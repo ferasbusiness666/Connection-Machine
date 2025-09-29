@@ -13,10 +13,37 @@ public:
     ) : simulatorOptimizer(evalConfig, middleIdProvider, dirtySimulatorIds) {}
 
     void addGate(SimPauseGuard& pauseGuard, const GateType gateType, const middle_id_t gateId) {
+        if (gateType == GateType::BUS_INTERFACE) {
+            busInterfaceIds.insert(gateId);
+            return;
+        }
         simulatorOptimizer.addGate(pauseGuard, gateType, gateId);
     }
 
     void removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
+        if (busInterfaceIds.contains(gateId)) {
+            std::vector<EvalConnection> omittedConns = omittedConnections[gateId];
+            for (const EvalConnection& conn : omittedConns) {
+                omittedConnections.at(conn.source.gateId).erase(
+                    std::remove_if(
+                        omittedConnections.at(conn.source.gateId).begin(),
+                        omittedConnections.at(conn.source.gateId).end(),
+                        [&](const EvalConnection& c) { return c == conn; }
+                    ),
+                    omittedConnections.at(conn.source.gateId).end()
+                );
+                omittedConnections.at(conn.destination.gateId).erase(
+                    std::remove_if(
+                        omittedConnections.at(conn.destination.gateId).begin(),
+                        omittedConnections.at(conn.destination.gateId).end(),
+                        [&](const EvalConnection& c) { return c == conn; }
+                    ),
+                    omittedConnections.at(conn.destination.gateId).end()
+                );
+            }
+            busInterfaceIds.erase(gateId);
+            return;
+        }
         simulatorOptimizer.removeGate(pauseGuard, gateId);
     }
 
@@ -69,10 +96,36 @@ public:
     }
 
     void makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
+        if (busInterfaceIds.contains(connection.source.gateId) ||
+            busInterfaceIds.contains(connection.destination.gateId)) {
+            omittedConnections[connection.source.gateId].push_back(connection);
+            omittedConnections[connection.destination.gateId].push_back(connection);
+            return;
+        }
         simulatorOptimizer.makeConnection(pauseGuard, connection);
     }
 
     void removeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
+        if (busInterfaceIds.contains(connection.source.gateId) ||
+            busInterfaceIds.contains(connection.destination.gateId)) {
+            omittedConnections[connection.source.gateId].erase(
+                std::remove_if(
+                    omittedConnections[connection.source.gateId].begin(),
+                    omittedConnections[connection.source.gateId].end(),
+                    [&](const EvalConnection& c) { return c == connection; }
+                ),
+                omittedConnections[connection.source.gateId].end()
+            );
+            omittedConnections[connection.destination.gateId].erase(
+                std::remove_if(
+                    omittedConnections[connection.destination.gateId].begin(),
+                    omittedConnections[connection.destination.gateId].end(),
+                    [&](const EvalConnection& c) { return c == connection; }
+                ),
+                omittedConnections[connection.destination.gateId].end()
+            );
+            return;
+        }
         simulatorOptimizer.removeConnection(pauseGuard, connection);
     }
 
@@ -85,20 +138,72 @@ public:
     }
 
     std::vector<EvalConnection> getInputs(middle_id_t middleId) const {
-        return simulatorOptimizer.getInputs(middleId);
+        std::vector<EvalConnection> conns = {};
+        if (omittedConnections.contains(middleId)) {
+            for (const EvalConnection& conn : omittedConnections.at(middleId)) {
+                if (conn.destination.gateId == middleId) {
+                    conns.push_back(conn);
+                }
+            }
+        }
+        if (busInterfaceIds.contains(middleId)) {
+            return conns;
+        }
+        for (const EvalConnection& conn : simulatorOptimizer.getInputs(middleId)) {
+            conns.push_back(conn);
+        }
+        return conns;
     }
 
     std::vector<EvalConnection> getOutputs(middle_id_t middleId) const {
-        return simulatorOptimizer.getOutputs(middleId);
+        std::vector<EvalConnection> conns = {};
+        if (omittedConnections.contains(middleId)) {
+            for (const EvalConnection& conn : omittedConnections.at(middleId)) {
+                if (conn.source.gateId == middleId) {
+                    conns.push_back(conn);
+                }
+            }
+        }
+        if (busInterfaceIds.contains(middleId)) {
+            return conns;
+        }
+        for (const EvalConnection& conn : simulatorOptimizer.getOutputs(middleId)) {
+            conns.push_back(conn);
+        }
+        return conns;
     }
     int getNumOutputs(middle_id_t middleId) const {
-        return simulatorOptimizer.getNumOutputs(middleId);
+        int count = 0;
+        if (omittedConnections.contains(middleId)) {
+            for (const EvalConnection& conn : omittedConnections.at(middleId)) {
+                if (conn.source.gateId == middleId) {
+                    count++;
+                }
+            }
+        }
+        if (busInterfaceIds.contains(middleId)) {
+            return count;
+        }
+        return count + simulatorOptimizer.getNumOutputs(middleId);
     }
     int getNumInputs(middle_id_t middleId) const {
-        return simulatorOptimizer.getNumInputs(middleId);
+        int count = 0;
+        if (omittedConnections.contains(middleId)) {
+            for (const EvalConnection& conn : omittedConnections.at(middleId)) {
+                if (conn.destination.gateId == middleId) {
+                    count++;
+                }
+            }
+        }
+        if (busInterfaceIds.contains(middleId)) {
+            return count;
+        }
+        return count + simulatorOptimizer.getNumInputs(middleId);
     }
 private:
     SimulatorOptimizer simulatorOptimizer;
+    std::unordered_map<middle_id_t, std::vector<EvalConnection>> omittedConnections;
+    std::unordered_set<middle_id_t> busInterfaceIds;
 };
 
 #endif /* busInterfacePassthrough_h */
