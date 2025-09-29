@@ -14,14 +14,14 @@ class Replacement {
 public:
 	Replacement(
 		Replacer* replacer,
-		SimulatorOptimizer* optimizer,
+		BusInterfacePassthrough* optimizer,
 		IdProvider<middle_id_t>* middleIdProvider,
 		std::unordered_map<middle_id_t, middle_id_t>* replacedIds,
 		std::unordered_map<middle_id_t, std::unordered_map<connection_port_id_t, EvalConnectionPoint>>* replacedConnectionPoints,
 		std::unordered_set<middle_id_t>* replacementIds
 	) :
 		replacer(replacer),
-		simulatorOptimizer(optimizer),
+		busInterfacePassthrough(optimizer),
 		middleIdProvider(middleIdProvider),
 		replacedIds(replacedIds),
 		replacedConnectionPoints(replacedConnectionPoints),
@@ -30,8 +30,8 @@ public:
 	void removeGate(SimPauseGuard& pauseGuard, middle_id_t gateId, std::unordered_map<connection_port_id_t, EvalConnectionPoint> replacementConnectionPoints) {
 		isEmpty = false;
 		// track connection removals
-		std::vector<EvalConnection> outputs = simulatorOptimizer->getOutputs(gateId);
-		std::vector<EvalConnection> inputs = simulatorOptimizer->getInputs(gateId);
+		std::vector<EvalConnection> outputs = busInterfacePassthrough->getOutputs(gateId);
+		std::vector<EvalConnection> inputs = busInterfacePassthrough->getInputs(gateId);
 		for (const auto& conn : outputs) {
 			if (conn.destination.gateId != conn.source.gateId) {
 				deletedConnections.push_back(conn);
@@ -40,18 +40,18 @@ public:
 		for (const auto& conn : inputs) {
 			deletedConnections.push_back(conn);
 		}
-		deletedGates.push_back({ gateId, simulatorOptimizer->getGateType(gateId) });
+		deletedGates.push_back({ gateId, busInterfacePassthrough->getGateType(gateId) });
 		idsToTrackInputs.insert(gateId);
 		idsToTrackOutputs.insert(gateId);
 		replacedConnectionPoints->insert({ gateId, replacementConnectionPoints });
-		simulatorOptimizer->removeGate(pauseGuard, gateId);
+		busInterfacePassthrough->removeGate(pauseGuard, gateId);
 	}
 
 	void removeGate(SimPauseGuard& pauseGuard, middle_id_t gateId, middle_id_t replacementId) {
 		isEmpty = false;
 		// track connection removals
-		std::vector<EvalConnection> outputs = simulatorOptimizer->getOutputs(gateId);
-		std::vector<EvalConnection> inputs = simulatorOptimizer->getInputs(gateId);
+		std::vector<EvalConnection> outputs = busInterfacePassthrough->getOutputs(gateId);
+		std::vector<EvalConnection> inputs = busInterfacePassthrough->getInputs(gateId);
 		for (const auto& conn : outputs) {
 			if (conn.destination.gateId != conn.source.gateId) {
 				deletedConnections.push_back(conn);
@@ -60,24 +60,24 @@ public:
 		for (const auto& conn : inputs) {
 			deletedConnections.push_back(conn);
 		}
-		deletedGates.push_back({ gateId, simulatorOptimizer->getGateType(gateId) });
+		deletedGates.push_back({ gateId, busInterfacePassthrough->getGateType(gateId) });
 		idsToTrackInputs.insert(gateId);
 		idsToTrackOutputs.insert(gateId);
 		replacedIds->insert({ gateId, replacementId });
-		simulatorOptimizer->removeGate(pauseGuard, gateId);
+		busInterfacePassthrough->removeGate(pauseGuard, gateId);
 		replacementIds->insert(replacementId);
 	}
 
 	void addGate(SimPauseGuard& pauseGuard, GateType gateType, middle_id_t gateId) {
 		isEmpty = false;
-		simulatorOptimizer->addGate(pauseGuard, gateType, gateId);
+		busInterfacePassthrough->addGate(pauseGuard, gateType, gateId);
 		// we don't need to track, because nothing can happen to this gate
 		addedGates.push_back({ gateId, gateType });
 	}
 
 	void removeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
 		isEmpty = false;
-		simulatorOptimizer->removeConnection(pauseGuard, connection);
+		busInterfacePassthrough->removeConnection(pauseGuard, connection);
 		idsToTrackInputs.insert(connection.destination.gateId);
 		idsToTrackOutputs.insert(connection.source.gateId);
 		deletedConnections.push_back(connection);
@@ -85,7 +85,7 @@ public:
 
 	void makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
 		isEmpty = false;
-		simulatorOptimizer->makeConnection(pauseGuard, connection);
+		busInterfacePassthrough->makeConnection(pauseGuard, connection);
 		idsToTrackInputs.insert(connection.destination.gateId);
 		idsToTrackOutputs.insert(connection.source.gateId);
 		addedConnections.push_back(connection);
@@ -130,7 +130,7 @@ public:
 
 private:
 	Replacer* replacer;
-	SimulatorOptimizer* simulatorOptimizer;
+	BusInterfacePassthrough* busInterfacePassthrough;
 	IdProvider<middle_id_t>* middleIdProvider;
 	std::unordered_map<middle_id_t, middle_id_t>* replacedIds;
 	std::unordered_map<middle_id_t, std::unordered_map<connection_port_id_t, EvalConnectionPoint>>* replacedConnectionPoints;

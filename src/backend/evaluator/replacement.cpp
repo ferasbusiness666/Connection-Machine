@@ -20,18 +20,18 @@ void Replacement::revert(SimPauseGuard& pauseGuard) {
 		replacer->pingInputs(pauseGuard, conn.id);
 	}
 	for (const auto& conn : addedConnections) {
-		simulatorOptimizer->removeConnection(pauseGuard, conn);
+		busInterfacePassthrough->removeConnection(pauseGuard, conn);
 	}
 	for (const auto& conn : addedGates) {
-		simulatorOptimizer->removeGate(pauseGuard, conn.id);
+		busInterfacePassthrough->removeGate(pauseGuard, conn.id);
 	}
 	for (const auto& gate : deletedGates) {
-		simulatorOptimizer->addGate(pauseGuard, gate.type, gate.id);
+		busInterfacePassthrough->addGate(pauseGuard, gate.type, gate.id);
 		replacedConnectionPoints->erase(gate.id);
 		replacedIds->erase(gate.id);
 	}
 	for (const auto& conn : deletedConnections) {
-		simulatorOptimizer->makeConnection(pauseGuard, conn);
+		busInterfacePassthrough->makeConnection(pauseGuard, conn);
 	}
 	for (const auto& id : reservedIds) {
 		middleIdProvider->releaseId(id);

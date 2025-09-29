@@ -1,7 +1,7 @@
 #ifndef replacer_h
 #define replacer_h
 
-#include "simulatorOptimizer.h"
+#include "busInterfacePassthrough.h"
 #include "evalConfig.h"
 #include "evalConnection.h"
 #include "evalTypedef.h"
@@ -19,89 +19,89 @@ public:
 		EvalConfig& evalConfig,
 		IdProvider<middle_id_t>& middleIdProvider,
 		std::vector<simulator_id_t>& dirtySimulatorIds) :
-		simulatorOptimizer(evalConfig, middleIdProvider, dirtySimulatorIds),
+		busInterfacePassthrough(evalConfig, middleIdProvider, dirtySimulatorIds),
 		evalConfig(evalConfig),
 		middleIdProvider(middleIdProvider) {}
 
-	inline void addGate(SimPauseGuard& pauseGuard, const GateType gateType, const middle_id_t gateId) {
-		simulatorOptimizer.addGate(pauseGuard, gateType, gateId);
+	void addGate(SimPauseGuard& pauseGuard, const GateType gateType, const middle_id_t gateId) {
+		busInterfacePassthrough.addGate(pauseGuard, gateType, gateId);
 	}
 
 	void removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
 		pingOutputs(pauseGuard, gateId);
 		pingInputs(pauseGuard, gateId);
-		simulatorOptimizer.removeGate(pauseGuard, gateId);
+		busInterfacePassthrough.removeGate(pauseGuard, gateId);
 	}
 
 	inline SimPauseGuard beginEdit() {
-		return simulatorOptimizer.beginEdit();
+		return busInterfacePassthrough.beginEdit();
 	}
 
 	void endEdit(SimPauseGuard& pauseGuard) {
 		cleanReplacements();
 		mergeJunctions(pauseGuard);
 
-		simulatorOptimizer.endEdit(pauseGuard);
+		busInterfacePassthrough.endEdit(pauseGuard);
 	}
 
 	inline std::optional<simulator_id_t> getSimIdFromMiddleId(middle_id_t middleId) const {
-		return simulatorOptimizer.getSimIdFromMiddleId(middleId);
+		return busInterfacePassthrough.getSimIdFromMiddleId(middleId);
 	}
 
 	inline std::optional<simulator_id_t> getSimIdFromConnectionPoint(const EvalConnectionPoint& point) const {
-		return simulatorOptimizer.getSimIdFromConnectionPoint(point);
+		return busInterfacePassthrough.getSimIdFromConnectionPoint(point);
 	}
 
 	inline logic_state_t getState(EvalConnectionPoint point) const {
-		return simulatorOptimizer.getState(getReplacementConnectionPoint(point));
+		return busInterfacePassthrough.getState(getReplacementConnectionPoint(point));
 	}
 
 	inline std::vector<logic_state_t> getStates(const std::vector<EvalConnectionPoint>& points) const {
-		return simulatorOptimizer.getStates(getReplacementConnectionPoints(points));
+		return busInterfacePassthrough.getStates(getReplacementConnectionPoints(points));
 	}
 
 	inline std::vector<logic_state_t> getPinStates(const std::vector<EvalConnectionPoint>& points) const {
-		return simulatorOptimizer.getPinStates(getReplacementConnectionPoints(points));
+		return busInterfacePassthrough.getPinStates(getReplacementConnectionPoints(points));
 	}
 
 	inline std::vector<logic_state_t> getStatesFromSimulatorIds(const std::vector<simulator_id_t>& simulatorIds) const {
-		return simulatorOptimizer.getStatesFromSimulatorIds(simulatorIds);
+		return busInterfacePassthrough.getStatesFromSimulatorIds(simulatorIds);
 	}
 
 	inline std::vector<SimulatorStateAndPinSimId> getSimulatorIds(const std::vector<EvalConnectionPoint>& points) const {
-		return simulatorOptimizer.getSimulatorIds(getReplacementConnectionPoints(points));
+		return busInterfacePassthrough.getSimulatorIds(getReplacementConnectionPoints(points));
 	}
 
 	inline std::vector<simulator_id_t> getBlockSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
-		return simulatorOptimizer.getBlockSimulatorIds(getReplacementConnectionPoints(points));
+		return busInterfacePassthrough.getBlockSimulatorIds(getReplacementConnectionPoints(points));
 	}
 
 	inline std::vector<simulator_id_t> getPinSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
-		return simulatorOptimizer.getPinSimulatorIds(getReplacementConnectionPoints(points));
+		return busInterfacePassthrough.getPinSimulatorIds(getReplacementConnectionPoints(points));
 	}
 
 	inline void setState(EvalConnectionPoint id, logic_state_t state) {
-		simulatorOptimizer.setState(getReplacementConnectionPoint(id), state);
+		busInterfacePassthrough.setState(getReplacementConnectionPoint(id), state);
 	}
 
 	void makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
 		pingOutputs(pauseGuard, connection.source.gateId);
 		pingInputs(pauseGuard, connection.destination.gateId);
-		simulatorOptimizer.makeConnection(pauseGuard, connection);
+		busInterfacePassthrough.makeConnection(pauseGuard, connection);
 	}
 
 	void removeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
 		pingOutputs(pauseGuard, connection.source.gateId);
 		pingInputs(pauseGuard, connection.destination.gateId);
-		simulatorOptimizer.removeConnection(pauseGuard, connection);
+		busInterfacePassthrough.removeConnection(pauseGuard, connection);
 	}
 
 	inline double getAverageTickrate() const {
-		return simulatorOptimizer.getAverageTickrate();
+		return busInterfacePassthrough.getAverageTickrate();
 	}
 
 private:
-	SimulatorOptimizer simulatorOptimizer;
+	BusInterfacePassthrough busInterfacePassthrough;
 	EvalConfig& evalConfig;
 	IdProvider<middle_id_t>& middleIdProvider;
 	std::vector<Replacement> replacements;

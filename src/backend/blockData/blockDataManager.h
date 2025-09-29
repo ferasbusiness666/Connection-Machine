@@ -47,14 +47,16 @@ public:
 		getBlockData(BlockType::LIGHT)->setName("Light");
 		getBlockData(BlockType::LIGHT)->setDefaultData(false);
 		getBlockData(BlockType::LIGHT)->setConnectionInput(Vector(0), 0);
-		// BUS
-		getBlockData(BlockType::BUS)->setName("Bus");
-		getBlockData(BlockType::BUS)->setDefaultData(false);
-		getBlockData(BlockType::BUS)->setConnectionOutput(Vector(1, 0), 0);
+		// BUS_INTERFACE
+		getBlockData(BlockType::BUS_INTERFACE)->setName("Bus Interface");
+		getBlockData(BlockType::BUS_INTERFACE)->setDefaultData(false);
+		getBlockData(BlockType::BUS_INTERFACE)->setConnectionOutput(Vector(1, 0), 0);
+		getBlockData(BlockType::BUS_INTERFACE)->setConnectionInput(Vector(1, 0), 1);
 		for (int i = 0; i < 8; ++i) {
-			getBlockData(BlockType::BUS)->setConnectionInput(Vector(0, i), i + 1);
+			getBlockData(BlockType::BUS_INTERFACE)->setConnectionOutput(Vector(0, i), i*2 + 2);
+			getBlockData(BlockType::BUS_INTERFACE)->setConnectionInput(Vector(0, i), i*2 + 3);
 		}
-		getBlockData(BlockType::BUS)->setSize(Size(2, 8));
+		getBlockData(BlockType::BUS_INTERFACE)->setSize(Size(2, 8));
 	}
 
 	inline BlockType addBlock() noexcept {

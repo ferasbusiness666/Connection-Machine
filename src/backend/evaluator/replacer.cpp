@@ -3,7 +3,7 @@
 Replacement& Replacer::makeReplacement() {
     replacements.push_back(Replacement(
         this,
-        &simulatorOptimizer,
+        &busInterfacePassthrough,
         &middleIdProvider,
         &replacedIds,
         &replacedConnectionPoints,
@@ -73,7 +73,7 @@ void Replacer::mergeJunctions(SimPauseGuard& pauseGuard) {
             continue;
         }
         // check if we're a junction
-        GateType gateType = simulatorOptimizer.getGateType(id);
+        GateType gateType = busInterfacePassthrough.getGateType(id);
         if (gateType != GateType::JUNCTION) {
             continue;
         }
@@ -125,13 +125,13 @@ Replacer::JunctionFloodFillResult Replacer::junctionFloodFill(middle_id_t juncti
         middle_id_t currentId = queue.front();
         queue.pop();
         result.junctionIds.push_back(currentId);
-        std::vector<EvalConnection> outputs = simulatorOptimizer.getOutputs(currentId);
-        std::vector<EvalConnection> inputs = simulatorOptimizer.getInputs(currentId);
+        std::vector<EvalConnection> outputs = busInterfacePassthrough.getOutputs(currentId);
+        std::vector<EvalConnection> inputs = busInterfacePassthrough.getInputs(currentId);
         for (const auto& output : outputs) {
             if (visited.contains(output.destination.gateId)) {
                 continue;
             }
-            GateType outputGateType = simulatorOptimizer.getGateType(output.destination.gateId);
+            GateType outputGateType = busInterfacePassthrough.getGateType(output.destination.gateId);
             if (outputGateType == GateType::JUNCTION) {
                 queue.push(output.destination.gateId);
                 visited.insert(output.destination.gateId);
@@ -143,7 +143,7 @@ Replacer::JunctionFloodFillResult Replacer::junctionFloodFill(middle_id_t juncti
             if (visited.contains(input.source.gateId)) {
                 continue;
             }
-            GateType inputGateType = simulatorOptimizer.getGateType(input.source.gateId);
+            GateType inputGateType = busInterfacePassthrough.getGateType(input.source.gateId);
             if (inputGateType == GateType::JUNCTION) {
                 queue.push(input.source.gateId);
                 visited.insert(input.source.gateId);
@@ -155,12 +155,12 @@ Replacer::JunctionFloodFillResult Replacer::junctionFloodFill(middle_id_t juncti
             }
             visitedOutputs.insert(input.source);
             result.outputsGoingIntoJunctions.push_back(input.source);
-            std::vector<EvalConnection> nodeOutputs = simulatorOptimizer.getOutputs(input.source.gateId);
+            std::vector<EvalConnection> nodeOutputs = busInterfacePassthrough.getOutputs(input.source.gateId);
             for (const auto& nodeOutput : nodeOutputs) {
                 if (nodeOutput.source.portId != input.source.portId) {
                     continue; // only consider outputs from the same port
                 }
-                GateType nodeOutputGateType = simulatorOptimizer.getGateType(nodeOutput.destination.gateId);
+                GateType nodeOutputGateType = busInterfacePassthrough.getGateType(nodeOutput.destination.gateId);
                 if (nodeOutputGateType == GateType::JUNCTION) {
                     if (visited.contains(nodeOutput.destination.gateId)) {
                         continue;
