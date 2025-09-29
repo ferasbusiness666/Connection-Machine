@@ -1,6 +1,8 @@
 #include "replacement.h"
 #include "logicSimulator.h"
 
+#include "replacer.h"
+
 void Replacement::revert(SimPauseGuard& pauseGuard) {
 	if (isReverting) {
 		return;

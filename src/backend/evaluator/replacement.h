@@ -1,7 +1,11 @@
 #ifndef replacement_h
 #define replacement_h
 
-#include "replacer.h"
+#include "busInterfacePassthrough.h"
+#include "evalConnection.h"
+#include "evalTypedef.h"
+#include "idProvider.h"
+#include "gateType.h"
 
 class Replacer;
 

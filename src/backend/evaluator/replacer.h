@@ -10,11 +10,9 @@
 #include "logicSimulator.h"
 #include "replacement.h"
 
-class Replacement;
-
 class Replacer {
-public:
 	friend class Replacement;
+public:
 	Replacer(
 		EvalConfig& evalConfig,
 		IdProvider<middle_id_t>& middleIdProvider,
