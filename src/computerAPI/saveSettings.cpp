@@ -68,7 +68,7 @@ void SaveSettings::load() {
     std::filesystem::path path = DirectoryManager::getConfigDirectory() / "stored_settings.txt";
     std::ifstream in(path);
     if (!in) {
-        this.save();
+        this->save();
         return;
     }
 

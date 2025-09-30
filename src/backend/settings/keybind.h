@@ -223,7 +223,7 @@ public:
 	Keybind(KeyId key) : Keybind((key << 8)) { }
 	Keybind(KeyId key, KeyMod modifier) : Keybind((key << 8) + modifier) { }
 	Keybind(KeyId key, unsigned int modifier) : Keybind((key << 8) + modifier) { } // because "a|b" outputs a int
-	Keybind(std::string keyString) {this->keyCombined = tokeyCombined(keyString)}
+	Keybind(std::string keyString) {this->keyCombined = tokeyCombined(keyString); }
 	bool operator==(Keybind keybind) const { return keybind.getKeyCombined() == keyCombined; }
 	bool operator!=(Keybind keybind) const { return keybind.getKeyCombined() != keyCombined; }
 
@@ -500,26 +500,26 @@ public:
 				else if (token == "Browser Back") key = KeyId::KI_BROWSER_BACK;
 				else if (token == "Browser Forward") key = KeyId::KI_BROWSER_FORWARD;
 				else if (token == "Browser Refresh") key = KeyId::KI_BROWSER_REFRESH;
-				else if (token == "Browser Stop") key = KeyId::KI_BROWSER_STOP
+				else if (token == "Browser Stop") key = KeyId::KI_BROWSER_STOP;
 				else if (token == "Browser Search") key = KeyId::KI_BROWSER_SEARCH;
-				else if (token ==)"Browser Favorites"; break;key = KeyId::KI_BROWSER_FAVORITES;
-				else if (token ==)"Browser Home"; break;key = KeyId::KI_BROWSER_HOME;
-				else if (token ==)"Volume Mute"; break;key = KeyId::KI_VOLUME_MUTE;
-				else if (token ==)"Volume Down"; break;key = KeyId::KI_VOLUME_DOWN;
-				else if (token ==)"Volume Up"; break;key = KeyId::KI_VOLUME_UP;
-				else if (token ==)"Media Next"; break;key = KeyId::KI_MEDIA_NEXT_TRACK;
-				else if (token ==)"Media Previous"; break;key = KeyId::KI_MEDIA_PREV_TRACK;
-				else if (token ==)"Media Stop"; break;key = KeyId::KI_MEDIA_STOP;
-				else if (token ==)"Media Play/Pause"; break;key = KeyId::KI_MEDIA_PLAY_PAUSE;
-				else if (token ==)"Launch Mail"; break;key = KeyId::KI_LAUNCH_MAIL;
-				else if (token ==)"Launch Media Select"; break;key = KeyId::KI_LAUNCH_MEDIA_SELECT;
-				else if (token ==)"Launch App1"; break;key = KeyId::KI_LAUNCH_APP1;
-				else if (token ==)"Launch App2"; break;key = KeyId::KI_LAUNCH_APP2;
-				else if (token ==)"OEM AX"; break;key = KeyId::KI_OEM_AX;
-				else if (token ==)"ICO Help"; break;key = KeyId::KI_ICO_HELP;
-				else if (token ==)"ICO 00"; break;key = KeyId::KI_ICO_00;
-				else if (token ==)"Process Key"; break;key = KeyId::KI_PROCESSKEY;
-				else if (token ==)"ICO Clear"; break;key = KeyId::KI_ICO_CLEAR;
+				else if (token =="Browser Favorites") key = KeyId::KI_BROWSER_FAVORITES;
+				else if (token =="Browser Home") key = KeyId::KI_BROWSER_HOME;
+				else if (token =="Volume Mute") key = KeyId::KI_VOLUME_MUTE;
+				else if (token =="Volume Down") key = KeyId::KI_VOLUME_DOWN;
+				else if (token =="Volume Up") key = KeyId::KI_VOLUME_UP;
+				else if (token =="Media Next") key = KeyId::KI_MEDIA_NEXT_TRACK;
+				else if (token =="Media Previous") key = KeyId::KI_MEDIA_PREV_TRACK;
+				else if (token =="Media Stop") key = KeyId::KI_MEDIA_STOP;
+				else if (token =="Media Play/Pause") key = KeyId::KI_MEDIA_PLAY_PAUSE;
+				else if (token =="Launch Mail") key = KeyId::KI_LAUNCH_MAIL;
+				else if (token =="Launch Media Select") key = KeyId::KI_LAUNCH_MEDIA_SELECT;
+				else if (token =="Launch App1") key = KeyId::KI_LAUNCH_APP1;
+				else if (token =="Launch App2") key = KeyId::KI_LAUNCH_APP2;
+				else if (token =="OEM AX") key = KeyId::KI_OEM_AX;
+				else if (token =="ICO Help") key = KeyId::KI_ICO_HELP;
+				else if (token =="ICO 00") key = KeyId::KI_ICO_00;
+				else if (token =="Process Key") key = KeyId::KI_PROCESSKEY;
+				else if (token =="ICO Clear") key = KeyId::KI_ICO_CLEAR;
 				else if (token == "ATTN") key = KeyId::KI_ATTN;
 				else if (token == "CRSEL") key = KeyId::KI_CRSEL;
 				else if (token == "EXSEL") key = KeyId::KI_EXSEL;
