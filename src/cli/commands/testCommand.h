@@ -1,12 +1,10 @@
 #ifndef testCommand_h
 #define testCommand_h
 
-#include "command.h"
+#include "../command.h"
 
-class testCommand : public Command {
+class TestCommand : public Command {
 public:
-    const std::string& getName() { return "testCommand"; }
-
     void run(std::vector<std::string> commands) {
         std::cout << "This is the test command, the parameters passed are:\n" << std::flush;
         for (std::vector<std::string>::iterator args = commands.begin(); iterator != commands.end(); ++iterator) {

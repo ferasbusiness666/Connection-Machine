@@ -11,8 +11,8 @@ public:
 	static void kill();
 
     void registerCommand(std::unique_ptr<Command>&& command);
+    const std::map<std::string, std::unique_ptr<Command>>& getCommandMap() const { return commandMap; }
     void run(const std::vector<std::string>& commandParams, Environment& environment);
-
 private:
     std::map<std::string, std::unique_ptr<Command>> commandMap;
 };

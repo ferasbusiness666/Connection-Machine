@@ -7,8 +7,9 @@ class Command {
 public:
 	Command(std::string name) : name(std::move(name)) {}
     virtual ~Command() {};
-    virtual const std::string& getName() { return name; };
+    const std::string& getName() { return name; }
     virtual void run(const std::vector<std::string>& args, Environment& environment) = 0;
+    virtual const std::string getHelpString() { return "Generic help string"; }
 private:
 	std::string name;
 };
