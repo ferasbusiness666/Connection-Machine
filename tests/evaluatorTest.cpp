@@ -47,7 +47,6 @@ TEST_F(EvaluatorTest, TickrateTest) {
 	evaluator->setPause(true);
 }
 
-
 TEST_F(EvaluatorTest, BasicStateManagement) {
 	Position pos(i, i); ++i;
 	Rotation rot = Rotation::ZERO;
@@ -70,17 +69,17 @@ TEST_F(EvaluatorTest, BasicStateManagement) {
 // 		Position(i + 2, i)
 // 	};
 // 	i += 3;
-
+//
 // 	// place switches
 // 	for (const Position& pos : positions) {
 // 		circuit->tryInsertBlock(pos, Rotation::ZERO, BlockType::SWITCH);
 // 	}
-
+//
 // 	std::vector<Address> addresses;
 // 	for (const Position& pos : positions) {
 // 		addresses.push_back(Address(pos));
 // 	}
-
+// 
 // 	std::vector<logic_state_t> states = evaluator->getBulkStates(addresses);
 // 	ASSERT_EQ(states.size(), addresses.size());
 // 	for (logic_state_t state : states) {
@@ -459,4 +458,47 @@ TEST_F(EvaluatorTest, AllBasicGatesBehavior) {
 			circuit->tryRemoveConnection(Position { i, 0 }, Position { 0, 1 });
 		}
 	}
+}
+
+TEST_F(EvaluatorTest, LargeEvaluatorTest) {
+	int LARGE_NUMBER = 10;
+	// 10 is about 20 ms
+	// 100 is 200 ms
+	// 1000 = EvaluatorTest.LargeEvaluatorTest (10790 ms) this seems like a
+	// long time for relatively not a lot of stuff but idk
+	std::vector<BlockType> allTypes = {
+		BlockType::AND,
+		BlockType::OR,
+		BlockType::XOR,
+		BlockType::NAND,
+		BlockType::NOR,
+		BlockType::XNOR
+	};
+	
+	for (i = 0; i < LARGE_NUMBER; i++) {
+		circuit->tryInsertBlock(Position(i, 0), Rotation::ZERO, BlockType::SWITCH);
+		evaluator->setState(Address( {i, 0} ), logic_state_t::HIGH);
+	}
+	int j = 0;
+	for (BlockType type : allTypes) {
+		++j;
+		for (i = 0; i < LARGE_NUMBER; i++) {
+			circuit->tryInsertBlock(Position(i, j), Rotation::ZERO, type);
+			circuit->tryCreateConnection(Position(i, 0), Position(i, j));
+		}
+	}
+	evaluator->tickStep(1);
+	Position andGate(rand() % LARGE_NUMBER, 1);
+	// and on should be true
+	ASSERT_TRUE(evaluator->getBoolState(Address( {rand() % LARGE_NUMBER, 1})));
+	// or on should be true
+	ASSERT_TRUE(evaluator->getBoolState(Address( {rand() % LARGE_NUMBER, 2})));
+	// xor on should be true
+	ASSERT_TRUE(evaluator->getBoolState(Address( {rand() % LARGE_NUMBER, 3})));
+	// nand on should be false
+	ASSERT_FALSE(evaluator->getBoolState(Address( {rand() % LARGE_NUMBER, 4})));
+	// nor on should be false
+	ASSERT_FALSE(evaluator->getBoolState(Address( {rand() % LARGE_NUMBER, 5})));
+	// xnor on should be false
+	ASSERT_FALSE(evaluator->getBoolState(Address( {rand() % LARGE_NUMBER, 6})));
 }
