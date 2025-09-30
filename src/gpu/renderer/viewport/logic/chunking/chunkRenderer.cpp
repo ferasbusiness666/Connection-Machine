@@ -73,7 +73,6 @@ void ChunkRenderer::render(Frame& frame, const glm::mat4& viewMatrix, Evaluator*
 #ifdef TRACY_PROFILER
 	ZoneScoped;
 #endif
-
 	// save chunk data to frame
 	for (auto& chunk : chunks) {
 		frame.lifetime.push(chunk);
@@ -112,6 +111,7 @@ void ChunkRenderer::render(Frame& frame, const glm::mat4& viewMatrix, Evaluator*
 		blockPipeline.cmdPushConstants(frame.mainCommandBuffer, &pushConstants);
 
 		// bind texture descriptor
+		// TODO: get the texture from the array
 		std::shared_ptr<BlockTexture> blockTexture = device->getBlockTextureManager().getTexture();
 		frame.lifetime.push(blockTexture);
 		vkCmdBindDescriptorSets(frame.mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, blockPipeline.getLayout(), 1, 1, &blockTexture->descriptor, 0, nullptr);

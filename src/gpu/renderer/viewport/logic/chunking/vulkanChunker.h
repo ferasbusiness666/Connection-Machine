@@ -20,7 +20,7 @@ struct BlockInstance {
 	glm::vec2 pos;
 	uint32_t sizeX;
 	uint32_t sizeY;
-	float texX;
+	uint32_t texLayer;
 	uint32_t orientation;
 
 	inline static std::vector<VkVertexInputBindingDescription> getBindingDescriptions() {
@@ -47,8 +47,8 @@ struct BlockInstance {
 
 		attributeDescriptions[2].binding = 0;
 		attributeDescriptions[2].location = 2;
-		attributeDescriptions[2].format = VK_FORMAT_R32_SFLOAT;
-		attributeDescriptions[2].offset = offsetof(BlockInstance, texX);
+		attributeDescriptions[2].format = VK_FORMAT_R32_UINT;
+		attributeDescriptions[2].offset = offsetof(BlockInstance, texLayer);
 
 		attributeDescriptions[3].binding = 0;
 		attributeDescriptions[3].location = 3;
