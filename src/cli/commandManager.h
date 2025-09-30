@@ -5,6 +5,7 @@
 #include "environment/environment.h"
 
 class CommandManager {
+// contains and runs all the commands that can be run from the CLI app
 public:
 	static CommandManager& get();
 	static void kill();

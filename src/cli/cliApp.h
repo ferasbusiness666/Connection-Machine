@@ -1,7 +1,10 @@
 #ifndef cliApp_h
 #define cliApp_h
 
+#include "commandManager.h"
+
 class CliApp {
+// highest level loop of the CLI version of the app
 public:
     CliApp() {
         std::string input;
