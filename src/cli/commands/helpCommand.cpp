@@ -4,8 +4,8 @@
 #include "../commandManager.h"
 #include "util/runAtStartup.h"
 
-
 runAtStartup(CommandManager::get().registerCommand(std::make_unique<HelpCommand>());)
+
 void HelpCommand::run(const std::vector<std::string>& args, Environment& environment) {
 	logInfo(args[0]);
 	const auto& commandMap = CommandManager::get().getCommandMap();
