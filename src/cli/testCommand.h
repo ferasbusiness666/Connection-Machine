@@ -5,7 +5,14 @@
 
 class testCommand : public Command {
 public:
-    const std::string& getName() { return "testCommand"}
+    const std::string& getName() { return "testCommand"; }
+
+    void run(std::vector<std::string> commands) {
+        std::cout << "This is the test command, the parameters passed are:\n" << std::flush;
+        for (std::vector<std::string>::iterator args = commands.begin(); iterator != commands.end(); ++iterator) {
+            std::cout << *iterator << "\n" << std::flush;
+        }
+    }
 };
 
 #endif
