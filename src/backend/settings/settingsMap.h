@@ -36,7 +36,7 @@ class SettingsMap {
 public:
 	template<SettingType settingType>
 	using ListenerFunction = std::function<void(const typename SettingTypeToType<settingType>::type&)>;
-
+	// using AllListenerFunction = std::function<void()>;
 	using AllListenerFunction = std::function<void(const std::string& key)>;
 
 	class SettingListenerBase {
@@ -73,7 +73,7 @@ public:
 			changeType<settingType>(iter->second);
 		}
 		for (AllListenerFunction& func : allListenerFunctions){
-			func();
+			func(key);
 		}
 	}
 	template<SettingType settingType>
@@ -85,7 +85,7 @@ public:
 			changeType<settingType>(iter->second, value);
 		}
 		for (AllListenerFunction& func : allListenerFunctions){
-			func();
+			func(key);
 		}
 	}
 	template<SettingType settingType>
@@ -143,7 +143,7 @@ public:
 		}
 		settingEntry->setValue(value);
 		for (AllListenerFunction& func : allListenerFunctions){
-			func();
+			func(key);
 		}
 		return true;
 	}

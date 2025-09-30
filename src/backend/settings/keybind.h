@@ -223,6 +223,7 @@ public:
 	Keybind(KeyId key) : Keybind((key << 8)) { }
 	Keybind(KeyId key, KeyMod modifier) : Keybind((key << 8) + modifier) { }
 	Keybind(KeyId key, unsigned int modifier) : Keybind((key << 8) + modifier) { } // because "a|b" outputs a int
+	Keybind(std::string keyString) {this->keyCombined = tokeyCombined(keyString)}
 	bool operator==(Keybind keybind) const { return keybind.getKeyCombined() == keyCombined; }
 	bool operator!=(Keybind keybind) const { return keybind.getKeyCombined() != keyCombined; }
 
@@ -422,6 +423,118 @@ public:
 
 		return keyString;
 	}
+	unsigned int tokeyCombined(const std::string& keyString) {
+    	unsigned int result = 0;
+
+    	// Split on " + "
+    	std::istringstream iss(keyString);
+    	std::string token;
+    	while (std::getline(iss, token, '+')) {
+        // trim spaces
+        	token.erase(0, token.find_first_not_of(" \t"));
+        	token.erase(token.find_last_not_of(" \t") + 1);
+
+        	if (token == "ALT") {
+            	result |= 4U;
+        	}
+#ifdef __APPLE__
+        	else if (token == "COMMAND") {
+            	result |= 1U;
+        	} else if (token == "CTRL") {
+            	result |= 8U;
+        	}
+#else
+        	else if (token == "CTRL") {
+            	result |= 1U;
+        	} else if (token == "META") {
+            	result |= 8U;
+        	}
+#endif
+        	else if (token == "SHIFT") {
+            	result |= 2U;
+        	} 
+        	else {
+            	// Handle main key
+            	KeyId key = KeyId::KI_UNKNOWN;
+            	if (token == "SPACE") key = KeyId::KI_SPACE;
+            	else if (token == "0") key = KeyId::KI_0;
+            	else if (token == "1") key = KeyId::KI_1;
+            	else if (token == "2") key = KeyId::KI_2;
+            	else if (token == "3") key = KeyId::KI_3;
+            	else if (token == "4") key = KeyId::KI_4;
+            	else if (token == "5") key = KeyId::KI_5;
+            	else if (token == "6") key = KeyId::KI_6;
+            	else if (token == "7") key = KeyId::KI_7;
+            	else if (token == "8") key = KeyId::KI_8;
+            	else if (token == "9") key = KeyId::KI_9;
+            	else if (token.size() == 1 && std::isalpha(token[0])) {
+                	char c = std::toupper(token[0]);
+                	key = static_cast<KeyId>(KeyId::KI_A + (c - 'A'));
+            	}
+            	else if (token == "F1") key = KeyId::KI_F1;
+            	else if (token == "F2") key = KeyId::KI_F2;
+            	else if (token == "F3") key = KeyId::KI_F3;
+            	else if (token == "F4") key = KeyId::KI_F4;
+            	else if (token == "F5") key = KeyId::KI_F5;
+            	else if (token == "F6") key = KeyId::KI_F6;
+            	else if (token == "F7") key = KeyId::KI_F7;
+            	else if (token == "F8") key = KeyId::KI_F8;
+            	else if (token == "F9") key = KeyId::KI_F9;
+            	else if (token == "F10") key = KeyId::KI_F10;
+            	else if (token == "F11") key = KeyId::KI_F11;
+            	else if (token == "F12") key = KeyId::KI_F12;
+				else if (token == "F13") key =KeyId::KI_F13;
+				else if (token == "F14") key =KeyId::KI_F14;
+				else if (token == "F15") key = KeyId::KI_F15;
+				else if (token == "F16") key = KeyId::KI_F16;
+				else if (token == "F17") key = KeyId::KI_F17;
+				else if (token == "F18") key = KeyId::KI_F18;
+				else if (token == "F19") key = KeyId::KI_F19;
+				else if (token == "F20") key = KeyId::KI_F20;
+				else if (token == "F21") key = KeyId::KI_F21;
+				else if (token == "F22") key = KeyId::KI_F22;
+				else if (token == "F23") key = KeyId::KI_F23;
+				else if (token == "F24") key = KeyId::KI_F24;
+				else if (token == "NumLock") key = KeyId::KI_NUMLOCK;
+				else if (token == "Scroll Lock") key = KeyId::KI_SCROLL;
+				else if (token == "Browser Back") key = KeyId::KI_BROWSER_BACK;
+				else if (token == "Browser Forward") key = KeyId::KI_BROWSER_FORWARD;
+				else if (token == "Browser Refresh") key = KeyId::KI_BROWSER_REFRESH;
+				else if (token == "Browser Stop") key = KeyId::KI_BROWSER_STOP
+				else if (token == "Browser Search") key = KeyId::KI_BROWSER_SEARCH;
+				else if (token ==)"Browser Favorites"; break;key = KeyId::KI_BROWSER_FAVORITES;
+				else if (token ==)"Browser Home"; break;key = KeyId::KI_BROWSER_HOME;
+				else if (token ==)"Volume Mute"; break;key = KeyId::KI_VOLUME_MUTE;
+				else if (token ==)"Volume Down"; break;key = KeyId::KI_VOLUME_DOWN;
+				else if (token ==)"Volume Up"; break;key = KeyId::KI_VOLUME_UP;
+				else if (token ==)"Media Next"; break;key = KeyId::KI_MEDIA_NEXT_TRACK;
+				else if (token ==)"Media Previous"; break;key = KeyId::KI_MEDIA_PREV_TRACK;
+				else if (token ==)"Media Stop"; break;key = KeyId::KI_MEDIA_STOP;
+				else if (token ==)"Media Play/Pause"; break;key = KeyId::KI_MEDIA_PLAY_PAUSE;
+				else if (token ==)"Launch Mail"; break;key = KeyId::KI_LAUNCH_MAIL;
+				else if (token ==)"Launch Media Select"; break;key = KeyId::KI_LAUNCH_MEDIA_SELECT;
+				else if (token ==)"Launch App1"; break;key = KeyId::KI_LAUNCH_APP1;
+				else if (token ==)"Launch App2"; break;key = KeyId::KI_LAUNCH_APP2;
+				else if (token ==)"OEM AX"; break;key = KeyId::KI_OEM_AX;
+				else if (token ==)"ICO Help"; break;key = KeyId::KI_ICO_HELP;
+				else if (token ==)"ICO 00"; break;key = KeyId::KI_ICO_00;
+				else if (token ==)"Process Key"; break;key = KeyId::KI_PROCESSKEY;
+				else if (token ==)"ICO Clear"; break;key = KeyId::KI_ICO_CLEAR;
+				else if (token == "ATTN") key = KeyId::KI_ATTN;
+				else if (token == "CRSEL") key = KeyId::KI_CRSEL;
+				else if (token == "EXSEL") key = KeyId::KI_EXSEL;
+				else if (token == "EREOF") key = KeyId::KI_EREOF;
+				else if (token == "Play") key = KeyId::KI_PLAY;
+				else if (token == "Zoom") key = KeyId::KI_ZOOM;
+				else if (token == "PA1") key = KeyId::KI_PA1;
+				else if (token == "OEM Clear") key = KeyId::KI_OEM_CLEAR;
+            	if (key != KeyId::KI_UNKNOWN) {
+                	result |= (static_cast<unsigned int>(key) << 8);
+            	}
+        	}
+    	}
+    	return result;
+}
 
 private:
 	unsigned int keyCombined = 0;

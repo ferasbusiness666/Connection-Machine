@@ -68,7 +68,7 @@ void SaveSettings::load() {
     std::filesystem::path path = DirectoryManager::getConfigDirectory() / "stored_settings.txt";
     std::ifstream in(path);
     if (!in) {
-        // First run: no file yet
+        this.save();
         return;
     }
 
@@ -104,10 +104,12 @@ void SaveSettings::load() {
                 } catch (...) {}
                 break;
             case SettingType::BOOL:
+            {
                 std::string keyCopy = key;
                 std::transform(keyCopy.begin(), keyCopy.end(), keyCopy.begin(), ::tolower);
                 Settings::set<SettingType::BOOL>(key, keyCopy == "1" || keyCopy == "true" || keyCopy == "yes" || keyCopy == "on");
                 break;
+            }
             case SettingType::KEYBIND:
                 try {
                     Settings::set<SettingType::KEYBIND>(key, Keybind(std::stoi(value)));
