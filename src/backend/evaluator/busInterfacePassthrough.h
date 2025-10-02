@@ -10,7 +10,8 @@ public:
         EvalConfig& evalConfig,
         IdProvider<middle_id_t>& middleIdProvider,
         std::vector<simulator_id_t>& dirtySimulatorIds
-    ) : simulatorOptimizer(evalConfig, middleIdProvider, dirtySimulatorIds) {}
+    ) : simulatorOptimizer(evalConfig, middleIdProvider, dirtySimulatorIds),
+    dirtySimulatorIds(dirtySimulatorIds) {}
 
     void addGate(SimPauseGuard& pauseGuard, const GateType gateType, const middle_id_t gateId) {
         if (gateType == GateType::BUS_INTERFACE) {
@@ -45,6 +46,7 @@ public:
         }
         if (busInterfaceIds.contains(gateId)) {
             busInterfaceIds.erase(gateId);
+            dirtySimulatorIds.push_back(0);
         } else {
             simulatorOptimizer.removeGate(pauseGuard, gateId);
         }
@@ -103,6 +105,7 @@ public:
             busInterfaceIds.contains(connection.destination.gateId)) {
             omittedConnections[connection.source.gateId].push_back(connection);
             omittedConnections[connection.destination.gateId].push_back(connection);
+            dirtySimulatorIds.push_back(0);
             return;
         }
         simulatorOptimizer.makeConnection(pauseGuard, connection);
@@ -111,6 +114,7 @@ public:
     void removeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
         if (busInterfaceIds.contains(connection.source.gateId) ||
             busInterfaceIds.contains(connection.destination.gateId)) {
+            dirtySimulatorIds.push_back(0);
             omittedConnections[connection.source.gateId].erase(
                 std::remove_if(
                     omittedConnections[connection.source.gateId].begin(),
@@ -210,6 +214,7 @@ private:
     SimulatorOptimizer simulatorOptimizer;
     std::unordered_map<middle_id_t, std::vector<EvalConnection>> omittedConnections;
     std::unordered_set<middle_id_t> busInterfaceIds;
+    std::vector<simulator_id_t>& dirtySimulatorIds;
 };
 
 #endif /* busInterfacePassthrough_h */
