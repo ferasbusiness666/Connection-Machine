@@ -4,11 +4,11 @@
 template<typename T>
 class IdProvider {
 public:
-	IdProvider() : lastId(0) {}
+	IdProvider() : nextId(0) {}
 
 	inline T getNewId() {
 		if (unusedIds.empty()) {
-			return lastId++;
+			return nextId++;
 		} else {
 			T id = *unusedIds.begin();
 			unusedIds.erase(unusedIds.begin());
@@ -16,12 +16,12 @@ public:
 		}
 	}
 	inline T getNewId(T preferredId) {
-		if (unusedIds.size() * 2 < lastId && unusedIds.contains(preferredId)) {
+		if (unusedIds.size() * 2 < nextId && unusedIds.contains(preferredId)) {
 			unusedIds.erase(preferredId);
 			return preferredId;
 		}
-		if (preferredId == lastId || unusedIds.empty()) {
-			return lastId++;
+		if (preferredId == nextId || unusedIds.empty()) {
+			return nextId++;
 		} else {
 			T id = *unusedIds.begin();
 			unusedIds.erase(unusedIds.begin());
@@ -29,24 +29,24 @@ public:
 		}
 	}
 	inline void releaseId(T id) {
-		if (id > lastId || unusedIds.contains(id)) {
+		if (id > nextId || unusedIds.contains(id)) {
 			return;
 		}
 		unusedIds.insert(id);
 	}
 	inline bool isIdUsed(T id) const {
-		return id <= lastId && !unusedIds.contains(id);
+		return id < nextId && !unusedIds.contains(id);
 	}
-	inline T getLastId() const {
-		return lastId;
+	inline T getNextId() const {
+		return nextId;
 	}
 	inline void reset() {
-		lastId = 0;
+		nextId = 0;
 		unusedIds.clear();
 	}
 	inline std::vector<T> getUsedIds() const {
 		std::vector<T> usedIds;
-		for (T id = 0; id < lastId; ++id) {
+		for (T id = 0; id < nextId; ++id) {
 			if (!unusedIds.contains(id)) {
 				usedIds.push_back(id);
 			}
@@ -54,7 +54,7 @@ public:
 		return usedIds;
 	}
 private:
-	T lastId;
+	T nextId;
 	std::set<T> unusedIds;
 };
 
