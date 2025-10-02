@@ -37,10 +37,18 @@ void Replacer::pingInputs(SimPauseGuard& pauseGuard, middle_id_t id) {
 
 EvalConnectionPoint Replacer::getReplacementConnectionPoint(EvalConnectionPoint point) const {
     if (replacedIds.contains(point.gateId)) {
-        return EvalConnectionPoint(replacedIds.at(point.gateId), point.portId);
+        EvalConnectionPoint newPoint = EvalConnectionPoint(replacedIds.at(point.gateId), point.portId);
+        if (newPoint != point) {
+            return getReplacementConnectionPoint(newPoint);
+        }
+        return newPoint;
     }
     if (replacedConnectionPoints.contains(point.gateId) && replacedConnectionPoints.at(point.gateId).contains(point.portId)) {
-        return replacedConnectionPoints.at(point.gateId).at(point.portId);
+        EvalConnectionPoint newPoint = replacedConnectionPoints.at(point.gateId).at(point.portId);
+        if (newPoint != point) {
+            return getReplacementConnectionPoint(newPoint);
+        }
+        return newPoint;
     }
     return point;
 }
@@ -76,20 +84,16 @@ void Replacer::mergeBuses(SimPauseGuard& pauseGuard) {
         // check if we're a bus interface
         GateType gateType = busInterfacePassthrough.getGateType(id);
         if (gateType != GateType::BUS_INTERFACE) {
-            logInfo("Skipping non-bus interface " + std::to_string(id) + ".", "Replacer::mergeBuses");
             continue;
         }
-        logInfo("Found bus interface " + std::to_string(id) + " to consider for merging.", "Replacer::mergeBuses");
         BusFloodFillResult floodFillResult = busFloodFill(id);
         logInfo("Merging " + std::to_string(floodFillResult.busIds.size()) + " bus interfaces and " + std::to_string(floodFillResult.junctionIds.size()) + " junctions.", "Replacer::mergeBuses");
         Replacement& replacement = makeReplacement();
         for (const EvalConnection& conn : floodFillResult.connectionsBetweenBusesAndJunctions) {
             replacement.removeConnection(pauseGuard, conn);
-            logInfo(" - Removed connection between buses/junctions: " + conn.toString(), "Replacer::mergeBuses");
         }
         for (const middle_id_t junctionId : floodFillResult.junctionIds) {
             replacement.removeGate(pauseGuard, junctionId, 0);
-            logInfo(" - Removed junction: " + std::to_string(junctionId), "Replacer::mergeBuses");
         }
         std::vector<middle_id_t> pinJunctionIds = {};
         for (const EvalConnection& conn : floodFillResult.connectionsIntoBuses) {
@@ -118,8 +122,8 @@ void Replacer::mergeBuses(SimPauseGuard& pauseGuard) {
         pinsMapping[0] = EvalConnectionPoint(0, 0);
         pinsMapping[1] = EvalConnectionPoint(0, 0);
         for (size_t i = 0; i < pinJunctionIds.size(); i++) {
-            pinsMapping[i * 2] = EvalConnectionPoint(pinJunctionIds[i], 0);
-            pinsMapping[i * 2 + 1] = EvalConnectionPoint(pinJunctionIds[i], 0);
+            pinsMapping[i * 2 + 2] = EvalConnectionPoint(pinJunctionIds[i], 0);
+            pinsMapping[i * 2 + 3] = EvalConnectionPoint(pinJunctionIds[i], 0);
         }
         for (const middle_id_t busId : floodFillResult.busIds) {
             replacement.removeGate(pauseGuard, busId, pinsMapping);
