@@ -773,7 +773,7 @@ void Evaluator::checkToCreateExternalConnections(SimPauseGuard& pauseGuard, eval
 		const auto& connections = blockData->getConnections();
 		// logInfo("Found {} connections for block type {}", "Evaluator::checkToCreateExternalConnections", connections.size(), static_cast<int>(block->type()));
 		for (const auto& [connectionId, connectionOffset] : connections) {
-			Vector portOffset = connectionOffset.first;
+			Vector portOffset = connectionOffset.positionOnBlock;
 			Position portPosition = block->getPosition() + portOffset;
 			// Determine direction (input or output)
 			Direction direction = block->isConnectionInput(connectionId) ? Direction::IN : Direction::OUT;
