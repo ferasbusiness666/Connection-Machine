@@ -22,6 +22,9 @@ public:
 
     void removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
         if (busInterfaceIds.contains(gateId)) {
+            busInterfaceIds.erase(gateId);
+        }
+        if (omittedConnections.contains(gateId)) {
             std::vector<EvalConnection> omittedConns = omittedConnections[gateId];
             for (const EvalConnection& conn : omittedConns) {
                 omittedConnections.at(conn.source.gateId).erase(
@@ -41,7 +44,7 @@ public:
                     omittedConnections.at(conn.destination.gateId).end()
                 );
             }
-            busInterfaceIds.erase(gateId);
+            omittedConnections.erase(gateId);
             return;
         }
         simulatorOptimizer.removeGate(pauseGuard, gateId);
