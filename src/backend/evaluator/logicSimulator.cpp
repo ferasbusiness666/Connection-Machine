@@ -330,6 +330,9 @@ simulator_id_t LogicSimulator::addGate(const GateType gateType) {
 	case GateType::NONE:
 		logError("Cannot add gate of type NONE", "LogicSimulator::addGate");
 		return 0;
+	default:
+		logError("Cannot add gate of type {}", "LogicSimulator::addGate", (unsigned int)gateType);
+		return 0;
 	}
 	return simulatorId;
 }
