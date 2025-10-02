@@ -1,14 +1,15 @@
 #include "replacer.h"
 #include "util/algorithm.h"
 
-Replacement& Replacer::makeReplacement() {
+Replacement& Replacer::makeReplacement(int layer) {
     replacements.push_back(Replacement(
         this,
         &busInterfacePassthrough,
         &middleIdProvider,
         &replacedIds,
         &replacedConnectionPoints,
-        &replacementIds
+        &replacementIdLayers,
+        layer
     ));
     return replacements.back();
 }
@@ -75,11 +76,13 @@ std::vector<std::optional<EvalConnectionPoint>> Replacer::getReplacementConnecti
     return result;
 }
 
-void Replacer::mergeBuses(SimPauseGuard& pauseGuard) {
+void Replacer::mergeBuses(SimPauseGuard& pauseGuard, int layer) {
     std::vector<middle_id_t> allMiddleIds = middleIdProvider.getUsedIds();
     for (const middle_id_t id : allMiddleIds) {
-        if (replacementIds.contains(id)) {
-            continue;
+        if (replacementIdLayers.contains(id)) {
+            if (replacementIdLayers.at(id) >= layer) {
+                continue;
+            }
         }
         // check if we're a bus interface
         GateType gateType = busInterfacePassthrough.getGateType(id);
@@ -88,7 +91,7 @@ void Replacer::mergeBuses(SimPauseGuard& pauseGuard) {
         }
         BusFloodFillResult floodFillResult = busFloodFill(id);
         logInfo("Merging " + std::to_string(floodFillResult.busIds.size()) + " bus interfaces and " + std::to_string(floodFillResult.junctionIds.size()) + " junctions.", "Replacer::mergeBuses");
-        Replacement& replacement = makeReplacement();
+        Replacement& replacement = makeReplacement(layer);
         for (const EvalConnection& conn : floodFillResult.connectionsBetweenBusesAndJunctions) {
             replacement.removeConnection(pauseGuard, conn);
         }
@@ -102,10 +105,13 @@ void Replacer::mergeBuses(SimPauseGuard& pauseGuard) {
                 middle_id_t newJunctionId = replacement.getNewId();
                 replacement.addGate(pauseGuard, GateType::JUNCTION, newJunctionId);
                 pinJunctionIds.push_back(newJunctionId);
+                logInfo("Created junction " + std::to_string(newJunctionId) + " for bus pin " + std::to_string(pin), "Replacer::mergeBuses");
             }
             middle_id_t junctionId = pinJunctionIds[pin];
             replacement.removeConnection(pauseGuard, conn);
-            replacement.makeConnection(pauseGuard, EvalConnection(conn.source, EvalConnectionPoint(junctionId, 0)));
+            EvalConnection newConnection = EvalConnection(conn.source, EvalConnectionPoint(junctionId, 0));
+            replacement.makeConnection(pauseGuard, newConnection);
+            logInfo("Rerouted connection from " + conn.toString() + " to " + newConnection.toString(), "Replacer::mergeBuses");
         }
         for (const EvalConnection& conn : floodFillResult.connectionsOutOfBuses) {
             int pin = conn.source.portId / 2 - 1;
@@ -113,10 +119,13 @@ void Replacer::mergeBuses(SimPauseGuard& pauseGuard) {
                 middle_id_t newJunctionId = replacement.getNewId();
                 replacement.addGate(pauseGuard, GateType::JUNCTION, newJunctionId);
                 pinJunctionIds.push_back(newJunctionId);
+                logInfo("Created junction " + std::to_string(newJunctionId) + " for bus pin " + std::to_string(pin), "Replacer::mergeBuses");
             }
             middle_id_t junctionId = pinJunctionIds[pin];
             replacement.removeConnection(pauseGuard, conn);
-            replacement.makeConnection(pauseGuard, EvalConnection(EvalConnectionPoint(junctionId, 0), conn.destination));
+            EvalConnection newConnection = EvalConnection(EvalConnectionPoint(junctionId, 0), conn.destination);
+            replacement.makeConnection(pauseGuard, newConnection);
+            logInfo("Rerouted connection from " + conn.toString() + " to " + newConnection.toString(), "Replacer::mergeBuses");
         }
         std::unordered_map<connection_port_id_t, EvalConnectionPoint> pinsMapping = {};
         pinsMapping[0] = EvalConnectionPoint(0, 0);
@@ -195,11 +204,13 @@ Replacer::BusFloodFillResult Replacer::busFloodFill(middle_id_t busId) {
     return result;
 }
 
-void Replacer::mergeJunctions(SimPauseGuard& pauseGuard) {
+void Replacer::mergeJunctions(SimPauseGuard& pauseGuard, int layer) {
     std::vector<middle_id_t> allMiddleIds = middleIdProvider.getUsedIds();
     for (const middle_id_t id : allMiddleIds) {
-        if (replacementIds.contains(id)) {
-            continue;
+        if (replacementIdLayers.contains(id)) {
+            if (replacementIdLayers.at(id) >= layer) {
+                continue;
+            }
         }
         // check if we're a junction
         GateType gateType = busInterfacePassthrough.getGateType(id);
@@ -212,7 +223,7 @@ void Replacer::mergeJunctions(SimPauseGuard& pauseGuard) {
             continue;
         }
 
-        Replacement& replacement = makeReplacement();
+        Replacement& replacement = makeReplacement(layer);
         if (floodFillResult.outputsGoingIntoJunctions.size() == 1) {
             EvalConnectionPoint output = floodFillResult.outputsGoingIntoJunctions.at(0);
             for (const auto& junctionId : floodFillResult.junctionIds) {

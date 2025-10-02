@@ -37,8 +37,8 @@ public:
 
 	void endEdit(SimPauseGuard& pauseGuard) {
 		cleanReplacements();
-		mergeBuses(pauseGuard);
-		mergeJunctions(pauseGuard);
+		mergeBuses(pauseGuard, 0);
+		mergeJunctions(pauseGuard, 1);
 
 		busInterfacePassthrough.endEdit(pauseGuard);
 	}
@@ -106,7 +106,7 @@ private:
 	std::vector<Replacement> replacements;
 	std::unordered_map<middle_id_t, std::unordered_map<connection_port_id_t, EvalConnectionPoint>> replacedConnectionPoints;
 	std::unordered_map<middle_id_t, middle_id_t> replacedIds;
-	std::unordered_set<middle_id_t> replacementIds;
+	std::unordered_map<middle_id_t, int> replacementIdLayers;
 
 	struct JunctionFloodFillResult {
 		std::vector<EvalConnectionPoint> outputsGoingIntoJunctions;
@@ -129,16 +129,16 @@ private:
 		std::vector<EvalConnection> connectionsOutOfBuses;
 	};
 
-	Replacement& makeReplacement();
+	Replacement& makeReplacement(int layer);
 	void cleanReplacements();
 	void pingOutputs(SimPauseGuard& pauseGuard, middle_id_t id);
 	void pingInputs(SimPauseGuard& pauseGuard, middle_id_t id);
 	EvalConnectionPoint getReplacementConnectionPoint(EvalConnectionPoint point) const;
 	std::vector<EvalConnectionPoint> getReplacementConnectionPoints(const std::vector<EvalConnectionPoint>& points) const;
 	std::vector<std::optional<EvalConnectionPoint>> getReplacementConnectionPoints(const std::vector<std::optional<EvalConnectionPoint>>& points) const;
-	void mergeBuses(SimPauseGuard& pauseGuard);
+	void mergeBuses(SimPauseGuard& pauseGuard, int layer);
 	BusFloodFillResult busFloodFill(middle_id_t busId);
-	void mergeJunctions(SimPauseGuard& pauseGuard);
+	void mergeJunctions(SimPauseGuard& pauseGuard, int layer);
 	JunctionFloodFillResult junctionFloodFill(middle_id_t junctionId);
 };
 

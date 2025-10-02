@@ -37,7 +37,7 @@ void Replacement::revert(SimPauseGuard& pauseGuard) {
 	}
 	for (const auto& id : reservedIds) {
 		middleIdProvider->releaseId(id);
-		replacementIds->erase(id);
+		replacementIdLayers->erase(id);
 	}
 	addedConnections.clear();
 	addedGates.clear();
