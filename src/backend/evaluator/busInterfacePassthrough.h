@@ -42,16 +42,12 @@ public:
                 );
             }
             omittedConnections.erase(gateId);
-            if (busInterfaceIds.contains(gateId)) {
-                busInterfaceIds.erase(gateId);
-            }
-            return;
         }
         if (busInterfaceIds.contains(gateId)) {
             busInterfaceIds.erase(gateId);
-            return;
+        } else {
+            simulatorOptimizer.removeGate(pauseGuard, gateId);
         }
-        simulatorOptimizer.removeGate(pauseGuard, gateId);
     }
 
     inline SimPauseGuard beginEdit() {
