@@ -27,6 +27,7 @@ evalSimulator(evalConfig, middleIdProvider, dirtySimulatorIds) {
 		return;
 	}
 	logInfo("Creating Evaluator with ID {} for Circuit ID {}", "Evaluator", evaluatorId, circuitId);
+	middleIdProvider.getNewId(); // reserve 0 for invalid
 	evalCircuitContainer.addCircuit(0, circuitId);
 	const auto blockContainer = circuit->getBlockContainer();
 	const Difference difference = blockContainer->getCreationDifference();
