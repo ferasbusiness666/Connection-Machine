@@ -37,6 +37,7 @@ public:
 
 	void endEdit(SimPauseGuard& pauseGuard) {
 		cleanReplacements();
+		mergeBuses(pauseGuard);
 		mergeJunctions(pauseGuard);
 
 		busInterfacePassthrough.endEdit(pauseGuard);
@@ -120,6 +121,14 @@ private:
 		// A -> JUNCTION, A -> B, A -> B is a connection to reroute because B should actually pull from the junction
 	};
 
+	struct BusFloodFillResult {
+		std::vector<middle_id_t> busIds;
+		std::vector<middle_id_t> junctionIds;
+		std::vector<EvalConnection> connectionsBetweenBusesAndJunctions;
+		std::vector<EvalConnection> connectionsIntoBuses;
+		std::vector<EvalConnection> connectionsOutOfBuses;
+	};
+
 	Replacement& makeReplacement();
 	void cleanReplacements();
 	void pingOutputs(SimPauseGuard& pauseGuard, middle_id_t id);
@@ -127,6 +136,8 @@ private:
 	EvalConnectionPoint getReplacementConnectionPoint(EvalConnectionPoint point) const;
 	std::vector<EvalConnectionPoint> getReplacementConnectionPoints(const std::vector<EvalConnectionPoint>& points) const;
 	std::vector<std::optional<EvalConnectionPoint>> getReplacementConnectionPoints(const std::vector<std::optional<EvalConnectionPoint>>& points) const;
+	void mergeBuses(SimPauseGuard& pauseGuard);
+	BusFloodFillResult busFloodFill(middle_id_t busId);
 	void mergeJunctions(SimPauseGuard& pauseGuard);
 	JunctionFloodFillResult junctionFloodFill(middle_id_t junctionId);
 };
