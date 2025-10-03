@@ -199,3 +199,9 @@ circuit_id_t CircuitFileManager::loadParsedCircuit(ParsedCircuit& parsedCircuit)
 
 	return id; // 0 if circuit creation failed
 }
+
+const CircuitFileManager::FileData* CircuitFileManager::getFileDataFromPath(std::string path) const {
+	auto iter = filePathToFile.find(path);
+	if (iter == filePathToFile.end()) return nullptr;
+	return &(iter->second);
+}

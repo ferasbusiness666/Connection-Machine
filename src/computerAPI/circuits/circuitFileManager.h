@@ -30,8 +30,7 @@ public:
 
 	const std::string* getSavePath(const std::string&) const;
 
-	const FileData* getFileDataFromPath(std::string path);
-	const FileData* getFileDataFromUUID(std::string uuid);
+	const FileData* getFileDataFromPath(std::string path) const;
 private:
 	circuit_id_t loadParsedCircuit(ParsedCircuit& parsedCircuit);
 
