@@ -454,81 +454,13 @@ public:
             	result |= 2U;
         	} 
         	else {
-            	// Handle main key
-            	KeyId key = KeyId::KI_UNKNOWN;
-            	if (token == "SPACE") key = KeyId::KI_SPACE;
-            	else if (token == "0") key = KeyId::KI_0;
-            	else if (token == "1") key = KeyId::KI_1;
-            	else if (token == "2") key = KeyId::KI_2;
-            	else if (token == "3") key = KeyId::KI_3;
-            	else if (token == "4") key = KeyId::KI_4;
-            	else if (token == "5") key = KeyId::KI_5;
-            	else if (token == "6") key = KeyId::KI_6;
-            	else if (token == "7") key = KeyId::KI_7;
-            	else if (token == "8") key = KeyId::KI_8;
-            	else if (token == "9") key = KeyId::KI_9;
-            	else if (token.size() == 1 && std::isalpha(token[0])) {
-                	char c = std::toupper(token[0]);
-                	key = static_cast<KeyId>(KeyId::KI_A + (c - 'A'));
-            	}
-            	else if (token == "F1") key = KeyId::KI_F1;
-            	else if (token == "F2") key = KeyId::KI_F2;
-            	else if (token == "F3") key = KeyId::KI_F3;
-            	else if (token == "F4") key = KeyId::KI_F4;
-            	else if (token == "F5") key = KeyId::KI_F5;
-            	else if (token == "F6") key = KeyId::KI_F6;
-            	else if (token == "F7") key = KeyId::KI_F7;
-            	else if (token == "F8") key = KeyId::KI_F8;
-            	else if (token == "F9") key = KeyId::KI_F9;
-            	else if (token == "F10") key = KeyId::KI_F10;
-            	else if (token == "F11") key = KeyId::KI_F11;
-            	else if (token == "F12") key = KeyId::KI_F12;
-				else if (token == "F13") key =KeyId::KI_F13;
-				else if (token == "F14") key =KeyId::KI_F14;
-				else if (token == "F15") key = KeyId::KI_F15;
-				else if (token == "F16") key = KeyId::KI_F16;
-				else if (token == "F17") key = KeyId::KI_F17;
-				else if (token == "F18") key = KeyId::KI_F18;
-				else if (token == "F19") key = KeyId::KI_F19;
-				else if (token == "F20") key = KeyId::KI_F20;
-				else if (token == "F21") key = KeyId::KI_F21;
-				else if (token == "F22") key = KeyId::KI_F22;
-				else if (token == "F23") key = KeyId::KI_F23;
-				else if (token == "F24") key = KeyId::KI_F24;
-				else if (token == "NumLock") key = KeyId::KI_NUMLOCK;
-				else if (token == "Scroll Lock") key = KeyId::KI_SCROLL;
-				else if (token == "Browser Back") key = KeyId::KI_BROWSER_BACK;
-				else if (token == "Browser Forward") key = KeyId::KI_BROWSER_FORWARD;
-				else if (token == "Browser Refresh") key = KeyId::KI_BROWSER_REFRESH;
-				else if (token == "Browser Stop") key = KeyId::KI_BROWSER_STOP;
-				else if (token == "Browser Search") key = KeyId::KI_BROWSER_SEARCH;
-				else if (token =="Browser Favorites") key = KeyId::KI_BROWSER_FAVORITES;
-				else if (token =="Browser Home") key = KeyId::KI_BROWSER_HOME;
-				else if (token =="Volume Mute") key = KeyId::KI_VOLUME_MUTE;
-				else if (token =="Volume Down") key = KeyId::KI_VOLUME_DOWN;
-				else if (token =="Volume Up") key = KeyId::KI_VOLUME_UP;
-				else if (token =="Media Next") key = KeyId::KI_MEDIA_NEXT_TRACK;
-				else if (token =="Media Previous") key = KeyId::KI_MEDIA_PREV_TRACK;
-				else if (token =="Media Stop") key = KeyId::KI_MEDIA_STOP;
-				else if (token =="Media Play/Pause") key = KeyId::KI_MEDIA_PLAY_PAUSE;
-				else if (token =="Launch Mail") key = KeyId::KI_LAUNCH_MAIL;
-				else if (token =="Launch Media Select") key = KeyId::KI_LAUNCH_MEDIA_SELECT;
-				else if (token =="Launch App1") key = KeyId::KI_LAUNCH_APP1;
-				else if (token =="Launch App2") key = KeyId::KI_LAUNCH_APP2;
-				else if (token =="OEM AX") key = KeyId::KI_OEM_AX;
-				else if (token =="ICO Help") key = KeyId::KI_ICO_HELP;
-				else if (token =="ICO 00") key = KeyId::KI_ICO_00;
-				else if (token =="Process Key") key = KeyId::KI_PROCESSKEY;
-				else if (token =="ICO Clear") key = KeyId::KI_ICO_CLEAR;
-				else if (token == "ATTN") key = KeyId::KI_ATTN;
-				else if (token == "CRSEL") key = KeyId::KI_CRSEL;
-				else if (token == "EXSEL") key = KeyId::KI_EXSEL;
-				else if (token == "EREOF") key = KeyId::KI_EREOF;
-				else if (token == "Play") key = KeyId::KI_PLAY;
-				else if (token == "Zoom") key = KeyId::KI_ZOOM;
-				else if (token == "PA1") key = KeyId::KI_PA1;
-				else if (token == "OEM Clear") key = KeyId::KI_OEM_CLEAR;
-            	if (key != KeyId::KI_UNKNOWN) {
+            	//find and replace ' "' with ' {"' and repace '")' with '",i})' copy paste all ~200 items into map and match with num
+				//all because microsoft hates if statements
+            	KeyId key = stringToKeyId[token];
+				if (!key){
+					key = KeyId::KI_UNKNOWN;
+				}
+				if (key != KeyId::KI_UNKNOWN) {
                 	result |= (static_cast<unsigned int>(key) << 8);
             	}
         	}
@@ -538,6 +470,167 @@ public:
 
 private:
 	unsigned int keyCombined = 0;
+	std::map<std::string, KeyId> stringToKeyId = {
+	{"SPACE", KeyId::KI_SPACE},
+	{"0", KeyId::KI_0},
+	{"1", KeyId::KI_1},
+	{"2", KeyId::KI_2},
+	{"3", KeyId::KI_3},
+	{"4", KeyId::KI_4},
+	{"5", KeyId::KI_5},
+	{"6", KeyId::KI_6},
+	{"7", KeyId::KI_7},
+	{"8", KeyId::KI_8},
+	{"9", KeyId::KI_9},
+	{"A", KeyId::KI_A},
+	{"B", KeyId::KI_B},
+	{"C", KeyId::KI_C},
+	{"D", KeyId::KI_D},
+	{"E", KeyId::KI_E},
+	{"F", KeyId::KI_F},
+	{"G", KeyId::KI_G},
+	{"H", KeyId::KI_H},
+	{"I", KeyId::KI_I},
+	{"J", KeyId::KI_J},
+	{"K", KeyId::KI_K},
+	{"L", KeyId::KI_L},
+	{"M", KeyId::KI_M},
+	{"N", KeyId::KI_N},
+	{"O", KeyId::KI_O},
+	{"P", KeyId::KI_P},
+	{"Q", KeyId::KI_Q},
+	{"R", KeyId::KI_R},
+	{"S", KeyId::KI_S},
+	{"T", KeyId::KI_T},
+	{"U", KeyId::KI_U},
+	{"V", KeyId::KI_V},
+	{"W", KeyId::KI_W},
+	{"X", KeyId::KI_X},
+	{"Y", KeyId::KI_Y},
+	{"Z", KeyId::KI_Z},
+	{";", KeyId::KI_OEM_1},
+	{"=", KeyId::KI_OEM_PLUS},
+	{",", KeyId::KI_OEM_COMMA},
+	{"-", KeyId::KI_OEM_MINUS},
+	{".", KeyId::KI_OEM_PERIOD},
+	{"/", KeyId::KI_OEM_2},
+	{"`", KeyId::KI_OEM_3},
+	{"[", KeyId::KI_OEM_4},
+	{"\\", KeyId::KI_OEM_5},
+	{"]", KeyId::KI_OEM_6},
+	{"'", KeyId::KI_OEM_7},
+	{"OEM_8", KeyId::KI_OEM_8},
+	{"OEM_102", KeyId::KI_OEM_102},
+	{"Num0", KeyId::KI_NUMPAD0},
+	{"Num1", KeyId::KI_NUMPAD1},
+	{"Num2", KeyId::KI_NUMPAD2},
+	{"Num3", KeyId::KI_NUMPAD3},
+	{"Num4", KeyId::KI_NUMPAD4},
+	{"Num5", KeyId::KI_NUMPAD5},
+	{"Num6", KeyId::KI_NUMPAD6},
+	{"Num7", KeyId::KI_NUMPAD7},
+	{"Num8", KeyId::KI_NUMPAD8},
+	{"Num9", KeyId::KI_NUMPAD9},
+	{"Num Enter", KeyId::KI_NUMPADENTER},
+	{"Num Multiply", KeyId::KI_MULTIPLY},
+	{"Num Plus", KeyId::KI_ADD},
+	{"Separator", KeyId::KI_SEPARATOR},
+	{"Num Minus", KeyId::KI_SUBTRACT},
+	{"NumpadDecimal", KeyId::KI_DECIMAL},
+	{"NumDivide", KeyId::KI_DIVIDE},
+	{"NumEquals", KeyId::KI_OEM_NEC_EQUAL},
+	{"Backspace", KeyId::KI_BACK},
+	{"Tab", KeyId::KI_TAB},
+	{"Clear", KeyId::KI_CLEAR},
+	{"Pause", KeyId::KI_PAUSE},
+	{"CapsLock", KeyId::KI_CAPITAL},
+	{"Kana", KeyId::KI_KANA},
+	{"Hangul", KeyId::KI_HANGUL},
+	{"Junja", KeyId::KI_JUNJA},
+	{"Final", KeyId::KI_FINAL},
+	{"Hanja", KeyId::KI_HANJA},
+	{"Kanji", KeyId::KI_KANJI},
+	{"Convert", KeyId::KI_CONVERT},
+	{"Nonconvert", KeyId::KI_NONCONVERT},
+	{"Accept", KeyId::KI_ACCEPT},
+	{"Mode Change", KeyId::KI_MODECHANGE},
+	{"Page Up", KeyId::KI_PRIOR},
+	{"Page Down", KeyId::KI_NEXT},
+	{"End", KeyId::KI_END},
+	{"Home", KeyId::KI_HOME},
+	{"Left Arrow", KeyId::KI_LEFT},
+	{"Up Arrow", KeyId::KI_UP},
+	{"Right Arrow", KeyId::KI_RIGHT},
+	{"Down Arrow", KeyId::KI_DOWN},
+	{"Select", KeyId::KI_SELECT},
+	{"Print", KeyId::KI_PRINT},
+	{"Execute", KeyId::KI_EXECUTE},
+	{"Print Screen", KeyId::KI_SNAPSHOT},
+	{"Insert", KeyId::KI_INSERT},
+	{"Delete", KeyId::KI_DELETE},
+	{"Help", KeyId::KI_HELP},
+	{"Apps", KeyId::KI_APPS},
+	{"Power", KeyId::KI_POWER},
+	{"Sleep", KeyId::KI_SLEEP},
+	{"Wake", KeyId::KI_WAKE},
+	{"F1", KeyId::KI_F1},
+	{"F2", KeyId::KI_F2},
+	{"F3", KeyId::KI_F3},
+	{"F4", KeyId::KI_F4},
+	{"F5", KeyId::KI_F5},
+	{"F6", KeyId::KI_F6},
+	{"F7", KeyId::KI_F7},
+	{"F8", KeyId::KI_F8},
+	{"F9", KeyId::KI_F9},
+	{"F10", KeyId::KI_F10},
+	{"F11", KeyId::KI_F11},
+	{"F12", KeyId::KI_F12},
+	{"F13", KeyId::KI_F13},
+	{"F14", KeyId::KI_F14},
+	{"F15", KeyId::KI_F15},
+	{"F16", KeyId::KI_F16},
+	{"F17", KeyId::KI_F17},
+	{"F18", KeyId::KI_F18},
+	{"F19", KeyId::KI_F19},
+	{"F20", KeyId::KI_F20},
+	{"F21", KeyId::KI_F21},
+	{"F22", KeyId::KI_F22},
+	{"F23", KeyId::KI_F23},
+	{"F24", KeyId::KI_F24},
+	{"NumLock", KeyId::KI_NUMLOCK},
+	{"Scroll Lock", KeyId::KI_SCROLL},
+	{"Browser Back", KeyId::KI_BROWSER_BACK},
+	{"Browser Forward", KeyId::KI_BROWSER_FORWARD},
+	{"Browser Refresh", KeyId::KI_BROWSER_REFRESH},
+	{"Browser Stop", KeyId::KI_BROWSER_STOP},
+	{"Browser Search", KeyId::KI_BROWSER_SEARCH},
+	{"Browser Favorites", KeyId::KI_BROWSER_FAVORITES},
+	{"Browser Home", KeyId::KI_BROWSER_HOME},
+	{"Volume Mute", KeyId::KI_VOLUME_MUTE},
+	{"Volume Down", KeyId::KI_VOLUME_DOWN},
+	{"Volume Up", KeyId::KI_VOLUME_UP},
+	{"Media Next", KeyId::KI_MEDIA_NEXT_TRACK},
+	{"Media Previous", KeyId::KI_MEDIA_PREV_TRACK},
+	{"Media Stop", KeyId::KI_MEDIA_STOP},
+	{"Media Play/Pause", KeyId::KI_MEDIA_PLAY_PAUSE},
+	{"Launch Mail", KeyId::KI_LAUNCH_MAIL},
+	{"Launch Media Select", KeyId::KI_LAUNCH_MEDIA_SELECT},
+	{"Launch App1", KeyId::KI_LAUNCH_APP1},
+	{"Launch App2", KeyId::KI_LAUNCH_APP2},
+	{"OEM AX", KeyId::KI_OEM_AX},
+	{"ICO Help", KeyId::KI_ICO_HELP},
+	{"ICO 00", KeyId::KI_ICO_00},
+	{"Process Key", KeyId::KI_PROCESSKEY},
+	{"ICO Clear", KeyId::KI_ICO_CLEAR},
+	{"ATTN", KeyId::KI_ATTN},
+	{"CRSEL", KeyId::KI_CRSEL},
+	{"EXSEL", KeyId::KI_EXSEL},
+	{"EREOF", KeyId::KI_EREOF},
+	{"Play", KeyId::KI_PLAY},
+	{"Zoom", KeyId::KI_ZOOM},
+	{"PA1", KeyId::KI_PA1},
+	{"OEM Clear", KeyId::KI_OEM_CLEAR},
+};
 };
 
 template <> struct std::hash<Keybind> {

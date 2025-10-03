@@ -46,7 +46,7 @@ void SaveSettings::save() {
                 break;
             }
             case SettingType::KEYBIND: {
-                out << std::quoted(std::to_string(settings.get<SettingType::KEYBIND>(key)->getKeyCombined()));
+                out << std::quoted(settings.get<SettingType::KEYBIND>(key)->toString());
                 break;
             }
             case SettingType::FILE_PATH: {
@@ -112,7 +112,7 @@ void SaveSettings::load() {
             }
             case SettingType::KEYBIND:
                 try {
-                    Settings::set<SettingType::KEYBIND>(key, Keybind(std::stoi(value)));
+                    Settings::set<SettingType::KEYBIND>(key, Keybind(value));
                 } catch (...) {}
                 break;
             case SettingType::FILE_PATH:
