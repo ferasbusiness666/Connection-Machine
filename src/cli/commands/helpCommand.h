@@ -11,4 +11,4 @@ public:
 	const std::string getHelpString() { return "Brings up this menu."; }
 };
 
-#endif /* openCommand_h */
+#endif /* helpCommand_h */
