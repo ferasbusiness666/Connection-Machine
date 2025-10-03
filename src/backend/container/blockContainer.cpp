@@ -235,10 +235,18 @@ bool BlockContainer::tryCreateConnection(ConnectionEnd outputConnectionEnd, Conn
 		input->type() == BlockType::JUNCTION && output->type() == BlockType::BUS_INTERFACE && input->getConnectionContainer().hasConnection(
 			outputConnectionEnd.getConnectionId(),
 			ConnectionEnd(outputConnectionEnd.getBlockId(), inputConnectionEnd.getConnectionId())
-		) ||
+		)
+	) return false;
+	if (
 		getBlockDataManager()->getBlockData(input->type())->getConnectionBitWidth(inputConnectionEnd.getConnectionId()) !=
 		getBlockDataManager()->getBlockData(output->type())->getConnectionBitWidth(outputConnectionEnd.getConnectionId())
-	) return false;
+	) {
+		if (input->type() == BlockType::JUNCTION) {
+		} else if (output->type() == BlockType::JUNCTION)	{
+		} else {
+			return false;
+		}
+	}
 	if (input->getConnectionContainer().tryMakeConnection(inputConnectionEnd.getConnectionId(), outputConnectionEnd)) {
 		bool secondSuc = output->getConnectionContainer().tryMakeConnection(outputConnectionEnd.getConnectionId(), inputConnectionEnd);
 		assert(secondSuc);
@@ -276,10 +284,16 @@ bool BlockContainer::tryCreateConnection(Position outputPosition, Position input
 		(input->type() == BlockType::JUNCTION && output->type() == BlockType::BUS_INTERFACE && input->getConnectionContainer().hasConnection(
 			outputConnectionId.value(),
 			ConnectionEnd(output->id(), inputConnectionId.value())
-		)) ||
-		getBlockDataManager()->getBlockData(input->type())->getConnectionBitWidth(inputConnectionId.value()) !=
-		getBlockDataManager()->getBlockData(output->type())->getConnectionBitWidth(outputConnectionId.value())
+		))
 	) return false;
+	if (getBlockDataManager()->getBlockData(input->type())->getConnectionBitWidth(inputConnectionId.value()) !=
+		getBlockDataManager()->getBlockData(output->type())->getConnectionBitWidth(outputConnectionId.value())) {
+		if (input->type() == BlockType::JUNCTION) {
+		} else if (output->type() == BlockType::JUNCTION)	{
+		} else {
+			return false;
+		}
+	}
 	if (input->getConnectionContainer().tryMakeConnection(inputConnectionId.value(), ConnectionEnd(output->id(), outputConnectionId.value()))) {
 		bool secondSuc = output->getConnectionContainer().tryMakeConnection(outputConnectionId.value(), ConnectionEnd(input->id(), inputConnectionId.value()));
 		assert(secondSuc);
