@@ -17,7 +17,7 @@ void SaveSettings::save() {
         logWarning("Failed to open file: {}", "SaveSettings", path.string());
         return;
     }
-
+    out << "version_1\n";
     for (const auto& pair : settings.getAllKeys()) {
         const std::string& key = pair.first;
         const auto& entry = pair.second;
@@ -73,6 +73,8 @@ void SaveSettings::load() {
     }
 
     std::string key, eq, value;
+    std::string dummy;
+    std::getline(in, dummy);
     while (in >> std::quoted(key) >> eq >> std::quoted(value)) {
         if (eq != "=") {
             logWarning("Malformed settings line in {}", "SaveSettings", path.string());
