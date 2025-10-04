@@ -66,6 +66,10 @@ public:
 	const std::optional<ConnectionEnd> getInputConnectionEnd(Position position) const;
 	const std::optional<ConnectionEnd> getOutputConnectionEnd(Position position) const;
 
+	unsigned int getBitwidthOfJunction(Position position) const { return getBitwidthOfJunction(getBlock(position)); }
+	unsigned int getBitwidthOfJunction(block_id_t blockId) const { return getBitwidthOfJunction(getBlock(blockId)); }
+
+
 	// -- setters --
 	// Trys to creates a connection. Returns if successful. Pass a Difference* to read the what changes were made.
 	bool tryCreateConnection(ConnectionEnd outputConnectionEnd, ConnectionEnd inputConnectionEnd, Difference* difference);
@@ -94,6 +98,10 @@ public:
 	DifferenceSharedPtr getCreationDifferenceShared() const;
 
 private:
+	unsigned int getBitwidthOfJunction(block_id_t blockId, std::unordered_set<block_id_t>& visited) const;
+	unsigned int getBitwidthOfJunction(const Block* block) const;
+
+
 	inline Block* getBlock_(Position position);
 	inline Block* getBlock_(block_id_t blockId);
 	inline Cell* getCell(Position position) { return grid.get(position); }
