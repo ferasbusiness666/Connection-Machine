@@ -106,7 +106,10 @@ jobs:
     - name: Coverage Report
       if: success() && matrix.os == 'ubuntu-latest'
       working-directory: ${{ github.workspace }}
-      run: bash gcov_coverage.sh && ls ./coverage
+      run: |
+            sudo apt install gcovr
+            bash gcov_coverage.sh
+            ls ./coverage
 
     - name: Notify Discord on test failure
       if: failure()
