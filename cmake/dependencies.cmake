@@ -235,5 +235,15 @@ function(add_app_dependencies)
 	)
 	list(APPEND EXTERNAL_LINKS glm)
 
+	# httplib
+	CPMAddPackage(
+		NAME httplib
+		GITHUB_REPOSITORY yhirose/cpp-httplib
+		GIT_TAG v0.26.0
+		EXCLUDE_FROM_ALL YES
+		SOURCE_DIR "${EXTERNAL_DIR}/cpp-httplib"
+	)
+	list(APPEND EXTERNAL_LINKS httplib)
+
 	set(EXTERNAL_LINKS "${EXTERNAL_LINKS}" PARENT_SCOPE)
 endfunction()
