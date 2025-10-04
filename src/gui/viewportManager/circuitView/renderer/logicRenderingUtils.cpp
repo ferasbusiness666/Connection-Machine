@@ -3,19 +3,19 @@
 constexpr float edgeDistance = 0.48f;
 constexpr float sideShift = 0.25f;
 
-FVector getOutputOffset(std::pair<BlockType, connection_end_id_t> connection) {
-	return getOutputOffset(connection, Orientation());
+FVector getOutputOffset(BlockType blockType, connection_end_id_t connectionEndId) {
+	return getOutputOffset(blockType, connectionEndId, Orientation());
 }
 
-FVector getInputOffset(std::pair<BlockType, connection_end_id_t> connection) {
-	return getInputOffset(connection, Orientation());
+FVector getInputOffset(BlockType blockType, connection_end_id_t connectionEndId) {
+	return getInputOffset(blockType, connectionEndId, Orientation());
 }
 
-FVector getOutputOffset(std::pair<BlockType, connection_end_id_t> connection, Orientation orientation) {
+FVector getOutputOffset(BlockType blockType, connection_end_id_t connectionEndId, Orientation orientation) {
 	FVector offset = { 0.5, 0.5 };
-	if (connection.first == BlockType::JUNCTION) return offset;
-	if (connection.first == BlockType::BUS_INTERFACE) {
-		if (connection.second == 0) {
+	if (blockType == BlockType::JUNCTION) return offset;
+	if (blockType == BlockType::BUS_INTERFACE) {
+		if (connectionEndId == 0) {
 			return offset + orientation * FVector(edgeDistance, 0.0f);
 		} else {
 			return offset + orientation * FVector(-edgeDistance, 0.0f);
@@ -25,11 +25,11 @@ FVector getOutputOffset(std::pair<BlockType, connection_end_id_t> connection, Or
 	return offset + orientation * FVector(edgeDistance, sideShift);
 }
 
-FVector getInputOffset(std::pair<BlockType, connection_end_id_t> connection, Orientation orientation) {
+FVector getInputOffset(BlockType blockType, connection_end_id_t connectionEndId, Orientation orientation) {
 	FVector offset = { 0.5, 0.5 };
-	if (connection.first == BlockType::JUNCTION) return offset;
-	if (connection.first == BlockType::BUS_INTERFACE) {
-		if (connection.second == 1) {
+	if (blockType == BlockType::JUNCTION) return offset;
+	if (blockType == BlockType::BUS_INTERFACE) {
+		if (connectionEndId == 1) {
 			return offset + orientation * FVector(edgeDistance, 0.0f);
 		} else {
 			return offset + orientation * FVector(-edgeDistance, 0.0f);

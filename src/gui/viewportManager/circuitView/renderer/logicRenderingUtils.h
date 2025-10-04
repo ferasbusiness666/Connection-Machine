@@ -5,9 +5,9 @@
 #include "backend/container/block/blockDefs.h"
 #include "backend/container/block/connectionEnd.h"
 
-FVector getOutputOffset(std::pair<BlockType, connection_end_id_t> connection);
-FVector getInputOffset(std::pair<BlockType, connection_end_id_t> connection);
-FVector getOutputOffset(std::pair<BlockType, connection_end_id_t> connection, Orientation orientation);
-FVector getInputOffset(std::pair<BlockType, connection_end_id_t> connection, Orientation orientation);
+FVector getOutputOffset(BlockType blockType, connection_end_id_t connectionEndId);
+FVector getInputOffset(BlockType blockType, connection_end_id_t connectionEndId);
+FVector getOutputOffset(BlockType blockType, connection_end_id_t connectionEndId, Orientation orientation);
+FVector getInputOffset(BlockType blockType, connection_end_id_t connectionEndId, Orientation orientation);
 
 #endif

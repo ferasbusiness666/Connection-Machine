@@ -69,7 +69,7 @@ void BlockRenderDataFeeder::blockDataSetConnectionUpdate(const DataUpdateEventMa
 		BlockPortRenderDataId blockPortRenderDataId = MainRenderer::get().addBlockPort(
 			iter->second.blockRenderDataId,
 			isInput,
-			blockData->getConnectionVector(data->get().second)->free() + (isInput ? getInputOffset(data->get()) : getOutputOffset(data->get()))
+			blockData->getConnectionVector(data->get().second)->free() + (isInput ? getInputOffset(data->get().first, data->get().second) : getOutputOffset(data->get().first, data->get().second))
 		);
 		iter->second.blockPortRenderDataIds.try_emplace(data->get().second, blockPortRenderDataId);
 		return;
@@ -77,7 +77,7 @@ void BlockRenderDataFeeder::blockDataSetConnectionUpdate(const DataUpdateEventMa
 	MainRenderer::get().moveBlockPort(
 		iter->second.blockRenderDataId,
 		portIter->second,
-		blockData->getConnectionVector(data->get().second)->free() + (isInput ? getInputOffset(data->get()) : getOutputOffset(data->get()))
+		blockData->getConnectionVector(data->get().second)->free() + (isInput ? getInputOffset(data->get().first, data->get().second) : getOutputOffset(data->get().first, data->get().second))
 	);
 }
 

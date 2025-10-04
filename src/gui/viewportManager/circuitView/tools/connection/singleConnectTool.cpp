@@ -53,12 +53,12 @@ void SingleConnectTool::updateElements() {
 					const Block* inputBlock = circuit->getBlockContainer()->getBlock(lastPointerPosition);
 					connection_end_id_t inputEndId = circuit->getBlockContainer()->getInputConnectionEnd(lastPointerPosition).value().getConnectionId();
 					elementCreator.addConnectionPreview(ConnectionPreview(
-						clickPosition.free() + getOutputOffset({outputBlock->type(), outputEndId}, outputBlock->getOrientation()),
-						lastPointerPosition.free() + getInputOffset({inputBlock->type(), inputEndId}, inputBlock->getOrientation())
+						clickPosition.free() + getOutputOffset(outputBlock->type(), outputEndId, outputBlock->getOrientation()),
+						lastPointerPosition.free() + getInputOffset(inputBlock->type(), inputEndId, inputBlock->getOrientation())
 					));
 				} else {
 					elementCreator.addHalfConnectionPreview(HalfConnectionPreview(
-						clickPosition.free() + getOutputOffset({outputBlock->type(), outputEndId}, outputBlock->getOrientation()),
+						clickPosition.free() + getOutputOffset(outputBlock->type(), outputEndId, outputBlock->getOrientation()),
 						lastPointerFPosition
 					));
 				}
