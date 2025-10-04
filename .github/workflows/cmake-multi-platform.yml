@@ -5,6 +5,16 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -107,10 +117,18 @@ jobs:
       if: success() && matrix.os == 'ubuntu-latest'
       working-directory: ${{ github.workspace }}
       run: |
-            sudo apt install gcovr
-            bash gcov_coverage.sh
-            ls ./coverage
+          sudo apt-get update
+          sudo apt-get install -y gcovr
+          bash gcov_coverage.sh
+          ls ./coverage
 
+    # Publish the coverage folder as the Pages artifact (ubuntu job only)
+    - name: Upload Pages artifact (coverage/)
+      if: success() && matrix.os == 'ubuntu-latest'
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: coverage
+        # optional: name: coverage-artifact
     - name: Notify Discord on test failure
       if: failure()
       uses: sarisia/actions-status-discord@v1
@@ -120,3 +138,16 @@ jobs:
         title: Tests failed on ${{ matrix.os }}
         description: Build type ${{ matrix.build_type }}
         color: 0xff0000
+
+  # Deploy only after the matrix completes; it will pick up the uploaded artifact
+  deploy:
+    needs: build
+    if: always() && needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
