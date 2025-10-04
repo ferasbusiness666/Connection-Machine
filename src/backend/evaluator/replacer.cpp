@@ -92,6 +92,10 @@ void Replacer::mergeBuses(SimPauseGuard& pauseGuard, int layer) {
         BusFloodFillResult floodFillResult = busFloodFill(id);
         logInfo("Merging " + std::to_string(floodFillResult.busIds.size()) + " bus interfaces and " + std::to_string(floodFillResult.junctionIds.size()) + " junctions.", "Replacer::mergeBuses");
         Replacement& replacement = makeReplacement(layer);
+        std::unordered_set<middle_id_t> busesMet;
+        for (const middle_id_t busId : floodFillResult.busIds) {
+            busesMet.insert(busId);
+        }
         for (const EvalConnection& conn : floodFillResult.connectionsBetweenBusesAndJunctions) {
             replacement.removeConnection(pauseGuard, conn);
         }
@@ -99,6 +103,7 @@ void Replacer::mergeBuses(SimPauseGuard& pauseGuard, int layer) {
             replacement.removeGate(pauseGuard, junctionId, 0);
         }
         std::vector<middle_id_t> pinJunctionIds = {};
+        std::vector<EvalConnection> sameBusConnections = {};
         for (const EvalConnection& conn : floodFillResult.connectionsIntoBuses) {
             int pin = conn.destination.portId / 2 - 1;
             while (pin + 1 > pinJunctionIds.size()) {
@@ -106,6 +111,10 @@ void Replacer::mergeBuses(SimPauseGuard& pauseGuard, int layer) {
                 replacement.addGate(pauseGuard, GateType::JUNCTION, newJunctionId);
                 pinJunctionIds.push_back(newJunctionId);
                 logInfo("Created junction " + std::to_string(newJunctionId) + " for bus pin " + std::to_string(pin), "Replacer::mergeBuses");
+            }
+            if (busesMet.contains(conn.source.gateId)) {
+                sameBusConnections.push_back(conn);
+                continue;
             }
             middle_id_t junctionId = pinJunctionIds[pin];
             replacement.removeConnection(pauseGuard, conn);
@@ -121,9 +130,22 @@ void Replacer::mergeBuses(SimPauseGuard& pauseGuard, int layer) {
                 pinJunctionIds.push_back(newJunctionId);
                 logInfo("Created junction " + std::to_string(newJunctionId) + " for bus pin " + std::to_string(pin), "Replacer::mergeBuses");
             }
+            if (busesMet.contains(conn.destination.gateId)) {
+                continue;
+            }
             middle_id_t junctionId = pinJunctionIds[pin];
             replacement.removeConnection(pauseGuard, conn);
             EvalConnection newConnection = EvalConnection(EvalConnectionPoint(junctionId, 0), conn.destination);
+            replacement.makeConnection(pauseGuard, newConnection);
+            logInfo("Rerouted connection from " + conn.toString() + " to " + newConnection.toString(), "Replacer::mergeBuses");
+        }
+        for (EvalConnection& conn : sameBusConnections) {
+            replacement.removeConnection(pauseGuard, conn);
+            int pinSource = conn.source.portId / 2 - 1;
+            int pinDest = conn.destination.portId / 2 - 1;
+            middle_id_t junctionIdSource = pinJunctionIds[pinSource];
+            middle_id_t junctionIdDest = pinJunctionIds[pinDest];
+            EvalConnection newConnection = EvalConnection(EvalConnectionPoint(junctionIdSource, 0), EvalConnectionPoint(junctionIdDest, 0));
             replacement.makeConnection(pauseGuard, newConnection);
             logInfo("Rerouted connection from " + conn.toString() + " to " + newConnection.toString(), "Replacer::mergeBuses");
         }
@@ -161,44 +183,46 @@ Replacer::BusFloodFillResult Replacer::busFloodFill(middle_id_t busId) {
         std::vector<EvalConnection> outputs = busInterfacePassthrough.getOutputs(currentId);
         std::vector<EvalConnection> inputs = busInterfacePassthrough.getInputs(currentId);
         for (const auto& output : outputs) {
-            if (visited.contains(output.destination.gateId)) {
-                if (!contains(result.connectionsBetweenBusesAndJunctions.begin(), result.connectionsBetweenBusesAndJunctions.end(), output)) {
-                    result.connectionsBetweenBusesAndJunctions.push_back(output);
-                }
-                continue;
-            }
-            if (output.source.portId < 2) { // should be bus or junction output
-                GateType outputGateType = busInterfacePassthrough.getGateType(output.destination.gateId);
-                if (outputGateType == GateType::BUS_INTERFACE || outputGateType == GateType::JUNCTION) {
-                    queue.push(output.destination.gateId);
-                    visited.insert(output.destination.gateId);
-                    result.connectionsBetweenBusesAndJunctions.push_back(output);
+            GateType outputGateType = busInterfacePassthrough.getGateType(output.destination.gateId);
+            bool isBusPort = (output.source.portId < 2 && (gateType == GateType::BUS_INTERFACE || gateType == GateType::JUNCTION));
+            if (isBusPort) {
+                if (visited.contains(output.destination.gateId)) {
+                    if (!contains(
+                        result.connectionsBetweenBusesAndJunctions.begin(),
+                        result.connectionsBetweenBusesAndJunctions.end(),
+                        output
+                    )) {
+                        result.connectionsBetweenBusesAndJunctions.push_back(output);
+                    }
                     continue;
                 }
-                logWarning("Bus flood fill encountered non-bus, non-junction output. The circuit is likely malformed.", "Replacer::busFloodFill");
-            } else {
-                result.connectionsOutOfBuses.push_back(output);
+                queue.push(output.destination.gateId);
+                visited.insert(output.destination.gateId);
+                result.connectionsBetweenBusesAndJunctions.push_back(output);
+                continue;
             }
+            result.connectionsOutOfBuses.push_back(output);
         }
         for (const auto& input : inputs) {
-            if (visited.contains(input.source.gateId)) {
-                if (!contains(result.connectionsBetweenBusesAndJunctions.begin(), result.connectionsBetweenBusesAndJunctions.end(), input)) {
-                    result.connectionsBetweenBusesAndJunctions.push_back(input);
-                }
-                continue;
-            }
-            if (input.destination.portId < 2) { // should be bus or junction input
-                GateType inputGateType = busInterfacePassthrough.getGateType(input.source.gateId);
-                if (inputGateType == GateType::BUS_INTERFACE || inputGateType == GateType::JUNCTION) {
-                    queue.push(input.source.gateId);
-                    visited.insert(input.source.gateId);
-                    result.connectionsBetweenBusesAndJunctions.push_back(input);
+            GateType inputGateType = busInterfacePassthrough.getGateType(input.source.gateId);
+            bool isBusPort = (input.destination.portId < 2 && (gateType == GateType::BUS_INTERFACE || gateType == GateType::JUNCTION));
+            if (isBusPort) {
+                if (visited.contains(input.source.gateId)) {
+                    if (!contains(
+                        result.connectionsBetweenBusesAndJunctions.begin(),
+                        result.connectionsBetweenBusesAndJunctions.end(),
+                        input
+                    )) {
+                        result.connectionsBetweenBusesAndJunctions.push_back(input);
+                    }
                     continue;
                 }
-                logWarning("Bus flood fill encountered non-bus, non-junction input. The circuit is likely malformed.", "Replacer::busFloodFill");
-            } else {
-                result.connectionsIntoBuses.push_back(input);
+                queue.push(input.source.gateId);
+                visited.insert(input.source.gateId);
+                result.connectionsBetweenBusesAndJunctions.push_back(input);
+                continue;
             }
+            result.connectionsIntoBuses.push_back(input);
         }
     }
     return result;
