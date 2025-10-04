@@ -30,10 +30,12 @@ jobs:
               c_compiler: cl
               cpp_compiler: cl
               runExecutable: .\Debug\Connection_Machine_tests.exe
+              working_directory: ${{ github.workspace }}/build
             - os: ubuntu-latest
               c_compiler: gcc
               cpp_compiler: g++
-              runExecutable: ./Connection_Machine_tests
+              runExecutable: ./gcov_coverage.sh
+              working_directory: ${{ github.workspace }}
             # - os: ubuntu-latest
             #   c_compiler: clang
             #   cpp_compiler: clang++
@@ -88,7 +90,7 @@ jobs:
         build-dir: ${{ github.workspace }}/build
         cc: ${{ matrix.c_compiler }}
         cxx: ${{ matrix.cpp_compiler }}
-        configure-options: "-DCONNECTION_MACHINE_BUILD_TESTS=ON -DCONNECTION_MACHINE_BUILD_APP=OFF -DCONNECTION_MACHINE_BUILD_CLI_APP=OFF"
+        configure-options: "-DCONNECTION_MACHINE_BUILD_TESTS=ON -DCONNECTION_MACHINE_CODE_COVERAGE=ON -DCONNECTION_MACHINE_BUILD_APP=OFF -DCONNECTION_MACHINE_BUILD_CLI_APP=OFF"
         target: Connection_Machine_tests
         build-type: ${{ matrix.build_type }}
 
@@ -97,7 +99,8 @@ jobs:
 
     - name: Test
       id: run_tests
-      working-directory: ${{ github.workspace }}/build
+      # working-directory: ${{ github.workspace }}/build
+      working-directory: ${{ matrix.working_directory }}
       # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ${{ matrix.runExecutable }}
