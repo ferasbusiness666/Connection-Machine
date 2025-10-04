@@ -120,6 +120,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gcovr
           bash gcov_coverage.sh
+          mv ./coverage/coverage.html ./coverage/index.html
           ls ./coverage
 
     # Publish the coverage folder as the Pages artifact (ubuntu job only)
