@@ -64,10 +64,6 @@ public:
         return simulatorOptimizer.getSimIdFromMiddleId(middleId);
     }
 
-    inline std::optional<simulator_id_t> getSimIdFromConnectionPoint(const EvalConnectionPoint& point) const {
-        return simulatorOptimizer.getSimIdFromConnectionPoint(point);
-    }
-
     inline logic_state_t getState(EvalConnectionPoint point) const {
         return simulatorOptimizer.getState(point);
     }
@@ -84,8 +80,26 @@ public:
         return simulatorOptimizer.getStatesFromSimulatorIds(simulatorIds);
     }
 
-    inline std::vector<SimulatorStateAndPinSimId> getSimulatorIds(const std::vector<EvalConnectionPoint>& points) const {
-        return simulatorOptimizer.getSimulatorIds(points);
+    inline simulator_id_t getBlockSimulatorId(EvalConnectionPoint point) const {
+        if (busInterfaceIds.contains(point.gateId)) {
+            return 1; // error state
+        }
+        return simulatorOptimizer.getBlockSimulatorId(point);
+    }
+
+    inline simulator_id_t getPinSimulatorId(EvalConnectionPoint point) const {
+        if (busInterfaceIds.contains(point.gateId)) {
+            return 1; // error state
+        }
+        return simulatorOptimizer.getPinSimulatorId(point);
+    }
+
+    inline std::vector<simulator_id_t> getBlockSimulatorIds(const std::vector<EvalConnectionPoint>& points) const {
+        return simulatorOptimizer.getBlockSimulatorIds(points);
+    }
+
+    inline std::vector<simulator_id_t> getPinSimulatorIds(const std::vector<EvalConnectionPoint>& points) const {
+        return simulatorOptimizer.getPinSimulatorIds(points);
     }
 
     inline std::vector<simulator_id_t> getBlockSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {

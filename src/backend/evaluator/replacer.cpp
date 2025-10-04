@@ -92,6 +92,7 @@ void Replacer::mergeBuses(SimPauseGuard& pauseGuard, int layer) {
         BusFloodFillResult floodFillResult = busFloodFill(id);
         logInfo("Merging " + std::to_string(floodFillResult.busIds.size()) + " bus interfaces and " + std::to_string(floodFillResult.junctionIds.size()) + " junctions.", "Replacer::mergeBuses");
         Replacement& replacement = makeReplacement(layer);
+        middle_id_t virtualBusId = replacement.getNewId();
         std::unordered_set<middle_id_t> busesMet;
         for (const middle_id_t busId : floodFillResult.busIds) {
             busesMet.insert(busId);
@@ -100,7 +101,7 @@ void Replacer::mergeBuses(SimPauseGuard& pauseGuard, int layer) {
             replacement.removeConnection(pauseGuard, conn);
         }
         for (const middle_id_t junctionId : floodFillResult.junctionIds) {
-            replacement.removeGate(pauseGuard, junctionId, 0);
+            replacement.removeGate(pauseGuard, junctionId, virtualBusId);
         }
         std::vector<middle_id_t> pinJunctionIds = {};
         std::vector<EvalConnection> sameBusConnections = {};
@@ -150,11 +151,15 @@ void Replacer::mergeBuses(SimPauseGuard& pauseGuard, int layer) {
             logInfo("Rerouted connection from " + conn.toString() + " to " + newConnection.toString(), "Replacer::mergeBuses");
         }
         std::unordered_map<connection_port_id_t, EvalConnectionPoint> pinsMapping = {};
-        pinsMapping[0] = EvalConnectionPoint(0, 0);
-        pinsMapping[1] = EvalConnectionPoint(0, 0);
+        pinsMapping[0] = EvalConnectionPoint(virtualBusId, 0);
+        pinsMapping[1] = EvalConnectionPoint(virtualBusId, 1);
         for (size_t i = 0; i < pinJunctionIds.size(); i++) {
             pinsMapping[i * 2 + 2] = EvalConnectionPoint(pinJunctionIds[i], 0);
             pinsMapping[i * 2 + 3] = EvalConnectionPoint(pinJunctionIds[i], 0);
+        }
+        busContentsMap[virtualBusId] = {};
+        for (const auto& pinJunctionId : pinJunctionIds) {
+            busContentsMap[virtualBusId].push_back(EvalConnectionPoint(pinJunctionId, 0));
         }
         for (const middle_id_t busId : floodFillResult.busIds) {
             replacement.removeGate(pauseGuard, busId, pinsMapping);
