@@ -1,5 +1,4 @@
 <template name="popUpWindow" content="content">
-
 	<head>
 		<link type="text/rcss" href="popUpWindow.rcss" />
 	</head>
