@@ -47,16 +47,18 @@ void SingleConnectTool::updateElements() {
 				bool valid = circuit->getBlockContainer()->getOutputConnectionEnd(lastPointerPosition).has_value();
 				elementCreator.addSelectionElement(SelectionElement(lastPointerPosition, !valid));
 			} else {
+				connection_end_id_t outputEndId = circuit->getBlockContainer()->getOutputConnectionEnd(clickPosition).value().getConnectionId();
 				bool valid = circuit->getBlockContainer()->getInputConnectionEnd(lastPointerPosition).has_value();
 				if (valid) {
 					const Block* inputBlock = circuit->getBlockContainer()->getBlock(lastPointerPosition);
+					connection_end_id_t inputEndId = circuit->getBlockContainer()->getInputConnectionEnd(lastPointerPosition).value().getConnectionId();
 					elementCreator.addConnectionPreview(ConnectionPreview(
-						clickPosition.free() + getOutputOffset(outputBlock->type(), outputBlock->getOrientation()),
-						lastPointerPosition.free() + getInputOffset(inputBlock->type(), inputBlock->getOrientation())
+						clickPosition.free() + getOutputOffset(outputBlock->type(), outputEndId, outputBlock->getOrientation()),
+						lastPointerPosition.free() + getInputOffset(inputBlock->type(), inputEndId, inputBlock->getOrientation())
 					));
 				} else {
 					elementCreator.addHalfConnectionPreview(HalfConnectionPreview(
-						clickPosition.free() + getOutputOffset(outputBlock->type(), outputBlock->getOrientation()),
+						clickPosition.free() + getOutputOffset(outputBlock->type(), outputEndId, outputBlock->getOrientation()),
 						lastPointerFPosition
 					));
 				}

@@ -60,23 +60,38 @@ struct TrackedGate {
 	}
 };
 
+struct TristateBuffer {
+	middle_id_t id;
+	middle_id_t junctionId1;
+	middle_id_t junctionId2;
+};
+
 class GateSubstituter {
 public:
 	GateSubstituter(
 		EvalConfig& evalConfig,
 		IdProvider<middle_id_t>& middleIdProvider,
 		std::vector<simulator_id_t>& dirtySimulatorIds) :
-		replacer(evalConfig, middleIdProvider, dirtySimulatorIds) {}
+		replacer(evalConfig, middleIdProvider, dirtySimulatorIds),
+		middleIdProvider(middleIdProvider) {}
 
 	void addGate(SimPauseGuard& pauseGuard, const GateType gateType, const middle_id_t gateId) {
 		if (gateType == GateType::DUMMY_INPUT || gateType == GateType::TICK_INPUT) {
-			// logInfo("Begining to track gate with ID {}", "GateSubstituter::addGate", gateId);
 			addTrackedGate({ gateId, gateType, gateType, GateType::JUNCTION, {}, {}, 1 });
+		} else if (gateType == GateType::TRISTATE_BUFFER || gateType == GateType::TRISTATE_BUFFER_INVERTED) {
+			replacer.addGate(pauseGuard, gateType, gateId);
+			addTrackedTristateBuffer(pauseGuard, gateId);
+			return;
 		}
 		replacer.addGate(pauseGuard, gateType, gateId); // this may need to be conditional in the future if we add more conditional gates
 	}
 	void removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
 		replacer.removeGate(pauseGuard, gateId);
+		if (isTrackedTristateBuffer(gateId)) {
+			deleteTrackedTristateBuffer(pauseGuard, gateId);
+			middleIdProvider.releaseId(tristateBuffers.at(gateId).junctionId1);
+			middleIdProvider.releaseId(tristateBuffers.at(gateId).junctionId2);
+		}
 		deleteTrackedGate(gateId);
 		for (auto& trackedGate : trackedGates) {
 			bool success = trackedGate.second.removeReferencesToId(gateId);
@@ -122,10 +137,10 @@ public:
 	inline std::vector<SimulatorStateAndPinSimId> getSimulatorIds(const std::vector<EvalConnectionPoint>& points) const {
 		return replacer.getSimulatorIds(points);
 	}
-	inline std::vector<simulator_id_t> getBlockSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
+	inline std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getBlockSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
 		return replacer.getBlockSimulatorIds(points);
 	}
-	inline std::vector<simulator_id_t> getPinSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
+	inline std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getPinSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
 		return replacer.getPinSimulatorIds(points);
 	}
 	inline void setState(EvalConnectionPoint point, logic_state_t state) {
@@ -134,6 +149,16 @@ public:
 	void makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
 		middle_id_t sourceGateId = connection.source.gateId;
 		middle_id_t destinationGateId = connection.destination.gateId;
+		if (isTrackedTristateBuffer(destinationGateId)) {
+			// redirect connection to junction
+			if (connection.destination.portId == 0) {
+				connection.destination.gateId = tristateBuffers.at(destinationGateId).junctionId1;
+			} else if (connection.destination.portId == 1) {
+				connection.destination.gateId = tristateBuffers.at(destinationGateId).junctionId2;
+			} else {
+				return;
+			}
+		}
 		if (trackedGates.contains(sourceGateId)) {
 			TrackedGate& trackedGate = trackedGates.at(sourceGateId);
 			trackedGate.addOutput(connection);
@@ -194,7 +219,9 @@ public:
 
 private:
 	Replacer replacer;
+	IdProvider<middle_id_t>& middleIdProvider;
 	std::unordered_map<middle_id_t, TrackedGate> trackedGates;
+	std::unordered_map<middle_id_t, TristateBuffer> tristateBuffers;
 	void addTrackedGate(const TrackedGate& gate) {
 		trackedGates[gate.id] = gate;
 	}
@@ -203,6 +230,25 @@ private:
 	}
 	bool isTrackedGate(middle_id_t gateId) const {
 		return trackedGates.contains(gateId);
+	}
+	void addTrackedTristateBuffer(SimPauseGuard& simPauseGuard, middle_id_t bufferId) {
+		middle_id_t junctionId1 = middleIdProvider.getNewId();
+		middle_id_t junctionId2 = middleIdProvider.getNewId();
+		replacer.addGate(simPauseGuard, GateType::JUNCTION, junctionId1);
+		replacer.addGate(simPauseGuard, GateType::JUNCTION, junctionId2);
+		tristateBuffers[bufferId] = { bufferId, junctionId1, junctionId2 };
+		replacer.makeConnection(simPauseGuard, EvalConnection(EvalConnectionPoint(junctionId1, 0), EvalConnectionPoint(bufferId, 0)));
+		replacer.makeConnection(simPauseGuard, EvalConnection(EvalConnectionPoint(junctionId2, 0), EvalConnectionPoint(bufferId, 1)));
+	}
+	void deleteTrackedTristateBuffer(SimPauseGuard& simPauseGuard, middle_id_t bufferId) {
+		replacer.removeGate(simPauseGuard, tristateBuffers.at(bufferId).junctionId1);
+		replacer.removeGate(simPauseGuard, tristateBuffers.at(bufferId).junctionId2);
+		middleIdProvider.releaseId(tristateBuffers.at(bufferId).junctionId1);
+		middleIdProvider.releaseId(tristateBuffers.at(bufferId).junctionId2);
+		tristateBuffers.erase(bufferId);
+	}
+	bool isTrackedTristateBuffer(middle_id_t bufferId) const {
+		return tristateBuffers.contains(bufferId);
 	}
 };
 

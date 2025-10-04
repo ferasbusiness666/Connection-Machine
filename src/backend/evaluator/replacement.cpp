@@ -36,8 +36,9 @@ void Replacement::revert(SimPauseGuard& pauseGuard) {
 		busInterfacePassthrough->makeConnection(pauseGuard, conn);
 	}
 	for (const auto& id : reservedIds) {
+		replacer->busContentsMap.erase(id);
 		middleIdProvider->releaseId(id);
-		replacementIds->erase(id);
+		replacementIdLayers->erase(id);
 	}
 	addedConnections.clear();
 	addedGates.clear();

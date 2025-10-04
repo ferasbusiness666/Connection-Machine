@@ -228,11 +228,11 @@ void BlockCreationWindow::resetMenu() {
 	Rml::ElementFormControlInput* heightElement = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(ele);
 	heightElement->SetValue(std::to_string(blockData->getSize().h));
 
-	const std::unordered_map<connection_end_id_t, std::pair<Vector, bool>>& conncections = blockData->getConnections();
+	const std::unordered_map<connection_end_id_t, BlockData::ConnectionData>& conncections = blockData->getConnections();
 	for (auto& iter : conncections) {
 		connection_end_id_t endId = iter.first;
-		bool isInputBool = iter.second.second;
-		Vector positionOnBlock = iter.second.first;
+		bool isInputBool = iter.second.isInput;
+		Vector positionOnBlock = iter.second.positionOnBlock;
 		std::optional<std::string> connectionName = blockData->getConnectionIdToName(endId);
 		if (!connectionName) connectionName = "";
 		const Position* positionPtr = circuitBlockData->getConnectionIdToPosition(endId);

@@ -10,6 +10,11 @@
 #include "logicSimulator.h"
 #include "replacement.h"
 
+struct SimulatorStateAndPinSimId {
+	std::variant<simulator_id_t, std::vector<simulator_id_t>> portSimIds;
+	std::variant<simulator_id_t, std::vector<simulator_id_t>> pinSimIds;
+};
+
 class Replacer {
 	friend class Replacement;
 public:
@@ -37,17 +42,14 @@ public:
 
 	void endEdit(SimPauseGuard& pauseGuard) {
 		cleanReplacements();
-		mergeJunctions(pauseGuard);
+		mergeBuses(pauseGuard, 0);
+		mergeJunctions(pauseGuard, 1);
 
 		busInterfacePassthrough.endEdit(pauseGuard);
 	}
 
 	inline std::optional<simulator_id_t> getSimIdFromMiddleId(middle_id_t middleId) const {
 		return busInterfacePassthrough.getSimIdFromMiddleId(middleId);
-	}
-
-	inline std::optional<simulator_id_t> getSimIdFromConnectionPoint(const EvalConnectionPoint& point) const {
-		return busInterfacePassthrough.getSimIdFromConnectionPoint(point);
 	}
 
 	inline logic_state_t getState(EvalConnectionPoint point) const {
@@ -67,15 +69,72 @@ public:
 	}
 
 	inline std::vector<SimulatorStateAndPinSimId> getSimulatorIds(const std::vector<EvalConnectionPoint>& points) const {
-		return busInterfacePassthrough.getSimulatorIds(getReplacementConnectionPoints(points));
+		// return busInterfacePassthrough.getSimulatorIds(getReplacementConnectionPoints(points));
+		std::vector<EvalConnectionPoint> replacedPoints = getReplacementConnectionPoints(points);
+		std::vector<SimulatorStateAndPinSimId> result;
+		result.reserve(replacedPoints.size());
+		for (const EvalConnectionPoint& point : replacedPoints) {
+			if (busContentsMap.contains(point.gateId)) {
+				std::vector<EvalConnectionPoint> busContents = getReplacementConnectionPoints(busContentsMap.at(point.gateId));
+				SimulatorStateAndPinSimId simIds = {
+					busInterfacePassthrough.getBlockSimulatorIds(busContents),
+					busInterfacePassthrough.getPinSimulatorIds(busContents)
+				};
+				result.push_back(simIds);
+			} else {
+				SimulatorStateAndPinSimId simIds = {
+					static_cast<simulator_id_t>(0),
+					static_cast<simulator_id_t>(0)
+				};
+				simIds.portSimIds = busInterfacePassthrough.getBlockSimulatorId(point);
+				simIds.pinSimIds = busInterfacePassthrough.getPinSimulatorId(point);
+				result.push_back(simIds);
+			}
+		}
+		return result;
 	}
 
-	inline std::vector<simulator_id_t> getBlockSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
-		return busInterfacePassthrough.getBlockSimulatorIds(getReplacementConnectionPoints(points));
+	inline std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getBlockSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
+		std::vector<std::optional<EvalConnectionPoint>> replacedPoints = getReplacementConnectionPoints(points);
+		std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> result;
+		result.reserve(replacedPoints.size());
+		for (const auto& point : replacedPoints) {
+			if (!point.has_value()) {
+				result.emplace_back(static_cast<simulator_id_t>(0));
+				continue;
+			}
+			if (busContentsMap.contains(point->gateId)) {
+				std::vector<EvalConnectionPoint> busContents = getReplacementConnectionPoints(busContentsMap.at(point->gateId));
+				std::vector<simulator_id_t> simIds = busInterfacePassthrough.getBlockSimulatorIds(busContents);
+				result.emplace_back(simIds);
+			} else {
+				simulator_id_t simId = busInterfacePassthrough.getBlockSimulatorId(*point);
+				result.emplace_back(simId);
+			}
+		}
+		return result;
 	}
 
-	inline std::vector<simulator_id_t> getPinSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
-		return busInterfacePassthrough.getPinSimulatorIds(getReplacementConnectionPoints(points));
+	inline std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getPinSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
+		// return busInterfacePassthrough.getPinSimulatorIds(getReplacementConnectionPoints(points));
+		std::vector<std::optional<EvalConnectionPoint>> replacedPoints = getReplacementConnectionPoints(points);
+		std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> result;
+		result.reserve(replacedPoints.size());
+		for (const auto& point : replacedPoints) {
+			if (!point.has_value()) {
+				result.emplace_back(static_cast<simulator_id_t>(0));
+				continue;
+			}
+			if (busContentsMap.contains(point->gateId)) {
+				std::vector<EvalConnectionPoint> busContents = getReplacementConnectionPoints(busContentsMap.at(point->gateId));
+				std::vector<simulator_id_t> simIds = busInterfacePassthrough.getPinSimulatorIds(busContents);
+				result.emplace_back(simIds);
+			} else {
+				simulator_id_t simId = busInterfacePassthrough.getPinSimulatorId(*point);
+				result.emplace_back(simId);
+			}
+		}
+		return result;
 	}
 
 	inline void setState(EvalConnectionPoint id, logic_state_t state) {
@@ -105,7 +164,7 @@ private:
 	std::vector<Replacement> replacements;
 	std::unordered_map<middle_id_t, std::unordered_map<connection_port_id_t, EvalConnectionPoint>> replacedConnectionPoints;
 	std::unordered_map<middle_id_t, middle_id_t> replacedIds;
-	std::unordered_set<middle_id_t> replacementIds;
+	std::unordered_map<middle_id_t, int> replacementIdLayers;
 
 	struct JunctionFloodFillResult {
 		std::vector<EvalConnectionPoint> outputsGoingIntoJunctions;
@@ -120,14 +179,26 @@ private:
 		// A -> JUNCTION, A -> B, A -> B is a connection to reroute because B should actually pull from the junction
 	};
 
-	Replacement& makeReplacement();
+	struct BusFloodFillResult {
+		std::vector<middle_id_t> busIds;
+		std::vector<middle_id_t> junctionIds;
+		std::vector<EvalConnection> connectionsBetweenBusesAndJunctions;
+		std::vector<EvalConnection> connectionsIntoBuses;
+		std::vector<EvalConnection> connectionsOutOfBuses;
+	};
+
+	std::unordered_map<middle_id_t, std::vector<EvalConnectionPoint>> busContentsMap;
+
+	Replacement& makeReplacement(int layer);
 	void cleanReplacements();
 	void pingOutputs(SimPauseGuard& pauseGuard, middle_id_t id);
 	void pingInputs(SimPauseGuard& pauseGuard, middle_id_t id);
 	EvalConnectionPoint getReplacementConnectionPoint(EvalConnectionPoint point) const;
 	std::vector<EvalConnectionPoint> getReplacementConnectionPoints(const std::vector<EvalConnectionPoint>& points) const;
 	std::vector<std::optional<EvalConnectionPoint>> getReplacementConnectionPoints(const std::vector<std::optional<EvalConnectionPoint>>& points) const;
-	void mergeJunctions(SimPauseGuard& pauseGuard);
+	void mergeBuses(SimPauseGuard& pauseGuard, int layer);
+	BusFloodFillResult busFloodFill(middle_id_t busId);
+	void mergeJunctions(SimPauseGuard& pauseGuard, int layer);
 	JunctionFloodFillResult junctionFloodFill(middle_id_t junctionId);
 };
 
