@@ -10,7 +10,8 @@ public:
         EvalConfig& evalConfig,
         IdProvider<middle_id_t>& middleIdProvider,
         std::vector<simulator_id_t>& dirtySimulatorIds
-    ) : simulatorOptimizer(evalConfig, middleIdProvider, dirtySimulatorIds) {}
+    ) : simulatorOptimizer(evalConfig, middleIdProvider, dirtySimulatorIds),
+    dirtySimulatorIds(dirtySimulatorIds) {}
 
     void addGate(SimPauseGuard& pauseGuard, const GateType gateType, const middle_id_t gateId) {
         if (gateType == GateType::BUS_INTERFACE) {
@@ -21,7 +22,7 @@ public:
     }
 
     void removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
-        if (busInterfaceIds.contains(gateId)) {
+        if (omittedConnections.contains(gateId)) {
             std::vector<EvalConnection> omittedConns = omittedConnections[gateId];
             for (const EvalConnection& conn : omittedConns) {
                 omittedConnections.at(conn.source.gateId).erase(
@@ -41,10 +42,14 @@ public:
                     omittedConnections.at(conn.destination.gateId).end()
                 );
             }
-            busInterfaceIds.erase(gateId);
-            return;
+            omittedConnections.erase(gateId);
         }
-        simulatorOptimizer.removeGate(pauseGuard, gateId);
+        if (busInterfaceIds.contains(gateId)) {
+            busInterfaceIds.erase(gateId);
+            dirtySimulatorIds.push_back(0);
+        } else {
+            simulatorOptimizer.removeGate(pauseGuard, gateId);
+        }
     }
 
     inline SimPauseGuard beginEdit() {
@@ -57,10 +62,6 @@ public:
 
     inline std::optional<simulator_id_t> getSimIdFromMiddleId(middle_id_t middleId) const {
         return simulatorOptimizer.getSimIdFromMiddleId(middleId);
-    }
-
-    inline std::optional<simulator_id_t> getSimIdFromConnectionPoint(const EvalConnectionPoint& point) const {
-        return simulatorOptimizer.getSimIdFromConnectionPoint(point);
     }
 
     inline logic_state_t getState(EvalConnectionPoint point) const {
@@ -79,8 +80,26 @@ public:
         return simulatorOptimizer.getStatesFromSimulatorIds(simulatorIds);
     }
 
-    inline std::vector<SimulatorStateAndPinSimId> getSimulatorIds(const std::vector<EvalConnectionPoint>& points) const {
-        return simulatorOptimizer.getSimulatorIds(points);
+    inline simulator_id_t getBlockSimulatorId(EvalConnectionPoint point) const {
+        if (busInterfaceIds.contains(point.gateId)) {
+            return 1; // error state
+        }
+        return simulatorOptimizer.getBlockSimulatorId(point);
+    }
+
+    inline simulator_id_t getPinSimulatorId(EvalConnectionPoint point) const {
+        if (busInterfaceIds.contains(point.gateId)) {
+            return 1; // error state
+        }
+        return simulatorOptimizer.getPinSimulatorId(point);
+    }
+
+    inline std::vector<simulator_id_t> getBlockSimulatorIds(const std::vector<EvalConnectionPoint>& points) const {
+        return simulatorOptimizer.getBlockSimulatorIds(points);
+    }
+
+    inline std::vector<simulator_id_t> getPinSimulatorIds(const std::vector<EvalConnectionPoint>& points) const {
+        return simulatorOptimizer.getPinSimulatorIds(points);
     }
 
     inline std::vector<simulator_id_t> getBlockSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
@@ -88,7 +107,7 @@ public:
     }
 
     inline std::vector<simulator_id_t> getPinSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
-        return simulatorOptimizer.getBlockSimulatorIds(points);
+        return simulatorOptimizer.getPinSimulatorIds(points);
     }
 
     inline void setState(EvalConnectionPoint point, logic_state_t state) {
@@ -100,6 +119,7 @@ public:
             busInterfaceIds.contains(connection.destination.gateId)) {
             omittedConnections[connection.source.gateId].push_back(connection);
             omittedConnections[connection.destination.gateId].push_back(connection);
+            dirtySimulatorIds.push_back(0);
             return;
         }
         simulatorOptimizer.makeConnection(pauseGuard, connection);
@@ -108,6 +128,7 @@ public:
     void removeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
         if (busInterfaceIds.contains(connection.source.gateId) ||
             busInterfaceIds.contains(connection.destination.gateId)) {
+            dirtySimulatorIds.push_back(0);
             omittedConnections[connection.source.gateId].erase(
                 std::remove_if(
                     omittedConnections[connection.source.gateId].begin(),
@@ -134,6 +155,9 @@ public:
     }
 
     GateType getGateType(middle_id_t middleId) const {
+        if (busInterfaceIds.contains(middleId)) {
+            return GateType::BUS_INTERFACE;
+        }
         return simulatorOptimizer.getGateType(middleId);
     }
 
@@ -204,6 +228,7 @@ private:
     SimulatorOptimizer simulatorOptimizer;
     std::unordered_map<middle_id_t, std::vector<EvalConnection>> omittedConnections;
     std::unordered_set<middle_id_t> busInterfaceIds;
+    std::vector<simulator_id_t>& dirtySimulatorIds;
 };
 
 #endif /* busInterfacePassthrough_h */

@@ -51,7 +51,9 @@ public:
 		getBlockData(BlockType::BUS_INTERFACE)->setName("Bus Interface");
 		getBlockData(BlockType::BUS_INTERFACE)->setDefaultData(false);
 		getBlockData(BlockType::BUS_INTERFACE)->setConnectionOutput(Vector(1, 0), 0);
+		getBlockData(BlockType::BUS_INTERFACE)->setConnectionBitWidth(0, 8);
 		getBlockData(BlockType::BUS_INTERFACE)->setConnectionInput(Vector(1, 0), 1);
+		getBlockData(BlockType::BUS_INTERFACE)->setConnectionBitWidth(1, 8);
 		for (int i = 0; i < 8; ++i) {
 			getBlockData(BlockType::BUS_INTERFACE)->setConnectionOutput(Vector(0, i), i*2 + 2);
 			getBlockData(BlockType::BUS_INTERFACE)->setConnectionInput(Vector(0, i), i*2 + 3);
