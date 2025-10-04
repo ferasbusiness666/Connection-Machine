@@ -242,7 +242,7 @@ bool BlockContainer::tryCreateConnection(ConnectionEnd outputConnectionEnd, Conn
 		getBlockDataManager()->getBlockData(output->type())->getConnectionBitWidth(outputConnectionEnd.getConnectionId())
 	) {
 		if (input->type() == BlockType::JUNCTION) {
-		} else if (output->type() == BlockType::JUNCTION)	{
+		} else if (output->type() == BlockType::JUNCTION) {
 		} else {
 			return false;
 		}
@@ -289,7 +289,7 @@ bool BlockContainer::tryCreateConnection(Position outputPosition, Position input
 	if (getBlockDataManager()->getBlockData(input->type())->getConnectionBitWidth(inputConnectionId.value()) !=
 		getBlockDataManager()->getBlockData(output->type())->getConnectionBitWidth(outputConnectionId.value())) {
 		if (input->type() == BlockType::JUNCTION) {
-		} else if (output->type() == BlockType::JUNCTION)	{
+		} else if (output->type() == BlockType::JUNCTION) {
 		} else {
 			return false;
 		}
