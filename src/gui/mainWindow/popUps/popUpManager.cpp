@@ -6,17 +6,37 @@
 
 #include <SDL3/SDL.h>
 
+static const char* popUpWindowRml = R"RML(
+	<div id="pop-up-overlay">\
+		<div id="pop-up-overlay-internal">\
+			<div id="pop-up-window" class="bordered bg-3">\
+			</div>
+		</div>
+	</div>
+)RML";
+/*
+				<span id="pop-up-text"></span>\
+				<div id="pop-up-actions">\
+					<button class="pop-up-action" id="23">Close2</button>\
+					<button class="pop-up-action" id="33">Close3</button>\
+					<button class="pop-up-action" id="13">Close1</button>\
+				</div>\
+*/
+
 void PopUpManager::addOptionsPopUp(const std::string& message, const std::vector<std::pair<std::string, std::function<void()>>>& options, bool blocking) {
-	createPopUp(message, blocking);
-	mainWindow->getRmlDocument()->GetElementById("pop-up-text")->SetInnerRML(message);
-	Rml::Element* actionsElement = mainWindow->getRmlDocument()->GetElementById("pop-up-actions");
-	while (actionsElement->HasChildNodes()) { actionsElement->RemoveChild(actionsElement->GetChild(0)); }
+	Rml::Element* popUpRoot = createPopUp(message, blocking);
+	Rml::Element* window = popUpRoot->GetElementById("pop-up-window");
+	Rml::Element* text = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("span"));
+	text->SetId("pop-up-text");
+	text->SetInnerRML(message);
+	Rml::Element* actionsElement = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("span"));
+	actionsElement->SetId("pop-up-actions");
 	for (const auto& option : options) {
 		Rml::ElementPtr setPositionButton = mainWindow->getRmlDocument()->CreateElement("button");
 		setPositionButton->AppendChild(std::move(mainWindow->getRmlDocument()->CreateTextNode(option.first)));
 		setPositionButton->AddEventListener(Rml::EventId::Click, new EventPasser(
-			[this, func = option.second](Rml::Event& event) {
-				mainWindow->getRmlDocument()->GetElementById("pop-up-overlay")->SetClass("invisible", true);
+			[popUpRoot, func = option.second](Rml::Event& event) {
+				popUpRoot->GetParentNode()->RemoveChild(popUpRoot);
 				func();
 			}
 		));
@@ -26,7 +46,12 @@ void PopUpManager::addOptionsPopUp(const std::string& message, const std::vector
 }
 
 Rml::Element* PopUpManager::createPopUp(const std::string& message, bool blocking) {
-	return mainWindow->getRmlDocument()->GetElementById("pop-up-overlay");
+	Rml::Element* allPopUps = mainWindow->getRmlDocument()->GetElementById("all-pop-ups");
+	assert(allPopUps);
+	// Rml::Element* div = allPopUps->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
+	// div->SetInnerRML();
+	allPopUps->SetInnerRML((allPopUps->GetInnerRML()) + std::string(popUpWindowRml));
+	return allPopUps->GetLastChild();
 }
 
 void SaveCallback(void* userData, const char* const* filePaths, int filter) {

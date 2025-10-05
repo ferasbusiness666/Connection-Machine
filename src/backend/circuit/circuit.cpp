@@ -119,7 +119,7 @@ bool Circuit::tryMoveBlocks(const SharedSelection& selection, Vector movement, O
 	for (unsigned int i = stackToMoveBack.size(); i > 0; i--) {
 		popOffStack(stackToMoveBack[i-1], transformAmount, false, difference2.get());
 	}
-	sendDifference(difference2);
+	sendDifference(std::move(difference2));
 	return true;
 }
 

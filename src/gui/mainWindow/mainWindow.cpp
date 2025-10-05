@@ -157,7 +157,7 @@ MainWindow::MainWindow(Environment* environment) :
 	rmlDocument->Show();
 
 	// example pop up
-	// addPopUp("this is a test", {
+	// popUpManager.addOptionsPopUp("this is a test", {
 	// 	std::make_pair<std::string, std::function<void()>>("A", [](){logInfo("A");}),
 	// 	std::make_pair<std::string, std::function<void()>>("B", [](){logInfo("B");}),
 	// 	std::make_pair<std::string, std::function<void()>>("C", [](){logInfo("C");})
