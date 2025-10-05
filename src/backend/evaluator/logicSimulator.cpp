@@ -38,7 +38,7 @@ void LogicSimulator::clearState() { }
 
 double LogicSimulator::getAverageTickrate() const {
 	if (!evalConfig.isRunning()) {
-		return false;
+		return 0.0;
 	}
 	double tickspeed = averageTickrate.load(std::memory_order_acquire);
 	// if tickspeed close enough to target tickspeed, return target tickspeed
@@ -126,12 +126,12 @@ inline void LogicSimulator::updateEmaTickrate(
 
 			double currentEMA = averageTickrate.load(std::memory_order_acquire);
 
-			if (currentTickrate/currentEMA > 3 || 0.33 > currentTickrate/currentEMA) {
-				averageTickrate.store(currentTickrate, std::memory_order_release);
-			} else {
-				double newEMA = alpha * currentTickrate + (1.0 - alpha) * currentEMA;
-				averageTickrate.store(newEMA, std::memory_order_release);
-			}
+			// if (currentTickrate/currentEMA > 3 || 0.33 > currentTickrate/currentEMA) {
+			// 	averageTickrate.store(currentTickrate, std::memory_order_release);
+			// } else {
+			double newEMA = alpha * currentTickrate + (1.0 - alpha) * currentEMA;
+			averageTickrate.store(newEMA, std::memory_order_release);
+			// }
 		}
 	} else {
 		isFirstTick = false;

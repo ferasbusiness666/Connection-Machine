@@ -89,8 +89,6 @@ public:
 		replacer.removeGate(pauseGuard, gateId);
 		if (isTrackedTristateBuffer(gateId)) {
 			deleteTrackedTristateBuffer(pauseGuard, gateId);
-			middleIdProvider.releaseId(tristateBuffers.at(gateId).junctionId1);
-			middleIdProvider.releaseId(tristateBuffers.at(gateId).junctionId2);
 		}
 		deleteTrackedGate(gateId);
 		for (auto& trackedGate : trackedGates) {
