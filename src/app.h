@@ -15,15 +15,18 @@ public:
 
 	// do not call
 	App();
+	~App();
 
 	std::shared_ptr<SdlWindow> registerWindow(const std::string& windowName);
 	void deregisterWindow(std::shared_ptr<SdlWindow>& sdlWindow);
 	void deregisterWindow(const SdlWindow* sdlWindow);
 
 	void newMainWindow();
-	void closeMainWindow(const MainWindow* mainWindow);
+	bool closeMainWindow(const MainWindow* mainWindow);
 
 	void runLoop();
+	void startTryingToQuit();
+	void stopTryingToQuit();
 
 private:
 	Environment environment;
@@ -32,7 +35,7 @@ private:
 	RmlSystemInterface rmlSystemInterface;
 
 	SdlInstance sdl;
-	RmlInstance rml;
+	std::optional<RmlInstance> rml;
 
 	std::vector<std::shared_ptr<SdlWindow>> sdlWindows;
 	std::vector<std::unique_ptr<MainWindow>> windows; // we could make this just a vector later, I don't want to deal with moving + threads
@@ -40,6 +43,8 @@ private:
 	std::vector<MainWindow*> newlyCreatedWindowsNext;
 	std::vector<MainWindow*> newlyCreatedWindows;
 	bool running = false;
+	bool tryingToQuit = false;
+	unsigned int tasksToFinishToQuit = 0;
 };
 
 #endif /* app_h */

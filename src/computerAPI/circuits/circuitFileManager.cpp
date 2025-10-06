@@ -101,6 +101,41 @@ bool CircuitFileManager::save(const std::string& UUID) {
 	return false;
 }
 
+bool CircuitFileManager::saveFile(const std::string& path) {
+	auto iter = filePathToFile.find(path);
+	// SharedCircuit circuit = circuitManager->getCircuit(UUID);
+	// if (circuit) {
+	// 	unsigned long long currentEditCount = circuit->getEditCount();
+	// 	unsigned long long lastSaved = fileData.lastSavedEdit.at(UUID);
+	// 	if (lastSaved >= currentEditCount) {
+	// 		logInfo("No changes to save ({})", "CircuitFileManager", iter->second);
+	// 		return true;
+	// 	}
+	// 	// fileData.lastSavedEdit[UUID] = currentEditCount; // Should this be here? Move into ConnectionMachineParser?
+	// } else {
+	// 	SharedProceduralCircuit proceduralCircuit = circuitManager->getProceduralCircuitManager()->getProceduralCircuit(UUID);
+	// 	if (!proceduralCircuit) {
+	// 		logError("Save failed! No Circuit or ProceduralCircuit with UUID {}", "CircuitFileManager", UUID); // this should not happen
+	// 		return false;
+	// 	}
+	// }
+	if (iter == filePathToFile.end()) {
+		logError("Could not save file {}. No data for the file found.", "CircuitFileManager", path);
+		return false;
+	}
+
+	ConnectionMachineParser saver(this, circuitManager);
+	if (saver.save(iter->second, false)) {
+		for (auto& pair : iter->second.lastSavedEdit) {
+			SharedCircuit savedCircuit = circuitManager->getCircuit(pair.first);
+			if (savedCircuit) pair.second = savedCircuit->getEditCount();
+		}
+		logInfo("Successfully saved to: {}", "CircuitFileManager", path);
+		return true;
+	}
+	return false;
+}
+
 // bool CircuitFileManager::saveAllDependencies(const std::string& UUID) {
 // 	const BlockContainer* blockContainer = circuitManager->getCircuit(circuitId)->getBlockContainer();
 // 	const CircuitBlockDataManager* circuitBlockDataManager = circuitManager->getCircuitBlockDataManager();
@@ -204,4 +239,12 @@ const CircuitFileManager::FileData* CircuitFileManager::getFileDataFromPath(std:
 	auto iter = filePathToFile.find(path);
 	if (iter == filePathToFile.end()) return nullptr;
 	return &(iter->second);
+}
+
+const CircuitFileManager::FileData* CircuitFileManager::getFileDataFromUUID(std::string UUID) const {
+	auto iter = UUIDToFilePath.find(UUID);
+	if (iter == UUIDToFilePath.end()) return nullptr;
+	auto iter2 = filePathToFile.find(iter->second);
+	if (iter2 == filePathToFile.end()) return nullptr;
+	return &(iter2->second);
 }

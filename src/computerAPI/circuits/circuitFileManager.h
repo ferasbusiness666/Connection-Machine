@@ -21,6 +21,7 @@ public:
     std::vector<circuit_id_t> loadFromFile(const std::string& path);
     bool saveToFile(const std::string& path, const std::string& UUID);
     bool save(const std::string& UUID);
+    bool saveFile(const std::string& path);
     // bool saveAllDependencies(const std::string& UUID);
 
     // bool saveAsMultiFile(const std::unordered_set<std::string>& UUIDs, const std::string& fileLocation);
@@ -28,9 +29,11 @@ public:
 
 	void setSaveFilePath(const std::string& UUID, const std::string& fileLocation);
 
-	const std::string* getSavePath(const std::string&) const;
+	const std::string* getSavePath(const std::string& UUID) const;
 
+	const std::map<std::string, FileData>& getAllFiles() const { return filePathToFile; }
 	const FileData* getFileDataFromPath(std::string path) const;
+	const FileData* getFileDataFromUUID(std::string UUID) const;
 private:
 	circuit_id_t loadParsedCircuit(ParsedCircuit& parsedCircuit);
 

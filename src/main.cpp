@@ -55,6 +55,5 @@ int main(int argc, char* argv[]) {
 	// }
 
 	logInfo("Exiting Connection Machine...");
-	MainRenderer::kill();
 	return EXIT_SUCCESS;
 }

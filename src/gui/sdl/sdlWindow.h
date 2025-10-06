@@ -14,10 +14,7 @@ public:
 	inline void setRecieveEventFunction(std::function<bool(SDL_Event&)> func) { doRecieveEvent = func; }
 
 	inline void render() { if (doRender) doRender(); }
-	inline bool recieveEvent(SDL_Event& event) {
-		if (doRecieveEvent) return doRecieveEvent(event);
-		return isThisMyEvent(event);
-	}
+	bool recieveEvent(SDL_Event& event);
 
 	bool isThisMyEvent(const SDL_Event& event);
 
