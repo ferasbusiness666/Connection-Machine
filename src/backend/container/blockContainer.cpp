@@ -223,8 +223,41 @@ bool BlockContainer::tryCreateConnection(ConnectionEnd outputConnectionEnd, Conn
 		input->type() == BlockType::JUNCTION && output->type() == BlockType::JUNCTION && input->getConnectionContainer().hasConnection(
 			outputConnectionEnd.getConnectionId(),
 			ConnectionEnd(outputConnectionEnd.getBlockId(), inputConnectionEnd.getConnectionId())
+		) ||
+		input->type() == BlockType::BUS_INTERFACE && output->type() == BlockType::BUS_INTERFACE && input->getConnectionContainer().hasConnection(
+			outputConnectionEnd.getConnectionId(),
+			ConnectionEnd(outputConnectionEnd.getBlockId(), inputConnectionEnd.getConnectionId())
+		) ||
+		input->type() == BlockType::BUS_INTERFACE && output->type() == BlockType::JUNCTION && input->getConnectionContainer().hasConnection(
+			outputConnectionEnd.getConnectionId(),
+			ConnectionEnd(outputConnectionEnd.getBlockId(), inputConnectionEnd.getConnectionId())
+		) ||
+		input->type() == BlockType::JUNCTION && output->type() == BlockType::BUS_INTERFACE && input->getConnectionContainer().hasConnection(
+			outputConnectionEnd.getConnectionId(),
+			ConnectionEnd(outputConnectionEnd.getBlockId(), inputConnectionEnd.getConnectionId())
 		)
 	) return false;
+	if (input->type() == BlockType::JUNCTION) {
+		unsigned int inputBitWidth = getBitwidthOfJunction(input->id());
+		if (inputBitWidth != 0) {
+			if (output->type() == BlockType::JUNCTION) {
+				unsigned int otherBitWidth = getBitwidthOfJunction(output->id());
+				if (otherBitWidth != 0 && inputBitWidth != otherBitWidth) return false;
+			} else if (inputBitWidth != getBlockDataManager()->getBlockData(output->type())->getConnectionBitWidth(outputConnectionEnd.getConnectionId())) {
+				return false;
+			}
+		}
+	} else if (output->type() == BlockType::JUNCTION) {
+		unsigned int outputBitWidth = getBitwidthOfJunction(output->blockId);
+		if (outputBitWidth != 0 && outputBitWidth != getBlockDataManager()->getBlockData(input->type())->getConnectionBitWidth(inputConnectionEnd.getConnectionId())) {
+			return false;
+		}
+	} else if (
+		getBlockDataManager()->getBlockData(input->type())->getConnectionBitWidth(inputConnectionEnd.getConnectionId()) !=
+		getBlockDataManager()->getBlockData(output->type())->getConnectionBitWidth(outputConnectionEnd.getConnectionId())
+	) {
+		return false;
+	}
 	if (input->getConnectionContainer().tryMakeConnection(inputConnectionEnd.getConnectionId(), outputConnectionEnd)) {
 		bool secondSuc = output->getConnectionContainer().tryMakeConnection(outputConnectionEnd.getConnectionId(), inputConnectionEnd);
 		assert(secondSuc);
@@ -250,8 +283,49 @@ bool BlockContainer::tryCreateConnection(Position outputPosition, Position input
 		(input->type() == BlockType::JUNCTION && output->type() == BlockType::JUNCTION && input->getConnectionContainer().hasConnection(
 			outputConnectionId.value(),
 			ConnectionEnd(output->id(), inputConnectionId.value())
+		)) ||
+		(input->type() == BlockType::BUS_INTERFACE && output->type() == BlockType::BUS_INTERFACE && input->getConnectionContainer().hasConnection(
+			outputConnectionId.value(),
+			ConnectionEnd(output->id(), inputConnectionId.value())
+		)) ||
+		(input->type() == BlockType::BUS_INTERFACE && output->type() == BlockType::JUNCTION && input->getConnectionContainer().hasConnection(
+			outputConnectionId.value(),
+			ConnectionEnd(output->id(), inputConnectionId.value())
+		)) ||
+		(input->type() == BlockType::JUNCTION && output->type() == BlockType::BUS_INTERFACE && input->getConnectionContainer().hasConnection(
+			outputConnectionId.value(),
+			ConnectionEnd(output->id(), inputConnectionId.value())
 		))
 	) return false;
+	if (input->type() == BlockType::JUNCTION) {
+		unsigned int inputBitWidth = getBitwidthOfJunction(input->id());
+		if (inputBitWidth != 0) {
+			if (output->type() == BlockType::JUNCTION) {
+				unsigned int otherBitWidth = getBitwidthOfJunction(output->id());
+				if (otherBitWidth != 0 && inputBitWidth != otherBitWidth) return false;
+			} else if (inputBitWidth != getBlockDataManager()->getBlockData(output->type())->getConnectionBitWidth(outputConnectionId.value())) {
+				return false;
+			}
+		}
+	} else if (output->type() == BlockType::JUNCTION) {
+		unsigned int outputBitWidth = getBitwidthOfJunction(output->blockId);
+		if (outputBitWidth != 0 && outputBitWidth != getBlockDataManager()->getBlockData(input->type())->getConnectionBitWidth(inputConnectionId.value())) {
+			return false;
+		}
+	} else if (
+		getBlockDataManager()->getBlockData(input->type())->getConnectionBitWidth(inputConnectionId.value()) !=
+		getBlockDataManager()->getBlockData(output->type())->getConnectionBitWidth(outputConnectionId.value())
+	) {
+		return false;
+	}
+	// if (getBlockDataManager()->getBlockData(input->type())->getConnectionBitWidth(inputConnectionId.value()) !=
+	// 	getBlockDataManager()->getBlockData(output->type())->getConnectionBitWidth(outputConnectionId.value())) {
+	// 	if (input->type() == BlockType::JUNCTION) {
+	// 	} else if (output->type() == BlockType::JUNCTION) {
+	// 	} else {
+	// 		return false;
+	// 	}
+	// }
 	if (input->getConnectionContainer().tryMakeConnection(inputConnectionId.value(), ConnectionEnd(output->id(), outputConnectionId.value()))) {
 		bool secondSuc = output->getConnectionContainer().tryMakeConnection(outputConnectionId.value(), ConnectionEnd(input->id(), inputConnectionId.value()));
 		assert(secondSuc);
@@ -264,30 +338,44 @@ bool BlockContainer::tryCreateConnection(Position outputPosition, Position input
 bool BlockContainer::tryRemoveConnection(ConnectionEnd outputConnectionEnd, ConnectionEnd inputConnectionEnd, Difference* difference) {
 	Block* input = getBlock_(inputConnectionEnd.getBlockId());
 	if (!input) return false;
+	std::optional<Position> inputConnectionPosition = input->getConnectionPosition(inputConnectionEnd.getConnectionId());
+	if (!inputConnectionPosition) return false;
 	Block* output = getBlock_(outputConnectionEnd.getBlockId());
 	if (!output) return false;
+	std::optional<Position> outputConnectionPosition = output->getConnectionPosition(outputConnectionEnd.getConnectionId());
+	if (!outputConnectionPosition) return false;
 	if (input->getConnectionContainer().tryRemoveConnection(inputConnectionEnd.getConnectionId(), outputConnectionEnd)) {
 		bool secondSuc = output->getConnectionContainer().tryRemoveConnection(outputConnectionEnd.getConnectionId(), inputConnectionEnd);
 		assert(secondSuc);
 		difference->addRemovedConnection(
-			output->getPosition(), output->getConnectionPosition(outputConnectionEnd.getConnectionId()).value(),
-			input->getPosition(), input->getConnectionPosition(inputConnectionEnd.getConnectionId()).value()
+			output->getPosition(), outputConnectionPosition.value(),
+			input->getPosition(), inputConnectionPosition.value()
 		);
 		return true;
 	}
-	if (input->type() == BlockType::JUNCTION && output->type() == BlockType::JUNCTION) {
+	if (
+		input->type() == BlockType::JUNCTION && output->type() == BlockType::JUNCTION ||
+		input->type() == BlockType::BUS_INTERFACE && output->type() == BlockType::BUS_INTERFACE ||
+		input->type() == BlockType::BUS_INTERFACE && output->type() == BlockType::JUNCTION ||
+		input->type() == BlockType::JUNCTION && output->type() == BlockType::BUS_INTERFACE
+	) {
+		std::optional<connection_end_id_t> outputConnectionId = input->getOutputConnectionId(inputConnectionPosition.value());
+		if (!outputConnectionId) return false;
+		std::optional<connection_end_id_t> inputConnectionId = output->getInputConnectionId(outputConnectionPosition.value());
+		if (!inputConnectionId) return false;
+
 		if (input->getConnectionContainer().tryRemoveConnection(
-			outputConnectionEnd.getConnectionId(),
-			ConnectionEnd(outputConnectionEnd.getBlockId(), inputConnectionEnd.getConnectionId())
+			outputConnectionId.value(),
+			ConnectionEnd(outputConnectionEnd.getBlockId(), inputConnectionId.value())
 		)) {
 			bool secondSuc = output->getConnectionContainer().tryRemoveConnection(
-				inputConnectionEnd.getConnectionId(),
-				ConnectionEnd(inputConnectionEnd.getBlockId(), outputConnectionEnd.getConnectionId())
+				inputConnectionId.value(),
+				ConnectionEnd(inputConnectionEnd.getBlockId(), outputConnectionId.value())
 			);
 			assert(secondSuc);
 			difference->addRemovedConnection(
-				output->getPosition(), output->getConnectionPosition(inputConnectionEnd.getConnectionId()).value(),
-				input->getPosition(), input->getConnectionPosition(outputConnectionEnd.getConnectionId()).value()
+				input->getPosition(), inputConnectionPosition.value(),
+				output->getPosition(), outputConnectionPosition.value()
 			);
 			return true;
 		}
@@ -309,7 +397,16 @@ bool BlockContainer::tryRemoveConnection(Position outputPosition, Position input
 		difference->addRemovedConnection(output->getPosition(), outputPosition, input->getPosition(), inputPosition);
 		return true;
 	}
-	if (input->type() == BlockType::JUNCTION && output->type() == BlockType::JUNCTION) {
+	if (
+		input->type() == BlockType::JUNCTION && output->type() == BlockType::JUNCTION ||
+		input->type() == BlockType::BUS_INTERFACE && output->type() == BlockType::BUS_INTERFACE ||
+		input->type() == BlockType::BUS_INTERFACE && output->type() == BlockType::JUNCTION ||
+		input->type() == BlockType::JUNCTION && output->type() == BlockType::BUS_INTERFACE
+	) {
+		outputConnectionId = input->getOutputConnectionId(inputPosition);
+		if (!outputConnectionId) return false;
+		inputConnectionId = output->getInputConnectionId(outputPosition);
+		if (!inputConnectionId) return false;
 		if (input->getConnectionContainer().tryRemoveConnection(outputConnectionId.value(), ConnectionEnd(output->id(), inputConnectionId.value()))) {
 			bool secondSuc = output->getConnectionContainer().tryRemoveConnection(inputConnectionId.value(), ConnectionEnd(input->id(), outputConnectionId.value()));
 			assert(secondSuc);
@@ -416,4 +513,44 @@ DifferenceSharedPtr BlockContainer::getCreationDifferenceShared() const {
 		}
 	}
 	return difference;
+}
+
+unsigned int BlockContainer::getBitwidthOfJunction(const Block* block) const {
+	if (block == nullptr || block->type() != BlockType::JUNCTION) return 0; // will not work for anything but a junction
+	for (const auto& connections : block->getConnectionContainer().getConnections()) {
+		for (const auto& connection : connections.second) {
+			const Block* connectedBlock = getBlock(connection.getBlockId());
+			if (connectedBlock->type() != BlockType::JUNCTION) {
+				return getBlockDataManager()->getBlockData(connectedBlock->type())->getConnectionBitWidth(connection.getConnectionId());
+			}
+		}
+	}
+	std::unordered_set<block_id_t> visited = {block->id()};
+	for (const auto& connections : block->getConnectionContainer().getConnections()) {
+		for (const auto& connection : connections.second) {
+			unsigned int bitWidth = getBitwidthOfJunction(connection.getBlockId(), visited);
+			if (bitWidth != 0) return bitWidth;
+		}
+	}
+	return 0;
+}
+
+unsigned int BlockContainer::getBitwidthOfJunction(block_id_t blockId, std::unordered_set<block_id_t>& visited) const {
+	if (!visited.insert(blockId).second) return 0;
+	const Block* block = getBlock(blockId);
+	for (const auto& connections : block->getConnectionContainer().getConnections()) {
+		for (const auto& connection : connections.second) {
+			const Block* connectedBlock = getBlock(connection.getBlockId());
+			if (connectedBlock->type() != BlockType::JUNCTION) {
+				return getBlockDataManager()->getBlockData(connectedBlock->type())->getConnectionBitWidth(connection.getConnectionId());
+			}
+		}
+	}
+	for (const auto& connections : block->getConnectionContainer().getConnections()) {
+		for (const auto& connection : connections.second) {
+			unsigned int bitWidth = getBitwidthOfJunction(connection.getBlockId(), visited);
+			if (bitWidth != 0) return bitWidth;
+		}
+	}
+	return 0;
 }

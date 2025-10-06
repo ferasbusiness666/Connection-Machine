@@ -17,6 +17,7 @@ enum class GateType {
 	JUNCTION = 12,
 	TRISTATE_BUFFER = 13,
 	TRISTATE_BUFFER_INVERTED = 14,
+	BUS_INTERFACE = 15,
 };
 
 #endif /* gateType_h */

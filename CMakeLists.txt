@@ -1,9 +1,9 @@
 # ======================================== CMAKE SETUP ========================================
 cmake_minimum_required(VERSION 3.10)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/dependencies.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/apple.cmake)
 
 if(APPLE)
+	include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/apple.cmake)
 	PreProjectAppleSetup()
 endif()
 
@@ -33,7 +33,7 @@ set(EXTERNAL_DIR "${CMAKE_SOURCE_DIR}/external")
 set(RESOURCES_DIR "${CMAKE_SOURCE_DIR}/resources")
 
 option(CONNECTION_MACHINE_BUILD_APP "Build Connection Machine App" ON)
-option(CONNECTION_MACHINE_BUILD_CLI_APP "Build Connection Machine App" ON)
+option(CONNECTION_MACHINE_BUILD_CLI_APP "Build Connection Machine CLI App" ON)
 option(CONNECTION_MACHINE_DISTRIBUTE_APP "Distribute App" OFF)
 option(CONNECTION_MACHINE_BUILD_TESTS "Build Connection Machine Tests" OFF)
 option(CONNECTION_MACHINE_CODE_COVERAGE "Enable code coverage reporting" OFF)
