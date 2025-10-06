@@ -12,6 +12,7 @@
 #include "sideBar/selector/selectorWindow.h"
 #include "sideBar/simulation/evalWindow.h"
 #include "gui/helper/keybindHandler.h"
+#include "popUps/popUpManager.h"
 
 class CircuitViewWidget;
 class Environment;
@@ -25,7 +26,14 @@ public:
 	MainWindow(const MainWindow&) = delete;
 	MainWindow& operator=(const MainWindow&) = delete;
 
-public:
+	Environment* getEnvironment() { return environment; }
+	const Environment* getEnvironment() const { return environment; }
+
+	Rml::ElementDocument* getRmlDocument() { return rmlDocument; }
+	const Rml::ElementDocument* getRmlDocument() const { return rmlDocument; }
+
+	PopUpManager& getPopUpManager() { return popUpManager; }
+
 	bool recieveEvent(SDL_Event& event);
 	void updateRml();
 
@@ -38,14 +46,9 @@ public:
 	// void addCircuitViewWidget() // once we can change element that it is attached to
 	void createCircuitViewWidget(Rml::Element* element);
 
-	void addPopUp(const std::string& message, const std::vector<std::pair<std::string, std::function<void()>>>& options);
-	void savePopUp(const std::string& circuitUUID);
-	void saveAsPopUp(const std::string& circuitUUID);
-
 	void setGlobalCssProperty(const std::string& property, const std::string& value);
 
 private:
-	void createPopUp(const std::string& message, const std::vector<std::pair<std::string, std::function<void()>>>& options);
 	void offsetUiScale(double delta);
 	void applyUiScale(float scale);
 
@@ -74,6 +77,7 @@ private:
 	std::vector<std::shared_ptr<CircuitViewWidget>> circuitViewWidgets;
 
 	// rmlui and sdl
+	PopUpManager popUpManager;
 	Rml::Context* rmlContext;
 	Rml::ElementDocument* rmlDocument;
 	std::shared_ptr<SdlWindow> sdlWindow;

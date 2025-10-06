@@ -18,18 +18,20 @@ class Replacement {
 public:
 	Replacement(
 		Replacer* replacer,
-		BusInterfacePassthrough* optimizer,
+		BusInterfacePassthrough* busInterfacePassthrough,
 		IdProvider<middle_id_t>* middleIdProvider,
 		std::unordered_map<middle_id_t, middle_id_t>* replacedIds,
 		std::unordered_map<middle_id_t, std::unordered_map<connection_port_id_t, EvalConnectionPoint>>* replacedConnectionPoints,
-		std::unordered_set<middle_id_t>* replacementIds
-	) :
+		std::unordered_map<middle_id_t, int>* replacementIdLayers,
+		int layer
+		) :
 		replacer(replacer),
-		busInterfacePassthrough(optimizer),
+		busInterfacePassthrough(busInterfacePassthrough),
 		middleIdProvider(middleIdProvider),
 		replacedIds(replacedIds),
 		replacedConnectionPoints(replacedConnectionPoints),
-		replacementIds(replacementIds) {}
+		replacementIdLayers(replacementIdLayers),
+		layer(layer) {}
 
 	void removeGate(SimPauseGuard& pauseGuard, middle_id_t gateId, std::unordered_map<connection_port_id_t, EvalConnectionPoint> replacementConnectionPoints) {
 		isEmpty = false;
@@ -69,7 +71,7 @@ public:
 		idsToTrackOutputs.insert(gateId);
 		replacedIds->insert({ gateId, replacementId });
 		busInterfacePassthrough->removeGate(pauseGuard, gateId);
-		replacementIds->insert(replacementId);
+		replacementIdLayers->insert({ replacementId, layer });
 	}
 
 	void addGate(SimPauseGuard& pauseGuard, GateType gateType, middle_id_t gateId) {
@@ -138,7 +140,7 @@ private:
 	IdProvider<middle_id_t>* middleIdProvider;
 	std::unordered_map<middle_id_t, middle_id_t>* replacedIds;
 	std::unordered_map<middle_id_t, std::unordered_map<connection_port_id_t, EvalConnectionPoint>>* replacedConnectionPoints;
-	std::unordered_set<middle_id_t>* replacementIds;
+	std::unordered_map<middle_id_t, int>* replacementIdLayers;
 	std::vector<ReplacementGate> addedGates;
 	std::vector<ReplacementGate> deletedGates;
 	std::vector<EvalConnection> addedConnections;
@@ -148,6 +150,7 @@ private:
 	std::set<middle_id_t> idsToTrackInputs;
 	bool isEmpty { true };
 	bool isReverting { false };
+	int layer { 0 };
 };
 
 #endif /* replacement_h */

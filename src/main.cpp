@@ -6,9 +6,10 @@
 #include "backend/settings/settings.h"
 #include "backend/settings/settingsMap.h"
 #include "computerAPI/directoryManager.h"
+#include "computerAPI/saveSettings.h"
 
 int main(int argc, char* argv[]) {
-	try {
+	// try {
 		// Set up directory manager
 		DirectoryManager::findDirectories();
 
@@ -43,14 +44,15 @@ int main(int argc, char* argv[]) {
 		Settings::registerSetting<SettingType::BOOL>("Keybinds/Camera/Scroll Panning", true);
 		Settings::registerSetting<SettingType::DECIMAL>("Appearance/UI Scale", 1.0);
 		Settings::registerSetting<SettingType::UINT>("Simulation/Max Thread Count", std::thread::hardware_concurrency() / 2);
-
+		SaveSettings save;
+		save.load();
 		App::get().runLoop();
 		App::kill();
-	} catch (const std::exception& e) {
-		// Top level fatal error catcher, logs issue
-		logFatalError("Exiting Connection Machine because of fatal error: '{}'", "", e.what());
-		return EXIT_FAILURE;
-	}
+	// } catch (const std::exception& e) {
+	// 	// Top level fatal error catcher, logs issue
+	// 	logFatalError("Exiting Connection Machine because of fatal error: '{}'", "", e.what());
+	// 	return EXIT_FAILURE;
+	// }
 
 	logInfo("Exiting Connection Machine...");
 	MainRenderer::kill();

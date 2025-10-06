@@ -75,21 +75,28 @@ bool Circuit::tryMoveBlocks(const SharedSelection& selection, Vector movement, O
 	Position newSelectionOrigin = selectionOrigin + movement;
 	std::unordered_set<Position> positions;
 	std::unordered_set<const Block*> blocks;
+	std::vector<const Block*> blockToCheck;
 	flattenSelection(selection, positions);
 	for (auto iter = positions.begin(); iter != positions.end(); ++iter) {
 		const Block* block = blockContainer.getBlock(*iter);
 		if (block) {
-			if (blocks.contains(block) || blocks.contains(block)) continue;
+			if (blocks.contains(block)) continue;
 			Position pos1 = newSelectionOrigin + transformAmount * (block->getPosition() - selectionOrigin);
 			Position pos2 = newSelectionOrigin + transformAmount * (block->getLargestPosition() - selectionOrigin);
 			for (auto iter = pos1.iterTo(pos2); iter; iter++) {
 				const Block* otherBlock = blockContainer.getBlock(*iter);
 				if (otherBlock == nullptr || otherBlock == block) continue;
 				if (!positions.contains(*iter)) {
-					return false;
+					if (otherBlock->size() == Size(1)) return false;
+					blockToCheck.push_back(otherBlock); // other parts of the block could be in the area
 				}
 			}
 			blocks.insert(block);
+		}
+	}
+	for (const Block* otherBlock : blockToCheck) {
+		if (!blocks.contains(otherBlock)) {
+			return false;
 		}
 	}
 
@@ -119,7 +126,7 @@ bool Circuit::tryMoveBlocks(const SharedSelection& selection, Vector movement, O
 	for (unsigned int i = stackToMoveBack.size(); i > 0; i--) {
 		popOffStack(stackToMoveBack[i-1], transformAmount, false, difference2.get());
 	}
-	sendDifference(difference2);
+	sendDifference(std::move(difference2));
 	return true;
 }
 
