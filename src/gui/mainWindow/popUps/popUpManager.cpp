@@ -36,8 +36,9 @@ void PopUpManager::addOptionsPopUp(const std::string& message, const std::vector
 		setPositionButton->AppendChild(std::move(mainWindow->getRmlDocument()->CreateTextNode(option.first)));
 		setPositionButton->AddEventListener(Rml::EventId::Click, new EventPasser(
 			[popUpRoot, func = option.second](Rml::Event& event) {
+				auto funcCopy = func;
 				popUpRoot->GetParentNode()->RemoveChild(popUpRoot);
-				func();
+				funcCopy();
 			}
 		));
 		setPositionButton->SetClass("pop-up-action", true);

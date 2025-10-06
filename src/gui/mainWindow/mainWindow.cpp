@@ -158,9 +158,9 @@ MainWindow::MainWindow(Environment* environment) :
 
 	// example pop up
 	// popUpManager.addOptionsPopUp("this is a test", {
-	// 	std::make_pair<std::string, std::function<void()>>("A", [](){logInfo("A");}),
-	// 	std::make_pair<std::string, std::function<void()>>("B", [](){logInfo("B");}),
-	// 	std::make_pair<std::string, std::function<void()>>("C", [](){logInfo("C");})
+	// 	std::make_pair("A", [](){logInfo("A");}),
+	// 	std::make_pair("B", [](){logInfo("B");}),
+	// 	std::make_pair("C", [](){logInfo("C");})
 	// });
 
 	Settings::registerListener<SettingType::FILE_PATH>("Appearance/Font", [this](const std::string& fontFilePath) {
