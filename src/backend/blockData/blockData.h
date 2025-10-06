@@ -10,10 +10,17 @@ class BlockData {
 	friend class BlockDataManager;
 public:
 	struct ConnectionData {
-		ConnectionData(Vector positionOnBlock, bool isInput, unsigned int bitWidth = 1) : positionOnBlock(positionOnBlock), isInput(isInput), bitWidth(bitWidth) {}
+		ConnectionData(
+			Vector positionOnBlock,
+			bool isInput,
+			unsigned int bitWidth = 1
+		) :
+			positionOnBlock(positionOnBlock),
+			isInput(isInput),
+			bitAccess(bitAccess) {}
 		Vector positionOnBlock = Vector(0, 0);
 		bool isInput = true;
-		unsigned int bitWidth = 1;
+		std::optional<std::vector<unsigned int>> bitAccess;
 	};
 
 	BlockData(BlockType blockType, DataUpdateEventManager* dataUpdateEventManager);
@@ -149,19 +156,33 @@ public:
 		if (str) return *str;
 		return std::nullopt;
 	}
-	inline connection_end_id_t getConnectionBitWidth(connection_end_id_t connectionId) const noexcept {
+	inline unsigned int getConnectionBitWidth(connection_end_id_t connectionId) const noexcept {
 		if (defaultData) return 1;
 		auto iter = connections.find(connectionId);
 		if (iter == connections.end()) return 0;
-		return iter->second.bitWidth;
+		return iter->second.bitAccess ? iter->second.bitAccess->size() : 1;
 	}
-	inline void setConnectionBitWidth(connection_end_id_t connectionId, unsigned int bitWidth) noexcept {
-		if (bitWidth == 0) {
-			logError("Cant set the bit width of a connection to 0", "BlockData");
+	inline const std::optional<std::vector<unsigned int>>& getConnectionBitAccess(connection_end_id_t connectionId) const noexcept {
+		if (defaultData) return std::nullopt;
+		auto iter = connections.find(connectionId);
+		if (iter == connections.end()) return {};
+		return iter->second.bitAccess;
+	}
+	inline void setConnectionBitAccess(connection_end_id_t connectionId, std::vector<unsigned int> bitAccess) noexcept {
+		if (bitAccess.empty()) {
+			logError("Cant set the bit access of a connection to be empty", "BlockData");
 		}
 		auto iter = connections.find(connectionId);
 		if (iter == connections.end()) return;
-		iter->second.bitWidth = bitWidth;
+		iter->second.bitAccess = bitAccess;
+	}
+	inline void setConnectionBitAccess(connection_end_id_t connectionId, std::optional<std::vector<unsigned int>> bitAccess) noexcept {
+		if (bitAccess.has_value() && bitAccess->empty()) {
+			logError("Cant set the bit access of a connection to be empty", "BlockData");
+		}
+		auto iter = connections.find(connectionId);
+		if (iter == connections.end()) return;
+		iter->second.bitAccess = bitAccess;
 	}
 
 private:
