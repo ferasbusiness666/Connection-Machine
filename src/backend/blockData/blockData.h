@@ -13,14 +13,14 @@ public:
 		ConnectionData(
 			Vector positionOnBlock,
 			bool isInput,
-			unsigned int bitWidth = 1
+			std::variant<unsigned int, std::vector<unsigned int>> bitConfiguration = static_cast<unsigned int>(1)
 		) :
 			positionOnBlock(positionOnBlock),
 			isInput(isInput),
-			bitAccess(bitAccess) {}
+			bitConfiguration(bitConfiguration) {}
 		Vector positionOnBlock = Vector(0, 0);
 		bool isInput = true;
-		std::optional<std::vector<unsigned int>> bitAccess;
+		std::variant<unsigned int, std::vector<unsigned int>> bitConfiguration;
 	};
 
 	BlockData(BlockType blockType, DataUpdateEventManager* dataUpdateEventManager);
@@ -160,29 +160,27 @@ public:
 		if (defaultData) return 1;
 		auto iter = connections.find(connectionId);
 		if (iter == connections.end()) return 0;
-		return iter->second.bitAccess ? iter->second.bitAccess->size() : 1;
+		if (std::holds_alternative<unsigned int>(iter->second.bitConfiguration)) {
+			return std::get<unsigned int>(iter->second.bitConfiguration);
+		} else {
+			return std::get<std::vector<unsigned int>>(iter->second.bitConfiguration).size();
+		}
 	}
-	inline const std::optional<std::vector<unsigned int>>& getConnectionBitAccess(connection_end_id_t connectionId) const noexcept {
-		if (defaultData) return std::nullopt;
+	inline const std::variant<unsigned int, std::vector<unsigned int>>* getConnectionBitConfiguration(connection_end_id_t connectionId) const noexcept {
+		if (defaultData) return nullptr;
 		auto iter = connections.find(connectionId);
-		if (iter == connections.end()) return {};
-		return iter->second.bitAccess;
+		if (iter == connections.end()) return nullptr;
+		return &iter->second.bitConfiguration;
 	}
-	inline void setConnectionBitAccess(connection_end_id_t connectionId, std::vector<unsigned int> bitAccess) noexcept {
-		if (bitAccess.empty()) {
-			logError("Cant set the bit access of a connection to be empty", "BlockData");
+	inline void setConnectionBitConfiguration(connection_end_id_t connectionId, std::variant<unsigned int, std::vector<unsigned int>> bitConfiguration) noexcept {
+		if (std::holds_alternative<std::vector<unsigned int>>(bitConfiguration) && std::get<std::vector<unsigned int>>(bitConfiguration).empty()) {
+			logError("Cant set the bit configuration of a connection to be empty", "BlockData");
+		} else if (std::holds_alternative<unsigned int>(bitConfiguration) && std::get<unsigned int>(bitConfiguration) == 0) {
+			logError("Cant set the bit configuration of a connection to be 0", "BlockData");
 		}
 		auto iter = connections.find(connectionId);
 		if (iter == connections.end()) return;
-		iter->second.bitAccess = bitAccess;
-	}
-	inline void setConnectionBitAccess(connection_end_id_t connectionId, std::optional<std::vector<unsigned int>> bitAccess) noexcept {
-		if (bitAccess.has_value() && bitAccess->empty()) {
-			logError("Cant set the bit access of a connection to be empty", "BlockData");
-		}
-		auto iter = connections.find(connectionId);
-		if (iter == connections.end()) return;
-		iter->second.bitAccess = bitAccess;
+		iter->second.bitConfiguration = bitConfiguration;
 	}
 
 private:
