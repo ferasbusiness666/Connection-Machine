@@ -692,4 +692,11 @@ struct Orientation {
 	}
 };
 
+template <>
+struct fmt::formatter<Orientation> : fmt::formatter<std::string> {
+	auto format(Orientation o, format_context& ctx) const {
+		return formatter<std::string>::format(o.toString(), ctx);
+	}
+};
+
 #endif /* position_h */

@@ -8,13 +8,10 @@ if(CONNECTION_MACHINE_CODE_COVERAGE)
 	else()
 		message(WARNING "Code coverage not working with: \"${CMAKE_CXX_COMPILER_ID}\"")
 	endif()
-else()
-	message(WARNING "Code coverage cant not be used without also enabling tests.")
 endif()
 
 
 # Google Testing
-
 CPMAddPackage(
 	NAME gtest
 	GITHUB_REPOSITORY google/googletest
@@ -33,6 +30,8 @@ file(GLOB_RECURSE TEST_FILES
 	"${TEST_DIR}/*.cpp"
 )
 
+add_main_dependencies()
+
 set(EXTERNAL_LINKS ${EXTERNAL_LINKS} gtest gtest_main)
 
 message("EXTERNAL_LINKS: ${EXTERNAL_LINKS}")
@@ -44,10 +43,7 @@ endif()
 
 add_executable(${PROJECT_NAME}_tests ${TEST_FILES})
 
-add_main_dependencies()
-
 target_include_directories(${PROJECT_NAME}_tests PRIVATE ${SOURCE_DIR} ${TEST_DIR} "${EXTERNAL_DIR}/wasmtime")
 target_link_libraries(${PROJECT_NAME}_tests PRIVATE ${EXTERNAL_LINKS})
 
 target_precompile_headers(${PROJECT_NAME}_tests PRIVATE "${SOURCE_DIR}/precompiled.h")
-

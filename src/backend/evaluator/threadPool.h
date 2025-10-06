@@ -45,12 +45,12 @@ public:
 		cv.notify_all();
 	}
 
-	void waitForCompletion() {
+	void waitForCompletion(bool helpCompute = false) {
 		bool sprintingNow = sprinting.load(std::memory_order_acquire);
 #ifdef TRACY_PROFILER
 		ZoneScoped;
 #endif
-		if (jobsRef != nullptr && (*jobsRef).size() != 0)
+		if (helpCompute && jobsRef != nullptr && (*jobsRef).size() != 0)
 			runTillDone((*jobsRef).size()-1); // if your waiting might as well help do the compute
 		uint32_t w = threadsWaiting.fetch_add(1, std::memory_order_acq_rel);
 		while (true) {

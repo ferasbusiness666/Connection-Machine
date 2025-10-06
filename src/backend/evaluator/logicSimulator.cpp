@@ -38,7 +38,7 @@ void LogicSimulator::clearState() { }
 
 double LogicSimulator::getAverageTickrate() const {
 	if (!evalConfig.isRunning()) {
-		return false;
+		return 0.0;
 	}
 	double tickspeed = averageTickrate.load(std::memory_order_acquire);
 	// if tickspeed close enough to target tickspeed, return target tickspeed
@@ -58,7 +58,6 @@ void LogicSimulator::simulationLoop() {
 
 	while (running) {
 		if (pauseRequest.load(std::memory_order_acquire)) {
-			averageTickrate.store(0.0, std::memory_order_release);
 			std::unique_lock<std::mutex> lk(cvMutex);
 			isPaused.store(true, std::memory_order_release);
 			cv.notify_all();
@@ -73,10 +72,11 @@ void LogicSimulator::simulationLoop() {
 		processPendingStateChanges();
 
 		bool didSprint = false;
-		while (running && !pauseRequest.load(std::memory_order_acquire) && evalConfig.consumeSprintTick()) {
+		while (running && !pauseRequest.load(std::memory_order_acquire) && evalConfig.canConsumeSprintTick()) {
 			didSprint = true;
 			auto currentTime = clock::now();
 			tickOnce();
+			evalConfig.consumeSprintTick();
 			updateEmaTickrate(currentTime, lastTickTime, isFirstTick);
 			if (pauseRequest.load(std::memory_order_acquire)) break;
 		}
@@ -125,8 +125,13 @@ inline void LogicSimulator::updateEmaTickrate(
 			double alpha = 1.0 - std::exp(-dtSeconds * std::log(2.0) / tickrateHalflife);
 
 			double currentEMA = averageTickrate.load(std::memory_order_acquire);
+
+			// if (currentTickrate/currentEMA > 3 || 0.33 > currentTickrate/currentEMA) {
+			// 	averageTickrate.store(currentTickrate, std::memory_order_release);
+			// } else {
 			double newEMA = alpha * currentTickrate + (1.0 - alpha) * currentEMA;
 			averageTickrate.store(newEMA, std::memory_order_release);
+			// }
 		}
 	} else {
 		isFirstTick = false;
@@ -138,7 +143,7 @@ inline void LogicSimulator::tickOnce() {
 	std::unique_lock lkNext(statesBMutex);
 
 	threadPool.resetAndLoad(jobs);
-	threadPool.waitForCompletion();
+	threadPool.waitForCompletion(true);
 
 	for (auto& gate : junctions) gate.tick(statesB);
 	std::unique_lock lkCurEx(statesAMutex);
@@ -324,6 +329,9 @@ simulator_id_t LogicSimulator::addGate(const GateType gateType) {
 		break;
 	case GateType::NONE:
 		logError("Cannot add gate of type NONE", "LogicSimulator::addGate");
+		return 0;
+	default:
+		logError("Cannot add gate of type {}", "LogicSimulator::addGate", (unsigned int)gateType);
 		return 0;
 	}
 	return simulatorId;
