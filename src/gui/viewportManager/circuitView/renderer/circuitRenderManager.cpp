@@ -122,7 +122,6 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 		case Difference::ModificationType::MOVE_BLOCK:
 		{
 			const auto& [curPosition, curOrientation, newPosition, newOrientation, moveType] = std::get<Difference::move_modification_t>(modificationData);
-			logInfo("moving {} {} {} {} {}", "CircuitRenderManager", curPosition, curOrientation, newPosition, newOrientation, (unsigned int)moveType);
 			if (curPosition == newPosition && curOrientation == newOrientation) continue;
 
 			auto iter = renderedBlocks.find(curPosition);
