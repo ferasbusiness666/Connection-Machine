@@ -6,6 +6,7 @@
 #include "backend/settings/settings.h"
 #include "backend/settings/settingsMap.h"
 #include "computerAPI/directoryManager.h"
+#include "computerAPI/saveSettings.h"
 
 int main(int argc, char* argv[]) {
 	// try {
@@ -43,7 +44,8 @@ int main(int argc, char* argv[]) {
 		Settings::registerSetting<SettingType::BOOL>("Keybinds/Camera/Scroll Panning", true);
 		Settings::registerSetting<SettingType::DECIMAL>("Appearance/UI Scale", 1.0);
 		Settings::registerSetting<SettingType::UINT>("Simulation/Max Thread Count", std::thread::hardware_concurrency() / 2);
-
+		SaveSettings save;
+		save.load();
 		App::get().runLoop();
 		App::kill();
 	// } catch (const std::exception& e) {
