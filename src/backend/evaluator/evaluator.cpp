@@ -166,6 +166,7 @@ void Evaluator::edit_deleteICContents(SimPauseGuard& pauseGuard, eval_circuit_id
 
 void Evaluator::edit_placeBlock(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, DiffCache& diffCache, Position position, Orientation orientation, BlockType type) {
 	GateType gateType = GateType::NONE;
+	
 	switch (type) {
 	case BlockType::AND: gateType = GateType::AND; break;
 	case BlockType::OR: gateType = GateType::OR; break;
@@ -180,17 +181,20 @@ void Evaluator::edit_placeBlock(SimPauseGuard& pauseGuard, eval_circuit_id_t eva
 	case BlockType::TICK_BUTTON: gateType = GateType::TICK_INPUT; break;
 	case BlockType::CONSTANT: gateType = GateType::CONSTANT_ON; break;
 	case BlockType::LIGHT: gateType = GateType::JUNCTION; break;
-	case BlockType::BUS_INTERFACE: gateType = GateType::BUS_INTERFACE; break;
 	default: break; // it was giving a warning
 	}
+
 	if (gateType == GateType::NONE) {
 		const circuit_id_t ICId = circuitBlockDataManager.getCircuitId(type);
 		if (ICId != 0) {
 			edit_placeIC(pauseGuard, evalCircuitId, diffCache, position, orientation, ICId);
 			return;
+		} else if (isBlockTypeABus(type)) {
+			gateType = GateType::BUS_INTERFACE;
+		} else {
+			logError("Unsupported BlockType {}", "Evaluator::edit_placeBlock", type);
+			return;
 		}
-		logError("Unsupported BlockType {}", "Evaluator::edit_placeBlock", type);
-		return;
 	}
 	middle_id_t gateId = middleIdProvider.getNewId();
 	evalSimulator.addGate(pauseGuard, gateType, gateId);

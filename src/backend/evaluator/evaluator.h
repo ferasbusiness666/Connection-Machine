@@ -217,11 +217,29 @@ private:
 		}
 	}
 
-private:
 	void processDirtyNodes();
 	void dirtyBlockAt(Position position, eval_circuit_id_t evalCircuitId);
 
 	mutable std::shared_mutex simMutex;
+
+	std::unordered_map<BlockType, bool> isBlockABus;
+
+	bool isBlockTypeABus(BlockType type) {
+		auto it = isBlockABus.find(type);
+		if (it != isBlockABus.end()) {
+			return it->second;
+		}
+		const BlockData* result = blockDataManager.getBlockData(type);
+		const std::unordered_map<connection_end_id_t, BlockData::ConnectionData>& connections = result->getConnections();
+		for (const auto& [id, connection] : connections) {
+			if (connection.bitAccess.has_value() && connection.bitAccess->size() > 1) {
+				isBlockABus[type] = true;
+				return true;
+			}
+		}
+		isBlockABus[type] = false;
+		return false;
+	}
 };
 
 typedef std::shared_ptr<Evaluator> SharedEvaluator;
