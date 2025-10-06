@@ -232,7 +232,7 @@ private:
 		const BlockData* result = blockDataManager.getBlockData(type);
 		const std::unordered_map<connection_end_id_t, BlockData::ConnectionData>& connections = result->getConnections();
 		for (const auto& [id, connection] : connections) {
-			if (connection.bitAccess.has_value() && connection.bitAccess->size() > 1) {
+			if (result->getConnectionBitWidth(id) > 1) {
 				isBlockABus[type] = true;
 				return true;
 			}
