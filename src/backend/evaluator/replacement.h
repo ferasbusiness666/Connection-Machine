@@ -10,7 +10,7 @@
 class Replacer;
 
 struct ReplacementGate {
-    middle_id_t id;
+	middle_id_t id;
 	GateType type;
 };
 
