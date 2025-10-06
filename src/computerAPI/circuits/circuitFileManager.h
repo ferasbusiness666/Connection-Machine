@@ -35,6 +35,7 @@ public:
 	const FileData* getFileDataFromPath(std::string path) const;
 	const FileData* getFileDataFromUUID(std::string UUID) const;
 private:
+	FileData* setSaveFilePathAndGetFileData(const std::string& UUID, const std::string& fileLocation);
 	circuit_id_t loadParsedCircuit(ParsedCircuit& parsedCircuit);
 
 	CircuitManager* circuitManager;
