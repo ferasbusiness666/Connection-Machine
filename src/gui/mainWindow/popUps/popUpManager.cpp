@@ -7,9 +7,9 @@
 #include <SDL3/SDL.h>
 
 static const char* popUpWindowRml = R"RML(
-	<div id="pop-up-overlay">\
-		<div id="pop-up-overlay-internal">\
-			<div id="pop-up-window" class="bordered bg-3">\
+	<div class="pop-up-overlay">\
+		<div class="pop-up-overlay-internal">\
+			<div class="pop-up-window bordered bg-3">\
 			</div>
 		</div>
 	</div>
@@ -25,12 +25,14 @@ static const char* popUpWindowRml = R"RML(
 
 void PopUpManager::addOptionsPopUp(const std::string& message, const std::vector<std::pair<std::string, std::function<void()>>>& options, bool blocking) {
 	Rml::Element* popUpRoot = createPopUp(message, blocking);
-	Rml::Element* window = popUpRoot->GetElementById("pop-up-window");
+	Rml::ElementList windowList;
+	popUpRoot->GetElementsByClassName(windowList, "pop-up-window");
+	Rml::Element* window = windowList.front();
 	Rml::Element* text = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("span"));
-	text->SetId("pop-up-text");
 	text->SetInnerRML(message);
+	text->SetClass("pop-up-text", true);
 	Rml::Element* actionsElement = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("span"));
-	actionsElement->SetId("pop-up-actions");
+	actionsElement->SetClass("pop-up-actions", true);
 	for (const auto& option : options) {
 		Rml::ElementPtr setPositionButton = mainWindow->getRmlDocument()->CreateElement("button");
 		setPositionButton->AppendChild(std::move(mainWindow->getRmlDocument()->CreateTextNode(option.first)));
