@@ -8,7 +8,7 @@
 #include <SDL3/SDL.h>
 
 void PopUpManager::addOptionsPopUp(const std::string& message, const std::vector<std::pair<std::string, std::function<void()>>>& options, bool blocking) {
-	Rml::Element* popUpRoot = createPopUp(message, blocking);
+	Rml::Element* popUpRoot = createPopUp(blocking);
 	Rml::ElementList windowList;
 	popUpRoot->GetElementsByClassName(windowList, "pop-up-window");
 	Rml::Element* window = windowList.front();
@@ -34,7 +34,7 @@ void PopUpManager::addOptionsPopUp(const std::string& message, const std::vector
 	}
 }
 
-Rml::Element* PopUpManager::createPopUp(const std::string& message, bool blocking) {
+Rml::Element* PopUpManager::createPopUp(bool blocking) {
 	Rml::Element* allPopUps = mainWindow->getRmlDocument()->GetElementById("all-pop-ups");
 	allPopUps->SetClass("invisible", false);
 	assert(allPopUps);
