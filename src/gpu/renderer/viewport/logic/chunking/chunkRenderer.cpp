@@ -111,8 +111,7 @@ void ChunkRenderer::render(Frame& frame, const glm::mat4& viewMatrix, Evaluator*
 		blockPipeline.cmdPushConstants(frame.mainCommandBuffer, &pushConstants);
 
 		// bind texture descriptor
-		// TODO: get the texture from the array
-		std::shared_ptr<BlockTexture> blockTexture = device->getBlockTextureManager().getTexture();
+		std::shared_ptr<BlockTexture> blockTexture = device->getBlockTextureManager().getTexture(0);
 		frame.lifetime.push(blockTexture);
 		vkCmdBindDescriptorSets(frame.mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, blockPipeline.getLayout(), 1, 1, &blockTexture->descriptor, 0, nullptr);
 

@@ -7,6 +7,15 @@
 
 class VulkanDevice;
 
+struct BlockTexture {
+	~BlockTexture();
+	VkDescriptorSet descriptor;
+	VkSampler sampler;
+	AllocatedImage image;
+	uint32_t layer;
+	VulkanDevice* device;
+};
+
 struct BlockTextureArray {
     VulkanDevice* device;
     AllocatedImage image;
@@ -29,6 +38,19 @@ public:
 
 	inline VkDescriptorSetLayout getDescriptorLayout() { return descriptorLayout; }
 	inline TileSetInfo& getTileset() { return mainTileSet; }
+    inline std::shared_ptr<BlockTextureArray> getTextureArray() { return textureArray; }
+	inline std::shared_ptr<BlockTexture> getTexture(uint32_t index) {
+		if (index >= textureArray->nextFreeLayer) {
+			throw std::out_of_range("Texture index out of range!");
+		}
+
+		BlockTexture tex{};
+		tex.device = textureArray->device;
+		tex.sampler = textureArray->sampler;
+		tex.descriptor = textureArray->descriptor;
+		tex.layer = index;
+		return tex;
+	}
 
 private:
 	VulkanDevice* device;

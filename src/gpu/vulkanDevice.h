@@ -25,6 +25,8 @@ public:
 	VkResult submitGraphicsQueue(VkSubmitInfo* submitInfo, VkFence fence);
 	VkResult submitPresent(VkPresentInfoKHR* presentInfo);
 	void immediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function);
+	void createBuffer();
+	uint32_t findMemoryType();
 
 	inline uint32_t getGraphicsQueueIndex() { return graphicsQueue.index; }
 	inline uint32_t getPresentQueueIndex() { return presentQueue.index; }

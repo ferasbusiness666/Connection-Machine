@@ -99,7 +99,7 @@ void ElementRenderer::cleanup() {
 void ElementRenderer::renderBlockPreviews(Frame& frame, const glm::mat4& viewMatrix, const std::vector<BlockPreviewRenderData>& blockPreviews) {
 	if (!blockPreviews.empty()) {
 		vkCmdBindPipeline(frame.mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, blockPreviewPipeline.getHandle());
-		std::shared_ptr<BlockTexture> blockTexture = device->getBlockTextureManager().getTexture();
+		std::shared_ptr<BlockTexture> blockTexture = device->getBlockTextureManager().getTexture(0);
 		frame.lifetime.push(blockTexture);
 		vkCmdBindDescriptorSets(frame.mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, blockPreviewPipeline.getLayout(), 0, 1, &blockTexture->descriptor, 0, nullptr);
 
