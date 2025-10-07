@@ -133,7 +133,7 @@ MainWindow::MainWindow(Environment* environment) :
 		logInfo("loaded, {}", "", fontFilePath);
 	});
 
-	// popUpManager.addFeedbackPopup();
+	popUpManager.addFeedbackPopup();
 }
 
 MainWindow::~MainWindow() {

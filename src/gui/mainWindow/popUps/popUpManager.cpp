@@ -79,4 +79,6 @@ void PopUpManager::addFeedbackPopup() {
 	Rml::Element* text = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("span"));
 	text->SetInnerRML("Testing");
 	text->SetClass("pop-up-text", true);
+
+	Rml::Element* text2 = window->AppendChild(mainWindow->getRmlDocument()->CreateTextNode("span"));
 }
