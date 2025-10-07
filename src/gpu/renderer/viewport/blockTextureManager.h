@@ -27,6 +27,7 @@ struct BlockTextureArray {
 
     BlockTextureArray() : device(nullptr), sampler(VK_NULL_HANDLE), descriptor(VK_NULL_HANDLE),
                           maxLayers(0), nextFreeLayer(0) {}
+	~BlockTextureArray();
 };
 
 class BlockTextureManager {
@@ -39,18 +40,18 @@ public:
 	inline VkDescriptorSetLayout getDescriptorLayout() { return descriptorLayout; }
 	inline TileSetInfo& getTileset() { return mainTileSet; }
     inline std::shared_ptr<BlockTextureArray> getTextureArray() { return textureArray; }
-	inline std::shared_ptr<BlockTexture> getTexture(uint32_t index) {
-		if (index >= textureArray->nextFreeLayer) {
-			throw std::out_of_range("Texture index out of range!");
-		}
+	// inline std::shared_ptr<BlockTexture> getTexture(uint32_t index) { // should be only using the whole textureArray
+	// 	if (index >= textureArray->nextFreeLayer) {
+	// 		throw std::out_of_range("Texture index out of range!");
+	// 	}
 
-		std::shared_ptr<BlockTexture> tex = std::make_shared<BlockTexture>();
-		tex->device = textureArray->device;
-		tex->sampler = textureArray->sampler;
-		tex->descriptor = textureArray->descriptor;
-		tex->layer = index;
-		return tex;
-	}
+	// 	std::shared_ptr<BlockTexture> tex = std::make_shared<BlockTexture>();
+	// 	tex->device = textureArray->device;
+	// 	tex->sampler = textureArray->sampler;
+	// 	tex->descriptor = textureArray->descriptor;
+	// 	tex->layer = index;
+	// 	return tex;
+	// }
 
 private:
 	VulkanDevice* device;

@@ -10,8 +10,15 @@ BlockTexture::~BlockTexture() {
 	vkDestroySampler(device->getDevice(), sampler, nullptr);
 }
 
+BlockTextureArray::~BlockTextureArray() {
+	destroyImage(image);
+	vkDestroySampler(device->getDevice(), sampler, nullptr);
+}
+
 void BlockTextureManager::init(VulkanDevice* device) {
 	this->device = device;
+
+	descriptorAllocator.init(device, 100, { { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1.0f } });
 
 	VkExtent3D texSize = { 512, 512, 1 };
 	textureArray = std::make_shared<BlockTextureArray>();
@@ -22,8 +29,6 @@ void BlockTextureManager::init(VulkanDevice* device) {
 		device, texSize, VK_FORMAT_R8G8B8A8_UNORM,
 		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, false, textureArray->maxLayers
 	);
-
-	addTexture("logicTiles.png");
 
 	// create layout and descriptor set
 	DescriptorLayoutBuilder textureLayoutBuilder;
@@ -42,6 +47,8 @@ void BlockTextureManager::init(VulkanDevice* device) {
 	DescriptorWriter textureWriter;
 	textureWriter.writeImage(0, textureArray->image.imageView, textureArray->sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 	textureWriter.updateSet(device->getDevice(), textureArray->descriptor);
+
+	addTexture(DirectoryManager::getResourceDirectory() / "logicTiles.png");
 }
 
 void BlockTextureManager::addTexture(const std::string& path) {
