@@ -5,7 +5,8 @@
 #include "gui/helper/eventPasser.h"
 #include "gui/mainWindow/circuitView/circuitViewWidget.h"
 
-SimControlsManager::SimControlsManager(Rml::ElementDocument* document, std::shared_ptr<CircuitViewWidget> circuitViewWidget, DataUpdateEventManager* dataUpdateEventManager) : circuitViewWidget(circuitViewWidget), dataUpdateEventReceiver(dataUpdateEventManager) {
+SimControlsManager::SimControlsManager(Rml::ElementDocument* document, std::shared_ptr<CircuitViewWidget> circuitViewWidget, DataUpdateEventManager* dataUpdateEventManager) :
+	circuitViewWidget(circuitViewWidget), dataUpdateEventReceiver(dataUpdateEventManager) {
 	toggleSimElement = document->GetElementById("toggle-simulation");
 	realisticElement = document->GetElementById("realistic-button");
 	limitSpeedElement = document->GetElementById("limit-speed-checkbox");
@@ -14,9 +15,9 @@ SimControlsManager::SimControlsManager(Rml::ElementDocument* document, std::shar
 	toggleSimElement->AddEventListener("click", new EventPasser(std::bind(&SimControlsManager::toggleSimulation, this)));
 	realisticElement->AddEventListener("click", new EventPasser(std::bind(&SimControlsManager::setRealistic, this)));
 	limitSpeedElement->AddEventListener("click", new EventPasser([this](Rml::Event& event) {
-		limitSpeed();
-		event.StopPropagation();
-	}));
+											limitSpeed();
+											event.StopPropagation();
+										}));
 	tpsInputElement->AddEventListener("change", new EventPasser(std::bind(&SimControlsManager::setTPS, this)));
 
 	dataUpdateEventReceiver.linkFunction("circuitViewChangeEvaluator", std::bind(&SimControlsManager::update, this));
