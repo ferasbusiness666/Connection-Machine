@@ -8,12 +8,8 @@ class ToolManagerManager {
 public:
 	ToolManagerManager(DataUpdateEventManager* dataUpdateEventManager);
 
-	void addCircuitView(CircuitView* circuitView) {
-		circuitViews.insert(circuitView);
-	}
-	void removeCircuitView(CircuitView* circuitView) {
-		circuitViews.erase(circuitView);
-	}
+	void addCircuitView(CircuitView* circuitView) { circuitViews.insert(circuitView); }
+	void removeCircuitView(CircuitView* circuitView) { circuitViews.erase(circuitView); }
 
 	inline void setBlock(BlockType blockType) {
 		setTool("placement");
@@ -39,13 +35,9 @@ public:
 		sendChangedSignal();
 	}
 
-	inline const std::string& getActiveTool() const {
-		return activeTool;
-	}
+	inline const std::string& getActiveTool() const { return activeTool; }
 
-	inline BlockType getSelectedBlock() const {
-		return selectedBlock;
-	}
+	inline BlockType getSelectedBlock() const { return selectedBlock; }
 
 	inline void setMode(const std::string& mode) {
 		if (activeTool.empty()) return; // this should never happen
@@ -77,14 +69,15 @@ public:
 
 	const std::optional<std::vector<std::string>> getActiveToolModes() const {
 		auto iter = tools.find(activeTool);
-		if (iter == tools.end()) { return std::nullopt; }
+		if (iter == tools.end()) {
+			return std::nullopt;
+		}
 		return iter->second->getModes();
 	}
 
 	const std::map<std::string, std::unique_ptr<void>>& getAllTools() const { return *reinterpret_cast<const std::map<std::string, std::unique_ptr<void>>*>(&tools); }
 
-	template<class T>
-	static void registerTool() { tools[T::getPath_()] = std::make_unique<ToolTypeMaker<T>>(); }
+	template <class T> static void registerTool() { tools[T::getPath_()] = std::make_unique<ToolTypeMaker<T>>(); }
 
 	/* ----------- listener ----------- */
 
@@ -93,11 +86,14 @@ public:
 	// subject to change
 	void connectListener(void* object, ListenerFunction func) { listenerFunctions[object] = func; }
 	// subject to change
-	void disconnectListener(void* object) { auto iter = listenerFunctions.find(object); if (iter != listenerFunctions.end()) listenerFunctions.erase(iter); }
+	void disconnectListener(void* object) {
+		auto iter = listenerFunctions.find(object);
+		if (iter != listenerFunctions.end()) listenerFunctions.erase(iter);
+	}
 
 private:
 	struct BaseToolTypeMaker {
-		virtual ~BaseToolTypeMaker() {}
+		virtual ~BaseToolTypeMaker() { }
 		virtual SharedCircuitTool getInstance() const = 0;
 		virtual std::vector<std::string> getModes() const = 0;
 	};

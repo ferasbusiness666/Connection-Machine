@@ -51,9 +51,9 @@ public:
 		getBlockData(BlockType::BUS_INTERFACE)->setName("Bus Interface");
 		getBlockData(BlockType::BUS_INTERFACE)->setDefaultData(false);
 		getBlockData(BlockType::BUS_INTERFACE)->setConnectionOutput(Vector(1, 0), 0);
-		getBlockData(BlockType::BUS_INTERFACE)->setConnectionBitAccess(0, {0,1,2,3,4,5,6,7});
+		getBlockData(BlockType::BUS_INTERFACE)->setConnectionBitConfiguration(0, std::vector<unsigned int>{0,1,2,3,4,5,6,7});
 		getBlockData(BlockType::BUS_INTERFACE)->setConnectionInput(Vector(1, 0), 1);
-		getBlockData(BlockType::BUS_INTERFACE)->setConnectionBitAccess(1, {0,1,2,3,4,5,6,7});
+		getBlockData(BlockType::BUS_INTERFACE)->setConnectionBitConfiguration(1, std::vector<unsigned int>{0,1,2,3,4,5,6,7});
 		for (int i = 0; i < 8; ++i) {
 			getBlockData(BlockType::BUS_INTERFACE)->setConnectionOutput(Vector(0, i), i*2 + 2);
 			getBlockData(BlockType::BUS_INTERFACE)->setConnectionInput(Vector(0, i), i*2 + 3);
@@ -166,3 +166,4 @@ private:
 };
 
 #endif /* blockDataManager_h */
+

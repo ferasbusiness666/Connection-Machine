@@ -32,8 +32,7 @@ if(APPLE) # MacOS
 
 elseif (WIN32) # Windows
 	if (CMAKE_BUILD_TYPE MATCHES Release) # If release build
-		# Set WIN32_EXECUTABLE (Disables Console)
-		set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
+		set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE FALSE)
 	endif ()
 endif()
 
