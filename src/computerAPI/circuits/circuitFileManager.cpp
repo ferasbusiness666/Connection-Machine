@@ -193,7 +193,14 @@ bool CircuitFileManager::saveFile(const std::string& path) {
 // 	return true;
 // }
 
-void CircuitFileManager::setSaveFilePath(const std::string& UUID, const std::string& fileLocation) {
+void CircuitFileManager::setSaveFilePath(const std::string& UUID, std::string fileLocation, bool addDotCir) {
+	SharedCircuit circuit = circuitManager->getCircuit(UUID);
+	if (circuit && addDotCir) {
+		if (fileLocation.back() != 'r') {
+			if (fileLocation.back() == '.') fileLocation += "cir";
+			else fileLocation += ".cir";
+		}
+	}
 	std::map<std::string, FileData>::iterator iter = filePathToFile.find(fileLocation);
 	if (iter == filePathToFile.end()) {
 		iter = filePathToFile.emplace(fileLocation, fileLocation).first;
@@ -201,7 +208,6 @@ void CircuitFileManager::setSaveFilePath(const std::string& UUID, const std::str
 		if (iter->second.UUIDs.contains(UUID)) return;
 	}
 	iter->second.UUIDs.emplace(UUID);
-	SharedCircuit circuit = circuitManager->getCircuit(UUID);
 	if (circuit) {
 		iter->second.lastSavedEdit[UUID] = 0;
 	}
@@ -230,7 +236,7 @@ circuit_id_t CircuitFileManager::loadParsedCircuit(ParsedCircuit& parsedCircuit)
 	circuit_id_t id = circuitManager->createNewCircuit(parsedCircuit);
 	if (parsedCircuit.getAbsoluteFilePath() != "") {
 		SharedCircuit circuit = circuitManager->getCircuit(id);
-		FileData* fileData = setSaveFilePathAndGetFileData(circuit->getUUID(), parsedCircuit.getAbsoluteFilePath());
+		FileData* fileData = setSaveFilePathAndGetFileData(circuit->getUUID(), parsedCircuit.getAbsoluteFilePath(), false); // we do not want ot add .cir because this file already exists
 		fileData->lastSavedEdit[circuit->getUUID()] = circuit->getEditCount();
 	}
 
@@ -251,7 +257,14 @@ const CircuitFileManager::FileData* CircuitFileManager::getFileDataFromUUID(std:
 	return &(iter2->second);
 }
 
-CircuitFileManager::FileData* CircuitFileManager::setSaveFilePathAndGetFileData(const std::string& UUID, const std::string& fileLocation) {
+CircuitFileManager::FileData* CircuitFileManager::setSaveFilePathAndGetFileData(const std::string& UUID, std::string fileLocation, bool addDotCir) {
+	SharedCircuit circuit = circuitManager->getCircuit(UUID);
+	if (circuit && addDotCir) {
+		if (fileLocation.back() != 'r') {
+			if (fileLocation.back() == '.') fileLocation += "cir";
+			else fileLocation += ".cir";
+		}
+	}
 	std::map<std::string, FileData>::iterator iter = filePathToFile.find(fileLocation);
 	if (iter == filePathToFile.end()) {
 		iter = filePathToFile.emplace(fileLocation, fileLocation).first;
@@ -259,7 +272,6 @@ CircuitFileManager::FileData* CircuitFileManager::setSaveFilePathAndGetFileData(
 		if (iter->second.UUIDs.contains(UUID)) return &(iter->second);
 	}
 	iter->second.UUIDs.emplace(UUID);
-	SharedCircuit circuit = circuitManager->getCircuit(UUID);
 	if (circuit) iter->second.lastSavedEdit[UUID] = 0;
 
 	std::map<std::string, std::string>::iterator iter2 = UUIDToFilePath.find(UUID);

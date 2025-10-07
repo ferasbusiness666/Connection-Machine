@@ -27,7 +27,7 @@ public:
     // bool saveAsMultiFile(const std::unordered_set<std::string>& UUIDs, const std::string& fileLocation);
     // bool saveAsNewProject(const std::unordered_set<std::string>& UUIDs, const std::string& fileLocationPrefix);
 
-	void setSaveFilePath(const std::string& UUID, const std::string& fileLocation);
+	void setSaveFilePath(const std::string& UUID, std::string fileLocation, bool addDotCir = true);
 
 	const std::string* getSavePath(const std::string& UUID) const;
 
@@ -35,7 +35,7 @@ public:
 	const FileData* getFileDataFromPath(std::string path) const;
 	const FileData* getFileDataFromUUID(std::string UUID) const;
 private:
-	FileData* setSaveFilePathAndGetFileData(const std::string& UUID, const std::string& fileLocation);
+	FileData* setSaveFilePathAndGetFileData(const std::string& UUID, std::string fileLocation, bool addDotCir = true);
 	circuit_id_t loadParsedCircuit(ParsedCircuit& parsedCircuit);
 
 	CircuitManager* circuitManager;
