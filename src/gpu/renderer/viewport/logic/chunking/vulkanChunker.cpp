@@ -59,9 +59,17 @@ VulkanChunkAllocation::VulkanChunkAllocation(VulkanDevice* device,const Rendered
 		}
 
 		if (evaluator) {
-			std::vector<simulator_id_t> simIds = evaluator->getBlockSimulatorIds(address, positions);
+			std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> simIds = evaluator->getBlockSimulatorIds(address, positions);
 			for (size_t i = 0; i < simIds.size(); i++) {
-				simulatorIds[indexes[i]] = simIds[i];
+				// for now, if we get multiple sim ids, just use the first one
+				if (std::holds_alternative<std::vector<simulator_id_t>>(simIds[i])) {
+					auto vec = std::get<std::vector<simulator_id_t>>(simIds[i]);
+					if (!vec.empty()) {
+						simulatorIds[indexes[i]] = vec[0];
+					}
+				} else {
+					simulatorIds[indexes[i]] = std::get<simulator_id_t>(simIds[i]);
+				}
 			}
 		}
 
@@ -105,9 +113,17 @@ VulkanChunkAllocation::VulkanChunkAllocation(VulkanDevice* device,const Rendered
 		}
 
 		if (evaluator) {
-			std::vector<simulator_id_t> simIds = evaluator->getPinSimulatorIds(address, positions);
+			std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> simIds = evaluator->getPinSimulatorIds(address, positions);
 			for (size_t i = 0; i < simIds.size(); i++) {
-				simulatorIds[indexes[i]] = simIds[i];
+				// for now, if we get multiple sim ids, just use the first one
+				if (std::holds_alternative<std::vector<simulator_id_t>>(simIds[i])) {
+					auto vec = std::get<std::vector<simulator_id_t>>(simIds[i]);
+					if (!vec.empty()) {
+						simulatorIds[indexes[i]] = vec[0];
+					}
+				} else {
+					simulatorIds[indexes[i]] = std::get<simulator_id_t>(simIds[i]);
+				}
 			}
 		}
 
@@ -299,15 +315,26 @@ void VulkanChunker::updateSimulatorIds(const std::vector<SimulatorMappingUpdate>
 		std::shared_ptr<VulkanChunkAllocation> vulkanChunkAllocation = allocation.value_or(nullptr);
 		if (vulkanChunkAllocation) {
 			for (const SimulatorMappingUpdate& simulatorMappingUpdate : simulatorMappingUpdates) {
+				const std::variant<simulator_id_t, std::vector<simulator_id_t>> simIds = simulatorMappingUpdate.simulatorIds;
+				// for now, if we get multiple sim ids, just use the first one
+				simulator_id_t simulatorId = 0;
+				if (std::holds_alternative<std::vector<simulator_id_t>>(simulatorMappingUpdate.simulatorIds)) {
+					auto vec = std::get<std::vector<simulator_id_t>>(simulatorMappingUpdate.simulatorIds);
+					if (!vec.empty()) {
+						simulatorId = vec[0];
+					}
+				} else {
+					simulatorId = std::get<simulator_id_t>(simulatorMappingUpdate.simulatorIds);
+				}
 				if (simulatorMappingUpdate.type == SimulatorMappingUpdateType::BLOCK) {
 					auto iter = vulkanChunkAllocation->getBlockStateIndex().find(simulatorMappingUpdate.portPosition);
 					if (iter != vulkanChunkAllocation->getBlockStateIndex().end()) {
-						vulkanChunkAllocation->getStateSimulatorIds()[iter->second] = simulatorMappingUpdate.simulatorId;
+						vulkanChunkAllocation->getStateSimulatorIds()[iter->second] = simulatorId;
 					}
 				} else {
 					auto iter = vulkanChunkAllocation->getPortStateIndex().find(simulatorMappingUpdate.portPosition);
 					if (iter != vulkanChunkAllocation->getPortStateIndex().end()) {
-						vulkanChunkAllocation->getStateSimulatorIds()[iter->second] = simulatorMappingUpdate.simulatorId;
+						vulkanChunkAllocation->getStateSimulatorIds()[iter->second] = simulatorId;
 					}
 				}
 

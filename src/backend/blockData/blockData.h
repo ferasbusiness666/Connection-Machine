@@ -9,6 +9,20 @@
 class BlockData {
 	friend class BlockDataManager;
 public:
+	struct ConnectionData {
+		ConnectionData(
+			Vector positionOnBlock,
+			bool isInput,
+			unsigned int bitWidth = 1
+		) :
+			positionOnBlock(positionOnBlock),
+			isInput(isInput),
+			bitAccess(bitAccess) {}
+		Vector positionOnBlock = Vector(0, 0);
+		bool isInput = true;
+		std::optional<std::vector<unsigned int>> bitAccess;
+	};
+
 	BlockData(BlockType blockType, DataUpdateEventManager* dataUpdateEventManager);
 
 	inline void sendBlockDataUpdate() { dataUpdateEventManager->sendEvent("blockDataUpdate"); }
@@ -44,27 +58,27 @@ public:
 
 	// trys to set a connection input in the block. Returns success.
 	void removeConnection(connection_end_id_t connectionId) noexcept;
-	void setConnectionInput(Vector vector, connection_end_id_t connectionId) noexcept;
+	void setConnectionInput(Vector positionOnBlock, connection_end_id_t connectionId) noexcept;
 	// trys to set a connection output in the block. Returns success.
-	void setConnectionOutput(Vector vector, connection_end_id_t connectionId) noexcept;
+	void setConnectionOutput(Vector positionOnBlock, connection_end_id_t connectionId) noexcept;
 
-	inline std::optional<connection_end_id_t> getInputConnectionId(Vector vector) const noexcept {
+	inline std::optional<connection_end_id_t> getInputConnectionId(Vector positionOnBlock) const noexcept {
 		if (defaultData) {
-			if (vector.dx == 0 && vector.dy == 0) return 0;
+			if (positionOnBlock.dx == 0 && positionOnBlock.dy == 0) return 0;
 			return std::nullopt;
 		}
 		for (auto& pair : connections) {
-			if (pair.second.first == vector && pair.second.second) return pair.first;
+			if (pair.second.positionOnBlock == positionOnBlock && pair.second.isInput) return pair.first;
 		}
 		return std::nullopt;
 	}
-	inline std::optional<connection_end_id_t> getOutputConnectionId(Vector vector) const noexcept {
+	inline std::optional<connection_end_id_t> getOutputConnectionId(Vector positionOnBlock) const noexcept {
 		if (defaultData) {
-			if (vector.dx == 0 && vector.dy == 0) return 1;
+			if (positionOnBlock.dx == 0 && positionOnBlock.dy == 0) return 1;
 			return std::nullopt;
 		}
 		for (auto& pair : connections) {
-			if (pair.second.first == vector && !pair.second.second) return pair.first;
+			if (pair.second.positionOnBlock == positionOnBlock && !pair.second.isInput) return pair.first;
 		}
 		return std::nullopt;
 	}
@@ -75,7 +89,7 @@ public:
 		}
 		Vector noOrientationVec = orientation.inverseTransformVectorWithArea(vector, orientation*blockSize);
 		for (auto& pair : connections) {
-			if (pair.second.first == noOrientationVec && pair.second.second) return pair.first;
+			if (pair.second.positionOnBlock == noOrientationVec && pair.second.isInput) return pair.first;
 		}
 		return std::nullopt;
 	}
@@ -86,7 +100,7 @@ public:
 		}
 		Vector noOrientationVec = orientation.inverseTransformVectorWithArea(vector, orientation*blockSize);
 		for (auto& pair : connections) {
-			if (pair.second.first == noOrientationVec && !pair.second.second) return pair.first;
+			if (pair.second.positionOnBlock == noOrientationVec && !pair.second.isInput) return pair.first;
 		}
 		return std::nullopt;
 	}
@@ -97,7 +111,7 @@ public:
 		}
 		auto iter = connections.find(connectionId);
 		if (iter == connections.end()) return std::nullopt;
-		return iter->second.first;
+		return iter->second.positionOnBlock;
 	}
 	inline std::optional<Vector> getConnectionVector(connection_end_id_t connectionId, Orientation orientation) const noexcept {
 		if (defaultData) {
@@ -106,7 +120,7 @@ public:
 		}
 		auto iter = connections.find(connectionId);
 		if (iter == connections.end()) return std::nullopt;
-		return orientation.transformVectorWithArea(iter->second.first, blockSize);
+		return orientation.transformVectorWithArea(iter->second.positionOnBlock, blockSize);
 	}
 	inline connection_end_id_t getConnectionCount() const noexcept {
 		if (defaultData) return 2;
@@ -124,14 +138,14 @@ public:
 	inline bool isConnectionInput(connection_end_id_t connectionId) const noexcept {
 		if (defaultData) return connectionId == 0;
 		auto iter = connections.find(connectionId);
-		return iter != connections.end() && iter->second.second;
+		return iter != connections.end() && iter->second.isInput;
 	}
 	inline bool isConnectionOutput(connection_end_id_t connectionId) const noexcept {
 		if (defaultData) return connectionId == 1;
 		auto iter = connections.find(connectionId);
-		return iter != connections.end() && !(iter->second.second);
+		return iter != connections.end() && !(iter->second.isInput);
 	}
-	const std::unordered_map<connection_end_id_t, std::pair<Vector, bool>>& getConnections() const noexcept {
+	const std::unordered_map<connection_end_id_t, ConnectionData>& getConnections() const noexcept {
 		assert((!defaultData) && "this will be empty if defaultData is true");
 		return connections;
 	}
@@ -141,6 +155,34 @@ public:
 		const std::string* str = connectionIdNames.get(connectionId);
 		if (str) return *str;
 		return std::nullopt;
+	}
+	inline unsigned int getConnectionBitWidth(connection_end_id_t connectionId) const noexcept {
+		if (defaultData) return 1;
+		auto iter = connections.find(connectionId);
+		if (iter == connections.end()) return 0;
+		return iter->second.bitAccess ? iter->second.bitAccess->size() : 1;
+	}
+	inline const std::optional<std::vector<unsigned int>>& getConnectionBitAccess(connection_end_id_t connectionId) const noexcept {
+		if (defaultData) return std::nullopt;
+		auto iter = connections.find(connectionId);
+		if (iter == connections.end()) return {};
+		return iter->second.bitAccess;
+	}
+	inline void setConnectionBitAccess(connection_end_id_t connectionId, std::vector<unsigned int> bitAccess) noexcept {
+		if (bitAccess.empty()) {
+			logError("Cant set the bit access of a connection to be empty", "BlockData");
+		}
+		auto iter = connections.find(connectionId);
+		if (iter == connections.end()) return;
+		iter->second.bitAccess = bitAccess;
+	}
+	inline void setConnectionBitAccess(connection_end_id_t connectionId, std::optional<std::vector<unsigned int>> bitAccess) noexcept {
+		if (bitAccess.has_value() && bitAccess->empty()) {
+			logError("Cant set the bit access of a connection to be empty", "BlockData");
+		}
+		auto iter = connections.find(connectionId);
+		if (iter == connections.end()) return;
+		iter->second.bitAccess = bitAccess;
 	}
 
 private:
@@ -152,7 +194,7 @@ private:
 	std::string path = "Basic";
 	Size blockSize = Size(1);
 	connection_end_id_t inputConnectionCount = 0;
-	std::unordered_map<connection_end_id_t, std::pair<Vector, bool>> connections;
+	std::unordered_map<connection_end_id_t, ConnectionData> connections;
 	BidirectionalMultiSecondKeyMap<connection_end_id_t, std::string> connectionIdNames;
 	DataUpdateEventManager* dataUpdateEventManager;
 };

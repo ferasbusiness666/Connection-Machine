@@ -2,6 +2,7 @@
 
 #include <RmlUi/Core.h>
 #include <RmlUi/Debugger.h>
+#include <SDL3/SDL_video.h>
 
 #include "gpu/mainRenderer.h"
 
@@ -9,15 +10,16 @@
 #include "gui/mainWindow/menuBar/menuBar.h"
 #include "gui/rml/rmlSystemInterface.h"
 #include "gui/rml/rmlRenderInterface.h"
-#include "gui/helper/eventPasser.h"
-
 #include "settingsWindow/settingsWindow.h"
-#include "computerAPI/directoryManager.h"
-#include "environment/environment.h"
+
 #include "app.h"
 
+#include "environment/environment.h"
+#include "backend/settings/settings.h"
+#include "computerAPI/directoryManager.h"
+
 MainWindow::MainWindow(Environment* environment) :
-	sdlWindow(App::get().registerWindow("Connection Machine")), environment(environment), toolManagerManager(environment->getBackend().getDataUpdateEventManager()) {
+	sdlWindow(App::get().registerWindow("Connection Machine")), environment(environment), toolManagerManager(environment->getBackend().getDataUpdateEventManager()), popUpManager(this) {
 	sdlWindow->setRecieveEventFunction(std::bind(&MainWindow::recieveEvent, this, std::placeholders::_1));
 	sdlWindow->setRenderFunction(std::bind(&MainWindow::updateRml, this));
 
@@ -132,12 +134,30 @@ MainWindow::MainWindow(Environment* environment) :
 		"Keybinds/Window/Toggle Fullscreen",
 		[this]() { sdlWindow->toggleBorderlessFullscreen(); }
 	);
+	keybindHandler.addListener(
+		"Keybinds/Window/Increase UI Scale",
+		[this]() { offsetUiScale(kUiScaleStep); }
+	);
+	keybindHandler.addListener(
+		"Keybinds/Window/Decrease UI Scale",
+		[this]() { offsetUiScale(-kUiScaleStep); }
+	);
+	keybindHandler.addListener(
+		"Keybinds/Window/Reset UI Scale",
+		[this]() { applyUiScale(1.0f); }
+	);
+
+	const double* initialUiScale = Settings::get<SettingType::DECIMAL>("Appearance/UI Scale");
+	applyUiScale(initialUiScale ? static_cast<float>(*initialUiScale) : 1.0f);
+	Settings::registerListener<SettingType::DECIMAL>("Appearance/UI Scale", [this](const double& value) {
+		applyUiScale(static_cast<float>(value));
+	});
 
 	// show rmlUi document
 	rmlDocument->Show();
 
 	// example pop up
-	// addPopUp("this is a test", {
+	// popUpManager.addOptionsPopUp("this is a test", {
 	// 	std::make_pair<std::string, std::function<void()>>("A", [](){logInfo("A");}),
 	// 	std::make_pair<std::string, std::function<void()>>("B", [](){logInfo("B");}),
 	// 	std::make_pair<std::string, std::function<void()>>("C", [](){logInfo("C");})
@@ -190,6 +210,10 @@ bool MainWindow::recieveEvent(SDL_Event& event) {
 		// send event to RML
 		RmlSDL::InputEventHandler(rmlContext, sdlWindow->getHandle(), event, getSdlWindowScalingSize());
 
+		if (event.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
+			applyUiScale(uiScale);
+		}
+
 		// let renderer know we if resized the window
 		if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
 			MainRenderer::get().resizeWindow(windowId, { event.window.data1, event.window.data2 });
@@ -216,7 +240,7 @@ void MainWindow::updateRml() {
 	}
 	// update circuit view widget UI components like TPS display
 	for (auto& circuitViewWidget : circuitViewWidgets) {
-		circuitViewWidget->render();
+		circuitViewWidget->updateTps();
 	}
 }
 
@@ -227,63 +251,44 @@ void MainWindow::createCircuitViewWidget(Rml::Element* element) {
 	activeCircuitViewWidget = circuitViewWidgets.back(); // if it is created, it should be used
 }
 
-void MainWindow::addPopUp(const std::string& message, const std::vector<std::pair<std::string, std::function<void()>>>& options) {
-	if (popUpsToAdd.empty()) {
-		createPopUp(message, options);
-	} else {
-		popUpsToAdd.emplace_back(message, options);
+void MainWindow::offsetUiScale(double delta) {
+	const double* storedScale = Settings::get<SettingType::DECIMAL>("Appearance/UI Scale");
+	const double currentScale = storedScale ? *storedScale : static_cast<double>(uiScale);
+	const double targetScale = std::clamp(currentScale + delta, kUiScaleMin, kUiScaleMax);
+	if (std::abs(targetScale - currentScale) < 1e-6) {
+		applyUiScale(static_cast<float>(targetScale));
+		return;
+	}
+	if (!Settings::set<SettingType::DECIMAL>("Appearance/UI Scale", targetScale)) {
+		applyUiScale(static_cast<float>(targetScale));
 	}
 }
 
-void MainWindow::createPopUp(const std::string& message, const std::vector<std::pair<std::string, std::function<void()>>>& options) {
-	rmlDocument->GetElementById("pop-up-overlay")->SetClass("invisible", false);
-	rmlDocument->GetElementById("pop-up-text")->SetInnerRML(message);
-	Rml::Element* actionsElement = rmlDocument->GetElementById("pop-up-actions");
-	while (actionsElement->HasChildNodes()) { actionsElement->RemoveChild(actionsElement->GetChild(0)); }
-	for (const auto& option : options) {
-		Rml::ElementPtr setPositionButton = rmlDocument->CreateElement("button");
-		setPositionButton->AppendChild(std::move(rmlDocument->CreateTextNode(option.first)));
-		setPositionButton->AddEventListener(Rml::EventId::Click, new EventPasser(
-			[this, func = option.second](Rml::Event& event) {
-				rmlDocument->GetElementById("pop-up-overlay")->SetClass("invisible", true);
-				func();
-			}
-		));
-		setPositionButton->SetClass("pop-up-action", true);
-		actionsElement->AppendChild(std::move(setPositionButton));
+void MainWindow::applyUiScale(float scale) {
+	const float clamped = std::clamp(scale, static_cast<float>(kUiScaleMin), static_cast<float>(kUiScaleMax));
+	if (std::abs(static_cast<double>(clamped) - static_cast<double>(scale)) > 1e-6 && !uiScaleSettingUpdateInProgress) {
+		const double* storedScale = Settings::get<SettingType::DECIMAL>("Appearance/UI Scale");
+		if (!storedScale || std::abs(*storedScale - clamped) > 1e-6) {
+			uiScaleSettingUpdateInProgress = true;
+			Settings::set<SettingType::DECIMAL>("Appearance/UI Scale", clamped);
+			uiScaleSettingUpdateInProgress = false;
+		}
 	}
-}
-
-void SaveCallback(void* userData, const char* const* filePaths, int filter) {
-	std::pair<CircuitFileManager*, std::string>* data = (std::pair<CircuitFileManager*, std::string>*)userData;
-	if (filePaths && filePaths[0]) {
-		std::string filePath = filePaths[0];
-		if (data->first->getSavePath(data->second) != nullptr)
-			logWarning("This circuit " + data->second + " will be saved with a new UUID");
-		data->first->saveToFile(filePath, data->second);
-	} else {
-		std::cout << "File dialog canceled." << std::endl;
+	uiScale = clamped;
+	if (!rmlContext) return;
+	float displayScale = 1.0f;
+	if (sdlWindow) {
+		displayScale = SDL_GetWindowDisplayScale(sdlWindow->getHandle());
+		if (!(displayScale > 0.0f)) {
+			displayScale = 1.0f;
+		}
 	}
-	delete data;
-}
+	rmlContext->SetDensityIndependentPixelRatio(displayScale * uiScale);
 
-void MainWindow::savePopUp(const std::string& circuitUUID) {
-	if (!environment->getCircuitFileManager().save(circuitUUID)) {
-		// if failed to save the circuit with out a path
-		static const SDL_DialogFileFilter filters[] = {
-			{ "Circuit Files",  ".cir" }
-		};
-		std::pair<CircuitFileManager*, std::string>* data = new std::pair<CircuitFileManager*, std::string>(&environment->getCircuitFileManager(), circuitUUID);
-		SDL_ShowSaveFileDialog(SaveCallback, data, sdlWindow->getHandle(), filters, 1, nullptr);
+	rmlContext->Update();
+	for (auto circuitViewWidget : circuitViewWidgets) {
+		circuitViewWidget->handleResize();
 	}
-}
-
-void MainWindow::saveAsPopUp(const std::string& circuitUUID) {
-	static const SDL_DialogFileFilter filters[] = {
-		{ "Circuit Files",  ".cir" }
-	};
-	std::pair<CircuitFileManager*, std::string>* data = new std::pair<CircuitFileManager*, std::string>(&environment->getCircuitFileManager(), circuitUUID);
-	SDL_ShowSaveFileDialog(SaveCallback, data, sdlWindow->getHandle(), filters, 1, nullptr);
 }
 
 void setGlobalCssPropertyRec(Rml::Element* element, const std::string& property, const std::string& value) {

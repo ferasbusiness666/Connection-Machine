@@ -24,7 +24,7 @@ enum class SimulatorMappingUpdateType {
 
 struct SimulatorMappingUpdate {
 	Position portPosition;
-	simulator_id_t simulatorId;
+	std::variant<simulator_id_t, std::vector<simulator_id_t>> simulatorIds;
 	SimulatorMappingUpdateType type;
 };
 
@@ -130,8 +130,8 @@ public:
 	const EvalAddressTree buildAddressTree() const;
 	const EvalAddressTree buildAddressTree(eval_circuit_id_t evalCircuitId) const;
 
-	std::vector<simulator_id_t> getBlockSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const;
-	std::vector<simulator_id_t> getPinSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const;
+	std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getBlockSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const;
+	std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getPinSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const;
 	std::vector<logic_state_t> getStatesFromSimulatorIds(const std::vector<simulator_id_t>& simulatorIds) const;
 
 	void connectListener(
@@ -168,7 +168,7 @@ private:
 	void edit_placeIC(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, DiffCache& diffCache, Position position, Orientation orientation, circuit_id_t circuitId);
 	void edit_removeConnection(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, DiffCache& diffCache, const BlockContainer* blockContainer, Position outputBlockPosition, Position outputPosition, Position inputBlockPosition, Position inputPosition);
 	void edit_createConnection(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, DiffCache& diffCache, const BlockContainer* blockContainer, Position outputBlockPosition, Position outputPosition, Position inputBlockPosition, Position inputPosition);
-	void edit_moveBlock(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, DiffCache& diffCache, Position curPosition, Orientation curOrientation, Position newPosition, Orientation newOrientation);
+	void edit_moveBlock(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, DiffCache& diffCache, Position curPosition, Orientation curOrientation, Position newPosition, Orientation newOrientation, MoveType finalMove);
 
 	void removeDependentInterCircuitConnections(SimPauseGuard& pauseGuard, CircuitPortDependency circuitPortDependency);
 	void removeDependentInterCircuitConnections(SimPauseGuard& pauseGuard, CircuitNode node);

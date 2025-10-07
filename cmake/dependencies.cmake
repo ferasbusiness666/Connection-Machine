@@ -2,6 +2,29 @@ include(cmake/CPM.cmake)
 include(ExternalProject)
 
 function(add_main_dependencies)
+	message("adding main dependencies")
+	if (APPLE)
+		find_library(COREFOUNDATION_FRAMEWORK CoreFoundation)
+		list(APPEND EXTERNAL_LINKS ${COREFOUNDATION_FRAMEWORK})
+	endif()
+
+	# cfgpath
+	CPMAddPackage(
+		NAME cfgpath
+		GITHUB_REPOSITORY sisyffe/cfgpath
+		GIT_TAG 4a48955f894a5d1ef292230f33a9e6caacfed572
+		EXCLUDE_FROM_ALL YES
+		DOWNLOAD_ONLY YES
+		SOURCE_DIR "${EXTERNAL_DIR}/cfgpath"
+	)
+	if (WIN32)
+		file(REMOVE "${EXTERNAL_DIR}/cfgpath/shlobj.h")
+	endif()
+	# add_library(cfgpath INTERFACE "${EXTERNAL_DIR}/cfgpath/cfgpath.h")
+	add_library(cfgpath INTERFACE)
+	target_include_directories(cfgpath INTERFACE "${EXTERNAL_DIR}/cfgpath")
+	list(APPEND EXTERNAL_LINKS cfgpath)
+
 	# JSON
 	CPMAddPackage(
 		NAME nlohmann_json
@@ -40,6 +63,9 @@ function(add_main_dependencies)
 	list(APPEND EXTERNAL_LINKS cpplocate::liblocate)
 
 	# wasmtime
+	if (APPLE)
+		set(ENV{MACOSX_DEPLOYMENT_TARGET} "15.0")
+	endif()
 	if (APPLE AND CONNECTION_MACHINE_DISTRIBUTE_APP)
 		add_library(wasmtime STATIC IMPORTED GLOBAL)
 		CPMAddPackage(

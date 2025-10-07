@@ -11,7 +11,7 @@ public:
 	void initializeDefaults() {
 		assert(blockData.size() == 0); // should call this before doing anything
 		// load default data
-		for (unsigned int i = 0; i < 13; i++) addBlock();
+		for (unsigned int i = 0; i < 14; i++) addBlock();
 		getBlockData(BlockType::AND)->setName("And");
 		getBlockData(BlockType::OR)->setName("Or");
 		getBlockData(BlockType::XOR)->setName("Xor");
@@ -47,6 +47,18 @@ public:
 		getBlockData(BlockType::LIGHT)->setName("Light");
 		getBlockData(BlockType::LIGHT)->setDefaultData(false);
 		getBlockData(BlockType::LIGHT)->setConnectionInput(Vector(0), 0);
+		// BUS_INTERFACE
+		getBlockData(BlockType::BUS_INTERFACE)->setName("Bus Interface");
+		getBlockData(BlockType::BUS_INTERFACE)->setDefaultData(false);
+		getBlockData(BlockType::BUS_INTERFACE)->setConnectionOutput(Vector(1, 0), 0);
+		getBlockData(BlockType::BUS_INTERFACE)->setConnectionBitAccess(0, {0,1,2,3,4,5,6,7});
+		getBlockData(BlockType::BUS_INTERFACE)->setConnectionInput(Vector(1, 0), 1);
+		getBlockData(BlockType::BUS_INTERFACE)->setConnectionBitAccess(1, {0,1,2,3,4,5,6,7});
+		for (int i = 0; i < 8; ++i) {
+			getBlockData(BlockType::BUS_INTERFACE)->setConnectionOutput(Vector(0, i), i*2 + 2);
+			getBlockData(BlockType::BUS_INTERFACE)->setConnectionInput(Vector(0, i), i*2 + 3);
+		}
+		getBlockData(BlockType::BUS_INTERFACE)->setSize(Size(2, 8));
 	}
 
 	inline BlockType addBlock() noexcept {

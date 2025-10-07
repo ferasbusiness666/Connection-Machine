@@ -27,6 +27,7 @@ evalSimulator(evalConfig, middleIdProvider, dirtySimulatorIds) {
 		return;
 	}
 	logInfo("Creating Evaluator with ID {} for Circuit ID {}", "Evaluator", evaluatorId, circuitId);
+	middleIdProvider.getNewId(); // reserve 0 for invalid
 	evalCircuitContainer.addCircuit(0, circuitId);
 	const auto blockContainer = circuit->getBlockContainer();
 	const Difference difference = blockContainer->getCreationDifference();
@@ -101,8 +102,8 @@ void Evaluator::makeEditInPlace(SimPauseGuard& pauseGuard, eval_circuit_id_t eva
 			break;
 		}
 		case Difference::ModificationType::MOVE_BLOCK: {
-			const auto& [curPosition, curOrientation, newPosition, newOrientation] = std::get<Difference::move_modification_t>(modificationData);
-			edit_moveBlock(pauseGuard, evalCircuitId, diffCache, curPosition, curOrientation, newPosition, newOrientation);
+			const auto& [curPosition, curOrientation, newPosition, newOrientation, finalMove] = std::get<Difference::move_modification_t>(modificationData);
+			edit_moveBlock(pauseGuard, evalCircuitId, diffCache, curPosition, curOrientation, newPosition, newOrientation, finalMove);
 			break;
 		}
 		case Difference::ModificationType::REMOVED_CONNECTION: {
@@ -179,6 +180,7 @@ void Evaluator::edit_placeBlock(SimPauseGuard& pauseGuard, eval_circuit_id_t eva
 	case BlockType::TICK_BUTTON: gateType = GateType::TICK_INPUT; break;
 	case BlockType::CONSTANT: gateType = GateType::CONSTANT_ON; break;
 	case BlockType::LIGHT: gateType = GateType::JUNCTION; break;
+	case BlockType::BUS_INTERFACE: gateType = GateType::BUS_INTERFACE; break;
 	default: break; // it was giving a warning
 	}
 	if (gateType == GateType::NONE) {
@@ -548,7 +550,7 @@ std::optional<EvalConnectionPoint> Evaluator::getConnectionPoint(
 	return getConnectionPoint(node->getId(), *internalPosition, direction, circuitPortDependencies, circuitNodeDependencies, true);
 }
 
-void Evaluator::edit_moveBlock(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, DiffCache& diffCache, Position curPosition, Orientation curOrientation, Position newPosition, Orientation newOrientation) {
+void Evaluator::edit_moveBlock(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, DiffCache& diffCache, Position curPosition, Orientation curOrientation, Position newPosition, Orientation newOrientation, MoveType finalMove) {
 	EvalCircuit* evalCircuit = evalCircuitContainer.getCircuit(evalCircuitId);
 	if (!evalCircuit) {
 		logError("EvalCircuit with id {} not found", "Evaluator::edit_moveBlock", evalCircuitId);
@@ -565,7 +567,9 @@ void Evaluator::edit_moveBlock(SimPauseGuard& pauseGuard, eval_circuit_id_t eval
 	}
 	removeDependentInterCircuitConnections(pauseGuard, node.value());
 	evalCircuit->moveNode(curPosition, newPosition);
-	checkToCreateExternalConnections(pauseGuard, evalCircuitId, newPosition);
+	if (finalMove != MoveType::MULTI_BEGIN && finalMove != MoveType::MULTI_MIDDLE) {
+		checkToCreateExternalConnections(pauseGuard, evalCircuitId, newPosition);
+	}
 	dirtyBlockAt(newPosition, evalCircuitId);
 }
 
@@ -771,7 +775,7 @@ void Evaluator::checkToCreateExternalConnections(SimPauseGuard& pauseGuard, eval
 		const auto& connections = blockData->getConnections();
 		// logInfo("Found {} connections for block type {}", "Evaluator::checkToCreateExternalConnections", connections.size(), static_cast<int>(block->type()));
 		for (const auto& [connectionId, connectionOffset] : connections) {
-			Vector portOffset = connectionOffset.first;
+			Vector portOffset = connectionOffset.positionOnBlock;
 			Position portPosition = block->getPosition() + portOffset;
 			// Determine direction (input or output)
 			Direction direction = block->isConnectionInput(connectionId) ? Direction::IN : Direction::OUT;
@@ -1006,18 +1010,36 @@ void Evaluator::processDirtyNodes() {
 	for (size_t i = 0; i < dirtyNodesToProcess.size(); ++i) {
 		const EvalPosition& evalPosition = dirtyNodesToProcess.at(i);
 		const SimulatorStateAndPinSimId& simulatorIdPair = simulatorIdPairs.at(i);
-		simulator_id_t portSimId = simulatorIdPair.portSimId;
-		simulator_id_t pinSimId = simulatorIdPair.pinSimId;
-		portSimulatorIdToEvalPositionMap.insert({ portSimId, evalPosition });
-		pinSimulatorIdToEvalPositionMap.insert({ pinSimId, evalPosition });
+		std::variant<simulator_id_t, std::vector<simulator_id_t>> portSimIds = simulatorIdPair.portSimIds;
+		std::variant<simulator_id_t, std::vector<simulator_id_t>> pinSimIds = simulatorIdPair.pinSimIds;
+		// portSimulatorIdToEvalPositionMap.insert({ portSimId, evalPosition });
+		// pinSimulatorIdToEvalPositionMap.insert({ pinSimId, evalPosition });
+		if (std::holds_alternative<simulator_id_t>(portSimIds)) {
+			simulator_id_t portSimId = std::get<simulator_id_t>(portSimIds);
+			portSimulatorIdToEvalPositionMap.insert({ portSimId, evalPosition });
+		} else {
+			const std::vector<simulator_id_t>& portSimIdVec = std::get<std::vector<simulator_id_t>>(portSimIds);
+			for (simulator_id_t portSimId : portSimIdVec) {
+				portSimulatorIdToEvalPositionMap.insert({ portSimId, evalPosition });
+			}
+		}
+		if (std::holds_alternative<simulator_id_t>(pinSimIds)) {
+			simulator_id_t pinSimId = std::get<simulator_id_t>(pinSimIds);
+			pinSimulatorIdToEvalPositionMap.insert({ pinSimId, evalPosition });
+		} else {
+			const std::vector<simulator_id_t>& pinSimIdVec = std::get<std::vector<simulator_id_t>>(pinSimIds);
+			for (simulator_id_t pinSimId : pinSimIdVec) {
+				pinSimulatorIdToEvalPositionMap.insert({ pinSimId, evalPosition });
+			}
+		}
 		simulatorMappingUpdates[evalPosition.evalCircuitId].push_back({
 			evalPosition.position,
-			portSimId,
+			portSimIds,
 			SimulatorMappingUpdateType::BLOCK
 		});
 		simulatorMappingUpdates[evalPosition.evalCircuitId].push_back({
 			evalPosition.position,
-			pinSimId,
+			pinSimIds,
 			SimulatorMappingUpdateType::PIN
 		});
 	}
@@ -1069,7 +1091,7 @@ void Evaluator::dirtyBlockAt(Position position, eval_circuit_id_t evalCircuitId)
 	}
 }
 
-std::vector<simulator_id_t> Evaluator::getBlockSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const {
+std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> Evaluator::getBlockSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const {
 	eval_circuit_id_t evalCircuitId = evalCircuitContainer.traverseToTopLevelIC(addressOrigin);
 	std::vector<std::optional<EvalConnectionPoint>> connectionPoints;
 	connectionPoints.reserve(positions.size());
@@ -1079,7 +1101,7 @@ std::vector<simulator_id_t> Evaluator::getBlockSimulatorIds(const Address& addre
 	return evalSimulator.getBlockSimulatorIds(connectionPoints);
 }
 
-std::vector<simulator_id_t> Evaluator::getPinSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const {
+std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> Evaluator::getPinSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const {
 	eval_circuit_id_t evalCircuitId = evalCircuitContainer.traverseToTopLevelIC(addressOrigin);
 	std::vector<std::optional<EvalConnectionPoint>> connectionPoints;
 	connectionPoints.reserve(positions.size());

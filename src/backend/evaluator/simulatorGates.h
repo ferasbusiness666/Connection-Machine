@@ -131,7 +131,7 @@ struct ANDLikeGate : public MultiInputGate {
 				return (logic_state_t)outputInverted;
 			}
 			// Track any unknown/floating driver; only matters if no decisive state was found
-			foundGoofyState |= (state >= logic_state_t::UNDEFINED); // FLOATING or UNDEFINED
+			foundGoofyState |= (state >= logic_state_t::FLOATING); // FLOATING or UNDEFINED
 		}
 		return foundGoofyState ? logic_state_t::UNDEFINED : (logic_state_t)!outputInverted;
 	}
@@ -162,7 +162,7 @@ struct XORLikeGate : public MultiInputGate {
 		bool parity = outputInverted;
 		for (const simulator_id_t inputId : inputs) {
 			const logic_state_t state = statesA[inputId];
-			if (state >= logic_state_t::UNDEFINED) { // FLOATING or UNDEFINED
+			if (state >= logic_state_t::FLOATING) { // FLOATING or UNDEFINED
 				return logic_state_t::UNDEFINED;
 			}
 			parity = parity ^ (state == logic_state_t::HIGH);
@@ -280,37 +280,35 @@ struct SingleBufferGate : public BufferGateBase {
 
 struct TristateBufferGate : public SimulatorGate {
 	bool enableInverted;
-	std::vector<simulator_id_t> inputs;
-	std::vector<simulator_id_t> enableInputs;
+	simulator_id_t dataInput;
+	simulator_id_t enableInput;
 
 	TristateBufferGate(simulator_id_t id, bool enableInverted = false)
 		: SimulatorGate(id), enableInverted(enableInverted) {}
 
 	void addInput(simulator_id_t inputId, connection_port_id_t portId) override {
 		if (portId == 0) {
-			inputs.push_back(inputId);
+			dataInput = inputId;
 		} else {
-			enableInputs.push_back(inputId);
+			enableInput = inputId;
 		}
 	}
 
 	void removeInput(simulator_id_t inputId, connection_port_id_t portId) override {
 		if (portId == 0) {
-			auto it = std::find(inputs.begin(), inputs.end(), inputId);
-			if (it != inputs.end()) {
-				inputs.erase(it);
-			}
+			dataInput = 0;
 		} else {
-			auto it = std::find(enableInputs.begin(), enableInputs.end(), inputId);
-			if (it != enableInputs.end()) {
-				enableInputs.erase(it);
-			}
+			enableInput = 0;
 		}
 	}
 
 	void removeIdRefs(simulator_id_t otherId) override {
-		inputs.erase(std::remove(inputs.begin(), inputs.end(), otherId), inputs.end());
-		enableInputs.erase(std::remove(enableInputs.begin(), enableInputs.end(), otherId), enableInputs.end());
+		if (dataInput == otherId) {
+			dataInput = 0;
+		}
+		if (enableInput == otherId) {
+			enableInput = 0;
+		}
 	}
 
 	void resetState(bool realistic, std::vector<logic_state_t>& states) override {
@@ -322,58 +320,15 @@ struct TristateBufferGate : public SimulatorGate {
 	}
 
 	inline logic_state_t calculate(const std::vector<logic_state_t>& statesA) const noexcept {
-		bool foundGoofyState = false;
-		bool foundEnabled = false;
-		bool foundDisabled = false;
-		for (const simulator_id_t enableId : enableInputs) {
-			logic_state_t enableState = statesA[enableId];
-			if (enableState == logic_state_t::UNDEFINED) {
-				foundGoofyState = true;
-				break;
-			}
-			if (enableState == logic_state_t::HIGH) {
-				foundEnabled = true;
-			} else if (enableState == logic_state_t::LOW) {
-				foundDisabled = true;
-			}
-			if (foundEnabled && foundDisabled) {
-				break;
-			}
-		}
-		if (foundEnabled == foundDisabled) {
-			foundGoofyState = true;
-		}
-		if (foundGoofyState) {
+		logic_state_t enableState = statesA[enableInput];
+		if (enableState >= logic_state_t::FLOATING) { // FLOATING or UNDEFINED
 			return logic_state_t::UNDEFINED;
 		}
-		if (foundEnabled == enableInverted) {
+		if (enableState == (logic_state_t)enableInverted) {
 			return logic_state_t::FLOATING;
 		}
-		if (inputs.empty()) {
-			return logic_state_t::UNDEFINED;
-		}
-		logic_state_t outputState = logic_state_t::FLOATING;
-		for (const simulator_id_t inputId : inputs) {
-			logic_state_t state = statesA[inputId];
-			if (state == logic_state_t::UNDEFINED) {
-				foundGoofyState = true;
-				break;
-			}
-			if (state == logic_state_t::FLOATING) {
-				continue;
-			}
-			if (outputState == logic_state_t::FLOATING) {
-				outputState = state;
-			} else if (outputState != state) {
-				outputState = logic_state_t::UNDEFINED;
-				break;
-			}
-		}
-		if (foundGoofyState) {
-			return logic_state_t::UNDEFINED;
-		} else {
-			return outputState;
-		}
+		// Enabled
+		return statesA[dataInput];
 	}
 
 	inline void tick(const std::vector<logic_state_t>& statesA, std::vector<logic_state_t>& statesB) noexcept {

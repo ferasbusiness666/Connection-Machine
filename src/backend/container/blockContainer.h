@@ -26,6 +26,9 @@ public:
 	bool checkCollision(Position position, Orientation orientation, BlockType blockType) const;
 	bool checkCollision(Position position, Orientation orientation, BlockType blockType, block_id_t idToIgnore) const;
 
+	/* ----------- blocktype ---------- */
+	bool canInsertBlocktype(BlockType blockType) const;
+
 	/* ----------- blocks ----------- */
 	// -- getters --
 	// Gets the cell at that position. Returns nullptr the cell is empty
@@ -49,10 +52,10 @@ public:
 	// Trys to remove a block. Returns if successful. Pass a Difference* to read the what changes were made.
 	bool tryRemoveBlock(Position position, Difference* difference);
 	// Trys to move a block. Returns if successful. Pass a Difference* to read the what changes were made.
-	bool tryMoveBlock(Position positionOfBlock, Position position, Orientation transformAmount, Difference* difference);
+	bool tryMoveBlock(Position positionOfBlock, Position position, Orientation transformAmount, Difference* difference, MoveType moveType = MoveType::SINGLE);
 	// Trys to set the type of a block. Returns if successful. Pass a Difference* to read the what changes were made.
 	bool trySetType(Position positionOfBlock, BlockType type, Difference* difference);
-	// moves blocks until they 
+	// moves blocks until they
 	void resizeBlockType(BlockType blockType, Size size, Difference* difference);
 
 	/* ----------- connections ----------- */
@@ -62,6 +65,10 @@ public:
 	const phmap::flat_hash_set<ConnectionEnd>* getOutputConnections(Position position) const;
 	const std::optional<ConnectionEnd> getInputConnectionEnd(Position position) const;
 	const std::optional<ConnectionEnd> getOutputConnectionEnd(Position position) const;
+
+	unsigned int getBitwidthOfJunction(Position position) const { return getBitwidthOfJunction(getBlock(position)); }
+	unsigned int getBitwidthOfJunction(block_id_t blockId) const { return getBitwidthOfJunction(getBlock(blockId)); }
+
 
 	// -- setters --
 	// Trys to creates a connection. Returns if successful. Pass a Difference* to read the what changes were made.
@@ -91,6 +98,10 @@ public:
 	DifferenceSharedPtr getCreationDifferenceShared() const;
 
 private:
+	unsigned int getBitwidthOfJunction(block_id_t blockId, std::unordered_set<block_id_t>& visited) const;
+	unsigned int getBitwidthOfJunction(const Block* block) const;
+
+
 	inline Block* getBlock_(Position position);
 	inline Block* getBlock_(block_id_t blockId);
 	inline Cell* getCell(Position position) { return grid.get(position); }

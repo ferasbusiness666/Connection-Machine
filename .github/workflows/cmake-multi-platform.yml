@@ -5,6 +5,16 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -88,7 +98,7 @@ jobs:
         build-dir: ${{ github.workspace }}/build
         cc: ${{ matrix.c_compiler }}
         cxx: ${{ matrix.cpp_compiler }}
-        configure-options: "-DCONNECTION_MACHINE_BUILD_TESTS=ON -DCONNECTION_MACHINE_BUILD_APP=OFF"
+        configure-options: "-DCONNECTION_MACHINE_BUILD_TESTS=ON -DCONNECTION_MACHINE_CODE_COVERAGE=ON -DCONNECTION_MACHINE_BUILD_APP=OFF -DCONNECTION_MACHINE_BUILD_CLI_APP=OFF"
         target: Connection_Machine_tests
         build-type: ${{ matrix.build_type }}
 
@@ -103,8 +113,25 @@ jobs:
       run: ${{ matrix.runExecutable }}
       # run: Gatality_tests
 
+    - name: Coverage Report
+      if: success() && matrix.os == 'ubuntu-latest'
+      working-directory: ${{ github.workspace }}
+      run: |
+          sudo apt-get update
+          sudo apt-get install -y gcovr
+          bash gcov_coverage.sh
+          mv ./coverage/coverage.html ./coverage/index.html
+          ls ./coverage
+
+    # Publish the coverage folder as the Pages artifact (ubuntu job only)
+    - name: Upload Pages artifact (coverage/)
+      if: success() && matrix.os == 'ubuntu-latest'
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: coverage
+        # optional: name: coverage-artifact
     - name: Notify Discord on test failure
-      if: failure() && steps.run_tests.outcome == 'failure'
+      if: failure()
       uses: sarisia/actions-status-discord@v1
       with:
         webhook: ${{ secrets.DISCORD_WEBHOOK }}
@@ -112,3 +139,16 @@ jobs:
         title: Tests failed on ${{ matrix.os }}
         description: Build type ${{ matrix.build_type }}
         color: 0xff0000
+
+  # Deploy only after the matrix completes; it will pick up the uploaded artifact
+  deploy:
+    needs: build
+    if: always() && needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

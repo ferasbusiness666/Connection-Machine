@@ -61,6 +61,7 @@ CircuitViewWidget::CircuitViewWidget(
 	Settings::registerListener<SettingType::BOOL>("Keybinds/Camera/Scroll Panning", [this](const bool& enabled) {
 		mouseControls = !enabled;
 	});
+	mouseControls = Settings::get<SettingType::BOOL>("Keybinds/Camera/Scroll Panning");
 
 	// set initial view
 	element->AddEventListener(Rml::EventId::Resize, new EventPasser([this](Rml::Event&){handleResize();}));
@@ -216,11 +217,14 @@ CircuitViewWidget::CircuitViewWidget(
 }
 
 
-void CircuitViewWidget::render() {
+void CircuitViewWidget::updateTps() {
 	Evaluator* evaluator = circuitView->getEvaluator();
 	std::string tpsText = "Real tps: N/A";
 	if (evaluator) {
-		tpsText = "Real tps: " + fmt::format("{:.2f}", evaluator->getRealTickrate());
+		double tps = evaluator->getRealTickrate();
+		if (tps < 5.235) tpsText = "Real tps: " + fmt::format("{:.2f}", tps);
+		else if (tps < 100) tpsText = "Real tps: " + fmt::format("{:.1f}", tps);
+		else tpsText = "Real tps: " + fmt::format("{:.0f}", tps);
 	}
 	Rml::Element* realTpsDisplay = document->GetElementById("real-tps-display");
 	if (realTpsDisplay) {
@@ -275,11 +279,11 @@ void CircuitViewWidget::setStatusBar(const std::string& text) {
 // save current circuit view widget we are viewing. Right now only works if it is the only widget in application.
 // Called via Ctrl-S keybind
 void CircuitViewWidget::save() {
-	if (circuitView->getCircuit()) mainWindow->savePopUp(circuitView->getCircuit()->getUUID());
+	if (circuitView->getCircuit()) mainWindow->getPopUpManager().savePopUp(circuitView->getCircuit()->getUUID());
 }
 
 void CircuitViewWidget::asSave() {
-	if (circuitView->getCircuit()) mainWindow->saveAsPopUp(circuitView->getCircuit()->getUUID());
+	if (circuitView->getCircuit()) mainWindow->getPopUpManager().saveAsPopUp(circuitView->getCircuit()->getUUID());
 }
 
 // for drag and drop load directly onto this circuit view widget
