@@ -4,6 +4,10 @@
 #include "gui/mainWindow/mainWindow.h"
 #include "environment/environment.h"
 #include "gui/helper/saveCallback.h"
+#include "computerAPI/directoryManager.h"
+#include "app.h"
+
+#include <RmlUi/Debugger.h>
 
 #include <SDL3/SDL.h>
 
@@ -23,9 +27,8 @@ void PopUpManager::addOptionsPopUp(const std::string& message, const std::vector
 		setPositionButton->AppendChild(std::move(mainWindow->getRmlDocument()->CreateTextNode(option.first)));
 		setPositionButton->AddEventListener(Rml::EventId::Click, new EventPasser(
 			[deleteFunc = popUpData.second, func = option.second](Rml::Event& event) {
-				auto funcCopy = func;
 				deleteFunc();
-				funcCopy();
+				func();
 			}
 		));
 		setPositionButton->SetClass("pop-up-action", true);
@@ -33,8 +36,8 @@ void PopUpManager::addOptionsPopUp(const std::string& message, const std::vector
 	}
 }
 
-std::pair<Rml::Element*, std::function<void()>> PopUpManager::createPopUp(bool blocking) {
-	if (blocking || true) {
+std::pair<Rml::Element*, std::function<void()>> PopUpManager::createPopUp(bool blocking, const std::string& windowName, unsigned int width, unsigned int height) {
+	if (blocking) {
 		Rml::Element* allPopUps = mainWindow->getRmlDocument()->GetElementById("all-pop-ups");
 		allPopUps->SetClass("invisible", false);
 		assert(allPopUps);
@@ -44,13 +47,64 @@ std::pair<Rml::Element*, std::function<void()>> PopUpManager::createPopUp(bool b
 		popUpOverlayInternal->SetClass("pop-up-overlay-internal", true);
 		Rml::Element* popUpWindow = popUpOverlayInternal->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
 		popUpWindow->SetClass("pop-up-window", true);
+		popUpWindow->SetClass("pop-up-window-blocked", true);
 		popUpWindow->SetClass("bordered", true);
 		popUpWindow->SetClass("bg-3", true);
 		return {popUpOverlay, [popUpOverlay, allPopUps](){
-			Rml::Element* allPopUpsCopy = allPopUps;
-			allPopUpsCopy->RemoveChild(popUpOverlay);
-			if (!allPopUpsCopy->HasChildNodes()) allPopUpsCopy->SetClass("invisible", true);
+			App::get().queForEndOfUpdate([popUpOverlay, allPopUps](){
+				allPopUps->RemoveChild(popUpOverlay);
+				if (!allPopUps->HasChildNodes()) allPopUps->SetClass("invisible", true);
+			});
 		}};
+	} else {
+		SdlWindow* sdlWindow = App::get().registerWindow(windowName, width, height).get();
+		WindowId windowId = MainRenderer::get().registerWindow(sdlWindow);
+		Rml::Context* rmlContext = Rml::CreateContext("popup_" + std::to_string(windowId), Rml::Vector2i(sdlWindow->getSize().first, sdlWindow->getSize().second));
+		if (rmlContext) {
+			Rml::ElementDocument* rmlDocument = rmlContext->LoadDocument(DirectoryManager::getResourceDirectory().generic_string() + "/gui/mainWindow/popUpWindow/popUpWindow.rml");
+			sdlWindow->setRenderFunction([windowId, rmlContext](){
+				RmlRenderInterface* rmlRenderInterface = dynamic_cast<RmlRenderInterface*>(Rml::GetRenderInterface());
+				if (rmlRenderInterface) {
+					rmlContext->Update();
+					rmlRenderInterface->setWindowToRenderOn(windowId);
+					MainRenderer::get().prepareForRmlRender(windowId);
+					rmlContext->Render();
+					MainRenderer::get().endRmlRender(windowId);
+				}
+			});
+			sdlWindow->setRecieveEventFunction(
+				[windowId, rmlContext, sdlWindow](SDL_Event& event){
+					if (sdlWindow->isThisMyEvent(event)) {
+						if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
+							Rml::RemoveContext(rmlContext->GetName());
+							MainRenderer::get().deregisterWindow(windowId);
+							App::get().deregisterWindow(sdlWindow);
+							return true;
+						}
+
+						RmlSDL::InputEventHandler(rmlContext, sdlWindow->getHandle(), event, sdlWindow->getWindowScalingSize());
+
+						// let renderer know we if resized the window
+						if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
+							MainRenderer::get().resizeWindow(windowId, { event.window.data1, event.window.data2 });
+							rmlContext->Update();
+						}
+						return true;
+					}
+					return false;
+				}
+			);
+			rmlDocument->Show();
+			return {rmlDocument, [windowId, rmlContext, sdlWindow](){
+				App::get().queForEndOfUpdate([windowId, rmlContext, sdlWindow](){
+					Rml::RemoveContext(rmlContext->GetName());
+					MainRenderer::get().deregisterWindow(windowId);
+					App::get().deregisterWindow(sdlWindow);
+				});
+			}};
+		}
+		logError("Failed to create new window for popup :(");
+		return {nullptr, nullptr};
 	}
 }
 
