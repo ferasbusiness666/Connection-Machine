@@ -63,3 +63,14 @@ void PopUpManager::saveAsPopUp(const std::string& circuitUUID) {
 	std::pair<CircuitFileManager*, std::string>* data = new std::pair<CircuitFileManager*, std::string>(&mainWindow->getEnvironment()->getCircuitFileManager(), circuitUUID);
 	SDL_ShowSaveFileDialog(SaveCallback, data, nullptr, filters, 1, nullptr);
 }
+
+void PopUpManager::addFeedbackPopup() {
+	Rml::Element* popUpRoot = createPopUp(true);
+	Rml::ElementList windowList;
+	popUpRoot->GetElementsByClassName(windowList, "pop-up-window");
+	Rml::Element* window = windowList.front();
+
+	Rml::Element* text = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("span"));
+	text->SetInnerRML("Testing");
+	text->SetClass("pop-up-text", true);
+}

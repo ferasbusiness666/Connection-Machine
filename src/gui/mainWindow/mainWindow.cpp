@@ -132,6 +132,8 @@ MainWindow::MainWindow(Environment* environment) :
 		// Rml::LoadFontFace(fontFilePath);
 		logInfo("loaded, {}", "", fontFilePath);
 	});
+
+	// popUpManager.addFeedbackPopup();
 }
 
 MainWindow::~MainWindow() {
