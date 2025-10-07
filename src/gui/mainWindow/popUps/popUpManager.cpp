@@ -8,7 +8,8 @@
 #include <SDL3/SDL.h>
 
 void PopUpManager::addOptionsPopUp(const std::string& message, const std::vector<std::pair<std::string, std::function<void()>>>& options, bool blocking) {
-	Rml::Element* popUpRoot = createPopUp(blocking);
+	std::pair<Rml::Element*, std::function<void()>> popUpData = createPopUp(blocking);
+	Rml::Element* popUpRoot = popUpData.first;
 	Rml::ElementList windowList;
 	popUpRoot->GetElementsByClassName(windowList, "pop-up-window");
 	Rml::Element* window = windowList.front();
@@ -21,12 +22,10 @@ void PopUpManager::addOptionsPopUp(const std::string& message, const std::vector
 		Rml::ElementPtr setPositionButton = mainWindow->getRmlDocument()->CreateElement("button");
 		setPositionButton->AppendChild(std::move(mainWindow->getRmlDocument()->CreateTextNode(option.first)));
 		setPositionButton->AddEventListener(Rml::EventId::Click, new EventPasser(
-			[popUpRoot, func = option.second](Rml::Event& event) {
+			[deleteFunc = popUpData.second, func = option.second](Rml::Event& event) {
 				auto funcCopy = func;
-				Rml::Element* root = popUpRoot->GetParentNode();
-				root->RemoveChild(popUpRoot);
+				deleteFunc();
 				funcCopy();
-				if (!root->HasChildNodes()) root->SetClass("invisible", true);
 			}
 		));
 		setPositionButton->SetClass("pop-up-action", true);
@@ -34,19 +33,25 @@ void PopUpManager::addOptionsPopUp(const std::string& message, const std::vector
 	}
 }
 
-Rml::Element* PopUpManager::createPopUp(bool blocking) {
-	Rml::Element* allPopUps = mainWindow->getRmlDocument()->GetElementById("all-pop-ups");
-	allPopUps->SetClass("invisible", false);
-	assert(allPopUps);
-	Rml::Element* popUpOverlay = allPopUps->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
-	popUpOverlay->SetClass("pop-up-overlay", true);
-	Rml::Element* popUpOverlayInternal = popUpOverlay->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
-	popUpOverlayInternal->SetClass("pop-up-overlay-internal", true);
-	Rml::Element* popUpWindow = popUpOverlayInternal->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
-	popUpWindow->SetClass("pop-up-window", true);
-	popUpWindow->SetClass("bordered", true);
-	popUpWindow->SetClass("bg-3", true);
-	return popUpOverlay;
+std::pair<Rml::Element*, std::function<void()>> PopUpManager::createPopUp(bool blocking) {
+	if (blocking || true) {
+		Rml::Element* allPopUps = mainWindow->getRmlDocument()->GetElementById("all-pop-ups");
+		allPopUps->SetClass("invisible", false);
+		assert(allPopUps);
+		Rml::Element* popUpOverlay = allPopUps->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
+		popUpOverlay->SetClass("pop-up-overlay", true);
+		Rml::Element* popUpOverlayInternal = popUpOverlay->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
+		popUpOverlayInternal->SetClass("pop-up-overlay-internal", true);
+		Rml::Element* popUpWindow = popUpOverlayInternal->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
+		popUpWindow->SetClass("pop-up-window", true);
+		popUpWindow->SetClass("bordered", true);
+		popUpWindow->SetClass("bg-3", true);
+		return {popUpOverlay, [popUpOverlay, allPopUps](){
+			Rml::Element* allPopUpsCopy = allPopUps;
+			allPopUpsCopy->RemoveChild(popUpOverlay);
+			if (!allPopUpsCopy->HasChildNodes()) allPopUpsCopy->SetClass("invisible", true);
+		}};
+	}
 }
 
 void PopUpManager::savePopUp(const std::string& circuitUUID) {
@@ -65,7 +70,8 @@ void PopUpManager::saveAsPopUp(const std::string& circuitUUID) {
 }
 
 void PopUpManager::addFeedbackPopup() {
-	Rml::Element* popUpRoot = createPopUp(true);
+	std::pair<Rml::Element*, std::function<void()>> popUpData = createPopUp(false);
+	Rml::Element* popUpRoot = popUpData.first;
 	Rml::ElementList windowList;
 	popUpRoot->GetElementsByClassName(windowList, "pop-up-window");
 	Rml::Element* window = windowList.front();

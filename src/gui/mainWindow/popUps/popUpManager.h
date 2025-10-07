@@ -10,7 +10,7 @@ public:
 	PopUpManager(MainWindow* mainWindow) : mainWindow(mainWindow) {}
 
 	void addOptionsPopUp(const std::string& message, const std::vector<std::pair<std::string, std::function<void()>>>& options, bool blocking = true);
-	Rml::Element* createPopUp(bool blocking = true);
+	std::pair<Rml::Element*, std::function<void()>> createPopUp(bool blocking = true);
 	void addFeedbackPopup();
 
 	void savePopUp(const std::string& circuitUUID);
