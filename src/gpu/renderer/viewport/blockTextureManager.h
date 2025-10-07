@@ -32,7 +32,7 @@ struct BlockTextureArray {
 class BlockTextureManager {
 public:
 	void init(VulkanDevice* device);
-	uint32_t addTexture(const std::string& path);
+	void addTexture(const std::string& path);
 	void update();
 	void cleanup();
 
@@ -44,11 +44,11 @@ public:
 			throw std::out_of_range("Texture index out of range!");
 		}
 
-		BlockTexture tex{};
-		tex.device = textureArray->device;
-		tex.sampler = textureArray->sampler;
-		tex.descriptor = textureArray->descriptor;
-		tex.layer = index;
+		std::shared_ptr<BlockTexture> tex = std::make_shared<BlockTexture>();
+		tex->device = textureArray->device;
+		tex->sampler = textureArray->sampler;
+		tex->descriptor = textureArray->descriptor;
+		tex->layer = index;
 		return tex;
 	}
 

@@ -142,37 +142,3 @@ void VulkanDevice::initializeImmediateSubmission() {
 	fenceInfo.pNext = nullptr;
 	vkCreateFence(device, &fenceInfo, nullptr, &immediateFence);
 }
-
-void VulkanDevice::createBuffer(VkDeviceSize size,
-					VkBufferUsageFlags usage,
-					VkMemoryPropertyFlags properties,
-					VkBuffer& buffer,
-					VkDeviceMemory& bufferMemory) {
-	// 1. Create buffer
-	VkBufferCreateInfo bufferInfo{};
-	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = size;
-	bufferInfo.usage = usage;
-	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-	if (vkCreateBuffer(logicalDevice, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to create buffer!");
-	}
-
-	// 2. Query memory requirements
-	VkMemoryRequirements memRequirements;
-	vkGetBufferMemoryRequirements(logicalDevice, buffer, &memRequirements);
-
-	// 3. Allocate memory
-	VkMemoryAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
-
-	if (vkAllocateMemory(logicalDevice, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to allocate buffer memory!");
-	}
-
-	// 4. Bind buffer to memory
-	vkBindBufferMemory(logicalDevice, buffer, bufferMemory, 0);
-}

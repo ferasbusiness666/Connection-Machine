@@ -11,169 +11,134 @@ BlockTexture::~BlockTexture() {
 }
 
 void BlockTextureManager::init(VulkanDevice* device) {
-        this->device = device;
+	this->device = device;
 
-        textureArray = std::make_shared<BlockTextureArray>();
-        textureArray->device = device;
-        textureArray->maxLayers = 5; // TODO
-        textureArray->nextFreeLayer = 0;
-		textureArray->image = createImageArray(
-			device,
-			extent,
-			VK_FORMAT_R8G8B8A8_UNORM,
-			VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-			layers
-		);
+	VkExtent3D texSize = { 512, 512, 1 };
+	textureArray = std::make_shared<BlockTextureArray>();
+	textureArray->device = device;
+	textureArray->maxLayers = 5; // TODO
+	textureArray->nextFreeLayer = 0;
+	textureArray->image = createImage(
+		device, texSize, VK_FORMAT_R8G8B8A8_UNORM,
+		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, false, textureArray->maxLayers
+	);
 
-		addTexture("logicTiles.png");
+	addTexture("logicTiles.png");
 
-        // Create sampler
-        VkSamplerCreateInfo samplerInfo{};
-        samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        samplerInfo.magFilter = VK_FILTER_LINEAR;
-        samplerInfo.minFilter = VK_FILTER_LINEAR;
-        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        vkCreateSampler(device->getDevice(), &samplerInfo, nullptr, &textureArray->sampler);
+	// create layout and descriptor set
+	DescriptorLayoutBuilder textureLayoutBuilder;
+	textureLayoutBuilder.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+	descriptorLayout = textureLayoutBuilder.build(device->getDevice(), VK_SHADER_STAGE_FRAGMENT_BIT);
+	textureArray->descriptor = descriptorAllocator.allocate(descriptorLayout);
 
-        // Create descriptor set
-        VkDescriptorSetLayoutBinding binding{};
-        binding.binding = 0;
-        binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        binding.descriptorCount = 1;
-        binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	// create sampler
+	VkSamplerCreateInfo samplerInfo{};
+	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	samplerInfo.minFilter = VK_FILTER_LINEAR;
+	samplerInfo.magFilter = VK_FILTER_LINEAR;
+	vkCreateSampler(device->getDevice(), &samplerInfo, nullptr, &textureArray->sampler);
 
-        descriptorLayout = device->createDescriptorSetLayout({binding});
-        textureArray->descriptor = device->allocateDescriptorSet(descriptorLayout);
-
-        VkDescriptorImageInfo imageInfoDS{};
-        imageInfoDS.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfoDS.imageView = textureArray->image.view;
-        imageInfoDS.sampler = textureArray->sampler;
-
-        VkWriteDescriptorSet write{};
-        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        write.dstSet = textureArray->descriptor;
-        write.dstBinding = 0;
-        write.descriptorCount = 1;
-        write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        write.pImageInfo = &imageInfoDS;
-        vkUpdateDescriptorSets(device->getDevice(), 1, &write, 0, nullptr);
+	// write descriptor
+	DescriptorWriter textureWriter;
+	textureWriter.writeImage(0, textureArray->image.imageView, textureArray->sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+	textureWriter.updateSet(device->getDevice(), textureArray->descriptor);
 }
 
-void copyTextureToLayer(VulkanDevice* device, uint8_t* pixels, int width, int height, VkImage image, uint32_t layer) {
-    VkDeviceSize imageSize = width * height * 4;
-
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingMemory;
-    device->createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                         stagingBuffer, stagingMemory);
-
-    void* data;
-    vkMapMemory(device->getDevice(), stagingMemory, 0, imageSize, 0, &data);
-    memcpy(data, pixels, static_cast<size_t>(imageSize));
-    vkUnmapMemory(device->getDevice(), stagingMemory);
-
-    VkCommandBuffer cmd = beginSingleTimeCommands(device);
-
-    VkImageSubresourceRange range{};
-    range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    range.baseMipLevel = 0;
-    range.levelCount = 1;
-    range.baseArrayLayer = layer;
-    range.layerCount = 1;
-
-    transitionImageLayout(cmd, image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, range);
-
-    VkBufferImageCopy region{};
-    region.bufferOffset = 0;
-    region.bufferRowLength = 0;
-    region.bufferImageHeight = 0;
-    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region.imageSubresource.mipLevel = 0;
-    region.imageSubresource.baseArrayLayer = layer;
-    region.imageSubresource.layerCount = 1;
-    region.imageOffset = {0, 0, 0};
-    region.imageExtent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1};
-
-    vkCmdCopyBufferToImage(cmd, stagingBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-
-    transitionImageLayout(cmd, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, range);
-
-    endSingleTimeCommands(device, cmd);
-
-    vkDestroyBuffer(device->getDevice(), stagingBuffer, nullptr);
-    vkFreeMemory(device->getDevice(), stagingMemory, nullptr);
-}
-
-uint32_t BlockTextureManager::addTexture(const std::string& path) {
-	if (textureArray->nextFreeLayer >= textureArray->maxLayers) {
-        throw std::runtime_error("Texture array is full!");
-    }
-
+void BlockTextureManager::addTexture(const std::string& path) {
+    // --- Load pixels from file ---
     int texWidth, texHeight, texChannels;
     stbi_uc* pixels = stbi_load(path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     if (!pixels) {
-        throw std::runtime_error("Failed to load texture: " + filepath);
+        throwFatalError("Failed to load texture: " + path);
     }
 
-    VkDeviceSize imageSize = texWidth * texHeight * 4;
+    if (textureArray->nextFreeLayer >= textureArray->maxLayers) {
+        stbi_image_free(pixels);
+        throwFatalError("Texture array is full!");
+    }
+
+    VkDevice device = textureArray->device->getDevice();
+
+    VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * texHeight * 4;
 
     // --- Create staging buffer ---
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingMemory;
-    textureArray->device->createBuffer(
+    AllocatedBuffer stagingBuffer = createBuffer(
+        textureArray->device,
         imageSize,
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        stagingBuffer,
-        stagingMemory
+        VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
     );
 
-    void* data;
-    vkMapMemory(textureArray->device->logicalDevice, stagingMemory, 0, imageSize, 0, &data);
-    memcpy(data, pixels, static_cast<size_t>(imageSize));
-    vkUnmapMemory(textureArray->device->logicalDevice, stagingMemory);
+    // Copy pixels into the staging buffer
+    vmaCopyMemoryToAllocation(textureArray->device->getAllocator(), pixels, stagingBuffer.allocation, 0, imageSize);
 
     stbi_image_free(pixels);
 
-    // --- Copy buffer → image layer ---
-    VkCommandBuffer cmd = textureArray->device->beginSingleTimeCommands();
+    // --- Upload to the array image layer ---
+    textureArray->device->immediateSubmit([&](VkCommandBuffer cmd) {
+        // Transition target layer to TRANSFER_DST_OPTIMAL
+        VkImageMemoryBarrier barrier{};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image = textureArray->image.image;
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer = textureArray->nextFreeLayer;
+        barrier.subresourceRange.layerCount = 1;
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
-	transitionImageLayout(cmd, textureArray->image,
-						VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-						VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        vkCmdPipelineBarrier(
+            cmd,
+            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+            0, 0, nullptr, 0, nullptr, 1, &barrier
+        );
 
-    VkBufferImageCopy region{};
-    region.bufferOffset = 0;
-    region.bufferRowLength = 0;
-    region.bufferImageHeight = 0;
+        // Copy staging buffer → texture layer
+        VkBufferImageCopy region{};
+        region.bufferOffset = 0;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
 
-    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region.imageSubresource.mipLevel = 0;
-    region.imageSubresource.baseArrayLayer = textureArray->nextFreeLayer;
-    region.imageSubresource.layerCount = 1;
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = textureArray->nextFreeLayer;
+        region.imageSubresource.layerCount = 1;
 
-    region.imageOffset = {0, 0, 0};
-    region.imageExtent = {
-        static_cast<uint32_t>(texWidth),
-        static_cast<uint32_t>(texHeight),
-        1
-    };
+        region.imageExtent = {
+            static_cast<uint32_t>(texWidth),
+            static_cast<uint32_t>(texHeight),
+            1
+        };
 
-    vkCmdCopyBufferToImage(cmd, stagingBuffer, textureArray->image.image,
-                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+        vkCmdCopyBufferToImage(
+            cmd,
+            stagingBuffer.buffer,
+            textureArray->image.image,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1,
+            &region
+        );
 
-    transitionImageLayout(cmd, textureArray->image,
-                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        // Transition layer to SHADER_READ_ONLY_OPTIMAL
+        VkImageMemoryBarrier shaderBarrier = barrier;
+        shaderBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        shaderBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        shaderBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        shaderBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-    textureArray->device->endSingleTimeCommands(cmd);
+        vkCmdPipelineBarrier(
+            cmd,
+            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            0, 0, nullptr, 0, nullptr, 1, &shaderBarrier
+        );
+    });
 
-    vkDestroyBuffer(textureArray->device->logicalDevice, stagingBuffer, nullptr);
-    vkFreeMemory(textureArray->device->logicalDevice, stagingMemory, nullptr);
+    destroyBuffer(stagingBuffer);
 
     textureArray->nextFreeLayer++;
 }
