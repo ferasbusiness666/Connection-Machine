@@ -1,6 +1,6 @@
 /* Pop Up Window */
 
-#pop-up-overlay {
+.pop-up-overlay {
 	position: absolute;
 	display: flex;
 	flex-direction: row;
@@ -9,7 +9,8 @@
 	width: 100%;
 	height: 100%;
 }
-#pop-up-overlay-internal {
+
+.pop-up-overlay-internal {
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
@@ -18,7 +19,7 @@
 	height: 100%;
 }
 
-#pop-up-window {
+.pop-up-window {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -30,7 +31,7 @@
 }
 
 /* --- action buttons --- */
-#pop-up-actions {
+.pop-up-actions {
 	align-items: center;
 	justify-content: center;
 	gap: 12dp;
@@ -47,7 +48,7 @@
 	text-align: center;
 }
 
-#pop-up-text {
+.pop-up-text {
 	font-size: 20dp;
 	font-weight: 500;
 }

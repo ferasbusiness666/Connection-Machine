@@ -1,5 +1,6 @@
 #include "sdlWindow.h"
 #include "util/fastMath.h"
+#include "app.h"
 
 SdlWindow::SdlWindow(const std::string& name) {
 	logInfo("Creating SDL window...");
@@ -30,6 +31,20 @@ SdlWindow::~SdlWindow() {
 	if (vkSurface.has_value()) SDL_Vulkan_DestroySurface(vkInstance, vkSurface.value(), nullptr);
 	SDL_DestroyWindow(handle);
 }
+
+bool SdlWindow::recieveEvent(SDL_Event& event) {
+		if (doRecieveEvent) {
+			return doRecieveEvent(event);
+		}
+		if (isThisMyEvent(event)) {
+			if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
+				App::get().deregisterWindow(this);
+			}
+			return true;
+		}
+
+		return false;
+	}
 
 bool SdlWindow::isThisMyEvent(const SDL_Event& event) {
 	if (event.type == 2050) return true; // the fuck is this? - jack quay jamison

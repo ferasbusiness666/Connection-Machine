@@ -6,13 +6,13 @@
 
 #include "gui/sdl/sdlWindow.h"
 
-#include "tools/toolManagerManager.h"
-#include "sideBar/icEditor/blockCreationWindow.h"
 #include "circuitView/simControlsManager.h"
-#include "sideBar/selector/selectorWindow.h"
-#include "sideBar/simulation/evalWindow.h"
 #include "gui/helper/keybindHandler.h"
 #include "popUps/popUpManager.h"
+#include "sideBar/icEditor/blockCreationWindow.h"
+#include "sideBar/selector/selectorWindow.h"
+#include "sideBar/simulation/evalWindow.h"
+#include "tools/toolManagerManager.h"
 
 class CircuitViewWidget;
 class Environment;
@@ -70,7 +70,7 @@ private:
 	std::optional<BlockCreationWindow> blockCreationWindow;
 	std::optional<SimControlsManager> simControlsManager;
 
-	std::vector<std::pair<std::string,const std::vector<std::pair<std::string, std::function<void()>>>>> popUpsToAdd;
+	std::vector<std::pair<std::string, const std::vector<std::pair<std::string, std::function<void()>>>>> popUpsToAdd;
 
 	// circuit view widget
 	std::shared_ptr<CircuitViewWidget> activeCircuitViewWidget;
