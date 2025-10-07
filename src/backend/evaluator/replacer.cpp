@@ -76,7 +76,12 @@ std::vector<std::optional<EvalConnectionPoint>> Replacer::getReplacementConnecti
 	return result;
 }
 
-void Replacer::mergeBuses(SimPauseGuard& pauseGuard, int layer) {}
+void Replacer::mergeBuses(SimPauseGuard& pauseGuard, int layer) {
+	std::vector<middle_id_t> allMiddleIds = middleIdProvider.getUsedIds();
+	for (const middle_id_t id : allMiddleIds) {
+		GateType gateType = busInterfacePassthrough.getGateType(id);
+	}
+}
 
 void Replacer::mergeJunctions(SimPauseGuard& pauseGuard, int layer) {
 	std::vector<middle_id_t> allMiddleIds = middleIdProvider.getUsedIds();
