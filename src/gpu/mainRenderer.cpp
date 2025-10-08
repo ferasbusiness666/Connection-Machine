@@ -170,8 +170,12 @@ void MainRenderer::setBlockSize(BlockRenderDataId blockRenderDataId, Size size) 
 	blockRenderDataManager.setBlockSize(blockRenderDataId, size);
 }
 
-void MainRenderer::setBlockTextureIndex(BlockRenderDataId blockRenderDataId, unsigned int textureIndex) {
-	blockRenderDataManager.setBlockTextureIndex(blockRenderDataId, textureIndex);
+BlockTextureId MainRenderer::addBlockTexture(const std::string& path) {
+	return vulkanInstance.getDevice()->getBlockTextureManager().addTexture(path);
+}
+
+void MainRenderer::setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize) {
+	blockRenderDataManager.setBlockTexture(blockRenderDataId, blockTextureId, tileSize, smallestCordTile, blockSize);
 }
 
 BlockPortRenderDataId MainRenderer::addBlockPort(BlockRenderDataId blockRenderDataId, bool isInput, FVector positionOnBlock) {

@@ -1,6 +1,7 @@
 #include "blockRenderDataFeeder.h"
 
 #include "gui/viewportManager/circuitView/renderer/logicRenderingUtils.h"
+#include "computerAPI/directoryManager.h"
 
 #include "backend/backend.h"
 #include "gpu/mainRenderer.h"
@@ -13,6 +14,8 @@ BlockRenderDataFeeder::BlockRenderDataFeeder(Backend* backend) : backend(backend
 	dataUpdateEventReceiver.linkFunction("blockDataSetConnection", std::bind(&BlockRenderDataFeeder::blockDataSetConnectionUpdate, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("blockDataRemoveConnection", std::bind(&BlockRenderDataFeeder::blockDataRemoveConnectionUpdate, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("blockDataConnectionNameSet", std::bind(&BlockRenderDataFeeder::blockDataConnectionNameSetUpdate, this, std::placeholders::_1));
+
+	mainBlockTextureId = MainRenderer::get().addBlockTexture(DirectoryManager::getResourceDirectory() / "logicTiles.png");
 }
 
 BlockRenderDataId BlockRenderDataFeeder::getBlockRenderDataId(BlockType blockType) const {
@@ -29,7 +32,7 @@ void BlockRenderDataFeeder::newBlockTypeUpdate(const DataUpdateEventManager::Eve
 	if (!data) return;
 	BlockRenderDataId blockRenderDataId = MainRenderer::get().registerBlockRenderData();
 	blockTypeToRenderIdData.emplace(data->get(), blockRenderDataId);
-	MainRenderer::get().setBlockTextureIndex(blockRenderDataId, data->get() >= BlockType::CUSTOM ? 1 : (data->get() + 1));
+	MainRenderer::get().setBlockTexture(blockRenderDataId, mainBlockTextureId, {256, 256}, {data->get() >= BlockType::CUSTOM ? 1 : (data->get() + 1), 0}, {1, 1});
 }
 
 void BlockRenderDataFeeder::postBlockSizeChangeUpdate(const DataUpdateEventManager::EventData* dataEvent) {

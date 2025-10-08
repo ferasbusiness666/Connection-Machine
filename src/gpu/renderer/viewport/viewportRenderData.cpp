@@ -193,9 +193,9 @@ ElementId ViewportRenderData::addBlockPreview(BlockPreview&& blockPreview) {
 		if (!blockRenderData) continue;
 		Size size = block.orientation * blockRenderData->size;
 		newPreview.size = glm::vec2(size.w, size.h);
-		newPreview.textureIndex = blockRenderData->textureIndex;
-		newPreview.texSize = blockRenderData->textureOrigin;
-		newPreview.texPos = blockRenderData->textureSize;
+		newPreview.textureIndex = blockRenderData->blockTextureCords.texLayer;
+		newPreview.texPos = blockRenderData->blockTextureCords.textureOriginUV;
+		newPreview.texSize = blockRenderData->blockTextureCords.texSizeUV;
 
 		// insert new block preview into map
 		blockPreviews.emplace(newElement, newPreview);

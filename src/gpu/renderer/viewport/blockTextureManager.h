@@ -1,26 +1,19 @@
 #ifndef blockTextureManager_h
 #define blockTextureManager_h
 
+#include "glm/ext/vector_float2.hpp"
 #include "gpu/abstractions/vulkanDescriptor.h"
 #include "gpu/abstractions/vulkanImage.h"
-#include "tileSet.h"
+#include "util/vec2.h"
 
 class VulkanDevice;
-
-struct BlockTexture {
-	~BlockTexture();
-	VkDescriptorSet descriptor;
-	VkSampler sampler;
-	AllocatedImage image;
-	uint32_t layer;
-	VulkanDevice* device;
-};
 
 struct BlockTextureArray {
     VulkanDevice* device;
     AllocatedImage image;
     VkSampler sampler;
     VkDescriptorSet descriptor;
+	VkExtent3D texSize;
 
     uint32_t maxLayers;
     uint32_t nextFreeLayer;
@@ -30,10 +23,29 @@ struct BlockTextureArray {
 	~BlockTextureArray();
 };
 
+typedef unsigned int BlockTextureId;
+
+struct BlockTexture {
+public:
+	BlockTexture(glm::vec2 textureOrigin, glm::vec2 texSize, unsigned int texLayer) : textureOrigin(textureOrigin), texSize(texSize), texLayer(texLayer) {}
+	glm::vec2 textureOrigin;
+	glm::vec2 texSize;
+	unsigned int texLayer;
+};
+
+struct BlockTextureCords {
+public:
+	BlockTextureCords(glm::vec2 textureOriginUV, glm::vec2 texSizeUV, unsigned int texLayer) : textureOriginUV(textureOriginUV), texSizeUV(texSizeUV), texLayer(texLayer) {}
+	glm::vec2 textureOriginUV;
+	glm::vec2 texSizeUV;
+	unsigned int texLayer;
+};
+
 class BlockTextureManager {
 public:
 	void init(VulkanDevice* device);
-	void addTexture(const std::string& path);
+	BlockTextureId addTexture(const std::string& path);
+	BlockTextureCords getBlockTextureCords(BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize) const;
 	void update();
 	void cleanup();
 
@@ -47,6 +59,7 @@ private:
 	VkDescriptorSetLayout descriptorLayout;
 
 	std::shared_ptr<BlockTextureArray> textureArray;
+	std::map<BlockTextureId, BlockTexture> blockTextures;
 };
 
 #endif

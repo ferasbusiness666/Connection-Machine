@@ -230,7 +230,14 @@ void VulkanChunker::addBlock(BlockRenderDataId blockRenderDataId, Position posit
 	Position chunkPos = getChunk(position);
 	auto iter = chunks.find(chunkPos);
 	const BlockRenderDataManager::BlockRenderData* blockRenderData = MainRenderer::get().getBlockRenderDataManager().getBlockRenderData(blockRenderDataId);
-	chunks[chunkPos].getRenderedBlocks().emplace(position, RenderedBlock(blockRenderData->textureIndex, blockRenderData->textureOrigin, blockRenderData->textureSize, orientation, (orientation * blockRenderData->size).free(), statePosition));
+	chunks[chunkPos].getRenderedBlocks().emplace(position, RenderedBlock(
+		blockRenderData->blockTextureCords.texLayer,
+		blockRenderData->blockTextureCords.textureOriginUV,
+		blockRenderData->blockTextureCords.texSizeUV,
+		orientation,
+		(orientation * blockRenderData->size).free(),
+		statePosition
+	));
 	chunksToUpdate.insert(chunkPos);
 }
 

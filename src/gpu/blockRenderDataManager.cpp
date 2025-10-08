@@ -1,6 +1,7 @@
 #include "blockRenderDataManager.h"
 
 #include "util/algorithm.h"
+#include "mainRenderer.h"
 
 const BlockRenderDataManager::BlockRenderData* BlockRenderDataManager::getBlockRenderData(BlockRenderDataId blockRenderDataId) {
 	auto iter = blockRenderData.find(blockRenderDataId);
@@ -44,13 +45,14 @@ void BlockRenderDataManager::setBlockSize(BlockRenderDataId blockRenderDataId, S
 	iter->second.size = size;
 }
 
-void BlockRenderDataManager::setBlockTextureIndex(BlockRenderDataId blockRenderDataId, unsigned int textureIndex) {
+void BlockRenderDataManager::setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize) {
 	auto iter = blockRenderData.find(blockRenderDataId);
 	if (iter == blockRenderData.end()) {
 		logError("Failed to call setBlockTextureIndex on non existent BlockRenderData {}.", "BlockRenderDataManager", blockRenderDataId);
 		return;
 	}
-	iter->second.textureIndex = textureIndex;
+	BlockTextureManager& blockTextureManager = MainRenderer::get().getVulkanInstance().getDevice()->getBlockTextureManager();
+	iter->second.blockTextureCords = blockTextureManager.getBlockTextureCords(blockTextureId, tileSize, smallestCordTile, blockSize);
 }
 
 BlockPortRenderDataId BlockRenderDataManager::addBlockPort(BlockRenderDataId blockRenderDataId, bool isInput, FVector positionOnBlock) {

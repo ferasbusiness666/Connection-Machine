@@ -32,6 +32,7 @@ private:
 	Backend* backend;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 	std::map<BlockType, RenderIdData> blockTypeToRenderIdData;
+	BlockTextureId mainBlockTextureId;
 };
 
 #endif /* blockRenderDataFeeder_h */
