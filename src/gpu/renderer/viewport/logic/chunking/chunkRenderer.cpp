@@ -7,9 +7,6 @@
 #include "computerAPI/fileLoader.h"
 #include "computerAPI/directoryManager.h"
 
-#include "util/vec2.h"
-
-
 #ifdef TRACY_PROFILER
 	#include <tracy/Tracy.hpp>
 #endif
@@ -81,9 +78,6 @@ void ChunkRenderer::render(Frame& frame, const glm::mat4& viewMatrix, Evaluator*
 	// shared push constants
 	ChunkPushConstants pushConstants{};
 	pushConstants.mvp = viewMatrix;
-	Vec2 uvCellSize = device->getBlockTextureManager().getTileset().getCellUVSize();
-	pushConstants.uvCellSizeX = uvCellSize.x;
-	pushConstants.uvCellSizeY = uvCellSize.y;
 
 	// fill state buffers
 	for (std::shared_ptr<VulkanChunkAllocation> chunk : chunks) {

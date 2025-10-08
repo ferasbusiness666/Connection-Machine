@@ -106,8 +106,6 @@ void ElementRenderer::renderBlockPreviews(Frame& frame, const glm::mat4& viewMat
 		BlockPreviewPushConstant blockPreviewConstant;
 		blockPreviewConstant.mvp = viewMatrix;
 		Vec2 uvCellSize = device->getBlockTextureManager().getTileset().getCellUVSize();
-		blockPreviewConstant.uvCellSizeX = uvCellSize.x;
-		blockPreviewConstant.uvCellSizeY = uvCellSize.y;
 		for (const BlockPreviewRenderData& preview : blockPreviews) {
 			blockPreviewConstant.position = preview.position;
 			blockPreviewConstant.size = preview.size;

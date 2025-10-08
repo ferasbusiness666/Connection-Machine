@@ -35,7 +35,7 @@ void main() {
 	vec2 posCoord = vec2((bitmasksX[0] & b) != 0, (bitmasksY[0] & b) != 0);
     vec2 uvCoord = vec2((bitmasksX[inRotation] & b) != 0, (bitmasksY[inRotation] & b) != 0);
 
-	outTex = vec2(inTexPos.x + uvCoord.x*push.uvCellSizeX, inTexPos.y + (push.uvCellSizeY)*(uvCoord.y+float(state)));
+	outTex = vec2(inTexPos.x + uvCoord.x*inTexSize.x, inTexPos.y + (uvCoord.y+float(state))*inTexSize.y);
     outLayer = inTexLayer;
 	gl_Position = push.mvp * vec4(inPosition + posCoord*inSize, 0.0, 1.0);
 }

@@ -7,8 +7,6 @@ layout( push_constant ) uniform constants
 	vec2 size;
 	float uvOffsetX;
 	uint rotation;
-	float uvSizeX;
-	float uvSizeY;
 } push;
 
 layout(location = 0) out vec2 outTex;
@@ -22,7 +20,7 @@ void main() {
 	uint b = 1 << (gl_VertexIndex % 6);
 	vec2 posCoord = vec2((bitmasksX[0] & b) != 0, (bitmasksY[0] & b) != 0);
     vec2 uvCoord = vec2((bitmasksX[push.rotation] & b) != 0, (bitmasksY[push.rotation] & b) != 0);
-	
-	outTex = vec2(push.uvOffsetX + (uvCoord.x * push.uvSizeX), uvCoord.y * push.uvSizeY);
+
+	outTex = vec2(push.uvOffsetX + (uvCoord.x * 0.1), uvCoord.y * 0.1);
 	gl_Position = push.mvp * vec4(push.position + (posCoord * push.size), 0.0, 1.0);
 }

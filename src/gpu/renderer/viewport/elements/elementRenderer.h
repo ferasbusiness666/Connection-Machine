@@ -14,8 +14,6 @@ struct BlockPreviewPushConstant {
     alignas(8)  glm::vec2 size;
     alignas(4)  float uvOffsetX;
 	alignas(4)  uint32_t orientation;
-	alignas(4)  float uvCellSizeX;
-	alignas(4)  float uvCellSizeY;
 };
 struct BlockPreviewRenderData {
 	glm::vec2 position;

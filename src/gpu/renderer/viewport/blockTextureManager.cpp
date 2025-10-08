@@ -20,7 +20,7 @@ void BlockTextureManager::init(VulkanDevice* device) {
 
 	descriptorAllocator.init(device, 100, { { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1.0f } });
 
-	VkExtent3D texSize = { 512, 512, 1 };
+	VkExtent3D texSize = { 4096, 4096, 1 };
 	textureArray = std::make_shared<BlockTextureArray>();
 	textureArray->device = device;
 	textureArray->maxLayers = 5; // TODO
