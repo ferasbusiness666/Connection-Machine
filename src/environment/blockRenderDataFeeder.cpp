@@ -32,7 +32,7 @@ void BlockRenderDataFeeder::newBlockTypeUpdate(const DataUpdateEventManager::Eve
 	if (!data) return;
 	BlockRenderDataId blockRenderDataId = MainRenderer::get().registerBlockRenderData();
 	blockTypeToRenderIdData.emplace(data->get(), blockRenderDataId);
-	MainRenderer::get().setBlockTexture(blockRenderDataId, mainBlockTextureId, {256, 256}, {data->get() >= BlockType::CUSTOM ? 1 : (data->get() + 1), 0}, {1, 1});
+	MainRenderer::get().setBlockTexture(blockRenderDataId, mainBlockTextureId, {256, 256}, {data->get() >= BlockType::BUS_INTERFACE ? 1 : (data->get() + 1), 0}, {1, 1});
 }
 
 void BlockRenderDataFeeder::postBlockSizeChangeUpdate(const DataUpdateEventManager::EventData* dataEvent) {
