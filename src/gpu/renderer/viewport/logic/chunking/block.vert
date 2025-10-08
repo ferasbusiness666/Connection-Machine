@@ -18,8 +18,6 @@ layout( push_constant ) uniform constants
 
 #include "stateBuffer.glsl"
 
-const int vertsPerBlock = 6;
-
 // magic rotation bitmasks for getting rotation coordinates
 uint bitmasksX[8] = uint[8](0x1C, 0x0E, 0x23, 0x31, 0x1C, 0x0E, 0x23, 0x31);
 uint bitmasksY[8] = uint[8](0x0E, 0x23, 0x31, 0x1C, 0x31, 0x1C, 0x0E, 0x23);
@@ -30,7 +28,7 @@ void main() {
 	uint state = (val >> ((gl_InstanceIndex % statesPerWord) * 8)) & 0xFFu;
 
 	// offsets
-	uint b = 1 << (gl_VertexIndex % vertsPerBlock);
+	uint b = 1 << (gl_VertexIndex % 6);
 	vec2 posCoord = vec2((bitmasksX[0] & b) != 0, (bitmasksY[0] & b) != 0);
     vec2 uvCoord = vec2((bitmasksX[inRotation] & b) != 0, (bitmasksY[inRotation] & b) != 0);
 

@@ -16,6 +16,7 @@ BlockRenderDataFeeder::BlockRenderDataFeeder(Backend* backend) : backend(backend
 	dataUpdateEventReceiver.linkFunction("blockDataConnectionNameSet", std::bind(&BlockRenderDataFeeder::blockDataConnectionNameSetUpdate, this, std::placeholders::_1));
 
 	mainBlockTextureId = MainRenderer::get().addBlockTexture(DirectoryManager::getResourceDirectory() / "logicTiles.png");
+	otherBlockTextureId = MainRenderer::get().addBlockTexture(DirectoryManager::getResourceDirectory() / "gateIcon.png");
 }
 
 BlockRenderDataId BlockRenderDataFeeder::getBlockRenderDataId(BlockType blockType) const {
@@ -32,7 +33,11 @@ void BlockRenderDataFeeder::newBlockTypeUpdate(const DataUpdateEventManager::Eve
 	if (!data) return;
 	BlockRenderDataId blockRenderDataId = MainRenderer::get().registerBlockRenderData();
 	blockTypeToRenderIdData.emplace(data->get(), blockRenderDataId);
-	MainRenderer::get().setBlockTexture(blockRenderDataId, mainBlockTextureId, {256, 256}, {data->get() >= BlockType::BUS_INTERFACE ? 1 : (data->get() + 1), 0}, {1, 1});
+	if (data->get() == BlockType::BUS_INTERFACE) {
+		MainRenderer::get().setBlockTexture(blockRenderDataId, otherBlockTextureId, {512, 512}, {0, 0}, {1, 1});
+	} else {
+		MainRenderer::get().setBlockTexture(blockRenderDataId, mainBlockTextureId, {256, 256}, {data->get() >= BlockType::BUS_INTERFACE ? 1 : (data->get() + 1), 0}, {1, 1});
+	}
 }
 
 void BlockRenderDataFeeder::postBlockSizeChangeUpdate(const DataUpdateEventManager::EventData* dataEvent) {

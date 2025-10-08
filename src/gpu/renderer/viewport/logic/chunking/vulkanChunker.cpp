@@ -46,7 +46,7 @@ VulkanChunkAllocation::VulkanChunkAllocation(VulkanDevice* device,const Rendered
 			instance.sizeX = block.second.size.w;
 			instance.sizeY = block.second.size.h;
 			instance.orientation = block.second.orientation.rotation + 4 * block.second.orientation.flipped;
-			instance.texLayer = 0;
+			instance.texLayer = block.second.textureIndex;
 			instance.texPos = block.second.textureOrigin;
 			instance.texSize = block.second.textureSize;
 

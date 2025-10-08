@@ -33,6 +33,7 @@ private:
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 	std::map<BlockType, RenderIdData> blockTypeToRenderIdData;
 	BlockTextureId mainBlockTextureId;
+	BlockTextureId otherBlockTextureId;
 };
 
 #endif /* blockRenderDataFeeder_h */
