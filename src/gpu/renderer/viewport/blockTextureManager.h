@@ -60,6 +60,7 @@ private:
 
 	std::shared_ptr<BlockTextureArray> textureArray;
 	std::map<BlockTextureId, BlockTexture> blockTextures;
+	std::map<std::string, BlockTextureId> loadedTextureFiles;
 };
 
 #endif

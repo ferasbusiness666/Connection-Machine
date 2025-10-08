@@ -43,6 +43,12 @@ void BlockTextureManager::init(VulkanDevice* device) {
 }
 
 BlockTextureId BlockTextureManager::addTexture(const std::string& path) {
+	// check if its already loaded
+	auto iter = loadedTextureFiles.find(path);
+	if (iter != loadedTextureFiles.end()) {
+		return iter->second;
+	}
+
 	// --- Load pixels from file ---
 	int texWidth, texHeight, texChannels;
 	stbi_uc* pixels = stbi_load(path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
@@ -117,6 +123,8 @@ BlockTextureId BlockTextureManager::addTexture(const std::string& path) {
 	BlockTextureId blockTextureId = findUnusedKey<BlockTextureId>(blockTextures, 1);
 	blockTextures.try_emplace(blockTextureId, glm::vec2(0, 0), glm::vec2(texWidth, texHeight), textureArray->nextFreeLayer);
 	textureArray->nextFreeLayer++;
+
+	loadedTextureFiles.emplace(path, blockTextureId);
 
 	return blockTextureId;
 }
