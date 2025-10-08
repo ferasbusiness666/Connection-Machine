@@ -21,6 +21,7 @@ LogicSimulator::LogicSimulator(
 
 	simulationThread = std::thread(&LogicSimulator::simulationLoop, this);
 	extendDataVectors(simulatorIdProvider.getNewId()); // reserve the 0th id to be used as an invalid id
+	setState(0, logic_state_t::LOW);
 }
 
 LogicSimulator::~LogicSimulator() {
@@ -202,7 +203,6 @@ std::vector<logic_state_t> LogicSimulator::getStates(const std::vector<simulator
 	std::shared_lock lk(statesAMutex);
 	for (size_t i = 0; i < ids.size(); ++i) {
 		const size_t id = ids[i];
-		// TODO make it so a id (prob 0) that will always be low so that render can render blocks with that state
 		if (id < statesA.size()) {
 			result[i] = statesA[id];
 		} else {
