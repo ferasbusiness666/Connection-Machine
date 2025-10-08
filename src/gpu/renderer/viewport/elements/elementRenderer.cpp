@@ -7,7 +7,6 @@
 #include "computerAPI/directoryManager.h"
 #include "computerAPI/fileLoader.h"
 #include "gpu/abstractions/vulkanShader.h"
-#include "util/vec2.h"
 #include "gpu/renderer/viewport/blockTextureManager.h"
 
 void ElementRenderer::init(VulkanDevice* device, VkRenderPass& renderPass) {
@@ -105,12 +104,13 @@ void ElementRenderer::renderBlockPreviews(Frame& frame, const glm::mat4& viewMat
 
 		BlockPreviewPushConstant blockPreviewConstant;
 		blockPreviewConstant.mvp = viewMatrix;
-		Vec2 uvCellSize = device->getBlockTextureManager().getTileset().getCellUVSize();
 		for (const BlockPreviewRenderData& preview : blockPreviews) {
 			blockPreviewConstant.position = preview.position;
 			blockPreviewConstant.size = preview.size;
 			blockPreviewConstant.orientation = preview.orientation.rotation + 4 * preview.orientation.flipped;
-			blockPreviewConstant.uvOffsetX = device->getBlockTextureManager().getTileset().getTopLeftUV(preview.textureIndex, 0).x;
+			blockPreviewConstant.texLayer = preview.textureIndex;
+			blockPreviewConstant.texPos = preview.texPos;
+			blockPreviewConstant.texSize = preview.texSize;
 
 			blockPreviewPipeline.cmdPushConstants(frame.mainCommandBuffer, &blockPreviewConstant);
 			vkCmdDraw(frame.mainCommandBuffer, 6, 1, 0, 0);

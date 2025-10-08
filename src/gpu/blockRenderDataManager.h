@@ -21,7 +21,7 @@ public:
 		Size size = Size(1);
 		unsigned int textureIndex = 0;
 		glm::vec2 textureOrigin = {0, 0};
-		glm::vec2 textureSize = {1, 1};
+		glm::vec2 textureSize = {0.9375, 0.25};
 		std::map<BlockPortRenderDataId, BlockPortRenderData> blockPortRenderData;
 	};
 

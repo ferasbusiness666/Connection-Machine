@@ -9,8 +9,7 @@ layout(location = 3) in vec2 inTexPos;
 layout(location = 4) in vec2 inTexSize;
 layout(location = 5) in uint inRotation;
 
-layout(location = 0) out vec2 outTex;
-layout(location = 1) flat out uint outLayer;
+layout(location = 0) out vec3 outTex;
 
 layout( push_constant ) uniform constants
 {
@@ -35,7 +34,6 @@ void main() {
 	vec2 posCoord = vec2((bitmasksX[0] & b) != 0, (bitmasksY[0] & b) != 0);
     vec2 uvCoord = vec2((bitmasksX[inRotation] & b) != 0, (bitmasksY[inRotation] & b) != 0);
 
-	outTex = vec2(inTexPos.x + uvCoord.x*inTexSize.x, inTexPos.y + (uvCoord.y+float(state))*inTexSize.y);
-    outLayer = inTexLayer;
+	outTex = vec3(inTexPos.x + uvCoord.x*inTexSize.x, inTexPos.y + (uvCoord.y+float(state))*inTexSize.y, inTexLayer);
 	gl_Position = push.mvp * vec4(inPosition + posCoord*inSize, 0.0, 1.0);
 }

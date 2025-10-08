@@ -38,20 +38,7 @@ public:
 	void cleanup();
 
 	inline VkDescriptorSetLayout getDescriptorLayout() { return descriptorLayout; }
-	inline TileSetInfo& getTileset() { return mainTileSet; }
     inline std::shared_ptr<BlockTextureArray> getTextureArray() { return textureArray; }
-	// inline std::shared_ptr<BlockTexture> getTexture(uint32_t index) { // should be only using the whole textureArray
-	// 	if (index >= textureArray->nextFreeLayer) {
-	// 		throw std::out_of_range("Texture index out of range!");
-	// 	}
-
-	// 	std::shared_ptr<BlockTexture> tex = std::make_shared<BlockTexture>();
-	// 	tex->device = textureArray->device;
-	// 	tex->sampler = textureArray->sampler;
-	// 	tex->descriptor = textureArray->descriptor;
-	// 	tex->layer = index;
-	// 	return tex;
-	// }
 
 private:
 	VulkanDevice* device;
@@ -60,7 +47,6 @@ private:
 	VkDescriptorSetLayout descriptorLayout;
 
 	std::shared_ptr<BlockTextureArray> textureArray;
-	TileSetInfo mainTileSet = TileSetInfo(256, 15, 4);
 };
 
 #endif
