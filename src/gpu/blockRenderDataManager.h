@@ -3,6 +3,8 @@
 
 #include "backend/position/position.h"
 
+#include <glm/ext/vector_float2.hpp>
+
 typedef uint32_t BlockRenderDataId;
 typedef uint32_t BlockPortRenderDataId;
 
@@ -18,6 +20,8 @@ public:
 		std::string blockName = "";
 		Size size = Size(1);
 		unsigned int textureIndex = 0;
+		glm::vec2 textureOrigin = {1000, 0};
+		glm::vec2 textureSize = {1000, 1000};
 		std::map<BlockPortRenderDataId, BlockPortRenderData> blockPortRenderData;
 	};
 

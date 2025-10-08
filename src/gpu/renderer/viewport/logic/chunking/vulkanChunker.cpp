@@ -47,7 +47,9 @@ VulkanChunkAllocation::VulkanChunkAllocation(VulkanDevice* device,const Rendered
 			instance.sizeX = block.second.size.w;
 			instance.sizeY = block.second.size.h;
 			instance.orientation = block.second.orientation.rotation + 4 * block.second.orientation.flipped;
-			instance.texLayer = uvOrigin.x;
+			instance.texLayer = 0;
+			instance.texPos = block.second.textureOrigin;
+			instance.texSize = block.second.textureSize;
 
 			blockInstances.push_back(instance);
 
@@ -229,7 +231,7 @@ void VulkanChunker::addBlock(BlockRenderDataId blockRenderDataId, Position posit
 	Position chunkPos = getChunk(position);
 	auto iter = chunks.find(chunkPos);
 	const BlockRenderDataManager::BlockRenderData* blockRenderData = MainRenderer::get().getBlockRenderDataManager().getBlockRenderData(blockRenderDataId);
-	chunks[chunkPos].getRenderedBlocks().emplace(position, RenderedBlock(blockRenderData->textureIndex, orientation, (orientation * blockRenderData->size).free(), statePosition));
+	chunks[chunkPos].getRenderedBlocks().emplace(position, RenderedBlock(blockRenderData->textureIndex, blockRenderData->textureOrigin, blockRenderData->textureSize, orientation, (orientation * blockRenderData->size).free(), statePosition));
 	chunksToUpdate.insert(chunkPos);
 }
 
