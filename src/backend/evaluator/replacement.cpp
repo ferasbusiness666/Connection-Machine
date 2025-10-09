@@ -119,7 +119,7 @@ void Replacement::revert(SimPauseGuard& pauseGuard) {
 		replacer->busInterfacePassthrough.makeConnection(pauseGuard, conn);
 	}
 	for (const auto& id : reservedIds) {
-		replacer->removeConnectionPointOverride(id);
+		replacer->removeconnectionPointBusOverride(id);
 		replacer->middleIdProvider.releaseId(id);
 		replacer->replacementIdLayers.erase(id);
 	}

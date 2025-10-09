@@ -74,8 +74,8 @@ public:
 		std::vector<SimulatorStateAndPinSimId> result;
 		result.reserve(replacedPoints.size());
 		for (const EvalConnectionPoint& point : replacedPoints) {
-			if (connectionPointOverride.contains(point)) {
-				std::vector<EvalConnectionPoint> override = getReplacementConnectionPoints(connectionPointOverride.at(point));
+			if (connectionPointBusOverride.contains(point)) {
+				std::vector<EvalConnectionPoint> override = getReplacementConnectionPoints(connectionPointBusOverride.at(point));
 				SimulatorStateAndPinSimId simIds = {
 					busInterfacePassthrough.getBlockSimulatorIds(override),
 					busInterfacePassthrough.getPinSimulatorIds(override)
@@ -103,8 +103,8 @@ public:
 				result.emplace_back(static_cast<simulator_id_t>(0));
 				continue;
 			}
-			if (connectionPointOverride.contains(point.value())) {
-				std::vector<EvalConnectionPoint> override = getReplacementConnectionPoints(connectionPointOverride.at(point.value()));
+			if (connectionPointBusOverride.contains(point.value())) {
+				std::vector<EvalConnectionPoint> override = getReplacementConnectionPoints(connectionPointBusOverride.at(point.value()));
 				std::vector<simulator_id_t> simIds = busInterfacePassthrough.getBlockSimulatorIds(override);
 				result.emplace_back(simIds);
 			} else {
@@ -125,8 +125,8 @@ public:
 				result.emplace_back(static_cast<simulator_id_t>(0));
 				continue;
 			}
-			if (connectionPointOverride.contains(point.value())) {
-				std::vector<EvalConnectionPoint> override = getReplacementConnectionPoints(connectionPointOverride.at(point.value()));
+			if (connectionPointBusOverride.contains(point.value())) {
+				std::vector<EvalConnectionPoint> override = getReplacementConnectionPoints(connectionPointBusOverride.at(point.value()));
 				std::vector<simulator_id_t> simIds = busInterfacePassthrough.getPinSimulatorIds(override);
 				result.emplace_back(simIds);
 			} else {
@@ -187,36 +187,36 @@ private:
 		std::vector<EvalConnection> connectionsOutOfBuses;
 	};
 
-	std::unordered_map<middle_id_t, std::vector<EvalConnectionPoint>> connectionPointOverrideLookup;
-	std::unordered_map<EvalConnectionPoint, std::vector<EvalConnectionPoint>> connectionPointOverride;
-	void addConnectionPointOverride(EvalConnectionPoint original, std::vector<EvalConnectionPoint> replacement) {
-		connectionPointOverride[original] = replacement;
-		if (!connectionPointOverrideLookup.contains(original.gateId)) {
-			connectionPointOverrideLookup[original.gateId] = {};
+	std::unordered_map<middle_id_t, std::vector<EvalConnectionPoint>> connectionPointBusOverrideLookup;
+	std::unordered_map<EvalConnectionPoint, std::vector<EvalConnectionPoint>> connectionPointBusOverride;
+	void addconnectionPointBusOverride(EvalConnectionPoint original, std::vector<EvalConnectionPoint> replacement) {
+		connectionPointBusOverride[original] = replacement;
+		if (!connectionPointBusOverrideLookup.contains(original.gateId)) {
+			connectionPointBusOverrideLookup[original.gateId] = {};
 		}
-		connectionPointOverrideLookup[original.gateId].push_back(original);
+		connectionPointBusOverrideLookup[original.gateId].push_back(original);
 	}
-	void removeConnectionPointOverride(middle_id_t gateId) {
-		if (!connectionPointOverrideLookup.contains(gateId)) {
+	void removeconnectionPointBusOverride(middle_id_t gateId) {
+		if (!connectionPointBusOverrideLookup.contains(gateId)) {
 			return;
 		}
-		for (const EvalConnectionPoint& point : connectionPointOverrideLookup[gateId]) {
-			connectionPointOverride.erase(point);
+		for (const EvalConnectionPoint& point : connectionPointBusOverrideLookup[gateId]) {
+			connectionPointBusOverride.erase(point);
 		}
-		connectionPointOverrideLookup.erase(gateId);
+		connectionPointBusOverrideLookup.erase(gateId);
 	}
-	void removeConnectionPointOverride(EvalConnectionPoint point) {
-		if (!connectionPointOverride.contains(point)) {
+	void removeconnectionPointBusOverride(EvalConnectionPoint point) {
+		if (!connectionPointBusOverride.contains(point)) {
 			return;
 		}
-		connectionPointOverride.erase(point);
-		if (!connectionPointOverrideLookup.contains(point.gateId)) {
+		connectionPointBusOverride.erase(point);
+		if (!connectionPointBusOverrideLookup.contains(point.gateId)) {
 			return;
 		}
-		auto& vec = connectionPointOverrideLookup[point.gateId];
+		auto& vec = connectionPointBusOverrideLookup[point.gateId];
 		vec.erase(std::remove(vec.begin(), vec.end(), point), vec.end());
 		if (vec.size() == 0) {
-			connectionPointOverrideLookup.erase(point.gateId);
+			connectionPointBusOverrideLookup.erase(point.gateId);
 		}
 	}
 
