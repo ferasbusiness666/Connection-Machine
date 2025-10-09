@@ -20,7 +20,7 @@ dataUpdateEventManager(dataUpdateEventManager),
 receiver(dataUpdateEventManager),
 evalConfig(),
 middleIdProvider(),
-evalSimulator(evalConfig, middleIdProvider, dirtySimulatorIds) {
+evalSimulator(evalConfig, middleIdProvider, dirtySimulatorIds, blockDataManager) {
 	const auto circuit = circuitManager.getCircuit(circuitId);
 	if (!circuit) {
 		logError("Circuit with ID {} not found", "Evaluator::Evaluator", circuitId);

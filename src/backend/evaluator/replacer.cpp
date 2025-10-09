@@ -75,6 +75,11 @@ void Replacer::mergeBuses(SimPauseGuard& pauseGuard, int layer) {
 	std::vector<middle_id_t> allMiddleIds = middleIdProvider.getUsedIds();
 	for (const middle_id_t id : allMiddleIds) {
 		BlockType blockType = busInterfacePassthrough.getBlockType(id);
+		const BlockData* blockData = blockDataManager.getBlockData(blockType);
+		if (!blockData->isBus()) {
+			continue;
+		}
+		logInfo("Merging bus {}", "Replacer::mergeBuses", id);
 	}
 }
 

@@ -36,6 +36,12 @@ public:
 	}
 	inline bool isPrimitive() const noexcept { return primitive; }
 
+	void setIsBus(bool bus) noexcept {
+		this->bus = bus;
+		sendBlockDataUpdate();
+	}
+	inline bool isBus() const noexcept { return bus; }
+
 	void setSize(Size size) noexcept;
 	inline Size getSize() const noexcept { return blockSize; }
 	inline Size getSize(Orientation orientation) const noexcept { return orientation * blockSize; }
@@ -188,6 +194,7 @@ private:
 	bool defaultData = true;
 	bool primitive = true; // true if defined by default (And, Or, Xor...)
 	bool placeable = true;
+	bool bus = false;
 	std::string name = "Unnamed Block";
 	std::string path = "Basic";
 	Size blockSize = Size(1);

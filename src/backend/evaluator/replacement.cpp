@@ -122,6 +122,12 @@ void Replacement::revert(SimPauseGuard& pauseGuard) {
 		replacer->middleIdProvider.releaseId(id);
 		replacer->replacementIdLayers.erase(id);
 	}
+	auto callbacks = std::move(revertCallbacks);
+	for (auto& callback : callbacks) {
+		if (callback) {
+			callback(pauseGuard);
+		}
+	}
 	addedConnections.clear();
 	addedGates.clear();
 	deletedConnections.clear();

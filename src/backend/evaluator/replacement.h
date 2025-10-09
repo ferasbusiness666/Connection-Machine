@@ -34,6 +34,11 @@ public:
 
 	void revert(SimPauseGuard& pauseGuard);
 
+	void addRevertAction(std::function<void(SimPauseGuard&)> callback) {
+		isEmpty = false;
+		revertCallbacks.push_back(std::move(callback));
+	}
+
 	void pingOutput(SimPauseGuard& pauseGuard, middle_id_t id) {
 		if (isReverting) {
 			return;
@@ -74,6 +79,7 @@ private:
 	std::vector<middle_id_t> reservedIds;
 	std::set<middle_id_t> idsToTrackOutputs;
 	std::set<middle_id_t> idsToTrackInputs;
+	std::vector<std::function<void(SimPauseGuard&)>> revertCallbacks;
 	bool isEmpty { true };
 	bool isReverting { false };
 	int layer { 0 };

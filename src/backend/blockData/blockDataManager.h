@@ -50,6 +50,7 @@ public:
 		// BUS_INTERFACE
 		getBlockData(BlockType::BUS_INTERFACE)->setName("Bus Interface");
 		getBlockData(BlockType::BUS_INTERFACE)->setDefaultData(false);
+		getBlockData(BlockType::BUS_INTERFACE)->setIsBus(true);
 		getBlockData(BlockType::BUS_INTERFACE)->setConnectionOutput(Vector(1, 0), 0);
 		getBlockData(BlockType::BUS_INTERFACE)->setConnectionBitConfiguration(0, std::vector<unsigned int>{0,1,2,3,4,5,6,7});
 		getBlockData(BlockType::BUS_INTERFACE)->setConnectionInput(Vector(1, 0), 1);

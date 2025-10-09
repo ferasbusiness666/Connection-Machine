@@ -8,6 +8,7 @@
 #include "idProvider.h"
 #include "logicSimulator.h"
 #include "replacement.h"
+#include "backend/blockData/blockDataManager.h"
 
 struct SimulatorStateAndPinSimId {
 	std::variant<simulator_id_t, std::vector<simulator_id_t>> portSimIds;
@@ -20,10 +21,12 @@ public:
 	Replacer(
 		EvalConfig& evalConfig,
 		IdProvider<middle_id_t>& middleIdProvider,
-		std::vector<simulator_id_t>& dirtySimulatorIds) :
+		std::vector<simulator_id_t>& dirtySimulatorIds,
+		BlockDataManager& blockDataManager) :
 		busInterfacePassthrough(evalConfig, middleIdProvider, dirtySimulatorIds),
 		evalConfig(evalConfig),
-		middleIdProvider(middleIdProvider) {}
+		middleIdProvider(middleIdProvider),
+		blockDataManager(blockDataManager) {}
 
 	void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
 		busInterfacePassthrough.addGate(pauseGuard, blockType, gateId);
@@ -229,6 +232,7 @@ private:
 	void mergeBuses(SimPauseGuard& pauseGuard, int layer);
 	void mergeJunctions(SimPauseGuard& pauseGuard, int layer);
 	JunctionFloodFillResult junctionFloodFill(middle_id_t junctionId);
+	BlockDataManager& blockDataManager;
 };
 
 #endif /* replacer_h */
