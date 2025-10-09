@@ -6,7 +6,6 @@
 #include "evalConnection.h"
 #include "evalTypedef.h"
 #include "idProvider.h"
-#include "gateType.h"
 #include "logicSimulator.h"
 #include "replacement.h"
 
@@ -26,8 +25,8 @@ public:
 		evalConfig(evalConfig),
 		middleIdProvider(middleIdProvider) {}
 
-	void addGate(SimPauseGuard& pauseGuard, const GateType gateType, const middle_id_t gateId) {
-		busInterfacePassthrough.addGate(pauseGuard, gateType, gateId);
+	void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
+		busInterfacePassthrough.addGate(pauseGuard, blockType, gateId);
 	}
 
 	void removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {

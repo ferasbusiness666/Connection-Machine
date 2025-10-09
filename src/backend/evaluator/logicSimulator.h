@@ -2,10 +2,10 @@
 #define logicSimulator_h
 
 #include "simulatorGates.h"
-#include "gateType.h"
 #include "idProvider.h"
 #include "evalConfig.h"
 #include "threadPool.h"
+#include "backend/container/block/blockDefs.h"
 
 enum class SimGateType : int {
 	AND = 0,
@@ -35,7 +35,7 @@ public:
 	std::vector<logic_state_t> getStates(const std::vector<simulator_id_t>& ids) const;
 	std::optional<simulator_id_t> getOutputPortId(simulator_id_t simId, connection_port_id_t portId) const;
 
-	simulator_id_t addGate(const GateType gateType);
+	simulator_id_t addGate(const BlockType blockType);
 	void removeGate(simulator_id_t gateId);
 	void makeConnection(simulator_id_t sourceId, connection_port_id_t sourcePort, simulator_id_t destinationId, connection_port_id_t destinationPort);
 	void removeConnection(simulator_id_t sourceId, connection_port_id_t sourcePort, simulator_id_t destinationId, connection_port_id_t destinationPort);

@@ -15,8 +15,8 @@ public:
 	inline void endEdit(SimPauseGuard& pauseGuard) {
 		gateSubstituter.endEdit(pauseGuard);
 	}
-	inline void addGate(SimPauseGuard& pauseGuard, const GateType gateType, const middle_id_t gateId) {
-		gateSubstituter.addGate(pauseGuard, gateType, gateId);
+	inline void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
+		gateSubstituter.addGate(pauseGuard, blockType, gateId);
 	}
 	inline void removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
 		gateSubstituter.removeGate(pauseGuard, gateId);

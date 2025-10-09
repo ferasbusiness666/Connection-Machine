@@ -5,13 +5,12 @@
 #include "evalConnection.h"
 #include "evalTypedef.h"
 #include "idProvider.h"
-#include "gateType.h"
 
 class Replacer;
 
 struct ReplacementGate {
 	middle_id_t id;
-	GateType type;
+	BlockType type;
 };
 
 class Replacement {
@@ -27,7 +26,7 @@ public:
 
 	void removeGate(SimPauseGuard& pauseGuard, middle_id_t gateId, middle_id_t replacementId);
 
-	void addGate(SimPauseGuard& pauseGuard, GateType gateType, middle_id_t gateId);
+	void addGate(SimPauseGuard& pauseGuard, BlockType blockType, middle_id_t gateId);
 
 	void removeConnection(SimPauseGuard& pauseGuard, EvalConnection connection);
 

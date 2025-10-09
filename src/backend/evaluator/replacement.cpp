@@ -19,7 +19,7 @@ void Replacement::removeGate(
 	for (const auto& conn : inputs) {
 		deletedConnections.push_back(conn);
 	}
-	deletedGates.push_back({ gateId, replacer->busInterfacePassthrough.getGateType(gateId) });
+	deletedGates.push_back({ gateId, replacer->busInterfacePassthrough.getBlockType(gateId) });
 	idsToTrackInputs.insert(gateId);
 	idsToTrackOutputs.insert(gateId);
 	replacer->replacedConnectionPoints.insert({ gateId, replacementConnectionPoints });
@@ -42,7 +42,7 @@ void Replacement::removeGate(
 	for (const auto& conn : inputs) {
 		deletedConnections.push_back(conn);
 	}
-	deletedGates.push_back({ gateId, replacer->busInterfacePassthrough.getGateType(gateId) });
+	deletedGates.push_back({ gateId, replacer->busInterfacePassthrough.getBlockType(gateId) });
 	idsToTrackInputs.insert(gateId);
 	idsToTrackOutputs.insert(gateId);
 	replacer->replacedIds.insert({ gateId, replacementId });
@@ -52,12 +52,12 @@ void Replacement::removeGate(
 
 void Replacement::addGate(
 	SimPauseGuard& pauseGuard,
-	GateType gateType,
+	BlockType blockType,
 	middle_id_t gateId) {
 	isEmpty = false;
-	replacer->busInterfacePassthrough.addGate(pauseGuard, gateType, gateId);
+	replacer->busInterfacePassthrough.addGate(pauseGuard, blockType, gateId);
 	// we don't need to track, because nothing can happen to this gate at a lower level
-	addedGates.push_back({ gateId, gateType });
+	addedGates.push_back({ gateId, blockType });
 }
 
 void Replacement::removeConnection(

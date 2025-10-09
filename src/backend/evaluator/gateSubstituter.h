@@ -6,19 +6,18 @@
 #include "evalConnection.h"
 #include "evalTypedef.h"
 #include "idProvider.h"
-#include "gateType.h"
 #include "logicSimulator.h"
 
 struct TrackedGate {
 	middle_id_t id;
-	GateType currentState;
-	GateType falseState;
-	GateType trueState;
+	BlockType currentState;
+	BlockType falseState;
+	BlockType trueState;
 	std::vector<EvalConnection> inputs;
 	std::vector<EvalConnection> outputs;
 	unsigned int numInputsForTrue;
 
-	GateType evaluate() {
+	BlockType evaluate() {
 		if (inputs.size() >= numInputsForTrue) {
 			return trueState;
 		} else {
@@ -75,15 +74,18 @@ public:
 		replacer(evalConfig, middleIdProvider, dirtySimulatorIds),
 		middleIdProvider(middleIdProvider) {}
 
-	void addGate(SimPauseGuard& pauseGuard, const GateType gateType, const middle_id_t gateId) {
-		if (gateType == GateType::DUMMY_INPUT || gateType == GateType::TICK_INPUT) {
-			addTrackedGate({ gateId, gateType, gateType, GateType::JUNCTION, {}, {}, 1 });
-		} else if (gateType == GateType::TRISTATE_BUFFER || gateType == GateType::TRISTATE_BUFFER_INVERTED) {
-			replacer.addGate(pauseGuard, gateType, gateId);
+	void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
+		if (blockType == BlockType::BUTTON || blockType == BlockType::SWITCH || blockType == BlockType::TICK_BUTTON) {
+			addTrackedGate({ gateId, blockType, blockType, BlockType::JUNCTION, {}, {}, 1 });
+			replacer.addGate(pauseGuard, blockType, gateId);
+		} else if (blockType == BlockType::TRISTATE_BUFFER) {
+			replacer.addGate(pauseGuard, blockType, gateId);
 			addTrackedTristateBuffer(pauseGuard, gateId);
-			return;
+		} else if (blockType == BlockType::LIGHT) {
+			replacer.addGate(pauseGuard, BlockType::JUNCTION, gateId);
+		} else {
+			replacer.addGate(pauseGuard, blockType, gateId);
 		}
-		replacer.addGate(pauseGuard, gateType, gateId); // this may need to be conditional in the future if we add more conditional gates
 	}
 	void removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
 		replacer.removeGate(pauseGuard, gateId);
@@ -95,7 +97,7 @@ public:
 			bool success = trackedGate.second.removeReferencesToId(gateId);
 			if (success) {
 				TrackedGate& trackedGateRef = trackedGate.second;
-				GateType newState = trackedGateRef.evaluate();
+				BlockType newState = trackedGateRef.evaluate();
 				if (newState != trackedGateRef.currentState) {
 					trackedGateRef.currentState = newState;
 					replacer.removeGate(pauseGuard, trackedGateRef.id);
@@ -164,7 +166,7 @@ public:
 		if (trackedGates.contains(destinationGateId)) {
 			TrackedGate& trackedGate = trackedGates.at(destinationGateId);
 			trackedGate.addInput(connection);
-			GateType newState = trackedGate.evaluate();
+			BlockType newState = trackedGate.evaluate();
 			if (newState != trackedGate.currentState) {
 				trackedGate.currentState = newState;
 				replacer.removeGate(pauseGuard, destinationGateId);
@@ -193,7 +195,7 @@ public:
 		if (trackedGates.contains(destinationGateId)) {
 			TrackedGate& trackedGate = trackedGates.at(destinationGateId);
 			trackedGate.removeInput(connection);
-			GateType newState = trackedGate.evaluate();
+			BlockType newState = trackedGate.evaluate();
 			if (newState != trackedGate.currentState) {
 				trackedGate.currentState = newState;
 				replacer.removeGate(pauseGuard, destinationGateId);
@@ -232,8 +234,8 @@ private:
 	void addTrackedTristateBuffer(SimPauseGuard& simPauseGuard, middle_id_t bufferId) {
 		middle_id_t junctionId1 = middleIdProvider.getNewId();
 		middle_id_t junctionId2 = middleIdProvider.getNewId();
-		replacer.addGate(simPauseGuard, GateType::JUNCTION, junctionId1);
-		replacer.addGate(simPauseGuard, GateType::JUNCTION, junctionId2);
+		replacer.addGate(simPauseGuard, BlockType::JUNCTION, junctionId1);
+		replacer.addGate(simPauseGuard, BlockType::JUNCTION, junctionId2);
 		tristateBuffers[bufferId] = { bufferId, junctionId1, junctionId2 };
 		replacer.makeConnection(simPauseGuard, EvalConnection(EvalConnectionPoint(junctionId1, 0), EvalConnectionPoint(bufferId, 0)));
 		replacer.makeConnection(simPauseGuard, EvalConnection(EvalConnectionPoint(junctionId2, 0), EvalConnectionPoint(bufferId, 1)));
