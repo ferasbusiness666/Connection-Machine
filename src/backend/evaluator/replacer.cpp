@@ -4,11 +4,6 @@
 Replacement& Replacer::makeReplacement(int layer) {
 	replacements.push_back(Replacement(
 		this,
-		&busInterfacePassthrough,
-		&middleIdProvider,
-		&replacedIds,
-		&replacedConnectionPoints,
-		&replacementIdLayers,
 		layer
 	));
 	return replacements.back();
