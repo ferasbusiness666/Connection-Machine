@@ -1,15 +1,14 @@
 #include "blockCreationWindow.h"
 
-#include "gui/viewportManager/circuitView/tools/other/portSelector.h"
+#include "gui/helper/eventPasser.h"
 #include "gui/mainWindow/circuitView/circuitViewWidget.h"
 #include "gui/mainWindow/mainWindow.h"
-#include "gui/helper/eventPasser.h"
+#include "gui/viewportManager/circuitView/tools/other/portSelector.h"
 
-#include "backend/dataUpdateEventManager.h"
 #include "backend/circuit/circuitManager.h"
+#include "backend/dataUpdateEventManager.h"
 
 #include "util/algorithm.h"
-
 
 BlockCreationWindow::BlockCreationWindow(
 	CircuitManager* circuitManager,
@@ -274,22 +273,22 @@ void BlockCreationWindow::resetMenu() {
 		}
 		Rml::ElementPtr setPositionButton = document->CreateElement("button");
 		setPositionButton->AppendChild(std::move(document->CreateTextNode("S")));
-		setPositionButton->AddEventListener(Rml::EventId::Click, new EventPasser(
-			[this, endId](Rml::Event& event) {
-				auto tool = std::dynamic_pointer_cast<PortSelector>(mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getToolManager().selectTool(std::make_shared<PortSelector>()));
-				if (tool) {
-					tool->setPort(endId, [this, endId](Position position) {
-						Rml::Element* row = document->GetElementById("ConnectionListItem Id: " + std::to_string(endId));
-						Rml::ElementList elements;
-						row->GetElementsByClassName(elements, "connection-list-item-pos-x");
-						rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->SetValue(std::to_string(position.x));
-						elements.clear();
-						row->GetElementsByClassName(elements, "connection-list-item-pos-y");
-						rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->SetValue(std::to_string(position.y));
-					});
-				}
-			}
-		));
+		setPositionButton->AddEventListener(Rml::EventId::Click, new EventPasser([this, endId](Rml::Event& event) {
+												auto tool = std::dynamic_pointer_cast<PortSelector>(
+													mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getToolManager().selectTool(std::make_shared<PortSelector>())
+												);
+												if (tool) {
+													tool->setPort(endId, [this, endId](Position position) {
+														Rml::Element* row = document->GetElementById("ConnectionListItem Id: " + std::to_string(endId));
+														Rml::ElementList elements;
+														row->GetElementsByClassName(elements, "connection-list-item-pos-x");
+														rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->SetValue(std::to_string(position.x));
+														elements.clear();
+														row->GetElementsByClassName(elements, "connection-list-item-pos-y");
+														rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->SetValue(std::to_string(position.y));
+													});
+												}
+											}));
 		// add children and set classes
 		row->AppendChild(std::move(name))->SetClass("connection-list-item-name", true);
 		row->AppendChild(std::move(positionOnBlockX))->SetClass("connection-list-item-on-block-x", true);
@@ -312,19 +311,10 @@ void BlockCreationWindow::resetMenu() {
 		row->SetId("ConnectionListItem Id: " + std::to_string(endId));
 		if (isInputBool) {
 			Rml::Element* rowPtr = inputList->AppendChild(std::move(row));
-			removePtr->AddEventListener(Rml::EventId::Click, new EventPasser(
-				[this, rowPtr](Rml::Event& event) {
-					inputList->RemoveChild(rowPtr);
-				}
-			));
+			removePtr->AddEventListener(Rml::EventId::Click, new EventPasser([this, rowPtr](Rml::Event& event) { inputList->RemoveChild(rowPtr); }));
 		} else {
 			Rml::Element* rowPtr = outputList->AppendChild(std::move(row));
-			removePtr->AddEventListener(Rml::EventId::Click, new EventPasser(
-				[this, rowPtr](Rml::Event& event) {
-					outputList->RemoveChild(rowPtr);
-				}
-			));
-
+			removePtr->AddEventListener(Rml::EventId::Click, new EventPasser([this, rowPtr](Rml::Event& event) { outputList->RemoveChild(rowPtr); }));
 		}
 	}
 }
@@ -341,10 +331,7 @@ void BlockCreationWindow::addListItem(bool isInput) {
 	connection_end_id_t endId = 0;
 	while (true) {
 		while (blockData->connectionExists(endId)) ++endId;
-		if (
-			inputList->GetElementById("ConnectionListItem Id: " + std::to_string(endId)) == nullptr &&
-			outputList->GetElementById("ConnectionListItem Id: " + std::to_string(endId)) == nullptr
-		) break;
+		if (inputList->GetElementById("ConnectionListItem Id: " + std::to_string(endId)) == nullptr && outputList->GetElementById("ConnectionListItem Id: " + std::to_string(endId)) == nullptr) break;
 		++endId;
 	}
 
@@ -382,22 +369,22 @@ void BlockCreationWindow::addListItem(bool isInput) {
 
 	Rml::ElementPtr setPositionButton = document->CreateElement("button");
 	setPositionButton->AppendChild(std::move(document->CreateTextNode("S")));
-	setPositionButton->AddEventListener(Rml::EventId::Click, new EventPasser(
-		[this, endId](Rml::Event& event) {
-			auto tool = std::dynamic_pointer_cast<PortSelector>(mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getToolManager().selectTool(std::make_shared<PortSelector>()));
-			if (tool) {
-				tool->setPort(endId, [this, endId](Position position) {
-					Rml::Element* row = document->GetElementById("ConnectionListItem Id: " + std::to_string(endId));
-					Rml::ElementList elements;
-					row->GetElementsByClassName(elements, "connection-list-item-pos-x");
-					rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->SetValue(std::to_string(position.x));
-					elements.clear();
-					row->GetElementsByClassName(elements, "connection-list-item-pos-y");
-					rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->SetValue(std::to_string(position.y));
-				});
-			}
-		}
-	));
+	setPositionButton->AddEventListener(Rml::EventId::Click, new EventPasser([this, endId](Rml::Event& event) {
+											auto tool = std::dynamic_pointer_cast<PortSelector>(
+												mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getToolManager().selectTool(std::make_shared<PortSelector>())
+											);
+											if (tool) {
+												tool->setPort(endId, [this, endId](Position position) {
+													Rml::Element* row = document->GetElementById("ConnectionListItem Id: " + std::to_string(endId));
+													Rml::ElementList elements;
+													row->GetElementsByClassName(elements, "connection-list-item-pos-x");
+													rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->SetValue(std::to_string(position.x));
+													elements.clear();
+													row->GetElementsByClassName(elements, "connection-list-item-pos-y");
+													rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->SetValue(std::to_string(position.y));
+												});
+											}
+										}));
 	// add children and set classes
 	row->AppendChild(std::move(name))->SetClass("connection-list-item-name", true);
 	row->AppendChild(std::move(positionOnBlockX))->SetClass("connection-list-item-on-block-x", true);
@@ -420,18 +407,10 @@ void BlockCreationWindow::addListItem(bool isInput) {
 	row->SetId("ConnectionListItem Id: " + std::to_string(endId));
 	if (isInput) {
 		Rml::Element* rowPtr = inputList->AppendChild(std::move(row));
-		removePtr->AddEventListener(Rml::EventId::Click, new EventPasser(
-			[this, rowPtr](Rml::Event& event) {
-				inputList->RemoveChild(rowPtr);
-			}
-		));
+		removePtr->AddEventListener(Rml::EventId::Click, new EventPasser([this, rowPtr](Rml::Event& event) { inputList->RemoveChild(rowPtr); }));
 	} else {
 		Rml::Element* rowPtr = outputList->AppendChild(std::move(row));
-		removePtr->AddEventListener(Rml::EventId::Click, new EventPasser(
-			[this, rowPtr](Rml::Event& event) {
-				outputList->RemoveChild(rowPtr);
-			}
-		));
+		removePtr->AddEventListener(Rml::EventId::Click, new EventPasser([this, rowPtr](Rml::Event& event) { outputList->RemoveChild(rowPtr); }));
 	}
 }
 
