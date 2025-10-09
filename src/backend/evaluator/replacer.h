@@ -188,14 +188,14 @@ private:
 
 	std::unordered_map<middle_id_t, std::vector<EvalConnectionPoint>> connectionPointBusOverrideLookup;
 	std::unordered_map<EvalConnectionPoint, std::vector<EvalConnectionPoint>> connectionPointBusOverride;
-	void addconnectionPointBusOverride(EvalConnectionPoint original, std::vector<EvalConnectionPoint> replacement) {
+	void addConnectionPointBusOverride(EvalConnectionPoint original, std::vector<EvalConnectionPoint> replacement) {
 		connectionPointBusOverride[original] = replacement;
 		if (!connectionPointBusOverrideLookup.contains(original.gateId)) {
 			connectionPointBusOverrideLookup[original.gateId] = {};
 		}
 		connectionPointBusOverrideLookup[original.gateId].push_back(original);
 	}
-	void removeconnectionPointBusOverride(middle_id_t gateId) {
+	void removeConnectionPointBusOverride(middle_id_t gateId) {
 		if (!connectionPointBusOverrideLookup.contains(gateId)) {
 			return;
 		}
@@ -204,7 +204,7 @@ private:
 		}
 		connectionPointBusOverrideLookup.erase(gateId);
 	}
-	void removeconnectionPointBusOverride(EvalConnectionPoint point) {
+	void removeConnectionPointBusOverride(EvalConnectionPoint point) {
 		if (!connectionPointBusOverride.contains(point)) {
 			return;
 		}
