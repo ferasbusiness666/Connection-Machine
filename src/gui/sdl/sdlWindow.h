@@ -7,7 +7,7 @@
 
 class SdlWindow {
 public:
-	SdlWindow(const std::string& name);
+	SdlWindow(const std::string& name, unsigned int width = 800, unsigned int height = 600);
 	~SdlWindow();
 
 	inline void setRenderFunction(std::function<void()> func) { doRender = func; }
