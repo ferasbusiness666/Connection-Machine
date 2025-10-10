@@ -70,15 +70,66 @@ void PopUpManager::saveAsPopUp(const std::string& circuitUUID) {
 }
 
 void PopUpManager::addFeedbackPopup() {
-	std::pair<Rml::Element*, std::function<void()>> popUpData = createPopUp(false);
-	Rml::Element* popUpRoot = popUpData.first;
-	Rml::ElementList windowList;
-	popUpRoot->GetElementsByClassName(windowList, "pop-up-window");
-	Rml::Element* window = windowList.front();
+    auto [overlay, closePopup] = createPopUp(true);
 
-	Rml::Element* text = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("span"));
-	text->SetInnerRML("Testing");
-	text->SetClass("pop-up-text", true);
+    Rml::ElementList windowList;
+    overlay->GetElementsByClassName(windowList, "pop-up-window");
+    if (windowList.empty()) return;
+    Rml::Element* window = windowList.front();
 
-	Rml::Element* text2 = window->AppendChild(mainWindow->getRmlDocument()->CreateTextNode("span"));
+    Rml::Element* title = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("p"));
+    title->SetInnerRML("Please give us any feedback!");
+    title->SetClass("popup-title", true);
+
+    Rml::Element* textarea = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("textarea"));
+    textarea->SetAttribute("rows", "5");
+    textarea->SetAttribute("cols", "40");
+    textarea->SetClass("popup-textarea", true);
+	textarea->SetClass("surface-pop", true);
+
+    Rml::Element* submitButton = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("button"));
+    submitButton->SetInnerRML("Happy Submit");
+    submitButton->SetClass("popup-button", true);
+	submitButton->AddEventListener(Rml::EventId::Click, new EventPasser(
+	    [deleteFunc = closePopup, textarea](Rml::Event& event) {
+	        // Retrieve the value from the textarea
+	        auto* textareaControl = dynamic_cast<Rml::ElementFormControlTextArea*>(textarea);
+			if (textareaControl)	
+				logInfo("Live text: {}","",textareaControl->GetValue());
+			logInfo("Feeling: happy","");
+	        // Close the popup
+	        deleteFunc();
+	    }
+	));
+
+	Rml::Element* submitButton2 = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("button"));
+    submitButton2->SetInnerRML("Medium Submit");
+    submitButton2->SetClass("popup-button", true);
+	submitButton2->AddEventListener(Rml::EventId::Click, new EventPasser(
+	    [deleteFunc = closePopup, textarea](Rml::Event& event) {
+	        // Retrieve the value from the textarea
+	        auto* textareaControl = dynamic_cast<Rml::ElementFormControlTextArea*>(textarea);
+			if (textareaControl)	
+				logInfo("Live text: {}","",textareaControl->GetValue());
+			logInfo("Feeling: medium","");
+	        // Close the popup
+	        deleteFunc();
+	    }
+	));
+
+	Rml::Element* submitButton3 = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("button"));
+    submitButton3->SetInnerRML("Sad Submit");
+    submitButton3->SetClass("popup-button", true);
+	submitButton3->AddEventListener(Rml::EventId::Click, new EventPasser(
+	    [deleteFunc = closePopup, textarea](Rml::Event& event) {
+	        // Retrieve the value from the textarea
+	        auto* textareaControl = dynamic_cast<Rml::ElementFormControlTextArea*>(textarea);
+			if (textareaControl)	
+				logInfo("Live text: {}","",textareaControl->GetValue());
+			logInfo("Feeling: sad","");
+	        // Close the popup
+	        deleteFunc();
+	    }
+	));
+
 }
