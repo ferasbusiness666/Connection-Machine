@@ -15,8 +15,8 @@ BlockRenderDataFeeder::BlockRenderDataFeeder(Backend* backend) : backend(backend
 	dataUpdateEventReceiver.linkFunction("blockDataRemoveConnection", std::bind(&BlockRenderDataFeeder::blockDataRemoveConnectionUpdate, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("blockDataConnectionNameSet", std::bind(&BlockRenderDataFeeder::blockDataConnectionNameSetUpdate, this, std::placeholders::_1));
 
-	mainBlockTextureId = MainRenderer::get().addBlockTexture(DirectoryManager::getResourceDirectory() / "logicTiles.png");
-	otherBlockTextureId = MainRenderer::get().addBlockTexture(DirectoryManager::getResourceDirectory() / "gateIcon.png");
+	mainBlockTextureId = MainRenderer::get().addBlockTexture((DirectoryManager::getResourceDirectory() / "logicTiles.png").string());
+	otherBlockTextureId = MainRenderer::get().addBlockTexture((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
 }
 
 BlockRenderDataId BlockRenderDataFeeder::getBlockRenderDataId(BlockType blockType) const {
