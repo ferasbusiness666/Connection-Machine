@@ -19,7 +19,7 @@ void BlockTextureManager::init(VulkanDevice* device) {
 	textureArray = std::make_shared<BlockTextureArray>();
 	textureArray->texSize = texSize;
 	textureArray->device = device;
-	textureArray->maxLayers = 5;
+	textureArray->maxLayers = 1;
 	textureArray->nextFreeLayer = 0;
 	textureArray->image = createImage(device, texSize, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, false, textureArray->maxLayers);
 
