@@ -39,37 +39,37 @@ void BlockRenderDataFeeder::newBlockTypeUpdate(const DataUpdateEventManager::Eve
 		renderData.texturePath = DirectoryManager::getResourceDirectory() / "gateIcon.png";
 		renderData.tileSize = {512, 512};
 		renderData.smallestCordTile = {0, 0};
-		renderData.blockSize = {1, 1};
+		renderData.blockTileSize = {1, 1};
 		MainRenderer::get().setBlockTexture(
 			blockRenderDataId,
 			otherBlockTextureId,
 			renderData.tileSize,
 			renderData.smallestCordTile,
-			renderData.blockSize
+			renderData.blockTileSize
 		);
 	} else if (data->get() < BlockType::CUSTOM) {
 		renderData.texturePath = "";
 		renderData.tileSize = {256, 256};
 		renderData.smallestCordTile = {data->get()+1, 0};
-		renderData.blockSize = {1, 1};
+		renderData.blockTileSize = {1, 1};
 		MainRenderer::get().setBlockTexture(
 			blockRenderDataId,
 			mainBlockTextureId,
 			renderData.tileSize,
 			renderData.smallestCordTile,
-			renderData.blockSize
+			renderData.blockTileSize
 		);
 	} else {
 		renderData.texturePath = "";
 		renderData.tileSize = {256, 256};
 		renderData.smallestCordTile = {1, 0};
-		renderData.blockSize = {1, 1};
+		renderData.blockTileSize = {1, 1};
 		MainRenderer::get().setBlockTexture(
 			blockRenderDataId,
 			mainBlockTextureId,
 			renderData.tileSize,
 			renderData.smallestCordTile,
-			renderData.blockSize
+			renderData.blockTileSize
 		);
 	}
 }
@@ -169,13 +169,13 @@ void BlockRenderDataFeeder::blockDataTextureChangeUpdate(const DataUpdateEventMa
 		iter->second.texturePath = "";
 		iter->second.tileSize = {256, 256};
 		iter->second.smallestCordTile = {1, 0};
-		iter->second.blockSize = {1, 1};
+		iter->second.blockTileSize = {1, 1};
 		MainRenderer::get().setBlockTexture(
 			iter->second.blockRenderDataId,
 			mainBlockTextureId,
 			iter->second.tileSize,
 			iter->second.smallestCordTile,
-			iter->second.blockSize
+			iter->second.blockTileSize
 		);
 		return;
 	}
@@ -186,8 +186,113 @@ void BlockRenderDataFeeder::blockDataTextureChangeUpdate(const DataUpdateEventMa
 	iter->second.texturePath = data->get().second;
 	iter->second.tileSize = {0, 0}; // mean that the whole texture is 1 tile.
 	iter->second.smallestCordTile = {0, 0};
-	iter->second.blockSize = {1, 1};
+	iter->second.blockTileSize = {1, 1};
 	MainRenderer::get().setBlockTexture(iter->second.blockRenderDataId, blockTextureId);
+}
+
+void BlockRenderDataFeeder::blockDataTextureTileSizeChangeUpdate(const DataUpdateEventManager::EventData* dataEvent) {
+	const auto* data = dataEvent->cast<std::pair<BlockType, Vec2Int>>();
+	if (!data) return;
+	auto iter = blockTypeToRenderData.find(data->get().first);
+	if (iter == blockTypeToRenderData.end()) {
+		logError("Failed to find RenderData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
+		return;
+	}
+	if (iter->second.tileSize == data->get().second) return;
+	iter->second.tileSize = data->get().second;
+	if (iter->second.tileSize.x == 0 && iter->second.tileSize.y == 0) {
+		if (iter->second.texturePath == "") {
+			MainRenderer::get().setBlockTexture(iter->second.blockRenderDataId, mainBlockTextureId);
+		} else {
+			BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(iter->second.texturePath);
+			if (blockTextureId == 0) return; // error message already sent
+			MainRenderer::get().setBlockTexture(iter->second.blockRenderDataId, blockTextureId);
+		}
+	} else {
+		if (iter->second.texturePath == "") {
+			MainRenderer::get().setBlockTexture(
+				iter->second.blockRenderDataId,
+				mainBlockTextureId,
+				iter->second.tileSize,
+				iter->second.smallestCordTile,
+				iter->second.blockTileSize
+			);
+		} else {
+			BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(iter->second.texturePath);
+			if (blockTextureId == 0) return; // error message already sent
+			MainRenderer::get().setBlockTexture(
+				iter->second.blockRenderDataId,
+				blockTextureId,
+				iter->second.tileSize,
+				iter->second.smallestCordTile,
+				iter->second.blockTileSize
+			);
+		}
+	}
+}
+
+void BlockRenderDataFeeder::blockDataTextureSmallestCordTileChangeUpdate(const DataUpdateEventManager::EventData* dataEvent) {
+	const auto* data = dataEvent->cast<std::pair<BlockType, Vec2Int>>();
+	if (!data) return;
+	auto iter = blockTypeToRenderData.find(data->get().first);
+	if (iter == blockTypeToRenderData.end()) {
+		logError("Failed to find RenderData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
+		return;
+	}
+	if (iter->second.smallestCordTile == data->get().second) return;
+	iter->second.smallestCordTile = data->get().second;
+	if (iter->second.tileSize.x == 0 && iter->second.tileSize.y == 0) return;
+	if (iter->second.texturePath == "") {
+		MainRenderer::get().setBlockTexture(
+			iter->second.blockRenderDataId,
+			mainBlockTextureId,
+			iter->second.tileSize,
+			iter->second.smallestCordTile,
+			iter->second.blockTileSize
+		);
+	} else {
+		BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(iter->second.texturePath);
+		if (blockTextureId == 0) return; // error message already sent
+		MainRenderer::get().setBlockTexture(
+			iter->second.blockRenderDataId,
+			blockTextureId,
+			iter->second.tileSize,
+			iter->second.smallestCordTile,
+			iter->second.blockTileSize
+		);
+	}
+}
+
+void BlockRenderDataFeeder::blockDataTextureBlockTileSizeChangeUpdate(const DataUpdateEventManager::EventData* dataEvent) {
+	const auto* data = dataEvent->cast<std::pair<BlockType, Vec2Int>>();
+	if (!data) return;
+	auto iter = blockTypeToRenderData.find(data->get().first);
+	if (iter == blockTypeToRenderData.end()) {
+		logError("Failed to find RenderData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
+		return;
+	}
+	if (iter->second.blockTileSize == data->get().second) return;
+	iter->second.blockTileSize = data->get().second;
+	if (iter->second.tileSize.x == 0 && iter->second.tileSize.y == 0) return;
+	if (iter->second.texturePath == "") {
+		MainRenderer::get().setBlockTexture(
+			iter->second.blockRenderDataId,
+			mainBlockTextureId,
+			iter->second.tileSize,
+			iter->second.smallestCordTile,
+			iter->second.blockTileSize
+		);
+	} else {
+		BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(iter->second.texturePath);
+		if (blockTextureId == 0) return; // error message already sent
+		MainRenderer::get().setBlockTexture(
+			iter->second.blockRenderDataId,
+			blockTextureId,
+			iter->second.tileSize,
+			iter->second.smallestCordTile,
+			iter->second.blockTileSize
+		);
+	}
 }
 
 void BlockRenderDataFeeder::refreshBlockTexture(BlockType blockType) {

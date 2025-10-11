@@ -55,6 +55,12 @@ public:
 	inline const std::string& getPath() const noexcept { return path; }
 	void setTexturePath(const std::string& texturePath) noexcept;
 	inline const std::string& getTexturePath() const noexcept { return texturePath; }
+	void setTextureTileSize(Vec2Int tileSize) noexcept;
+	Vec2Int getTextureTileSize() const noexcept { return textureTileSize; }
+	void setTextureSmallestCordTile(Vec2Int smallestCordTile) noexcept;
+	Vec2Int getTextureSmallestCordTile() const noexcept { return textureSmallestCordTile; }
+	void setTextureBlockTileSize(Vec2Int blockSizeInTiles) noexcept;
+	Vec2Int getTextureBlockTileSize() const noexcept { return textureBlockTileSize; }
 
 	// trys to set a connection input in the block. Returns success.
 	void removeConnection(connection_end_id_t connectionId) noexcept;

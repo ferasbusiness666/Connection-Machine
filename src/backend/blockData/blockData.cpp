@@ -59,10 +59,30 @@ void BlockData::setPath(const std::string& path) noexcept {
 }
 
 void BlockData::setTexturePath(const std::string& texturePath) noexcept {
+	if (this->texturePath == "" &&  texturePath == "") return; // what is this going to do...
 	this->texturePath = texturePath;
 	dataUpdateEventManager->sendEvent<std::pair<BlockType, std::string>>("blockDataTextureChange", { blockType, texturePath });
 	sendBlockDataUpdate();
 }
+
+void BlockData::setTextureTileSize(Vec2Int tileSize) noexcept {
+	this->textureTileSize = tileSize;
+	dataUpdateEventManager->sendEvent<std::pair<BlockType, Vec2Int>>("blockDataTextureTileSizeChange", { blockType, tileSize });
+	sendBlockDataUpdate();
+}
+
+void BlockData::setTextureSmallestCordTile(Vec2Int smallestCordTile) noexcept {
+	this->textureSmallestCordTile = smallestCordTile;
+	dataUpdateEventManager->sendEvent<std::pair<BlockType, Vec2Int>>("blockDataTextureSmallestCordTileChange", { blockType, smallestCordTile });
+	sendBlockDataUpdate();
+}
+
+void BlockData::setTextureBlockTileSize(Vec2Int blockSizeInTiles) noexcept {
+	this->textureBlockTileSize = blockSizeInTiles;
+	dataUpdateEventManager->sendEvent<std::pair<BlockType, Vec2Int>>("blockDataTextureBlockTileSizeChange", { blockType, blockSizeInTiles });
+	sendBlockDataUpdate();
+}
+
 
 // trys to set a connection input in the block. Returns success.
 void BlockData::removeConnection(connection_end_id_t connectionId) noexcept {

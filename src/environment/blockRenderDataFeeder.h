@@ -22,6 +22,9 @@ public:
 	void blockDataRemoveConnectionUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void blockDataConnectionNameSetUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void blockDataTextureChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
+	void blockDataTextureTileSizeChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
+	void blockDataTextureSmallestCordTileChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
+	void blockDataTextureBlockTileSizeChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void refreshBlockTexture(BlockType blockType);
 
 private:
@@ -32,7 +35,7 @@ private:
 		std::string texturePath;
 		Vec2Int tileSize;
 		Vec2Int smallestCordTile;
-		Vec2Int blockSize;
+		Vec2Int blockTileSize;
 	};
 
 	Backend* backend;

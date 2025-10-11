@@ -150,6 +150,19 @@ std::vector<circuit_id_t> ConnectionMachineParser::load(const std::string& path)
 			std::string uuid;
 			inputFile >> uuid;
 			currentParsedCircuit->setUUID(uuid == "null" ? generate_uuid_v4() : uuid);
+		} else if (token == "texture:") {
+			std::string texturePath;
+			inputFile >> std::quoted(texturePath);
+			currentParsedCircuit->setTexturePath(texturePath);
+		} else if (token == "getTextureTileSize:") {
+			int tileSizeX, tileSizeY, smallestCordTileX, smallestCordTileY, blockTileSizeX, blockTileSizeY;
+			inputFile >>
+				cToken >> tileSizeX >> cToken >> tileSizeY >> cToken >> cToken >>
+				cToken >> smallestCordTileX >> cToken >> smallestCordTileY >> cToken >> cToken >>
+				cToken >> blockTileSizeX >> cToken >> blockTileSizeY >> cToken;
+			currentParsedCircuit->setTextureTileSize({tileSizeX, tileSizeY});
+			currentParsedCircuit->setTextureBlockTileSize({smallestCordTileX, smallestCordTileY});
+			currentParsedCircuit->setTextureBlockTileSize({blockTileSizeX, blockTileSizeY});
 		} else if (token == "blockId") {
 			// block id
 			int blockId;
@@ -292,6 +305,15 @@ bool ConnectionMachineParser::save(const CircuitFileManager::FileData& fileData,
 		outputFile << "UUID: " << circuit->getUUID() << "\n";
 		if (circuitBlockData) {
 			BlockData* blockData = circuitManager->getBlockDataManager()->getBlockData(circuitBlockData->getBlockType());
+			if (blockData->getTexturePath() != "") {
+				outputFile << "texture: " << std::quoted(blockData->getTexturePath()) << "\n";
+				if (blockData->getTextureTileSize().x != 0 || blockData->getTextureTileSize().y != 0) {
+					outputFile << "textureTileData: " <<
+						blockData->getTextureTileSize().toString() << ", " <<
+						blockData->getTextureSmallestCordTile().toString() << ", " <<
+						blockData->getTextureBlockTileSize().toString() << "\n";
+				}
+			}
 			outputFile << "size: " << blockData->getSize().toString() << "\n";
 			outputFile << "ports:\n";
 			for (auto pair : blockData->getConnections()) {

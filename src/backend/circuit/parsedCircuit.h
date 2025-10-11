@@ -94,6 +94,18 @@ public:
 	void setUUID(const std::string& uuid) { this->uuid = uuid; }
 	const std::string& getUUID() const { return uuid; }
 
+	void setTexturePath(const std::string& texturePath) { this->texturePath = texturePath; }
+	const std::string& getTexturePath() const { return texturePath; }
+
+	void setTextureTileSize(Vec2Int textureTileSize) { this->textureTileSize = textureTileSize; }
+	Vec2Int getTextureTileSize() const { return textureTileSize; }
+
+	void setTextureSmallestCordTile(Vec2Int textureSmallestCordTile) { this->textureSmallestCordTile = textureSmallestCordTile; }
+	Vec2Int getTextureSmallestCordTile() const { return textureSmallestCordTile; }
+
+	void setTextureBlockTileSize(Vec2Int textureBlockTileSize) { this->textureBlockTileSize = textureBlockTileSize; }
+	Vec2Int getTextureBlockTileSize() const { return textureBlockTileSize; }
+
 	Size getSize() const { return size; }
 	void setSize(Size size) { this->size = size; valid = false; }
 
@@ -105,6 +117,10 @@ private:
 	std::string absoluteFilePath;
 	std::string uuid;
 	std::string name;
+	std::string texturePath = "";
+	Vec2Int textureTileSize = {0, 0}; // mean that the whole texture is 1 tile.
+	Vec2Int textureSmallestCordTile = {0, 0};
+	Vec2Int textureBlockTileSize = {1, 1};
 
 	// If this represents a custom block:
 	bool isCustomBlock;
