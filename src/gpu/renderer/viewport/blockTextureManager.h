@@ -8,6 +8,8 @@
 
 class VulkanDevice;
 
+#include <stb_image.h>
+
 struct BlockTextureArray {
     VulkanDevice* device;
     AllocatedImage image;
@@ -48,6 +50,7 @@ class BlockTextureManager {
 public:
 	void init(VulkanDevice* device);
 	BlockTextureId addTexture(const std::string& path);
+	void refreshBlockTexture(const std::string& path);
 	BlockTextureCords getBlockTextureCords(BlockTextureId blockTextureId) const;
 	BlockTextureCords getBlockTextureCords(BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize) const;
 	void update();
@@ -57,6 +60,9 @@ public:
     inline std::shared_ptr<BlockTextureArray> getTextureArray() { return textureArray; }
 
 private:
+	// this needs to free pixels
+	std::pair<glm::vec2, uint32_t> addTextureToArray(stbi_uc* pixels, int texWidth, int texHeight);
+
 	VulkanDevice* device;
 
 	DescriptorAllocator descriptorAllocator;

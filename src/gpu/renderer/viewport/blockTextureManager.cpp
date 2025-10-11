@@ -3,8 +3,6 @@
 #include "gpu/vulkanDevice.h"
 #include "util/algorithm.h"
 
-#include <stb_image.h>
-
 BlockTextureArray::~BlockTextureArray() {
 	destroyImage(image);
 	vkDestroySampler(device->getDevice(), sampler, nullptr);
@@ -56,6 +54,83 @@ BlockTextureId BlockTextureManager::addTexture(const std::string& path) {
 		throwFatalError("Failed to load texture: " + path);
 	}
 
+	std::pair<glm::vec2, uint32_t> pair = addTextureToArray(pixels, texWidth, texHeight);
+
+	BlockTextureId blockTextureId = findUnusedKey<BlockTextureId>(blockTextures, 1);
+	blockTextures.try_emplace(blockTextureId, pair.first, glm::vec2(texWidth, texHeight), pair.second);
+
+	loadedTextureFiles.emplace(path, blockTextureId);
+
+	return blockTextureId;
+}
+
+BlockTextureId BlockTextureManager::refreshBlockTexture(const std::string& path) {
+	// check if its already loaded
+	auto iter = loadedTextureFiles.find(path);
+	if (iter == loadedTextureFiles.end()) {
+		return iter->second;
+	}
+
+	// --- Load pixels from file ---
+	int texWidth, texHeight, texChannels;
+	stbi_uc* pixels = stbi_load(path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+	if (!pixels) {
+		throwFatalError("Failed to load texture: " + path);
+	}
+
+	std::pair<glm::vec2, uint32_t> pair = addTextureToArray(pixels, texWidth, texHeight);
+
+	BlockTextureId blockTextureId = findUnusedKey<BlockTextureId>(blockTextures, 1);
+	blockTextures.try_emplace(blockTextureId, pair.first, glm::vec2(texWidth, texHeight), pair.second);
+
+	loadedTextureFiles.emplace(path, blockTextureId);
+
+	return blockTextureId;
+}
+
+BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId blockTextureId) const {
+	auto blockTextureIter = blockTextures.find(blockTextureId);
+	if (blockTextureIter == blockTextures.end()) {
+		logError("Could not find block texture with id {}", "BlockTextureManager", blockTextureId);
+		return { glm::vec2(0, 0), glm::vec2(0, 0), 0 };
+	}
+	return BlockTextureCords(
+		glm::vec2(
+			(double)(blockTextureIter->second.textureOrigin.x) / (double)textureArray->texSize.width,
+			(double)(blockTextureIter->second.textureOrigin.y) / (double)textureArray->texSize.height
+		),
+		glm::vec2((double)(blockTextureIter->second.texSize.x) / (double)textureArray->texSize.width, (double)(blockTextureIter->second.texSize.y) / (double)textureArray->texSize.height),
+		blockTextureIter->second.texLayer
+	);
+}
+
+BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize) const {
+	auto blockTextureIter = blockTextures.find(blockTextureId);
+	if (blockTextureIter == blockTextures.end()) {
+		logError("Could not find block texture with id {}", "BlockTextureManager", blockTextureId);
+		return { glm::vec2(0, 0), glm::vec2(0, 0), 0 };
+	}
+	return BlockTextureCords(
+		glm::vec2(
+			(double)(blockTextureIter->second.textureOrigin.x + smallestCordTile.x * tileSize.x) / (double)textureArray->texSize.width,
+			(double)(blockTextureIter->second.textureOrigin.y + smallestCordTile.y * tileSize.y) / (double)textureArray->texSize.height
+		),
+		glm::vec2((double)(blockSize.x * tileSize.x) / (double)textureArray->texSize.width, (double)(blockSize.y * tileSize.y) / (double)(textureArray->texSize.height)),
+		blockTextureIter->second.texLayer
+	);
+}
+
+void BlockTextureManager::cleanup() {
+	// destroy image
+	vkDestroyDescriptorSetLayout(device->getDevice(), descriptorLayout, nullptr);
+
+	textureArray.reset();
+
+	// destroy descriptor allocator
+	descriptorAllocator.cleanup();
+}
+
+std::pair<glm::vec2, uint32_t> BlockTextureManager::addTextureToArray(stbi_uc* pixels, int texWidth, int texHeight) {
 	if (textureArray->nextFreeLayer >= textureArray->maxLayers) {
 		stbi_image_free(pixels);
 		throwFatalError("Texture array is full!");
@@ -120,53 +195,5 @@ BlockTextureId BlockTextureManager::addTexture(const std::string& path) {
 
 	destroyBuffer(stagingBuffer);
 
-	BlockTextureId blockTextureId = findUnusedKey<BlockTextureId>(blockTextures, 1);
-	blockTextures.try_emplace(blockTextureId, glm::vec2(0, 0), glm::vec2(texWidth, texHeight), textureArray->nextFreeLayer);
-	textureArray->nextFreeLayer++;
-
-	loadedTextureFiles.emplace(path, blockTextureId);
-
-	return blockTextureId;
-}
-
-BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId blockTextureId) const {
-	auto blockTextureIter = blockTextures.find(blockTextureId);
-	if (blockTextureIter == blockTextures.end()) {
-		logError("Could not find block texture with id {}", "BlockTextureManager", blockTextureId);
-		return { glm::vec2(0, 0), glm::vec2(0, 0), 0 };
-	}
-	return BlockTextureCords(
-		glm::vec2(
-			(double)(blockTextureIter->second.textureOrigin.x) / (double)textureArray->texSize.width,
-			(double)(blockTextureIter->second.textureOrigin.y) / (double)textureArray->texSize.height
-		),
-		glm::vec2((double)(blockTextureIter->second.texSize.x) / (double)textureArray->texSize.width, (double)(blockTextureIter->second.texSize.y) / (double)textureArray->texSize.height),
-		blockTextureIter->second.texLayer
-	);
-}
-
-BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize) const {
-	auto blockTextureIter = blockTextures.find(blockTextureId);
-	if (blockTextureIter == blockTextures.end()) {
-		logError("Could not find block texture with id {}", "BlockTextureManager", blockTextureId);
-		return { glm::vec2(0, 0), glm::vec2(0, 0), 0 };
-	}
-	return BlockTextureCords(
-		glm::vec2(
-			(double)(blockTextureIter->second.textureOrigin.x + smallestCordTile.x * tileSize.x) / (double)textureArray->texSize.width,
-			(double)(blockTextureIter->second.textureOrigin.y + smallestCordTile.y * tileSize.y) / (double)textureArray->texSize.height
-		),
-		glm::vec2((double)(blockSize.x * tileSize.x) / (double)textureArray->texSize.width, (double)(blockSize.y * tileSize.y) / (double)(textureArray->texSize.height)),
-		blockTextureIter->second.texLayer
-	);
-}
-
-void BlockTextureManager::cleanup() {
-	// destroy image
-	vkDestroyDescriptorSetLayout(device->getDevice(), descriptorLayout, nullptr);
-
-	textureArray.reset();
-
-	// destroy descriptor allocator
-	descriptorAllocator.cleanup();
+	return {{0, 0}, (textureArray->nextFreeLayer)++}; // needs to be post inc
 }

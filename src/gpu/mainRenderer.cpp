@@ -174,6 +174,10 @@ BlockTextureId MainRenderer::addBlockTexture(const std::string& path) {
 	return vulkanInstance.getDevice()->getBlockTextureManager().addTexture(path);
 }
 
+void MainRenderer::refreshBlockTexture(const std::string& path) {
+	vulkanInstance.getDevice()->getBlockTextureManager().refreshBlockTexture(path);
+}
+
 void MainRenderer::setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId) {
 	blockRenderDataManager.setBlockTexture(blockRenderDataId, blockTextureId);
 }

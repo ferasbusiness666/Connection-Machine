@@ -54,19 +54,6 @@ BlockCreationWindow::BlockCreationWindow(
 
 			std::string filePath = filePaths[0];
 			blockData->setTexturePath(filePath);
-			// BlockRenderDataId blockRenderDataId = blockCreationWindow->environment->getBlockRenderDataFeeder().getBlockRenderDataId(circuit->getBlockType());
-			// if (blockRenderDataId == 0) {
-			// 	logError("Could not find BlockRenderDataId with block type {}", "BlockCreationWindow", circuit->getBlockType());
-			// 	return;
-			// }
-
-			// BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(filePath);
-			// if (blockTextureId == 0) {
-			// 	logError("Failed to load texture {}", "BlockCreationWindow", filePath);
-			// 	return;
-			// }
-
-			// MainRenderer::get().setBlockTexture(blockRenderDataId, blockTextureId);
 
 			blockCreationWindow->menu->GetElementById("block-texture-menu-no-texture")->SetClass("invisible", true);
 			blockCreationWindow->menu->GetElementById("block-texture-menu-has-texture")->SetClass("invisible", false);
@@ -77,7 +64,6 @@ BlockCreationWindow::BlockCreationWindow(
 
 		SDL_ShowOpenFileDialog([](void* userData, const char* const* filePaths, int filter){
 			if (!filePaths || !filePaths[0]) return;
-
 
 			BlockCreationWindow* blockCreationWindow = (BlockCreationWindow*)userData;
 			Circuit* circuit = blockCreationWindow->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
@@ -94,15 +80,8 @@ BlockCreationWindow::BlockCreationWindow(
 		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 		BlockData* blockData = this->environment->getBackend().getBlockDataManager()->getBlockData(circuit->getBlockType());
 		blockData->setTexturePath("");
-		// BlockRenderDataId blockRenderDataId = blockCreationWindow->environment->getBlockRenderDataFeeder().getBlockRenderDataId(circuit->getBlockType());
-		// if (blockRenderDataId == 0) {
-		// 	logError("Could not find BlockRenderDataId with block type {}", "BlockCreationWindow", circuit->getBlockType());
-		// 	return;
-		// }
-
-		// // environment->getBlockRenderDataFeeder().getBlockRenderDataId(BlockType blockType)
-		// MainRenderer::get().setBlockTexture(blockRenderDataId, blockTextureId);
-		// }, this, nullptr, nullptr, 0, nullptr, true);
+		this->menu->GetElementById("block-texture-menu-no-texture")->SetClass("invisible", false);
+		this->menu->GetElementById("block-texture-menu-has-texture")->SetClass("invisible", true);
 	}));
 	embedTexture->AddEventListener("click", new EventPasser([this](Rml::Event& event){
 		logError("Embed texture not supported yet.");

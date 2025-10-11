@@ -21,8 +21,8 @@ BlockRenderDataFeeder::BlockRenderDataFeeder(Backend* backend) : backend(backend
 }
 
 BlockRenderDataId BlockRenderDataFeeder::getBlockRenderDataId(BlockType blockType) const {
-	auto iter = blockTypeToRenderIdData.find(blockType);
-	if (iter == blockTypeToRenderIdData.end()) {
+	auto iter = blockTypeToRenderData.find(blockType);
+	if (iter == blockTypeToRenderData.end()) {
 		logError("Failed to get BlockRenderDataId for BlockType {}", "BlockRenderDataFeeder", blockType);
 		return 0;
 	}
@@ -33,20 +33,53 @@ void BlockRenderDataFeeder::newBlockTypeUpdate(const DataUpdateEventManager::Eve
 	const auto* data = dataEvent->cast<BlockType>();
 	if (!data) return;
 	BlockRenderDataId blockRenderDataId = MainRenderer::get().registerBlockRenderData();
-	blockTypeToRenderIdData.emplace(data->get(), blockRenderDataId);
+	auto iter = blockTypeToRenderData.emplace(data->get(), blockRenderDataId);
+	RenderData& renderData = iter.first->second;
 	if (data->get() == BlockType::BUS_INTERFACE) {
-		MainRenderer::get().setBlockTexture(blockRenderDataId, otherBlockTextureId, {512, 512}, {0, 0}, {1, 1});
+		renderData.texturePath = DirectoryManager::getResourceDirectory() / "gateIcon.png";
+		renderData.tileSize = {512, 512};
+		renderData.smallestCordTile = {0, 0};
+		renderData.blockSize = {1, 1};
+		MainRenderer::get().setBlockTexture(
+			blockRenderDataId,
+			otherBlockTextureId,
+			renderData.tileSize,
+			renderData.smallestCordTile,
+			renderData.blockSize
+		);
+	} else if (data->get() < BlockType::CUSTOM) {
+		renderData.texturePath = "";
+		renderData.tileSize = {256, 256};
+		renderData.smallestCordTile = {data->get(), 0};
+		renderData.blockSize = {1, 1};
+		MainRenderer::get().setBlockTexture(
+			blockRenderDataId,
+			mainBlockTextureId,
+			renderData.tileSize,
+			renderData.smallestCordTile,
+			renderData.blockSize
+		);
 	} else {
-		MainRenderer::get().setBlockTexture(blockRenderDataId, mainBlockTextureId, {256, 256}, {data->get() >= BlockType::BUS_INTERFACE ? 1 : (data->get() + 1), 0}, {1, 1});
+		renderData.texturePath = "";
+		renderData.tileSize = {256, 256};
+		renderData.smallestCordTile = {1, 0};
+		renderData.blockSize = {1, 1};
+		MainRenderer::get().setBlockTexture(
+			blockRenderDataId,
+			mainBlockTextureId,
+			renderData.tileSize,
+			renderData.smallestCordTile,
+			renderData.blockSize
+		);
 	}
 }
 
 void BlockRenderDataFeeder::postBlockSizeChangeUpdate(const DataUpdateEventManager::EventData* dataEvent) {
 	const auto* data = dataEvent->cast<std::pair<BlockType, Size>>();
 	if (!data) return;
-	auto iter = blockTypeToRenderIdData.find(data->get().first);
-	if (iter == blockTypeToRenderIdData.end()) {
-		logError("Failed to find RenderIdData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
+	auto iter = blockTypeToRenderData.find(data->get().first);
+	if (iter == blockTypeToRenderData.end()) {
+		logError("Failed to find RenderData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
 		return;
 	}
 	MainRenderer::get().setBlockSize(iter->second.blockRenderDataId, data->get().second);
@@ -55,9 +88,9 @@ void BlockRenderDataFeeder::postBlockSizeChangeUpdate(const DataUpdateEventManag
 void BlockRenderDataFeeder::blockNameChangeUpdate(const DataUpdateEventManager::EventData* dataEvent) {
 	const auto* data = dataEvent->cast<std::pair<BlockType, std::string>>();
 	if (!data) return;
-	auto iter = blockTypeToRenderIdData.find(data->get().first);
-	if (iter == blockTypeToRenderIdData.end()) {
-		logError("Failed to find RenderIdData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
+	auto iter = blockTypeToRenderData.find(data->get().first);
+	if (iter == blockTypeToRenderData.end()) {
+		logError("Failed to find RenderData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
 		return;
 	}
 	MainRenderer::get().setBlockName(iter->second.blockRenderDataId, data->get().second);
@@ -66,9 +99,9 @@ void BlockRenderDataFeeder::blockNameChangeUpdate(const DataUpdateEventManager::
 void BlockRenderDataFeeder::blockDataSetConnectionUpdate(const DataUpdateEventManager::EventData* dataEvent) {
 	const auto* data = dataEvent->cast<std::pair<BlockType, connection_end_id_t>>();
 	if (!data) return;
-	auto iter = blockTypeToRenderIdData.find(data->get().first);
-	if (iter == blockTypeToRenderIdData.end()) {
-		logError("Failed to find RenderIdData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
+	auto iter = blockTypeToRenderData.find(data->get().first);
+	if (iter == blockTypeToRenderData.end()) {
+		logError("Failed to find RenderData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
 		return;
 	}
 	auto portIter = iter->second.blockPortRenderDataIds.find(data->get().second);
@@ -93,9 +126,9 @@ void BlockRenderDataFeeder::blockDataSetConnectionUpdate(const DataUpdateEventMa
 void BlockRenderDataFeeder::blockDataRemoveConnectionUpdate(const DataUpdateEventManager::EventData* dataEvent) {
 	const auto* data = dataEvent->cast<std::pair<BlockType, connection_end_id_t>>();
 	if (!data) return;
-	auto iter = blockTypeToRenderIdData.find(data->get().first);
-	if (iter == blockTypeToRenderIdData.end()) {
-		logError("Failed to find RenderIdData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
+	auto iter = blockTypeToRenderData.find(data->get().first);
+	if (iter == blockTypeToRenderData.end()) {
+		logError("Failed to find RenderData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
 		return;
 	}
 	auto portIter = iter->second.blockPortRenderDataIds.find(data->get().second);
@@ -109,9 +142,9 @@ void BlockRenderDataFeeder::blockDataRemoveConnectionUpdate(const DataUpdateEven
 void BlockRenderDataFeeder::blockDataConnectionNameSetUpdate(const DataUpdateEventManager::EventData* dataEvent) {
 	const auto* data = dataEvent->cast<std::pair<BlockType, connection_end_id_t>>();
 	if (!data) return;
-	auto iter = blockTypeToRenderIdData.find(data->get().first);
-	if (iter == blockTypeToRenderIdData.end()) {
-		logError("Failed to find RenderIdData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
+	auto iter = blockTypeToRenderData.find(data->get().first);
+	if (iter == blockTypeToRenderData.end()) {
+		logError("Failed to find RenderData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
 		return;
 	}
 	auto portIter = iter->second.blockPortRenderDataIds.find(data->get().second);
@@ -126,9 +159,24 @@ void BlockRenderDataFeeder::blockDataConnectionNameSetUpdate(const DataUpdateEve
 void BlockRenderDataFeeder::blockDataTextureChangeUpdate(const DataUpdateEventManager::EventData* dataEvent) {
 	const auto* data = dataEvent->cast<std::pair<BlockType, std::string>>();
 	if (!data) return;
-	auto iter = blockTypeToRenderIdData.find(data->get().first);
-	if (iter == blockTypeToRenderIdData.end()) {
-		logError("Failed to find RenderIdData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
+	auto iter = blockTypeToRenderData.find(data->get().first);
+	if (iter == blockTypeToRenderData.end()) {
+		logError("Failed to find RenderData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
+		return;
+	}
+
+	if (data->get().second == "") {
+		iter->second.texturePath = "";
+		iter->second.tileSize = {256, 256};
+		iter->second.smallestCordTile = {1, 0};
+		iter->second.blockSize = {1, 1};
+		MainRenderer::get().setBlockTexture(
+			iter->second.blockRenderDataId,
+			mainBlockTextureId,
+			iter->second.tileSize,
+			iter->second.smallestCordTile,
+			iter->second.blockSize
+		);
 		return;
 	}
 
@@ -136,6 +184,25 @@ void BlockRenderDataFeeder::blockDataTextureChangeUpdate(const DataUpdateEventMa
 	if (blockTextureId == 0) {
 		logError("Failed to load texture {}", "BlockRenderDataFeeder", data->get().second);
 	}
-	MainRenderer::get().setBlockTexture(iter->second.blockRenderDataId, blockTextureId);
+
+	iter->second.texturePath = "";
+	iter->second.tileSize = {0, 0}; // mean that the whole texture is 1 tile.
+	iter->second.smallestCordTile = {0, 0};
+	iter->second.blockSize = {1, 1};
+	MainRenderer::get().setBlockTexture(
+		iter->second.blockRenderDataId,
+		mainBlockTextureId,
+		iter->second.tileSize,
+		iter->second.smallestCordTile,
+		iter->second.blockSize
+	);
 }
 
+void BlockRenderDataFeeder::refreshBlockTexture(BlockType blockType) {
+	auto iter = blockTypeToRenderData.find(blockType);
+	if (iter == blockTypeToRenderData.end()) {
+		logError("Failed to refresh block texture for BlockType {}", "BlockRenderDataFeeder", blockType);
+	}
+
+	MainRenderer::get().refreshBlockTexture(iter->second.texturePath);
+}
