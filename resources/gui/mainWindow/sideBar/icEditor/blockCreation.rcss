@@ -10,6 +10,11 @@ scrollbarvertical {
 	width: 0;
 }
 
+#pick-texture, #pick-new-texture, #reload-texture, #remove-texture, #embed-texture {
+	display: inline-block;
+	margin: 2dp 4dp 2dp auto;
+}
+
 #reset-block-creation, #update-block-creation {
 	display: inline-block;
 	margin: 0.2em 0.2em;

@@ -11,6 +11,7 @@ class BlockCreationWindow {
 public:
 	BlockCreationWindow(
 		CircuitManager* circuitManager,
+		Environment* environment,
 		MainWindow* mainWindow,
 		DataUpdateEventManager* dataUpdateEventManager,
 		ToolManagerManager* toolManagerManager,
@@ -32,6 +33,7 @@ private:
 	Rml::Element* menu;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 	MainWindow* mainWindow;
+	Environment* environment;
 	CircuitManager* circuitManager;
 	ToolManagerManager* toolManagerManager;
 };

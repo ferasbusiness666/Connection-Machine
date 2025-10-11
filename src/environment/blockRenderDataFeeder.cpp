@@ -14,6 +14,7 @@ BlockRenderDataFeeder::BlockRenderDataFeeder(Backend* backend) : backend(backend
 	dataUpdateEventReceiver.linkFunction("blockDataSetConnection", std::bind(&BlockRenderDataFeeder::blockDataSetConnectionUpdate, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("blockDataRemoveConnection", std::bind(&BlockRenderDataFeeder::blockDataRemoveConnectionUpdate, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("blockDataConnectionNameSet", std::bind(&BlockRenderDataFeeder::blockDataConnectionNameSetUpdate, this, std::placeholders::_1));
+	dataUpdateEventReceiver.linkFunction("blockDataTextureChange", std::bind(&BlockRenderDataFeeder::blockDataTextureChangeUpdate, this, std::placeholders::_1));
 
 	mainBlockTextureId = MainRenderer::get().addBlockTexture(DirectoryManager::getResourceDirectory() / "logicTiles.png");
 	otherBlockTextureId = MainRenderer::get().addBlockTexture(DirectoryManager::getResourceDirectory() / "gateIcon.png");
@@ -122,4 +123,19 @@ void BlockRenderDataFeeder::blockDataConnectionNameSetUpdate(const DataUpdateEve
 	MainRenderer::get().setBlockPortName(iter->second.blockRenderDataId, portIter->second, *blockData->getConnectionIdToName(data->get().second));
 }
 
+void BlockRenderDataFeeder::blockDataTextureChangeUpdate(const DataUpdateEventManager::EventData* dataEvent) {
+	const auto* data = dataEvent->cast<std::pair<BlockType, std::string>>();
+	if (!data) return;
+	auto iter = blockTypeToRenderIdData.find(data->get().first);
+	if (iter == blockTypeToRenderIdData.end()) {
+		logError("Failed to find RenderIdData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
+		return;
+	}
+
+	BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(data->get().second);
+	if (blockTextureId == 0) {
+		logError("Failed to load texture {}", "BlockRenderDataFeeder", data->get().second);
+	}
+	MainRenderer::get().setBlockTexture(iter->second.blockRenderDataId, blockTextureId);
+}
 

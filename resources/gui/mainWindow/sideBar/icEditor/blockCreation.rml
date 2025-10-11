@@ -18,6 +18,18 @@
 				<label class="form-label" for="height">Height</label>
 				<input id="height-input" type="text" name="height" maxlength="3" class="number" />
 			</div>
+			<div id="block-texture-menu" class="surface-raised pad-sm">
+				<label class="form-label">Block Texture</label><br></br>
+				<div id="block-texture-menu-no-texture">
+					<button id="pick-texture" class="btn btn-outline btn-sm">Pick Texture</button>
+				</div>
+				<div id="block-texture-menu-has-texture" class="invisible">
+					<button id="pick-new-texture" class="btn btn-sm">Pick Texture</button>
+					<button id="reload-texture" class="btn btn-sm">Reload Texture</button>
+					<button id="remove-texture" class="btn btn-sm">Remove Texture</button>
+					<button id="embed-texture" class="btn btn-sm">Embed in .cir</button>
+				</div>
+			</div>
 			<div id="connection-menu" class="surface-raised pad-sm">
 				<div class="section-header">Inputs <button id="connection-list-add-input" class="btn btn-outline btn-sm"><span>Add Input</span></button></div>
 				<div id="connection-list-input-headers" class="connection-list-headers">Name | Port X/Y | Block X/Y</div>

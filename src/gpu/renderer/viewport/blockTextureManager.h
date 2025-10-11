@@ -36,6 +36,9 @@ public:
 struct BlockTextureCords {
 public:
 	BlockTextureCords(glm::vec2 textureOriginUV, glm::vec2 texSizeUV, unsigned int texLayer) : textureOriginUV(textureOriginUV), texSizeUV(texSizeUV), texLayer(texLayer) {}
+	bool operator==(const BlockTextureCords& other) const {
+		return textureOriginUV == other.textureOriginUV && texSizeUV == other.texSizeUV && texLayer == other.texLayer;
+	}
 	glm::vec2 textureOriginUV;
 	glm::vec2 texSizeUV;
 	unsigned int texLayer;
@@ -45,6 +48,7 @@ class BlockTextureManager {
 public:
 	void init(VulkanDevice* device);
 	BlockTextureId addTexture(const std::string& path);
+	BlockTextureCords getBlockTextureCords(BlockTextureId blockTextureId) const;
 	BlockTextureCords getBlockTextureCords(BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize) const;
 	void update();
 	void cleanup();

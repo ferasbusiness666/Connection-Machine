@@ -174,6 +174,10 @@ BlockTextureId MainRenderer::addBlockTexture(const std::string& path) {
 	return vulkanInstance.getDevice()->getBlockTextureManager().addTexture(path);
 }
 
+void MainRenderer::setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId) {
+	blockRenderDataManager.setBlockTexture(blockRenderDataId, blockTextureId);
+}
+
 void MainRenderer::setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize) {
 	blockRenderDataManager.setBlockTexture(blockRenderDataId, blockTextureId, tileSize, smallestCordTile, blockSize);
 }
@@ -192,6 +196,12 @@ void MainRenderer::moveBlockPort(BlockRenderDataId blockRenderDataId, BlockPortR
 
 void MainRenderer::setBlockPortName(BlockRenderDataId blockRenderDataId, BlockPortRenderDataId blockPortRenderDataId, const std::string& newPortName) {
 	blockRenderDataManager.setBlockPortName(blockRenderDataId, blockPortRenderDataId, newPortName);
+}
+
+void MainRenderer::regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDataId) {
+	for (std::pair<const unsigned int, ViewportRenderData>& pair : viewportRenderers) {
+		pair.second.getChunker().regenerateAllChunksWithBlock(blockRenderDataId);
+	}
 }
 
 ViewportId MainRenderer::registerViewport(WindowId windowId, glm::vec2 origin, glm::vec2 size) {

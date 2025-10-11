@@ -178,3 +178,6 @@ tab:active {
 	background: #717171;
 }
 
+.invisible {
+	display: none;
+}

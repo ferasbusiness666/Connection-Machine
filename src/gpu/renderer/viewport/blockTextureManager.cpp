@@ -129,6 +129,22 @@ BlockTextureId BlockTextureManager::addTexture(const std::string& path) {
 	return blockTextureId;
 }
 
+BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId blockTextureId) const {
+	auto blockTextureIter = blockTextures.find(blockTextureId);
+	if (blockTextureIter == blockTextures.end()) {
+		logError("Could not find block texture with id {}", "BlockTextureManager", blockTextureId);
+		return { glm::vec2(0, 0), glm::vec2(0, 0), 0 };
+	}
+	return BlockTextureCords(
+		glm::vec2(
+			(double)(blockTextureIter->second.textureOrigin.x) / (double)textureArray->texSize.width,
+			(double)(blockTextureIter->second.textureOrigin.y) / (double)textureArray->texSize.height
+		),
+		glm::vec2((double)(blockTextureIter->second.texSize.x) / (double)textureArray->texSize.width, (double)(blockTextureIter->second.texSize.y) / (double)textureArray->texSize.height),
+		blockTextureIter->second.texLayer
+	);
+}
+
 BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize) const {
 	auto blockTextureIter = blockTextures.find(blockTextureId);
 	if (blockTextureIter == blockTextures.end()) {
@@ -138,7 +154,7 @@ BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId block
 	return BlockTextureCords(
 		glm::vec2(
 			(double)(blockTextureIter->second.textureOrigin.x + smallestCordTile.x * tileSize.x) / (double)textureArray->texSize.width,
-			(double)(blockTextureIter->second.textureOrigin.x + smallestCordTile.y * tileSize.y) / (double)textureArray->texSize.height
+			(double)(blockTextureIter->second.textureOrigin.y + smallestCordTile.y * tileSize.y) / (double)textureArray->texSize.height
 		),
 		glm::vec2((double)(blockSize.x * tileSize.x) / (double)textureArray->texSize.width, (double)(blockSize.y * tileSize.y) / (double)(textureArray->texSize.height)),
 		blockTextureIter->second.texLayer

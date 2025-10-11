@@ -1,5 +1,6 @@
 #include "blockCreationWindow.h"
 
+#include "SDL3/SDL_dialog.h"
 #include "gui/helper/eventPasser.h"
 #include "gui/mainWindow/circuitView/circuitViewWidget.h"
 #include "gui/mainWindow/mainWindow.h"
@@ -9,15 +10,17 @@
 #include "backend/dataUpdateEventManager.h"
 
 #include "util/algorithm.h"
+#include "environment/environment.h"
 
 BlockCreationWindow::BlockCreationWindow(
 	CircuitManager* circuitManager,
+	Environment* environment,
 	MainWindow* mainWindow,
 	DataUpdateEventManager* dataUpdateEventManager,
 	ToolManagerManager* toolManagerManager,
 	Rml::ElementDocument* document,
 	Rml::Element* menu
-) : document(document), dataUpdateEventReceiver(dataUpdateEventManager), circuitManager(circuitManager), mainWindow(mainWindow), toolManagerManager(toolManagerManager) {
+) : document(document), dataUpdateEventReceiver(dataUpdateEventManager), circuitManager(circuitManager), environment(environment), mainWindow(mainWindow), toolManagerManager(toolManagerManager) {
 	// enuTree(document, parent, true, false)
 	this->menu = menu;
 	outputList = menu->GetElementById("connection-list-output");
@@ -33,6 +36,78 @@ BlockCreationWindow::BlockCreationWindow(
 	addInputConnection->AddEventListener("click", new EventPasser(std::bind(&BlockCreationWindow::addListItem, this, true)));
 	Rml::Element* addOutputConnection = menu->GetElementById("connection-list-add-output");
 	addOutputConnection->AddEventListener("click", new EventPasser(std::bind(&BlockCreationWindow::addListItem, this, false)));
+	// texture
+	Rml::Element* pickTexture = menu->GetElementById("pick-texture");
+	Rml::Element* pickNewTexture = menu->GetElementById("pick-new-texture");
+	Rml::Element* reloadTexture = menu->GetElementById("reload-texture");
+	Rml::Element* removeTexture = menu->GetElementById("remove-texture");
+	Rml::Element* embedTexture = menu->GetElementById("embed-texture");
+	pickTexture->AddEventListener("click", new EventPasser([this](Rml::Event& event){
+		static const SDL_DialogFileFilter filters[] = {};
+
+		SDL_ShowOpenFileDialog([](void* userData, const char* const* filePaths, int filter){
+			if (!filePaths || !filePaths[0]) return;
+
+			BlockCreationWindow* blockCreationWindow = (BlockCreationWindow*)userData;
+			Circuit* circuit = blockCreationWindow->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
+			BlockData* blockData = blockCreationWindow->environment->getBackend().getBlockDataManager()->getBlockData(circuit->getBlockType());
+
+			std::string filePath = filePaths[0];
+			blockData->setTexturePath(filePath);
+			// BlockRenderDataId blockRenderDataId = blockCreationWindow->environment->getBlockRenderDataFeeder().getBlockRenderDataId(circuit->getBlockType());
+			// if (blockRenderDataId == 0) {
+			// 	logError("Could not find BlockRenderDataId with block type {}", "BlockCreationWindow", circuit->getBlockType());
+			// 	return;
+			// }
+
+			// BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(filePath);
+			// if (blockTextureId == 0) {
+			// 	logError("Failed to load texture {}", "BlockCreationWindow", filePath);
+			// 	return;
+			// }
+
+			// MainRenderer::get().setBlockTexture(blockRenderDataId, blockTextureId);
+
+			blockCreationWindow->menu->GetElementById("block-texture-menu-no-texture")->SetClass("invisible", true);
+			blockCreationWindow->menu->GetElementById("block-texture-menu-has-texture")->SetClass("invisible", false);
+		}, this, nullptr, nullptr, 0, nullptr, true);
+	}));
+	pickNewTexture->AddEventListener("click", new EventPasser([this](Rml::Event& event){
+		static const SDL_DialogFileFilter filters[] = {};
+
+		SDL_ShowOpenFileDialog([](void* userData, const char* const* filePaths, int filter){
+			if (!filePaths || !filePaths[0]) return;
+
+
+			BlockCreationWindow* blockCreationWindow = (BlockCreationWindow*)userData;
+			Circuit* circuit = blockCreationWindow->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
+			BlockData* blockData = blockCreationWindow->environment->getBackend().getBlockDataManager()->getBlockData(circuit->getBlockType());
+
+			std::string filePath = filePaths[0];
+			blockData->setTexturePath(filePath);
+		}, this, nullptr, nullptr, 0, nullptr, true);
+	}));
+	reloadTexture->AddEventListener("click", new EventPasser([this](Rml::Event& event){
+		logError("Reload texture not supported yet.");
+	}));
+	removeTexture->AddEventListener("click", new EventPasser([this](Rml::Event& event){
+		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
+		BlockData* blockData = this->environment->getBackend().getBlockDataManager()->getBlockData(circuit->getBlockType());
+		blockData->setTexturePath("");
+		// BlockRenderDataId blockRenderDataId = blockCreationWindow->environment->getBlockRenderDataFeeder().getBlockRenderDataId(circuit->getBlockType());
+		// if (blockRenderDataId == 0) {
+		// 	logError("Could not find BlockRenderDataId with block type {}", "BlockCreationWindow", circuit->getBlockType());
+		// 	return;
+		// }
+
+		// // environment->getBlockRenderDataFeeder().getBlockRenderDataId(BlockType blockType)
+		// MainRenderer::get().setBlockTexture(blockRenderDataId, blockTextureId);
+		// }, this, nullptr, nullptr, 0, nullptr, true);
+	}));
+	embedTexture->AddEventListener("click", new EventPasser([this](Rml::Event& event){
+		logError("Embed texture not supported yet.");
+	}));
+
 	// dataUpdateEvents
 	dataUpdateEventReceiver.linkFunction("blockDataUpdate", std::bind(&BlockCreationWindow::resetMenu, this));
 	dataUpdateEventReceiver.linkFunction("circuitViewChangeCircuit", std::bind(&BlockCreationWindow::resetMenu, this));

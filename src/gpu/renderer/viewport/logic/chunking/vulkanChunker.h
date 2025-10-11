@@ -109,6 +109,7 @@ struct WireInstance {
 
 // ====================================================================================================================
 struct RenderedBlock {
+	BlockRenderDataId blockRenderDataId;
 	unsigned int textureIndex;
 	glm::vec2 textureOrigin;
 	glm::vec2 textureSize;
@@ -164,8 +165,8 @@ private:
 
 class Chunk {
 public:
-	inline RenderedBlocks& getRenderedBlocks() { allocationDirty = true; return blocks; }
-	inline RenderedWires& getRenderedWires() { allocationDirty = true; return wires; }
+	inline RenderedBlocks& getRenderedBlocks() { return blocks; }
+	inline RenderedWires& getRenderedWires() { return wires; }
 	void rebuildAllocation(VulkanDevice* device, const Evaluator* evaluator, const Address& address);
 
 	std::optional<std::shared_ptr<VulkanChunkAllocation>> getAllocation();
@@ -176,7 +177,6 @@ private:
 private:
 	RenderedBlocks blocks;
 	RenderedWires wires;
-	bool allocationDirty = false;
 
 	std::optional<std::shared_ptr<VulkanChunkAllocation>> newestAllocation;
 	std::optional<std::shared_ptr<VulkanChunkAllocation>> currentlyAllocating;
@@ -204,6 +204,7 @@ public:
 	void addWire(std::pair<Position, Position> points, std::pair<FVector, FVector> socketOffsets);
 	void removeWire(std::pair<Position, Position> points);
 	void reset();
+	void regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDataId);
 
 	void updateSimulatorIds(const std::vector<SimulatorMappingUpdate>& simulatorMappingUpdates);
 	void setEvaluator(Evaluator* evaluator, const Address& address);
@@ -215,6 +216,8 @@ private:
 	std::vector<ChunkIntersection> getNeededChunkIntersections(FPosition start, FPosition end);
 
 private:
+	std::unordered_map<BlockRenderDataId, unsigned int> blockTypesCount; // Used to regenerateAllChunksWithBlock
+
 	phmap::flat_hash_map<Position, Chunk> chunks;
 	phmap::flat_hash_map<std::pair<Position, Position>, std::vector<Position>> chunksUnderWire;
 	std::mutex mux; // sync can be relaxed in the future

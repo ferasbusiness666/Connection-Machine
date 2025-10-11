@@ -21,6 +21,7 @@ public:
 	void blockDataSetConnectionUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void blockDataRemoveConnectionUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void blockDataConnectionNameSetUpdate(const DataUpdateEventManager::EventData* dataEvent);
+	void blockDataTextureChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
 
 private:
 	struct RenderIdData {

@@ -53,6 +53,17 @@ void BlockData::setName(const std::string& name) noexcept {
 	sendBlockDataUpdate();
 }
 
+void BlockData::setPath(const std::string& path) noexcept {
+	this->path = path;
+	sendBlockDataUpdate();
+}
+
+void BlockData::setTexturePath(const std::string& texturePath) noexcept {
+	this->texturePath = texturePath;
+	dataUpdateEventManager->sendEvent<std::pair<BlockType, std::string>>("blockDataTextureChange", { blockType, texturePath });
+	sendBlockDataUpdate();
+}
+
 // trys to set a connection input in the block. Returns success.
 void BlockData::removeConnection(connection_end_id_t connectionId) noexcept {
 	auto iter = connections.find(connectionId);

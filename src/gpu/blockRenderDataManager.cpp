@@ -45,6 +45,20 @@ void BlockRenderDataManager::setBlockSize(BlockRenderDataId blockRenderDataId, S
 	iter->second.size = size;
 }
 
+void BlockRenderDataManager::setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId) {
+	auto iter = blockRenderData.find(blockRenderDataId);
+	if (iter == blockRenderData.end()) {
+		logError("Failed to call setBlockTextureIndex on non existent BlockRenderData {}.", "BlockRenderDataManager", blockRenderDataId);
+		return;
+	}
+	BlockTextureManager& blockTextureManager = MainRenderer::get().getVulkanInstance().getDevice()->getBlockTextureManager();
+	BlockTextureCords newBlockTextureCords = blockTextureManager.getBlockTextureCords(blockTextureId);
+	if (newBlockTextureCords != iter->second.blockTextureCords) {
+		iter->second.blockTextureCords = newBlockTextureCords;
+		MainRenderer::get().regenerateAllChunksWithBlock(blockRenderDataId);
+	}
+}
+
 void BlockRenderDataManager::setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize) {
 	auto iter = blockRenderData.find(blockRenderDataId);
 	if (iter == blockRenderData.end()) {

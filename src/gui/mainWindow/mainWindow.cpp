@@ -31,7 +31,7 @@ MainWindow::MainWindow(Environment* environment) :
 	// create rmlUI document
 	rmlDocument = rmlContext->LoadDocument(DirectoryManager::getResourceDirectory().generic_string() + "/gui/mainWindow/mainWindow.rml");
 
-	// SdlWindow* sdlWindow2 = App::get().registerWindow("Debugger").get();
+	// SdlWindow* sdlWindow2 = App::get().registerWindow("Debugger", 350, 800).get();
 	// WindowId windowId2 = MainRenderer::get().registerWindow(sdlWindow2);
 	// Rml::Context* rmlContext2 = Rml::CreateContext("Debugger", Rml::Vector2i(sdlWindow2->getSize().first, sdlWindow2->getSize().second));
 	// if (rmlContext2) {
@@ -99,7 +99,7 @@ MainWindow::MainWindow(Environment* environment) :
 	);
 
 	Rml::Element* blockCreationMenu = rmlDocument->GetElementById("block-creation-form");
-	blockCreationWindow.emplace(&(environment->getBackend().getCircuitManager()), this, environment->getBackend().getDataUpdateEventManager(), &toolManagerManager, rmlDocument, blockCreationMenu);
+	blockCreationWindow.emplace(&(environment->getBackend().getCircuitManager()), environment, this, environment->getBackend().getDataUpdateEventManager(), &toolManagerManager, rmlDocument, blockCreationMenu);
 
 	simControlsManager.emplace(rmlDocument, getCircuitViewWidget(0), environment->getBackend().getDataUpdateEventManager());
 

@@ -173,8 +173,6 @@ void Chunk::rebuildAllocation(VulkanDevice* device, const Evaluator* evaluator, 
 		// drop newest allocation
 		newestAllocation.reset();
 	}
-
-	allocationDirty = false;
 }
 
 std::optional<std::shared_ptr<VulkanChunkAllocation>> Chunk::getAllocation() {
@@ -231,6 +229,7 @@ void VulkanChunker::addBlock(BlockRenderDataId blockRenderDataId, Position posit
 	auto iter = chunks.find(chunkPos);
 	const BlockRenderDataManager::BlockRenderData* blockRenderData = MainRenderer::get().getBlockRenderDataManager().getBlockRenderData(blockRenderDataId);
 	chunks[chunkPos].getRenderedBlocks().emplace(position, RenderedBlock(
+		blockRenderDataId,
 		blockRenderData->blockTextureCords.texLayer,
 		blockRenderData->blockTextureCords.textureOriginUV,
 		blockRenderData->blockTextureCords.texSizeUV,
@@ -239,6 +238,7 @@ void VulkanChunker::addBlock(BlockRenderDataId blockRenderDataId, Position posit
 		statePosition
 	));
 	chunksToUpdate.insert(chunkPos);
+	blockTypesCount[blockRenderDataId] = 1; // for now just make it dirty. Should keep it from remaking everything.
 }
 
 void VulkanChunker::removeBlock(Position position) {
@@ -315,6 +315,29 @@ void VulkanChunker::reset() {
 
 	chunks.clear();
 	chunksUnderWire.clear();
+	blockTypesCount.clear();
+}
+
+void VulkanChunker::regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDataId) {
+	std::lock_guard<std::mutex> lock(mux);
+	auto iter = blockTypesCount.find(blockRenderDataId);
+	if (iter == blockTypesCount.end()) return;
+	if (iter->second == 0) return;
+
+	const BlockRenderDataManager::BlockRenderData* blockRenderData = MainRenderer::get().getBlockRenderDataManager().getBlockRenderData(blockRenderDataId);
+
+	for (std::pair<const Position, Chunk>& chunk : chunks) {
+		bool foundType = false;
+		for (std::pair<const Position, RenderedBlock>& block : chunk.second.getRenderedBlocks()) {
+			if (block.second.blockRenderDataId == blockRenderDataId) {
+				foundType = true;
+				block.second.textureIndex = blockRenderData->blockTextureCords.texLayer;
+				block.second.textureOrigin = blockRenderData->blockTextureCords.textureOriginUV;
+				block.second.textureSize = blockRenderData->blockTextureCords.texSizeUV;
+			}
+		}
+		if (foundType) chunk.second.rebuildAllocation(device, evaluator, address);
+	}
 }
 
 void VulkanChunker::updateSimulatorIds(const std::vector<SimulatorMappingUpdate>& simulatorMappingUpdates) {
