@@ -50,7 +50,7 @@ void BlockRenderDataFeeder::newBlockTypeUpdate(const DataUpdateEventManager::Eve
 	} else if (data->get() < BlockType::CUSTOM) {
 		renderData.texturePath = "";
 		renderData.tileSize = {256, 256};
-		renderData.smallestCordTile = {data->get(), 0};
+		renderData.smallestCordTile = {data->get()+1, 0};
 		renderData.blockSize = {1, 1};
 		MainRenderer::get().setBlockTexture(
 			blockRenderDataId,
@@ -185,23 +185,18 @@ void BlockRenderDataFeeder::blockDataTextureChangeUpdate(const DataUpdateEventMa
 		logError("Failed to load texture {}", "BlockRenderDataFeeder", data->get().second);
 	}
 
-	iter->second.texturePath = "";
+	iter->second.texturePath = data->get().second;
 	iter->second.tileSize = {0, 0}; // mean that the whole texture is 1 tile.
 	iter->second.smallestCordTile = {0, 0};
 	iter->second.blockSize = {1, 1};
-	MainRenderer::get().setBlockTexture(
-		iter->second.blockRenderDataId,
-		mainBlockTextureId,
-		iter->second.tileSize,
-		iter->second.smallestCordTile,
-		iter->second.blockSize
-	);
+	MainRenderer::get().setBlockTexture(iter->second.blockRenderDataId, blockTextureId);
 }
 
 void BlockRenderDataFeeder::refreshBlockTexture(BlockType blockType) {
 	auto iter = blockTypeToRenderData.find(blockType);
 	if (iter == blockTypeToRenderData.end()) {
 		logError("Failed to refresh block texture for BlockType {}", "BlockRenderDataFeeder", blockType);
+		return;
 	}
 
 	MainRenderer::get().refreshBlockTexture(iter->second.texturePath);

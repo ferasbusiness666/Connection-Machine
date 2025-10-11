@@ -5,6 +5,7 @@
 #include "backend/dataUpdateEventManager.h"
 #include "backend/position/position.h"
 #include "util/bidirectionalMultiSecondKeyMap.h"
+#include "util/vec2.h"
 
 class BlockData {
 	friend class BlockDataManager;
@@ -190,6 +191,9 @@ private:
 	std::string name = "Unnamed Block";
 	std::string path = "Basic";
 	std::string texturePath = "";
+	Vec2Int textureTileSize = {0, 0}; // mean that the whole texture is 1 tile.
+	Vec2Int textureSmallestCordTile = {0, 0};
+	Vec2Int textureBlockTileSize = {1, 1};
 	Size blockSize = Size(1);
 	connection_end_id_t inputConnectionCount = 0;
 	std::unordered_map<connection_end_id_t, ConnectionData> connections;

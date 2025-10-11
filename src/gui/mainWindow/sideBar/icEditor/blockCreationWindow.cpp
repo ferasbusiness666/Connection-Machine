@@ -74,7 +74,8 @@ BlockCreationWindow::BlockCreationWindow(
 		}, this, nullptr, nullptr, 0, nullptr, true);
 	}));
 	reloadTexture->AddEventListener("click", new EventPasser([this](Rml::Event& event){
-		logError("Reload texture not supported yet.");
+		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
+		this->environment->getBlockRenderDataFeeder().refreshBlockTexture(circuit->getBlockType());
 	}));
 	removeTexture->AddEventListener("click", new EventPasser([this](Rml::Event& event){
 		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();

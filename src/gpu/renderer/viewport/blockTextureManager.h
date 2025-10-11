@@ -49,7 +49,6 @@ public:
 class BlockTextureManager {
 public:
 	void init(VulkanDevice* device);
-	void resizeTextureArray(uint32_t newLayerCount);
 	BlockTextureId addTexture(const std::string& path);
 	void refreshBlockTexture(const std::string& path);
 	BlockTextureCords getBlockTextureCords(BlockTextureId blockTextureId) const;
@@ -62,7 +61,8 @@ public:
 
 private:
 	// this needs to free pixels
-	std::pair<glm::vec2, uint32_t> addTextureToArray(stbi_uc* pixels, int texWidth, int texHeight);
+	void addTextureToArray(stbi_uc* pixels, glm::vec2 texSize, glm::vec2 texPos, unsigned int texLayer);
+	void resizeTextureArray(uint32_t newLayerCount);
 
 	VulkanDevice* device;
 
