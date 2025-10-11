@@ -17,7 +17,7 @@ void BlockTextureManager::init(VulkanDevice* device) {
 	textureArray = std::make_shared<BlockTextureArray>();
 	textureArray->texSize = texSize;
 	textureArray->device = device;
-	textureArray->maxLayers = 5;
+	textureArray->maxLayers = 1;
 	textureArray->nextFreeLayer = 0;
 	textureArray->image = createImage(device, texSize, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, false, textureArray->maxLayers);
 
@@ -38,6 +38,43 @@ void BlockTextureManager::init(VulkanDevice* device) {
 	DescriptorWriter textureWriter;
 	textureWriter.writeImage(0, textureArray->image.imageView, textureArray->sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 	textureWriter.updateSet(device->getDevice(), textureArray->descriptor);
+}
+
+void BlockTextureManager::resizeTextureArray(uint32_t newLayerCount) {
+	VulkanDevice* dev = textureArray->device;
+	auto oldImage = textureArray->image;
+	uint32_t oldLayerCount = textureArray->maxLayers;
+
+	AllocatedImage newImage = createImage(
+		dev,
+		textureArray->texSize,
+		VK_FORMAT_R8G8B8A8_UNORM,
+		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+		false,
+		newLayerCount
+	);
+
+	dev->immediateSubmit([&](VkCommandBuffer cmd) {
+		for (uint32_t layer = 0; layer < oldLayerCount; layer++) {
+			VkImageCopy region{};
+			region.srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, layer, 1 };
+			region.dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, layer, 1 };
+			region.extent = { textureArray->texSize.width, textureArray->texSize.height, 1 };
+			vkCmdCopyImage(cmd,
+				oldImage.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+				newImage.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				1, &region);
+		}
+	});
+
+	destroyImage(oldImage);
+	textureArray->image = newImage;
+	textureArray->maxLayers = newLayerCount;
+
+	DescriptorWriter writer;
+	writer.writeImage(0, newImage.imageView, textureArray->sampler,
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+	writer.updateSet(dev->getDevice(), textureArray->descriptor);
 }
 
 BlockTextureId BlockTextureManager::addTexture(const std::string& path) {
@@ -132,8 +169,7 @@ void BlockTextureManager::cleanup() {
 
 std::pair<glm::vec2, uint32_t> BlockTextureManager::addTextureToArray(stbi_uc* pixels, int texWidth, int texHeight) {
 	if (textureArray->nextFreeLayer >= textureArray->maxLayers) {
-		stbi_image_free(pixels);
-		throwFatalError("Texture array is full!");
+		resizeTextureArray(textureArray->maxLayers + 1);
 	}
 
 	VkDevice device = textureArray->device->getDevice();

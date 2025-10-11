@@ -49,6 +49,7 @@ public:
 class BlockTextureManager {
 public:
 	void init(VulkanDevice* device);
+	void resizeTextureArray(uint32_t newLayerCount);
 	BlockTextureId addTexture(const std::string& path);
 	void refreshBlockTexture(const std::string& path);
 	BlockTextureCords getBlockTextureCords(BlockTextureId blockTextureId) const;
