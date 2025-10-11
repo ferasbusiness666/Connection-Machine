@@ -43,13 +43,15 @@ BlockCreationWindow::BlockCreationWindow(
 	Rml::Element* removeTexture = menu->GetElementById("remove-texture");
 	Rml::Element* embedTexture = menu->GetElementById("embed-texture");
 	pickTexture->AddEventListener("click", new EventPasser([this](Rml::Event& event){
+		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
+		if (!circuit || !(circuit->isEditable())) return;
 		static const SDL_DialogFileFilter filters[] = {};
-
 		SDL_ShowOpenFileDialog([](void* userData, const char* const* filePaths, int filter){
 			if (!filePaths || !filePaths[0]) return;
 
 			BlockCreationWindow* blockCreationWindow = (BlockCreationWindow*)userData;
 			Circuit* circuit = blockCreationWindow->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
+			if (!circuit || !(circuit->isEditable())) return;
 			BlockData* blockData = blockCreationWindow->environment->getBackend().getBlockDataManager()->getBlockData(circuit->getBlockType());
 
 			std::string filePath = filePaths[0];
@@ -60,13 +62,15 @@ BlockCreationWindow::BlockCreationWindow(
 		}, this, nullptr, nullptr, 0, nullptr, true);
 	}));
 	pickNewTexture->AddEventListener("click", new EventPasser([this](Rml::Event& event){
+		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
+		if (!circuit || !(circuit->isEditable())) return;
 		static const SDL_DialogFileFilter filters[] = {};
-
 		SDL_ShowOpenFileDialog([](void* userData, const char* const* filePaths, int filter){
 			if (!filePaths || !filePaths[0]) return;
 
 			BlockCreationWindow* blockCreationWindow = (BlockCreationWindow*)userData;
 			Circuit* circuit = blockCreationWindow->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
+			if (!circuit || !(circuit->isEditable())) return;
 			BlockData* blockData = blockCreationWindow->environment->getBackend().getBlockDataManager()->getBlockData(circuit->getBlockType());
 
 			std::string filePath = filePaths[0];
@@ -75,16 +79,20 @@ BlockCreationWindow::BlockCreationWindow(
 	}));
 	reloadTexture->AddEventListener("click", new EventPasser([this](Rml::Event& event){
 		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
+		if (!circuit || !(circuit->isEditable())) return;
 		this->environment->getBlockRenderDataFeeder().refreshBlockTexture(circuit->getBlockType());
 	}));
 	removeTexture->AddEventListener("click", new EventPasser([this](Rml::Event& event){
 		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
+		if (!circuit || !(circuit->isEditable())) return;
 		BlockData* blockData = this->environment->getBackend().getBlockDataManager()->getBlockData(circuit->getBlockType());
 		blockData->setTexturePath("");
 		this->menu->GetElementById("block-texture-menu-no-texture")->SetClass("invisible", false);
 		this->menu->GetElementById("block-texture-menu-has-texture")->SetClass("invisible", true);
 	}));
 	embedTexture->AddEventListener("click", new EventPasser([this](Rml::Event& event){
+		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
+		if (!circuit || !(circuit->isEditable())) return;
 		logError("Embed texture not supported yet.");
 	}));
 

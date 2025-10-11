@@ -28,6 +28,17 @@
 					<button id="reload-texture" class="btn btn-sm">Reload Texture</button>
 					<button id="remove-texture" class="btn btn-sm">Remove Texture</button>
 					<button id="embed-texture" class="btn btn-sm">Embed in .cir</button>
+					<div class="form-row-2">
+						<input id="texture-uses-tilemap" type="checkbox" />
+						<label class="form-label" for="uses tilemap">Uses Tilemap</label>
+					</div>
+				</div>
+					<!-- <checkbox id="set-uses-tilemap-texture" name="uses tilemap"></checkbox> -->
+				<div id="block-texture-menu-has-texture" class="invisible">
+					<button id="pick-new-texture" class="btn btn-sm">Pick Texture</button>
+					<button id="reload-texture" class="btn btn-sm">Reload Texture</button>
+					<button id="remove-texture" class="btn btn-sm">Remove Texture</button>
+					<button id="embed-texture" class="btn btn-sm">Embed in .cir</button>
 				</div>
 			</div>
 			<div id="connection-menu" class="surface-raised pad-sm">
