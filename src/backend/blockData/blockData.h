@@ -28,6 +28,24 @@ public:
 				return std::get<std::vector<unsigned int>>(bitConfiguration).size();
 			}
 		}
+		std::vector<unsigned int> getLaneIds() const noexcept {
+			if (std::holds_alternative<unsigned int>(bitConfiguration)) {
+				std::vector<unsigned int> vec;
+				for (unsigned int i = 0; i < std::get<unsigned int>(bitConfiguration); i++) {
+					vec.push_back(i);
+				}
+				return vec;
+			} else {
+				return std::get<std::vector<unsigned int>>(bitConfiguration);
+			}
+		}
+		unsigned int getFirstLaneId() const noexcept {
+			if (std::holds_alternative<unsigned int>(bitConfiguration)) {
+				return 0;
+			} else {
+				return std::get<std::vector<unsigned int>>(bitConfiguration).at(0);
+			}
+		}
 	};
 
 	BlockData(BlockType blockType, DataUpdateEventManager* dataUpdateEventManager);

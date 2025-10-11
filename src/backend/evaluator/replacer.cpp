@@ -104,7 +104,43 @@ void Replacer::mergeBuses(SimPauseGuard& pauseGuard, int layer) {
 			}
 			Replacement& replacement = makeReplacement(layer);
 			middle_id_t newJunctionId = replacement.getNewId();
-			
+			std::unordered_set<LanePoint> visitedLanePoints = {};
+			mergeBusLane(pauseGuard, replacement, id, laneId, newJunctionId, visitedLanePoints);
+		}
+	}
+}
+
+void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, Replacement& replacement, middle_id_t busId, unsigned int laneId, middle_id_t newJunctionId, std::unordered_set<Replacer::LanePoint>& visitedLanePoints) {
+	LanePoint lanePoint = { busId, laneId };
+	if (visitedLanePoints.contains(lanePoint)) {
+		return;
+	}
+	visitedLanePoints.insert(lanePoint);
+	logInfo("Merging bus lane {}:{}", "Replacer::mergeBusLane", busId, laneId);
+	const BlockData* blockData = blockDataManager.getBlockData(busInterfacePassthrough.getBlockType(busId));
+	if (blockData == nullptr) {
+		logError("Bus {} has invalid block type", "Replacer::mergeBusLane", busId);
+		return;
+	}
+	const std::unordered_map<connection_end_id_t, BlockData::ConnectionData>& connectionMap = blockData->getConnections();
+	for (const auto& [connectionId, connectionData] : connectionMap) {
+		unsigned int bitWidth = connectionData.getBitWidth();
+		if (bitWidth == 1) {
+			unsigned int connectionLaneId = connectionData.getFirstLaneId();
+			if (connectionLaneId != laneId) {
+				continue;
+			}
+			EvalConnectionPoint connectionPoint = EvalConnectionPoint(busId, connectionId);
+			addConnectionPointBusOverride(busId, connectionPoint, EvalConnectionPoint(newJunctionId, 0), replacement);
+		} else {
+			std::vector<unsigned int> connectionLaneIds = connectionData.getLaneIds();
+			for (unsigned int i = 0; i < connectionLaneIds.size(); i++) {
+				if (connectionLaneIds.at(i) != laneId) {
+					continue;
+				}
+				EvalConnectionPoint connectionPoint = EvalConnectionPoint(busId, connectionId);
+				// need to recursively merge other buses connected to this connection point
+			}
 		}
 	}
 }
