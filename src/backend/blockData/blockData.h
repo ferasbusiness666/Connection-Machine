@@ -21,6 +21,13 @@ public:
 		Vector positionOnBlock = Vector(0, 0);
 		bool isInput = true;
 		std::variant<unsigned int, std::vector<unsigned int>> bitConfiguration;
+		unsigned int getBitWidth() const noexcept {
+			if (std::holds_alternative<unsigned int>(bitConfiguration)) {
+				return std::get<unsigned int>(bitConfiguration);
+			} else {
+				return std::get<std::vector<unsigned int>>(bitConfiguration).size();
+			}
+		}
 	};
 
 	BlockData(BlockType blockType, DataUpdateEventManager* dataUpdateEventManager);
@@ -166,11 +173,7 @@ public:
 		if (defaultData) return 1;
 		auto iter = connections.find(connectionId);
 		if (iter == connections.end()) return 0;
-		if (std::holds_alternative<unsigned int>(iter->second.bitConfiguration)) {
-			return std::get<unsigned int>(iter->second.bitConfiguration);
-		} else {
-			return std::get<std::vector<unsigned int>>(iter->second.bitConfiguration).size();
-		}
+		return iter->second.getBitWidth();
 	}
 	inline const std::variant<unsigned int, std::vector<unsigned int>>* getConnectionBitConfiguration(connection_end_id_t connectionId) const noexcept {
 		if (defaultData) return nullptr;

@@ -75,11 +75,37 @@ void Replacer::mergeBuses(SimPauseGuard& pauseGuard, int layer) {
 	std::vector<middle_id_t> allMiddleIds = middleIdProvider.getUsedIds();
 	for (const middle_id_t id : allMiddleIds) {
 		BlockType blockType = busInterfacePassthrough.getBlockType(id);
+		if (blockType == BlockType::NONE) {
+			continue;
+		}
 		const BlockData* blockData = blockDataManager.getBlockData(blockType);
 		if (!blockData->isBus()) {
 			continue;
 		}
 		logInfo("Merging bus {}", "Replacer::mergeBuses", id);
+		const std::vector<EvalConnection>& outputs = busInterfacePassthrough.getOutputs(id);
+		const std::vector<EvalConnection>& inputs = busInterfacePassthrough.getInputs(id);
+		const std::unordered_map<connection_end_id_t, BlockData::ConnectionData>& connectionMap = blockData->getConnections();
+		for (const auto& [connectionId, connectionData] : connectionMap) {
+			unsigned int bitWidth = connectionData.getBitWidth();
+			if (bitWidth != 1) {
+				continue;
+			}
+			if (connectionPointBusOverride.contains(EvalConnectionPoint(id, connectionId))) {
+				continue; // already overridden by another bus
+			}
+			unsigned int laneId;
+			std::variant<unsigned int, std::vector<unsigned int>> bitConfiguration = connectionData.bitConfiguration;
+			if (std::holds_alternative<unsigned int>(bitConfiguration)) {
+				logError("Bus {} connection has single bit width but non-vector bit configuration > 1", "Replacer::mergeBuses", id);
+				continue;
+			} else {
+				laneId = std::get<std::vector<unsigned int>>(bitConfiguration).at(0);
+			}
+			Replacement& replacement = makeReplacement(layer);
+			middle_id_t newJunctionId = replacement.getNewId();
+			
+		}
 	}
 }
 
