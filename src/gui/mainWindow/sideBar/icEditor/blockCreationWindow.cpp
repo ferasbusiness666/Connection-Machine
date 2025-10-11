@@ -282,6 +282,14 @@ void BlockCreationWindow::resetMenu() {
 	Rml::ElementFormControlInput* heightElement = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(ele);
 	heightElement->SetValue(std::to_string(blockData->getSize().h));
 
+	if (blockData->getTexturePath() == "") {
+		this->menu->GetElementById("block-texture-menu-no-texture")->SetClass("invisible", false);
+		this->menu->GetElementById("block-texture-menu-has-texture")->SetClass("invisible", true);
+	} else {
+		this->menu->GetElementById("block-texture-menu-no-texture")->SetClass("invisible", true);
+		this->menu->GetElementById("block-texture-menu-has-texture")->SetClass("invisible", false);
+	}
+
 	const std::unordered_map<connection_end_id_t, BlockData::ConnectionData>& conncections = blockData->getConnections();
 	for (auto& iter : conncections) {
 		connection_end_id_t endId = iter.first;
