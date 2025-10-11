@@ -181,9 +181,7 @@ void BlockRenderDataFeeder::blockDataTextureChangeUpdate(const DataUpdateEventMa
 	}
 
 	BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(data->get().second);
-	if (blockTextureId == 0) {
-		logError("Failed to load texture {}", "BlockRenderDataFeeder", data->get().second);
-	}
+	if (blockTextureId == 0) return; // error message already sent
 
 	iter->second.texturePath = data->get().second;
 	iter->second.tileSize = {0, 0}; // mean that the whole texture is 1 tile.
