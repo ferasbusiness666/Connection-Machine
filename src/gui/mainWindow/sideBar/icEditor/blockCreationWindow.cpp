@@ -90,11 +90,24 @@ BlockCreationWindow::BlockCreationWindow(
 			BlockData* blockData = blockCreationWindow->circuitManager->getBlockDataManager()->getBlockData(circuit->getBlockType());
 
 			std::string filePath = filePaths[0];
+			if (filePath.empty()) return;
 			blockData->setTexturePath(filePath);
 
 			blockCreationWindow->menu->GetElementById("block-texture-menu-no-texture")->SetClass("invisible", true);
 			blockCreationWindow->menu->GetElementById("block-texture-menu-has-texture")->SetClass("invisible", false);
 		}, this, nullptr, nullptr, 0, nullptr, true);
+	}));
+	menu->GetElementById("pick-texture")->AddEventListener("dropFile", new EventPasser([this](Rml::Event& event) {
+		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
+		if (!circuit || !(circuit->isEditable())) return;
+		BlockData* blockData = this->circuitManager->getBlockDataManager()->getBlockData(circuit->getBlockType());
+
+		std::string filePath = event.GetParameter<Rml::String>("file_path", "");
+		if (filePath.empty()) return;
+		blockData->setTexturePath(filePath);
+
+		this->menu->GetElementById("block-texture-menu-no-texture")->SetClass("invisible", true);
+		this->menu->GetElementById("block-texture-menu-has-texture")->SetClass("invisible", false);
 	}));
 	menu->GetElementById("pick-new-texture")->AddEventListener("click", new EventPasser([this](Rml::Event& event){
 		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
@@ -111,6 +124,15 @@ BlockCreationWindow::BlockCreationWindow(
 			std::string filePath = filePaths[0];
 			blockData->setTexturePath(filePath);
 		}, this, nullptr, nullptr, 0, nullptr, true);
+	}));
+	menu->GetElementById("pick-new-texture")->AddEventListener("dropFile", new EventPasser([this](Rml::Event& event) {
+		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
+		if (!circuit || !(circuit->isEditable())) return;
+		BlockData* blockData = this->circuitManager->getBlockDataManager()->getBlockData(circuit->getBlockType());
+
+		std::string filePath = event.GetParameter<Rml::String>("file_path", "");
+		if (filePath.empty()) return;
+		blockData->setTexturePath(filePath);
 	}));
 	menu->GetElementById("reload-texture")->AddEventListener("click", new EventPasser([this](Rml::Event& event){
 		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();

@@ -214,8 +214,30 @@ CircuitViewWidget::CircuitViewWidget(
 			// }
 		}
 	));
-}
 
+	element->AddEventListener("dropFile", new EventPasser(
+		[this](Rml::Event& event) {
+			std::string filePath = event.GetParameter<Rml::String>("file_path", "");
+			std::cout << filePath << "\n";
+			if (filePath.empty()) return;
+			std::vector<circuit_id_t> ids = getFileManager()->loadFromFile(filePath);
+			if (ids.empty()) {
+				// logError("Error", "Failed to load circuit file."); // Not a error! It is valid to load 0 circuits.
+			} else {
+				circuit_id_t id = ids.back();
+				if (id == 0) {
+					logError("Error", "Failed to load circuit file.");
+				} else {
+					circuitView->setCircuit(circuitView->getBackend(), id);
+					for (auto& iter : circuitView->getBackend()->getEvaluatorManager().getEvaluators()) {
+						if (iter.second->getCircuitId(Address()) == id) {
+							circuitView->setEvaluator(circuitView->getBackend(), iter.first);						}
+					}
+				}
+			}
+		}
+	));
+}
 
 void CircuitViewWidget::updateTps() {
 	Evaluator* evaluator = circuitView->getEvaluator();

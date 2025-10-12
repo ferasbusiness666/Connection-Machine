@@ -154,29 +154,6 @@ bool MainWindow::recieveEvent(SDL_Event& event) {
 		return true;
 	}
 
-	if (event.type == SDL_EVENT_DROP_FILE) {
-		std::string file = event.drop.data;
-		std::cout << file << "\n";
-		std::vector<circuit_id_t> ids = getActiveCircuitViewWidget()->getFileManager()->loadFromFile(file);
-		if (ids.empty()) {
-			// logError("Error", "Failed to load circuit file."); // Not a error! It is valid to load 0 circuits.
-		} else {
-			circuit_id_t id = ids.back();
-			if (id == 0) {
-				logError("Error", "Failed to load circuit file.");
-			} else {
-				getActiveCircuitViewWidget()->getCircuitView()->setCircuit(&environment->getBackend(), id);
-				// circuitViewWidget->getCircuitView()->getBackend()->linkCircuitViewWithCircuit(circuitViewWidget->getCircuitView(), id);
-				for (auto& iter : environment->getBackend().getEvaluatorManager().getEvaluators()) {
-					if (iter.second->getCircuitId(Address()) == id) {
-						getActiveCircuitViewWidget()->getCircuitView()->setEvaluator(&environment->getBackend(), iter.first);
-						// circuitViewWidget->getCircuitView()->getBackend()->linkCircuitViewWithEvaluator(circuitViewWidget->getCircuitView(), iter.first, Address());
-					}
-				}
-			}
-		}
-	}
-
 	// send event to RML
 	RmlSDL::InputEventHandler(rmlContext, sdlWindow->getHandle(), event, getSdlWindowScalingSize());
 
