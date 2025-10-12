@@ -48,7 +48,7 @@ void SimControlsManager::update() {
 		std::string correctValue;
 		bool foundDecimal = false;
 		for (char c : value) {
-			if (('0' <= c && c <= '9') || (correctValue.empty() && c == '-')) {
+			if ('0' <= c && c <= '9') {
 				correctValue += c;
 			} else if (c == '.' && !foundDecimal) {
 				foundDecimal = true;
@@ -110,7 +110,7 @@ void SimControlsManager::setTPS() {
 		std::string correctValue;
 		bool foundDecimal = false;
 		for (char c : value) {
-			if (('0' <= c && c <= '9') || (correctValue.empty() && c == '-')) {
+			if ('0' <= c && c <= '9') {
 				correctValue += c;
 			} else if (c == '.' && !foundDecimal) {
 				foundDecimal = true;

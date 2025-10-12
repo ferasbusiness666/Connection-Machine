@@ -97,6 +97,9 @@ public:
 	void setTexturePath(const std::string& texturePath) { this->texturePath = texturePath; }
 	const std::string& getTexturePath() const { return texturePath; }
 
+	void setUsesTileMapTexture(bool usesTileMapTexture) { this->usesTileMapTexture = usesTileMapTexture; }
+	bool getUsesTileMapTexture() const { return usesTileMapTexture; }
+
 	void setTextureTileSize(Vec2Int textureTileSize) { this->textureTileSize = textureTileSize; }
 	Vec2Int getTextureTileSize() const { return textureTileSize; }
 
@@ -118,6 +121,7 @@ private:
 	std::string uuid;
 	std::string name;
 	std::string texturePath = "";
+	bool usesTileMapTexture = false;
 	Vec2Int textureTileSize = {0, 0}; // mean that the whole texture is 1 tile.
 	Vec2Int textureSmallestCordTile = {0, 0};
 	Vec2Int textureBlockTileSize = {1, 1};

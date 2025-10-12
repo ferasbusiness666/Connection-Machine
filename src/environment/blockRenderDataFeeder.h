@@ -22,6 +22,7 @@ public:
 	void blockDataRemoveConnectionUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void blockDataConnectionNameSetUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void blockDataTextureChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
+	void blockDataUsesTileMapTextureChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void blockDataTextureTileSizeChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void blockDataTextureSmallestCordTileChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void blockDataTextureBlockTileSizeChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
@@ -32,17 +33,11 @@ private:
 		RenderData(BlockRenderDataId blockRenderDataId) : blockRenderDataId(blockRenderDataId) {}
 		BlockRenderDataId blockRenderDataId;
 		std::map<connection_end_id_t, BlockPortRenderDataId> blockPortRenderDataIds;
-		std::string texturePath;
-		Vec2Int tileSize;
-		Vec2Int smallestCordTile;
-		Vec2Int blockTileSize;
 	};
 
 	Backend* backend;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 	std::map<BlockType, RenderData> blockTypeToRenderData;
-	BlockTextureId mainBlockTextureId;
-	BlockTextureId otherBlockTextureId;
 };
 
 #endif /* blockRenderDataFeeder_h */

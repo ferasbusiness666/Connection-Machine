@@ -32,13 +32,23 @@
 						<input id="texture-uses-tilemap" type="checkbox" />
 						<label class="form-label" for="uses tilemap">Uses Tilemap</label>
 					</div>
-				</div>
-					<!-- <checkbox id="set-uses-tilemap-texture" name="uses tilemap"></checkbox> -->
-				<div id="block-texture-menu-has-texture" class="invisible">
-					<button id="pick-new-texture" class="btn btn-sm">Pick Texture</button>
-					<button id="reload-texture" class="btn btn-sm">Reload Texture</button>
-					<button id="remove-texture" class="btn btn-sm">Remove Texture</button>
-					<button id="embed-texture" class="btn btn-sm">Embed in .cir</button>
+					<div id="block-texture-tile-menu" class="invisible">
+						<div class="form-row">
+							<label class="form-label">Tile Size</label>
+							<textarea id="block-texture-tile-size-x" rows="1" cols="7" maxlength="5"></textarea>
+							<textarea id="block-texture-tile-size-y" rows="1" cols="7" maxlength="5"></textarea>
+						</div>
+						<div class="form-row">
+							<label class="form-label">Top Right Tile</label>
+							<textarea id="block-texture-smallest-cord-tile-x" rows="1" cols="5" maxlength="4"></textarea>
+							<textarea id="block-texture-smallest-cord-tile-y" rows="1" cols="5" maxlength="4"></textarea>
+						</div>
+						<div class="form-row">
+							<label class="form-label">Block size</label>
+							<textarea id="block-texture-block-tile-size-x" rows="1" cols="5" maxlength="4"></textarea>
+							<textarea id="block-texture-block-tile-size-y" rows="1" cols="5" maxlength="4"></textarea>
+						</div>
+					</div>
 				</div>
 			</div>
 			<div id="connection-menu" class="surface-raised pad-sm">

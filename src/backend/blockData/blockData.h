@@ -61,6 +61,8 @@ public:
 	Vec2Int getTextureSmallestCordTile() const noexcept { return textureSmallestCordTile; }
 	void setTextureBlockTileSize(Vec2Int blockSizeInTiles) noexcept;
 	Vec2Int getTextureBlockTileSize() const noexcept { return textureBlockTileSize; }
+	void setUsesTileMapTexture(bool usesTileMapTexture) noexcept;
+	bool getUsesTileMapTexture() const noexcept { return usesTileMapTexture; }
 
 	// trys to set a connection input in the block. Returns success.
 	void removeConnection(connection_end_id_t connectionId) noexcept;
@@ -197,6 +199,7 @@ private:
 	std::string name = "Unnamed Block";
 	std::string path = "Basic";
 	std::string texturePath = "";
+	bool usesTileMapTexture = false;
 	Vec2Int textureTileSize = {0, 0}; // mean that the whole texture is 1 tile.
 	Vec2Int textureSmallestCordTile = {0, 0};
 	Vec2Int textureBlockTileSize = {1, 1};

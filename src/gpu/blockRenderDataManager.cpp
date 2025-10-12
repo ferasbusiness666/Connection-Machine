@@ -43,6 +43,7 @@ void BlockRenderDataManager::setBlockSize(BlockRenderDataId blockRenderDataId, S
 		return;
 	}
 	iter->second.size = size;
+	MainRenderer::get().regenerateAllChunksWithBlock(blockRenderDataId);
 }
 
 void BlockRenderDataManager::setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId) {

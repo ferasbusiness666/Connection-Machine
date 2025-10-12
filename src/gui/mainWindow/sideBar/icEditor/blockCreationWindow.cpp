@@ -12,6 +12,46 @@
 #include "util/algorithm.h"
 #include "environment/environment.h"
 
+
+void makeNumberInputFunc(Rml::Element* element) {
+	element->AddEventListener("change", new EventPasser([element](Rml::Event& event){
+		Rml::String value = element->GetAttribute<Rml::String>("value", "");
+		std::string correctValue;
+		for (char c : value) {
+			if ('0' <= c && c <= '9') {
+				correctValue += c;
+			}
+		}
+		element->SetInnerRML(std::string(correctValue.size(), ' '));
+		element->SetAttribute<Rml::String>("value", correctValue);
+	}));
+}
+
+void makeNumberInputFunc(Rml::Element* element, std::function<void(unsigned int)> callBack = nullptr) {
+	element->AddEventListener("change", new EventPasser([element, callBack](Rml::Event& event){
+		Rml::String value = element->GetAttribute<Rml::String>("value", "");
+		std::string correctValue;
+		for (char c : value) {
+			if ('0' <= c && c <= '9') {
+				correctValue += c;
+			}
+		}
+		element->SetInnerRML(std::string(correctValue.size(), ' '));
+		element->SetAttribute<Rml::String>("value", correctValue);
+		if (callBack && !correctValue.empty()) {
+			std::stringstream ss(correctValue);
+			unsigned int number = 0;
+			ss >> number;
+			callBack(number);
+		}
+	}));
+}
+
+void setNumberInputValue(Rml::Element* element, const std::string& number) {
+	element->SetInnerRML(std::string(number.size(), ' '));
+	element->SetAttribute<Rml::String>("value", number);
+}
+
 BlockCreationWindow::BlockCreationWindow(
 	CircuitManager* circuitManager,
 	Environment* environment,
@@ -37,12 +77,7 @@ BlockCreationWindow::BlockCreationWindow(
 	Rml::Element* addOutputConnection = menu->GetElementById("connection-list-add-output");
 	addOutputConnection->AddEventListener("click", new EventPasser(std::bind(&BlockCreationWindow::addListItem, this, false)));
 	// texture
-	Rml::Element* pickTexture = menu->GetElementById("pick-texture");
-	Rml::Element* pickNewTexture = menu->GetElementById("pick-new-texture");
-	Rml::Element* reloadTexture = menu->GetElementById("reload-texture");
-	Rml::Element* removeTexture = menu->GetElementById("remove-texture");
-	Rml::Element* embedTexture = menu->GetElementById("embed-texture");
-	pickTexture->AddEventListener("click", new EventPasser([this](Rml::Event& event){
+	menu->GetElementById("pick-texture")->AddEventListener("click", new EventPasser([this](Rml::Event& event){
 		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 		if (!circuit || !(circuit->isEditable())) return;
 		static const SDL_DialogFileFilter filters[] = {};
@@ -52,7 +87,7 @@ BlockCreationWindow::BlockCreationWindow(
 			BlockCreationWindow* blockCreationWindow = (BlockCreationWindow*)userData;
 			Circuit* circuit = blockCreationWindow->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 			if (!circuit || !(circuit->isEditable())) return;
-			BlockData* blockData = blockCreationWindow->environment->getBackend().getBlockDataManager()->getBlockData(circuit->getBlockType());
+			BlockData* blockData = blockCreationWindow->circuitManager->getBlockDataManager()->getBlockData(circuit->getBlockType());
 
 			std::string filePath = filePaths[0];
 			blockData->setTexturePath(filePath);
@@ -61,7 +96,7 @@ BlockCreationWindow::BlockCreationWindow(
 			blockCreationWindow->menu->GetElementById("block-texture-menu-has-texture")->SetClass("invisible", false);
 		}, this, nullptr, nullptr, 0, nullptr, true);
 	}));
-	pickNewTexture->AddEventListener("click", new EventPasser([this](Rml::Event& event){
+	menu->GetElementById("pick-new-texture")->AddEventListener("click", new EventPasser([this](Rml::Event& event){
 		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 		if (!circuit || !(circuit->isEditable())) return;
 		static const SDL_DialogFileFilter filters[] = {};
@@ -71,30 +106,79 @@ BlockCreationWindow::BlockCreationWindow(
 			BlockCreationWindow* blockCreationWindow = (BlockCreationWindow*)userData;
 			Circuit* circuit = blockCreationWindow->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 			if (!circuit || !(circuit->isEditable())) return;
-			BlockData* blockData = blockCreationWindow->environment->getBackend().getBlockDataManager()->getBlockData(circuit->getBlockType());
+			BlockData* blockData = blockCreationWindow->circuitManager->getBlockDataManager()->getBlockData(circuit->getBlockType());
 
 			std::string filePath = filePaths[0];
 			blockData->setTexturePath(filePath);
 		}, this, nullptr, nullptr, 0, nullptr, true);
 	}));
-	reloadTexture->AddEventListener("click", new EventPasser([this](Rml::Event& event){
+	menu->GetElementById("reload-texture")->AddEventListener("click", new EventPasser([this](Rml::Event& event){
 		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 		if (!circuit || !(circuit->isEditable())) return;
 		this->environment->getBlockRenderDataFeeder().refreshBlockTexture(circuit->getBlockType());
 	}));
-	removeTexture->AddEventListener("click", new EventPasser([this](Rml::Event& event){
+	menu->GetElementById("remove-texture")->AddEventListener("click", new EventPasser([this](Rml::Event& event){
 		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 		if (!circuit || !(circuit->isEditable())) return;
-		BlockData* blockData = this->environment->getBackend().getBlockDataManager()->getBlockData(circuit->getBlockType());
+		BlockData* blockData = this->circuitManager->getBlockDataManager()->getBlockData(circuit->getBlockType());
 		blockData->setTexturePath("");
 		this->menu->GetElementById("block-texture-menu-no-texture")->SetClass("invisible", false);
 		this->menu->GetElementById("block-texture-menu-has-texture")->SetClass("invisible", true);
 	}));
-	embedTexture->AddEventListener("click", new EventPasser([this](Rml::Event& event){
+	menu->GetElementById("embed-texture")->AddEventListener("click", new EventPasser([this](Rml::Event& event){
 		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 		if (!circuit || !(circuit->isEditable())) return;
 		logError("Embed texture not supported yet.");
 	}));
+	menu->GetElementById("texture-uses-tilemap")->AddEventListener("click", new EventPasser([this](Rml::Event& event){
+		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
+		if (!circuit || !(circuit->isEditable())) {
+			this->menu->GetElementById("texture-uses-tilemap")->SetClass("checked", false);
+			return;
+		}
+		BlockData* blockData = this->circuitManager->getBlockDataManager()->getBlockData(circuit->getBlockType());
+		blockData->setUsesTileMapTexture(!blockData->getUsesTileMapTexture());
+
+		this->menu->GetElementById("block-texture-tile-menu")->SetClass("invisible", !blockData->getUsesTileMapTexture());
+		this->menu->GetElementById("texture-uses-tilemap")->SetClass("checked", blockData->getUsesTileMapTexture());
+	}));
+
+	makeNumberInputFunc(menu->GetElementById("block-texture-tile-size-x"), [this](int x){
+		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
+		if (!circuit || !(circuit->isEditable())) return;
+		BlockData* blockData = this->circuitManager->getBlockDataManager()->getBlockData(circuit->getBlockType());
+		blockData->setTextureTileSize({x, blockData->getTextureTileSize().y});
+	});
+	makeNumberInputFunc(menu->GetElementById("block-texture-tile-size-y"), [this](int y){
+		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
+		if (!circuit || !(circuit->isEditable())) return;
+		BlockData* blockData = this->circuitManager->getBlockDataManager()->getBlockData(circuit->getBlockType());
+		blockData->setTextureTileSize({blockData->getTextureTileSize().x, y});
+	});
+	makeNumberInputFunc(menu->GetElementById("block-texture-smallest-cord-tile-x"), [this](int x){
+		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
+		if (!circuit || !(circuit->isEditable())) return;
+		BlockData* blockData = this->circuitManager->getBlockDataManager()->getBlockData(circuit->getBlockType());
+		blockData->setTextureSmallestCordTile({x, blockData->getTextureSmallestCordTile().y});
+	});
+	makeNumberInputFunc(menu->GetElementById("block-texture-smallest-cord-tile-y"), [this](int y){
+		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
+		if (!circuit || !(circuit->isEditable())) return;
+		BlockData* blockData = this->circuitManager->getBlockDataManager()->getBlockData(circuit->getBlockType());
+		blockData->setTextureSmallestCordTile({blockData->getTextureSmallestCordTile().x, y});
+	});
+	makeNumberInputFunc(menu->GetElementById("block-texture-block-tile-size-x"), [this](int x){
+		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
+		if (!circuit || !(circuit->isEditable())) return;
+		BlockData* blockData = this->circuitManager->getBlockDataManager()->getBlockData(circuit->getBlockType());
+		blockData->setTextureBlockTileSize({x, blockData->getTextureBlockTileSize().y});
+	});
+	makeNumberInputFunc(menu->GetElementById("block-texture-block-tile-size-y"), [this](int y){
+		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
+		if (!circuit || !(circuit->isEditable())) return;
+		BlockData* blockData = this->circuitManager->getBlockDataManager()->getBlockData(circuit->getBlockType());
+		blockData->setTextureBlockTileSize({blockData->getTextureBlockTileSize().x, y});
+	});
 
 	// dataUpdateEvents
 	dataUpdateEventReceiver.linkFunction("blockDataUpdate", std::bind(&BlockCreationWindow::resetMenu, this));
@@ -291,11 +375,24 @@ void BlockCreationWindow::resetMenu() {
 	heightElement->SetValue(std::to_string(blockData->getSize().h));
 
 	if (blockData->getTexturePath() == "") {
-		this->menu->GetElementById("block-texture-menu-no-texture")->SetClass("invisible", false);
-		this->menu->GetElementById("block-texture-menu-has-texture")->SetClass("invisible", true);
+		menu->GetElementById("block-texture-menu-no-texture")->SetClass("invisible", false);
+		menu->GetElementById("block-texture-menu-has-texture")->SetClass("invisible", true);
 	} else {
-		this->menu->GetElementById("block-texture-menu-no-texture")->SetClass("invisible", true);
-		this->menu->GetElementById("block-texture-menu-has-texture")->SetClass("invisible", false);
+		menu->GetElementById("block-texture-menu-no-texture")->SetClass("invisible", true);
+		menu->GetElementById("block-texture-menu-has-texture")->SetClass("invisible", false);
+		if (blockData->getUsesTileMapTexture()) {
+			menu->GetElementById("texture-uses-tilemap")->SetClass("checked", false);
+			menu->GetElementById("block-texture-tile-menu")->SetClass("invisible", false);
+		} else {
+			menu->GetElementById("texture-uses-tilemap")->SetClass("checked", true);
+			menu->GetElementById("block-texture-tile-menu")->SetClass("invisible", true);
+		}
+		setNumberInputValue(menu->GetElementById("block-texture-tile-size-x"), std::to_string(blockData->getTextureTileSize().x));
+		setNumberInputValue(menu->GetElementById("block-texture-tile-size-y"), std::to_string(blockData->getTextureTileSize().y));
+		setNumberInputValue(menu->GetElementById("block-texture-smallest-cord-tile-x"), std::to_string(blockData->getTextureSmallestCordTile().x));
+		setNumberInputValue(menu->GetElementById("block-texture-smallest-cord-tile-y"), std::to_string(blockData->getTextureSmallestCordTile().y));
+		setNumberInputValue(menu->GetElementById("block-texture-block-tile-size-x"), std::to_string(blockData->getTextureBlockTileSize().x));
+		setNumberInputValue(menu->GetElementById("block-texture-block-tile-size-y"), std::to_string(blockData->getTextureBlockTileSize().y));
 	}
 
 	const std::unordered_map<connection_end_id_t, BlockData::ConnectionData>& conncections = blockData->getConnections();
@@ -345,21 +442,21 @@ void BlockCreationWindow::resetMenu() {
 		Rml::ElementPtr setPositionButton = document->CreateElement("button");
 		setPositionButton->AppendChild(std::move(document->CreateTextNode("S")));
 		setPositionButton->AddEventListener(Rml::EventId::Click, new EventPasser([this, endId](Rml::Event& event) {
-												auto tool = std::dynamic_pointer_cast<PortSelector>(
-													mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getToolManager().selectTool(std::make_shared<PortSelector>())
-												);
-												if (tool) {
-													tool->setPort(endId, [this, endId](Position position) {
-														Rml::Element* row = document->GetElementById("ConnectionListItem Id: " + std::to_string(endId));
-														Rml::ElementList elements;
-														row->GetElementsByClassName(elements, "connection-list-item-pos-x");
-														rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->SetValue(std::to_string(position.x));
-														elements.clear();
-														row->GetElementsByClassName(elements, "connection-list-item-pos-y");
-														rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->SetValue(std::to_string(position.y));
-													});
-												}
-											}));
+			auto tool = std::dynamic_pointer_cast<PortSelector>(
+				mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getToolManager().selectTool(std::make_shared<PortSelector>())
+			);
+			if (tool) {
+				tool->setPort(endId, [this, endId](Position position) {
+					Rml::Element* row = document->GetElementById("ConnectionListItem Id: " + std::to_string(endId));
+					Rml::ElementList elements;
+					row->GetElementsByClassName(elements, "connection-list-item-pos-x");
+					rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->SetValue(std::to_string(position.x));
+					elements.clear();
+					row->GetElementsByClassName(elements, "connection-list-item-pos-y");
+					rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->SetValue(std::to_string(position.y));
+				});
+			}
+		}));
 		// add children and set classes
 		row->AppendChild(std::move(name))->SetClass("connection-list-item-name", true);
 		row->AppendChild(std::move(positionOnBlockX))->SetClass("connection-list-item-on-block-x", true);
