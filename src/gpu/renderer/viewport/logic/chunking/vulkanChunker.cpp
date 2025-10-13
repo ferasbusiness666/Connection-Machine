@@ -230,9 +230,9 @@ void VulkanChunker::addBlock(BlockRenderDataId blockRenderDataId, Position posit
 	const BlockRenderDataManager::BlockRenderData* blockRenderData = MainRenderer::get().getBlockRenderDataManager().getBlockRenderData(blockRenderDataId);
 	chunks[chunkPos].getRenderedBlocks().emplace(position, RenderedBlock(
 		blockRenderDataId,
-		blockRenderData->blockTextureCords.texLayer,
+		blockRenderData->blockTextureCords.textureLayer,
 		blockRenderData->blockTextureCords.textureOriginUV,
-		blockRenderData->blockTextureCords.texSizeUV,
+		blockRenderData->blockTextureCords.textureSizeUV,
 		orientation,
 		(orientation * blockRenderData->size).free(),
 		statePosition
@@ -332,9 +332,9 @@ void VulkanChunker::regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDa
 			if (block.second.blockRenderDataId == blockRenderDataId) {
 				foundType = true;
 				block.second.size = blockRenderData->size.free();
-				block.second.textureIndex = blockRenderData->blockTextureCords.texLayer;
+				block.second.textureIndex = blockRenderData->blockTextureCords.textureLayer;
 				block.second.textureOrigin = blockRenderData->blockTextureCords.textureOriginUV;
-				block.second.textureSize = blockRenderData->blockTextureCords.texSizeUV;
+				block.second.textureSize = blockRenderData->blockTextureCords.textureSizeUV;
 			}
 		}
 		if (foundType) chunk.second.rebuildAllocation(device, evaluator, address);

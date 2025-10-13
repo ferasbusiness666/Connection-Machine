@@ -178,6 +178,22 @@ void MainRenderer::refreshBlockTexture(const std::string& path) {
 	vulkanInstance.getDevice()->getBlockTextureManager().refreshBlockTexture(path);
 }
 
+BlockTextureId MainRenderer::addBlockTexture(const stbi_uc* pixels, int textureWidth, int textureHeight) {
+	return vulkanInstance.getDevice()->getBlockTextureManager().addTexture(pixels, textureWidth, textureHeight);
+}
+
+void MainRenderer::updateBlockTexture(const stbi_uc* pixels, BlockTextureId blockTextureId) {
+	vulkanInstance.getDevice()->getBlockTextureManager().updateBlockTexture(pixels, blockTextureId);
+}
+
+void MainRenderer::removeBlockTexture(const std::string& path) {
+	vulkanInstance.getDevice()->getBlockTextureManager().removeBlockTexture(path);
+}
+
+void MainRenderer::removeBlockTexture(BlockTextureId blockTextureId) {
+	vulkanInstance.getDevice()->getBlockTextureManager().removeBlockTexture(blockTextureId);
+}
+
 void MainRenderer::setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId) {
 	blockRenderDataManager.setBlockTexture(blockRenderDataId, blockTextureId);
 }

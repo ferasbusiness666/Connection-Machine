@@ -57,6 +57,10 @@ public:
 	void setBlockSize(BlockRenderDataId blockRenderDataId, Size size);
 	BlockTextureId addBlockTexture(const std::string& path);
 	void refreshBlockTexture(const std::string& path);
+	BlockTextureId addBlockTexture(const stbi_uc* pixels, int textureWidth, int textureHeight);
+	void updateBlockTexture(const stbi_uc* pixels, BlockTextureId blockTextureId);
+	void removeBlockTexture(const std::string& path);
+	void removeBlockTexture(BlockTextureId blockTextureId);
 	void setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId);
 	void setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize);
 	BlockPortRenderDataId addBlockPort(BlockRenderDataId blockRenderDataId, bool isInput, FVector positionOnBlock);
