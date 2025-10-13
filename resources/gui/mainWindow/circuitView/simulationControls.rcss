@@ -112,7 +112,7 @@
 	background-color: #252525;
 	color: #fff;
 	height: 20dp;
-	width: 64dp;
+	width: 95dp;
 	border: 1dp #3b3b3b;
 	border-radius: 4dp;
 	padding: 0 4dp;

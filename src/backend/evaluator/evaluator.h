@@ -4,7 +4,6 @@
 #include "backend/circuit/circuit.h"
 #include "backend/circuit/circuitManager.h"
 #include "backend/container/difference.h"
-#include "backend/dataUpdateEventManager.h"
 
 #include "backend/address.h"
 #include "logicState.h"

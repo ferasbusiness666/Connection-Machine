@@ -11,16 +11,18 @@ Evaluator::Evaluator(
 	CircuitBlockDataManager& circuitBlockDataManager,
 	circuit_id_t circuitId,
 	DataUpdateEventManager* dataUpdateEventManager
-) : evaluatorId(evaluatorId),
-circuitManager(circuitManager),
-blockDataManager(blockDataManager),
-circuitBlockDataManager(circuitBlockDataManager),
-evalCircuitContainer(),
-dataUpdateEventManager(dataUpdateEventManager),
-receiver(dataUpdateEventManager),
-evalConfig(),
-middleIdProvider(),
-evalSimulator(evalConfig, middleIdProvider, dirtySimulatorIds) {
+) :
+	evaluatorId(evaluatorId),
+	circuitManager(circuitManager),
+	blockDataManager(blockDataManager),
+	circuitBlockDataManager(circuitBlockDataManager),
+	evalCircuitContainer(),
+	dataUpdateEventManager(dataUpdateEventManager),
+	receiver(dataUpdateEventManager),
+	evalConfig(dataUpdateEventManager, evaluatorId),
+	middleIdProvider(),
+	evalSimulator(evalConfig, middleIdProvider, dirtySimulatorIds)
+{
 	const auto circuit = circuitManager.getCircuit(circuitId);
 	if (!circuit) {
 		logError("Circuit with ID {} not found", "Evaluator::Evaluator", circuitId);

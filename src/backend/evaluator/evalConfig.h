@@ -2,10 +2,13 @@
 #define evalConfig_h
 
 #include "backend/settings/settings.h"
+#include "backend/dataUpdateEventManager.h"
+
+typedef unsigned int evaluator_id_t;
 
 class EvalConfig {
 public:
-	EvalConfig() {
+	EvalConfig(DataUpdateEventManager* dataUpdateEventManager, evaluator_id_t evaluatorId) : dataUpdateEventManager(dataUpdateEventManager), evaluatorId(evaluatorId) {
 		Settings::registerListener<SettingType::UINT>("Simulation/Max Thread Count", [this](const int& newMaxThreadCount) { this->setMaxThreadCount(newMaxThreadCount); });
 	}
 
@@ -16,6 +19,7 @@ public:
 	inline void setTargetTickrate(double tickrate) {
 		targetTickrate.store(tickrate);
 		notifySubscribers();
+		dataUpdateEventManager->sendEvent("evaluatorTargetTickrateSet", std::make_pair(evaluatorId, tickrate));
 	}
 
 	inline bool isTickrateLimiterEnabled() const {
@@ -25,6 +29,7 @@ public:
 	inline void setTickrateLimiter(bool enabled) {
 		tickrateLimiter.store(enabled);
 		notifySubscribers();
+		dataUpdateEventManager->sendEvent("evaluatorTickrateLimiterSet", std::make_pair(evaluatorId, enabled));
 	}
 
 	inline bool isRunning() const {
@@ -34,6 +39,7 @@ public:
 	inline void setRunning(bool run) {
 		running.store(run);
 		notifySubscribers();
+		dataUpdateEventManager->sendEvent("evaluatorRunningSet", std::make_pair(evaluatorId, run));
 	}
 
 	inline bool isRealistic() const {
@@ -43,6 +49,7 @@ public:
 	inline void setRealistic(bool value) {
 		realistic.store(value);
 		notifySubscribers();
+		dataUpdateEventManager->sendEvent("evaluatorRealisticSet", std::make_pair(evaluatorId, value));
 	}
 
 	inline int getMaxThreadCount() const {
@@ -52,6 +59,7 @@ public:
 	inline void setMaxThreadCount(int value) {
 		maxThreadCount.store(value);
 		notifySubscribers();
+		dataUpdateEventManager->sendEvent("evaluatorMaxThreadCountSet", std::make_pair(evaluatorId, value));
 	}
 
 	inline void addSprint(int nTicks) {
@@ -71,7 +79,7 @@ public:
 	inline bool canConsumeSprintTick() {
 		return sprintCounter.load(std::memory_order_relaxed) > 0;
 	}
-	
+
 	inline bool consumeSprintTick() {
 		int expected = sprintCounter.load(std::memory_order_relaxed);
 		while (expected > 0) {
@@ -93,6 +101,9 @@ public:
 	}
 
 private:
+	DataUpdateEventManager* dataUpdateEventManager;
+	evaluator_id_t evaluatorId;
+
 	std::atomic<double> targetTickrate = 0.0;
 	std::atomic<bool> tickrateLimiter = true;
 	std::atomic<bool> running = false;
