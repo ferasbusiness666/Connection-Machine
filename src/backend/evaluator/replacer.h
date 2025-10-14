@@ -261,7 +261,9 @@ private:
 		};
 	};
 
-	void mergeBusLane(SimPauseGuard& pauseGuard, Replacement& replacement, middle_id_t initialBusId, unsigned int laneId, middle_id_t newJunctionId, std::unordered_set<LanePoint>& visitedLanePoints);
+	using LanePointSet = std::unordered_set<LanePoint, LanePoint::Hash>;
+
+	void mergeBusLane(SimPauseGuard& pauseGuard, Replacement& replacement, middle_id_t initialBusId, unsigned int laneId, middle_id_t newJunctionId, LanePointSet& visitedLanePoints);
 	void mergeJunctions(SimPauseGuard& pauseGuard, int layer);
 	JunctionFloodFillResult junctionFloodFill(middle_id_t junctionId);
 	BlockDataManager& blockDataManager;

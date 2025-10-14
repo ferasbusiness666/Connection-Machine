@@ -104,13 +104,13 @@ void Replacer::mergeBuses(SimPauseGuard& pauseGuard, int layer) {
 			}
 			Replacement& replacement = makeReplacement(layer);
 			middle_id_t newJunctionId = replacement.getNewId();
-			std::unordered_set<LanePoint> visitedLanePoints = {};
+			LanePointSet visitedLanePoints;
 			mergeBusLane(pauseGuard, replacement, id, laneId, newJunctionId, visitedLanePoints);
 		}
 	}
 }
 
-void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, Replacement& replacement, middle_id_t busId, unsigned int laneId, middle_id_t newJunctionId, std::unordered_set<Replacer::LanePoint>& visitedLanePoints) {
+void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, Replacement& replacement, middle_id_t busId, unsigned int laneId, middle_id_t newJunctionId, LanePointSet& visitedLanePoints) {
 	LanePoint lanePoint = { busId, laneId };
 	if (visitedLanePoints.contains(lanePoint)) {
 		return;
