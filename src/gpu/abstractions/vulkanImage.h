@@ -13,11 +13,12 @@ struct AllocatedImage {
     VkFormat imageFormat;
 	VkImageAspectFlags aspect;
 	uint32_t mipLevels;
+	uint32_t arrayLayers;
 
 	VulkanDevice* device;
 };
 
-AllocatedImage createImage(VulkanDevice* device, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped = false);
+AllocatedImage createImage(VulkanDevice* device, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped = false, uint32_t arrayLayers = 1);
 AllocatedImage createImage(VulkanDevice* device, void* data, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped = false);
 void destroyImage(AllocatedImage& image);
 

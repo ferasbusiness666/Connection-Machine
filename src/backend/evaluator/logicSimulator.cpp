@@ -20,6 +20,7 @@ LogicSimulator::LogicSimulator(
 
 	simulationThread = std::thread(&LogicSimulator::simulationLoop, this);
 	extendDataVectors(simulatorIdProvider.getNewId()); // reserve the 0th id to be used as an invalid id
+	setState(0, logic_state_t::LOW);
 }
 
 LogicSimulator::~LogicSimulator() {

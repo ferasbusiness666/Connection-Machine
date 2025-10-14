@@ -40,14 +40,15 @@ VulkanChunkAllocation::VulkanChunkAllocation(VulkanDevice* device,const Rendered
 		blockInstances.reserve(blocks.size());
 		for (const auto& block : blocks) {
 			Position blockPosition = block.first;
-			Vec2 uvOrigin = device->getBlockTextureManager().getTileset().getTopLeftUV(block.second.textureIndex, 0);
 
 			BlockInstance instance;
 			instance.pos = glm::vec2(blockPosition.x, blockPosition.y);
 			instance.sizeX = block.second.size.w;
 			instance.sizeY = block.second.size.h;
 			instance.orientation = block.second.orientation.rotation + 4 * block.second.orientation.flipped;
-			instance.texX = uvOrigin.x;
+			instance.texLayer = block.second.textureIndex;
+			instance.texPos = block.second.textureOrigin;
+			instance.texSize = block.second.textureSize;
 
 			blockInstances.push_back(instance);
 
@@ -172,8 +173,6 @@ void Chunk::rebuildAllocation(VulkanDevice* device, const Evaluator* evaluator, 
 		// drop newest allocation
 		newestAllocation.reset();
 	}
-
-	allocationDirty = false;
 }
 
 std::optional<std::shared_ptr<VulkanChunkAllocation>> Chunk::getAllocation() {
@@ -229,8 +228,17 @@ void VulkanChunker::addBlock(BlockRenderDataId blockRenderDataId, Position posit
 	Position chunkPos = getChunk(position);
 	auto iter = chunks.find(chunkPos);
 	const BlockRenderDataManager::BlockRenderData* blockRenderData = MainRenderer::get().getBlockRenderDataManager().getBlockRenderData(blockRenderDataId);
-	chunks[chunkPos].getRenderedBlocks().emplace(position, RenderedBlock(blockRenderData->textureIndex, orientation, (orientation * blockRenderData->size).free(), statePosition));
+	chunks[chunkPos].getRenderedBlocks().emplace(position, RenderedBlock(
+		blockRenderDataId,
+		blockRenderData->blockTextureCords.textureLayer,
+		blockRenderData->blockTextureCords.textureOriginUV,
+		blockRenderData->blockTextureCords.textureSizeUV,
+		orientation,
+		(orientation * blockRenderData->size).free(),
+		statePosition
+	));
 	chunksToUpdate.insert(chunkPos);
+	blockTypesCount[blockRenderDataId] = 1; // for now just make it dirty. Should keep it from remaking everything.
 }
 
 void VulkanChunker::removeBlock(Position position) {
@@ -307,6 +315,30 @@ void VulkanChunker::reset() {
 
 	chunks.clear();
 	chunksUnderWire.clear();
+	blockTypesCount.clear();
+}
+
+void VulkanChunker::regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDataId) {
+	std::lock_guard<std::mutex> lock(mux);
+	auto iter = blockTypesCount.find(blockRenderDataId);
+	if (iter == blockTypesCount.end()) return;
+	if (iter->second == 0) return;
+
+	const BlockRenderDataManager::BlockRenderData* blockRenderData = MainRenderer::get().getBlockRenderDataManager().getBlockRenderData(blockRenderDataId);
+
+	for (std::pair<const Position, Chunk>& chunk : chunks) {
+		bool foundType = false;
+		for (std::pair<const Position, RenderedBlock>& block : chunk.second.getRenderedBlocks()) {
+			if (block.second.blockRenderDataId == blockRenderDataId) {
+				foundType = true;
+				block.second.size = blockRenderData->size.free();
+				block.second.textureIndex = blockRenderData->blockTextureCords.textureLayer;
+				block.second.textureOrigin = blockRenderData->blockTextureCords.textureOriginUV;
+				block.second.textureSize = blockRenderData->blockTextureCords.textureSizeUV;
+			}
+		}
+		if (foundType) chunk.second.rebuildAllocation(device, evaluator, address);
+	}
 }
 
 void VulkanChunker::updateSimulatorIds(const std::vector<SimulatorMappingUpdate>& simulatorMappingUpdates) {

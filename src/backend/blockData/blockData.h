@@ -5,6 +5,7 @@
 #include "backend/dataUpdateEventManager.h"
 #include "backend/position/position.h"
 #include "util/bidirectionalMultiSecondKeyMap.h"
+#include "util/vec2.h"
 
 class BlockData {
 	friend class BlockDataManager;
@@ -80,12 +81,19 @@ public:
 	inline bool isPlaceable() const noexcept { return placeable; }
 
 	void setName(const std::string& name) noexcept;
-	inline void setPath(const std::string& path) noexcept {
-		this->path = path;
-		sendBlockDataUpdate();
-	}
 	inline const std::string& getName() const noexcept { return name; }
+	void setPath(const std::string& path) noexcept;
 	inline const std::string& getPath() const noexcept { return path; }
+	void setTexturePath(const std::string& texturePath) noexcept;
+	inline const std::string& getTexturePath() const noexcept { return texturePath; }
+	void setTextureTileSize(Vec2Int tileSize) noexcept;
+	Vec2Int getTextureTileSize() const noexcept { return textureTileSize; }
+	void setTextureSmallestCordTile(Vec2Int smallestCordTile) noexcept;
+	Vec2Int getTextureSmallestCordTile() const noexcept { return textureSmallestCordTile; }
+	void setTextureBlockTileSize(Vec2Int blockSizeInTiles) noexcept;
+	Vec2Int getTextureBlockTileSize() const noexcept { return textureBlockTileSize; }
+	void setUsesTileMapTexture(bool usesTileMapTexture) noexcept;
+	bool getUsesTileMapTexture() const noexcept { return usesTileMapTexture; }
 
 	// trys to set a connection input in the block. Returns success.
 	void removeConnection(connection_end_id_t connectionId) noexcept;
@@ -218,6 +226,11 @@ private:
 	bool bus = false;
 	std::string name = "Unnamed Block";
 	std::string path = "Basic";
+	std::string texturePath = "";
+	bool usesTileMapTexture = false;
+	Vec2Int textureTileSize = {0, 0}; // mean that the whole texture is 1 tile.
+	Vec2Int textureSmallestCordTile = {0, 0};
+	Vec2Int textureBlockTileSize = {1, 1};
 	Size blockSize = Size(1);
 	connection_end_id_t inputConnectionCount = 0;
 	std::unordered_map<connection_end_id_t, ConnectionData> connections;
