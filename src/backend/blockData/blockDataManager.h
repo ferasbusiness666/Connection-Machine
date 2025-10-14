@@ -141,6 +141,7 @@ public:
 		busInterfaceBlockData->setName("Bus Interface");
 		busInterfaceBlockData->setDefaultData(false);
 		busInterfaceBlockData->setIsBus(true);
+		busInterfaceBlockData->setSize(Size(2, 8));
 		busInterfaceBlockData->setConnectionOutput(Vector(1, 0), 0);
 		busInterfaceBlockData->setConnectionBitConfiguration(0, std::vector<unsigned int>{0,1,2,3,4,5,6,7});
 		busInterfaceBlockData->setConnectionInput(Vector(1, 0), 1);
