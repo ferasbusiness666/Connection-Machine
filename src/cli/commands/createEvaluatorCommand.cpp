@@ -11,12 +11,24 @@ void CreateEvaluatorCommand::run(const std::vector<std::string>& args, Environme
   		logError("Wrong number of arguments passed to create_evaluator. Proper usage is 'create_evaluator {UUID}'.", "CreateEvaluatorCommand");
 	  	return;
     }
-    SharedCircuit cir = environment.getBackend().getCircuitManager().getCircuit(args[1]);
-    if (cir == nullptr) {
-        logError("Unrecognized UUID. Available circuits can be found with the 'list_circuits' command.", "CreateEvaluatorCommand");
+
+    circuit_id_t cirID;
+    try {
+        cirID = std::stoi(args[1]);
+    }
+    catch (const std::invalid_argument& e) {
+        logError("Non-numerical argument detected.", "CreateEvaluatorCommand");
         return;
     }
-    circuit_id_t id = cir->getCircuitId();
+    catch (const std::out_of_range& e) {
+        logError("Positional value is out of range.", "CreateEvaluatorCommand");
+        return;
+    }
+    catch (...) {
+        logError("Unknown exception occured.", "CreateEvaluatorCommand");
+        return;
+    }
+
     auto backend = environment.getBackend();
-    backend.createEvaluator(id);
+    backend.createEvaluator(cirID);
 }
