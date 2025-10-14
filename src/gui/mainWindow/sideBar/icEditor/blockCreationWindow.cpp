@@ -80,7 +80,6 @@ BlockCreationWindow::BlockCreationWindow(
 	menu->GetElementById("pick-texture")->AddEventListener("click", new EventPasser([this](Rml::Event& event){
 		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 		if (!circuit || !(circuit->isEditable())) return;
-		static const SDL_DialogFileFilter filters[] = {};
 		SDL_ShowOpenFileDialog([](void* userData, const char* const* filePaths, int filter){
 			if (!filePaths || !filePaths[0]) return;
 
@@ -112,7 +111,6 @@ BlockCreationWindow::BlockCreationWindow(
 	menu->GetElementById("pick-new-texture")->AddEventListener("click", new EventPasser([this](Rml::Event& event){
 		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 		if (!circuit || !(circuit->isEditable())) return;
-		static const SDL_DialogFileFilter filters[] = {};
 		SDL_ShowOpenFileDialog([](void* userData, const char* const* filePaths, int filter){
 			if (!filePaths || !filePaths[0]) return;
 
