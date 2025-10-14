@@ -57,7 +57,11 @@ bool CircuitFileManager::saveToFile(const std::string& path, const std::string& 
 	// Doesn't check if the file is saved, we are just saving as
 	setSaveFilePath(UUID, path);
 	ConnectionMachineParser saver(this, circuitManager);
-	if (saver.save(filePathToFile.at(path), true)) {
+	auto iter = filePathToFile.find(path);
+	if (iter == filePathToFile.end()) {
+		return false;
+	}
+	if (saver.save(iter->second, true)) {
 		logInfo("Successfully saved to: {}", "CircuitFileManager", path);
 		return true;
 	}
@@ -196,7 +200,7 @@ bool CircuitFileManager::saveFile(const std::string& path) {
 void CircuitFileManager::setSaveFilePath(const std::string& UUID, std::string fileLocation, bool addDotCir) {
 	SharedCircuit circuit = circuitManager->getCircuit(UUID);
 	if (circuit && addDotCir) {
-		if (fileLocation.back() != 'r') {
+		if (!fileLocation.ends_with(".cir")) {
 			if (fileLocation.back() == '.') fileLocation += "cir";
 			else fileLocation += ".cir";
 		}
