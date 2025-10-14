@@ -20,22 +20,14 @@ void GetBlockDataCommand::run(const std::vector<std::string>& args, Environment&
         yPos = std::stoi(args[3]);
         cirID = std::stoi(args[1]);
     }
-    catch (const std::invalid_argument& e) {
-        logError("Non-numerical argument detected.", "GetBlockDataCommand");
-        return;
-    }
-    catch (const std::out_of_range& e) {
-        logError("Positional value is out of range.", "GetBlockDataCommand");
-        return;
-    }
     catch (...) {
-        logError("Unknown exception occured.", "GetBlockDataCommand");
+        logError("Exception occured. Check your arguments, they should be reasonably-sized integers.", "GetBlockDataCommand");
         return;
     }
 
     SharedCircuit cir = environment.getBackend().getCircuitManager().getCircuit(cirID);
     if (cir == nullptr) {
-        logError("Unrecognized ID. Available circuits can be found with the 'list_circuits' command.", "GetBlockDataCommand");
+        logError("Unrecognized circuit ID. Available circuits can be found with the 'list_circuits' command.", "GetBlockDataCommand");
         return;
     }
 

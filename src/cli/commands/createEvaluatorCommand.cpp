@@ -8,7 +8,7 @@ runAtStartup(CommandManager::get().registerCommand(std::make_unique<CreateEvalua
 
 void CreateEvaluatorCommand::run(const std::vector<std::string>& args, Environment& environment) {
     if (args.size() != 2) {
-  		logError("Wrong number of arguments passed to create_evaluator. Proper usage is 'create_evaluator {UUID}'.", "CreateEvaluatorCommand");
+  		logError("Wrong number of arguments passed to create_evaluator. Proper usage is 'create_evaluator {ID}'.", "CreateEvaluatorCommand");
 	  	return;
     }
 
@@ -16,19 +16,15 @@ void CreateEvaluatorCommand::run(const std::vector<std::string>& args, Environme
     try {
         cirID = std::stoi(args[1]);
     }
-    catch (const std::invalid_argument& e) {
-        logError("Non-numerical argument detected.", "CreateEvaluatorCommand");
-        return;
-    }
-    catch (const std::out_of_range& e) {
-        logError("Positional value is out of range.", "CreateEvaluatorCommand");
-        return;
-    }
     catch (...) {
-        logError("Unknown exception occured.", "CreateEvaluatorCommand");
+        logError("Exception occured. Check your arguments, they should be reasonably-sized integers.", "CreateEvaluatorCommand");
         return;
     }
 
-    auto backend = environment.getBackend();
+    Backend& backend = environment.getBackend();
+    if (backend.getCircuitManager().getCircuit(cirID) == nullptr) {
+        logError("Unrecognized circuit ID. Available circuits can be found with the 'list_circuits' command.", "CreateEvaluatorCommand");
+        return;
+    }
     backend.createEvaluator(cirID);
 }
