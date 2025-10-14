@@ -123,32 +123,100 @@ void PopUpManager::saveAsPopUp(const std::string& circuitUUID) {
 	SDL_ShowSaveFileDialog(SaveCallback, data, nullptr, filters, 1, nullptr);
 }
 
-void PopUpManager::addFeedbackPopup() {
+void PopUpManager::addFeedbackPopup() { //feature request, bug report, feature complaint, feedback
     auto [overlay, closePopup] = createPopUp(true);
 
     Rml::ElementList windowList;
     overlay->GetElementsByClassName(windowList, "pop-up-window");
     if (windowList.empty()) return;
     Rml::Element* window = windowList.front();
-
-    Rml::Element* title = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("p"));
+    
+	Rml::Element* title = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("p"));
     title->SetInnerRML("Please give us any feedback!");
     title->SetClass("popup-title", true);
+
+	Rml::ElementPtr el_ptr = Rml::Factory::InstanceElement(
+	    window, "select", "select", Rml::XMLAttributes());
+	
+	Rml::Element* el = el_ptr.get();
+	
+	auto* dropdown = dynamic_cast<Rml::ElementFormControlSelect*>(el);
+	if (!dropdown)
+	    return; 
+	
+	dropdown->SetClass("popup-dropdown", true);
+	dropdown->SetClass("surface-pop", true);
+	dropdown->SetAttribute("id", "feedback_select");
+	dropdown->SetAttribute("style", "width: 160px; height: 20px; background-color:#303030;");
+	
+	int feedback1 = dropdown->Add("Feedback", "feedback");
+	int feedback2 = dropdown->Add("Bug Report", "bug");
+	int feedback3 = dropdown->Add("Feature Request", "request");
+	int feedback4 = dropdown->Add("Feature Complaint", "complaint");
+	dropdown->SetSelection(0);
+	
+	Rml::Element* feedback1use = dropdown->GetOption(feedback1);
+	feedback1use->SetAttribute("style", "width: 160px; height: 20px; background-color:#303030;");
+	Rml::Element* feedback2use = dropdown->GetOption(feedback2);
+	feedback2use->SetAttribute("style", "width: 160px; height: 20px; background-color:#303030;");
+	Rml::Element* feedback3use = dropdown->GetOption(feedback3);
+	feedback3use->SetAttribute("style", "width: 160px; height: 20px; background-color:#303030;");
+	Rml::Element* feedback4use = dropdown->GetOption(feedback4);
+	feedback4use->SetAttribute("style", "width: 160px; height: 20px; background-color:#303030;");
+
+	// dropdown->AddEventListener(Rml::EventId::Change, new EventPasser(
+	//     [](Rml::Event& e) {
+	//         auto* select = dynamic_cast<Rml::ElementFormControlSelect*>(e.GetTargetElement());
+	//         if (select)
+	//             std::cout << "User selected: " << select->GetValue() << std::endl;
+	//     }
+	// ));
+	window->AppendChild(std::move(el_ptr));
 
     Rml::Element* textarea = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("textarea"));
     textarea->SetAttribute("rows", "5");
     textarea->SetAttribute("cols", "40");
     textarea->SetClass("popup-textarea", true);
 	textarea->SetClass("surface-pop", true);
+	textarea->SetInnerRML("Enter Here.");
+	textarea->AddEventListener(Rml::EventId::Keydown, new EventPasser(
+	    [ textarea](Rml::Event& event) {
+	        auto* textareaControl = dynamic_cast<Rml::ElementFormControlTextArea*>(textarea);
+			if (textareaControl->GetValue() != ""){
+				textarea->SetInnerRML("");
+			} else {
+				textarea->SetInnerRML("Enter Here.");
+			}
+			
+	    }
+	));
+	textarea->AddEventListener(Rml::EventId::Keyup, new EventPasser(
+	    [ textarea](Rml::Event& event) {
+	        auto* textareaControl = dynamic_cast<Rml::ElementFormControlTextArea*>(textarea);
+			if (textareaControl->GetValue() != ""){
+				textarea->SetInnerRML("");
+			} else {
+				textarea->SetInnerRML("Enter Here.");
+			}
+	    }
+	));
 
-    Rml::Element* submitButton = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("button"));
+	Rml::Element* buttonContainer = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
+	buttonContainer->SetClass("popup-button-container", true);
+	buttonContainer->SetAttribute(
+	    "style",
+	    "display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 10px;"
+	);
+    Rml::Element* submitButton = buttonContainer->AppendChild(mainWindow->getRmlDocument()->CreateElement("button"));
     submitButton->SetInnerRML("Happy Submit");
     submitButton->SetClass("popup-button", true);
 	submitButton->AddEventListener(Rml::EventId::Click, new EventPasser(
-	    [deleteFunc = closePopup, textarea](Rml::Event& event) {
+	    [deleteFunc = closePopup, textarea, dropdown](Rml::Event& event) {
 	        // Retrieve the value from the textarea
 	        auto* textareaControl = dynamic_cast<Rml::ElementFormControlTextArea*>(textarea);
-			if (textareaControl)	
+			auto* select = dynamic_cast<Rml::ElementFormControlSelect*>(dropdown);
+			if (textareaControl && select)	
+				logInfo("Dropdown Select: {}","",select->GetValue());
 				logInfo("Live text: {}","",textareaControl->GetValue());
 			logInfo("Feeling: happy","");
 	        // Close the popup
@@ -156,14 +224,16 @@ void PopUpManager::addFeedbackPopup() {
 	    }
 	));
 
-	Rml::Element* submitButton2 = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("button"));
+	Rml::Element* submitButton2 = buttonContainer->AppendChild(mainWindow->getRmlDocument()->CreateElement("button"));
     submitButton2->SetInnerRML("Medium Submit");
     submitButton2->SetClass("popup-button", true);
 	submitButton2->AddEventListener(Rml::EventId::Click, new EventPasser(
-	    [deleteFunc = closePopup, textarea](Rml::Event& event) {
+	    [deleteFunc = closePopup, textarea, dropdown](Rml::Event& event) {
 	        // Retrieve the value from the textarea
 	        auto* textareaControl = dynamic_cast<Rml::ElementFormControlTextArea*>(textarea);
-			if (textareaControl)	
+			auto* select = dynamic_cast<Rml::ElementFormControlSelect*>(dropdown);
+			if (textareaControl && select)	
+				logInfo("Dropdown Select: {}","",select->GetValue());
 				logInfo("Live text: {}","",textareaControl->GetValue());
 			logInfo("Feeling: medium","");
 	        // Close the popup
@@ -171,14 +241,16 @@ void PopUpManager::addFeedbackPopup() {
 	    }
 	));
 
-	Rml::Element* submitButton3 = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("button"));
+	Rml::Element* submitButton3 = buttonContainer->AppendChild(mainWindow->getRmlDocument()->CreateElement("button"));
     submitButton3->SetInnerRML("Sad Submit");
     submitButton3->SetClass("popup-button", true);
 	submitButton3->AddEventListener(Rml::EventId::Click, new EventPasser(
-	    [deleteFunc = closePopup, textarea](Rml::Event& event) {
+	    [deleteFunc = closePopup, textarea, dropdown](Rml::Event& event) {
 	        // Retrieve the value from the textarea
 	        auto* textareaControl = dynamic_cast<Rml::ElementFormControlTextArea*>(textarea);
-			if (textareaControl)	
+			auto* select = dynamic_cast<Rml::ElementFormControlSelect*>(dropdown);
+			if (textareaControl && select)	
+				logInfo("Dropdown Select: {}","",select->GetValue());
 				logInfo("Live text: {}","",textareaControl->GetValue());
 			logInfo("Feeling: sad","");
 	        // Close the popup
