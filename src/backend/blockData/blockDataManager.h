@@ -150,6 +150,7 @@ public:
 			busInterfaceBlockData->setConnectionInput(Vector(0, i), i*2 + 3);
 		}
 		busInterfaceBlockData->setTexturePath((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
+		busInterfaceBlockData->setIsPlaceable(false);
 	}
 
 	inline BlockType addBlock() noexcept {
