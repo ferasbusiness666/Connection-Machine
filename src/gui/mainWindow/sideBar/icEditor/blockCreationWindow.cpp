@@ -145,11 +145,11 @@ BlockCreationWindow::BlockCreationWindow(
 		this->menu->GetElementById("block-texture-menu-no-texture")->SetClass("invisible", false);
 		this->menu->GetElementById("block-texture-menu-has-texture")->SetClass("invisible", true);
 	}));
-	menu->GetElementById("embed-texture")->AddEventListener("click", new EventPasser([this](Rml::Event& event){
-		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
-		if (!circuit || !(circuit->isEditable())) return;
-		logError("Embed texture not supported yet.");
-	}));
+	// menu->GetElementById("embed-texture")->AddEventListener("click", new EventPasser([this](Rml::Event& event){
+	// 	Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
+	// 	if (!circuit || !(circuit->isEditable())) return;
+	// 	logError("Embed texture not supported yet.");
+	// }));
 	menu->GetElementById("texture-uses-tilemap")->AddEventListener("click", new EventPasser([this](Rml::Event& event){
 		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 		if (!circuit || !(circuit->isEditable())) {

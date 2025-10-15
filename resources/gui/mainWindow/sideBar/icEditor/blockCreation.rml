@@ -27,7 +27,7 @@
 					<button id="pick-new-texture" class="btn btn-sm">Pick Texture</button>
 					<button id="reload-texture" class="btn btn-sm">Reload Texture</button>
 					<button id="remove-texture" class="btn btn-sm">Remove Texture</button>
-					<button id="embed-texture" class="btn btn-sm">Embed in .cir</button>
+					<!-- <button id="embed-texture" class="btn btn-sm">Embed in .cir</button> -->
 					<div class="form-row-2">
 						<input id="texture-uses-tilemap" type="checkbox" />
 						<label class="form-label" for="uses tilemap">Uses Tilemap</label>
