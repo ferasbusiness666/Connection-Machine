@@ -89,6 +89,8 @@ private:
 	static void execXORRealistic(void* jobInstruction);
 	static void execTristate(void* jobInstruction);
 	static void execTristateRealistic(void* jobInstruction);
+	static void execSingleBuffer(void* jobInstruction);
+	static void execSingleBufferRealistic(void* jobInstruction);
 	static void execConstantReset(void* jobInstruction);
 	static void execCopySelfOutput(void* jobInstruction);
 

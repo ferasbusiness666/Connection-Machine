@@ -738,6 +738,10 @@ void LogicSimulator::regenerateJobs() {
 		JobInstruction* ji = makeJI(i, std::min(i + batch, tristateBuffers.size()));
 		allJobs.push_back(ThreadPool::Job{ isRealistic ? &LogicSimulator::execTristateRealistic : &LogicSimulator::execTristate, ji });
 	}
+	for (size_t i = 0; i < singleBuffers.size(); i += batch) {
+		JobInstruction* ji = makeJI(i, std::min(i + batch, singleBuffers.size()));
+		allJobs.push_back(ThreadPool::Job{ isRealistic ? &LogicSimulator::execSingleBufferRealistic : &LogicSimulator::execSingleBuffer, ji });
+	}
 	for (size_t i = 0; i < constantResetGates.size(); i += batch) {
 		JobInstruction* ji = makeJI(i, std::min(i + batch, constantResetGates.size()));
 		allJobs.push_back(ThreadPool::Job{ &LogicSimulator::execConstantReset, ji });
@@ -783,6 +787,14 @@ void LogicSimulator::execTristate(void* jobInstruction) {
 void LogicSimulator::execTristateRealistic(void* jobInstruction) {
 	auto* ji = static_cast<JobInstruction*>(jobInstruction);
 	for (size_t i = ji->start; i < ji->end; ++i) ji->self->tristateBuffers[i].realisticTick(ji->self->statesA, ji->self->statesB);
+}
+void LogicSimulator::execSingleBuffer(void* jobInstruction) {
+	auto* ji = static_cast<JobInstruction*>(jobInstruction);
+	for (size_t i = ji->start; i < ji->end; ++i) ji->self->singleBuffers[i].tick(ji->self->statesA, ji->self->statesB);
+}
+void LogicSimulator::execSingleBufferRealistic(void* jobInstruction) {
+	auto* ji = static_cast<JobInstruction*>(jobInstruction);
+	for (size_t i = ji->start; i < ji->end; ++i) ji->self->singleBuffers[i].realisticTick(ji->self->statesA, ji->self->statesB);
 }
 void LogicSimulator::execConstantReset(void* jobInstruction) {
 	auto* ji = static_cast<JobInstruction*>(jobInstruction);

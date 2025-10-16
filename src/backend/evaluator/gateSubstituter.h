@@ -59,10 +59,9 @@ struct TrackedGate {
 	}
 };
 
-struct TristateBuffer {
+struct GateWithLinkedInputs {
 	middle_id_t id;
-	middle_id_t junctionId1;
-	middle_id_t junctionId2;
+	std::unordered_map<connection_port_id_t, middle_id_t> linkedInputs; // portId -> junctionId
 };
 
 class GateSubstituter {
@@ -76,12 +75,10 @@ public:
 		middleIdProvider(middleIdProvider) {}
 
 	void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
+		if (tryAddGateWithLinkedInputs(pauseGuard, blockType, gateId)) return;
 		if (blockType == BlockType::BUTTON || blockType == BlockType::SWITCH || blockType == BlockType::TICK_BUTTON) {
 			addTrackedGate({ gateId, blockType, blockType, BlockType::JUNCTION, {}, {}, 1 });
 			replacer.addGate(pauseGuard, blockType, gateId);
-		} else if (blockType == BlockType::TRISTATE_BUFFER) {
-			replacer.addGate(pauseGuard, blockType, gateId);
-			addTrackedTristateBuffer(pauseGuard, gateId);
 		} else if (blockType == BlockType::LIGHT) {
 			replacer.addGate(pauseGuard, BlockType::JUNCTION, gateId);
 		} else {
@@ -89,10 +86,10 @@ public:
 		}
 	}
 	void removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
-		replacer.removeGate(pauseGuard, gateId);
-		if (isTrackedTristateBuffer(gateId)) {
-			deleteTrackedTristateBuffer(pauseGuard, gateId);
+		if (isGateWithLinkedInputs(gateId)) {
+			deleteGateWithLinkedInputs(pauseGuard, gateId);
 		}
+		replacer.removeGate(pauseGuard, gateId);
 		deleteTrackedGate(gateId);
 		for (auto& trackedGate : trackedGates) {
 			bool success = trackedGate.second.removeReferencesToId(gateId);
@@ -150,16 +147,7 @@ public:
 	void makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
 		middle_id_t sourceGateId = connection.source.gateId;
 		middle_id_t destinationGateId = connection.destination.gateId;
-		if (isTrackedTristateBuffer(destinationGateId)) {
-			// redirect connection to junction
-			if (connection.destination.portId == 0) {
-				connection.destination.gateId = tristateBuffers.at(destinationGateId).junctionId1;
-			} else if (connection.destination.portId == 1) {
-				connection.destination.gateId = tristateBuffers.at(destinationGateId).junctionId2;
-			} else {
-				return;
-			}
-		}
+		redirectConnectionToLinkedInput(connection, destinationGateId);
 		if (trackedGates.contains(sourceGateId)) {
 			TrackedGate& trackedGate = trackedGates.at(sourceGateId);
 			trackedGate.addOutput(connection);
@@ -186,9 +174,10 @@ public:
 		replacer.makeConnection(pauseGuard, connection);
 	}
 	void removeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
-		replacer.removeConnection(pauseGuard, connection);
 		middle_id_t sourceGateId = connection.source.gateId;
 		middle_id_t destinationGateId = connection.destination.gateId;
+		redirectConnectionToLinkedInput(connection, destinationGateId);
+		replacer.removeConnection(pauseGuard, connection);
 		if (trackedGates.contains(sourceGateId)) {
 			TrackedGate& trackedGate = trackedGates.at(sourceGateId);
 			trackedGate.removeOutput(connection);
@@ -222,7 +211,8 @@ private:
 	Replacer replacer;
 	IdProvider<middle_id_t>& middleIdProvider;
 	std::unordered_map<middle_id_t, TrackedGate> trackedGates;
-	std::unordered_map<middle_id_t, TristateBuffer> tristateBuffers;
+	std::unordered_map<middle_id_t, GateWithLinkedInputs> gatesWithLinkedInputs;
+	std::unordered_map<middle_id_t, std::pair<middle_id_t, connection_port_id_t>> linkedInputJunctionLookup;
 	void addTrackedGate(const TrackedGate& gate) {
 		trackedGates[gate.id] = gate;
 	}
@@ -232,25 +222,57 @@ private:
 	bool isTrackedGate(middle_id_t gateId) const {
 		return trackedGates.contains(gateId);
 	}
-	void addTrackedTristateBuffer(SimPauseGuard& simPauseGuard, middle_id_t bufferId) {
-		middle_id_t junctionId1 = middleIdProvider.getNewId();
-		middle_id_t junctionId2 = middleIdProvider.getNewId();
-		replacer.addGate(simPauseGuard, BlockType::JUNCTION, junctionId1);
-		replacer.addGate(simPauseGuard, BlockType::JUNCTION, junctionId2);
-		tristateBuffers[bufferId] = { bufferId, junctionId1, junctionId2 };
-		replacer.makeConnection(simPauseGuard, EvalConnection(EvalConnectionPoint(junctionId1, 0), EvalConnectionPoint(bufferId, 0)));
-		replacer.makeConnection(simPauseGuard, EvalConnection(EvalConnectionPoint(junctionId2, 0), EvalConnectionPoint(bufferId, 1)));
+	bool tryAddGateWithLinkedInputs(SimPauseGuard& pauseGuard, BlockType blockType, middle_id_t gateId) {
+		auto configIter = blockTypesWithLinkedInputs.find(blockType);
+		if (configIter == blockTypesWithLinkedInputs.end()) {
+			return false;
+		}
+		replacer.addGate(pauseGuard, blockType, gateId);
+		GateWithLinkedInputs gateWithLinkedInputs{ gateId, {} };
+		for (connection_port_id_t portId : configIter->second) {
+			middle_id_t junctionId = middleIdProvider.getNewId();
+			replacer.addGate(pauseGuard, BlockType::JUNCTION, junctionId);
+			replacer.makeConnection(pauseGuard, EvalConnection(EvalConnectionPoint(junctionId, 0), EvalConnectionPoint(gateId, portId)));
+			gateWithLinkedInputs.linkedInputs[portId] = junctionId;
+			linkedInputJunctionLookup[junctionId] = { gateId, portId };
+		}
+		gatesWithLinkedInputs[gateId] = std::move(gateWithLinkedInputs);
+		return true;
 	}
-	void deleteTrackedTristateBuffer(SimPauseGuard& simPauseGuard, middle_id_t bufferId) {
-		replacer.removeGate(simPauseGuard, tristateBuffers.at(bufferId).junctionId1);
-		replacer.removeGate(simPauseGuard, tristateBuffers.at(bufferId).junctionId2);
-		middleIdProvider.releaseId(tristateBuffers.at(bufferId).junctionId1);
-		middleIdProvider.releaseId(tristateBuffers.at(bufferId).junctionId2);
-		tristateBuffers.erase(bufferId);
+	void deleteGateWithLinkedInputs(SimPauseGuard& pauseGuard, middle_id_t gateId) {
+		if (!isGateWithLinkedInputs(gateId)) {
+			return;
+		}
+		GateWithLinkedInputs& gate = gatesWithLinkedInputs.at(gateId);
+		for (const auto& [portId, junctionId] : gate.linkedInputs) {
+			replacer.removeConnection(pauseGuard, EvalConnection(EvalConnectionPoint(junctionId, 0), EvalConnectionPoint(gateId, portId)));
+			replacer.removeGate(pauseGuard, junctionId);
+			middleIdProvider.releaseId(junctionId);
+			linkedInputJunctionLookup.erase(junctionId);
+		}
+		gatesWithLinkedInputs.erase(gateId);
 	}
-	bool isTrackedTristateBuffer(middle_id_t bufferId) const {
-		return tristateBuffers.contains(bufferId);
+	bool isGateWithLinkedInputs(middle_id_t gateId) const {
+		return gatesWithLinkedInputs.contains(gateId);
 	}
+	bool redirectConnectionToLinkedInput(EvalConnection& connection, middle_id_t& originalGateId) {
+		auto gateIter = gatesWithLinkedInputs.find(connection.destination.gateId);
+		if (gateIter == gatesWithLinkedInputs.end()) {
+			return false;
+		}
+		auto linkIter = gateIter->second.linkedInputs.find(connection.destination.portId);
+		if (linkIter == gateIter->second.linkedInputs.end()) {
+			return false;
+		}
+		originalGateId = gateIter->first;
+		connection.destination.gateId = linkIter->second;
+		return true;
+	}
+
+	std::map<BlockType, std::vector<connection_port_id_t>> blockTypesWithLinkedInputs = {
+		{BlockType::TRISTATE_BUFFER, {0, 1}},
+		{BlockType::NOT, {0}}
+	};
 };
 
 #endif /* gateSubstituter_h */
