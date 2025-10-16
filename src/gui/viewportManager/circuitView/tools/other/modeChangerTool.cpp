@@ -9,6 +9,7 @@ const std::vector<std::pair<BlockType, std::string>> types = {
 	{BlockType::XOR, "Xor"},
 	{BlockType::NAND, "Nand"},
 	{BlockType::NOR, "Nor"},
+	{BlockType::XNOR, "Xnor"},
 	{BlockType::BUFFER, "Buffer"},
 	{BlockType::NOT, "Not"},
 	{BlockType::JUNCTION, "Junction"}
