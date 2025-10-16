@@ -271,6 +271,14 @@ simulator_id_t LogicSimulator::addGate(const BlockType blockType) {
 		junctions.back().resetState(evalConfig.isRealistic(), statesA);
 		junctions.back().resetState(evalConfig.isRealistic(), statesB);
 		break;
+	case BlockType::NOT:
+		simulatorId = singleBuffers.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(singleBuffers.back().getId());
+		extendDataVectors(simulatorId);
+		singleBuffers.push_back({ simulatorId, true });
+		updateGateLocation(simulatorId, SimGateType::SINGLE_BUFFER, singleBuffers.size() - 1);
+		singleBuffers.back().resetState(evalConfig.isRealistic(), statesA);
+		singleBuffers.back().resetState(evalConfig.isRealistic(), statesB);
+		break;
 	case BlockType::TRISTATE_BUFFER:
 		simulatorId = tristateBuffers.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(tristateBuffers.back().getId());
 		extendDataVectors(simulatorId);
