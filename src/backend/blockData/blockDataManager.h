@@ -148,14 +148,17 @@ public:
 		BlockData* busInterfaceBlockData = getBlockData(BlockType::BUS_INTERFACE);
 		busInterfaceBlockData->setName("Bus Interface");
 		busInterfaceBlockData->setDefaultData(false);
+		busInterfaceBlockData->setIsBus(true);
 		busInterfaceBlockData->setSize(Size(2, 8));
 		busInterfaceBlockData->setConnectionOutput(Vector(1, 0), 0);
 		busInterfaceBlockData->setConnectionBitConfiguration(0, std::vector<unsigned int>{0,1,2,3,4,5,6,7});
 		busInterfaceBlockData->setConnectionInput(Vector(1, 0), 1);
 		busInterfaceBlockData->setConnectionBitConfiguration(1, std::vector<unsigned int>{0,1,2,3,4,5,6,7});
-		for (int i = 0; i < 8; ++i) {
-			busInterfaceBlockData->setConnectionOutput(Vector(0, i), i*2 + 2);
-			busInterfaceBlockData->setConnectionInput(Vector(0, i), i*2 + 3);
+		for (unsigned int i = 0; i < 8; ++i) {
+			busInterfaceBlockData->setConnectionOutput(Vector(0, i), i * 2 + 2);
+			busInterfaceBlockData->setConnectionBitConfiguration(i * 2 + 2, std::vector<unsigned int>{ i });
+			busInterfaceBlockData->setConnectionInput(Vector(0, i), i * 2 + 3);
+			busInterfaceBlockData->setConnectionBitConfiguration(i * 2 + 3, std::vector<unsigned int>{ i });
 		}
 		busInterfaceBlockData->setTexturePath((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
 		busInterfaceBlockData->setIsPlaceable(false);

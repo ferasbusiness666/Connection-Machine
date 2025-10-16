@@ -1,7 +1,6 @@
 #ifndef busInterfacePassthrough_h
 #define busInterfacePassthrough_h
 
-#include "gateType.h"
 #include "simulatorOptimizer.h"
 
 class BusInterfacePassthrough {
@@ -13,12 +12,12 @@ public:
     ) : simulatorOptimizer(evalConfig, middleIdProvider, dirtySimulatorIds),
     dirtySimulatorIds(dirtySimulatorIds) {}
 
-    void addGate(SimPauseGuard& pauseGuard, const GateType gateType, const middle_id_t gateId) {
-        if (gateType == GateType::BUS_INTERFACE) {
+    void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
+        if (blockType == BlockType::BUS_INTERFACE) {
             busInterfaceIds.insert(gateId);
             return;
         }
-        simulatorOptimizer.addGate(pauseGuard, gateType, gateId);
+        simulatorOptimizer.addGate(pauseGuard, blockType, gateId);
     }
 
     void removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
@@ -154,11 +153,11 @@ public:
         return simulatorOptimizer.getAverageTickrate();
     }
 
-    GateType getGateType(middle_id_t middleId) const {
+    BlockType getBlockType(middle_id_t middleId) const {
         if (busInterfaceIds.contains(middleId)) {
-            return GateType::BUS_INTERFACE;
+            return BlockType::BUS_INTERFACE;
         }
-        return simulatorOptimizer.getGateType(middleId);
+        return simulatorOptimizer.getBlockType(middleId);
     }
 
     std::vector<EvalConnection> getInputs(middle_id_t middleId) const {

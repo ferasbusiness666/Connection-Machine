@@ -265,7 +265,14 @@ struct SingleBufferGate : public BufferGateBase {
 		: BufferGateBase(id, outputInverted) {}
 
 	inline logic_state_t calculate(const std::vector<logic_state_t>& statesA) const noexcept {
-		return input.has_value() ? statesA[input.value()] : logic_state_t::LOW;
+		if (!input.has_value()) [[unlikely]] {
+			return logic_state_t::UNDEFINED;
+		}
+		logic_state_t state = statesA[input.value()];
+		if (state >= logic_state_t::FLOATING) { // FLOATING or UNDEFINED
+			return logic_state_t::UNDEFINED;
+		}
+		return outputInverted ? (state == logic_state_t::HIGH ? logic_state_t::LOW : logic_state_t::HIGH) : state;
 	}
 
 	inline void tick(const std::vector<logic_state_t>& statesA, std::vector<logic_state_t>& statesB) noexcept {

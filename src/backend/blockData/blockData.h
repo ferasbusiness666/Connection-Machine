@@ -22,6 +22,31 @@ public:
 		Vector positionOnBlock = Vector(0, 0);
 		bool isInput = true;
 		std::variant<unsigned int, std::vector<unsigned int>> bitConfiguration;
+		unsigned int getBitWidth() const noexcept {
+			if (std::holds_alternative<unsigned int>(bitConfiguration)) {
+				return std::get<unsigned int>(bitConfiguration);
+			} else {
+				return std::get<std::vector<unsigned int>>(bitConfiguration).size();
+			}
+		}
+		std::vector<unsigned int> getLaneIds() const noexcept {
+			if (std::holds_alternative<unsigned int>(bitConfiguration)) {
+				std::vector<unsigned int> vec;
+				for (unsigned int i = 0; i < std::get<unsigned int>(bitConfiguration); i++) {
+					vec.push_back(i);
+				}
+				return vec;
+			} else {
+				return std::get<std::vector<unsigned int>>(bitConfiguration);
+			}
+		}
+		unsigned int getFirstLaneId() const noexcept {
+			if (std::holds_alternative<unsigned int>(bitConfiguration)) {
+				return 0;
+			} else {
+				return std::get<std::vector<unsigned int>>(bitConfiguration).at(0);
+			}
+		}
 	};
 
 	BlockData(BlockType blockType, DataUpdateEventManager* dataUpdateEventManager);
@@ -36,6 +61,12 @@ public:
 		sendBlockDataUpdate();
 	}
 	inline bool isPrimitive() const noexcept { return primitive; }
+
+	void setIsBus(bool bus) noexcept {
+		this->bus = bus;
+		sendBlockDataUpdate();
+	}
+	inline bool isBus() const noexcept { return bus; }
 
 	void setSize(Size size) noexcept;
 	inline Size getSize() const noexcept { return blockSize; }
@@ -168,11 +199,7 @@ public:
 		if (defaultData) return 1;
 		auto iter = connections.find(connectionId);
 		if (iter == connections.end()) return 0;
-		if (std::holds_alternative<unsigned int>(iter->second.bitConfiguration)) {
-			return std::get<unsigned int>(iter->second.bitConfiguration);
-		} else {
-			return std::get<std::vector<unsigned int>>(iter->second.bitConfiguration).size();
-		}
+		return iter->second.getBitWidth();
 	}
 	inline const std::variant<unsigned int, std::vector<unsigned int>>* getConnectionBitConfiguration(connection_end_id_t connectionId) const noexcept {
 		if (defaultData) return nullptr;
@@ -196,6 +223,7 @@ private:
 	bool defaultData = true;
 	bool primitive = true; // true if defined by default (And, Or, Xor...)
 	bool placeable = true;
+	bool bus = false;
 	std::string name = "Unnamed Block";
 	std::string path = "Basic";
 	std::string texturePath = "";

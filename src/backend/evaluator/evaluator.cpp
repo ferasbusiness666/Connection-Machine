@@ -21,7 +21,7 @@ Evaluator::Evaluator(
 	receiver(dataUpdateEventManager),
 	evalConfig(dataUpdateEventManager, evaluatorId),
 	middleIdProvider(),
-	evalSimulator(evalConfig, middleIdProvider, dirtySimulatorIds)
+	evalSimulator(evalConfig, middleIdProvider, dirtySimulatorIds, blockDataManager)
 {
 	const auto circuit = circuitManager.getCircuit(circuitId);
 	if (!circuit) {
@@ -166,37 +166,15 @@ void Evaluator::edit_deleteICContents(SimPauseGuard& pauseGuard, eval_circuit_id
 	});
 }
 
-void Evaluator::edit_placeBlock(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, DiffCache& diffCache, Position position, Orientation orientation, BlockType type) {
-	GateType gateType = GateType::NONE;
-	switch (type) {
-	case BlockType::AND: gateType = GateType::AND; break;
-	case BlockType::OR: gateType = GateType::OR; break;
-	case BlockType::XOR: gateType = GateType::XOR; break;
-	case BlockType::NAND: gateType = GateType::NAND; break;
-	case BlockType::NOR: gateType = GateType::NOR; break;
-	case BlockType::XNOR: gateType = GateType::XNOR; break;
-	case BlockType::NOT: gateType = GateType::NOR; break;
-	case BlockType::JUNCTION: gateType = GateType::JUNCTION; break;
-	case BlockType::TRISTATE_BUFFER: gateType = GateType::TRISTATE_BUFFER; break;
-	case BlockType::BUTTON: gateType = GateType::DUMMY_INPUT; break;
-	case BlockType::SWITCH: gateType = GateType::DUMMY_INPUT; break;
-	case BlockType::TICK_BUTTON: gateType = GateType::TICK_INPUT; break;
-	case BlockType::CONSTANT: gateType = GateType::CONSTANT_ON; break;
-	case BlockType::LIGHT: gateType = GateType::JUNCTION; break;
-	case BlockType::BUS_INTERFACE: gateType = GateType::BUS_INTERFACE; break;
-	default: break; // it was giving a warning
-	}
-	if (gateType == GateType::NONE) {
-		const circuit_id_t ICId = circuitBlockDataManager.getCircuitId(type);
-		if (ICId != 0) {
-			edit_placeIC(pauseGuard, evalCircuitId, diffCache, position, orientation, ICId);
-			return;
-		}
-		logError("Unsupported BlockType {}", "Evaluator::edit_placeBlock", type);
+void Evaluator::edit_placeBlock(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, DiffCache& diffCache, Position position, Orientation orientation, BlockType blockType) {
+	const circuit_id_t ICId = circuitBlockDataManager.getCircuitId(blockType);
+	if (ICId != 0) {
+		edit_placeIC(pauseGuard, evalCircuitId, diffCache, position, orientation, ICId);
 		return;
 	}
+
 	middle_id_t gateId = middleIdProvider.getNewId();
-	evalSimulator.addGate(pauseGuard, gateType, gateId);
+	evalSimulator.addGate(pauseGuard, blockType, gateId);
 	EvalCircuit* evalCircuit = evalCircuitContainer.getCircuit(evalCircuitId);
 	if (!evalCircuit) {
 		logError("EvalCircuit with id {} not found", "Evaluator::edit_placeBlock", evalCircuitId);

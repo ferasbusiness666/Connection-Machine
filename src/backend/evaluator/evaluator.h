@@ -216,7 +216,6 @@ private:
 		}
 	}
 
-private:
 	void processDirtyNodes();
 	void dirtyBlockAt(Position position, eval_circuit_id_t evalCircuitId);
 
