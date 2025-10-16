@@ -10,6 +10,7 @@ BlockType stringToBlockType(const std::string& str) {
 	if (str == "NAND") return BlockType::NAND;
 	if (str == "NOR") return BlockType::NOR;
 	if (str == "XNOR") return BlockType::XNOR;
+	if (str == "NOT") return BlockType::NOT;
 	if (str == "JUNCTION") return BlockType::JUNCTION;
 	if (str == "TRISTATE_BUFFER") return BlockType::TRISTATE_BUFFER;
 	if (str == "BUTTON") return BlockType::BUTTON;
@@ -42,6 +43,7 @@ std::string blockTypeToString(BlockType type) {
 	case BlockType::NAND: return "NAND";
 	case BlockType::NOR: return "NOR";
 	case BlockType::XNOR: return "XNOR";
+	case BlockType::NOT: return "NOT";
 	case BlockType::JUNCTION: return "JUNCTION";
 	case BlockType::TRISTATE_BUFFER: return "TRISTATE_BUFFER";
 	case BlockType::BUTTON: return "BUTTON";

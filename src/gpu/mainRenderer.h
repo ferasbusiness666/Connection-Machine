@@ -56,7 +56,7 @@ public:
 	void setBlockName(BlockRenderDataId blockRenderDataId, const std::string& blockName);
 	void setBlockSize(BlockRenderDataId blockRenderDataId, Size size);
 	BlockTextureId addBlockTexture(const std::string& path);
-	BlockTextureId addBlockTexture(const std::filesystem::path& path); // implicit cast to string wasnt working
+	BlockTextureId addBlockTexture(const std::filesystem::path& path);
 	void refreshBlockTexture(const std::string& path);
 	BlockTextureId addBlockTexture(const stbi_uc* pixels, int textureWidth, int textureHeight);
 	void updateBlockTexture(const stbi_uc* pixels, BlockTextureId blockTextureId);

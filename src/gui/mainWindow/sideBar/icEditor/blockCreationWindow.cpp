@@ -80,7 +80,7 @@ BlockCreationWindow::BlockCreationWindow(
 	menu->GetElementById("pick-texture")->AddEventListener("click", new EventPasser([this](Rml::Event& event){
 		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 		if (!circuit || !(circuit->isEditable())) return;
-		// static const SDL_DialogFileFilter filters[] = {}; // MSVC: cannot allocate an array of constant size 0
+		static const SDL_DialogFileFilter filters[] = {};
 		SDL_ShowOpenFileDialog([](void* userData, const char* const* filePaths, int filter){
 			if (!filePaths || !filePaths[0]) return;
 
@@ -112,7 +112,7 @@ BlockCreationWindow::BlockCreationWindow(
 	menu->GetElementById("pick-new-texture")->AddEventListener("click", new EventPasser([this](Rml::Event& event){
 		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 		if (!circuit || !(circuit->isEditable())) return;
-		// static const SDL_DialogFileFilter filters[] = {}; // MSVC: cannot allocate an array of constant size 0
+		static const SDL_DialogFileFilter filters[] = {};
 		SDL_ShowOpenFileDialog([](void* userData, const char* const* filePaths, int filter){
 			if (!filePaths || !filePaths[0]) return;
 
@@ -147,11 +147,11 @@ BlockCreationWindow::BlockCreationWindow(
 		this->menu->GetElementById("block-texture-menu-no-texture")->SetClass("invisible", false);
 		this->menu->GetElementById("block-texture-menu-has-texture")->SetClass("invisible", true);
 	}));
-	menu->GetElementById("embed-texture")->AddEventListener("click", new EventPasser([this](Rml::Event& event){
-		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
-		if (!circuit || !(circuit->isEditable())) return;
-		logError("Embed texture not supported yet.");
-	}));
+	// menu->GetElementById("embed-texture")->AddEventListener("click", new EventPasser([this](Rml::Event& event){
+	// 	Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
+	// 	if (!circuit || !(circuit->isEditable())) return;
+	// 	logError("Embed texture not supported yet.");
+	// }));
 	menu->GetElementById("texture-uses-tilemap")->AddEventListener("click", new EventPasser([this](Rml::Event& event){
 		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 		if (!circuit || !(circuit->isEditable())) {

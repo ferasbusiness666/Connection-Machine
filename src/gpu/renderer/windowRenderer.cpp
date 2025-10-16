@@ -115,7 +115,6 @@ void WindowRenderer::renderLoop() {
 		// submit to queue
 		if (device->submitGraphicsQueue(&submitInfo, frame.renderFence) != VK_SUCCESS){
 			logError("failed to submit draw command buffer!");
-
 		}
 
 		// start setting up present submission =====================================================

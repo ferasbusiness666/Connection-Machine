@@ -311,11 +311,15 @@ void CircuitViewWidget::asSave() {
 // for drag and drop load directly onto this circuit view widget
 void CircuitViewWidget::load() {
 	if (!fileManager) return;
-
+#ifdef _WIN32
+#define DOT ""
+#else
+#define DOT "."
+#endif
 	static const SDL_DialogFileFilter filters[] = {
-		{ "Circuit Files",  ".cir" },
-		{ "Circuit Files",  ".blif" },
-		{ "Circuit Files",  ".wasm" },
+		{ "Circuit Files",  DOT"cir" },
+		{ "BLIF Files",  DOT"blif" },
+		{ "WASM Files",  DOT"wasm" },
 	};
 
 	SDL_ShowOpenFileDialog(LoadCallback, this, nullptr, filters, 3, nullptr, true);

@@ -12,7 +12,7 @@ public:
 	void initializeDefaults() {
 		assert(blockData.size() == 0); // should call this before doing anything
 		// load default data
-		for (unsigned int i = 0; i < 14; i++) addBlock();
+		for (unsigned int i = 0; i < 15; i++) addBlock();
 
 		std::string mainTexturePath = (DirectoryManager::getResourceDirectory() / "logicTiles.png").string();
 
@@ -64,6 +64,14 @@ public:
 		xnorBlockData->setTextureTileSize({256, 256});
 		xnorBlockData->setTextureBlockTileSize({1, 1});
 		xnorBlockData->setTextureSmallestCordTile({7, 0});
+		// NOT
+		BlockData* notBlockData = getBlockData(BlockType::NOT);
+		notBlockData->setName("Not");
+		notBlockData->setTexturePath(mainTexturePath);
+		notBlockData->setUsesTileMapTexture(true);
+		notBlockData->setTextureTileSize({256, 256});
+		notBlockData->setTextureBlockTileSize({1, 1});
+		notBlockData->setTextureSmallestCordTile({8, 0});
 		// JUNCTION
 		BlockData* junctionBlockData = getBlockData(BlockType::JUNCTION);
 		junctionBlockData->setName("Junction");
@@ -71,7 +79,7 @@ public:
 		junctionBlockData->setUsesTileMapTexture(true);
 		junctionBlockData->setTextureTileSize({256, 256});
 		junctionBlockData->setTextureBlockTileSize({1, 1});
-		junctionBlockData->setTextureSmallestCordTile({8, 0});
+		junctionBlockData->setTextureSmallestCordTile({9, 0});
 		// TRISTATE_BUFFER
 		BlockData* tristateBufferBlockData = getBlockData(BlockType::TRISTATE_BUFFER);
 		tristateBufferBlockData->setName("Tristate Buffer");
@@ -84,7 +92,7 @@ public:
 		tristateBufferBlockData->setUsesTileMapTexture(true);
 		tristateBufferBlockData->setTextureTileSize({256, 256});
 		tristateBufferBlockData->setTextureBlockTileSize({1, 1});
-		tristateBufferBlockData->setTextureSmallestCordTile({9, 0});
+		tristateBufferBlockData->setTextureSmallestCordTile({10, 0});
 		// BUTTON
 		BlockData* buttonBlockData = getBlockData(BlockType::BUTTON);
 		buttonBlockData->setName("Button");
@@ -94,7 +102,7 @@ public:
 		buttonBlockData->setUsesTileMapTexture(true);
 		buttonBlockData->setTextureTileSize({256, 256});
 		buttonBlockData->setTextureBlockTileSize({1, 1});
-		buttonBlockData->setTextureSmallestCordTile({10, 0});
+		buttonBlockData->setTextureSmallestCordTile({11, 0});
 		// TICK_BUTTON
 		BlockData* tickButtonBlockData = getBlockData(BlockType::TICK_BUTTON);
 		tickButtonBlockData->setName("Tick Button");
@@ -104,7 +112,7 @@ public:
 		tickButtonBlockData->setUsesTileMapTexture(true);
 		tickButtonBlockData->setTextureTileSize({256, 256});
 		tickButtonBlockData->setTextureBlockTileSize({1, 1});
-		tickButtonBlockData->setTextureSmallestCordTile({11, 0});
+		tickButtonBlockData->setTextureSmallestCordTile({12, 0});
 		// SWITCH
 		BlockData* switchBlockData = getBlockData(BlockType::SWITCH);
 		switchBlockData->setName("Switch");
@@ -114,7 +122,7 @@ public:
 		switchBlockData->setUsesTileMapTexture(true);
 		switchBlockData->setTextureTileSize({256, 256});
 		switchBlockData->setTextureBlockTileSize({1, 1});
-		switchBlockData->setTextureSmallestCordTile({12, 0});
+		switchBlockData->setTextureSmallestCordTile({13, 0});
 		// CONSTANT
 		BlockData* constantBlockData = getBlockData(BlockType::CONSTANT);
 		constantBlockData->setName("Constant");
@@ -125,7 +133,7 @@ public:
 		constantBlockData->setUsesTileMapTexture(true);
 		constantBlockData->setTextureTileSize({256, 256});
 		constantBlockData->setTextureBlockTileSize({1, 1});
-		constantBlockData->setTextureSmallestCordTile({13, 0});
+		constantBlockData->setTextureSmallestCordTile({14, 0});
 		// LIGHT
 		BlockData* lightBlockData = getBlockData(BlockType::LIGHT);
 		lightBlockData->setName("Light");
@@ -135,7 +143,7 @@ public:
 		lightBlockData->setUsesTileMapTexture(true);
 		lightBlockData->setTextureTileSize({256, 256});
 		lightBlockData->setTextureBlockTileSize({1, 1});
-		lightBlockData->setTextureSmallestCordTile({14, 0});
+		lightBlockData->setTextureSmallestCordTile({15, 0});
 		// BUS_INTERFACE
 		BlockData* busInterfaceBlockData = getBlockData(BlockType::BUS_INTERFACE);
 		busInterfaceBlockData->setName("Bus Interface");
@@ -153,6 +161,7 @@ public:
 			busInterfaceBlockData->setConnectionBitConfiguration(i * 2 + 3, std::vector<unsigned int>{ i });
 		}
 		busInterfaceBlockData->setTexturePath((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
+		busInterfaceBlockData->setIsPlaceable(false);
 	}
 
 	inline BlockType addBlock() noexcept {
