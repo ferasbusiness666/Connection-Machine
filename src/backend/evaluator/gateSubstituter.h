@@ -156,20 +156,23 @@ public:
 			TrackedGate& trackedGate = trackedGates.at(destinationGateId);
 			trackedGate.addInput(connection);
 			BlockType newState = trackedGate.evaluate();
-			if (newState != trackedGate.currentState) {
-				trackedGate.currentState = newState;
-				replacer.removeGate(pauseGuard, destinationGateId);
-				replacer.addGate(pauseGuard, newState, destinationGateId);
-				for (const auto& input : trackedGate.inputs) {
-					replacer.makeConnection(pauseGuard, input);
-				}
-				for (const auto& output : trackedGate.outputs) {
-					if (output.source.gateId == output.destination.gateId) {
-						continue;
-					}
-					replacer.makeConnection(pauseGuard, output);
-				}
+			if (newState == trackedGate.currentState) {
+				replacer.makeConnection(pauseGuard, connection);
+				return;
 			}
+			trackedGate.currentState = newState;
+			replacer.removeGate(pauseGuard, destinationGateId);
+			replacer.addGate(pauseGuard, newState, destinationGateId);
+			for (const auto& input : trackedGate.inputs) {
+				replacer.makeConnection(pauseGuard, input);
+			}
+			for (const auto& output : trackedGate.outputs) {
+				if (output.source.gateId == output.destination.gateId) {
+					continue;
+				}
+				replacer.makeConnection(pauseGuard, output);
+			}
+			return;
 		}
 		replacer.makeConnection(pauseGuard, connection);
 	}
