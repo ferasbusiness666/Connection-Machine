@@ -175,6 +175,7 @@ void Evaluator::edit_placeBlock(SimPauseGuard& pauseGuard, eval_circuit_id_t eva
 	case BlockType::NAND: gateType = GateType::NAND; break;
 	case BlockType::NOR: gateType = GateType::NOR; break;
 	case BlockType::XNOR: gateType = GateType::XNOR; break;
+	case BlockType::NOT: gateType = GateType::NOR; break;
 	case BlockType::JUNCTION: gateType = GateType::JUNCTION; break;
 	case BlockType::TRISTATE_BUFFER: gateType = GateType::TRISTATE_BUFFER; break;
 	case BlockType::BUTTON: gateType = GateType::DUMMY_INPUT; break;

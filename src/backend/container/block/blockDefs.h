@@ -14,6 +14,7 @@ enum BlockType : std::uint16_t {
 	NAND,
 	NOR,
 	XNOR,
+	NOT,
 	JUNCTION,
 	TRISTATE_BUFFER,
 	//TIMER,
