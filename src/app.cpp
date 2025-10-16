@@ -199,8 +199,13 @@ void App::startTryingToQuit() {
 		windowIter->get()->getPopUpManager().addOptionsPopUp("Do you want to save: " + circuit.second->getCircuitName(), {
 			std::make_pair("Save", [window=windowIter->get(), uuid=circuit.second->getUUID(), this]() {
 				logInfo("Saving circuit {}", "", uuid);
+				#ifdef _WIN32
+				#define DOT ""
+				#else
+				#define DOT "."
+				#endif
 				static const SDL_DialogFileFilter filters[] = {
-					{ "Circuit Files",  ".cir" }
+					{ "Circuit Files",  DOT"cir" }
 				};
 				std::pair<CircuitFileManager*, std::string>* data = new std::pair<CircuitFileManager*, std::string>(&environment.getCircuitFileManager(), uuid);
 				SDL_ShowSaveFileDialog(
