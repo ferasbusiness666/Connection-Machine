@@ -44,7 +44,7 @@ public:
 
 	void endEdit(SimPauseGuard& pauseGuard) {
 		cleanReplacements();
-		mergeBuses(pauseGuard, 0);
+		// mergeBuses(pauseGuard, 0);
 		mergeJunctions(pauseGuard, 1);
 
 		busInterfacePassthrough.endEdit(pauseGuard);
