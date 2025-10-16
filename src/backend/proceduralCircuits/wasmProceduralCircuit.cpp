@@ -32,6 +32,7 @@ WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, Circu
 			else if (blockName == "NAND") return BlockType::NAND;
 			else if (blockName == "NOR") return BlockType::NOR;
 			else if (blockName == "XNOR") return BlockType::XNOR;
+			else if (blockName == "BUFFER") return BlockType::BUFFER;
 			else if (blockName == "NOT") return BlockType::NOT;
 			else if (blockName == "JUNCTION") return BlockType::JUNCTION;
 			else if (blockName == "TRISTATE_BUFFER") return BlockType::TRISTATE_BUFFER;
