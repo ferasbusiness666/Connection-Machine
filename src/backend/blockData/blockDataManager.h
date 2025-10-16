@@ -12,7 +12,7 @@ public:
 	void initializeDefaults() {
 		assert(blockData.size() == 0); // should call this before doing anything
 		// load default data
-		for (unsigned int i = 0; i < 15; i++) addBlock();
+		for (unsigned int i = 0; i < 16; i++) addBlock();
 
 		std::string mainTexturePath = (DirectoryManager::getResourceDirectory() / "logicTiles.png").string();
 
@@ -64,6 +64,14 @@ public:
 		xnorBlockData->setTextureTileSize({256, 256});
 		xnorBlockData->setTextureBlockTileSize({1, 1});
 		xnorBlockData->setTextureSmallestCordTile({7, 0});
+		// BUFFER
+		BlockData* bufferBlockData = getBlockData(BlockType::BUFFER);
+		bufferBlockData->setName("Buffer");
+		bufferBlockData->setTexturePath(mainTexturePath);
+		bufferBlockData->setUsesTileMapTexture(true);
+		bufferBlockData->setTextureTileSize({256, 256});
+		bufferBlockData->setTextureBlockTileSize({1, 1});
+		bufferBlockData->setTextureSmallestCordTile({0, 4});
 		// NOT
 		BlockData* notBlockData = getBlockData(BlockType::NOT);
 		notBlockData->setName("Not");

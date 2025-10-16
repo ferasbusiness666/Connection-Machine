@@ -274,7 +274,8 @@ private:
 
 	std::map<BlockType, std::vector<connection_port_id_t>> blockTypesWithLinkedInputs = {
 		{BlockType::TRISTATE_BUFFER, {0, 1}},
-		{BlockType::NOT, {0}}
+		{BlockType::NOT, {0}},
+		{BlockType::BUFFER, {0}}
 	};
 };
 
