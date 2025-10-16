@@ -311,10 +311,34 @@ simulator_id_t LogicSimulator::addGate(const BlockType blockType) {
 	// 	constantGates.back().resetState(evalConfig.isRealistic(), statesA);
 	// 	constantGates.back().resetState(evalConfig.isRealistic(), statesB);
 	// 	break;
-	case BlockType::CONSTANT:
+	case BlockType::CONSTANT_OFF:
+		simulatorId = constantGates.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(constantGates.back().getId());
+		extendDataVectors(simulatorId);
+		constantGates.push_back({ simulatorId, logic_state_t::LOW });
+		updateGateLocation(simulatorId, SimGateType::CONSTANT, constantGates.size() - 1);
+		constantGates.back().resetState(evalConfig.isRealistic(), statesA);
+		constantGates.back().resetState(evalConfig.isRealistic(), statesB);
+		break;
+	case BlockType::CONSTANT_ON:
 		simulatorId = constantGates.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(constantGates.back().getId());
 		extendDataVectors(simulatorId);
 		constantGates.push_back({ simulatorId, logic_state_t::HIGH });
+		updateGateLocation(simulatorId, SimGateType::CONSTANT, constantGates.size() - 1);
+		constantGates.back().resetState(evalConfig.isRealistic(), statesA);
+		constantGates.back().resetState(evalConfig.isRealistic(), statesB);
+		break;
+	case BlockType::CONSTANT_Z:
+		simulatorId = constantGates.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(constantGates.back().getId());
+		extendDataVectors(simulatorId);
+		constantGates.push_back({ simulatorId, logic_state_t::FLOATING });
+		updateGateLocation(simulatorId, SimGateType::CONSTANT, constantGates.size() - 1);
+		constantGates.back().resetState(evalConfig.isRealistic(), statesA);
+		constantGates.back().resetState(evalConfig.isRealistic(), statesB);
+		break;
+	case BlockType::CONSTANT_X:
+		simulatorId = constantGates.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(constantGates.back().getId());
+		extendDataVectors(simulatorId);
+		constantGates.push_back({ simulatorId, logic_state_t::UNDEFINED });
 		updateGateLocation(simulatorId, SimGateType::CONSTANT, constantGates.size() - 1);
 		constantGates.back().resetState(evalConfig.isRealistic(), statesA);
 		constantGates.back().resetState(evalConfig.isRealistic(), statesB);

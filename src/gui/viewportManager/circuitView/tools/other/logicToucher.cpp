@@ -11,7 +11,6 @@ void LogicToucher::activate() {
 	setStatusBar("Left click to toggle the state of a block");
 }
 
-
 bool LogicToucher::press(const Event* event) {
 	if (!circuitView || !circuit) return false;
 	Evaluator* evaluator = circuitView->getEvaluator();

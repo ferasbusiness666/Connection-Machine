@@ -12,7 +12,7 @@ public:
 	void initializeDefaults() {
 		assert(blockData.size() == 0); // should call this before doing anything
 		// load default data
-		for (unsigned int i = 0; i < 15; i++) addBlock();
+		for (unsigned int i = 0; i < 18; i++) addBlock();
 
 		std::string mainTexturePath = (DirectoryManager::getResourceDirectory() / "logicTiles.png").string();
 
@@ -123,17 +123,49 @@ public:
 		switchBlockData->setTextureTileSize({256, 256});
 		switchBlockData->setTextureBlockTileSize({1, 1});
 		switchBlockData->setTextureSmallestCordTile({13, 0});
-		// CONSTANT
-		BlockData* constantBlockData = getBlockData(BlockType::CONSTANT);
-		constantBlockData->setName("Constant");
-		constantBlockData->setDefaultData(false);
-		constantBlockData->setIsPlaceable(false);
-		constantBlockData->setConnectionOutput(Vector(0), 0);
-		constantBlockData->setTexturePath(mainTexturePath);
-		constantBlockData->setUsesTileMapTexture(true);
-		constantBlockData->setTextureTileSize({256, 256});
-		constantBlockData->setTextureBlockTileSize({1, 1});
-		constantBlockData->setTextureSmallestCordTile({14, 0});
+		// CONSTANT OFF
+		BlockData* constantOffBlockData = getBlockData(BlockType::CONSTANT_OFF);
+		constantOffBlockData->setName("Constant");
+		constantOffBlockData->setDefaultData(false);
+		constantOffBlockData->setConnectionOutput(Vector(0), 0);
+		constantOffBlockData->setTexturePath(mainTexturePath);
+		constantOffBlockData->setUsesTileMapTexture(true);
+		constantOffBlockData->setTextureTileSize({256, 256});
+		constantOffBlockData->setTextureBlockTileSize({1, 1});
+		constantOffBlockData->setTextureSmallestCordTile({14, 0});
+		// constantOffBlockDataON
+		BlockData* constantOnBlockData = getBlockData(BlockType::CONSTANT_ON);
+		constantOnBlockData->setName("Constant");
+		constantOnBlockData->setDefaultData(false);
+		constantOnBlockData->setIsPlaceable(false);
+		constantOnBlockData->setConnectionOutput(Vector(0), 0);
+		constantOnBlockData->setTexturePath(mainTexturePath);
+		constantOnBlockData->setUsesTileMapTexture(true);
+		constantOnBlockData->setTextureTileSize({256, 256});
+		constantOnBlockData->setTextureBlockTileSize({1, 1});
+		constantOnBlockData->setTextureSmallestCordTile({14, 0});
+		// CONSTANT Z
+		BlockData* constantZBlockData = getBlockData(BlockType::CONSTANT_Z);
+		constantZBlockData->setName("Constant");
+		constantZBlockData->setDefaultData(false);
+		constantZBlockData->setIsPlaceable(false);
+		constantZBlockData->setConnectionOutput(Vector(0), 0);
+		constantZBlockData->setTexturePath(mainTexturePath);
+		constantZBlockData->setUsesTileMapTexture(true);
+		constantZBlockData->setTextureTileSize({256, 256});
+		constantZBlockData->setTextureBlockTileSize({1, 1});
+		constantZBlockData->setTextureSmallestCordTile({14, 0});
+		// CONSTANT X
+		BlockData* constantXBlockData = getBlockData(BlockType::CONSTANT_X);
+		constantXBlockData->setName("Constant");
+		constantXBlockData->setDefaultData(false);
+		constantXBlockData->setIsPlaceable(false);
+		constantXBlockData->setConnectionOutput(Vector(0), 0);
+		constantXBlockData->setTexturePath(mainTexturePath);
+		constantXBlockData->setUsesTileMapTexture(true);
+		constantXBlockData->setTextureTileSize({256, 256});
+		constantXBlockData->setTextureBlockTileSize({1, 1});
+		constantXBlockData->setTextureSmallestCordTile({14, 0});
 		// LIGHT
 		BlockData* lightBlockData = getBlockData(BlockType::LIGHT);
 		lightBlockData->setName("Light");

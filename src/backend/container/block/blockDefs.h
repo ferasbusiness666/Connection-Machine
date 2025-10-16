@@ -21,7 +21,10 @@ enum BlockType : std::uint16_t {
 	BUTTON,
 	TICK_BUTTON,
 	SWITCH,
-	CONSTANT,
+	CONSTANT_OFF,
+	CONSTANT_ON,
+	CONSTANT_Z,
+	CONSTANT_X,
 	LIGHT,
 	BUS_INTERFACE,
 	CUSTOM, // placeholder for custom blocks in parsed circuit
