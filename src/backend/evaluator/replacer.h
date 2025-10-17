@@ -236,34 +236,6 @@ private:
 	std::vector<EvalConnectionPoint> getReplacementConnectionPoints(const std::vector<EvalConnectionPoint>& points) const;
 	std::vector<std::optional<EvalConnectionPoint>> getReplacementConnectionPoints(const std::vector<std::optional<EvalConnectionPoint>>& points) const;
 	void mergeBuses(SimPauseGuard& pauseGuard, int layer);
-
-	struct LanePoint {
-		middle_id_t busId;
-		unsigned int laneId;
-
-		bool operator==(const LanePoint& other) const {
-			return busId == other.busId && laneId == other.laneId;
-		}
-
-		bool operator!=(const LanePoint& other) const {
-			return !(*this == other);
-		}
-
-		bool operator<(const LanePoint& other) const noexcept {
-			return std::tie(busId, laneId) < std::tie(other.busId, other.laneId);
-		}
-
-		struct Hash {
-			std::size_t operator()(const LanePoint& point) const noexcept {
-				return std::hash<middle_id_t>{}(point.busId) ^
-					(std::hash<unsigned int>{}(point.laneId) << 1);
-			}
-		};
-	};
-
-	using LanePointSet = std::unordered_set<LanePoint, LanePoint::Hash>;
-
-	void mergeBusLane(SimPauseGuard& pauseGuard, Replacement& replacement, middle_id_t initialBusId, unsigned int laneId, middle_id_t newJunctionId, LanePointSet& visitedLanePoints);
 	void mergeJunctions(SimPauseGuard& pauseGuard, int layer);
 	JunctionFloodFillResult junctionFloodFill(middle_id_t junctionId);
 	BlockDataManager& blockDataManager;
