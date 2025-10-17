@@ -27,7 +27,7 @@ void SetBlockStateCommand::run(const std::vector<std::string>& args, Environment
         return;
     }
     if (state < 0 || state > 3) {
-        logError("Invalid state. Valid states are 0 for low, 1 for high, 2 for floating, and 3 for undefined.");
+        logError("Invalid state. Valid states are 0 for low, 1 for high, 2 for floating, and 3 for undefined.", "SetBlockStateCommand");
         return;
     }
     SharedEvaluator eval = environment.getBackend().getEvaluatorManager().getEvaluator(evalID);

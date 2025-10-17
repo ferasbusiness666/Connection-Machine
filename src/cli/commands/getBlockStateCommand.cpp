@@ -30,6 +30,5 @@ void GetBlockStateCommand::run(const std::vector<std::string>& args, Environment
         return;
     }
     unsigned char state = (unsigned char)eval->getState(Address(Position(xPos, yPos)));
-    logInfo(eval->isPause());
     logInfo("State of block in eval with ID {} at position ({}, {}) is {}", "GetBlockStateCommand", evalID, xPos, yPos, state);
 }
