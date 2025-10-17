@@ -23,11 +23,33 @@ bool LogicToucher::press(const Event* event) {
 		return false;
 	} else {
 		clickPosition = lastPointerPosition;
-		if (circuit->getBlockContainer()->checkCollision(clickPosition)) {
-			bool stateToSet = true;
-			Address address = circuitView->getAddress();
-			address.addBlockId(clickPosition);
-			evaluator->setState(address, !evaluator->getBoolState(address));
+		const Block* block = circuit->getBlockContainer()->getBlock(clickPosition);
+		Position posOfBlock = block->getPosition();
+		Orientation rotOfBlock = block->getOrientation();
+		if (block) {
+			switch (block->type()) {
+			case BlockType::CONSTANT_OFF: {
+				circuit->tryRemoveBlock(posOfBlock);
+				circuit->tryInsertBlock(posOfBlock, rotOfBlock, BlockType::CONSTANT_ON);
+			} break;
+			case BlockType::CONSTANT_ON: {
+				circuit->tryRemoveBlock(posOfBlock);
+				circuit->tryInsertBlock(posOfBlock, rotOfBlock, BlockType::CONSTANT_OFF);
+			} break;
+			case BlockType::CONSTANT_Z: {
+				circuit->tryRemoveBlock(posOfBlock);
+				circuit->tryInsertBlock(posOfBlock, rotOfBlock, BlockType::CONSTANT_OFF);
+			} break;
+			case BlockType::CONSTANT_X: {
+				circuit->tryRemoveBlock(posOfBlock);
+				circuit->tryInsertBlock(posOfBlock, rotOfBlock, BlockType::CONSTANT_OFF);
+			} break;
+			default:
+				bool stateToSet = true;
+				Address address = circuitView->getAddress();
+				address.addBlockId(clickPosition);
+				evaluator->setState(address, !evaluator->getBoolState(address));
+			}
 		}
 		clicked = true;
 		return true;
