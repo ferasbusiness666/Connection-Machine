@@ -123,6 +123,21 @@ void PopUpManager::saveAsPopUp(const std::string& circuitUUID) {
 	SDL_ShowSaveFileDialog(SaveCallback, data, nullptr, filters, 1, nullptr);
 }
 
+void set_invisible(Rml::Element* element, bool invisible){
+	if (invisible){
+		element->SetClass("invisible",true);
+		for (int i = 0; i < element->GetNumChildren(); ++i){
+			element->GetChild(i)->SetClass("invisible",true);
+		}
+	} else {
+		element->SetClass("invisible",false);
+		for (int i = 0; i < element->GetNumChildren(); ++i){
+			element->GetChild(i)->SetClass("invisible",false);
+		}
+	}
+	
+}
+
 void PopUpManager::addFeedbackPopup() { //feature request, bug report, feature complaint, feedback
     auto [overlay, closePopup] = createPopUp(true);
 
@@ -130,6 +145,7 @@ void PopUpManager::addFeedbackPopup() { //feature request, bug report, feature c
     overlay->GetElementsByClassName(windowList, "pop-up-window");
     if (windowList.empty()) return;
     Rml::Element* window = windowList.front();
+
     
 	Rml::Element* title = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("p"));
     title->SetInnerRML("Please give us any feedback!");
@@ -155,6 +171,10 @@ void PopUpManager::addFeedbackPopup() { //feature request, bug report, feature c
 	int feedback4 = dropdown->Add("Feature Complaint", "complaint");
 	dropdown->SetSelection(0);
 	
+	window->AppendChild(std::move(el_ptr));
+	Rml::Element* BugReportContainerText = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
+	Rml::Element* BugReportContainer = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
+
 	Rml::Element* feedback1use = dropdown->GetOption(feedback1);
 	feedback1use->SetAttribute("style", "width: 160px; height: 20px; background-color:#303030;");
 	Rml::Element* feedback2use = dropdown->GetOption(feedback2);
@@ -164,14 +184,79 @@ void PopUpManager::addFeedbackPopup() { //feature request, bug report, feature c
 	Rml::Element* feedback4use = dropdown->GetOption(feedback4);
 	feedback4use->SetAttribute("style", "width: 160px; height: 20px; background-color:#303030;");
 
-	// dropdown->AddEventListener(Rml::EventId::Change, new EventPasser(
-	//     [](Rml::Event& e) {
-	//         auto* select = dynamic_cast<Rml::ElementFormControlSelect*>(e.GetTargetElement());
-	//         if (select)
-	//             std::cout << "User selected: " << select->GetValue() << std::endl;
+	dropdown->AddEventListener(Rml::EventId::Change, new EventPasser(
+	    [BugReportContainer,window](Rml::Event& e) {
+	        auto* select = dynamic_cast<Rml::ElementFormControlSelect*>(e.GetTargetElement());
+			if (select){
+				if (select->GetValue() == "Bug Report" || select->GetValue() == "bug"){
+					set_invisible(BugReportContainer,true);
+					window->SetClass("pop-up-window-blocked", false);
+					window->SetClass("pop-up-window-blocked-bug-report", true);
+				} else {
+					set_invisible(BugReportContainer,false);
+					window->SetClass("pop-up-window-blocked", true);
+					window->SetClass("pop-up-window-blocked-bug-report", false);
+				}
+			}
+	        
+	    }
+	));
+	
+	BugReportContainerText->SetClass("bug-report-container-text", true);
+	BugReportContainerText->SetAttribute(
+	    "style",
+	    "display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 10px;"
+	);
+	
+	
+	BugReportContainer->SetClass("bug-report-container", true);
+	BugReportContainer->SetAttribute(
+	    "style",
+	    "display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 10px;"
+	);
+
+	Rml::Element* checkbox = BugReportContainer->AppendChild(mainWindow->getRmlDocument()->CreateElement("input"));
+	Rml::Element* checkbox2 = BugReportContainer->AppendChild(mainWindow->getRmlDocument()->CreateElement("input"));
+	Rml::Element* checkbox3 = BugReportContainer->AppendChild(mainWindow->getRmlDocument()->CreateElement("input"));
+	Rml::Element* checkbox4 = BugReportContainer->AppendChild(mainWindow->getRmlDocument()->CreateElement("input"));
+	Rml::Element* checkbox5 = BugReportContainer->AppendChild(mainWindow->getRmlDocument()->CreateElement("input"));
+	checkbox->SetAttribute("type","checkbox");
+	checkbox2->SetAttribute("type","checkbox");
+	checkbox3->SetAttribute("type","checkbox");
+	checkbox4->SetAttribute("type","checkbox");
+	checkbox5->SetAttribute("type","checkbox");
+	set_invisible(BugReportContainer,false);
+	
+	// Rml::Element* StepsToReproduceBugtitle = BugReportContainer->AppendChild(mainWindow->getRmlDocument()->CreateElement("p"));
+	// StepsToReproduceBugtitle->SetInnerRML("Steps to reproduce bug:");
+
+	// Rml::Element* StepsToReproduceBugtextarea = BugReportContainer->AppendChild(mainWindow->getRmlDocument()->CreateElement("textarea"));
+    // StepsToReproduceBugtextarea->SetAttribute("rows", "5");
+    // StepsToReproduceBugtextarea->SetAttribute("cols", "40");
+    // StepsToReproduceBugtextarea->SetClass("popup-textarea", true);
+	// StepsToReproduceBugtextarea->SetClass("surface-pop", true);
+	// StepsToReproduceBugtextarea->SetInnerRML("Enter Here.");
+	// StepsToReproduceBugtextarea->AddEventListener(Rml::EventId::Keydown, new EventPasser(
+	//     [ StepsToReproduceBugtextarea](Rml::Event& event) {
+	//         auto* textareaControl = dynamic_cast<Rml::ElementFormControlTextArea*>(StepsToReproduceBugtextarea);
+	// 		if (textareaControl->GetValue() != ""){
+	// 			StepsToReproduceBugtextarea->SetInnerRML("");
+	// 		} else {
+	// 			StepsToReproduceBugtextarea->SetInnerRML("Enter Here.");
+	// 		}
+			
 	//     }
 	// ));
-	window->AppendChild(std::move(el_ptr));
+	// StepsToReproduceBugtextarea->AddEventListener(Rml::EventId::Keyup, new EventPasser(
+	//     [ StepsToReproduceBugtextarea](Rml::Event& event) {
+	//         auto* textareaControl = dynamic_cast<Rml::ElementFormControlTextArea*>(StepsToReproduceBugtextarea);
+	// 		if (textareaControl->GetValue() != ""){
+	// 			StepsToReproduceBugtextarea->SetInnerRML("");
+	// 		} else {
+	// 			StepsToReproduceBugtextarea->SetInnerRML("Enter Here.");
+	// 		}
+	//     }
+	// ));
 
     Rml::Element* textarea = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("textarea"));
     textarea->SetAttribute("rows", "5");
