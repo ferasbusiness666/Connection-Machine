@@ -28,3 +28,4 @@ void ResetEvaluatorCommand::run(const std::vector<std::string>& args, Environmen
     eval->reset();
     logInfo("Reset evaluator of ID {}", "ResetEvaluatorCommand", evalID);
 }
+*/
