@@ -64,6 +64,14 @@ public:
 		xnorBlockData->setTextureTileSize({256, 256});
 		xnorBlockData->setTextureBlockTileSize({1, 1});
 		xnorBlockData->setTextureSmallestCordTile({7, 0});
+		// BUFFER
+		BlockData* bufferBlockData = getBlockData(BlockType::BUFFER);
+		bufferBlockData->setName("Buffer");
+		bufferBlockData->setTexturePath(mainTexturePath);
+		bufferBlockData->setUsesTileMapTexture(true);
+		bufferBlockData->setTextureTileSize({256, 256});
+		bufferBlockData->setTextureBlockTileSize({1, 1});
+		bufferBlockData->setTextureSmallestCordTile({0, 4});
 		// NOT
 		BlockData* notBlockData = getBlockData(BlockType::NOT);
 		notBlockData->setName("Not");

@@ -263,13 +263,13 @@ simulator_id_t LogicSimulator::addGate(const BlockType blockType) {
 		xorGates.back().resetState(evalConfig.isRealistic(), statesA);
 		xorGates.back().resetState(evalConfig.isRealistic(), statesB);
 		break;
-	case BlockType::JUNCTION:
-		simulatorId = junctions.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(junctions.back().getId());
+	case BlockType::BUFFER:
+		simulatorId = singleBuffers.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(singleBuffers.back().getId());
 		extendDataVectors(simulatorId);
-		junctions.push_back({ simulatorId });
-		updateGateLocation(simulatorId, SimGateType::JUNCTION, junctions.size() - 1);
-		junctions.back().resetState(evalConfig.isRealistic(), statesA);
-		junctions.back().resetState(evalConfig.isRealistic(), statesB);
+		singleBuffers.push_back({ simulatorId, false });
+		updateGateLocation(simulatorId, SimGateType::SINGLE_BUFFER, singleBuffers.size() - 1);
+		singleBuffers.back().resetState(evalConfig.isRealistic(), statesA);
+		singleBuffers.back().resetState(evalConfig.isRealistic(), statesB);
 		break;
 	case BlockType::NOT:
 		simulatorId = singleBuffers.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(singleBuffers.back().getId());
@@ -278,6 +278,14 @@ simulator_id_t LogicSimulator::addGate(const BlockType blockType) {
 		updateGateLocation(simulatorId, SimGateType::SINGLE_BUFFER, singleBuffers.size() - 1);
 		singleBuffers.back().resetState(evalConfig.isRealistic(), statesA);
 		singleBuffers.back().resetState(evalConfig.isRealistic(), statesB);
+		break;
+	case BlockType::JUNCTION:
+		simulatorId = junctions.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(junctions.back().getId());
+		extendDataVectors(simulatorId);
+		junctions.push_back({ simulatorId });
+		updateGateLocation(simulatorId, SimGateType::JUNCTION, junctions.size() - 1);
+		junctions.back().resetState(evalConfig.isRealistic(), statesA);
+		junctions.back().resetState(evalConfig.isRealistic(), statesB);
 		break;
 	case BlockType::TRISTATE_BUFFER:
 		simulatorId = tristateBuffers.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(tristateBuffers.back().getId());

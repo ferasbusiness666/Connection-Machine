@@ -195,6 +195,7 @@ void App::startTryingToQuit() {
 	}
 	for (auto& circuit : environment.getBackend().getCircuitManager().getCircuits()) {
 		if (environment.getCircuitFileManager().getSavePath(circuit.second->getUUID())) continue;
+		if (!circuit.second->isEditable()) continue;
 		++tasksToFinishToQuit;
 		windowIter->get()->getPopUpManager().addOptionsPopUp("Do you want to save: " + circuit.second->getCircuitName(), {
 			std::make_pair("Save", [window=windowIter->get(), uuid=circuit.second->getUUID(), this]() {
