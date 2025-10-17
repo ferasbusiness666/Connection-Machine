@@ -24,28 +24,21 @@ bool LogicToucher::press(const Event* event) {
 	} else {
 		clickPosition = lastPointerPosition;
 		const Block* block = circuit->getBlockContainer()->getBlock(clickPosition);
-		Position posOfBlock = block->getPosition();
-		Orientation rotOfBlock = block->getOrientation();
 		if (block) {
 			switch (block->type()) {
 			case BlockType::CONSTANT_OFF: {
-				circuit->tryRemoveBlock(posOfBlock);
-				circuit->tryInsertBlock(posOfBlock, rotOfBlock, BlockType::CONSTANT_ON);
+				circuit->setType(block->getPosition(), BlockType::CONSTANT_ON);
 			} break;
 			case BlockType::CONSTANT_ON: {
-				circuit->tryRemoveBlock(posOfBlock);
-				circuit->tryInsertBlock(posOfBlock, rotOfBlock, BlockType::CONSTANT_OFF);
+				circuit->setType(block->getPosition(), BlockType::CONSTANT_OFF);
 			} break;
 			case BlockType::CONSTANT_Z: {
-				circuit->tryRemoveBlock(posOfBlock);
-				circuit->tryInsertBlock(posOfBlock, rotOfBlock, BlockType::CONSTANT_OFF);
+				circuit->setType(block->getPosition(), BlockType::CONSTANT_OFF);
 			} break;
 			case BlockType::CONSTANT_X: {
-				circuit->tryRemoveBlock(posOfBlock);
-				circuit->tryInsertBlock(posOfBlock, rotOfBlock, BlockType::CONSTANT_OFF);
+				circuit->setType(block->getPosition(), BlockType::CONSTANT_OFF);
 			} break;
 			default:
-				bool stateToSet = true;
 				Address address = circuitView->getAddress();
 				address.addBlockId(clickPosition);
 				evaluator->setState(address, !evaluator->getBoolState(address));
@@ -87,10 +80,26 @@ bool LogicToucher::pointerMove(const Event* event) {
 			evaluator->setState(address, false);
 		}
 		clickPosition = lastPointerPosition;
-		if (circuit->getBlockContainer()->checkCollision(clickPosition)) {
-			Address address = circuitView->getAddress();
-			address.addBlockId(clickPosition);
-			evaluator->setState(address, !evaluator->getBoolState(address));
+		block = circuit->getBlockContainer()->getBlock(clickPosition);
+		if (block) {
+			switch (block->type()) {
+			case BlockType::CONSTANT_OFF: {
+				circuit->setType(block->getPosition(), BlockType::CONSTANT_ON);
+			} break;
+			case BlockType::CONSTANT_ON: {
+				circuit->setType(block->getPosition(), BlockType::CONSTANT_OFF);
+			} break;
+			case BlockType::CONSTANT_Z: {
+				circuit->setType(block->getPosition(), BlockType::CONSTANT_OFF);
+			} break;
+			case BlockType::CONSTANT_X: {
+				circuit->setType(block->getPosition(), BlockType::CONSTANT_OFF);
+			} break;
+			default:
+				Address address = circuitView->getAddress();
+				address.addBlockId(clickPosition);
+				evaluator->setState(address, !evaluator->getBoolState(address));
+			}
 		}
 	}
 	return false;

@@ -139,6 +139,13 @@ void Circuit::setType(const SharedSelection& selection, BlockType type) {
 	sendDifference(std::move(difference));
 }
 
+bool Circuit::setType(Position positionOfBlock, BlockType type) {
+	DifferenceSharedPtr difference = std::make_shared<Difference>();
+	bool output = blockContainer.trySetType(positionOfBlock, type, difference.get());
+	sendDifference(std::move(difference));
+	return output;
+}
+
 void Circuit::setType(const SharedSelection& selection, BlockType type, Difference* difference) {
 
 	// Cell Selection

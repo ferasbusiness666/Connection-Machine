@@ -57,6 +57,8 @@ public:
 	bool tryMoveBlocks(const SharedSelection& selection, Vector movement, Orientation transformAmount);
 	// Sets the type of blocks. Will set as many of the blocks as possible.
 	void setType(const SharedSelection& selection, BlockType type);
+	// Sets the type of a block.
+	bool setType(Position positionOfBlock, BlockType type);
 
 	void tryInsertOverArea(Position cellA, Position cellB, Orientation transformAmount, BlockType blockType);
 	void tryRemoveOverArea(Position cellA, Position cellB);
