@@ -885,7 +885,7 @@ void Evaluator::traceOutwardsIC(
 			continue;
 		}
 		Position connectionPos = connectionPosOpt.value();
-		const phmap::flat_hash_set<ConnectionEnd>* connectionEnds = (direction == Direction::IN) ?
+		const std::unordered_set<ConnectionEnd>* connectionEnds = (direction == Direction::IN) ?
 			parentCircuitBlock->getInputConnections(connectionPos) : parentCircuitBlock->getOutputConnections(connectionPos);
 		if (!connectionEnds) {
 			// logError("Connection ends not found at position {}", "Evaluator::traceOutwardsIC", connectionPos.toString());
