@@ -5,6 +5,7 @@
 #include "backend/dataUpdateEventManager.h"
 #include "backend/position/position.h"
 #include "util/bidirectionalMultiSecondKeyMap.h"
+#include "util/vec2.h"
 
 class BlockData {
 	friend class BlockDataManager;
@@ -21,6 +22,31 @@ public:
 		Vector positionOnBlock = Vector(0, 0);
 		bool isInput = true;
 		std::variant<unsigned int, std::vector<unsigned int>> bitConfiguration;
+		unsigned int getBitWidth() const noexcept {
+			if (std::holds_alternative<unsigned int>(bitConfiguration)) {
+				return std::get<unsigned int>(bitConfiguration);
+			} else {
+				return std::get<std::vector<unsigned int>>(bitConfiguration).size();
+			}
+		}
+		std::vector<unsigned int> getLaneIds() const noexcept {
+			if (std::holds_alternative<unsigned int>(bitConfiguration)) {
+				std::vector<unsigned int> vec;
+				for (unsigned int i = 0; i < std::get<unsigned int>(bitConfiguration); i++) {
+					vec.push_back(i);
+				}
+				return vec;
+			} else {
+				return std::get<std::vector<unsigned int>>(bitConfiguration);
+			}
+		}
+		unsigned int getFirstLaneId() const noexcept {
+			if (std::holds_alternative<unsigned int>(bitConfiguration)) {
+				return 0;
+			} else {
+				return std::get<std::vector<unsigned int>>(bitConfiguration).at(0);
+			}
+		}
 	};
 
 	BlockData(BlockType blockType, DataUpdateEventManager* dataUpdateEventManager);
@@ -36,6 +62,12 @@ public:
 	}
 	inline bool isPrimitive() const noexcept { return primitive; }
 
+	void setIsBus(bool bus) noexcept {
+		this->bus = bus;
+		sendBlockDataUpdate();
+	}
+	inline bool isBus() const noexcept { return bus; }
+
 	void setSize(Size size) noexcept;
 	inline Size getSize() const noexcept { return blockSize; }
 	inline Size getSize(Orientation orientation) const noexcept { return orientation * blockSize; }
@@ -49,12 +81,19 @@ public:
 	inline bool isPlaceable() const noexcept { return placeable; }
 
 	void setName(const std::string& name) noexcept;
-	inline void setPath(const std::string& path) noexcept {
-		this->path = path;
-		sendBlockDataUpdate();
-	}
 	inline const std::string& getName() const noexcept { return name; }
+	void setPath(const std::string& path) noexcept;
 	inline const std::string& getPath() const noexcept { return path; }
+	void setTexturePath(const std::string& texturePath) noexcept;
+	inline const std::string& getTexturePath() const noexcept { return texturePath; }
+	void setTextureTileSize(Vec2Int tileSize) noexcept;
+	Vec2Int getTextureTileSize() const noexcept { return textureTileSize; }
+	void setTextureSmallestCordTile(Vec2Int smallestCordTile) noexcept;
+	Vec2Int getTextureSmallestCordTile() const noexcept { return textureSmallestCordTile; }
+	void setTextureBlockTileSize(Vec2Int blockSizeInTiles) noexcept;
+	Vec2Int getTextureBlockTileSize() const noexcept { return textureBlockTileSize; }
+	void setUsesTileMapTexture(bool usesTileMapTexture) noexcept;
+	bool getUsesTileMapTexture() const noexcept { return usesTileMapTexture; }
 
 	// trys to set a connection input in the block. Returns success.
 	void removeConnection(connection_end_id_t connectionId) noexcept;
@@ -160,11 +199,7 @@ public:
 		if (defaultData) return 1;
 		auto iter = connections.find(connectionId);
 		if (iter == connections.end()) return 0;
-		if (std::holds_alternative<unsigned int>(iter->second.bitConfiguration)) {
-			return std::get<unsigned int>(iter->second.bitConfiguration);
-		} else {
-			return std::get<std::vector<unsigned int>>(iter->second.bitConfiguration).size();
-		}
+		return iter->second.getBitWidth();
 	}
 	inline const std::variant<unsigned int, std::vector<unsigned int>>* getConnectionBitConfiguration(connection_end_id_t connectionId) const noexcept {
 		if (defaultData) return nullptr;
@@ -188,8 +223,14 @@ private:
 	bool defaultData = true;
 	bool primitive = true; // true if defined by default (And, Or, Xor...)
 	bool placeable = true;
+	bool bus = false;
 	std::string name = "Unnamed Block";
 	std::string path = "Basic";
+	std::string texturePath = "";
+	bool usesTileMapTexture = false;
+	Vec2Int textureTileSize = {0, 0}; // mean that the whole texture is 1 tile.
+	Vec2Int textureSmallestCordTile = {0, 0};
+	Vec2Int textureBlockTileSize = {1, 1};
 	Size blockSize = Size(1);
 	connection_end_id_t inputConnectionCount = 0;
 	std::unordered_map<connection_end_id_t, ConnectionData> connections;

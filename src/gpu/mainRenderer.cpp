@@ -170,8 +170,40 @@ void MainRenderer::setBlockSize(BlockRenderDataId blockRenderDataId, Size size) 
 	blockRenderDataManager.setBlockSize(blockRenderDataId, size);
 }
 
-void MainRenderer::setBlockTextureIndex(BlockRenderDataId blockRenderDataId, unsigned int textureIndex) {
-	blockRenderDataManager.setBlockTextureIndex(blockRenderDataId, textureIndex);
+BlockTextureId MainRenderer::addBlockTexture(const std::string& path) {
+	return vulkanInstance.getDevice()->getBlockTextureManager().addTexture(path);
+}
+
+BlockTextureId MainRenderer::addBlockTexture(const std::filesystem::path& path) {
+	return vulkanInstance.getDevice()->getBlockTextureManager().addTexture(path.string());
+}
+
+void MainRenderer::refreshBlockTexture(const std::string& path) {
+	vulkanInstance.getDevice()->getBlockTextureManager().refreshBlockTexture(path);
+}
+
+BlockTextureId MainRenderer::addBlockTexture(const stbi_uc* pixels, int textureWidth, int textureHeight) {
+	return vulkanInstance.getDevice()->getBlockTextureManager().addTexture(pixels, textureWidth, textureHeight);
+}
+
+void MainRenderer::updateBlockTexture(const stbi_uc* pixels, BlockTextureId blockTextureId) {
+	vulkanInstance.getDevice()->getBlockTextureManager().updateBlockTexture(pixels, blockTextureId);
+}
+
+void MainRenderer::removeBlockTexture(const std::string& path) {
+	vulkanInstance.getDevice()->getBlockTextureManager().removeBlockTexture(path);
+}
+
+void MainRenderer::removeBlockTexture(BlockTextureId blockTextureId) {
+	vulkanInstance.getDevice()->getBlockTextureManager().removeBlockTexture(blockTextureId);
+}
+
+void MainRenderer::setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId) {
+	blockRenderDataManager.setBlockTexture(blockRenderDataId, blockTextureId);
+}
+
+void MainRenderer::setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize) {
+	blockRenderDataManager.setBlockTexture(blockRenderDataId, blockTextureId, tileSize, smallestCordTile, blockSize);
 }
 
 BlockPortRenderDataId MainRenderer::addBlockPort(BlockRenderDataId blockRenderDataId, bool isInput, FVector positionOnBlock) {
@@ -188,6 +220,12 @@ void MainRenderer::moveBlockPort(BlockRenderDataId blockRenderDataId, BlockPortR
 
 void MainRenderer::setBlockPortName(BlockRenderDataId blockRenderDataId, BlockPortRenderDataId blockPortRenderDataId, const std::string& newPortName) {
 	blockRenderDataManager.setBlockPortName(blockRenderDataId, blockPortRenderDataId, newPortName);
+}
+
+void MainRenderer::regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDataId) {
+	for (std::pair<const unsigned int, ViewportRenderData>& pair : viewportRenderers) {
+		pair.second.getChunker().regenerateAllChunksWithBlock(blockRenderDataId);
+	}
 }
 
 ViewportId MainRenderer::registerViewport(WindowId windowId, glm::vec2 origin, glm::vec2 size) {

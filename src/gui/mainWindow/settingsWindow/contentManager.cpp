@@ -173,8 +173,6 @@ Rml::ElementPtr ContentManager::generateItem(const std::string& key) {
 			for (char c : value) {
 				if (('0' <= c && c <= '9') || (correctValue.empty() && c == '-')) {
 					correctValue += c;
-				} else if (c == '.') {
-					break;
 				}
 			}
 			std::stringstream ss(correctValue);
@@ -201,13 +199,8 @@ Rml::ElementPtr ContentManager::generateItem(const std::string& key) {
 			Rml::String value = inputBox->GetAttribute<Rml::String>("value", "");
 			std::string correctValue;
 			for (char c : value) {
-				if (correctValue.empty() && c == '-') {
-					correctValue = "0";
-					break;
-				} else if ('0' <= c && c <= '9') {
+				if ('0' <= c && c <= '9') {
 					correctValue += c;
-				} else if (c == '.') {
-					break;
 				}
 			}
 			std::stringstream ss(correctValue);

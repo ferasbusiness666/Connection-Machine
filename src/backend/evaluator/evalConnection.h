@@ -67,4 +67,20 @@ struct EvalConnection {
 	}
 };
 
+namespace std {
+	template <>
+	struct hash<EvalConnectionPoint> {
+		size_t operator()(const EvalConnectionPoint& point) const noexcept {
+			return EvalConnectionPoint::Hash {}(point);
+		}
+	};
+
+	template <>
+	struct hash<EvalConnection> {
+		size_t operator()(const EvalConnection& connection) const noexcept {
+			return EvalConnection::Hash {}(connection);
+		}
+	};
+}; // namespace std
+
 #endif /* evalConnection_h */

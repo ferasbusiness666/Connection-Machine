@@ -55,11 +55,21 @@ public:
 	void deregisterBlockRenderData(BlockRenderDataId blockRenderDataId);
 	void setBlockName(BlockRenderDataId blockRenderDataId, const std::string& blockName);
 	void setBlockSize(BlockRenderDataId blockRenderDataId, Size size);
-	void setBlockTextureIndex(BlockRenderDataId blockRenderDataId, unsigned int textureIndex);
+	BlockTextureId addBlockTexture(const std::string& path);
+	BlockTextureId addBlockTexture(const std::filesystem::path& path);
+	void refreshBlockTexture(const std::string& path);
+	BlockTextureId addBlockTexture(const stbi_uc* pixels, int textureWidth, int textureHeight);
+	void updateBlockTexture(const stbi_uc* pixels, BlockTextureId blockTextureId);
+	void removeBlockTexture(const std::string& path);
+	void removeBlockTexture(BlockTextureId blockTextureId);
+	void setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId);
+	void setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize);
 	BlockPortRenderDataId addBlockPort(BlockRenderDataId blockRenderDataId, bool isInput, FVector positionOnBlock);
 	void removeBlockPort(BlockRenderDataId blockRenderDataId, BlockPortRenderDataId blockPortRenderDataId);
 	void moveBlockPort(BlockRenderDataId blockRenderDataId, BlockPortRenderDataId blockPortRenderDataId, FVector newPositionOnBlock);
 	void setBlockPortName(BlockRenderDataId blockRenderDataId, BlockPortRenderDataId blockPortRenderDataId, const std::string& newPortName);
+	void regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDataId);
+
 
 	// Viewports ================================================================================================================================
 	ViewportId registerViewport(WindowId windowId, glm::vec2 origin, glm::vec2 size);

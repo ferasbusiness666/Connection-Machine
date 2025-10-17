@@ -5,18 +5,18 @@
 
 class EvalSimulator {
 public:
-	EvalSimulator(EvalConfig& evalConfig, IdProvider<middle_id_t>& middleIdProvider, std::vector<simulator_id_t>& dirtySimulatorIds) :
+	EvalSimulator(EvalConfig& evalConfig, IdProvider<middle_id_t>& middleIdProvider, std::vector<simulator_id_t>& dirtySimulatorIds, BlockDataManager& blockDataManager) :
 		evalConfig(evalConfig),
 		middleIdProvider(middleIdProvider),
-		gateSubstituter(evalConfig, middleIdProvider, dirtySimulatorIds) {}
+		gateSubstituter(evalConfig, middleIdProvider, dirtySimulatorIds, blockDataManager) {}
 	inline SimPauseGuard beginEdit() {
 		return gateSubstituter.beginEdit();
 	}
 	inline void endEdit(SimPauseGuard& pauseGuard) {
 		gateSubstituter.endEdit(pauseGuard);
 	}
-	inline void addGate(SimPauseGuard& pauseGuard, const GateType gateType, const middle_id_t gateId) {
-		gateSubstituter.addGate(pauseGuard, gateType, gateId);
+	inline void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
+		gateSubstituter.addGate(pauseGuard, blockType, gateId);
 	}
 	inline void removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
 		gateSubstituter.removeGate(pauseGuard, gateId);

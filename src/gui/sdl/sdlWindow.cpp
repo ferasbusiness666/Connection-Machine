@@ -2,10 +2,10 @@
 #include "util/fastMath.h"
 #include "app.h"
 
-SdlWindow::SdlWindow(const std::string& name) {
+SdlWindow::SdlWindow(const std::string& name, unsigned int width, unsigned int height) {
 	logInfo("Creating SDL window...");
 
-	handle = SDL_CreateWindow(name.c_str(), 800, 600, SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN | SDL_WINDOW_HIGH_PIXEL_DENSITY);
+	handle = SDL_CreateWindow(name.c_str(), width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN | SDL_WINDOW_HIGH_PIXEL_DENSITY);
 	if (!handle)
 	{
 		throwFatalError("SDL could not create window! SDL_Error: " + std::string(SDL_GetError()));
