@@ -23,7 +23,7 @@ public:
 		IdProvider<middle_id_t>& middleIdProvider,
 		std::vector<simulator_id_t>& dirtySimulatorIds,
 		BlockDataManager& blockDataManager) :
-		busInterfacePassthrough(evalConfig, middleIdProvider, dirtySimulatorIds),
+		busInterfacePassthrough(evalConfig, middleIdProvider, dirtySimulatorIds, blockDataManager),
 		evalConfig(evalConfig),
 		middleIdProvider(middleIdProvider),
 		blockDataManager(blockDataManager) {}

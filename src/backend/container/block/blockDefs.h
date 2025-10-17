@@ -23,7 +23,9 @@ enum BlockType : std::uint16_t {
 	SWITCH,
 	CONSTANT,
 	LIGHT,
-	BUS_INTERFACE,
+	BUS_INTERFACE_1,
+	BUS_INTERFACE_2,
+	BUS_INTERFACE_3,
 	CUSTOM, // placeholder for custom blocks in parsed circuit
 };
 
