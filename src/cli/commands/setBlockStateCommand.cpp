@@ -1,22 +1,26 @@
-#include "setEvaluatorStateCommand.h"
+#include "setBlockStateCommand.h"
 
 #include "environment/environment.h"
 #include "../commandManager.h"
 #include "util/runAtStartup.h"
 
-runAtStartup(CommandManager::get().registerCommand(std::make_unique<SetEvaluatorStateCommand>());)
+runAtStartup(CommandManager::get().registerCommand(std::make_unique<SetBlockStateCommand>());)
 
-void SetEvaluatorStateCommand::run(const std::vector<std::string>& args, Environment& environment) {
-	if (args.size() != 3) {
-		logError("Wrong number of arguments passed to set_evaluator_state. Proper usage is 'set_evaluator_state {eval_id} {state}'", "SetEvaluatorStateCommand");
+void SetBlockStateCommand::run(const std::vector<std::string>& args, Environment& environment) {
+	if (args.size() != 5) {
+		logError("Wrong number of arguments passed to set_evaluator_state. Proper usage is 'set_evaluator_state {eval_id} {state} {x_pos} {y_pos}'", "SetEvaluatorStateCommand");
 		return;
 	}
 
     int evalID;
     int state;
+    int xPos;
+    int yPos;
     try {
         evalID = std::stoi(args[1]);
         state = std::stoi(args[2]);
+        xPos = std::stoi(args[3]);
+        yPos = std::stoi(args[4]);
     }
     catch (...) {
         logError("Exception occured. Check your arguments, they should be reasonably-sized integers.", "SetEvaluatorStateCommand");
@@ -31,5 +35,5 @@ void SetEvaluatorStateCommand::run(const std::vector<std::string>& args, Environ
         logError("Unrecognized evaluator ID. Available evaluators can be found with the 'list_evaluators' command.", "SetEvaluatorStateCommand");
         return;
     }
-    eval->setState(Address(), (logic_state_t)state);
+    eval->setState(Address(Position(xPos, yPos)), (logic_state_t)state);
 }
