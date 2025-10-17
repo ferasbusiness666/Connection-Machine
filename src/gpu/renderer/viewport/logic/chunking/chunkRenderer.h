@@ -8,8 +8,6 @@
 
 struct ChunkPushConstants {
 	glm::mat4 mvp;
-	float uvCellSizeX;
-	float uvCellSizeY;
 };
 
 class ChunkRenderer {

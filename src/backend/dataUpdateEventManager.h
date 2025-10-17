@@ -33,6 +33,7 @@ public:
 		~DataUpdateEventReceiver();
 
 		void linkFunction(const std::string& eventName, std::function<void(const EventData*)> function) { functions[eventName] = function; }
+		void clearAllLinks() { functions.clear(); }
 
 	private:
 		std::map<std::string, std::function<void(const EventData*)>> functions;
@@ -61,7 +62,6 @@ public:
 
 private:
 	std::set<DataUpdateEventReceiver*> dataUpdateEventReceivers;
-
 };
 
 template <class V>

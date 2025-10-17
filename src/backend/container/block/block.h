@@ -25,11 +25,11 @@ public:
 	inline bool withinBlock(Position position) const { return position.withinArea(getPosition(), getLargestPosition()); }
 
 	inline const ConnectionContainer& getConnectionContainer() const { return connections; }
-	inline const phmap::flat_hash_set<ConnectionEnd>* getInputConnections(Position position) const {
+	inline const std::unordered_set<ConnectionEnd>* getInputConnections(Position position) const {
 		std::optional<connection_end_id_t> connectionId = getInputConnectionId(position);
 		return connectionId ? getConnectionContainer().getConnections(connectionId.value()) : nullptr;
 	}
-	inline const phmap::flat_hash_set<ConnectionEnd>* getOutputConnections(Position position) const {
+	inline const std::unordered_set<ConnectionEnd>* getOutputConnections(Position position) const {
 		std::optional<connection_end_id_t> connectionId = getOutputConnectionId(position);
 		return connectionId ? getConnectionContainer().getConnections(connectionId.value()) : nullptr;
 	}

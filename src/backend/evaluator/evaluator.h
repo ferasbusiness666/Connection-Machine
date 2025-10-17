@@ -4,7 +4,6 @@
 #include "backend/circuit/circuit.h"
 #include "backend/circuit/circuitManager.h"
 #include "backend/container/difference.h"
-#include "backend/dataUpdateEventManager.h"
 
 #include "backend/address.h"
 #include "logicState.h"
@@ -217,7 +216,6 @@ private:
 		}
 	}
 
-private:
 	void processDirtyNodes();
 	void dirtyBlockAt(Position position, eval_circuit_id_t evalCircuitId);
 

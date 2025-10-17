@@ -18,8 +18,10 @@ public:
 	~App();
 
 	std::shared_ptr<SdlWindow> registerWindow(const std::string& windowName);
+	std::shared_ptr<SdlWindow> registerWindow(const std::string& windowName, unsigned int width, unsigned int height);
 	void deregisterWindow(std::shared_ptr<SdlWindow>& sdlWindow);
 	void deregisterWindow(const SdlWindow* sdlWindow);
+	void queForEndOfUpdate(std::function<void()> function) { functionsToRunAtEndOfUpdate.push_back(function); }
 
 	void newMainWindow();
 	bool closeMainWindow(const MainWindow* mainWindow);
@@ -42,6 +44,7 @@ private:
 	std::vector<const MainWindow*> windowsToDestroy;
 	std::vector<MainWindow*> newlyCreatedWindowsNext;
 	std::vector<MainWindow*> newlyCreatedWindows;
+	std::vector<std::function<void()>> functionsToRunAtEndOfUpdate;
 	bool running = false;
 	bool tryingToQuit = false;
 	unsigned int tasksToFinishToQuit = 0;

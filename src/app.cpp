@@ -31,6 +31,7 @@ App::~App() {
 }
 
 std::shared_ptr<SdlWindow> App::registerWindow(const std::string& windowName) { return sdlWindows.emplace_back(std::make_shared<SdlWindow>(windowName)); }
+std::shared_ptr<SdlWindow> App::registerWindow(const std::string& windowName, unsigned int width, unsigned int height) { return sdlWindows.emplace_back(std::make_shared<SdlWindow>(windowName, width, height)); }
 
 void App::deregisterWindow(std::shared_ptr<SdlWindow>& sdlWindow) {
 	auto iter = std::find(sdlWindows.begin(), sdlWindows.end(), sdlWindow);
@@ -136,6 +137,12 @@ void App::runLoop() {
 		}
 		newlyCreatedWindows = std::move(newlyCreatedWindowsNext);
 		newlyCreatedWindowsNext.clear();
+
+		for (const std::function<void()>& function : functionsToRunAtEndOfUpdate) {
+			function();
+		}
+		functionsToRunAtEndOfUpdate.clear();
+
 #ifdef TRACY_PROFILER
 		FrameMarkEnd(addLoopTracyName);
 #endif
@@ -188,6 +195,7 @@ void App::startTryingToQuit() {
 	}
 	for (auto& circuit : environment.getBackend().getCircuitManager().getCircuits()) {
 		if (environment.getCircuitFileManager().getSavePath(circuit.second->getUUID())) continue;
+		if (!circuit.second->isEditable()) continue;
 		++tasksToFinishToQuit;
 		windowIter->get()->getPopUpManager().addOptionsPopUp("Do you want to save: " + circuit.second->getCircuitName(), {
 			std::make_pair("Save", [window=windowIter->get(), uuid=circuit.second->getUUID(), this]() {

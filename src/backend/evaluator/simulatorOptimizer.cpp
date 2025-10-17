@@ -1,7 +1,7 @@
 #include "simulatorOptimizer.h"
 
-void SimulatorOptimizer::addGate(SimPauseGuard& pauseGuard, const GateType gateType, const middle_id_t gateId) {
-	simulator_id_t simulatorId = simulator.addGate(gateType);
+void SimulatorOptimizer::addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
+	simulator_id_t simulatorId = simulator.addGate(blockType);
 
 	// if simulatorIds is too short, extend it
 	if (simulatorIds.size() <= simulatorId) {
@@ -20,10 +20,10 @@ void SimulatorOptimizer::addGate(SimPauseGuard& pauseGuard, const GateType gateT
 	if (outputConnections.size() <= gateId) {
 		outputConnections.resize(gateId + 1);
 	}
-	if (gateTypes.size() <= gateId) {
-		gateTypes.resize(gateId + 1, GateType::NONE);
+	if (blockTypes.size() <= gateId) {
+		blockTypes.resize(gateId + 1, BlockType::NONE);
 	}
-	gateTypes[gateId] = gateType;
+	blockTypes[gateId] = blockType;
 }
 
 void SimulatorOptimizer::removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
@@ -64,7 +64,7 @@ void SimulatorOptimizer::removeGate(SimPauseGuard& pauseGuard, const middle_id_t
 		outputConnections.at(gateId).clear();
 	}
 
-	gateTypes[gateId] = GateType::NONE;
+	blockTypes[gateId] = BlockType::NONE;
 }
 
 void SimulatorOptimizer::makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {

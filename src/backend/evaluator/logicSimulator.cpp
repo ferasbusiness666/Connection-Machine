@@ -1,5 +1,4 @@
 #include "logicSimulator.h"
-#include "gateType.h"
 #include "util/fastMath.h"
 
 LogicSimulator::LogicSimulator(
@@ -21,6 +20,7 @@ LogicSimulator::LogicSimulator(
 
 	simulationThread = std::thread(&LogicSimulator::simulationLoop, this);
 	extendDataVectors(simulatorIdProvider.getNewId()); // reserve the 0th id to be used as an invalid id
+	setState(0, logic_state_t::LOW);
 }
 
 LogicSimulator::~LogicSimulator() {
@@ -211,11 +211,11 @@ std::vector<logic_state_t> LogicSimulator::getStates(const std::vector<simulator
 	return result;
 }
 
-simulator_id_t LogicSimulator::addGate(const GateType gateType) {
+simulator_id_t LogicSimulator::addGate(const BlockType blockType) {
 	simulator_id_t simulatorId;
 
-	switch (gateType) {
-	case GateType::AND:
+	switch (blockType) {
+	case BlockType::AND:
 		simulatorId = andGates.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(andGates.back().getId());
 		extendDataVectors(simulatorId);
 		andGates.push_back({ simulatorId, false, false });
@@ -223,7 +223,7 @@ simulator_id_t LogicSimulator::addGate(const GateType gateType) {
 		andGates.back().resetState(evalConfig.isRealistic(), statesA);
 		andGates.back().resetState(evalConfig.isRealistic(), statesB);
 		break;
-	case GateType::OR:
+	case BlockType::OR:
 		simulatorId = andGates.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(andGates.back().getId());
 		extendDataVectors(simulatorId);
 		andGates.push_back({ simulatorId, true, true });
@@ -231,7 +231,7 @@ simulator_id_t LogicSimulator::addGate(const GateType gateType) {
 		andGates.back().resetState(evalConfig.isRealistic(), statesA);
 		andGates.back().resetState(evalConfig.isRealistic(), statesB);
 		break;
-	case GateType::NAND:
+	case BlockType::NAND:
 		simulatorId = andGates.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(andGates.back().getId());
 		extendDataVectors(simulatorId);
 		andGates.push_back({ simulatorId, false, true });
@@ -239,7 +239,7 @@ simulator_id_t LogicSimulator::addGate(const GateType gateType) {
 		andGates.back().resetState(evalConfig.isRealistic(), statesA);
 		andGates.back().resetState(evalConfig.isRealistic(), statesB);
 		break;
-	case GateType::NOR:
+	case BlockType::NOR:
 		simulatorId = andGates.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(andGates.back().getId());
 		extendDataVectors(simulatorId);
 		andGates.push_back({ simulatorId, true, false });
@@ -247,7 +247,7 @@ simulator_id_t LogicSimulator::addGate(const GateType gateType) {
 		andGates.back().resetState(evalConfig.isRealistic(), statesA);
 		andGates.back().resetState(evalConfig.isRealistic(), statesB);
 		break;
-	case GateType::XOR:
+	case BlockType::XOR:
 		simulatorId = xorGates.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(xorGates.back().getId());
 		extendDataVectors(simulatorId);
 		xorGates.push_back({ simulatorId, false });
@@ -255,7 +255,7 @@ simulator_id_t LogicSimulator::addGate(const GateType gateType) {
 		xorGates.back().resetState(evalConfig.isRealistic(), statesA);
 		xorGates.back().resetState(evalConfig.isRealistic(), statesB);
 		break;
-	case GateType::XNOR:
+	case BlockType::XNOR:
 		simulatorId = xorGates.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(xorGates.back().getId());
 		extendDataVectors(simulatorId);
 		xorGates.push_back({ simulatorId, true });
@@ -263,55 +263,7 @@ simulator_id_t LogicSimulator::addGate(const GateType gateType) {
 		xorGates.back().resetState(evalConfig.isRealistic(), statesA);
 		xorGates.back().resetState(evalConfig.isRealistic(), statesB);
 		break;
-	case GateType::JUNCTION:
-		simulatorId = junctions.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(junctions.back().getId());
-		extendDataVectors(simulatorId);
-		junctions.push_back({ simulatorId });
-		updateGateLocation(simulatorId, SimGateType::JUNCTION, junctions.size() - 1);
-		junctions.back().resetState(evalConfig.isRealistic(), statesA);
-		junctions.back().resetState(evalConfig.isRealistic(), statesB);
-		break;
-	case GateType::TRISTATE_BUFFER:
-		simulatorId = tristateBuffers.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(tristateBuffers.back().getId());
-		extendDataVectors(simulatorId);
-		tristateBuffers.push_back({ simulatorId, false });
-		updateGateLocation(simulatorId, SimGateType::TRISTATE_BUFFER, tristateBuffers.size() - 1);
-		tristateBuffers.back().resetState(evalConfig.isRealistic(), statesA);
-		tristateBuffers.back().resetState(evalConfig.isRealistic(), statesB);
-		break;
-	case GateType::TRISTATE_BUFFER_INVERTED:
-		simulatorId = tristateBuffers.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(tristateBuffers.back().getId());
-		extendDataVectors(simulatorId);
-		tristateBuffers.push_back({ simulatorId, true });
-		updateGateLocation(simulatorId, SimGateType::TRISTATE_BUFFER, tristateBuffers.size() - 1);
-		tristateBuffers.back().resetState(evalConfig.isRealistic(), statesA);
-		tristateBuffers.back().resetState(evalConfig.isRealistic(), statesB);
-		break;
-	case GateType::CONSTANT_OFF:
-		simulatorId = constantGates.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(constantGates.back().getId());
-		extendDataVectors(simulatorId);
-		constantGates.push_back({ simulatorId, logic_state_t::LOW });
-		updateGateLocation(simulatorId, SimGateType::CONSTANT, constantGates.size() - 1);
-		constantGates.back().resetState(evalConfig.isRealistic(), statesA);
-		constantGates.back().resetState(evalConfig.isRealistic(), statesB);
-		break;
-	case GateType::CONSTANT_ON:
-		simulatorId = constantGates.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(constantGates.back().getId());
-		extendDataVectors(simulatorId);
-		constantGates.push_back({ simulatorId, logic_state_t::HIGH });
-		updateGateLocation(simulatorId, SimGateType::CONSTANT, constantGates.size() - 1);
-		constantGates.back().resetState(evalConfig.isRealistic(), statesA);
-		constantGates.back().resetState(evalConfig.isRealistic(), statesB);
-		break;
-	case GateType::DUMMY_INPUT:
-		simulatorId = copySelfOutputGates.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(copySelfOutputGates.back().getId());
-		extendDataVectors(simulatorId);
-		copySelfOutputGates.push_back({ simulatorId });
-		updateGateLocation(simulatorId, SimGateType::COPY_SELF_OUTPUT, copySelfOutputGates.size() - 1);
-		copySelfOutputGates.back().resetState(evalConfig.isRealistic(), statesA);
-		copySelfOutputGates.back().resetState(evalConfig.isRealistic(), statesB);
-		break;
-	case GateType::THROUGH:
+	case BlockType::BUFFER:
 		simulatorId = singleBuffers.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(singleBuffers.back().getId());
 		extendDataVectors(simulatorId);
 		singleBuffers.push_back({ simulatorId, false });
@@ -319,7 +271,87 @@ simulator_id_t LogicSimulator::addGate(const GateType gateType) {
 		singleBuffers.back().resetState(evalConfig.isRealistic(), statesA);
 		singleBuffers.back().resetState(evalConfig.isRealistic(), statesB);
 		break;
-	case GateType::TICK_INPUT:
+	case BlockType::NOT:
+		simulatorId = singleBuffers.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(singleBuffers.back().getId());
+		extendDataVectors(simulatorId);
+		singleBuffers.push_back({ simulatorId, true });
+		updateGateLocation(simulatorId, SimGateType::SINGLE_BUFFER, singleBuffers.size() - 1);
+		singleBuffers.back().resetState(evalConfig.isRealistic(), statesA);
+		singleBuffers.back().resetState(evalConfig.isRealistic(), statesB);
+		break;
+	case BlockType::JUNCTION:
+		simulatorId = junctions.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(junctions.back().getId());
+		extendDataVectors(simulatorId);
+		junctions.push_back({ simulatorId });
+		updateGateLocation(simulatorId, SimGateType::JUNCTION, junctions.size() - 1);
+		junctions.back().resetState(evalConfig.isRealistic(), statesA);
+		junctions.back().resetState(evalConfig.isRealistic(), statesB);
+		break;
+	case BlockType::TRISTATE_BUFFER:
+		simulatorId = tristateBuffers.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(tristateBuffers.back().getId());
+		extendDataVectors(simulatorId);
+		tristateBuffers.push_back({ simulatorId, false });
+		updateGateLocation(simulatorId, SimGateType::TRISTATE_BUFFER, tristateBuffers.size() - 1);
+		tristateBuffers.back().resetState(evalConfig.isRealistic(), statesA);
+		tristateBuffers.back().resetState(evalConfig.isRealistic(), statesB);
+		break;
+	// case GateType::TRISTATE_BUFFER_INVERTED:
+	// 	simulatorId = tristateBuffers.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(tristateBuffers.back().getId());
+	// 	extendDataVectors(simulatorId);
+	// 	tristateBuffers.push_back({ simulatorId, true });
+	// 	updateGateLocation(simulatorId, SimGateType::TRISTATE_BUFFER, tristateBuffers.size() - 1);
+	// 	tristateBuffers.back().resetState(evalConfig.isRealistic(), statesA);
+	// 	tristateBuffers.back().resetState(evalConfig.isRealistic(), statesB);
+	// 	break;
+	// case GateType::CONSTANT_OFF:
+	// 	simulatorId = constantGates.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(constantGates.back().getId());
+	// 	extendDataVectors(simulatorId);
+	// 	constantGates.push_back({ simulatorId, logic_state_t::LOW });
+	// 	updateGateLocation(simulatorId, SimGateType::CONSTANT, constantGates.size() - 1);
+	// 	constantGates.back().resetState(evalConfig.isRealistic(), statesA);
+	// 	constantGates.back().resetState(evalConfig.isRealistic(), statesB);
+	// 	break;
+	// case GateType::CONSTANT_ON:
+	// 	simulatorId = constantGates.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(constantGates.back().getId());
+	// 	extendDataVectors(simulatorId);
+	// 	constantGates.push_back({ simulatorId, logic_state_t::HIGH });
+	// 	updateGateLocation(simulatorId, SimGateType::CONSTANT, constantGates.size() - 1);
+	// 	constantGates.back().resetState(evalConfig.isRealistic(), statesA);
+	// 	constantGates.back().resetState(evalConfig.isRealistic(), statesB);
+	// 	break;
+	case BlockType::CONSTANT:
+		simulatorId = constantGates.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(constantGates.back().getId());
+		extendDataVectors(simulatorId);
+		constantGates.push_back({ simulatorId, logic_state_t::HIGH });
+		updateGateLocation(simulatorId, SimGateType::CONSTANT, constantGates.size() - 1);
+		constantGates.back().resetState(evalConfig.isRealistic(), statesA);
+		constantGates.back().resetState(evalConfig.isRealistic(), statesB);
+		break;
+	case BlockType::SWITCH:
+		simulatorId = copySelfOutputGates.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(copySelfOutputGates.back().getId());
+		extendDataVectors(simulatorId);
+		copySelfOutputGates.push_back({ simulatorId });
+		updateGateLocation(simulatorId, SimGateType::COPY_SELF_OUTPUT, copySelfOutputGates.size() - 1);
+		copySelfOutputGates.back().resetState(evalConfig.isRealistic(), statesA);
+		copySelfOutputGates.back().resetState(evalConfig.isRealistic(), statesB);
+		break;
+	case BlockType::BUTTON:
+		simulatorId = copySelfOutputGates.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(copySelfOutputGates.back().getId());
+		extendDataVectors(simulatorId);
+		copySelfOutputGates.push_back({ simulatorId });
+		updateGateLocation(simulatorId, SimGateType::COPY_SELF_OUTPUT, copySelfOutputGates.size() - 1);
+		copySelfOutputGates.back().resetState(evalConfig.isRealistic(), statesA);
+		copySelfOutputGates.back().resetState(evalConfig.isRealistic(), statesB);
+		break;
+	// case GateType::THROUGH:
+	// 	simulatorId = singleBuffers.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(singleBuffers.back().getId());
+	// 	extendDataVectors(simulatorId);
+	// 	singleBuffers.push_back({ simulatorId, false });
+	// 	updateGateLocation(simulatorId, SimGateType::SINGLE_BUFFER, singleBuffers.size() - 1);
+	// 	singleBuffers.back().resetState(evalConfig.isRealistic(), statesA);
+	// 	singleBuffers.back().resetState(evalConfig.isRealistic(), statesB);
+	// 	break;
+	case BlockType::TICK_BUTTON:
 		simulatorId = constantResetGates.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(constantResetGates.back().getId());
 		extendDataVectors(simulatorId);
 		constantResetGates.push_back({ simulatorId, logic_state_t::LOW });
@@ -327,11 +359,11 @@ simulator_id_t LogicSimulator::addGate(const GateType gateType) {
 		constantResetGates.back().resetState(evalConfig.isRealistic(), statesA);
 		constantResetGates.back().resetState(evalConfig.isRealistic(), statesB);
 		break;
-	case GateType::NONE:
-		logError("Cannot add gate of type NONE", "LogicSimulator::addGate");
-		return 0;
+	// case BlockType::NONE:
+	// 	logError("Cannot add gate of type NONE", "LogicSimulator::addGate");
+	// 	return 0;
 	default:
-		logError("Cannot add gate of type {}", "LogicSimulator::addGate", (unsigned int)gateType);
+		logError("Cannot add gate of type {}", "LogicSimulator::addGate", (unsigned int)blockType);
 		return 0;
 	}
 	return simulatorId;
@@ -714,6 +746,10 @@ void LogicSimulator::regenerateJobs() {
 		JobInstruction* ji = makeJI(i, std::min(i + batch, tristateBuffers.size()));
 		allJobs.push_back(ThreadPool::Job{ isRealistic ? &LogicSimulator::execTristateRealistic : &LogicSimulator::execTristate, ji });
 	}
+	for (size_t i = 0; i < singleBuffers.size(); i += batch) {
+		JobInstruction* ji = makeJI(i, std::min(i + batch, singleBuffers.size()));
+		allJobs.push_back(ThreadPool::Job{ isRealistic ? &LogicSimulator::execSingleBufferRealistic : &LogicSimulator::execSingleBuffer, ji });
+	}
 	for (size_t i = 0; i < constantResetGates.size(); i += batch) {
 		JobInstruction* ji = makeJI(i, std::min(i + batch, constantResetGates.size()));
 		allJobs.push_back(ThreadPool::Job{ &LogicSimulator::execConstantReset, ji });
@@ -759,6 +795,14 @@ void LogicSimulator::execTristate(void* jobInstruction) {
 void LogicSimulator::execTristateRealistic(void* jobInstruction) {
 	auto* ji = static_cast<JobInstruction*>(jobInstruction);
 	for (size_t i = ji->start; i < ji->end; ++i) ji->self->tristateBuffers[i].realisticTick(ji->self->statesA, ji->self->statesB);
+}
+void LogicSimulator::execSingleBuffer(void* jobInstruction) {
+	auto* ji = static_cast<JobInstruction*>(jobInstruction);
+	for (size_t i = ji->start; i < ji->end; ++i) ji->self->singleBuffers[i].tick(ji->self->statesA, ji->self->statesB);
+}
+void LogicSimulator::execSingleBufferRealistic(void* jobInstruction) {
+	auto* ji = static_cast<JobInstruction*>(jobInstruction);
+	for (size_t i = ji->start; i < ji->end; ++i) ji->self->singleBuffers[i].realisticTick(ji->self->statesA, ji->self->statesB);
 }
 void LogicSimulator::execConstantReset(void* jobInstruction) {
 	auto* ji = static_cast<JobInstruction*>(jobInstruction);
