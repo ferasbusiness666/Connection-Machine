@@ -76,22 +76,13 @@ public:
 		std::vector<SimulatorStateAndPinSimId> result;
 		result.reserve(replacedPoints.size());
 		for (const EvalConnectionPoint& point : replacedPoints) {
-			if (connectionPointBusOverride.contains(point)) {
-				std::vector<EvalConnectionPoint> override = getReplacementConnectionPoints(connectionPointBusOverride.at(point));
-				SimulatorStateAndPinSimId simIds = {
-					busInterfacePassthrough.getBlockSimulatorIds(override),
-					busInterfacePassthrough.getPinSimulatorIds(override)
-				};
-				result.push_back(simIds);
-			} else {
-				SimulatorStateAndPinSimId simIds = {
-					static_cast<simulator_id_t>(0),
-					static_cast<simulator_id_t>(0)
-				};
-				simIds.portSimIds = busInterfacePassthrough.getBlockSimulatorId(point);
-				simIds.pinSimIds = busInterfacePassthrough.getPinSimulatorId(point);
-				result.push_back(simIds);
-			}
+			SimulatorStateAndPinSimId simIds = {
+				static_cast<simulator_id_t>(0),
+				static_cast<simulator_id_t>(0)
+			};
+			simIds.portSimIds = busInterfacePassthrough.getBlockSimulatorId(point);
+			simIds.pinSimIds = busInterfacePassthrough.getPinSimulatorId(point);
+			result.push_back(simIds);
 		}
 		return result;
 	}
@@ -105,14 +96,8 @@ public:
 				result.emplace_back(static_cast<simulator_id_t>(0));
 				continue;
 			}
-			if (connectionPointBusOverride.contains(point.value())) {
-				std::vector<EvalConnectionPoint> override = getReplacementConnectionPoints(connectionPointBusOverride.at(point.value()));
-				std::vector<simulator_id_t> simIds = busInterfacePassthrough.getBlockSimulatorIds(override);
-				result.emplace_back(simIds);
-			} else {
-				simulator_id_t simId = busInterfacePassthrough.getBlockSimulatorId(*point);
-				result.emplace_back(simId);
-			}
+			simulator_id_t simId = busInterfacePassthrough.getBlockSimulatorId(*point);
+			result.emplace_back(simId);
 		}
 		return result;
 	}
@@ -127,14 +112,8 @@ public:
 				result.emplace_back(static_cast<simulator_id_t>(0));
 				continue;
 			}
-			if (connectionPointBusOverride.contains(point.value())) {
-				std::vector<EvalConnectionPoint> override = getReplacementConnectionPoints(connectionPointBusOverride.at(point.value()));
-				std::vector<simulator_id_t> simIds = busInterfacePassthrough.getPinSimulatorIds(override);
-				result.emplace_back(simIds);
-			} else {
-				simulator_id_t simId = busInterfacePassthrough.getPinSimulatorId(*point);
-				result.emplace_back(simId);
-			}
+			simulator_id_t simId = busInterfacePassthrough.getPinSimulatorId(*point);
+			result.emplace_back(simId);
 		}
 		return result;
 	}
@@ -189,45 +168,6 @@ private:
 		std::vector<EvalConnection> connectionsOutOfBuses;
 	};
 
-	std::unordered_map<middle_id_t, std::vector<EvalConnectionPoint>> connectionPointBusOverrideLookup;
-	std::unordered_map<EvalConnectionPoint, std::vector<EvalConnectionPoint>> connectionPointBusOverride;
-	void addConnectionPointBusOverride(EvalConnectionPoint original, std::vector<EvalConnectionPoint> replacement) {
-		connectionPointBusOverride[original] = replacement;
-		if (!connectionPointBusOverrideLookup.contains(original.gateId)) {
-			connectionPointBusOverrideLookup[original.gateId] = {};
-		}
-		connectionPointBusOverrideLookup[original.gateId].push_back(original);
-	}
-	void addConnectionPointBusOverride(middle_id_t gateId, EvalConnectionPoint originalConnectionPoint, EvalConnectionPoint newConnectionPoint, Replacement& replacement) {
-		addConnectionPointBusOverride(originalConnectionPoint, { newConnectionPoint });
-		replacement.addRevertAction([this, originalConnectionPoint](SimPauseGuard& pauseGuard) {
-			this->removeConnectionPointBusOverride(originalConnectionPoint);
-		});
-	}
-	void removeConnectionPointBusOverride(middle_id_t gateId) {
-		if (!connectionPointBusOverrideLookup.contains(gateId)) {
-			return;
-		}
-		for (const EvalConnectionPoint& point : connectionPointBusOverrideLookup[gateId]) {
-			connectionPointBusOverride.erase(point);
-		}
-		connectionPointBusOverrideLookup.erase(gateId);
-	}
-	void removeConnectionPointBusOverride(EvalConnectionPoint point) {
-		if (!connectionPointBusOverride.contains(point)) {
-			return;
-		}
-		connectionPointBusOverride.erase(point);
-		if (!connectionPointBusOverrideLookup.contains(point.gateId)) {
-			return;
-		}
-		auto& vec = connectionPointBusOverrideLookup[point.gateId];
-		vec.erase(std::remove(vec.begin(), vec.end(), point), vec.end());
-		if (vec.size() == 0) {
-			connectionPointBusOverrideLookup.erase(point.gateId);
-		}
-	}
-
 	Replacement& makeReplacement(int layer);
 	void cleanReplacements();
 	void pingOutputs(SimPauseGuard& pauseGuard, middle_id_t id);
@@ -235,6 +175,45 @@ private:
 	EvalConnectionPoint getReplacementConnectionPoint(EvalConnectionPoint point) const;
 	std::vector<EvalConnectionPoint> getReplacementConnectionPoints(const std::vector<EvalConnectionPoint>& points) const;
 	std::vector<std::optional<EvalConnectionPoint>> getReplacementConnectionPoints(const std::vector<std::optional<EvalConnectionPoint>>& points) const;
+	struct BusInternalJunctionArray {
+		std::vector<middle_id_t> junctionIds {};
+		int numDefined {0};
+	};
+	std::unordered_map<middle_id_t, BusInternalJunctionArray> busInternalJunctions;
+	std::optional<middle_id_t> getJunctionInsideBus(middle_id_t busId, unsigned int laneId) {
+		if (!busInternalJunctions.contains(busId)) {
+			return std::nullopt;
+		}
+		const BusInternalJunctionArray& busInternalJunctionArray = busInternalJunctions.at(busId);
+		if (busInternalJunctionArray.junctionIds.size() <= laneId) {
+			return std::nullopt;
+		}
+		middle_id_t junctionId = busInternalJunctionArray.junctionIds[laneId];
+		if (junctionId == 0) {
+			return std::nullopt;
+		}
+		return junctionId;
+	};
+	void defineJunctionInsideBus(middle_id_t busId, unsigned int laneId, middle_id_t junctionId) {
+		BusInternalJunctionArray& busInternalJunctionArray = busInternalJunctions[busId];
+		assert(
+			busInternalJunctionArray.junctionIds.size() <= laneId ||
+			busInternalJunctionArray.junctionIds[laneId] == 0
+		);
+		busInternalJunctionArray.junctionIds[laneId] = junctionId;
+		busInternalJunctionArray.numDefined += 1;
+	};
+	void undefineJunctionInsideBus(middle_id_t busId, unsigned int laneId) {
+		BusInternalJunctionArray& busInternalJunctionArray = busInternalJunctions.at(busId);
+		assert(busInternalJunctionArray.junctionIds[laneId] != 0);
+		assert(busInternalJunctionArray.numDefined > 0);
+		busInternalJunctionArray.numDefined -= 1;
+		if (busInternalJunctionArray.numDefined == 0) {
+			busInternalJunctions.erase(busId);
+			return;
+		}
+		busInternalJunctionArray.junctionIds[laneId] = 0;
+	}
 	void mergeBuses(SimPauseGuard& pauseGuard, int layer);
 	void mergeJunctions(SimPauseGuard& pauseGuard, int layer);
 	JunctionFloodFillResult junctionFloodFill(middle_id_t junctionId);
