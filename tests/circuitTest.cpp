@@ -33,6 +33,11 @@ TEST_F(CircuitTest, BlockContainerBasicOperations) {
 		circuit->undo();
 		block = container->getBlock(pos);
 		ASSERT_TRUE(block == nullptr);
+
+		// Test redo
+		circuit->redo();
+		block = container->getBlock(pos);
+		ASSERT_FALSE(block == nullptr);
 	}
 }
 
@@ -59,6 +64,11 @@ TEST_F(CircuitTest, BlockPlacementCollision) {
 
 		// Test undo nothing
 		circuit->undo();
+		block = circuit->getBlockContainer()->getBlock(pos);
+		ASSERT_TRUE(block == nullptr);
+
+		// Test redo nothing
+		circuit->redo();
 		block = circuit->getBlockContainer()->getBlock(pos);
 		ASSERT_TRUE(block == nullptr);
 	}
@@ -105,6 +115,17 @@ TEST_F(CircuitTest, ConnectionCreation) {
 		const Block* block2 = container->getBlock(pos2);
 		ASSERT_TRUE(block1 == nullptr);
 		ASSERT_TRUE(block2 == nullptr);
+
+		// Test redo nothing
+		circuit->redo();
+		circuit->redo();
+		block1 = circuit->getBlockContainer()->getBlock(pos1);
+		block2 = circuit->getBlockContainer()->getBlock(pos2);
+		ASSERT_FALSE(block1 == nullptr);
+		ASSERT_FALSE(block2 == nullptr);
+		circuit->redo();
+		bool redoneConnection = container->connectionExists(pos1, pos2);
+		ASSERT_TRUE(redoneConnection);
 	}
 }
 
