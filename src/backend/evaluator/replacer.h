@@ -67,25 +67,27 @@ public:
 	}
 
 	inline std::vector<simulator_id_t> getBlockSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
-		std::vector<std::optional<EvalConnectionPoint>> replacedPoints = getReplacementConnectionPoints(points);
 		std::vector<simulator_id_t> result;
-		result.reserve(replacedPoints.size());
-		for (const auto& point : replacedPoints) {
-			if (!point.has_value()) {
+		for (const auto& pointOpt : points) {
+			if (!pointOpt.has_value()) {
 				result.emplace_back(0);
 				continue;
 			}
-			BlockType blockType = busInterfacePassthrough.getBlockType(point->gateId);
+			BlockType originalBlockType = busInterfacePassthrough.getBlockType(pointOpt->gateId);
+			if (originalBlockType != BlockType::NONE) {
+				const BlockData* blockData = blockDataManager.getBlockData(originalBlockType);
+				if (!blockData->hasBlockState()) {
+					result.emplace_back(0);
+					continue;
+				}
+			}
+			EvalConnectionPoint replacedPoint = getReplacementConnectionPoint(*pointOpt);
+			BlockType blockType = busInterfacePassthrough.getBlockType(replacedPoint.gateId);
 			if (blockType == BlockType::NONE) {
 				result.emplace_back(0);
 				continue;
 			}
-			const BlockData* blockData = blockDataManager.getBlockData(blockType);
-			if (!blockData->hasBlockState()) {
-				result.emplace_back(0);
-				continue;
-			}
-			simulator_id_t simId = busInterfacePassthrough.getBlockSimulatorId(*point);
+			simulator_id_t simId = busInterfacePassthrough.getBlockSimulatorId(replacedPoint);
 			result.emplace_back(simId);
 		}
 		return result;
