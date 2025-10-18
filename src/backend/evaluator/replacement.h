@@ -1,11 +1,11 @@
 #ifndef replacement_h
 #define replacement_h
 
-#include "busInterfacePassthrough.h"
 #include "evalConnection.h"
-#include "evalTypedef.h"
-#include "idProvider.h"
+#include "evalDefs.h"
+#include "backend/container/block/blockDefs.h"
 
+class SimPauseGuard;
 class Replacer;
 
 struct ReplacementGate {

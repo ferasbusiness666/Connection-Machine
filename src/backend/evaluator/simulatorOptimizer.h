@@ -3,10 +3,8 @@
 
 #include "evalConfig.h"
 #include "evalConnection.h"
-#include "evalTypedef.h"
 #include "idProvider.h"
 #include "logicSimulator.h"
-#include "simulatorGates.h"
 
 class SimulatorOptimizer {
 public:
