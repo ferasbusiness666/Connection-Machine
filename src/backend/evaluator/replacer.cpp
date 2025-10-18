@@ -1,5 +1,4 @@
 #include "replacer.h"
-#include "util/algorithm.h"
 
 Replacement& Replacer::makeReplacement(int layer) {
 	replacements.push_back(Replacement(
