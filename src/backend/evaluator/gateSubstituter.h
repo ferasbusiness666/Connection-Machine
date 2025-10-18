@@ -1,10 +1,10 @@
 #ifndef gateSubstituter_h
 #define gateSubstituter_h
 
-#include "evalConfig.h"
-#include "evalConnection.h"
-#include "evalDefs.h"
 #include "logicSimulator.h"
+#include "evalConnection.h"
+#include "evalConfig.h"
+#include "evalDefs.h"
 #include "replacer.h"
 
 struct TrackedGate {

@@ -2,12 +2,7 @@
 #define replacer_h
 
 #include "busInterfacePassthrough.h"
-#include "evalConfig.h"
-#include "evalConnection.h"
-#include "idProvider.h"
-#include "logicSimulator.h"
 #include "replacement.h"
-#include "backend/blockData/blockDataManager.h"
 
 struct SimulatorStateAndPinSimId {
 	std::variant<simulator_id_t, std::vector<simulator_id_t>> portSimIds;

@@ -1,8 +1,8 @@
 #ifndef busInterfacePassthrough_h
 #define busInterfacePassthrough_h
 
-#include "simulatorOptimizer.h"
 #include "backend/blockData/blockDataManager.h"
+#include "simulatorOptimizer.h"
 
 class BusInterfacePassthrough {
 public:
