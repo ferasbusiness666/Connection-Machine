@@ -70,8 +70,9 @@ public:
 		EvalConfig& evalConfig,
 		IdProvider<middle_id_t>& middleIdProvider,
 		std::vector<simulator_id_t>& dirtySimulatorIds,
+		std::vector<middle_id_t>& dirtyMiddleIds,
 		BlockDataManager& blockDataManager) :
-		replacer(evalConfig, middleIdProvider, dirtySimulatorIds, blockDataManager),
+		replacer(evalConfig, middleIdProvider, dirtySimulatorIds, dirtyMiddleIds, blockDataManager),
 		middleIdProvider(middleIdProvider) {}
 
 	void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {

@@ -22,9 +22,11 @@ public:
 		EvalConfig& evalConfig,
 		IdProvider<middle_id_t>& middleIdProvider,
 		std::vector<simulator_id_t>& dirtySimulatorIds,
+		std::vector<middle_id_t>& dirtyMiddleIds,
 		BlockDataManager& blockDataManager) :
 		busInterfacePassthrough(evalConfig, middleIdProvider, dirtySimulatorIds, blockDataManager),
 		evalConfig(evalConfig),
+		dirtyMiddleIds(dirtyMiddleIds),
 		middleIdProvider(middleIdProvider),
 		blockDataManager(blockDataManager) {}
 
@@ -80,9 +82,33 @@ public:
 				static_cast<simulator_id_t>(0),
 				static_cast<simulator_id_t>(0)
 			};
-			simIds.portSimIds = busInterfacePassthrough.getBlockSimulatorId(point);
-			simIds.pinSimIds = busInterfacePassthrough.getPinSimulatorId(point);
-			result.push_back(simIds);
+			if (busInternalJunctions.contains(point.gateId)) {
+				BlockType blockType = busInterfacePassthrough.getBlockType(point.gateId);
+				const BlockData* blockData = blockDataManager.getBlockData(blockType);
+				const BlockData::ConnectionData* connectionData = blockData->getConnectionData(point.portId);
+				const BusInternalJunctionArray& busInternalJunctionArray = busInternalJunctions.at(point.gateId);
+				std::vector<simulator_id_t> portSimIds;
+				std::vector<simulator_id_t> pinSimIds;
+				portSimIds.reserve(connectionData->getBitWidth());
+				pinSimIds.reserve(connectionData->getBitWidth());
+				for (unsigned int laneIndex : connectionData->getLaneIds()) {
+					EvalConnectionPoint junctionPoint = getReplacementConnectionPoint(
+						EvalConnectionPoint(
+							busInternalJunctionArray.junctionIds[laneIndex],
+							point.portId
+						)
+					);
+					portSimIds.push_back(busInterfacePassthrough.getBlockSimulatorId(junctionPoint));
+					pinSimIds.push_back(busInterfacePassthrough.getPinSimulatorId(junctionPoint));
+				}
+				simIds.portSimIds = std::move(portSimIds);
+				simIds.pinSimIds = std::move(pinSimIds);
+				result.push_back(std::move(simIds));
+			} else {
+				simIds.portSimIds = busInterfacePassthrough.getBlockSimulatorId(point);
+				simIds.pinSimIds = busInterfacePassthrough.getPinSimulatorId(point);
+				result.push_back(simIds);
+			}
 		}
 		return result;
 	}
@@ -96,8 +122,21 @@ public:
 				result.emplace_back(static_cast<simulator_id_t>(0));
 				continue;
 			}
-			simulator_id_t simId = busInterfacePassthrough.getBlockSimulatorId(*point);
-			result.emplace_back(simId);
+			if (busInternalJunctions.contains(point->gateId)) {
+				BlockType blockType = busInterfacePassthrough.getBlockType(point->gateId);
+				const BlockData* blockData = blockDataManager.getBlockData(blockType);
+				const BlockData::ConnectionData* connectionData = blockData->getConnectionData(point->portId);
+				const BusInternalJunctionArray& busInternalJunctionArray = busInternalJunctions.at(point->gateId);
+				std::vector<simulator_id_t> simIds;
+				simIds.reserve(connectionData->getBitWidth());
+				for (unsigned int laneIndex : connectionData->getLaneIds()) {
+					simIds.push_back(busInternalJunctionArray.junctionIds[laneIndex]);
+				}
+				result.emplace_back(std::move(simIds));
+			} else {
+				simulator_id_t simId = busInterfacePassthrough.getBlockSimulatorId(*point);
+				result.emplace_back(simId);
+			}
 		}
 		return result;
 	}
@@ -112,8 +151,21 @@ public:
 				result.emplace_back(static_cast<simulator_id_t>(0));
 				continue;
 			}
-			simulator_id_t simId = busInterfacePassthrough.getPinSimulatorId(*point);
-			result.emplace_back(simId);
+			if (busInternalJunctions.contains(point->gateId)) {
+				BlockType blockType = busInterfacePassthrough.getBlockType(point->gateId);
+				const BlockData* blockData = blockDataManager.getBlockData(blockType);
+				const BlockData::ConnectionData* connectionData = blockData->getConnectionData(point->portId);
+				const BusInternalJunctionArray& busInternalJunctionArray = busInternalJunctions.at(point->gateId);
+				std::vector<simulator_id_t> simIds;
+				simIds.reserve(connectionData->getBitWidth());
+				for (unsigned int laneIndex : connectionData->getLaneIds()) {
+					simIds.push_back(busInternalJunctionArray.junctionIds[laneIndex]);
+				}
+				result.emplace_back(std::move(simIds));
+			} else {
+				simulator_id_t simId = busInterfacePassthrough.getPinSimulatorId(*point);
+				result.emplace_back(simId);
+			}
 		}
 		return result;
 	}
@@ -195,7 +247,7 @@ private:
 		return junctionId;
 	};
 	void defineJunctionInsideBus(middle_id_t busId, unsigned int laneId, middle_id_t junctionId) {
-		logInfo("Defining junction {} inside bus {} at lane {}", "Replacer::defineJunctionInsideBus", junctionId, busId, laneId);
+		dirtyMiddleIds.push_back(busId);
 		if (!busInternalJunctions.contains(busId)) {
 			busInternalJunctions[busId] = { std::vector<middle_id_t>{}, 0 };
 		}
@@ -213,7 +265,7 @@ private:
 		});
 	};
 	void undefineJunctionInsideBus(middle_id_t busId, unsigned int laneId) {
-		logInfo("Undefining junction inside bus {} at lane {}", "Replacer::undefineJunctionInsideBus", busId, laneId);
+		dirtyMiddleIds.push_back(busId);
 		BusInternalJunctionArray& busInternalJunctionArray = busInternalJunctions.at(busId);
 		busInternalJunctionArray.numDefined -= 1;
 		busInternalJunctionArray.junctionIds[laneId] = 0;
@@ -249,6 +301,7 @@ private:
 	void mergeJunctions(SimPauseGuard& pauseGuard, int layer);
 	JunctionFloodFillResult junctionFloodFill(middle_id_t junctionId);
 	BlockDataManager& blockDataManager;
+	std::vector<middle_id_t>& dirtyMiddleIds;
 };
 
 #endif /* replacer_h */

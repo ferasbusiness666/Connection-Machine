@@ -92,6 +92,7 @@ public:
 		BlockData* tristateBufferBlockData = getBlockData(BlockType::TRISTATE_BUFFER);
 		tristateBufferBlockData->setName("Tristate Buffer");
 		tristateBufferBlockData->setDefaultData(false);
+		tristateBufferBlockData->setHasBlockState(true);
 		tristateBufferBlockData->setConnectionInput(Vector(0, 1), 0);
 		tristateBufferBlockData->setConnectionInput(Vector(0, 0), 1);
 		tristateBufferBlockData->setConnectionOutput(Vector(0, 1), 2);
@@ -105,6 +106,7 @@ public:
 		BlockData* buttonBlockData = getBlockData(BlockType::BUTTON);
 		buttonBlockData->setName("Button");
 		buttonBlockData->setDefaultData(false);
+		buttonBlockData->setHasBlockState(true);
 		buttonBlockData->setConnectionOutput(Vector(0), 0);
 		buttonBlockData->setTexturePath(mainTexturePath);
 		buttonBlockData->setUsesTileMapTexture(true);
@@ -115,6 +117,7 @@ public:
 		BlockData* tickButtonBlockData = getBlockData(BlockType::TICK_BUTTON);
 		tickButtonBlockData->setName("Tick Button");
 		tickButtonBlockData->setDefaultData(false);
+		tickButtonBlockData->setHasBlockState(true);
 		tickButtonBlockData->setConnectionOutput(Vector(0), 0);
 		tickButtonBlockData->setTexturePath(mainTexturePath);
 		tickButtonBlockData->setUsesTileMapTexture(true);
@@ -125,6 +128,7 @@ public:
 		BlockData* switchBlockData = getBlockData(BlockType::SWITCH);
 		switchBlockData->setName("Switch");
 		switchBlockData->setDefaultData(false);
+		switchBlockData->setHasBlockState(true);
 		switchBlockData->setConnectionOutput(Vector(0), 0);
 		switchBlockData->setTexturePath(mainTexturePath);
 		switchBlockData->setUsesTileMapTexture(true);
@@ -135,6 +139,7 @@ public:
 		BlockData* constantBlockData = getBlockData(BlockType::CONSTANT);
 		constantBlockData->setName("Constant");
 		constantBlockData->setDefaultData(false);
+		constantBlockData->setHasBlockState(true);
 		constantBlockData->setIsPlaceable(false);
 		constantBlockData->setConnectionOutput(Vector(0), 0);
 		constantBlockData->setTexturePath(mainTexturePath);
@@ -146,6 +151,7 @@ public:
 		BlockData* lightBlockData = getBlockData(BlockType::LIGHT);
 		lightBlockData->setName("Light");
 		lightBlockData->setDefaultData(false);
+		lightBlockData->setHasBlockState(true);
 		lightBlockData->setConnectionInput(Vector(0), 0);
 		lightBlockData->setTexturePath(mainTexturePath);
 		lightBlockData->setUsesTileMapTexture(true);

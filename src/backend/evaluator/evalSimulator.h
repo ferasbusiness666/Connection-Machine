@@ -5,10 +5,14 @@
 
 class EvalSimulator {
 public:
-	EvalSimulator(EvalConfig& evalConfig, IdProvider<middle_id_t>& middleIdProvider, std::vector<simulator_id_t>& dirtySimulatorIds, BlockDataManager& blockDataManager) :
-		evalConfig(evalConfig),
-		middleIdProvider(middleIdProvider),
-		gateSubstituter(evalConfig, middleIdProvider, dirtySimulatorIds, blockDataManager) {}
+	EvalSimulator(
+		EvalConfig& evalConfig,
+		IdProvider<middle_id_t>& middleIdProvider,
+		std::vector<simulator_id_t>& dirtySimulatorIds,
+		std::vector<middle_id_t>& dirtyMiddleIds,
+		BlockDataManager& blockDataManager
+	) :
+		gateSubstituter(evalConfig, middleIdProvider, dirtySimulatorIds, dirtyMiddleIds, blockDataManager) {}
 	inline SimPauseGuard beginEdit() {
 		return gateSubstituter.beginEdit();
 	}
@@ -55,8 +59,6 @@ public:
 		return gateSubstituter.getAverageTickrate();
 	}
 private:
-	EvalConfig& evalConfig;
-	IdProvider<middle_id_t>& middleIdProvider;
 	GateSubstituter gateSubstituter;
 };
 

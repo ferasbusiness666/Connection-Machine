@@ -203,9 +203,11 @@ private:
 		std::set<CircuitNode>& circuitNodeDependencies
 	);
 	std::vector<simulator_id_t> dirtySimulatorIds;
+	std::vector<middle_id_t> dirtyMiddleIds;
 	std::unordered_set<EvalPosition> dirtyNodes;
 	std::unordered_multimap<simulator_id_t, EvalPosition> portSimulatorIdToEvalPositionMap;
 	std::unordered_multimap<simulator_id_t, EvalPosition> pinSimulatorIdToEvalPositionMap;
+	std::unordered_map<middle_id_t, EvalPosition> middleIdToEvalPositionMap;
 
 	std::map<void*, SimulatorMappingUpdateListener> listeners;
 	void sendSimulatorMappingUpdate(eval_circuit_id_t targetEvalCircuitId, const std::vector<SimulatorMappingUpdate>& updates) {

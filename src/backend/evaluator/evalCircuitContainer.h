@@ -11,6 +11,9 @@ struct EvalPosition {
 	Position position;
 	eval_circuit_id_t evalCircuitId;
 
+	inline EvalPosition()
+		: position(0, 0), evalCircuitId(0) {}
+
 	inline EvalPosition(Position position, eval_circuit_id_t evalCircuitId)
 		: position(position), evalCircuitId(evalCircuitId) {}
 
