@@ -17,7 +17,10 @@ BlockType stringToBlockType(const std::string& str) {
 	if (str == "BUTTON") return BlockType::BUTTON;
 	if (str == "TICK_BUTTON") return BlockType::TICK_BUTTON;
 	if (str == "SWITCH") return BlockType::SWITCH;
-	if (str == "CONSTANT") return BlockType::CONSTANT;
+	if (str == "CONSTANT_OFF") return BlockType::CONSTANT_OFF;
+	if (str == "CONSTANT_ON") return BlockType::CONSTANT_ON;
+	if (str == "CONSTANT_Z") return BlockType::CONSTANT_Z;
+	if (str == "CONSTANT_X") return BlockType::CONSTANT_X;
 	if (str == "LIGHT") return BlockType::LIGHT;
 	if (str == "BUS_INTERFACE_1") return BlockType::BUS_INTERFACE_1;
 	if (str == "BUS_INTERFACE_2") return BlockType::BUS_INTERFACE_2;
@@ -53,7 +56,10 @@ std::string blockTypeToString(BlockType type) {
 	case BlockType::BUTTON: return "BUTTON";
 	case BlockType::TICK_BUTTON: return "TICK_BUTTON";
 	case BlockType::SWITCH: return "SWITCH";
-	case BlockType::CONSTANT: return "CONSTANT";
+	case BlockType::CONSTANT_OFF: return "CONSTANT_OFF";
+	case BlockType::CONSTANT_ON: return "CONSTANT_ON";
+	case BlockType::CONSTANT_Z: return "CONSTANT_Z";
+	case BlockType::CONSTANT_X: return "CONSTANT_X";
 	case BlockType::LIGHT: return "LIGHT";
 	case BlockType::BUS_INTERFACE_1: return "BUS_INTERFACE_1";
 	case BlockType::BUS_INTERFACE_2: return "BUS_INTERFACE_2";

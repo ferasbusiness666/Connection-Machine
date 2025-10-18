@@ -155,6 +155,12 @@ public:
 			logError("Sim ID not found for connection point", "SimulatorOptimizer::setState");
 			return;
 		}
+		BlockType blockType = getBlockType(point.gateId);
+		if (blockType == BlockType::CONSTANT_ON || blockType == BlockType::CONSTANT_OFF ||
+			blockType == BlockType::CONSTANT_Z || blockType == BlockType::CONSTANT_X) {
+			// cannot set state of constant blocks
+			return;
+		}
 		simulator.setState(simIdOpt.value(), state);
 	}
 	void makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection);
