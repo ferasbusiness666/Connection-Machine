@@ -47,7 +47,7 @@ void Replacement::removeGate(
 	idsToTrackOutputs.insert(gateId);
 	replacer->replacedIds.insert({ gateId, replacementId });
 	replacer->busInterfacePassthrough.removeGate(pauseGuard, gateId);
-	replacer->replacementIdLayers.insert({ replacementId, layer });
+	trackReplacementLayer(replacementId, layer);
 }
 
 void Replacement::addGate(
@@ -84,14 +84,21 @@ void Replacement::overrideConnectionPoint(
 	EvalConnectionPoint originalPoint,
 	EvalConnectionPoint replacementPoint) {
 	isEmpty = false;
-	replacer->replacedConnectionPoints[originalPoint.gateId][originalPoint.portId] = replacementPoint;
+	auto& gateOverrides = replacer->replacedConnectionPoints[originalPoint.gateId];
+	std::optional<EvalConnectionPoint> previousPoint;
+	auto it = gateOverrides.find(originalPoint.portId);
+	if (it != gateOverrides.end()) {
+		previousPoint = it->second;
+	}
+	overriddenConnectionPoints.push_back({ originalPoint.gateId, originalPoint.portId, previousPoint });
+	gateOverrides[originalPoint.portId] = replacementPoint;
 }
 
 void Replacement::markIdAsReplaced(
 	middle_id_t originalId,
 	int overpowerLayer) {
 	isEmpty = false;
-	replacer->replacementIdLayers.insert({ originalId, overpowerLayer });
+	trackReplacementLayer(originalId, overpowerLayer);
 }
 
 middle_id_t Replacement::getNewId() {
@@ -100,10 +107,20 @@ middle_id_t Replacement::getNewId() {
 	return newId;
 }
 
+void Replacement::trackReplacementLayer(middle_id_t id, int layer) {
+	auto insertResult = replacer->replacementIdLayers.insert({ id, layer });
+	if (insertResult.second) {
+		replacementLayerEntries.push_back({ id });
+	}
+}
+
 void Replacement::revert(SimPauseGuard& pauseGuard) {
 	if (isReverting) {
 		return;
 	}
+	static int depth = 0;
+	++depth;
+	logInfo("Reverting replacement at layer {} at depth {}", "Replacement::revert", layer, depth);
 	isReverting = true;
 	isEmpty = true;
 	for (const auto& conn : addedConnections) {
@@ -118,6 +135,7 @@ void Replacement::revert(SimPauseGuard& pauseGuard) {
 		replacer->pingOutputs(pauseGuard, conn.id);
 		replacer->pingInputs(pauseGuard, conn.id);
 	}
+	--depth;
 	for (const auto& conn : addedConnections) {
 		replacer->busInterfacePassthrough.removeConnection(pauseGuard, conn);
 	}
@@ -131,6 +149,22 @@ void Replacement::revert(SimPauseGuard& pauseGuard) {
 	}
 	for (const auto& conn : deletedConnections) {
 		replacer->busInterfacePassthrough.makeConnection(pauseGuard, conn);
+	}
+	for (auto it = overriddenConnectionPoints.rbegin(); it != overriddenConnectionPoints.rend(); ++it) {
+		auto gateMapIt = replacer->replacedConnectionPoints.find(it->gateId);
+		if (!it->previousPoint.has_value()) {
+			if (gateMapIt != replacer->replacedConnectionPoints.end()) {
+				gateMapIt->second.erase(it->portId);
+				if (gateMapIt->second.empty()) {
+					replacer->replacedConnectionPoints.erase(gateMapIt);
+				}
+			}
+		} else {
+			replacer->replacedConnectionPoints[it->gateId][it->portId] = *it->previousPoint;
+		}
+	}
+	for (const auto& entry : replacementLayerEntries) {
+		replacer->replacementIdLayers.erase(entry.id);
 	}
 	for (const auto& id : reservedIds) {
 		replacer->middleIdProvider.releaseId(id);
@@ -155,5 +189,7 @@ void Replacement::revert(SimPauseGuard& pauseGuard) {
 	reservedIds.clear();
 	idsToTrackInputs.clear();
 	idsToTrackOutputs.clear();
+	replacementLayerEntries.clear();
+	overriddenConnectionPoints.clear();
 	isReverting = false;
 }

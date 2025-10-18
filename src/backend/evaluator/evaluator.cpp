@@ -1090,13 +1090,13 @@ void Evaluator::processDirtyNodes() {
 			}
 		}
 		if (needsBlockUpdate) {
-			logInfo(
-				"Sending BLOCK update for evalCircuitId {} at position {} with value {}",
-				"Evaluator::processDirtyNodes",
-				evalPosition.evalCircuitId,
-				evalPosition.position.toString(),
-				std::to_string(blockSimId)
-			);
+			// logInfo(
+			// 	"Sending BLOCK update for evalCircuitId {} at position {} with value {}",
+			// 	"Evaluator::processDirtyNodes",
+			// 	evalPosition.evalCircuitId,
+			// 	evalPosition.position.toString(),
+			// 	std::to_string(blockSimId)
+			// );
 			simulatorMappingUpdates[evalPosition.evalCircuitId].push_back({ evalPosition.position, blockSimId, SimulatorMappingUpdateType::BLOCK });
 			// } else {
 			// 	simulatorMappingUpdates[evalPosition.evalCircuitId].push_back({
@@ -1105,13 +1105,13 @@ void Evaluator::processDirtyNodes() {
 			// 		SimulatorMappingUpdateType::BLOCK
 			// 	});
 		}
-		logInfo(
-			"Sending PIN update for evalCircuitId {} at position {} with value {}",
-			"Evaluator::processDirtyNodes",
-			evalPosition.evalCircuitId,
-			evalPosition.position.toString(),
-			std::to_string(pinSimId)
-		);
+		// logInfo(
+		// 	"Sending PIN update for evalCircuitId {} at position {} with value {}",
+		// 	"Evaluator::processDirtyNodes",
+		// 	evalPosition.evalCircuitId,
+		// 	evalPosition.position.toString(),
+		// 	std::to_string(pinSimId)
+		// );
 		simulatorMappingUpdates[evalPosition.evalCircuitId].push_back({ evalPosition.position, pinSimId, SimulatorMappingUpdateType::PIN });
 	}
 	for (const auto& [evalCircuitId, updates] : simulatorMappingUpdates) {

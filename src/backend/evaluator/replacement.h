@@ -86,12 +86,25 @@ public:
 	}
 
 private:
+	struct ReplacementLayerEntry {
+		middle_id_t id;
+	};
+	struct ReplacementConnectionPointOverride {
+		middle_id_t gateId;
+		connection_port_id_t portId;
+		std::optional<EvalConnectionPoint> previousPoint;
+	};
+
+	void trackReplacementLayer(middle_id_t id, int layer);
+
 	Replacer* replacer;
 	std::vector<ReplacementGate> addedGates;
 	std::vector<ReplacementGate> deletedGates;
 	std::vector<EvalConnection> addedConnections;
 	std::vector<EvalConnection> deletedConnections;
 	std::vector<middle_id_t> reservedIds;
+	std::vector<ReplacementLayerEntry> replacementLayerEntries;
+	std::vector<ReplacementConnectionPointOverride> overriddenConnectionPoints;
 	std::set<middle_id_t> idsToTrackOutputs;
 	std::set<middle_id_t> idsToTrackInputs;
 	std::vector<std::function<void(SimPauseGuard&)>> revertCallbacksWithPauseGuard;
