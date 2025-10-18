@@ -13,6 +13,9 @@ BlockType stringToBlockType(const std::string& str) {
 	if (str == "BUFFER") return BlockType::BUFFER;
 	if (str == "NOT") return BlockType::NOT;
 	if (str == "JUNCTION") return BlockType::JUNCTION;
+	if (str == "JUNCTION_L") return BlockType::JUNCTION_L;
+	if (str == "JUNCTION_H") return BlockType::JUNCTION_H;
+	if (str == "JUNCTION_X") return BlockType::JUNCTION_X;
 	if (str == "TRISTATE_BUFFER") return BlockType::TRISTATE_BUFFER;
 	if (str == "BUTTON") return BlockType::BUTTON;
 	if (str == "TICK_BUTTON") return BlockType::TICK_BUTTON;
@@ -52,6 +55,9 @@ std::string blockTypeToString(BlockType type) {
 	case BlockType::BUFFER: return "BUFFER";
 	case BlockType::NOT: return "NOT";
 	case BlockType::JUNCTION: return "JUNCTION";
+	case BlockType::JUNCTION_L: return "JUNCTION_L";
+	case BlockType::JUNCTION_H: return "JUNCTION_H";
+	case BlockType::JUNCTION_X: return "JUNCTION_X";
 	case BlockType::TRISTATE_BUFFER: return "TRISTATE_BUFFER";
 	case BlockType::BUTTON: return "BUTTON";
 	case BlockType::TICK_BUTTON: return "TICK_BUTTON";
