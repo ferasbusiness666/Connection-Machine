@@ -17,7 +17,7 @@ bool SinglePlaceTool::startPlaceBlock(const Event* event) {
 	switch (clicks[0]) {
 	case 'n':
 		clicks[0] = 'p';
-		if (selectedBlock != BlockType::NONE) circuit->tryInsertBlock(lastPointerPosition, orientation, selectedBlock);
+		if (selectedBlock != BlockType::NONE) circuit->tryInsertBlock(lastPointerPosition - calculateElementOffset(), orientation, selectedBlock);
 		updateElements();
 		return true;
 	case 'p':
@@ -25,7 +25,7 @@ bool SinglePlaceTool::startPlaceBlock(const Event* event) {
 	case 'r':
 		if (clicks[1] == 'n') {
 			clicks[1] = 'p';
-			if (selectedBlock != BlockType::NONE) circuit->tryInsertBlock(lastPointerPosition, orientation, selectedBlock);
+			if (selectedBlock != BlockType::NONE) circuit->tryInsertBlock(lastPointerPosition - calculateElementOffset(), orientation, selectedBlock);
 			updateElements();
 			return true;
 		}
@@ -113,14 +113,14 @@ bool SinglePlaceTool::pointerMove(const Event* event) {
 		return false;
 	case 'r':
 		if (clicks[1] == 'p') {
-			if (selectedBlock != BlockType::NONE) circuit->tryInsertBlock(lastPointerPosition, orientation, selectedBlock);
+			if (selectedBlock != BlockType::NONE) circuit->tryInsertBlock(lastPointerPosition - calculateElementOffset(), orientation, selectedBlock);
 		} else {
 			circuit->tryRemoveBlock(lastPointerPosition);
 		}
 		return false;
 	case 'p':
 		if (clicks[1] == 'r') circuit->tryRemoveBlock(lastPointerPosition);
-		else if (selectedBlock != BlockType::NONE) circuit->tryInsertBlock(lastPointerPosition, orientation, selectedBlock);
+		else if (selectedBlock != BlockType::NONE) circuit->tryInsertBlock(lastPointerPosition - calculateElementOffset(), orientation, selectedBlock);
 	}
 	return false;
 }
