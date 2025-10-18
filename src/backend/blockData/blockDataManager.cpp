@@ -16,7 +16,7 @@ void BlockDataManager::initializeDefaults() {
 	andBlockData->setUsesTileMapTexture(true);
 	andBlockData->setTextureTileSize({ 256, 256 });
 	andBlockData->setTextureBlockTileSize({ 1, 1 });
-	andBlockData->setTextureSmallestCordTile({ 2, 0 });
+	andBlockData->setTextureSmallestCordTile({ 1, 0 });
 	// OR
 	BlockData* orBlockData = getBlockData(BlockType::OR);
 	orBlockData->setName("Or");
@@ -24,7 +24,7 @@ void BlockDataManager::initializeDefaults() {
 	orBlockData->setUsesTileMapTexture(true);
 	orBlockData->setTextureTileSize({ 256, 256 });
 	orBlockData->setTextureBlockTileSize({ 1, 1 });
-	orBlockData->setTextureSmallestCordTile({ 3, 0 });
+	orBlockData->setTextureSmallestCordTile({ 2, 0 });
 	// XOR
 	BlockData* xorBlockData = getBlockData(BlockType::XOR);
 	xorBlockData->setName("Xor");
@@ -32,7 +32,7 @@ void BlockDataManager::initializeDefaults() {
 	xorBlockData->setUsesTileMapTexture(true);
 	xorBlockData->setTextureTileSize({ 256, 256 });
 	xorBlockData->setTextureBlockTileSize({ 1, 1 });
-	xorBlockData->setTextureSmallestCordTile({ 4, 0 });
+	xorBlockData->setTextureSmallestCordTile({ 3, 0 });
 	// NAND
 	BlockData* nandBlockData = getBlockData(BlockType::NAND);
 	nandBlockData->setName("Nand");
@@ -40,7 +40,7 @@ void BlockDataManager::initializeDefaults() {
 	nandBlockData->setUsesTileMapTexture(true);
 	nandBlockData->setTextureTileSize({ 256, 256 });
 	nandBlockData->setTextureBlockTileSize({ 1, 1 });
-	nandBlockData->setTextureSmallestCordTile({ 5, 0 });
+	nandBlockData->setTextureSmallestCordTile({ 4, 0 });
 	// NOR
 	BlockData* norBlockData = getBlockData(BlockType::NOR);
 	norBlockData->setName("Nor");
@@ -48,7 +48,7 @@ void BlockDataManager::initializeDefaults() {
 	norBlockData->setUsesTileMapTexture(true);
 	norBlockData->setTextureTileSize({ 256, 256 });
 	norBlockData->setTextureBlockTileSize({ 1, 1 });
-	norBlockData->setTextureSmallestCordTile({ 6, 0 });
+	norBlockData->setTextureSmallestCordTile({ 5, 0 });
 	// XNOR
 	BlockData* xnorBlockData = getBlockData(BlockType::XNOR);
 	xnorBlockData->setName("Xnor");
@@ -56,7 +56,7 @@ void BlockDataManager::initializeDefaults() {
 	xnorBlockData->setUsesTileMapTexture(true);
 	xnorBlockData->setTextureTileSize({ 256, 256 });
 	xnorBlockData->setTextureBlockTileSize({ 1, 1 });
-	xnorBlockData->setTextureSmallestCordTile({ 7, 0 });
+	xnorBlockData->setTextureSmallestCordTile({ 6, 0 });
 	// BUFFER
 	BlockData* bufferBlockData = getBlockData(BlockType::BUFFER);
 	bufferBlockData->setName("Buffer");
@@ -64,7 +64,7 @@ void BlockDataManager::initializeDefaults() {
 	bufferBlockData->setUsesTileMapTexture(true);
 	bufferBlockData->setTextureTileSize({ 256, 256 });
 	bufferBlockData->setTextureBlockTileSize({ 1, 1 });
-	bufferBlockData->setTextureSmallestCordTile({ 0, 4 });
+	bufferBlockData->setTextureSmallestCordTile({ 7, 0 });
 	// NOT
 	BlockData* notBlockData = getBlockData(BlockType::NOT);
 	notBlockData->setName("Not");
@@ -92,7 +92,7 @@ void BlockDataManager::initializeDefaults() {
 	tristateBufferBlockData->setTexturePath(mainTexturePath);
 	tristateBufferBlockData->setUsesTileMapTexture(true);
 	tristateBufferBlockData->setTextureTileSize({ 256, 256 });
-	tristateBufferBlockData->setTextureBlockTileSize({ 1, 1 });
+	tristateBufferBlockData->setTextureBlockTileSize({ 1, 2 });
 	tristateBufferBlockData->setTextureSmallestCordTile({ 10, 0 });
 	// BUTTON
 	BlockData* buttonBlockData = getBlockData(BlockType::BUTTON);
