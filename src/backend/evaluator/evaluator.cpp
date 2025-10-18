@@ -1,4 +1,5 @@
 #include "evaluator.h"
+#include "util/algorithm.h"
 
 #ifdef TRACY_PROFILER
 #include <tracy/Tracy.hpp>
@@ -1038,7 +1039,7 @@ void Evaluator::processDirtyNodes() {
 			}
 		}
 		if (needsBlockUpdate) {
-			logInfo("Sending BLOCK update for evalCircuitId {} at position {}", "Evaluator::processDirtyNodes", evalPosition.evalCircuitId, evalPosition.position.toString());
+			logInfo("Sending BLOCK update for evalCircuitId {} at position {} with value {}", "Evaluator::processDirtyNodes", evalPosition.evalCircuitId, evalPosition.position.toString(), std::to_string(portSimIds));
 			simulatorMappingUpdates[evalPosition.evalCircuitId].push_back({
 				evalPosition.position,
 				portSimIds,
@@ -1051,7 +1052,7 @@ void Evaluator::processDirtyNodes() {
 				SimulatorMappingUpdateType::BLOCK
 			});
 		}
-		logInfo("Sending PIN update for evalCircuitId {} at position {}", "Evaluator::processDirtyNodes", evalPosition.evalCircuitId, evalPosition.position.toString());
+		logInfo("Sending PIN update for evalCircuitId {} at position {} with value {}", "Evaluator::processDirtyNodes", evalPosition.evalCircuitId, evalPosition.position.toString(), std::to_string(pinSimIds));
 		simulatorMappingUpdates[evalPosition.evalCircuitId].push_back({
 			evalPosition.position,
 			pinSimIds,
@@ -1095,14 +1096,12 @@ void Evaluator::dirtyBlockAt(Position position, eval_circuit_id_t evalCircuitId)
 		return;
 	}
 	for (connection_end_id_t i = 0; i < blockData->getConnectionCount(); ++i) {
-		if (block->isConnectionOutput(i)) {
-			std::optional<Position> portPositionOpt = block->getConnectionPosition(i);
-			if (!portPositionOpt) {
-				logError("Port position not found for connection ID {}", "Evaluator::dirtyBlockAt", i);
-				continue;
-			}
-			dirtyNodes.insert({portPositionOpt.value(), evalCircuitId});
+		std::optional<Position> portPositionOpt = block->getConnectionPosition(i);
+		if (!portPositionOpt) {
+			logError("Port position not found for connection ID {}", "Evaluator::dirtyBlockAt", i);
+			continue;
 		}
+		dirtyNodes.insert({portPositionOpt.value(), evalCircuitId});
 	}
 }
 

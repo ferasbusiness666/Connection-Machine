@@ -92,12 +92,7 @@ public:
 				portSimIds.reserve(connectionData->getBitWidth());
 				pinSimIds.reserve(connectionData->getBitWidth());
 				for (unsigned int laneIndex : connectionData->getLaneIds()) {
-					EvalConnectionPoint junctionPoint = getReplacementConnectionPoint(
-						EvalConnectionPoint(
-							busInternalJunctionArray.junctionIds[laneIndex],
-							point.portId
-						)
-					);
+					EvalConnectionPoint junctionPoint = getReplacementConnectionPoint({busInternalJunctionArray.junctionIds[laneIndex], 0});
 					portSimIds.push_back(busInterfacePassthrough.getBlockSimulatorId(junctionPoint));
 					pinSimIds.push_back(busInterfacePassthrough.getPinSimulatorId(junctionPoint));
 				}
@@ -130,7 +125,7 @@ public:
 				std::vector<simulator_id_t> simIds;
 				simIds.reserve(connectionData->getBitWidth());
 				for (unsigned int laneIndex : connectionData->getLaneIds()) {
-					simIds.push_back(busInternalJunctionArray.junctionIds[laneIndex]);
+					simIds.push_back(busInterfacePassthrough.getBlockSimulatorId(getReplacementConnectionPoint({busInternalJunctionArray.junctionIds[laneIndex], 0})));
 				}
 				result.emplace_back(std::move(simIds));
 			} else {
@@ -159,7 +154,7 @@ public:
 				std::vector<simulator_id_t> simIds;
 				simIds.reserve(connectionData->getBitWidth());
 				for (unsigned int laneIndex : connectionData->getLaneIds()) {
-					simIds.push_back(busInternalJunctionArray.junctionIds[laneIndex]);
+					simIds.push_back(busInterfacePassthrough.getPinSimulatorId(getReplacementConnectionPoint({busInternalJunctionArray.junctionIds[laneIndex], 0})));
 				}
 				result.emplace_back(std::move(simIds));
 			} else {
