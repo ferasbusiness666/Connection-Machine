@@ -133,10 +133,21 @@ void SinglePlaceTool::updateElements() {
 	if (selectedBlock != BlockType::NONE) {
 		if (!circuit) return;
 		Size size = circuit->getBlockContainer()->getBlockDataManager()->getBlockSize(selectedBlock, orientation);
-		bool cantPlace = circuit->getBlockContainer()->checkCollision(lastPointerPosition, orientation, selectedBlock);
-		elementCreator.addSelectionElement(SelectionElement(lastPointerPosition, lastPointerPosition + size.getLargestVectorInArea(), cantPlace));
-		elementCreator.addBlockPreview(BlockPreview(environment->getBlockRenderDataFeeder().getBlockRenderDataId(selectedBlock), lastPointerPosition, orientation));
+		Position placingPosition = lastPointerPosition - calculateElementOffset();
+		bool cantPlace = circuit->getBlockContainer()->checkCollision(placingPosition, orientation, selectedBlock);
+		elementCreator.addSelectionElement(SelectionElement(placingPosition, placingPosition + size.getLargestVectorInArea(), cantPlace));
+		elementCreator.addBlockPreview(BlockPreview(environment->getBlockRenderDataFeeder().getBlockRenderDataId(selectedBlock), placingPosition, orientation));
 	} else {
 		elementCreator.addSelectionElement(SelectionElement(lastPointerPosition, true));
 	}
+}
+
+Vector SinglePlaceTool::calculateElementOffset() const {
+	if (!circuit) return Vector(0, 0);
+	if (selectedBlock == BlockType::NONE) return Vector(0, 0);
+	Vector offset(0, 0);
+	if (selectedBlock == BlockType::JUNCTION_L || selectedBlock == BlockType::JUNCTION_H) {
+		offset = Vector(0, 2);
+	}
+	return orientation.transformVectorWithArea(offset, circuit->getBlockContainer()->getBlockDataManager()->getBlockSize(selectedBlock));
 }

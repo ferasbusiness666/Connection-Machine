@@ -5,7 +5,7 @@
 void BlockDataManager::initializeDefaults() {
 	assert(blockData.size() == 0); // should call this before doing anything
 	// load default data
-	for (unsigned int i = 0; i < 21; i++) addBlock();
+	for (unsigned int i = 0; i < 24; i++) addBlock();
 
 	std::string mainTexturePath = (DirectoryManager::getResourceDirectory() / "logicTiles.png").string();
 
@@ -81,6 +81,43 @@ void BlockDataManager::initializeDefaults() {
 	junctionBlockData->setTextureTileSize({ 256, 256 });
 	junctionBlockData->setTextureBlockTileSize({ 1, 1 });
 	junctionBlockData->setTextureSmallestCordTile({ 9, 0 });
+	// JUNCTION_L
+	BlockData* junctionLBlockData = getBlockData(BlockType::JUNCTION_L);
+	junctionLBlockData->setName("Pull-down Resistor");
+	junctionLBlockData->setDefaultData(false);
+	junctionLBlockData->setSize(Size(1, 3));
+	junctionLBlockData->setConnectionInput(Vector(0, 2), 0);
+	junctionLBlockData->setConnectionOutput(Vector(0, 2), 1);
+	junctionLBlockData->setTexturePath(mainTexturePath);
+	junctionLBlockData->setUsesTileMapTexture(true);
+	junctionLBlockData->setTextureTileSize({ 256, 256 });
+	junctionLBlockData->setTextureBlockTileSize({ 1, 3 });
+	junctionLBlockData->setTextureSmallestCordTile({ 0, 4 });
+	// JUNCTION_H
+	BlockData* junctionHBlockData = getBlockData(BlockType::JUNCTION_H);
+	junctionHBlockData->setName("Pull-up Resistor");
+	junctionHBlockData->setDefaultData(false);
+	junctionHBlockData->setSize(Size(1, 3));
+	junctionHBlockData->setConnectionInput(Vector(0, 2), 0);
+	junctionHBlockData->setConnectionOutput(Vector(0, 2), 1);
+	junctionHBlockData->setTexturePath(mainTexturePath);
+	junctionHBlockData->setUsesTileMapTexture(true);
+	junctionHBlockData->setTextureTileSize({ 256, 256 });
+	junctionHBlockData->setTextureBlockTileSize({ 1, 3 });
+	junctionHBlockData->setTextureSmallestCordTile({ 0, 7 });
+	// JUNCTION_X
+	BlockData* junctionXBlockData = getBlockData(BlockType::JUNCTION_X);
+	junctionXBlockData->setName("Pull-X Resistor");
+	junctionXBlockData->setDefaultData(false);
+	junctionXBlockData->setSize(Size(1, 3));
+	junctionXBlockData->setConnectionInput(Vector(0, 2), 0);
+	junctionXBlockData->setConnectionOutput(Vector(0, 2), 1);
+	junctionXBlockData->setTexturePath(mainTexturePath);
+	junctionXBlockData->setUsesTileMapTexture(true);
+	junctionXBlockData->setTextureTileSize({ 256, 256 });
+	junctionXBlockData->setTextureBlockTileSize({ 1, 3 });
+	junctionXBlockData->setTextureSmallestCordTile({ 0, 6 });
+	junctionXBlockData->setIsPlaceable(false);
 	// TRISTATE_BUFFER
 	BlockData* tristateBufferBlockData = getBlockData(BlockType::TRISTATE_BUFFER);
 	tristateBufferBlockData->setName("Tristate Buffer");
