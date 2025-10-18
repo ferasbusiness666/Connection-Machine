@@ -72,6 +72,111 @@ std::vector<std::optional<EvalConnectionPoint>> Replacer::getReplacementConnecti
 }
 
 void Replacer::mergeBuses(SimPauseGuard& pauseGuard, int layer) {
+	std::vector<middle_id_t> allMiddleIds = middleIdProvider.getUsedIds();
+	for (const middle_id_t id : allMiddleIds) {
+		if (replacementIdLayers.contains(id)) {
+			if (replacementIdLayers.at(id) >= layer) {
+				continue;
+			}
+		}
+		BlockType blockType = busInterfacePassthrough.getBlockType(id);
+		if (blockType == BlockType::NONE) {
+			continue;
+		}
+		const BlockData* blockData = blockDataManager.getBlockData(blockType);
+		if (!blockData->isBus()) {
+			continue;
+		}
+		unsigned int laneCount = blockData->getLaneCount();
+		for (unsigned int lane = 0; lane < laneCount; lane++) {
+			std::optional<middle_id_t> junctionId = getJunctionInsideBus(id, lane);
+			if (junctionId) {
+				continue;
+			}
+			mergeBusLane(pauseGuard, layer, id, lane);
+		}
+	}
+}
+
+void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, int layer, middle_id_t id, unsigned int laneId) {
+	Replacement& replacement = makeReplacement(layer);
+	middle_id_t newJunctionId = replacement.getNewId();
+	replacement.addGate(pauseGuard, BlockType::JUNCTION, newJunctionId);
+	std::queue<BlockLane> mergeQueue;
+	std::unordered_set<BlockLane, BlockLane::Hash> visited;
+	mergeQueue.push({ id, laneId });
+	visited.insert({ id, laneId });
+	while (!mergeQueue.empty()) {
+		BlockLane current = mergeQueue.front();
+		mergeQueue.pop();
+		replacement.trackGate(current.blockId);
+		defineJunctionInsideBus(id, laneId, newJunctionId, replacement);
+		BlockType blockType = busInterfacePassthrough.getBlockType(current.blockId);
+		// get all inputs/outputs, and add them to the queue if the lanes line up
+		std::vector<EvalConnection> inputs = busInterfacePassthrough.getInputs(current.blockId);
+		BlockData* blockData = blockDataManager.getBlockData(blockType);
+		for (const EvalConnection& input : inputs) {
+			const BlockData::ConnectionData* connectionData = blockData->getConnectionData(input.destination.portId);
+			unsigned int connectionLaneIndex = current.laneId;
+			if (blockType != BlockType::JUNCTION) {
+				if (!connectionData->containsLaneId(current.laneId)) {
+					continue;
+				}
+				connectionLaneIndex = connectionData->getIndexOfLaneId(current.laneId);
+				if (connectionData->getBitWidth() == 1) {
+					replacement.trackConnection(input);
+					replacement.removeConnection(pauseGuard, input);
+					replacement.makeConnection(pauseGuard, { input.source, { newJunctionId, 0 } });
+					continue;
+				}
+			}
+			replacement.trackConnection(input);
+			middle_id_t sourceBlockId = input.source.gateId;
+			BlockType sourceBlockType = busInterfacePassthrough.getBlockType(sourceBlockId);
+			unsigned int sourceLaneId = connectionLaneIndex;
+			if (sourceBlockType != BlockType::JUNCTION) {
+				const BlockData* sourceBlockData = blockDataManager.getBlockData(sourceBlockType);
+				const BlockData::ConnectionData* sourceConnectionData = sourceBlockData->getConnectionData(input.source.portId);
+				sourceLaneId = sourceConnectionData->getLaneId(connectionLaneIndex);
+			}
+			BlockLane sourceLane = { sourceBlockId, sourceLaneId };
+			if (!visited.contains(sourceLane)) {
+				mergeQueue.push(sourceLane);
+				visited.insert(sourceLane);
+			}
+		}
+		std::vector<EvalConnection> outputs = busInterfacePassthrough.getOutputs(current.blockId);
+		for (const EvalConnection& output : outputs) {
+			const BlockData::ConnectionData* connectionData = blockData->getConnectionData(output.source.portId);
+			unsigned int connectionLaneIndex = current.laneId;
+			if (blockType != BlockType::JUNCTION) {
+				if (!connectionData->containsLaneId(current.laneId)) {
+					continue;
+				}
+				connectionLaneIndex = connectionData->getIndexOfLaneId(current.laneId);
+				if (connectionData->getBitWidth() == 1) {
+					replacement.trackConnection(output);
+					replacement.removeConnection(pauseGuard, output);
+					replacement.makeConnection(pauseGuard, { { newJunctionId, 0 } , output.destination });
+					continue;
+				}
+			}
+			replacement.trackConnection(output);
+			middle_id_t destBlockId = output.destination.gateId;
+			BlockType destBlockType = busInterfacePassthrough.getBlockType(destBlockId);
+			unsigned int destLaneId = connectionLaneIndex;
+			if (destBlockType != BlockType::JUNCTION) {
+				const BlockData* destBlockData = blockDataManager.getBlockData(destBlockType);
+				const BlockData::ConnectionData* destConnectionData = destBlockData->getConnectionData(output.destination.portId);
+				destLaneId = destConnectionData->getLaneId(connectionLaneIndex);
+			}
+			BlockLane destLane = { destBlockId, destLaneId };
+			if (!visited.contains(destLane)) {
+				mergeQueue.push(destLane);
+				visited.insert(destLane);
+			}
+		}
+	}
 }
 
 void Replacer::mergeJunctions(SimPauseGuard& pauseGuard, int layer) {

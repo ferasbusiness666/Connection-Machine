@@ -36,6 +36,10 @@ public:
 
 	void addRevertAction(std::function<void(SimPauseGuard&)> callback) {
 		isEmpty = false;
+		revertCallbacksWithPauseGuard.push_back(std::move(callback));
+	}
+	void addRevertAction(std::function<void()> callback) {
+		isEmpty = false;
 		revertCallbacks.push_back(std::move(callback));
 	}
 
@@ -69,6 +73,14 @@ public:
 	void trackInput(middle_id_t id) {
 		idsToTrackInputs.insert(id);
 	}
+	void trackConnection(EvalConnection conn) {
+		trackOutput(conn.source.gateId);
+		trackInput(conn.destination.gateId);
+	}
+	void trackGate(middle_id_t id) {
+		trackOutput(id);
+		trackInput(id);
+	}
 
 private:
 	Replacer* replacer;
@@ -79,7 +91,8 @@ private:
 	std::vector<middle_id_t> reservedIds;
 	std::set<middle_id_t> idsToTrackOutputs;
 	std::set<middle_id_t> idsToTrackInputs;
-	std::vector<std::function<void(SimPauseGuard&)>> revertCallbacks;
+	std::vector<std::function<void(SimPauseGuard&)>> revertCallbacksWithPauseGuard;
+	std::vector<std::function<void()>> revertCallbacks;
 	bool isEmpty { true };
 	bool isReverting { false };
 	int layer { 0 };

@@ -44,7 +44,7 @@ public:
 
 	void endEdit(SimPauseGuard& pauseGuard) {
 		cleanReplacements();
-		// mergeBuses(pauseGuard, 0);
+		mergeBuses(pauseGuard, 0);
 		mergeJunctions(pauseGuard, 1);
 
 		busInterfacePassthrough.endEdit(pauseGuard);
@@ -195,26 +195,57 @@ private:
 		return junctionId;
 	};
 	void defineJunctionInsideBus(middle_id_t busId, unsigned int laneId, middle_id_t junctionId) {
-		BusInternalJunctionArray& busInternalJunctionArray = busInternalJunctions[busId];
-		assert(
-			busInternalJunctionArray.junctionIds.size() <= laneId ||
-			busInternalJunctionArray.junctionIds[laneId] == 0
-		);
+		logInfo("Defining junction {} inside bus {} at lane {}", "Replacer::defineJunctionInsideBus", junctionId, busId, laneId);
+		if (!busInternalJunctions.contains(busId)) {
+			busInternalJunctions[busId] = { std::vector<middle_id_t>{}, 0 };
+		}
+		BusInternalJunctionArray& busInternalJunctionArray = busInternalJunctions.at(busId);
+		if (busInternalJunctionArray.junctionIds.size() <= laneId) {
+			busInternalJunctionArray.junctionIds.resize(laneId + 1, 0);
+		}
 		busInternalJunctionArray.junctionIds[laneId] = junctionId;
 		busInternalJunctionArray.numDefined += 1;
 	};
+	void defineJunctionInsideBus(middle_id_t busId, unsigned int laneId, middle_id_t junctionId, Replacement& replacement) {
+		defineJunctionInsideBus(busId, laneId, junctionId);
+		replacement.addRevertAction([this, busId, laneId]() {
+			undefineJunctionInsideBus(busId, laneId);
+		});
+	};
 	void undefineJunctionInsideBus(middle_id_t busId, unsigned int laneId) {
+		logInfo("Undefining junction inside bus {} at lane {}", "Replacer::undefineJunctionInsideBus", busId, laneId);
 		BusInternalJunctionArray& busInternalJunctionArray = busInternalJunctions.at(busId);
-		assert(busInternalJunctionArray.junctionIds[laneId] != 0);
-		assert(busInternalJunctionArray.numDefined > 0);
 		busInternalJunctionArray.numDefined -= 1;
+		busInternalJunctionArray.junctionIds[laneId] = 0;
 		if (busInternalJunctionArray.numDefined == 0) {
 			busInternalJunctions.erase(busId);
 			return;
 		}
-		busInternalJunctionArray.junctionIds[laneId] = 0;
-	}
+	};
+
+	struct BlockLane {
+		middle_id_t blockId;
+		unsigned int laneId;
+		bool operator==(const BlockLane& other) const noexcept {
+			return blockId == other.blockId && laneId == other.laneId;
+		}
+		bool operator!=(const BlockLane& other) const noexcept {
+			return !(*this == other);
+		}
+		bool operator<(const BlockLane& other) const noexcept {
+			return std::tie(blockId, laneId) < std::tie(other.blockId, other.laneId);
+		}
+		struct Hash {
+			size_t operator()(const BlockLane& value) const noexcept {
+				size_t seed = static_cast<size_t>(value.blockId);
+				seed ^= static_cast<size_t>(value.laneId) + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2);
+				return seed;
+			}
+		};
+	};
+
 	void mergeBuses(SimPauseGuard& pauseGuard, int layer);
+	void mergeBusLane(SimPauseGuard& pauseGuard, int layer, middle_id_t id, unsigned int laneId);
 	void mergeJunctions(SimPauseGuard& pauseGuard, int layer);
 	JunctionFloodFillResult junctionFloodFill(middle_id_t junctionId);
 	BlockDataManager& blockDataManager;
