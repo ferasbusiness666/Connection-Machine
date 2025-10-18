@@ -307,6 +307,10 @@ std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> Replacer:
 			continue;
 		}
 		BlockType blockType = busInterfacePassthrough.getBlockType(point->gateId);
+		if (blockType == BlockType::NONE) {
+			result.emplace_back(static_cast<simulator_id_t>(0));
+			continue;
+		}
 		if (blockType == BlockType::JUNCTION) {
 			if (busInternalJunctions.contains(point->gateId)) {
 				const BusInternalJunctionArray& busInternalJunctionArray = busInternalJunctions.at(point->gateId);

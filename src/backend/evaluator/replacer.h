@@ -76,6 +76,10 @@ public:
 				continue;
 			}
 			BlockType blockType = busInterfacePassthrough.getBlockType(point->gateId);
+			if (blockType == BlockType::NONE) {
+				result.emplace_back(0);
+				continue;
+			}
 			const BlockData* blockData = blockDataManager.getBlockData(blockType);
 			if (!blockData->hasBlockState()) {
 				result.emplace_back(0);
