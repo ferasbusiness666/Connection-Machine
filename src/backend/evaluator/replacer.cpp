@@ -330,7 +330,11 @@ std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> Replacer:
 				for (const middle_id_t junctionId : busInternalJunctionArray.junctionIds) {
 					simIds.push_back(busInterfacePassthrough.getPinSimulatorId(getReplacementConnectionPoint({junctionId, 0})));
 				}
-				result.emplace_back(std::move(simIds));
+				if (simIds.size() == 1) {
+					result.emplace_back(simIds.at(0));
+				} else {
+					result.emplace_back(std::move(simIds));
+				}
 			} else {
 				simulator_id_t simId = busInterfacePassthrough.getPinSimulatorId(*point);
 				result.emplace_back(simId);
@@ -351,7 +355,11 @@ std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> Replacer:
 						simIds.push_back(0);
 					}
 				}
-				result.emplace_back(std::move(simIds));
+				if (simIds.size() == 1) {
+					result.emplace_back(simIds.at(0));
+				} else {
+					result.emplace_back(std::move(simIds));
+				}
 			} else {
 				simulator_id_t simId = busInterfacePassthrough.getPinSimulatorId(*point);
 				result.emplace_back(simId);
