@@ -80,6 +80,13 @@ void Replacement::makeConnection(
 	addedConnections.push_back(connection);
 }
 
+void Replacement::overrideConnectionPoint(
+	EvalConnectionPoint originalPoint,
+	EvalConnectionPoint replacementPoint) {
+	isEmpty = false;
+	replacer->replacedConnectionPoints[originalPoint.gateId][originalPoint.portId] = replacementPoint;
+}
+
 middle_id_t Replacement::getNewId() {
 	middle_id_t newId = replacer->middleIdProvider.getNewId();
 	reservedIds.push_back(newId);

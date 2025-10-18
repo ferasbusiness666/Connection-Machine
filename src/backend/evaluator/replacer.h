@@ -103,15 +103,21 @@ public:
 				result.emplace_back(static_cast<simulator_id_t>(0));
 				continue;
 			}
-			if (busInternalJunctions.contains(point->gateId)) {
-				BlockType blockType = busInterfacePassthrough.getBlockType(point->gateId);
-				const BlockData* blockData = blockDataManager.getBlockData(blockType);
+			BlockType blockType = busInterfacePassthrough.getBlockType(point->gateId);
+			const BlockData* blockData = blockDataManager.getBlockData(blockType);
+			if (blockData && blockData->isBus()) {
 				const BlockData::ConnectionData* connectionData = blockData->getConnectionData(point->portId);
-				const BusInternalJunctionArray& busInternalJunctionArray = busInternalJunctions.at(point->gateId);
 				std::vector<simulator_id_t> simIds;
 				simIds.reserve(connectionData->getBitWidth());
-				for (unsigned int laneIndex : connectionData->getLaneIds()) {
-					simIds.push_back(busInterfacePassthrough.getPinSimulatorId(getReplacementConnectionPoint({busInternalJunctionArray.junctionIds[laneIndex], 0})));
+				if (busInternalJunctions.contains(point->gateId)) {
+					const BusInternalJunctionArray& busInternalJunctionArray = busInternalJunctions.at(point->gateId);
+					for (unsigned int laneIndex : connectionData->getLaneIds()) {
+						simIds.push_back(busInterfacePassthrough.getPinSimulatorId(getReplacementConnectionPoint({busInternalJunctionArray.junctionIds[laneIndex], 0})));
+					}
+				} else {
+					for (unsigned int laneIndex : connectionData->getLaneIds()) {
+						simIds.push_back(0);
+					}
 				}
 				result.emplace_back(std::move(simIds));
 			} else {

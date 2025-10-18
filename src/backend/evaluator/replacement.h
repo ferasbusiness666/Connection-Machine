@@ -32,6 +32,8 @@ public:
 
 	void makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection);
 
+	void overrideConnectionPoint(EvalConnectionPoint originalPoint, EvalConnectionPoint replacementPoint);
+
 	void revert(SimPauseGuard& pauseGuard);
 
 	void addRevertAction(std::function<void(SimPauseGuard&)> callback) {

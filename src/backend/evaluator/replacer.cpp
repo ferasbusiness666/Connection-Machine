@@ -127,6 +127,7 @@ void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, int layer, middle_id_t id
 					replacement.trackConnection(input);
 					replacement.removeConnection(pauseGuard, input);
 					replacement.makeConnection(pauseGuard, { input.source, { newJunctionId, 0 } });
+					replacement.overrideConnectionPoint(input.destination, { newJunctionId, 0 });
 					continue;
 				}
 			}
@@ -158,6 +159,7 @@ void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, int layer, middle_id_t id
 					replacement.trackConnection(output);
 					replacement.removeConnection(pauseGuard, output);
 					replacement.makeConnection(pauseGuard, { { newJunctionId, 0 } , output.destination });
+					replacement.overrideConnectionPoint(output.source, { newJunctionId, 0 });
 					continue;
 				}
 			}
