@@ -87,6 +87,13 @@ void Replacement::overrideConnectionPoint(
 	replacer->replacedConnectionPoints[originalPoint.gateId][originalPoint.portId] = replacementPoint;
 }
 
+void Replacement::markIdAsReplaced(
+	middle_id_t originalId,
+	int overpowerLayer) {
+	isEmpty = false;
+	replacer->replacementIdLayers.insert({ originalId, overpowerLayer });
+}
+
 middle_id_t Replacement::getNewId() {
 	middle_id_t newId = replacer->middleIdProvider.getNewId();
 	reservedIds.push_back(newId);

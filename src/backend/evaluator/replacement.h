@@ -34,6 +34,8 @@ public:
 
 	void overrideConnectionPoint(EvalConnectionPoint originalPoint, EvalConnectionPoint replacementPoint);
 
+	void markIdAsReplaced(middle_id_t originalId, int overpowerLayer);
+
 	void revert(SimPauseGuard& pauseGuard);
 
 	void addRevertAction(std::function<void(SimPauseGuard&)> callback) {

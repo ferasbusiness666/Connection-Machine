@@ -71,7 +71,7 @@ std::vector<std::optional<EvalConnectionPoint>> Replacer::getReplacementConnecti
 	return result;
 }
 
-void Replacer::mergeBuses(SimPauseGuard& pauseGuard, int layer) {
+void Replacer::mergeBuses(SimPauseGuard& pauseGuard, int layer, int junctionOverpowerLayer) {
 	std::vector<middle_id_t> allMiddleIds = middleIdProvider.getUsedIds();
 	for (const middle_id_t id : allMiddleIds) {
 		if (replacementIdLayers.contains(id)) {
@@ -93,12 +93,12 @@ void Replacer::mergeBuses(SimPauseGuard& pauseGuard, int layer) {
 			if (junctionId) {
 				continue;
 			}
-			mergeBusLane(pauseGuard, layer, id, lane);
+			mergeBusLane(pauseGuard, layer, junctionOverpowerLayer, id, lane);
 		}
 	}
 }
 
-void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, int layer, middle_id_t id, unsigned int laneId) {
+void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, int layer, int junctionOverpowerLayer, middle_id_t id, unsigned int laneId) {
 	Replacement& replacement = makeReplacement(layer);
 	middle_id_t newJunctionId = replacement.getNewId();
 	replacement.addGate(pauseGuard, BlockType::JUNCTION, newJunctionId);
@@ -112,6 +112,9 @@ void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, int layer, middle_id_t id
 		replacement.trackGate(current.blockId);
 		defineJunctionInsideBus(current.blockId, current.laneId, newJunctionId, replacement);
 		BlockType blockType = busInterfacePassthrough.getBlockType(current.blockId);
+		if (blockType == BlockType::JUNCTION) {
+			replacement.markIdAsReplaced(current.blockId, junctionOverpowerLayer);
+		}
 		// get all inputs/outputs, and add them to the queue if the lanes line up
 		std::vector<EvalConnection> inputs = busInterfacePassthrough.getInputs(current.blockId);
 		BlockData* blockData = blockDataManager.getBlockData(blockType);

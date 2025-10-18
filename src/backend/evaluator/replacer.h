@@ -46,7 +46,7 @@ public:
 
 	void endEdit(SimPauseGuard& pauseGuard) {
 		cleanReplacements();
-		mergeBuses(pauseGuard, 0);
+		mergeBuses(pauseGuard, 0, 2);
 		mergeJunctions(pauseGuard, 1);
 
 		busInterfacePassthrough.endEdit(pauseGuard);
@@ -221,8 +221,8 @@ private:
 		};
 	};
 
-	void mergeBuses(SimPauseGuard& pauseGuard, int layer);
-	void mergeBusLane(SimPauseGuard& pauseGuard, int layer, middle_id_t id, unsigned int laneId);
+	void mergeBuses(SimPauseGuard& pauseGuard, int layer, int junctionOverpowerLayer);
+	void mergeBusLane(SimPauseGuard& pauseGuard, int layer, int junctionOverpowerLayer, middle_id_t id, unsigned int laneId);
 	void mergeJunctions(SimPauseGuard& pauseGuard, int layer);
 	JunctionFloodFillResult junctionFloodFill(middle_id_t junctionId);
 	BlockDataManager& blockDataManager;
