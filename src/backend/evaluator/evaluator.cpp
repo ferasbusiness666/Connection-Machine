@@ -984,7 +984,7 @@ void Evaluator::processDirtyNodes() {
 		auto it = middleIdToEvalPositionMap.find(id);
 		if (it != middleIdToEvalPositionMap.end()) {
 			const EvalPosition& evalPosition = it->second;
-			dirtyNodes.insert(evalPosition);
+			dirtyBlockAt(evalPosition.position, evalPosition.evalCircuitId);
 		}
 	}
 	dirtyMiddleIds.clear();
