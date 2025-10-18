@@ -24,6 +24,7 @@ struct BlockInstance {
 	glm::vec2 texPos;
 	glm::vec2 texSize;
 	uint32_t orientation;
+	glm::vec2 stateStep;
 
 	inline static std::vector<VkVertexInputBindingDescription> getBindingDescriptions() {
 		std::vector<VkVertexInputBindingDescription> bindingDescriptions(1);
@@ -35,7 +36,7 @@ struct BlockInstance {
     }
 
 	inline static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
-		std::vector<VkVertexInputAttributeDescription> attributeDescriptions(6);
+		std::vector<VkVertexInputAttributeDescription> attributeDescriptions(7);
 
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
@@ -66,6 +67,11 @@ struct BlockInstance {
 		attributeDescriptions[5].location = 5;
 		attributeDescriptions[5].format = VK_FORMAT_R32_UINT;
 		attributeDescriptions[5].offset = offsetof(BlockInstance, orientation);
+
+		attributeDescriptions[6].binding = 0;
+		attributeDescriptions[6].location = 6;
+		attributeDescriptions[6].format = VK_FORMAT_R32G32_SFLOAT;
+		attributeDescriptions[6].offset = offsetof(BlockInstance, stateStep);
 
 		return attributeDescriptions;
 	}
@@ -113,6 +119,7 @@ struct RenderedBlock {
 	unsigned int textureIndex;
 	glm::vec2 textureOrigin;
 	glm::vec2 textureSize;
+	glm::vec2 textureStateStep;
 	Orientation orientation;
 	FSize size;
 	Position statePosition;

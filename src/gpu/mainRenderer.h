@@ -64,6 +64,7 @@ public:
 	void removeBlockTexture(BlockTextureId blockTextureId);
 	void setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId);
 	void setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize);
+	void setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize, Vec2Int textureStepSize);
 	BlockPortRenderDataId addBlockPort(BlockRenderDataId blockRenderDataId, bool isInput, FVector positionOnBlock);
 	void removeBlockPort(BlockRenderDataId blockRenderDataId, BlockPortRenderDataId blockPortRenderDataId);
 	void moveBlockPort(BlockRenderDataId blockRenderDataId, BlockPortRenderDataId blockPortRenderDataId, FVector newPositionOnBlock);

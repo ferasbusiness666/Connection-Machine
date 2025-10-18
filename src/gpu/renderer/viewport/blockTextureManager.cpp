@@ -159,7 +159,7 @@ BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId block
 	auto blockTextureIter = blockTextures.find(blockTextureId);
 	if (blockTextureIter == blockTextures.end()) {
 		logError("Could not find block texture with id {}", "BlockTextureManager", blockTextureId);
-		return { glm::vec2(0, 0), glm::vec2(0, 0), 0 };
+		return { glm::vec2(0, 0), glm::vec2(0, 0), 0, glm::vec2(0, 0) };
 	}
 	return BlockTextureCords(
 		glm::vec2(
@@ -170,23 +170,29 @@ BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId block
 			(double)(blockTextureIter->second.textureSize.x) / (double)textureArray->textureSize.width,
 			(double)(blockTextureIter->second.textureSize.y) / (double)textureArray->textureSize.height
 		),
-		blockTextureIter->second.textureLayer
+		blockTextureIter->second.textureLayer,
+		glm::vec2(0, 0)
 	);
 }
 
 BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize) const {
+	return getBlockTextureCords(blockTextureId, tileSize, smallestCordTile, blockSize, Vec2Int(0, tileSize.y*blockSize.y));
+}
+
+BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize, Vec2Int textureStepSize) const {
 	auto blockTextureIter = blockTextures.find(blockTextureId);
 	if (blockTextureIter == blockTextures.end()) {
 		logError("Could not find block texture with id {}", "BlockTextureManager", blockTextureId);
-		return { glm::vec2(0, 0), glm::vec2(0, 0), 0 };
+		return { glm::vec2(0, 0), glm::vec2(0, 0), 0, glm::vec2(0, 0) };
 	}
 	return BlockTextureCords(
 		glm::vec2(
-			(double)(blockTextureIter->second.textureOrigin.x + smallestCordTile.x * tileSize.x) / (double)textureArray->textureSize.width,
-			(double)(blockTextureIter->second.textureOrigin.y + smallestCordTile.y * tileSize.y) / (double)textureArray->textureSize.height
+			(double)(blockTextureIter->second.textureOrigin.x + smallestCordTile.x * tileSize.x + 4) / (double)textureArray->textureSize.width,
+			(double)(blockTextureIter->second.textureOrigin.y + smallestCordTile.y * tileSize.y + 4) / (double)textureArray->textureSize.height
 		),
-		glm::vec2((double)(blockSize.x * tileSize.x) / (double)textureArray->textureSize.width, (double)(blockSize.y * tileSize.y) / (double)(textureArray->textureSize.height)),
-		blockTextureIter->second.textureLayer
+		glm::vec2((double)(blockSize.x * tileSize.x - 8) / (double)textureArray->textureSize.width, (double)(blockSize.y * tileSize.y - 8) / (double)(textureArray->textureSize.height)),
+		blockTextureIter->second.textureLayer,
+		glm::vec2((double)textureStepSize.x / (double)textureArray->textureSize.width, (double)textureStepSize.y / (double)textureArray->textureSize.height)
 	);
 }
 

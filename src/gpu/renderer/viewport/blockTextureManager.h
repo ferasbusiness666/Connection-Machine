@@ -37,10 +37,12 @@ public:
 
 struct BlockTextureCords {
 public:
-	BlockTextureCords(glm::vec2 textureOriginUV, glm::vec2 textureSizeUV, unsigned int textureLayer) : textureOriginUV(textureOriginUV), textureSizeUV(textureSizeUV), textureLayer(textureLayer) {}
+	BlockTextureCords(glm::vec2 textureOriginUV, glm::vec2 textureSizeUV, unsigned int textureLayer, glm::vec2 textureUVStateStep) :
+		textureOriginUV(textureOriginUV), textureSizeUV(textureSizeUV), textureLayer(textureLayer), textureUVStateStep(textureUVStateStep) {}
 	bool operator==(const BlockTextureCords& other) const {
-		return textureOriginUV == other.textureOriginUV && textureSizeUV == other.textureSizeUV && textureLayer == other.textureLayer;
+		return textureOriginUV == other.textureOriginUV && textureSizeUV == other.textureSizeUV && textureLayer == other.textureLayer && textureUVStateStep == other.textureUVStateStep;
 	}
+	glm::vec2 textureUVStateStep;
 	glm::vec2 textureOriginUV;
 	glm::vec2 textureSizeUV;
 	unsigned int textureLayer;
@@ -57,6 +59,7 @@ public:
 	void removeBlockTexture(BlockTextureId blockTextureId);
 	BlockTextureCords getBlockTextureCords(BlockTextureId blockTextureId) const;
 	BlockTextureCords getBlockTextureCords(BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize) const;
+	BlockTextureCords getBlockTextureCords(BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize, Vec2Int textureStepSize) const;
 	void update();
 	void cleanup();
 
