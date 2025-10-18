@@ -67,10 +67,10 @@ TEST_F(CircuitTest, BlockPlacementCollision) {
 		block = circuit->getBlockContainer()->getBlock(pos);
 		ASSERT_TRUE(block == nullptr);
 
-		// Test redo nothing
+		// Test redo after undo nothing
 		circuit->redo();
 		block = circuit->getBlockContainer()->getBlock(pos);
-		ASSERT_TRUE(block == nullptr);
+		ASSERT_FALSE(block == nullptr);
 	}
 }
 
