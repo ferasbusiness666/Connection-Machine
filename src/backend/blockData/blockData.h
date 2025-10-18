@@ -257,6 +257,7 @@ public:
 				ports.push_back(pair.first);
 			}
 		}
+		return ports;
 	}
 	inline unsigned int getLaneCount() const noexcept {
 		assert(isBus() && "Only bus blocks have lane counts");
