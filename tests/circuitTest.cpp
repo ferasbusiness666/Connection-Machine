@@ -416,7 +416,7 @@ TEST_F(CircuitTest, MoveBlockSimple) {
 
 	bool inserted = circuit->tryInsertBlock(pos1, Rotation::ZERO, BlockType::AND);
 	const Block* block1 = container->getBlock(pos1);
-	bool moved = circuit->tryMoveBlock(pos1, pos2);
+	bool moved = circuit->tryMoveBlock(pos1, pos2, Orientation());
 	const Block* block2 = container->getBlock(pos1);
 	const Block* block3 = container->getBlock(pos2);
 	ASSERT_TRUE(inserted);
@@ -442,7 +442,7 @@ TEST_F(CircuitTest, MoveBlock) {
 	circuit->tryInsertBlock(pos3, Rotation::ZERO, BlockType::AND);
 	circuit->tryCreateConnection(pos1, pos2);
 	circuit->tryCreateConnection(pos2, pos3);
-	circuit->tryMoveBlock(pos2, pos4);
+	circuit->tryMoveBlock(pos2, pos4, Orientation());
 	ASSERT_TRUE(container->connectionExists(pos1, pos4));
 	ASSERT_TRUE(container->connectionExists(pos4, pos3));
 }

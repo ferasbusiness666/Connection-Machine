@@ -139,7 +139,7 @@ TEST_F(EvaluatorTest, EvaluatingCircuitModifications) {
 	// block movement
 	evaluator->setState(pos2, true);
 	Position newPos(i, i); ++i;
-	circuit->tryMoveBlock(pos2, newPos);
+	circuit->tryMoveBlock(pos2, newPos, Orientation());
 
 	// reaccess addresses
 	//ASSERT_EQ(evaluator->getState(Address(pos2)), false); // This old address will cause an error as it is not found in address tree
