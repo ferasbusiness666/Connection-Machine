@@ -1,5 +1,7 @@
 #include "evaluatorTest.h"
 
+#include "backend/evaluator/evaluator.h"
+
 // Note that logic simulator is tested separately
 void EvaluatorTest::SetUp() {
 	circuit_id_t circuitId = backend.createCircuit();
@@ -79,7 +81,7 @@ TEST_F(EvaluatorTest, BasicStateManagement) {
 // 	for (const Position& pos : positions) {
 // 		addresses.push_back(Address(pos));
 // 	}
-// 
+//
 // 	std::vector<logic_state_t> states = evaluator->getBulkStates(addresses);
 // 	ASSERT_EQ(states.size(), addresses.size());
 // 	for (logic_state_t state : states) {
@@ -474,7 +476,7 @@ TEST_F(EvaluatorTest, LargeEvaluatorTest) {
 		BlockType::NOR,
 		BlockType::XNOR
 	};
-	
+
 	for (i = 0; i < LARGE_NUMBER; i++) {
 		circuit->tryInsertBlock(Position(i, 0), Rotation::ZERO, BlockType::SWITCH);
 		evaluator->setState(Address( {i, 0} ), logic_state_t::HIGH);
