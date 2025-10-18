@@ -127,7 +127,37 @@ bool BlockContainer::trySetType(Position positionOfBlock, BlockType type, Differ
 	if (type == selfBlockType) return false;
 	Block* oldBlock = getBlock_(positionOfBlock);
 	if (!oldBlock) return false;
-	if (oldBlock->type() == type) return true;
+		BlockType oldBlockType = oldBlock->type();
+	if (oldBlockType == type) return true;
+	if (((
+			type == BlockType::AND ||
+			type == BlockType::OR ||
+			type == BlockType::XOR ||
+			type == BlockType::NOR ||
+			type == BlockType::NAND ||
+			type == BlockType::XNOR ||
+			type == BlockType::NOT ||
+			type == BlockType::BUFFER
+		) && (
+			oldBlockType != BlockType::AND &&
+			oldBlockType != BlockType::OR &&
+			oldBlockType != BlockType::XOR &&
+			oldBlockType != BlockType::NOR &&
+			oldBlockType != BlockType::NAND &&
+			oldBlockType != BlockType::XNOR &&
+			oldBlockType != BlockType::NOT &&
+			oldBlockType != BlockType::BUFFER
+	)) || ((
+			type == BlockType::CONSTANT_OFF ||
+			type == BlockType::CONSTANT_ON ||
+			type == BlockType::CONSTANT_Z ||
+			type == BlockType::CONSTANT_X
+		) && (
+			oldBlockType != BlockType::CONSTANT_OFF &&
+			oldBlockType != BlockType::CONSTANT_ON &&
+			oldBlockType != BlockType::CONSTANT_Z &&
+			oldBlockType != BlockType::CONSTANT_X
+	))) return false;
 	Position pos = oldBlock->getPosition();
 	Orientation rot = oldBlock->getOrientation();
 	auto connections = oldBlock->getConnectionContainer().getConnections();
