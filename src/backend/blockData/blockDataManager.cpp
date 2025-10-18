@@ -194,6 +194,7 @@ void BlockDataManager::initializeDefaults() {
 		busInterfaceBlockData1->setConnectionBitConfiguration(i * 2 + 3, std::vector<unsigned int>{ i });
 	}
 	busInterfaceBlockData1->setTexturePath((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
+	busInterfaceBlockData1->setIsPlaceable(false);
 	// BUS_INTERFACE_2
 	BlockData* busInterfaceBlockData2 = getBlockData(BlockType::BUS_INTERFACE_2);
 	busInterfaceBlockData2->setName("Bus Interface 4x2 -> 1x8");
@@ -211,6 +212,7 @@ void BlockDataManager::initializeDefaults() {
 		busInterfaceBlockData2->setConnectionBitConfiguration(i * 2 + 3, std::vector<unsigned int>{ i * 2, i * 2 + 1 });
 	}
 	busInterfaceBlockData2->setTexturePath((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
+	busInterfaceBlockData2->setIsPlaceable(false);
 	// BUS_INTERFACE_3
 	BlockData* busInterfaceBlockData3 = getBlockData(BlockType::BUS_INTERFACE_3);
 	busInterfaceBlockData3->setName("Bus Interface 2 -> 1x2");
@@ -228,4 +230,5 @@ void BlockDataManager::initializeDefaults() {
 		busInterfaceBlockData3->setConnectionBitConfiguration(i * 2 + 3, std::vector<unsigned int>{ i });
 	}
 	busInterfaceBlockData3->setTexturePath((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
+	busInterfaceBlockData3->setIsPlaceable(false);
 }
