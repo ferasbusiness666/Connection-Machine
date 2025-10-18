@@ -60,17 +60,9 @@ VulkanChunkAllocation::VulkanChunkAllocation(VulkanDevice* device,const Rendered
 		}
 
 		if (evaluator) {
-			std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> simIds = evaluator->getBlockSimulatorIds(address, positions);
+			std::vector<simulator_id_t> simIds = evaluator->getBlockSimulatorIds(address, positions);
 			for (size_t i = 0; i < simIds.size(); i++) {
-				// for now, if we get multiple sim ids, just use the first one
-				if (std::holds_alternative<std::vector<simulator_id_t>>(simIds[i])) {
-					auto vec = std::get<std::vector<simulator_id_t>>(simIds[i]);
-					if (!vec.empty()) {
-						simulatorIds[indexes[i]] = vec[0];
-					}
-				} else {
-					simulatorIds[indexes[i]] = std::get<simulator_id_t>(simIds[i]);
-				}
+				simulatorIds[indexes[i]] = simIds[i];
 			}
 		}
 

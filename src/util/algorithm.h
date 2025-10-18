@@ -95,4 +95,14 @@ namespace std {
 	}
 }
 
+template <typename T>
+inline std::vector<std::optional<T>> to_optional_vector(const std::vector<T>& input) {
+	std::vector<std::optional<T>> result;
+	result.reserve(input.size());
+	for (const auto& value : input) {
+		result.emplace_back(value);
+	}
+	return result;
+}
+
 #endif /* algorithm_h */
