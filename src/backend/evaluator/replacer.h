@@ -77,6 +77,7 @@ public:
 			}
 			BlockType blockType = busInterfacePassthrough.getBlockType(point->gateId);
 			if (blockType == BlockType::NONE) {
+				logError("Internal eval error busInterfacePassthrough.getBlockType returned: BlockType::NONE, gateid: {}", "Replacer", point->gateId);
 				result.emplace_back(0);
 				continue;
 			}

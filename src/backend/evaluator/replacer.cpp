@@ -309,6 +309,7 @@ std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> Replacer:
 		BlockType blockType = busInterfacePassthrough.getBlockType(point->gateId);
 		if (blockType == BlockType::NONE) {
 			result.emplace_back(static_cast<simulator_id_t>(0));
+			logError("Internal eval error busInterfacePassthrough.getBlockType returned: BlockType::NONE, gateid: {}", "Replacer", point->gateId);
 			continue;
 		}
 		if (blockType == BlockType::JUNCTION) {
