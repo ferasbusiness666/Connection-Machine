@@ -279,18 +279,13 @@ public:
 	}
 	inline bool hasBlockState() const noexcept {
 		if (defaultData) return true;
-		return receivesBlockState;
-	}
-	inline void setHasBlockState(bool hasBlockState) noexcept {
-		this->receivesBlockState = hasBlockState;
-		sendBlockDataUpdate();
+		return (primitive) && !(bus);
 	}
 
 private:
 	BlockType blockType;
 	bool defaultData = true;
 	bool primitive = true; // true if defined by default (And, Or, Xor...)
-	bool receivesBlockState = false;
 	bool placeable = true;
 	bool bus = false;
 	std::string name = "Unnamed Block";
