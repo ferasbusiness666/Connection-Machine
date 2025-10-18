@@ -206,6 +206,10 @@ void MainRenderer::setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTex
 	blockRenderDataManager.setBlockTexture(blockRenderDataId, blockTextureId, tileSize, smallestCordTile, blockSize);
 }
 
+void MainRenderer::setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize, Vec2Int textureStepSize) {
+	blockRenderDataManager.setBlockTexture(blockRenderDataId, blockTextureId, tileSize, smallestCordTile, blockSize, textureStepSize);
+}
+
 BlockPortRenderDataId MainRenderer::addBlockPort(BlockRenderDataId blockRenderDataId, bool isInput, FVector positionOnBlock) {
 	return blockRenderDataManager.addBlockPort(blockRenderDataId, isInput, positionOnBlock);
 }
