@@ -110,7 +110,7 @@ void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, int layer, middle_id_t id
 		BlockLane current = mergeQueue.front();
 		mergeQueue.pop();
 		replacement.trackGate(current.blockId);
-		defineJunctionInsideBus(id, laneId, newJunctionId, replacement);
+		defineJunctionInsideBus(current.blockId, current.laneId, newJunctionId, replacement);
 		BlockType blockType = busInterfacePassthrough.getBlockType(current.blockId);
 		// get all inputs/outputs, and add them to the queue if the lanes line up
 		std::vector<EvalConnection> inputs = busInterfacePassthrough.getInputs(current.blockId);
