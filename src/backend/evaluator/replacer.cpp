@@ -137,6 +137,9 @@ void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, int layer, int junctionOv
 			replacement.trackConnection(input);
 			middle_id_t sourceBlockId = input.source.gateId;
 			BlockType sourceBlockType = busInterfacePassthrough.getBlockType(sourceBlockId);
+			if (sourceBlockType == BlockType::NONE) {
+				continue;
+			}
 			unsigned int sourceLaneId = connectionLaneIndex;
 			if (sourceBlockType != BlockType::JUNCTION) {
 				const BlockData* sourceBlockData = blockDataManager.getBlockData(sourceBlockType);
@@ -169,6 +172,9 @@ void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, int layer, int junctionOv
 			replacement.trackConnection(output);
 			middle_id_t destBlockId = output.destination.gateId;
 			BlockType destBlockType = busInterfacePassthrough.getBlockType(destBlockId);
+			if (destBlockType == BlockType::NONE) {
+				continue;
+			}
 			unsigned int destLaneId = connectionLaneIndex;
 			if (destBlockType != BlockType::JUNCTION) {
 				const BlockData* destBlockData = blockDataManager.getBlockData(destBlockType);
