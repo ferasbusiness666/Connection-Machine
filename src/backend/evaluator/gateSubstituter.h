@@ -1,12 +1,11 @@
 #ifndef gateSubstituter_h
 #define gateSubstituter_h
 
-#include "replacer.h"
-#include "evalConfig.h"
-#include "evalConnection.h"
-#include "evalTypedef.h"
-#include "idProvider.h"
 #include "logicSimulator.h"
+#include "evalConnection.h"
+#include "evalConfig.h"
+#include "evalDefs.h"
+#include "replacer.h"
 
 struct TrackedGate {
 	middle_id_t id;
