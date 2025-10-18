@@ -1038,12 +1038,12 @@ void Evaluator::processDirtyNodes() {
 				blockSimId,
 				SimulatorMappingUpdateType::BLOCK
 			});
-		} else {
-			simulatorMappingUpdates[evalPosition.evalCircuitId].push_back({
-				evalPosition.position,
-				(simulator_id_t)0,
-				SimulatorMappingUpdateType::BLOCK
-			});
+		// } else {
+		// 	simulatorMappingUpdates[evalPosition.evalCircuitId].push_back({
+		// 		evalPosition.position,
+		// 		(simulator_id_t)0,
+		// 		SimulatorMappingUpdateType::BLOCK
+		// 	});
 		}
 		logInfo("Sending PIN update for evalCircuitId {} at position {} with value {}", "Evaluator::processDirtyNodes", evalPosition.evalCircuitId, evalPosition.position.toString(), std::to_string(pinSimId));
 		simulatorMappingUpdates[evalPosition.evalCircuitId].push_back({
