@@ -1,11 +1,11 @@
 #ifndef logicSimulator_h
 #define logicSimulator_h
 
+#include "backend/container/block/blockDefs.h"
 #include "simulatorGates.h"
 #include "idProvider.h"
 #include "evalConfig.h"
 #include "threadPool.h"
-#include "backend/container/block/blockDefs.h"
 
 enum class SimGateType : int {
 	AND = 0,

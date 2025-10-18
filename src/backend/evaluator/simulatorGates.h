@@ -1,8 +1,8 @@
 #ifndef simulatorGates_h
 #define simulatorGates_h
 
-#include "evalTypedef.h"
 #include "logicState.h"
+#include "evalDefs.h"
 
 class SimulatorGate {
 public:

@@ -258,15 +258,15 @@ bool BlockContainer::tryCreateConnection(ConnectionEnd outputConnectionEnd, Conn
 			outputConnectionEnd.getConnectionId(),
 			ConnectionEnd(outputConnectionEnd.getBlockId(), inputConnectionEnd.getConnectionId())
 		) ||
-		input->type() == BlockType::BUS_INTERFACE && output->type() == BlockType::BUS_INTERFACE && input->getConnectionContainer().hasConnection(
+		inputBlockData->isBus() && outputBlockData->isBus() && input->getConnectionContainer().hasConnection(
 			outputConnectionEnd.getConnectionId(),
 			ConnectionEnd(outputConnectionEnd.getBlockId(), inputConnectionEnd.getConnectionId())
 		) ||
-		input->type() == BlockType::BUS_INTERFACE && output->type() == BlockType::JUNCTION && input->getConnectionContainer().hasConnection(
+		inputBlockData->isBus() && output->type() == BlockType::JUNCTION && input->getConnectionContainer().hasConnection(
 			outputConnectionEnd.getConnectionId(),
 			ConnectionEnd(outputConnectionEnd.getBlockId(), inputConnectionEnd.getConnectionId())
 		) ||
-		input->type() == BlockType::JUNCTION && output->type() == BlockType::BUS_INTERFACE && input->getConnectionContainer().hasConnection(
+		input->type() == BlockType::JUNCTION && outputBlockData->isBus() && input->getConnectionContainer().hasConnection(
 			outputConnectionEnd.getConnectionId(),
 			ConnectionEnd(outputConnectionEnd.getBlockId(), inputConnectionEnd.getConnectionId())
 		)
@@ -312,21 +312,23 @@ bool BlockContainer::tryCreateConnection(Position outputPosition, Position input
 	Block* output = getBlock_(outputPosition);
 	if (!output) return false;
 	std::optional<connection_end_id_t> outputConnectionId = output->getOutputConnectionId(outputPosition);
+	const BlockData* outputBlockData = blockDataManager->getBlockData(output->type());
+	const BlockData* inputBlockData = blockDataManager->getBlockData(input->type());
 	if (
 		!outputConnectionId ||
 		(input->type() == BlockType::JUNCTION && output->type() == BlockType::JUNCTION && input->getConnectionContainer().hasConnection(
 			outputConnectionId.value(),
 			ConnectionEnd(output->id(), inputConnectionId.value())
 		)) ||
-		(input->type() == BlockType::BUS_INTERFACE && output->type() == BlockType::BUS_INTERFACE && input->getConnectionContainer().hasConnection(
+		(inputBlockData->isBus() && outputBlockData->isBus() && input->getConnectionContainer().hasConnection(
 			outputConnectionId.value(),
 			ConnectionEnd(output->id(), inputConnectionId.value())
 		)) ||
-		(input->type() == BlockType::BUS_INTERFACE && output->type() == BlockType::JUNCTION && input->getConnectionContainer().hasConnection(
+		(inputBlockData->isBus() && output->type() == BlockType::JUNCTION && input->getConnectionContainer().hasConnection(
 			outputConnectionId.value(),
 			ConnectionEnd(output->id(), inputConnectionId.value())
 		)) ||
-		(input->type() == BlockType::JUNCTION && output->type() == BlockType::BUS_INTERFACE && input->getConnectionContainer().hasConnection(
+		(input->type() == BlockType::JUNCTION && outputBlockData->isBus() && input->getConnectionContainer().hasConnection(
 			outputConnectionId.value(),
 			ConnectionEnd(output->id(), inputConnectionId.value())
 		))
@@ -387,11 +389,13 @@ bool BlockContainer::tryRemoveConnection(ConnectionEnd outputConnectionEnd, Conn
 		);
 		return true;
 	}
+	const BlockData* outputBlockData = blockDataManager->getBlockData(output->type());
+	const BlockData* inputBlockData = blockDataManager->getBlockData(input->type());
 	if (
 		input->type() == BlockType::JUNCTION && output->type() == BlockType::JUNCTION ||
-		input->type() == BlockType::BUS_INTERFACE && output->type() == BlockType::BUS_INTERFACE ||
-		input->type() == BlockType::BUS_INTERFACE && output->type() == BlockType::JUNCTION ||
-		input->type() == BlockType::JUNCTION && output->type() == BlockType::BUS_INTERFACE
+		inputBlockData->isBus() && outputBlockData->isBus() ||
+		inputBlockData->isBus() && output->type() == BlockType::JUNCTION ||
+		input->type() == BlockType::JUNCTION && outputBlockData->isBus()
 	) {
 		std::optional<connection_end_id_t> outputConnectionId = input->getOutputConnectionId(inputConnectionPosition.value());
 		if (!outputConnectionId) return false;
@@ -431,11 +435,13 @@ bool BlockContainer::tryRemoveConnection(Position outputPosition, Position input
 		difference->addRemovedConnection(output->getPosition(), outputPosition, input->getPosition(), inputPosition);
 		return true;
 	}
+	const BlockData* outputBlockData = blockDataManager->getBlockData(output->type());
+	const BlockData* inputBlockData = blockDataManager->getBlockData(input->type());
 	if (
 		input->type() == BlockType::JUNCTION && output->type() == BlockType::JUNCTION ||
-		input->type() == BlockType::BUS_INTERFACE && output->type() == BlockType::BUS_INTERFACE ||
-		input->type() == BlockType::BUS_INTERFACE && output->type() == BlockType::JUNCTION ||
-		input->type() == BlockType::JUNCTION && output->type() == BlockType::BUS_INTERFACE
+		inputBlockData->isBus() && outputBlockData->isBus() ||
+		inputBlockData->isBus() && output->type() == BlockType::JUNCTION ||
+		input->type() == BlockType::JUNCTION && outputBlockData->isBus()
 	) {
 		outputConnectionId = input->getOutputConnectionId(inputPosition);
 		if (!outputConnectionId) return false;

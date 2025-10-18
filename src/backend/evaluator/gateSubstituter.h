@@ -1,12 +1,11 @@
 #ifndef gateSubstituter_h
 #define gateSubstituter_h
 
-#include "replacer.h"
-#include "evalConfig.h"
-#include "evalConnection.h"
-#include "evalTypedef.h"
-#include "idProvider.h"
 #include "logicSimulator.h"
+#include "evalConnection.h"
+#include "evalConfig.h"
+#include "evalDefs.h"
+#include "replacer.h"
 
 struct TrackedGate {
 	middle_id_t id;
@@ -70,8 +69,9 @@ public:
 		EvalConfig& evalConfig,
 		IdProvider<middle_id_t>& middleIdProvider,
 		std::vector<simulator_id_t>& dirtySimulatorIds,
+		std::vector<middle_id_t>& dirtyMiddleIds,
 		BlockDataManager& blockDataManager) :
-		replacer(evalConfig, middleIdProvider, dirtySimulatorIds, blockDataManager),
+		replacer(evalConfig, middleIdProvider, dirtySimulatorIds, dirtyMiddleIds, blockDataManager),
 		middleIdProvider(middleIdProvider) {}
 
 	void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
@@ -132,10 +132,7 @@ public:
 	inline std::vector<logic_state_t> getStatesFromSimulatorIds(const std::vector<simulator_id_t>& simulatorIds) const {
 		return replacer.getStatesFromSimulatorIds(simulatorIds);
 	}
-	inline std::vector<SimulatorStateAndPinSimId> getSimulatorIds(const std::vector<EvalConnectionPoint>& points) const {
-		return replacer.getSimulatorIds(points);
-	}
-	inline std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getBlockSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
+	inline std::vector<simulator_id_t> getBlockSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
 		return replacer.getBlockSimulatorIds(points);
 	}
 	inline std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getPinSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {

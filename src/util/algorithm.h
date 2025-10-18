@@ -73,4 +73,36 @@ inline void stringSplitInto(const std::string& s, const char delimiter, std::vec
 	}
 }
 
+namespace std {
+	template <typename T>
+	inline std::string to_string(const std::vector<T>& vec) {
+		std::string result = "[";
+		for (size_t i = 0; i < vec.size(); i++) {
+			result += std::to_string(vec[i]);
+			if (i < vec.size() - 1) {
+				result += ", ";
+			}
+		}
+		result += "]";
+		return result;
+	}
+
+	template <typename... Ts>
+	inline std::string to_string(const std::variant<Ts...>& var) {
+		return std::visit([](const auto& value) {
+			return std::to_string(value);
+		}, var);
+	}
+}
+
+template <typename T>
+inline std::vector<std::optional<T>> to_optional_vector(const std::vector<T>& input) {
+	std::vector<std::optional<T>> result;
+	result.reserve(input.size());
+	for (const auto& value : input) {
+		result.emplace_back(value);
+	}
+	return result;
+}
+
 #endif /* algorithm_h */

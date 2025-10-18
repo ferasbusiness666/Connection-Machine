@@ -5,7 +5,7 @@
 void BlockDataManager::initializeDefaults() {
 	assert(blockData.size() == 0); // should call this before doing anything
 	// load default data
-	for (unsigned int i = 0; i < 19; i++) addBlock();
+	for (unsigned int i = 0; i < 21; i++) addBlock();
 
 	std::string mainTexturePath = (DirectoryManager::getResourceDirectory() / "logicTiles.png").string();
 
@@ -16,7 +16,7 @@ void BlockDataManager::initializeDefaults() {
 	andBlockData->setUsesTileMapTexture(true);
 	andBlockData->setTextureTileSize({ 256, 256 });
 	andBlockData->setTextureBlockTileSize({ 1, 1 });
-	andBlockData->setTextureSmallestCordTile({ 2, 0 });
+	andBlockData->setTextureSmallestCordTile({ 1, 0 });
 	// OR
 	BlockData* orBlockData = getBlockData(BlockType::OR);
 	orBlockData->setName("Or");
@@ -24,7 +24,7 @@ void BlockDataManager::initializeDefaults() {
 	orBlockData->setUsesTileMapTexture(true);
 	orBlockData->setTextureTileSize({ 256, 256 });
 	orBlockData->setTextureBlockTileSize({ 1, 1 });
-	orBlockData->setTextureSmallestCordTile({ 3, 0 });
+	orBlockData->setTextureSmallestCordTile({ 2, 0 });
 	// XOR
 	BlockData* xorBlockData = getBlockData(BlockType::XOR);
 	xorBlockData->setName("Xor");
@@ -32,7 +32,7 @@ void BlockDataManager::initializeDefaults() {
 	xorBlockData->setUsesTileMapTexture(true);
 	xorBlockData->setTextureTileSize({ 256, 256 });
 	xorBlockData->setTextureBlockTileSize({ 1, 1 });
-	xorBlockData->setTextureSmallestCordTile({ 4, 0 });
+	xorBlockData->setTextureSmallestCordTile({ 3, 0 });
 	// NAND
 	BlockData* nandBlockData = getBlockData(BlockType::NAND);
 	nandBlockData->setName("Nand");
@@ -40,7 +40,7 @@ void BlockDataManager::initializeDefaults() {
 	nandBlockData->setUsesTileMapTexture(true);
 	nandBlockData->setTextureTileSize({ 256, 256 });
 	nandBlockData->setTextureBlockTileSize({ 1, 1 });
-	nandBlockData->setTextureSmallestCordTile({ 5, 0 });
+	nandBlockData->setTextureSmallestCordTile({ 4, 0 });
 	// NOR
 	BlockData* norBlockData = getBlockData(BlockType::NOR);
 	norBlockData->setName("Nor");
@@ -48,7 +48,7 @@ void BlockDataManager::initializeDefaults() {
 	norBlockData->setUsesTileMapTexture(true);
 	norBlockData->setTextureTileSize({ 256, 256 });
 	norBlockData->setTextureBlockTileSize({ 1, 1 });
-	norBlockData->setTextureSmallestCordTile({ 6, 0 });
+	norBlockData->setTextureSmallestCordTile({ 5, 0 });
 	// XNOR
 	BlockData* xnorBlockData = getBlockData(BlockType::XNOR);
 	xnorBlockData->setName("Xnor");
@@ -56,7 +56,7 @@ void BlockDataManager::initializeDefaults() {
 	xnorBlockData->setUsesTileMapTexture(true);
 	xnorBlockData->setTextureTileSize({ 256, 256 });
 	xnorBlockData->setTextureBlockTileSize({ 1, 1 });
-	xnorBlockData->setTextureSmallestCordTile({ 7, 0 });
+	xnorBlockData->setTextureSmallestCordTile({ 6, 0 });
 	// BUFFER
 	BlockData* bufferBlockData = getBlockData(BlockType::BUFFER);
 	bufferBlockData->setName("Buffer");
@@ -64,7 +64,7 @@ void BlockDataManager::initializeDefaults() {
 	bufferBlockData->setUsesTileMapTexture(true);
 	bufferBlockData->setTextureTileSize({ 256, 256 });
 	bufferBlockData->setTextureBlockTileSize({ 1, 1 });
-	bufferBlockData->setTextureSmallestCordTile({ 0, 4 });
+	bufferBlockData->setTextureSmallestCordTile({ 7, 0 });
 	// NOT
 	BlockData* notBlockData = getBlockData(BlockType::NOT);
 	notBlockData->setName("Not");
@@ -92,7 +92,7 @@ void BlockDataManager::initializeDefaults() {
 	tristateBufferBlockData->setTexturePath(mainTexturePath);
 	tristateBufferBlockData->setUsesTileMapTexture(true);
 	tristateBufferBlockData->setTextureTileSize({ 256, 256 });
-	tristateBufferBlockData->setTextureBlockTileSize({ 1, 1 });
+	tristateBufferBlockData->setTextureBlockTileSize({ 1, 2 });
 	tristateBufferBlockData->setTextureSmallestCordTile({ 10, 0 });
 	// BUTTON
 	BlockData* buttonBlockData = getBlockData(BlockType::BUTTON);
@@ -177,22 +177,58 @@ void BlockDataManager::initializeDefaults() {
 	lightBlockData->setTextureTileSize({ 256, 256 });
 	lightBlockData->setTextureBlockTileSize({ 1, 1 });
 	lightBlockData->setTextureSmallestCordTile({ 15, 0 });
-	// BUS_INTERFACE
-	BlockData* busInterfaceBlockData = getBlockData(BlockType::BUS_INTERFACE);
-	busInterfaceBlockData->setName("Bus Interface");
-	busInterfaceBlockData->setDefaultData(false);
-	busInterfaceBlockData->setIsBus(true);
-	busInterfaceBlockData->setSize(Size(2, 8));
-	busInterfaceBlockData->setConnectionOutput(Vector(1, 0), 0);
-	busInterfaceBlockData->setConnectionBitConfiguration(0, std::vector<unsigned int>{ 0, 1, 2, 3, 4, 5, 6, 7 });
-	busInterfaceBlockData->setConnectionInput(Vector(1, 0), 1);
-	busInterfaceBlockData->setConnectionBitConfiguration(1, std::vector<unsigned int>{ 0, 1, 2, 3, 4, 5, 6, 7 });
+	// BUS_INTERFACE_1
+	BlockData* busInterfaceBlockData1 = getBlockData(BlockType::BUS_INTERFACE_1);
+	busInterfaceBlockData1->setName("Bus Interface 8 -> 1x8");
+	busInterfaceBlockData1->setDefaultData(false);
+	busInterfaceBlockData1->setIsBus(true);
+	busInterfaceBlockData1->setSize(Size(2, 8));
+	busInterfaceBlockData1->setConnectionOutput(Vector(1, 0), 0);
+	busInterfaceBlockData1->setConnectionBitConfiguration(0, std::vector<unsigned int>{ 0, 1, 2, 3, 4, 5, 6, 7 });
+	busInterfaceBlockData1->setConnectionInput(Vector(1, 0), 1);
+	busInterfaceBlockData1->setConnectionBitConfiguration(1, std::vector<unsigned int>{ 0, 1, 2, 3, 4, 5, 6, 7 });
 	for (unsigned int i = 0; i < 8; ++i) {
-		busInterfaceBlockData->setConnectionOutput(Vector(0, i), i * 2 + 2);
-		busInterfaceBlockData->setConnectionBitConfiguration(i * 2 + 2, std::vector<unsigned int>{ i });
-		busInterfaceBlockData->setConnectionInput(Vector(0, i), i * 2 + 3);
-		busInterfaceBlockData->setConnectionBitConfiguration(i * 2 + 3, std::vector<unsigned int>{ i });
+		busInterfaceBlockData1->setConnectionOutput(Vector(0, i), i * 2 + 2);
+		busInterfaceBlockData1->setConnectionBitConfiguration(i * 2 + 2, std::vector<unsigned int>{ i });
+		busInterfaceBlockData1->setConnectionInput(Vector(0, i), i * 2 + 3);
+		busInterfaceBlockData1->setConnectionBitConfiguration(i * 2 + 3, std::vector<unsigned int>{ i });
 	}
-	busInterfaceBlockData->setTexturePath((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
-	busInterfaceBlockData->setIsPlaceable(false);
+	busInterfaceBlockData1->setTexturePath((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
+	busInterfaceBlockData1->setIsPlaceable(false);
+	// BUS_INTERFACE_2
+	BlockData* busInterfaceBlockData2 = getBlockData(BlockType::BUS_INTERFACE_2);
+	busInterfaceBlockData2->setName("Bus Interface 4x2 -> 1x8");
+	busInterfaceBlockData2->setDefaultData(false);
+	busInterfaceBlockData2->setIsBus(true);
+	busInterfaceBlockData2->setSize(Size(2, 4));
+	busInterfaceBlockData2->setConnectionOutput(Vector(1, 0), 0);
+	busInterfaceBlockData2->setConnectionBitConfiguration(0, std::vector<unsigned int>{ 0, 1, 2, 3, 4, 5, 6, 7 });
+	busInterfaceBlockData2->setConnectionInput(Vector(1, 0), 1);
+	busInterfaceBlockData2->setConnectionBitConfiguration(1, std::vector<unsigned int>{ 0, 1, 2, 3, 4, 5, 6, 7 });
+	for (unsigned int i = 0; i < 4; ++i) {
+		busInterfaceBlockData2->setConnectionOutput(Vector(0, i), i * 2 + 2);
+		busInterfaceBlockData2->setConnectionBitConfiguration(i * 2 + 2, std::vector<unsigned int>{ i * 2, i * 2 + 1 });
+		busInterfaceBlockData2->setConnectionInput(Vector(0, i), i * 2 + 3);
+		busInterfaceBlockData2->setConnectionBitConfiguration(i * 2 + 3, std::vector<unsigned int>{ i * 2, i * 2 + 1 });
+	}
+	busInterfaceBlockData2->setTexturePath((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
+	busInterfaceBlockData2->setIsPlaceable(false);
+	// BUS_INTERFACE_3
+	BlockData* busInterfaceBlockData3 = getBlockData(BlockType::BUS_INTERFACE_3);
+	busInterfaceBlockData3->setName("Bus Interface 2 -> 1x2");
+	busInterfaceBlockData3->setDefaultData(false);
+	busInterfaceBlockData3->setIsBus(true);
+	busInterfaceBlockData3->setSize(Size(2, 2));
+	busInterfaceBlockData3->setConnectionOutput(Vector(1, 0), 0);
+	busInterfaceBlockData3->setConnectionBitConfiguration(0, std::vector<unsigned int>{ 0, 1 });
+	busInterfaceBlockData3->setConnectionInput(Vector(1, 0), 1);
+	busInterfaceBlockData3->setConnectionBitConfiguration(1, std::vector<unsigned int>{ 0, 1 });
+	for (unsigned int i = 0; i < 2; ++i) {
+		busInterfaceBlockData3->setConnectionOutput(Vector(0, i), i * 2 + 2);
+		busInterfaceBlockData3->setConnectionBitConfiguration(i * 2 + 2, std::vector<unsigned int>{ i });
+		busInterfaceBlockData3->setConnectionInput(Vector(0, i), i * 2 + 3);
+		busInterfaceBlockData3->setConnectionBitConfiguration(i * 2 + 3, std::vector<unsigned int>{ i });
+	}
+	busInterfaceBlockData3->setTexturePath((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
+	busInterfaceBlockData3->setIsPlaceable(false);
 }

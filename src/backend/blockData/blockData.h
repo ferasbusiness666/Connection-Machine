@@ -47,6 +47,41 @@ public:
 				return std::get<std::vector<unsigned int>>(bitConfiguration).at(0);
 			}
 		}
+		// TODO: improve the performance of the below functions by improving the data structure used to store bitConfiguration
+		unsigned int getLaneId(unsigned int index) const noexcept {
+			if (std::holds_alternative<unsigned int>(bitConfiguration)) {
+				assert(index < std::get<unsigned int>(bitConfiguration));
+				return index;
+			} else {
+				return std::get<std::vector<unsigned int>>(bitConfiguration).at(index);
+			}
+		}
+		unsigned int getMaxLaneId() const noexcept {
+			if (std::holds_alternative<unsigned int>(bitConfiguration)) {
+				return std::get<unsigned int>(bitConfiguration) - 1;
+			} else {
+				return std::get<std::vector<unsigned int>>(bitConfiguration).back();
+			}
+		}
+		bool containsLaneId(unsigned int laneId) const noexcept {
+			if (std::holds_alternative<unsigned int>(bitConfiguration)) {
+				return laneId < std::get<unsigned int>(bitConfiguration);
+			} else {
+				auto& vec = std::get<std::vector<unsigned int>>(bitConfiguration);
+				return std::find(vec.begin(), vec.end(), laneId) != vec.end();
+			}
+		}
+		unsigned int getIndexOfLaneId(unsigned int laneId) const noexcept {
+			if (std::holds_alternative<unsigned int>(bitConfiguration)) {
+				assert(laneId < std::get<unsigned int>(bitConfiguration));
+				return laneId;
+			} else {
+				auto& vec = std::get<std::vector<unsigned int>>(bitConfiguration);
+				auto iter = std::find(vec.begin(), vec.end(), laneId);
+				assert(iter != vec.end());
+				return std::distance(vec.begin(), iter);
+			}
+		}
 	};
 
 	BlockData(BlockType blockType, DataUpdateEventManager* dataUpdateEventManager);
@@ -188,6 +223,12 @@ public:
 		assert((!defaultData) && "this will be empty if defaultData is true");
 		return connections;
 	}
+	const ConnectionData* getConnectionData(connection_end_id_t connectionId) const noexcept {
+		if (defaultData) return nullptr;
+		auto iter = connections.find(connectionId);
+		if (iter == connections.end()) return nullptr;
+		return &iter->second;
+	}
 	void setConnectionIdName(connection_end_id_t connectionId, const std::string& name);
 	inline std::optional<std::string> getConnectionIdToName(connection_end_id_t connectionId) const {
 		if (defaultData) return connectionId == 1 ? "Out" : "In";
@@ -207,6 +248,25 @@ public:
 		if (iter == connections.end()) return nullptr;
 		return &iter->second.bitConfiguration;
 	}
+	inline const std::vector<unsigned int> getPortsWithLaneId(unsigned int laneId) const noexcept {
+		assert(isBus() && "Only bus blocks have lane ids");
+		std::vector<unsigned int> ports; // TODO: make this not linear search
+		for (auto& pair : connections) {
+			auto laneIds = pair.second.getLaneIds();
+			if (std::find(laneIds.begin(), laneIds.end(), laneId) != laneIds.end()) {
+				ports.push_back(pair.first);
+			}
+		}
+		return ports;
+	}
+	inline unsigned int getLaneCount() const noexcept {
+		assert(isBus() && "Only bus blocks have lane counts");
+		unsigned int laneCount = 0;
+		for (auto& pair : connections) {
+			laneCount = std::max(laneCount, pair.second.getMaxLaneId() + 1);
+		}
+		return laneCount;
+	}
 	inline void setConnectionBitConfiguration(connection_end_id_t connectionId, std::variant<unsigned int, std::vector<unsigned int>> bitConfiguration) noexcept {
 		if (std::holds_alternative<std::vector<unsigned int>>(bitConfiguration) && std::get<std::vector<unsigned int>>(bitConfiguration).empty()) {
 			logError("Cant set the bit configuration of a connection to be empty", "BlockData");
@@ -216,6 +276,10 @@ public:
 		auto iter = connections.find(connectionId);
 		if (iter == connections.end()) return;
 		iter->second.bitConfiguration = bitConfiguration;
+	}
+	inline bool hasBlockState() const noexcept {
+		if (defaultData) return true;
+		return (primitive) && !(bus);
 	}
 
 private:
