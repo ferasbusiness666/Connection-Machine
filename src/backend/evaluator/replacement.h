@@ -85,6 +85,10 @@ public:
 		trackInput(id);
 	}
 
+	int getLayer() const {
+		return layer;
+	}
+
 private:
 	struct ReplacementLayerEntry {
 		middle_id_t id;

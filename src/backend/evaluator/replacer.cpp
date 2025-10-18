@@ -18,14 +18,20 @@ void Replacer::cleanReplacements() {
 	}
 }
 
-void Replacer::pingOutputs(SimPauseGuard& pauseGuard, middle_id_t id) {
+void Replacer::pingOutputs(SimPauseGuard& pauseGuard, middle_id_t id, int minLayer) {
 	for (Replacement& replacement : replacements) {
+		if (replacement.getLayer() < minLayer) {
+			continue;
+		}
 		replacement.pingOutput(pauseGuard, id);
 	}
 }
 
-void Replacer::pingInputs(SimPauseGuard& pauseGuard, middle_id_t id) {
+void Replacer::pingInputs(SimPauseGuard& pauseGuard, middle_id_t id, int minLayer) {
 	for (Replacement& replacement : replacements) {
+		if (replacement.getLayer() < minLayer) {
+			continue;
+		}
 		replacement.pingInput(pauseGuard, id);
 	}
 }

@@ -145,8 +145,8 @@ private:
 
 	Replacement& makeReplacement(int layer);
 	void cleanReplacements();
-	void pingOutputs(SimPauseGuard& pauseGuard, middle_id_t id);
-	void pingInputs(SimPauseGuard& pauseGuard, middle_id_t id);
+	void pingOutputs(SimPauseGuard& pauseGuard, middle_id_t id, int minLayer = 0);
+	void pingInputs(SimPauseGuard& pauseGuard, middle_id_t id, int minLayer = 0);
 	EvalConnectionPoint getReplacementConnectionPoint(EvalConnectionPoint point) const;
 	std::vector<EvalConnectionPoint> getReplacementConnectionPoints(const std::vector<EvalConnectionPoint>& points) const;
 	std::vector<std::optional<EvalConnectionPoint>> getReplacementConnectionPoints(const std::vector<std::optional<EvalConnectionPoint>>& points) const;
