@@ -93,40 +93,7 @@ public:
 		return result;
 	}
 
-	inline std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getPinSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
-		// return busInterfacePassthrough.getPinSimulatorIds(getReplacementConnectionPoints(points));
-		std::vector<std::optional<EvalConnectionPoint>> replacedPoints = getReplacementConnectionPoints(points);
-		std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> result;
-		result.reserve(replacedPoints.size());
-		for (const auto& point : replacedPoints) {
-			if (!point.has_value()) {
-				result.emplace_back(static_cast<simulator_id_t>(0));
-				continue;
-			}
-			BlockType blockType = busInterfacePassthrough.getBlockType(point->gateId);
-			const BlockData* blockData = blockDataManager.getBlockData(blockType);
-			if (blockData && blockData->isBus()) {
-				const BlockData::ConnectionData* connectionData = blockData->getConnectionData(point->portId);
-				std::vector<simulator_id_t> simIds;
-				simIds.reserve(connectionData->getBitWidth());
-				if (busInternalJunctions.contains(point->gateId)) {
-					const BusInternalJunctionArray& busInternalJunctionArray = busInternalJunctions.at(point->gateId);
-					for (unsigned int laneIndex : connectionData->getLaneIds()) {
-						simIds.push_back(busInterfacePassthrough.getPinSimulatorId(getReplacementConnectionPoint({busInternalJunctionArray.junctionIds[laneIndex], 0})));
-					}
-				} else {
-					for (unsigned int laneIndex : connectionData->getLaneIds()) {
-						simIds.push_back(0);
-					}
-				}
-				result.emplace_back(std::move(simIds));
-			} else {
-				simulator_id_t simId = busInterfacePassthrough.getPinSimulatorId(*point);
-				result.emplace_back(simId);
-			}
-		}
-		return result;
-	}
+	std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getPinSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const;
 
 	inline void setState(EvalConnectionPoint id, logic_state_t state) {
 		busInterfacePassthrough.setState(getReplacementConnectionPoint(id), state);
