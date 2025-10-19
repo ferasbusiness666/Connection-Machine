@@ -195,6 +195,8 @@ void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, int layer, int junctionOv
 	}
 }
 
+
+
 void Replacer::mergeJunctions(SimPauseGuard& pauseGuard, int layer) {
 	std::vector<middle_id_t> allMiddleIds = middleIdProvider.getUsedIds();
 	for (const middle_id_t id : allMiddleIds) {
@@ -205,17 +207,17 @@ void Replacer::mergeJunctions(SimPauseGuard& pauseGuard, int layer) {
 		}
 		// check if we're a junction
 		BlockType blockType = busInterfacePassthrough.getBlockType(id);
-		if (blockType != BlockType::JUNCTION) {
+		if (!isJunctionType(blockType)) {
 			continue;
 		}
 		JunctionFloodFillResult floodFillResult = junctionFloodFill(id);
 
-		if (floodFillResult.outputsGoingIntoJunctions.size() == 0) {
+		if (floodFillResult.outputsGoingIntoJunctions.size() == 0 && floodFillResult.defaultState == logic_state_t::FLOATING) {
 			continue;
 		}
 
 		Replacement& replacement = makeReplacement(layer);
-		if (floodFillResult.outputsGoingIntoJunctions.size() == 1) {
+		if (floodFillResult.outputsGoingIntoJunctions.size() == 1 && floodFillResult.defaultState == logic_state_t::FLOATING) {
 			EvalConnectionPoint output = floodFillResult.outputsGoingIntoJunctions.at(0);
 			for (const middle_id_t junctionId : floodFillResult.junctionIds) {
 				replacement.removeGate(pauseGuard, junctionId, { {0, output }, {1, output } });
@@ -226,7 +228,17 @@ void Replacer::mergeJunctions(SimPauseGuard& pauseGuard, int layer) {
 			replacement.trackOutput(output.gateId);
 		} else {
 			middle_id_t newJunctionId = replacement.getNewId();
-			replacement.addGate(pauseGuard, BlockType::JUNCTION, newJunctionId);
+			BlockType typeOfJunction;
+			if (floodFillResult.defaultState == logic_state_t::LOW) {
+				typeOfJunction = BlockType::JUNCTION_L;
+			} else if (floodFillResult.defaultState == logic_state_t::HIGH) {
+				typeOfJunction = BlockType::JUNCTION_H;
+			} else if (floodFillResult.defaultState == logic_state_t::UNDEFINED) {
+				typeOfJunction = BlockType::JUNCTION_X;
+			} else {
+				typeOfJunction = BlockType::JUNCTION;
+			}
+			replacement.addGate(pauseGuard, typeOfJunction, newJunctionId);
 			for (const middle_id_t junctionId : floodFillResult.junctionIds) {
 				replacement.removeGate(pauseGuard, junctionId, newJunctionId);
 			}
@@ -252,18 +264,35 @@ Replacer::JunctionFloodFillResult Replacer::junctionFloodFill(middle_id_t juncti
 	std::queue<middle_id_t> queue;
 	queue.push(junctionId);
 	visited.insert(junctionId);
+	logic_state_t defaultState = logic_state_t::FLOATING;
 	while (!queue.empty()) {
 		middle_id_t currentId = queue.front();
 		queue.pop();
 		result.junctionIds.push_back(currentId);
 		std::vector<EvalConnection> outputs = busInterfacePassthrough.getOutputs(currentId);
 		std::vector<EvalConnection> inputs = busInterfacePassthrough.getInputs(currentId);
+		BlockType currentBlockType = busInterfacePassthrough.getBlockType(currentId);
+		if (currentBlockType == BlockType::JUNCTION_L) {
+			if (defaultState == logic_state_t::HIGH) {
+				defaultState = logic_state_t::UNDEFINED;
+			} else if (defaultState == logic_state_t::FLOATING) {
+				defaultState = logic_state_t::LOW;
+			}
+		} else if (currentBlockType == BlockType::JUNCTION_H) {
+			if (defaultState == logic_state_t::LOW) {
+				defaultState = logic_state_t::UNDEFINED;
+			} else if (defaultState == logic_state_t::FLOATING) {
+				defaultState = logic_state_t::HIGH;
+			}
+		} else if (currentBlockType == BlockType::JUNCTION_X) {
+			defaultState = logic_state_t::UNDEFINED;
+		}
 		for (const EvalConnection& output : outputs) {
 			if (visited.contains(output.destination.gateId)) {
 				continue;
 			}
 			BlockType outputBlockType = busInterfacePassthrough.getBlockType(output.destination.gateId);
-			if (outputBlockType == BlockType::JUNCTION) {
+			if (isJunctionType(outputBlockType)) {
 				queue.push(output.destination.gateId);
 				visited.insert(output.destination.gateId);
 				continue;
@@ -275,7 +304,7 @@ Replacer::JunctionFloodFillResult Replacer::junctionFloodFill(middle_id_t juncti
 				continue;
 			}
 			BlockType inputBlockType = busInterfacePassthrough.getBlockType(input.source.gateId);
-			if (inputBlockType == BlockType::JUNCTION) {
+			if (isJunctionType(inputBlockType)) {
 				queue.push(input.source.gateId);
 				visited.insert(input.source.gateId);
 				continue;
@@ -292,7 +321,7 @@ Replacer::JunctionFloodFillResult Replacer::junctionFloodFill(middle_id_t juncti
 					continue; // only consider outputs from the same port
 				}
 				BlockType nodeOutputBlockType = busInterfacePassthrough.getBlockType(nodeOutput.destination.gateId);
-				if (nodeOutputBlockType == BlockType::JUNCTION) {
+				if (isJunctionType(nodeOutputBlockType)) {
 					if (visited.contains(nodeOutput.destination.gateId)) {
 						continue;
 					}
@@ -304,6 +333,7 @@ Replacer::JunctionFloodFillResult Replacer::junctionFloodFill(middle_id_t juncti
 			}
 		}
 	}
+	result.defaultState = defaultState;
 	return result;
 }
 

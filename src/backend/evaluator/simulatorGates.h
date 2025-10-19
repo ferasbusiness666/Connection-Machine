@@ -181,8 +181,9 @@ struct XORLikeGate : public MultiInputGate {
 
 struct JunctionGate : public SimulatorGate {
 	std::vector<simulator_id_t> inputs;
+	logic_state_t defaultState;
 
-	JunctionGate(simulator_id_t id) : SimulatorGate(id) {}
+	JunctionGate(simulator_id_t id, logic_state_t defaultState) : SimulatorGate(id), defaultState(defaultState) {}
 
 	inline logic_state_t calculate(const std::vector<logic_state_t>& states) const noexcept {
 		logic_state_t outputState = logic_state_t::FLOATING;
@@ -199,6 +200,9 @@ struct JunctionGate : public SimulatorGate {
 			} else if (outputState != state) {
 				return logic_state_t::UNDEFINED;
 			}
+		}
+		if (outputState == logic_state_t::FLOATING) {
+			return defaultState;
 		}
 		return outputState;
 	}

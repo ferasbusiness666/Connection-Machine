@@ -282,7 +282,31 @@ simulator_id_t LogicSimulator::addGate(const BlockType blockType) {
 	case BlockType::JUNCTION:
 		simulatorId = junctions.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(junctions.back().getId());
 		extendDataVectors(simulatorId);
-		junctions.push_back({ simulatorId });
+		junctions.push_back({ simulatorId, logic_state_t::FLOATING });
+		updateGateLocation(simulatorId, SimGateType::JUNCTION, junctions.size() - 1);
+		junctions.back().resetState(evalConfig.isRealistic(), statesA);
+		junctions.back().resetState(evalConfig.isRealistic(), statesB);
+		break;
+	case BlockType::JUNCTION_L:
+		simulatorId = junctions.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(junctions.back().getId());
+		extendDataVectors(simulatorId);
+		junctions.push_back({ simulatorId, logic_state_t::LOW });
+		updateGateLocation(simulatorId, SimGateType::JUNCTION, junctions.size() - 1);
+		junctions.back().resetState(evalConfig.isRealistic(), statesA);
+		junctions.back().resetState(evalConfig.isRealistic(), statesB);
+		break;
+	case BlockType::JUNCTION_H:
+		simulatorId = junctions.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(junctions.back().getId());
+		extendDataVectors(simulatorId);
+		junctions.push_back({ simulatorId, logic_state_t::HIGH });
+		updateGateLocation(simulatorId, SimGateType::JUNCTION, junctions.size() - 1);
+		junctions.back().resetState(evalConfig.isRealistic(), statesA);
+		junctions.back().resetState(evalConfig.isRealistic(), statesB);
+		break;
+	case BlockType::JUNCTION_X:
+		simulatorId = junctions.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(junctions.back().getId());
+		extendDataVectors(simulatorId);
+		junctions.push_back({ simulatorId, logic_state_t::UNDEFINED });
 		updateGateLocation(simulatorId, SimGateType::JUNCTION, junctions.size() - 1);
 		junctions.back().resetState(evalConfig.isRealistic(), statesA);
 		junctions.back().resetState(evalConfig.isRealistic(), statesB);

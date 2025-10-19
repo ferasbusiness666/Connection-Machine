@@ -135,6 +135,7 @@ private:
 		std::vector<EvalConnection> connectionsToReroute;
 		// connections that are connected to the junctions through the outputs of other gates
 		// A -> JUNCTION, A -> B, A -> B is a connection to reroute because B should actually pull from the junction
+		logic_state_t defaultState { logic_state_t::FLOATING };
 	};
 
 	struct BusFloodFillResult {
@@ -227,6 +228,9 @@ private:
 	JunctionFloodFillResult junctionFloodFill(middle_id_t junctionId);
 	BlockDataManager& blockDataManager;
 	std::vector<middle_id_t>& dirtyMiddleIds;
+	bool isJunctionType(BlockType blockType) const {
+		return blockType == BlockType::JUNCTION || blockType == BlockType::JUNCTION_L || blockType == BlockType::JUNCTION_H || blockType == BlockType::JUNCTION_X;
+	}
 };
 
 #endif /* replacer_h */
