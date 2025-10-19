@@ -1186,10 +1186,16 @@ void Evaluator::dirtyBlockAt(Position position, eval_circuit_id_t evalCircuitId)
 
 std::vector<simulator_id_t> Evaluator::getBlockSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const {
 	eval_circuit_id_t evalCircuitId = evalCircuitContainer.traverseToTopLevelIC(addressOrigin);
+	EvalCircuit* evalCircuit = evalCircuitContainer.getCircuit(evalCircuitId);
 	std::vector<std::optional<EvalConnectionPoint>> connectionPoints;
 	connectionPoints.reserve(positions.size());
 	for (const Position& portPosition : positions) {
-		connectionPoints.push_back(getConnectionPoint(evalCircuitId, portPosition, Direction::OUT));
+		CircuitNode node = evalCircuit->getNode(portPosition).value();
+		if (node.isIC()) {
+			connectionPoints.push_back(std::nullopt);
+			continue;
+		}
+		connectionPoints.push_back(EvalConnectionPoint(node.getId(), 0));
 	}
 	return evalSimulator->getBlockSimulatorIds(connectionPoints);
 }
