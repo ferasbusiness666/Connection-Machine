@@ -528,7 +528,7 @@ Difference BlockContainer::getCreationDifference() const {
 			if (block.second.isConnectionBidirectional(connectionIter.first)) {
 				for (auto otherConnectionIter : *connections) {
 					const Block* otherBlock = getBlock(otherConnectionIter.getBlockId());
-					if (otherBlock->isConnectionInput(otherConnectionIter.getConnectionId())) continue;
+					if (otherBlock->isConnectionOutput(otherConnectionIter.getConnectionId())) continue;
 					if (otherBlock->isConnectionBidirectional(otherConnectionIter.getConnectionId()) && otherConnectionIter.getBlockId() > block.first) continue;
 					difference.addCreatedConnection(
 						block.second.getPosition(),
