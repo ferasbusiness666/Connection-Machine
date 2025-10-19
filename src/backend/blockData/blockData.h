@@ -14,7 +14,8 @@ public:
 		enum PortType {
 			INPUT,
 			OUTPUT,
-			BIDIRECTIONAL
+			BIDIRECTIONAL,
+			NONE
 		};
 		ConnectionData(
 			Vector positionOnBlock,
@@ -198,6 +199,28 @@ public:
 		}
 		return std::nullopt;
 	}
+	inline std::optional<connection_end_id_t> getInputOrBidirectionalConnectionId(Vector vector, Orientation orientation) const noexcept {
+		if (defaultData) {
+			if (vector.dx == 0 && vector.dy == 0) return 1;
+			return std::nullopt;
+		}
+		Vector noOrientationVec = orientation.inverseTransformVectorWithArea(vector, orientation*blockSize);
+		for (auto& pair : connections) {
+			if (pair.second.positionOnBlock == noOrientationVec && pair.second.portType != ConnectionData::PortType::OUTPUT) return pair.first;
+		}
+		return std::nullopt;
+	}
+	inline std::optional<connection_end_id_t> getOutputOrBidirectionalConnectionId(Vector vector, Orientation orientation) const noexcept {
+		if (defaultData) {
+			if (vector.dx == 0 && vector.dy == 0) return 1;
+			return std::nullopt;
+		}
+		Vector noOrientationVec = orientation.inverseTransformVectorWithArea(vector, orientation*blockSize);
+		for (auto& pair : connections) {
+			if (pair.second.positionOnBlock == noOrientationVec && pair.second.portType != ConnectionData::PortType::INPUT) return pair.first;
+		}
+		return std::nullopt;
+	}
 	inline std::optional<Vector> getConnectionVector(connection_end_id_t connectionId) const noexcept {
 		if (defaultData) {
 			if (connectionId <= 1) return Vector(0);
@@ -244,9 +267,19 @@ public:
 		return iter != connections.end() && iter->second.portType == ConnectionData::PortType::OUTPUT;
 	}
 	inline bool isConnectionBidirectional(connection_end_id_t connectionId) const noexcept {
-		if (defaultData) return connectionId == 1;
+		if (defaultData) return false;
 		auto iter = connections.find(connectionId);
 		return iter != connections.end() && iter->second.portType == ConnectionData::PortType::BIDIRECTIONAL;
+	}
+	inline ConnectionData::PortType getConnectionPortType(connection_end_id_t connectionId) const noexcept {
+		if (defaultData) {
+			if (connectionId == 0) return ConnectionData::PortType::INPUT;
+			if (connectionId == 1) return ConnectionData::PortType::OUTPUT;
+			return ConnectionData::PortType::NONE;
+		}
+		auto iter = connections.find(connectionId);
+		if (iter == connections.end()) return ConnectionData::PortType::NONE;
+		return iter->second.portType;
 	}
 	const std::unordered_map<connection_end_id_t, ConnectionData>& getConnections() const noexcept {
 		assert((!defaultData) && "this will be empty if defaultData is true");

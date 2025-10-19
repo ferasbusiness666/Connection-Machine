@@ -84,6 +84,18 @@ public:
 		if (!blockExists(type)) return std::nullopt;
 		return blockData[type - 1].getOutputConnectionId(vector, orientation);
 	}
+	inline  std::optional<connection_end_id_t> getBidirectionalConnectionId(BlockType type, Orientation orientation, Vector vector) const noexcept {
+		if (!blockExists(type)) return std::nullopt;
+		return blockData[type - 1].getBidirectionalConnectionId(vector, orientation);
+	}
+	inline  std::optional<connection_end_id_t> getInputOrBidirectionalConnectionId(BlockType type, Orientation orientation, Vector vector) const noexcept {
+		if (!blockExists(type)) return std::nullopt;
+		return blockData[type - 1].getInputOrBidirectionalConnectionId(vector, orientation);
+	}
+	inline  std::optional<connection_end_id_t> getOutputOrBidirectionalConnectionId(BlockType type, Orientation orientation, Vector vector) const noexcept {
+		if (!blockExists(type)) return std::nullopt;
+		return blockData[type - 1].getOutputOrBidirectionalConnectionId(vector, orientation);
+	}
 	inline std::optional<Vector> getConnectionVector(BlockType type, connection_end_id_t connectionId) const noexcept {
 		if (!blockExists(type)) return std::nullopt;
 		return blockData[type - 1].getConnectionVector(connectionId);
@@ -92,7 +104,6 @@ public:
 		if (!blockExists(type)) return std::nullopt;
 		return blockData[type - 1].getConnectionVector(connectionId, orientation);
 	}
-
 	inline connection_end_id_t getConnectionCount(BlockType type) const noexcept {
 		if (!blockExists(type)) return 0;
 		return blockData[type - 1].getConnectionCount();
@@ -108,6 +119,10 @@ public:
 	inline bool isConnectionOutput(BlockType type, connection_end_id_t connectionId) const noexcept {
 		if (!blockExists(type)) return false;
 		return blockData[type - 1].isConnectionOutput(connectionId);
+	}
+	inline bool isConnectionBidirectional(BlockType type, connection_end_id_t connectionId) const noexcept {
+		if (!blockExists(type)) return false;
+		return blockData[type - 1].isConnectionBidirectional(connectionId);
 	}
 
 private:

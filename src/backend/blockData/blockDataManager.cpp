@@ -76,6 +76,8 @@ void BlockDataManager::initializeDefaults() {
 	// JUNCTION
 	BlockData* junctionBlockData = getBlockData(BlockType::JUNCTION);
 	junctionBlockData->setName("Junction");
+	junctionBlockData->setDefaultData(false);
+	junctionBlockData->setConnectionBidirectional(Vector(0), 0);
 	junctionBlockData->setTexturePath(mainTexturePath);
 	junctionBlockData->setUsesTileMapTexture(true);
 	junctionBlockData->setTextureTileSize({ 256, 256 });
@@ -86,8 +88,7 @@ void BlockDataManager::initializeDefaults() {
 	junctionLBlockData->setName("Pull-down Resistor");
 	junctionLBlockData->setDefaultData(false);
 	junctionLBlockData->setSize(Size(1, 3));
-	junctionLBlockData->setConnectionInput(Vector(0, 2), 0);
-	junctionLBlockData->setConnectionOutput(Vector(0, 2), 1);
+	junctionLBlockData->setConnectionBidirectional(Vector(0, 2), 0);
 	junctionLBlockData->setTexturePath(mainTexturePath);
 	junctionLBlockData->setUsesTileMapTexture(true);
 	junctionLBlockData->setTextureTileSize({ 256, 256 });
@@ -98,8 +99,7 @@ void BlockDataManager::initializeDefaults() {
 	junctionHBlockData->setName("Pull-up Resistor");
 	junctionHBlockData->setDefaultData(false);
 	junctionHBlockData->setSize(Size(1, 3));
-	junctionHBlockData->setConnectionInput(Vector(0, 2), 0);
-	junctionHBlockData->setConnectionOutput(Vector(0, 2), 1);
+	junctionHBlockData->setConnectionBidirectional(Vector(0, 2), 0);
 	junctionHBlockData->setTexturePath(mainTexturePath);
 	junctionHBlockData->setUsesTileMapTexture(true);
 	junctionHBlockData->setTextureTileSize({ 256, 256 });
@@ -110,8 +110,7 @@ void BlockDataManager::initializeDefaults() {
 	junctionXBlockData->setName("Pull-X Resistor");
 	junctionXBlockData->setDefaultData(false);
 	junctionXBlockData->setSize(Size(1, 3));
-	junctionXBlockData->setConnectionInput(Vector(0, 2), 0);
-	junctionXBlockData->setConnectionOutput(Vector(0, 2), 1);
+	junctionXBlockData->setConnectionBidirectional(Vector(0, 2), 0);
 	junctionXBlockData->setTexturePath(mainTexturePath);
 	junctionXBlockData->setUsesTileMapTexture(true);
 	junctionXBlockData->setTextureTileSize({ 256, 256 });
@@ -220,52 +219,40 @@ void BlockDataManager::initializeDefaults() {
 	busInterfaceBlockData1->setDefaultData(false);
 	busInterfaceBlockData1->setIsBus(true);
 	busInterfaceBlockData1->setSize(Size(2, 8));
-	busInterfaceBlockData1->setConnectionOutput(Vector(1, 0), 0);
+	busInterfaceBlockData1->setConnectionBidirectional(Vector(1, 0), 0);
 	busInterfaceBlockData1->setConnectionBitConfiguration(0, std::vector<unsigned int>{ 0, 1, 2, 3, 4, 5, 6, 7 });
-	busInterfaceBlockData1->setConnectionInput(Vector(1, 0), 1);
-	busInterfaceBlockData1->setConnectionBitConfiguration(1, std::vector<unsigned int>{ 0, 1, 2, 3, 4, 5, 6, 7 });
 	for (unsigned int i = 0; i < 8; ++i) {
-		busInterfaceBlockData1->setConnectionOutput(Vector(0, i), i * 2 + 2);
-		busInterfaceBlockData1->setConnectionBitConfiguration(i * 2 + 2, std::vector<unsigned int>{ i });
-		busInterfaceBlockData1->setConnectionInput(Vector(0, i), i * 2 + 3);
-		busInterfaceBlockData1->setConnectionBitConfiguration(i * 2 + 3, std::vector<unsigned int>{ i });
+		busInterfaceBlockData1->setConnectionBidirectional(Vector(0, i), i + 1);
+		busInterfaceBlockData1->setConnectionBitConfiguration(i + 1, std::vector<unsigned int>{ i });
 	}
 	busInterfaceBlockData1->setTexturePath((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
-	busInterfaceBlockData1->setIsPlaceable(false);
+	// busInterfaceBlockData1->setIsPlaceable(false);
 	// BUS_INTERFACE_2
 	BlockData* busInterfaceBlockData2 = getBlockData(BlockType::BUS_INTERFACE_2);
 	busInterfaceBlockData2->setName("Bus Interface 4x2 -> 1x8");
 	busInterfaceBlockData2->setDefaultData(false);
 	busInterfaceBlockData2->setIsBus(true);
 	busInterfaceBlockData2->setSize(Size(2, 4));
-	busInterfaceBlockData2->setConnectionOutput(Vector(1, 0), 0);
+	busInterfaceBlockData2->setConnectionBidirectional(Vector(1, 0), 0);
 	busInterfaceBlockData2->setConnectionBitConfiguration(0, std::vector<unsigned int>{ 0, 1, 2, 3, 4, 5, 6, 7 });
-	busInterfaceBlockData2->setConnectionInput(Vector(1, 0), 1);
-	busInterfaceBlockData2->setConnectionBitConfiguration(1, std::vector<unsigned int>{ 0, 1, 2, 3, 4, 5, 6, 7 });
 	for (unsigned int i = 0; i < 4; ++i) {
-		busInterfaceBlockData2->setConnectionOutput(Vector(0, i), i * 2 + 2);
-		busInterfaceBlockData2->setConnectionBitConfiguration(i * 2 + 2, std::vector<unsigned int>{ i * 2, i * 2 + 1 });
-		busInterfaceBlockData2->setConnectionInput(Vector(0, i), i * 2 + 3);
-		busInterfaceBlockData2->setConnectionBitConfiguration(i * 2 + 3, std::vector<unsigned int>{ i * 2, i * 2 + 1 });
+		busInterfaceBlockData2->setConnectionBidirectional(Vector(0, i), i + 1);
+		busInterfaceBlockData2->setConnectionBitConfiguration(i + 1, std::vector<unsigned int>{ i * 2, i * 2 + 1 });
 	}
 	busInterfaceBlockData2->setTexturePath((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
-	busInterfaceBlockData2->setIsPlaceable(false);
+	// busInterfaceBlockData2->setIsPlaceable(false);
 	// BUS_INTERFACE_3
 	BlockData* busInterfaceBlockData3 = getBlockData(BlockType::BUS_INTERFACE_3);
 	busInterfaceBlockData3->setName("Bus Interface 2 -> 1x2");
 	busInterfaceBlockData3->setDefaultData(false);
 	busInterfaceBlockData3->setIsBus(true);
 	busInterfaceBlockData3->setSize(Size(2, 2));
-	busInterfaceBlockData3->setConnectionOutput(Vector(1, 0), 0);
+	busInterfaceBlockData3->setConnectionBidirectional(Vector(1, 0), 0);
 	busInterfaceBlockData3->setConnectionBitConfiguration(0, std::vector<unsigned int>{ 0, 1 });
-	busInterfaceBlockData3->setConnectionInput(Vector(1, 0), 1);
-	busInterfaceBlockData3->setConnectionBitConfiguration(1, std::vector<unsigned int>{ 0, 1 });
 	for (unsigned int i = 0; i < 2; ++i) {
-		busInterfaceBlockData3->setConnectionOutput(Vector(0, i), i * 2 + 2);
-		busInterfaceBlockData3->setConnectionBitConfiguration(i * 2 + 2, std::vector<unsigned int>{ i });
-		busInterfaceBlockData3->setConnectionInput(Vector(0, i), i * 2 + 3);
-		busInterfaceBlockData3->setConnectionBitConfiguration(i * 2 + 3, std::vector<unsigned int>{ i });
+		busInterfaceBlockData3->setConnectionBidirectional(Vector(0, i), i + 1);
+		busInterfaceBlockData3->setConnectionBitConfiguration(i + 1, std::vector<unsigned int>{ i });
 	}
 	busInterfaceBlockData3->setTexturePath((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
-	busInterfaceBlockData3->setIsPlaceable(false);
+	// busInterfaceBlockData3->setIsPlaceable(false);
 }

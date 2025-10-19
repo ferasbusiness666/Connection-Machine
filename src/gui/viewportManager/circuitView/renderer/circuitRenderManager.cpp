@@ -76,8 +76,10 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 			}
 			outputIter->second.connectionsToOtherBlock.emplace(newConnection, inputBlockPosition);
 
-			connection_end_id_t outputEndId = circuit->getBlockContainer()->getOutputConnectionEnd(outputPosition).value().getConnectionId();
-			connection_end_id_t inputEndId = circuit->getBlockContainer()->getInputConnectionEnd(inputPosition).value().getConnectionId();
+			std::optional<ConnectionEnd> outputConnectionEnd = circuit->getBlockContainer()->getOutputOrBidirectionalConnectionEnd(outputPosition);
+			if (!outputConnectionEnd) continue;
+			std::optional<ConnectionEnd> inputConnectionEnd = circuit->getBlockContainer()->getInputOrBidirectionalConnectionEnd(inputPosition);
+			if (!inputConnectionEnd) continue;
 
 			// only need both if it is a different block
 			if (outputBlockPosition != inputBlockPosition) {
@@ -87,13 +89,13 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 				}
 				inputIter->second.connectionsToOtherBlock.emplace(newConnection, outputBlockPosition);
 				MainRenderer::get().addWire(viewportId, newConnection, {
-					getOutputOffset(outputIter->second.type, outputEndId, outputIter->second.orientation),
-					getInputOffset(inputIter->second.type, inputEndId, inputIter->second.orientation)
+					getOutputOffset(outputIter->second.type, outputConnectionEnd.value().getConnectionId(), outputIter->second.orientation),
+					getInputOffset(inputIter->second.type, inputConnectionEnd.value().getConnectionId(), inputIter->second.orientation)
 				});
 			} else {
 				MainRenderer::get().addWire(viewportId, newConnection, {
-					getOutputOffset(outputIter->second.type, outputEndId, outputIter->second.orientation),
-					getInputOffset(outputIter->second.type, inputEndId, outputIter->second.orientation)
+					getOutputOffset(outputIter->second.type, outputConnectionEnd.value().getConnectionId(), outputIter->second.orientation),
+					getInputOffset(outputIter->second.type, inputConnectionEnd.value().getConnectionId(), outputIter->second.orientation)
 				});
 			}
 			break;
@@ -101,13 +103,19 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 		case Difference::ModificationType::REMOVED_CONNECTION:
 		{
 			const auto& [outputBlockPosition, outputPosition, inputBlockPosition, inputPosition] = std::get<Difference::connection_modification_t>(modificationData);
+
 			MainRenderer::get().removeWire(viewportId, { outputPosition, inputPosition });
 
 			auto outputIter = renderedBlocks.find(outputBlockPosition);
 			if (outputIter == renderedBlocks.end()) {
 				logError("Could not find block at {} to remove output connection from.", "CircuitRenderManager", outputBlockPosition);
 			}
-			outputIter->second.connectionsToOtherBlock.erase({ outputPosition, inputPosition });
+			auto returnVal = outputIter->second.connectionsToOtherBlock.erase({ outputPosition, inputPosition });
+			if (!returnVal) {
+				if (!outputIter->second.connectionsToOtherBlock.erase({ inputPosition, outputPosition })) {
+					logError("Cound not remove connection {}, {} from output block", "", outputPosition, inputPosition);
+				}
+			}
 
 			// only need both if it is a different block
 			if (outputBlockPosition != inputBlockPosition) {
@@ -115,7 +123,12 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 				if (inputIter == renderedBlocks.end()) {
 					logError("Could not find block at {} to remove input connection from.", "CircuitRenderManager", inputBlockPosition);
 				}
-				inputIter->second.connectionsToOtherBlock.erase({ outputPosition, inputPosition });
+				auto returnVal2 = inputIter->second.connectionsToOtherBlock.erase({ outputPosition, inputPosition });
+				if (!returnVal2) {
+					if (!inputIter->second.connectionsToOtherBlock.erase({ inputPosition, outputPosition })) {
+						logError("Cound not remove connection {}, {} from inpuit block", "", outputPosition, inputPosition);
+					}
+				}
 			}
 			break;
 		}
@@ -161,15 +174,14 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 					Vector inputVec = transformAmount.transformVectorWithArea(posPair.second - curPosition, blockSize);
 					Position inputPos = newPosition + inputVec;
 					if (moveType == MoveType::SINGLE || moveType == MoveType::MULTI_FINAL) {
-						connection_end_id_t outputEndId = circuit->getBlockContainer()->getBlockDataManager()->getOutputConnectionId(
-							iter->second.type, newOrientation, outputVec
-						).value();
-						connection_end_id_t inputEndId = circuit->getBlockContainer()->getBlockDataManager()->getInputConnectionId(
-							iter->second.type, newOrientation, inputVec
-						).value();
+						const BlockData* blockData = circuit->getBlockContainer()->getBlockDataManager()->getBlockData(iter->second.type);
+						std::optional<connection_end_id_t> outputEndId = blockData->getOutputOrBidirectionalConnectionId(outputVec, newOrientation);
+						if (!outputEndId) continue;
+						std::optional<connection_end_id_t> inputEndId = blockData->getInputOrBidirectionalConnectionId(inputVec, newOrientation);
+						if (!inputEndId) continue;
 						wiresToRender.emplace_back(std::make_pair(outputPos, inputPos), std::make_pair(
-							getOutputOffset(iter->second.type, outputEndId, newOrientation),
-							getInputOffset(iter->second.type, inputEndId, newOrientation)
+							getOutputOffset(iter->second.type, outputEndId.value(), newOrientation),
+							getInputOffset(iter->second.type, inputEndId.value(), newOrientation)
 						));
 					}
 					wiresToAdd.emplace_back(std::make_pair(outputPos, inputPos), std::make_pair(newPosition, newPosition));
@@ -185,15 +197,17 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 						Vector inputVec = transformAmount.transformVectorWithArea(posPair.second - curPosition, blockSize);
 						Position inputPos = newPosition + inputVec;
 						if ((moveType == MoveType::SINGLE || moveType == MoveType::MULTI_FINAL) && otherBlockPos.x != 10000000) {
-							connection_end_id_t outputEndId = circuit->getBlockContainer()->getBlockDataManager()->getOutputConnectionId(
+							std::optional<connection_end_id_t> outputEndId = circuit->getBlockContainer()->getBlockDataManager()->getOutputOrBidirectionalConnectionId(
 								otherIter->second.type, otherIter->second.orientation, posPair.first - otherBlockPos
-							).value();
-							connection_end_id_t inputEndId = circuit->getBlockContainer()->getBlockDataManager()->getInputConnectionId(
+							);
+							if (!outputEndId) continue;
+							std::optional<connection_end_id_t> inputEndId = circuit->getBlockContainer()->getBlockDataManager()->getInputOrBidirectionalConnectionId(
 								iter->second.type, newOrientation, inputVec
-							).value();
+							);
+							if (!inputEndId) continue;
 							wiresToRender.emplace_back(std::make_pair(posPair.first, inputPos), std::make_pair(
-								getOutputOffset(otherIter->second.type, outputEndId, otherIter->second.orientation),
-								getInputOffset(iter->second.type, inputEndId, newOrientation)
+								getOutputOffset(otherIter->second.type, outputEndId.value(), otherIter->second.orientation),
+								getInputOffset(iter->second.type, inputEndId.value(), newOrientation)
 							));
 						}
 						wiresToAdd.emplace_back(std::make_pair(posPair.first, inputPos), std::make_pair(otherBlockPos, newPosition));
@@ -201,15 +215,17 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 						Vector outputVec = transformAmount.transformVectorWithArea(posPair.first - curPosition, blockSize);
 						Position outputPos = newPosition + outputVec;
 						if ((moveType == MoveType::SINGLE || moveType == MoveType::MULTI_FINAL) && otherBlockPos.x != 10000000) {
-							connection_end_id_t outputEndId = circuit->getBlockContainer()->getBlockDataManager()->getOutputConnectionId(
+							std::optional<connection_end_id_t> outputEndId = circuit->getBlockContainer()->getBlockDataManager()->getOutputOrBidirectionalConnectionId(
 								iter->second.type, newOrientation, outputVec
-							).value();
-							connection_end_id_t inputEndId = circuit->getBlockContainer()->getBlockDataManager()->getInputConnectionId(
+							);
+							if (!outputEndId) continue;
+							std::optional<connection_end_id_t> inputEndId = circuit->getBlockContainer()->getBlockDataManager()->getInputOrBidirectionalConnectionId(
 								otherIter->second.type, otherIter->second.orientation, posPair.second - otherBlockPos
-							).value();
+							);
+							if (!inputEndId) continue;
 							wiresToRender.emplace_back(std::make_pair(outputPos, posPair.second), std::make_pair(
-								getOutputOffset(iter->second.type, outputEndId, newOrientation),
-								getInputOffset(otherIter->second.type, inputEndId, otherIter->second.orientation)
+								getOutputOffset(iter->second.type, outputEndId.value(), newOrientation),
+								getInputOffset(otherIter->second.type, inputEndId.value(), otherIter->second.orientation)
 							));
 						}
 						wiresToAdd.emplace_back(std::make_pair(outputPos, posPair.second), std::make_pair(newPosition, otherBlockPos));

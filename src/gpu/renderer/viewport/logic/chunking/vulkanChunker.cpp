@@ -291,8 +291,12 @@ void VulkanChunker::addWire(std::pair<Position, Position> points, std::pair<FVec
 void VulkanChunker::removeWire(std::pair<Position, Position> points) {
 	auto itr = chunksUnderWire.find(points);
 	if (itr == chunksUnderWire.end()) {
-		logError("Could not find wire ({}, {}) to remove", "VulkanChunker", points.first, points.second);
-		return;
+		std::swap(points.first, points.second);
+		itr = chunksUnderWire.find(points);
+		if (itr == chunksUnderWire.end()) {
+			logError("Could not find wire ({}, {}) to remove", "VulkanChunker", points.first, points.second);
+			return;
+		}
 	}
 	for (Position chunkPos : itr->second) {
 		auto iter = chunks.find(chunkPos);

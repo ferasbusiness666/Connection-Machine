@@ -31,7 +31,7 @@ FVector getInputOffset(BlockType blockType, connection_end_id_t connectionEndId,
 	FVector offset = { 0.5, 0.5 };
 	if (blockType == BlockType::JUNCTION) return offset;
 	if (blockType == BlockType::BUS_INTERFACE_1 || blockType == BlockType::BUS_INTERFACE_2 || blockType == BlockType::BUS_INTERFACE_3) {
-		if (connectionEndId == 1) {
+		if (connectionEndId == 0) {
 			return offset + orientation * FVector(edgeDistance, 0.0f);
 		} else {
 			return offset + orientation * FVector(-edgeDistance, 0.0f);
