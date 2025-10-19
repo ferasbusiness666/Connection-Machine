@@ -1072,7 +1072,6 @@ void Evaluator::processDirtyNodes() {
 		const SharedCircuit circuit = circuitManager.getCircuit(evalCircuit->getCircuitId());
 		const Block* block = circuit->getBlockContainer()->getBlock(position);
 		if (!block) [[unlikely]] {
-			logError("Block not found at position {}", "Evaluator::processDirtyNodes", position.toString());
 			continue;
 		}
 		BlockType blockType = block->type();
