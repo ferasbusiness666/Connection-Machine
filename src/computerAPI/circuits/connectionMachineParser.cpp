@@ -354,7 +354,7 @@ bool ConnectionMachineParser::save(const CircuitFileManager::FileData& fileData,
 				std::optional<std::string> name = blockData->getConnectionIdToName(pair.first);
 				if (!name) name = "";
 
-				outputFile << "\t(" << (pair.second.portType == pair.second.INPUT ? "IN, " : "OUT, ") << pair.first << ", " << id << ", " << pair.second.positionOnBlock.toString() << ", \"" << *name << "\")\n";
+				outputFile << "\t(" << (pair.second.portType == BlockData::ConnectionData::PortType::INPUT ? "IN, " : "OUT, ") << pair.first << ", " << id << ", " << pair.second.positionOnBlock.toString() << ", \"" << *name << "\")\n";
 			}
 		}
 

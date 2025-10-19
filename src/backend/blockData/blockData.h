@@ -185,6 +185,17 @@ public:
 		}
 		return std::nullopt;
 	}
+	inline std::optional<connection_end_id_t> getBidirectionalConnectionId(Vector vector, Orientation orientation) const noexcept {
+		if (defaultData) {
+			if (vector.dx == 0 && vector.dy == 0) return 1;
+			return std::nullopt;
+		}
+		Vector noOrientationVec = orientation.inverseTransformVectorWithArea(vector, orientation*blockSize);
+		for (auto& pair : connections) {
+			if (pair.second.positionOnBlock == noOrientationVec && pair.second.portType == ConnectionData::PortType::BIDIRECTIONAL) return pair.first;
+		}
+		return std::nullopt;
+	}
 	inline std::optional<Vector> getConnectionVector(connection_end_id_t connectionId) const noexcept {
 		if (defaultData) {
 			if (connectionId <= 1) return Vector(0);
@@ -215,6 +226,10 @@ public:
 		if (defaultData) return 1;
 		return outputConnectionCount;
 	}
+	inline connection_end_id_t getBidirectionalConnectionCount() const noexcept {
+		if (defaultData) return 0;
+		return connections.size() - inputConnectionCount - outputConnectionCount;
+	}
 	inline bool connectionExists(connection_end_id_t connectionId) const noexcept { return defaultData ? connectionId <= 1 : connections.contains(connectionId); }
 	inline bool isConnectionInput(connection_end_id_t connectionId) const noexcept {
 		if (defaultData) return connectionId == 0;
@@ -225,6 +240,11 @@ public:
 		if (defaultData) return connectionId == 1;
 		auto iter = connections.find(connectionId);
 		return iter != connections.end() && iter->second.portType == ConnectionData::PortType::OUTPUT;
+	}
+	inline bool isConnectionBidirectional(connection_end_id_t connectionId) const noexcept {
+		if (defaultData) return connectionId == 1;
+		auto iter = connections.find(connectionId);
+		return iter != connections.end() && iter->second.portType == ConnectionData::PortType::BIDIRECTIONAL;
 	}
 	const std::unordered_map<connection_end_id_t, ConnectionData>& getConnections() const noexcept {
 		assert((!defaultData) && "this will be empty if defaultData is true");
