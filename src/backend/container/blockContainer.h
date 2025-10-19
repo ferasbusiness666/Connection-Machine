@@ -75,7 +75,7 @@ public:
 
 	// -- setters --
 	// Trys to creates a connection. Returns if successful. Pass a Difference* to read the what changes were made.
-	bool tryCreateConnection(ConnectionEnd outputConnectionEnd, ConnectionEnd inputConnectionEnd, Difference* difference);
+	bool tryCreateConnection(ConnectionEnd connectionEndA, ConnectionEnd connectionEndB, Difference* difference);
 	// Trys to creates a connection. Returns if successful. Pass a Difference* to read the what changes were made.
 	bool tryCreateConnection(Position outputPosition, Position inputPosition, Difference* difference);
 	// Trys to remove a connection. Returns if successful. Pass a Difference* to read the what changes were made.

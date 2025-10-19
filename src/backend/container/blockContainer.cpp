@@ -307,52 +307,61 @@ const std::optional<ConnectionEnd> BlockContainer::getOutputOrBidirectionalConne
 	return ConnectionEnd(block->id(), connectionData.value());
 }
 
-bool BlockContainer::tryCreateConnection(ConnectionEnd outputConnectionEnd, ConnectionEnd inputConnectionEnd, Difference* difference) {
-	if (outputConnectionEnd.getConnectionId() == inputConnectionEnd.getConnectionId() && outputConnectionEnd.getBlockId() == inputConnectionEnd.getBlockId()) return false; // ports cant self connect
-	Block* input = getBlock_(inputConnectionEnd.getBlockId());
-	if (!input) return false;
-	const BlockData* inputBlockData = blockDataManager->getBlockData(input->type());
-	BlockData::ConnectionData::PortType inputPortType = inputBlockData->getConnectionPortType(inputConnectionEnd.getConnectionId());
-	if (inputPortType == BlockData::ConnectionData::PortType::OUTPUT || inputPortType == BlockData::ConnectionData::PortType::NONE) return false;
-	Block* output = getBlock_(outputConnectionEnd.getBlockId());
-	if (!output) return false;
-	const BlockData* outputBlockData = blockDataManager->getBlockData(output->type());
-	BlockData::ConnectionData::PortType outputPortType = outputBlockData->getConnectionPortType(outputConnectionEnd.getConnectionId());
-	if (outputPortType == BlockData::ConnectionData::PortType::INPUT || outputPortType == BlockData::ConnectionData::PortType::NONE) return false;
-	if (input->getConnectionContainer().hasConnection(
-		inputConnectionEnd.getConnectionId(),
-		ConnectionEnd(outputConnectionEnd.getBlockId(), outputConnectionEnd.getConnectionId())
+bool BlockContainer::tryCreateConnection(ConnectionEnd connectionEndA, ConnectionEnd connectionEndB, Difference* difference) {
+	if (connectionEndA.getConnectionId() == connectionEndB.getConnectionId() && connectionEndA.getBlockId() == connectionEndB.getBlockId()) return false; // ports cant self connect
+	Block* blockA = getBlock_(connectionEndA.getBlockId());
+	if (!blockA) return false;
+	const BlockData* blockABlockData = blockDataManager->getBlockData(blockA->type());
+	BlockData::ConnectionData::PortType portAType = blockABlockData->getConnectionPortType(connectionEndA.getConnectionId());
+	if (portAType == BlockData::ConnectionData::PortType::NONE) return false;
+	Block* blockB = getBlock_(connectionEndB.getBlockId());
+	if (!blockB) return false;
+	const BlockData* blockBBlockData = blockDataManager->getBlockData(blockB->type());
+	BlockData::ConnectionData::PortType portBType = blockBBlockData->getConnectionPortType(connectionEndB.getConnectionId());
+	if (
+		portBType == BlockData::ConnectionData::PortType::NONE ||
+		(portBType == BlockData::ConnectionData::PortType::OUTPUT && portAType == BlockData::ConnectionData::PortType::OUTPUT) ||
+		(portBType == BlockData::ConnectionData::PortType::INPUT && portAType == BlockData::ConnectionData::PortType::INPUT)
+	) return false;
+	if (blockA->getConnectionContainer().hasConnection(
+		connectionEndA.getConnectionId(),
+		ConnectionEnd(connectionEndB.getBlockId(), connectionEndB.getConnectionId())
 	)) return false;
-	std::optional<Position> inputConnectionPosition = input->getConnectionPosition(inputConnectionEnd.getConnectionId());
-	std::optional<Position> outputConnectionPosition = output->getConnectionPosition(outputConnectionEnd.getConnectionId());
-	if (input->type() == BlockType::JUNCTION) {
-		unsigned int inputBitWidth = getBitwidthOfJunction(input->id());
-		if (inputBitWidth != 0) {
-			if (output->type() == BlockType::JUNCTION) {
-				unsigned int otherBitWidth = getBitwidthOfJunction(output->id());
-				if (otherBitWidth != 0 && inputBitWidth != otherBitWidth) return false;
-			} else if (inputBitWidth != getBlockDataManager()->getBlockData(output->type())->getConnectionBitWidth(outputConnectionEnd.getConnectionId())) {
+	if (blockA->type() == BlockType::JUNCTION) {
+		unsigned int blockABitWidth = getBitwidthOfJunction(blockA->id());
+		if (blockABitWidth != 0) {
+			if (blockB->type() == BlockType::JUNCTION) {
+				unsigned int blockBBitWidth = getBitwidthOfJunction(blockB->id());
+				if (blockBBitWidth != 0 && blockABitWidth != blockBBitWidth) return false;
+			} else if (blockABitWidth != blockBBlockData->getConnectionBitWidth(connectionEndB.getConnectionId())) {
 				return false;
 			}
 		}
-	} else if (output->type() == BlockType::JUNCTION) {
-		unsigned int outputBitWidth = getBitwidthOfJunction(output->blockId);
-		if (outputBitWidth != 0 && outputBitWidth != getBlockDataManager()->getBlockData(input->type())->getConnectionBitWidth(inputConnectionEnd.getConnectionId())) {
+	} else if (blockB->type() == BlockType::JUNCTION) {
+		unsigned int blockBBitWidth = getBitwidthOfJunction(blockB->blockId);
+		if (blockBBitWidth != 0 && blockBBitWidth != blockABlockData->getConnectionBitWidth(connectionEndA.getConnectionId())) {
 			return false;
 		}
 	} else if (
-		getBlockDataManager()->getBlockData(input->type())->getConnectionBitWidth(inputConnectionEnd.getConnectionId()) !=
-		getBlockDataManager()->getBlockData(output->type())->getConnectionBitWidth(outputConnectionEnd.getConnectionId())
+		blockABlockData->getConnectionBitWidth(connectionEndA.getConnectionId()) !=
+		blockBBlockData->getConnectionBitWidth(connectionEndB.getConnectionId())
 	) {
 		return false;
 	}
-	if (input->getConnectionContainer().tryMakeConnection(inputConnectionEnd.getConnectionId(), outputConnectionEnd)) {
-		bool secondSuc = output->getConnectionContainer().tryMakeConnection(outputConnectionEnd.getConnectionId(), inputConnectionEnd);
+	if (blockA->getConnectionContainer().tryMakeConnection(connectionEndA.getConnectionId(), connectionEndB)) {
+		bool secondSuc = blockB->getConnectionContainer().tryMakeConnection(connectionEndB.getConnectionId(), connectionEndA);
 		assert(secondSuc);
-		difference->addCreatedConnection(
-			output->getPosition(), output->getConnectionPosition(outputConnectionEnd.getConnectionId()).value(),
-			input->getPosition(), input->getConnectionPosition(inputConnectionEnd.getConnectionId()).value()
-		);
+		if (portAType == BlockData::ConnectionData::PortType::INPUT || portBType == BlockData::ConnectionData::PortType::OUTPUT) {
+			difference->addCreatedConnection(
+				blockB->getPosition(), blockB->getConnectionPosition(connectionEndB.getConnectionId()).value(),
+				blockA->getPosition(), blockA->getConnectionPosition(connectionEndA.getConnectionId()).value()
+			);
+		} else {
+			difference->addCreatedConnection(
+				blockA->getPosition(), blockA->getConnectionPosition(connectionEndA.getConnectionId()).value(),
+				blockB->getPosition(), blockB->getConnectionPosition(connectionEndB.getConnectionId()).value()
+			);
+		}
 		return true;
 	}
 	return false;
