@@ -1189,7 +1189,7 @@ std::vector<simulator_id_t> Evaluator::getBlockSimulatorIds(const Address& addre
 	connectionPoints.reserve(positions.size());
 	for (const Position& portPosition : positions) {
 		std::optional<CircuitNode> node = evalCircuit->getNode(portPosition);
-		if (node.isIC() || !node.has_value()) {
+		if (!node.has_value() || node->isIC()) {
 			connectionPoints.push_back(std::nullopt);
 			continue;
 		}
