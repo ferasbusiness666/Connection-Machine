@@ -189,10 +189,7 @@ public:
 		return std::nullopt;
 	}
 	inline std::optional<connection_end_id_t> getBidirectionalConnectionId(Vector vector, Orientation orientation) const noexcept {
-		if (defaultData) {
-			if (vector.dx == 0 && vector.dy == 0) return 1;
-			return std::nullopt;
-		}
+		if (defaultData) return std::nullopt;
 		Vector noOrientationVec = orientation.inverseTransformVectorWithArea(vector, orientation*blockSize);
 		for (auto& pair : connections) {
 			if (pair.second.positionOnBlock == noOrientationVec && pair.second.portType == ConnectionData::PortType::BIDIRECTIONAL) return pair.first;
@@ -201,7 +198,7 @@ public:
 	}
 	inline std::optional<connection_end_id_t> getInputOrBidirectionalConnectionId(Vector vector, Orientation orientation) const noexcept {
 		if (defaultData) {
-			if (vector.dx == 0 && vector.dy == 0) return 1;
+			if (vector.dx == 0 && vector.dy == 0) return 0;
 			return std::nullopt;
 		}
 		Vector noOrientationVec = orientation.inverseTransformVectorWithArea(vector, orientation*blockSize);
