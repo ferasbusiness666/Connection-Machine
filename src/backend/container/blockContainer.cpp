@@ -149,7 +149,7 @@ bool BlockContainer::trySetType(Position positionOfBlock, BlockType type, Differ
 	if (type == selfBlockType) return false;
 	Block* oldBlock = getBlock_(positionOfBlock);
 	if (!oldBlock) return false;
-		BlockType oldBlockType = oldBlock->type();
+	BlockType oldBlockType = oldBlock->type();
 	if (oldBlockType == type) return true;
 	if (!(((
 			type == BlockType::AND ||
