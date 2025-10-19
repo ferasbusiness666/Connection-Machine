@@ -369,7 +369,7 @@ private:
 	Vec2Int textureTileSize = {0, 0}; // mean that the whole texture is 1 tile.
 	Vec2Int textureSmallestCordTile = {0, 0};
 	Vec2Int textureBlockTileSize = {1, 1};
-	Vec2Int textureBlockStateOffset = {1, 1};
+	Vec2Int textureBlockStateOffset = {0, 256};
 	Size blockSize = Size(1);
 	connection_end_id_t inputConnectionCount = 0;
 	connection_end_id_t outputConnectionCount = 0;

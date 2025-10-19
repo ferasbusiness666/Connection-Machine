@@ -23,9 +23,7 @@ public:
 	void blockDataConnectionNameSetUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void blockDataTextureChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void blockDataUsesTileMapTextureChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
-	void blockDataTextureTileSizeChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
-	void blockDataTextureSmallestCordTileChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
-	void blockDataTextureBlockTileSizeChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
+	void blockDataTextureTileChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void refreshBlockTexture(BlockType blockType);
 
 private:

@@ -16,9 +16,10 @@ BlockRenderDataFeeder::BlockRenderDataFeeder(Backend* backend) : backend(backend
 	dataUpdateEventReceiver.linkFunction("blockDataConnectionNameSet", std::bind(&BlockRenderDataFeeder::blockDataConnectionNameSetUpdate, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("blockDataTextureChange", std::bind(&BlockRenderDataFeeder::blockDataTextureChangeUpdate, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("blockDataUsesTileMapTextureChange", std::bind(&BlockRenderDataFeeder::blockDataUsesTileMapTextureChangeUpdate, this, std::placeholders::_1));
-	dataUpdateEventReceiver.linkFunction("blockDataTextureTileSizeChange", std::bind(&BlockRenderDataFeeder::blockDataTextureTileSizeChangeUpdate, this, std::placeholders::_1));
-	dataUpdateEventReceiver.linkFunction("blockDataTextureSmallestCordTileChange", std::bind(&BlockRenderDataFeeder::blockDataTextureSmallestCordTileChangeUpdate, this, std::placeholders::_1));
-	dataUpdateEventReceiver.linkFunction("blockDataTextureBlockTileSizeChange", std::bind(&BlockRenderDataFeeder::blockDataTextureBlockTileSizeChangeUpdate, this, std::placeholders::_1));
+	dataUpdateEventReceiver.linkFunction("blockDataTextureTileSizeChange", std::bind(&BlockRenderDataFeeder::blockDataTextureTileChangeUpdate, this, std::placeholders::_1));
+	dataUpdateEventReceiver.linkFunction("blockDataTextureSmallestCordTileChange", std::bind(&BlockRenderDataFeeder::blockDataTextureTileChangeUpdate, this, std::placeholders::_1));
+	dataUpdateEventReceiver.linkFunction("blockDataTextureBlockTileSizeChange", std::bind(&BlockRenderDataFeeder::blockDataTextureTileChangeUpdate, this, std::placeholders::_1));
+	dataUpdateEventReceiver.linkFunction("blockDataTextureBlockStateOffsetChange", std::bind(&BlockRenderDataFeeder::blockDataTextureTileChangeUpdate, this, std::placeholders::_1));
 
 	MainRenderer::get().addBlockTexture((DirectoryManager::getResourceDirectory() / "logicTiles.png").string());
 	MainRenderer::get().addBlockTexture((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
@@ -270,91 +271,7 @@ void BlockRenderDataFeeder::blockDataUsesTileMapTextureChangeUpdate(const DataUp
 	}
 }
 
-void BlockRenderDataFeeder::blockDataTextureTileSizeChangeUpdate(const DataUpdateEventManager::EventData* dataEvent) {
-	const auto* data = dataEvent->cast<std::pair<BlockType, Vec2Int>>();
-	if (!data) return;
-
-	const BlockData* blockData = backend->getBlockDataManager()->getBlockData(data->get().first);
-	if (!blockData) {
-		logError("Failed to find BlockData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
-		return;
-	}
-	if (!blockData->getUsesTileMapTexture()) return;
-
-	auto iter = blockTypeToRenderData.find(data->get().first);
-	if (iter == blockTypeToRenderData.end()) {
-		logError("Failed to find RenderData for BlockType {} \"{}\"", "BlockRenderDataFeeder", data->get().first, blockData->getName());
-		return;
-	}
-
-	if (blockData->getTexturePath() == "") {
-		BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(DirectoryManager::getResourceDirectory() / "gateIcon.png");
-		if (blockTextureId == 0) return;
-		MainRenderer::get().setBlockTexture(
-			iter->second.blockRenderDataId,
-			blockTextureId,
-			blockData->getTextureTileSize(),
-			blockData->getTextureSmallestCordTile(),
-			blockData->getTextureBlockTileSize(),
-			blockData->getTextureBlockStateOffset()
-		);
-	} else {
-		BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(blockData->getTexturePath());
-		if (blockTextureId == 0) return;
-		MainRenderer::get().setBlockTexture(
-			iter->second.blockRenderDataId,
-			blockTextureId,
-			blockData->getTextureTileSize(),
-			blockData->getTextureSmallestCordTile(),
-			blockData->getTextureBlockTileSize(),
-			blockData->getTextureBlockStateOffset()
-		);
-	}
-}
-
-void BlockRenderDataFeeder::blockDataTextureSmallestCordTileChangeUpdate(const DataUpdateEventManager::EventData* dataEvent) {
-	const auto* data = dataEvent->cast<std::pair<BlockType, Vec2Int>>();
-	if (!data) return;
-
-	const BlockData* blockData = backend->getBlockDataManager()->getBlockData(data->get().first);
-	if (!blockData) {
-		logError("Failed to find BlockData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
-		return;
-	}
-	if (!blockData->getUsesTileMapTexture()) return;
-
-	auto iter = blockTypeToRenderData.find(data->get().first);
-	if (iter == blockTypeToRenderData.end()) {
-		logError("Failed to find RenderData for BlockType {} \"{}\"", "BlockRenderDataFeeder", data->get().first, blockData->getName());
-		return;
-	}
-
-	if (blockData->getTexturePath() == "") {
-		BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(DirectoryManager::getResourceDirectory() / "gateIcon.png");
-		if (blockTextureId == 0) return;
-		MainRenderer::get().setBlockTexture(
-			iter->second.blockRenderDataId,
-			blockTextureId,
-			blockData->getTextureTileSize(),
-			blockData->getTextureSmallestCordTile(),
-			blockData->getTextureBlockTileSize(),
-			blockData->getTextureBlockStateOffset()
-		);
-	} else {
-		BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(blockData->getTexturePath());
-		if (blockTextureId == 0) return;
-		MainRenderer::get().setBlockTexture(
-			iter->second.blockRenderDataId,
-			blockTextureId,
-			blockData->getTextureTileSize(),
-			blockData->getTextureSmallestCordTile(),
-			blockData->getTextureBlockTileSize(),
-			blockData->getTextureBlockStateOffset()
-		);
-	}
-}
-
-void BlockRenderDataFeeder::blockDataTextureBlockTileSizeChangeUpdate(const DataUpdateEventManager::EventData* dataEvent) {
+void BlockRenderDataFeeder::blockDataTextureTileChangeUpdate(const DataUpdateEventManager::EventData* dataEvent) {
 	const auto* data = dataEvent->cast<std::pair<BlockType, Vec2Int>>();
 	if (!data) return;
 

@@ -73,6 +73,89 @@ void BlockDataManager::initializeDefaults() {
 	notBlockData->setTextureTileSize({ 256, 256 });
 	notBlockData->setTextureBlockTileSize({ 1, 1 });
 	notBlockData->setTextureSmallestCordTile({ 8, 0 });
+	// BUTTON
+	BlockData* buttonBlockData = getBlockData(BlockType::BUTTON);
+	buttonBlockData->setName("Button");
+	buttonBlockData->setDefaultData(false);
+	buttonBlockData->setConnectionOutput(Vector(0), 0);
+	buttonBlockData->setTexturePath(mainTexturePath);
+	buttonBlockData->setUsesTileMapTexture(true);
+	buttonBlockData->setTextureTileSize({ 256, 256 });
+	buttonBlockData->setTextureBlockTileSize({ 1, 1 });
+	buttonBlockData->setTextureSmallestCordTile({ 9, 0 });
+	// TICK_BUTTON
+	BlockData* tickButtonBlockData = getBlockData(BlockType::TICK_BUTTON);
+	tickButtonBlockData->setName("Tick Button");
+	tickButtonBlockData->setDefaultData(false);
+	tickButtonBlockData->setConnectionOutput(Vector(0), 0);
+	tickButtonBlockData->setTexturePath(mainTexturePath);
+	tickButtonBlockData->setUsesTileMapTexture(true);
+	tickButtonBlockData->setTextureTileSize({ 256, 256 });
+	tickButtonBlockData->setTextureBlockTileSize({ 1, 1 });
+	tickButtonBlockData->setTextureSmallestCordTile({ 10, 0 });
+	// SWITCH
+	BlockData* switchBlockData = getBlockData(BlockType::SWITCH);
+	switchBlockData->setName("Switch");
+	switchBlockData->setDefaultData(false);
+	switchBlockData->setConnectionOutput(Vector(0), 0);
+	switchBlockData->setTexturePath(mainTexturePath);
+	switchBlockData->setUsesTileMapTexture(true);
+	switchBlockData->setTextureTileSize({ 256, 256 });
+	switchBlockData->setTextureBlockTileSize({ 1, 1 });
+	switchBlockData->setTextureSmallestCordTile({ 11, 0 });
+	// CONSTANT OFF
+	BlockData* constantOffBlockData = getBlockData(BlockType::CONSTANT_OFF);
+	constantOffBlockData->setName("Constant");
+	constantOffBlockData->setDefaultData(false);
+	constantOffBlockData->setConnectionOutput(Vector(0), 0);
+	constantOffBlockData->setTexturePath(mainTexturePath);
+	constantOffBlockData->setUsesTileMapTexture(true);
+	constantOffBlockData->setTextureTileSize({ 256, 256 });
+	constantOffBlockData->setTextureBlockTileSize({ 1, 1 });
+	constantOffBlockData->setTextureSmallestCordTile({ 12, 0 });
+	// CONSTANT ON
+	BlockData* constantOnBlockData = getBlockData(BlockType::CONSTANT_ON);
+	constantOnBlockData->setName("Constant");
+	constantOnBlockData->setDefaultData(false);
+	constantOnBlockData->setIsPlaceable(false);
+	constantOnBlockData->setConnectionOutput(Vector(0), 0);
+	constantOnBlockData->setTexturePath(mainTexturePath);
+	constantOnBlockData->setUsesTileMapTexture(true);
+	constantOnBlockData->setTextureTileSize({ 256, 256 });
+	constantOnBlockData->setTextureBlockTileSize({ 1, 1 });
+	constantOnBlockData->setTextureSmallestCordTile({ 12, 0 });
+	// CONSTANT Z
+	BlockData* constantZBlockData = getBlockData(BlockType::CONSTANT_Z);
+	constantZBlockData->setName("Constant");
+	constantZBlockData->setDefaultData(false);
+	constantZBlockData->setIsPlaceable(false);
+	constantZBlockData->setConnectionOutput(Vector(0), 0);
+	constantZBlockData->setTexturePath(mainTexturePath);
+	constantZBlockData->setUsesTileMapTexture(true);
+	constantZBlockData->setTextureTileSize({ 256, 256 });
+	constantZBlockData->setTextureBlockTileSize({ 1, 1 });
+	constantZBlockData->setTextureSmallestCordTile({ 12, 0 });
+	// CONSTANT X
+	BlockData* constantXBlockData = getBlockData(BlockType::CONSTANT_X);
+	constantXBlockData->setName("Constant");
+	constantXBlockData->setDefaultData(false);
+	constantXBlockData->setIsPlaceable(false);
+	constantXBlockData->setConnectionOutput(Vector(0), 0);
+	constantXBlockData->setTexturePath(mainTexturePath);
+	constantXBlockData->setUsesTileMapTexture(true);
+	constantXBlockData->setTextureTileSize({ 256, 256 });
+	constantXBlockData->setTextureBlockTileSize({ 1, 1 });
+	constantXBlockData->setTextureSmallestCordTile({ 12, 0 });
+	// LIGHT
+	BlockData* lightBlockData = getBlockData(BlockType::LIGHT);
+	lightBlockData->setName("Light");
+	lightBlockData->setDefaultData(false);
+	lightBlockData->setConnectionInput(Vector(0), 0);
+	lightBlockData->setTexturePath(mainTexturePath);
+	lightBlockData->setUsesTileMapTexture(true);
+	lightBlockData->setTextureTileSize({ 256, 256 });
+	lightBlockData->setTextureBlockTileSize({ 1, 1 });
+	lightBlockData->setTextureSmallestCordTile({ 13, 0 });
 	// JUNCTION
 	BlockData* junctionBlockData = getBlockData(BlockType::JUNCTION);
 	junctionBlockData->setName("Junction");
@@ -82,7 +165,8 @@ void BlockDataManager::initializeDefaults() {
 	junctionBlockData->setUsesTileMapTexture(true);
 	junctionBlockData->setTextureTileSize({ 256, 256 });
 	junctionBlockData->setTextureBlockTileSize({ 1, 1 });
-	junctionBlockData->setTextureSmallestCordTile({ 9, 0 });
+	junctionBlockData->setTextureSmallestCordTile({ 8, 6 });
+	junctionBlockData->setTextureBlockStateOffset({ 256, 0 });
 	// JUNCTION_L
 	BlockData* junctionLBlockData = getBlockData(BlockType::JUNCTION_L);
 	junctionLBlockData->setName("Pull-down Resistor");
@@ -94,6 +178,7 @@ void BlockDataManager::initializeDefaults() {
 	junctionLBlockData->setTextureTileSize({ 256, 256 });
 	junctionLBlockData->setTextureBlockTileSize({ 1, 3 });
 	junctionLBlockData->setTextureSmallestCordTile({ 0, 4 });
+	junctionLBlockData->setTextureBlockStateOffset({ 256, 0 });
 	// JUNCTION_H
 	BlockData* junctionHBlockData = getBlockData(BlockType::JUNCTION_H);
 	junctionHBlockData->setName("Pull-up Resistor");
@@ -104,7 +189,8 @@ void BlockDataManager::initializeDefaults() {
 	junctionHBlockData->setUsesTileMapTexture(true);
 	junctionHBlockData->setTextureTileSize({ 256, 256 });
 	junctionHBlockData->setTextureBlockTileSize({ 1, 3 });
-	junctionHBlockData->setTextureSmallestCordTile({ 0, 7 });
+	junctionHBlockData->setTextureSmallestCordTile({ 4, 4 });
+	junctionHBlockData->setTextureBlockStateOffset({ 256, 0 });
 	// JUNCTION_X
 	BlockData* junctionXBlockData = getBlockData(BlockType::JUNCTION_X);
 	junctionXBlockData->setName("Pull-X Resistor");
@@ -115,7 +201,8 @@ void BlockDataManager::initializeDefaults() {
 	junctionXBlockData->setUsesTileMapTexture(true);
 	junctionXBlockData->setTextureTileSize({ 256, 256 });
 	junctionXBlockData->setTextureBlockTileSize({ 1, 3 });
-	junctionXBlockData->setTextureSmallestCordTile({ 0, 6 });
+	junctionXBlockData->setTextureSmallestCordTile({ 0, 3 });
+	junctionXBlockData->setTextureBlockStateOffset({ 256, 0 });
 	junctionXBlockData->setIsPlaceable(false);
 	// TRISTATE_BUFFER
 	BlockData* tristateBufferBlockData = getBlockData(BlockType::TRISTATE_BUFFER);
@@ -129,90 +216,8 @@ void BlockDataManager::initializeDefaults() {
 	tristateBufferBlockData->setUsesTileMapTexture(true);
 	tristateBufferBlockData->setTextureTileSize({ 256, 256 });
 	tristateBufferBlockData->setTextureBlockTileSize({ 1, 2 });
-	tristateBufferBlockData->setTextureSmallestCordTile({ 10, 0 });
-	// BUTTON
-	BlockData* buttonBlockData = getBlockData(BlockType::BUTTON);
-	buttonBlockData->setName("Button");
-	buttonBlockData->setDefaultData(false);
-	buttonBlockData->setConnectionOutput(Vector(0), 0);
-	buttonBlockData->setTexturePath(mainTexturePath);
-	buttonBlockData->setUsesTileMapTexture(true);
-	buttonBlockData->setTextureTileSize({ 256, 256 });
-	buttonBlockData->setTextureBlockTileSize({ 1, 1 });
-	buttonBlockData->setTextureSmallestCordTile({ 11, 0 });
-	// TICK_BUTTON
-	BlockData* tickButtonBlockData = getBlockData(BlockType::TICK_BUTTON);
-	tickButtonBlockData->setName("Tick Button");
-	tickButtonBlockData->setDefaultData(false);
-	tickButtonBlockData->setConnectionOutput(Vector(0), 0);
-	tickButtonBlockData->setTexturePath(mainTexturePath);
-	tickButtonBlockData->setUsesTileMapTexture(true);
-	tickButtonBlockData->setTextureTileSize({ 256, 256 });
-	tickButtonBlockData->setTextureBlockTileSize({ 1, 1 });
-	tickButtonBlockData->setTextureSmallestCordTile({ 12, 0 });
-	// SWITCH
-	BlockData* switchBlockData = getBlockData(BlockType::SWITCH);
-	switchBlockData->setName("Switch");
-	switchBlockData->setDefaultData(false);
-	switchBlockData->setConnectionOutput(Vector(0), 0);
-	switchBlockData->setTexturePath(mainTexturePath);
-	switchBlockData->setUsesTileMapTexture(true);
-	switchBlockData->setTextureTileSize({ 256, 256 });
-	switchBlockData->setTextureBlockTileSize({ 1, 1 });
-	switchBlockData->setTextureSmallestCordTile({ 13, 0 });
-	// CONSTANT OFF
-	BlockData* constantOffBlockData = getBlockData(BlockType::CONSTANT_OFF);
-	constantOffBlockData->setName("Constant");
-	constantOffBlockData->setDefaultData(false);
-	constantOffBlockData->setConnectionOutput(Vector(0), 0);
-	constantOffBlockData->setTexturePath(mainTexturePath);
-	constantOffBlockData->setUsesTileMapTexture(true);
-	constantOffBlockData->setTextureTileSize({ 256, 256 });
-	constantOffBlockData->setTextureBlockTileSize({ 1, 1 });
-	constantOffBlockData->setTextureSmallestCordTile({ 14, 0 });
-	// constantOffBlockDataON
-	BlockData* constantOnBlockData = getBlockData(BlockType::CONSTANT_ON);
-	constantOnBlockData->setName("Constant");
-	constantOnBlockData->setDefaultData(false);
-	constantOnBlockData->setIsPlaceable(false);
-	constantOnBlockData->setConnectionOutput(Vector(0), 0);
-	constantOnBlockData->setTexturePath(mainTexturePath);
-	constantOnBlockData->setUsesTileMapTexture(true);
-	constantOnBlockData->setTextureTileSize({ 256, 256 });
-	constantOnBlockData->setTextureBlockTileSize({ 1, 1 });
-	constantOnBlockData->setTextureSmallestCordTile({ 14, 0 });
-	// CONSTANT Z
-	BlockData* constantZBlockData = getBlockData(BlockType::CONSTANT_Z);
-	constantZBlockData->setName("Constant");
-	constantZBlockData->setDefaultData(false);
-	constantZBlockData->setIsPlaceable(false);
-	constantZBlockData->setConnectionOutput(Vector(0), 0);
-	constantZBlockData->setTexturePath(mainTexturePath);
-	constantZBlockData->setUsesTileMapTexture(true);
-	constantZBlockData->setTextureTileSize({ 256, 256 });
-	constantZBlockData->setTextureBlockTileSize({ 1, 1 });
-	constantZBlockData->setTextureSmallestCordTile({ 14, 0 });
-	// CONSTANT X
-	BlockData* constantXBlockData = getBlockData(BlockType::CONSTANT_X);
-	constantXBlockData->setName("Constant");
-	constantXBlockData->setDefaultData(false);
-	constantXBlockData->setIsPlaceable(false);
-	constantXBlockData->setConnectionOutput(Vector(0), 0);
-	constantXBlockData->setTexturePath(mainTexturePath);
-	constantXBlockData->setUsesTileMapTexture(true);
-	constantXBlockData->setTextureTileSize({ 256, 256 });
-	constantXBlockData->setTextureBlockTileSize({ 1, 1 });
-	constantXBlockData->setTextureSmallestCordTile({ 14, 0 });
-	// LIGHT
-	BlockData* lightBlockData = getBlockData(BlockType::LIGHT);
-	lightBlockData->setName("Light");
-	lightBlockData->setDefaultData(false);
-	lightBlockData->setConnectionInput(Vector(0), 0);
-	lightBlockData->setTexturePath(mainTexturePath);
-	lightBlockData->setUsesTileMapTexture(true);
-	lightBlockData->setTextureTileSize({ 256, 256 });
-	lightBlockData->setTextureBlockTileSize({ 1, 1 });
-	lightBlockData->setTextureSmallestCordTile({ 15, 0 });
+	tristateBufferBlockData->setTextureSmallestCordTile({ 8, 4 });
+	tristateBufferBlockData->setTextureBlockStateOffset({ 256, 0 });
 	// BUS_INTERFACE_1
 	BlockData* busInterfaceBlockData1 = getBlockData(BlockType::BUS_INTERFACE_1);
 	busInterfaceBlockData1->setName("Bus Interface 8 -> 1x8");
