@@ -1193,7 +1193,7 @@ std::vector<simulator_id_t> Evaluator::getBlockSimulatorIds(const Address& addre
 			connectionPoints.push_back(std::nullopt);
 			continue;
 		}
-		connectionPoints.push_back(EvalConnectionPoint(node.value().getId(), 0));
+		connectionPoints.push_back(EvalConnectionPoint(node->getId(), 0));
 	}
 	return evalSimulator->getBlockSimulatorIds(connectionPoints);
 }
