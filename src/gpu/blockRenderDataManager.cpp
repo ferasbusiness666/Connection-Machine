@@ -81,7 +81,7 @@ void BlockRenderDataManager::setBlockTexture(BlockRenderDataId blockRenderDataId
 		return;
 	}
 	BlockTextureManager& blockTextureManager = MainRenderer::get().getVulkanInstance().getDevice()->getBlockTextureManager();
-	BlockTextureCords newBlockTextureCords = blockTextureManager.getBlockTextureCords(blockTextureId, tileSize, smallestCordTile, blockSize);
+	BlockTextureCords newBlockTextureCords = blockTextureManager.getBlockTextureCords(blockTextureId, tileSize, smallestCordTile, blockSize, textureStepSize);
 	if (newBlockTextureCords != iter->second.blockTextureCords) {
 		iter->second.blockTextureCords = newBlockTextureCords;
 		MainRenderer::get().regenerateAllChunksWithBlock(blockRenderDataId);
