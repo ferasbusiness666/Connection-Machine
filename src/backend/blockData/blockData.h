@@ -11,16 +11,21 @@ class BlockData {
 	friend class BlockDataManager;
 public:
 	struct ConnectionData {
+		enum PortType {
+			INPUT,
+			OUTPUT,
+			BIDIRECTIONAL
+		};
 		ConnectionData(
 			Vector positionOnBlock,
-			bool isInput,
+			PortType portType,
 			std::variant<unsigned int, std::vector<unsigned int>> bitConfiguration = static_cast<unsigned int>(1)
 		) :
 			positionOnBlock(positionOnBlock),
-			isInput(isInput),
+			portType(portType),
 			bitConfiguration(bitConfiguration) {}
 		Vector positionOnBlock = Vector(0, 0);
-		bool isInput = true;
+		PortType portType = PortType::INPUT;
 		std::variant<unsigned int, std::vector<unsigned int>> bitConfiguration;
 		unsigned int getBitWidth() const noexcept {
 			if (std::holds_alternative<unsigned int>(bitConfiguration)) {
@@ -130,11 +135,13 @@ public:
 	void setUsesTileMapTexture(bool usesTileMapTexture) noexcept;
 	bool getUsesTileMapTexture() const noexcept { return usesTileMapTexture; }
 
-	// trys to set a connection input in the block. Returns success.
 	void removeConnection(connection_end_id_t connectionId) noexcept;
+	// trys to set a input connection in the block.
 	void setConnectionInput(Vector positionOnBlock, connection_end_id_t connectionId) noexcept;
-	// trys to set a connection output in the block. Returns success.
+	// trys to set a output connection in the block.
 	void setConnectionOutput(Vector positionOnBlock, connection_end_id_t connectionId) noexcept;
+	// trys to set a bidirectional connection in the block.
+	void setConnectionBidirectional(Vector positionOnBlock, connection_end_id_t connectionId) noexcept;
 
 	inline std::optional<connection_end_id_t> getInputConnectionId(Vector positionOnBlock) const noexcept {
 		if (defaultData) {
@@ -142,7 +149,7 @@ public:
 			return std::nullopt;
 		}
 		for (auto& pair : connections) {
-			if (pair.second.positionOnBlock == positionOnBlock && pair.second.isInput) return pair.first;
+			if (pair.second.positionOnBlock == positionOnBlock && pair.second.portType == ConnectionData::PortType::INPUT) return pair.first;
 		}
 		return std::nullopt;
 	}
@@ -152,7 +159,7 @@ public:
 			return std::nullopt;
 		}
 		for (auto& pair : connections) {
-			if (pair.second.positionOnBlock == positionOnBlock && !pair.second.isInput) return pair.first;
+			if (pair.second.positionOnBlock == positionOnBlock && pair.second.portType == ConnectionData::PortType::OUTPUT) return pair.first;
 		}
 		return std::nullopt;
 	}
@@ -163,7 +170,7 @@ public:
 		}
 		Vector noOrientationVec = orientation.inverseTransformVectorWithArea(vector, orientation*blockSize);
 		for (auto& pair : connections) {
-			if (pair.second.positionOnBlock == noOrientationVec && pair.second.isInput) return pair.first;
+			if (pair.second.positionOnBlock == noOrientationVec && pair.second.portType == ConnectionData::PortType::INPUT) return pair.first;
 		}
 		return std::nullopt;
 	}
@@ -174,7 +181,7 @@ public:
 		}
 		Vector noOrientationVec = orientation.inverseTransformVectorWithArea(vector, orientation*blockSize);
 		for (auto& pair : connections) {
-			if (pair.second.positionOnBlock == noOrientationVec && !pair.second.isInput) return pair.first;
+			if (pair.second.positionOnBlock == noOrientationVec && pair.second.portType == ConnectionData::PortType::OUTPUT) return pair.first;
 		}
 		return std::nullopt;
 	}
@@ -206,18 +213,18 @@ public:
 	}
 	inline connection_end_id_t getOutputConnectionCount() const noexcept {
 		if (defaultData) return 1;
-		return connections.size() - inputConnectionCount;
+		return outputConnectionCount;
 	}
 	inline bool connectionExists(connection_end_id_t connectionId) const noexcept { return defaultData ? connectionId <= 1 : connections.contains(connectionId); }
 	inline bool isConnectionInput(connection_end_id_t connectionId) const noexcept {
 		if (defaultData) return connectionId == 0;
 		auto iter = connections.find(connectionId);
-		return iter != connections.end() && iter->second.isInput;
+		return iter != connections.end() && iter->second.portType == ConnectionData::PortType::INPUT;
 	}
 	inline bool isConnectionOutput(connection_end_id_t connectionId) const noexcept {
 		if (defaultData) return connectionId == 1;
 		auto iter = connections.find(connectionId);
-		return iter != connections.end() && !(iter->second.isInput);
+		return iter != connections.end() && iter->second.portType == ConnectionData::PortType::OUTPUT;
 	}
 	const std::unordered_map<connection_end_id_t, ConnectionData>& getConnections() const noexcept {
 		assert((!defaultData) && "this will be empty if defaultData is true");
@@ -297,6 +304,7 @@ private:
 	Vec2Int textureBlockTileSize = {1, 1};
 	Size blockSize = Size(1);
 	connection_end_id_t inputConnectionCount = 0;
+	connection_end_id_t outputConnectionCount = 0;
 	std::unordered_map<connection_end_id_t, ConnectionData> connections;
 	BidirectionalMultiSecondKeyMap<connection_end_id_t, std::string> connectionIdNames;
 	DataUpdateEventManager* dataUpdateEventManager;

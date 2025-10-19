@@ -96,15 +96,18 @@ void BlockData::removeConnection(connection_end_id_t connectionId) noexcept {
 	auto iter = connections.find(connectionId);
 	if (iter == connections.end()) return;
 	dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataRemoveConnection", { blockType, connectionId });
-	bool isInput = iter->second.isInput;
+	if (iter->second.portType == ConnectionData::PortType::INPUT) {
+		inputConnectionCount--;
+	} else if (iter->second.portType == ConnectionData::PortType::OUTPUT) {
+		outputConnectionCount--;
+	}
 	connections.erase(iter);
-	inputConnectionCount -= isInput;
 	dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataRemoveConnection", { blockType, connectionId });
 	sendBlockDataUpdate();
 }
 void BlockData::setConnectionInput(Vector positionOnBlock, connection_end_id_t connectionId) noexcept {
 	dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataSetConnection", { blockType, connectionId });
-	connections.insert_or_assign(connectionId, ConnectionData(positionOnBlock, true));
+	connections.insert_or_assign(connectionId, ConnectionData(positionOnBlock, ConnectionData::PortType::INPUT));
 	inputConnectionCount++;
 	dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connectionId });
 	sendBlockDataUpdate();
@@ -112,7 +115,15 @@ void BlockData::setConnectionInput(Vector positionOnBlock, connection_end_id_t c
 // trys to set a connection output in the block. Returns success.
 void BlockData::setConnectionOutput(Vector positionOnBlock, connection_end_id_t connectionId) noexcept {
 	dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataSetConnection", { blockType, connectionId });
-	connections.insert_or_assign(connectionId, ConnectionData(positionOnBlock, false));
+	connections.insert_or_assign(connectionId, ConnectionData(positionOnBlock, ConnectionData::PortType::OUTPUT));
+	outputConnectionCount++;
+	dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connectionId });
+	sendBlockDataUpdate();
+}
+
+void BlockData::setConnectionBidirectional(Vector positionOnBlock, connection_end_id_t connectionId) noexcept {
+	dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataSetConnection", { blockType, connectionId });
+	connections.insert_or_assign(connectionId, ConnectionData(positionOnBlock, ConnectionData::PortType::BIDIRECTIONAL));
 	dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connectionId });
 	sendBlockDataUpdate();
 }
