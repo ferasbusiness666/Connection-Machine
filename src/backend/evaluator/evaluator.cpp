@@ -274,6 +274,7 @@ void Evaluator::edit_createConnection(
 	Position inputBlockPosition,
 	Position inputPosition
 ) {
+	logInfo("Creating connection from {} to {}", "Evaluator::edit_createConnection", outputPosition.toString(), inputPosition.toString());
 	std::set<CircuitPortDependency> circuitPortDependencies;
 	std::set<CircuitNode> circuitNodeDependencies;
 
@@ -282,11 +283,13 @@ void Evaluator::edit_createConnection(
 	if (!outputPoint.has_value()) {
 		return;
 	}
+	logInfo("Output point: gateId {}, portId {}", "Evaluator::edit_createConnection", outputPoint->gateId, outputPoint->portId);
 	std::optional<EvalConnectionPoint> inputPoint =
 		getConnectionPoint(evalCircuitId, inputPosition, Direction::IN, circuitPortDependencies, circuitNodeDependencies, false);
 	if (!inputPoint.has_value()) {
 		return;
 	}
+	logInfo("Input point: gateId {}, portId {}", "Evaluator::edit_createConnection", inputPoint->gateId, inputPoint->portId);
 	EvalConnection connection(outputPoint.value(), inputPoint.value());
 	if (!circuitPortDependencies.empty() || !circuitNodeDependencies.empty()) {
 		interCircuitConnections.push_back({ connection, circuitPortDependencies, circuitNodeDependencies });
@@ -411,9 +414,9 @@ std::optional<connection_port_id_t> Evaluator::getPortId(
 
 	// Directly return the result based on direction
 	if (direction == Direction::IN) {
-		return block->getInputConnectionId(portPosition);
+		return block->getInputOrBidirectionalConnectionId(portPosition);
 	} else {
-		return block->getOutputConnectionId(portPosition);
+		return block->getOutputOrBidirectionalConnectionId(portPosition);
 	}
 }
 
@@ -477,12 +480,12 @@ std::optional<EvalConnectionPoint> Evaluator::getConnectionPoint(
 
 	std::optional<connection_port_id_t> portId;
 	if (direction == Direction::IN) {
-		const std::optional<connection_port_id_t> port = block->getInputConnectionId(portPosition);
+		const std::optional<connection_port_id_t> port = block->getInputOrBidirectionalConnectionId(portPosition);
 		if (port) [[likely]] {
 			portId = port.value();
 		}
 	} else {
-		const std::optional<connection_port_id_t> port = block->getOutputConnectionId(portPosition);
+		const std::optional<connection_port_id_t> port = block->getOutputOrBidirectionalConnectionId(portPosition);
 		if (port) [[likely]] {
 			portId = port.value();
 		}
@@ -563,12 +566,12 @@ std::optional<EvalConnectionPoint> Evaluator::getConnectionPoint(
 
 	std::optional<connection_port_id_t> portId;
 	if (direction == Direction::IN) {
-		const std::optional<connection_port_id_t> port = block->getInputConnectionId(portPosition);
+		const std::optional<connection_port_id_t> port = block->getInputOrBidirectionalConnectionId(portPosition);
 		if (port) [[likely]] {
 			portId = port.value();
 		}
 	} else {
-		const std::optional<connection_port_id_t> port = block->getOutputConnectionId(portPosition);
+		const std::optional<connection_port_id_t> port = block->getOutputOrBidirectionalConnectionId(portPosition);
 		if (port) [[likely]] {
 			portId = port.value();
 		}
