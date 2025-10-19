@@ -228,10 +228,7 @@ std::vector<circuit_id_t> ConnectionMachineParser::load(const std::string& path)
 						logError("Failed to parse (blockid, connection_id) token", "ConnectionMachineParser");
 						break;
 					}
-					if (blockType == BlockType::JUNCTION)
-						currentParsedCircuit->addConnection(blockId, 0, otherBlockId, otherConnId);
-					else
-						currentParsedCircuit->addConnection(blockId, connId, otherBlockId, otherConnId);
+					currentParsedCircuit->addConnection(blockId, connId, otherBlockId, otherConnId);
 				}
 			}
 		}
