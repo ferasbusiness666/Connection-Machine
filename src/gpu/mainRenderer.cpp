@@ -299,13 +299,13 @@ void MainRenderer::stopMakingEdits(ViewportId viewportId) {
 	iter->second.getChunker().stopMakingEdits();
 }
 
-void MainRenderer::addBlock(ViewportId viewportId, BlockRenderDataId blockRenderDataId, Position position, Orientation orientation, Position statePosition) {
+void MainRenderer::addBlock(ViewportId viewportId, BlockRenderDataId blockRenderDataId, Position position, Orientation orientation) {
 	auto iter = viewportRenderers.find(viewportId);
 	if (iter == viewportRenderers.end()) {
 		logError("Failed to call startMakingEdits on non existent viewport {}", "MainRenderer", viewportId);
 		return;
 	}
-	iter->second.getChunker().addBlock(blockRenderDataId, position, orientation, statePosition);
+	iter->second.getChunker().addBlock(blockRenderDataId, position, orientation);
 }
 
 void MainRenderer::removeBlock(ViewportId viewportId, Position position) {

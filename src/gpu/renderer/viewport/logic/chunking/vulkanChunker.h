@@ -122,7 +122,6 @@ struct RenderedBlock {
 	glm::vec2 textureStateStep;
 	Orientation orientation;
 	FSize size;
-	Position statePosition;
 };
 
 struct RenderedWire {
@@ -205,7 +204,7 @@ public:
 
 	void startMakingEdits();
 	void stopMakingEdits();
-	void addBlock(BlockRenderDataId blockRenderDataId, Position position, Orientation orientation, Position statePosition);
+	void addBlock(BlockRenderDataId blockRenderDataId, Position position, Orientation orientation);
 	void removeBlock(Position position);
 	void moveBlock(Position curPos, Position newPos, Orientation newOrientation);
 	void addWire(std::pair<Position, Position> points, std::pair<FVector, FVector> socketOffsets);
@@ -228,6 +227,9 @@ private:
 	phmap::flat_hash_map<Position, Chunk> chunks;
 	std::unordered_map<std::pair<Position, Position>, std::vector<Position>> chunksUnderWire;
 	std::mutex mux; // sync can be relaxed in the future
+
+	std::unordered_map<Position, std::unordered_set<Position>> portStatePosToChunks;
+
 
 	// while edits are being made
 	std::unordered_set<Position> chunksToUpdate;

@@ -37,12 +37,7 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 		case Difference::ModificationType::PLACE_BLOCK:
 		{
 			const auto& [position, orientation, blockType] = std::get<Difference::block_modification_t>(modificationData);
-			Position statePosition = Position(1000000, 1000000);
-			if (blockType < BlockType::CUSTOM) {
-				if (blockType == BlockType::TRISTATE_BUFFER) statePosition = position + orientation.transformVectorWithArea(Vector(0, 1), Size(1, 2));
-				else statePosition = position;
-			}
-			MainRenderer::get().addBlock(viewportId, blockType, position, orientation, statePosition);
+			MainRenderer::get().addBlock(viewportId, blockType, position, orientation);
 			renderedBlocks.emplace(position, RenderedBlock(blockType, orientation));
 			break;
 		}
