@@ -132,6 +132,8 @@ public:
 	Vec2Int getTextureSmallestCordTile() const noexcept { return textureSmallestCordTile; }
 	void setTextureBlockTileSize(Vec2Int blockSizeInTiles) noexcept;
 	Vec2Int getTextureBlockTileSize() const noexcept { return textureBlockTileSize; }
+	void setTextureBlockStateOffset(Vec2Int textureBlockStateOffset) noexcept;
+	Vec2Int getTextureBlockStateOffset() const noexcept { return textureBlockStateOffset; }
 	void setUsesTileMapTexture(bool usesTileMapTexture) noexcept;
 	bool getUsesTileMapTexture() const noexcept { return usesTileMapTexture; }
 
@@ -322,6 +324,7 @@ private:
 	Vec2Int textureTileSize = {0, 0}; // mean that the whole texture is 1 tile.
 	Vec2Int textureSmallestCordTile = {0, 0};
 	Vec2Int textureBlockTileSize = {1, 1};
+	Vec2Int textureBlockStateOffset = {1, 1};
 	Size blockSize = Size(1);
 	connection_end_id_t inputConnectionCount = 0;
 	connection_end_id_t outputConnectionCount = 0;

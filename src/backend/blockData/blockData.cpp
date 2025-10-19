@@ -84,6 +84,13 @@ void BlockData::setTextureBlockTileSize(Vec2Int blockSizeInTiles) noexcept {
 	sendBlockDataUpdate();
 }
 
+void BlockData::setTextureBlockStateOffset(Vec2Int textureBlockStateOffset) noexcept {
+	if (this->textureBlockStateOffset == textureBlockStateOffset) return;
+	this->textureBlockStateOffset = textureBlockStateOffset;
+	dataUpdateEventManager->sendEvent<std::pair<BlockType, Vec2Int>>("blockDataTextureBlockStateOffsetChange", { blockType, textureBlockStateOffset });
+	sendBlockDataUpdate();
+}
+
 void BlockData::setUsesTileMapTexture(bool usesTileMapTexture) noexcept {
 	if (this->usesTileMapTexture == usesTileMapTexture) return;
 	this->usesTileMapTexture = usesTileMapTexture;

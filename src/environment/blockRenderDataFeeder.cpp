@@ -64,7 +64,8 @@ void BlockRenderDataFeeder::newBlockTypeUpdate(const DataUpdateEventManager::Eve
 				blockTextureId,
 				blockData->getTextureTileSize(),
 				blockData->getTextureSmallestCordTile(),
-				blockData->getTextureBlockTileSize()
+				blockData->getTextureBlockTileSize(),
+				blockData->getTextureBlockStateOffset()
 			);
 		} else {
 			BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(blockData->getTexturePath());
@@ -74,7 +75,8 @@ void BlockRenderDataFeeder::newBlockTypeUpdate(const DataUpdateEventManager::Eve
 				blockTextureId,
 				blockData->getTextureTileSize(),
 				blockData->getTextureSmallestCordTile(),
-				blockData->getTextureBlockTileSize()
+				blockData->getTextureBlockTileSize(),
+				blockData->getTextureBlockStateOffset()
 			);
 		}
 	}
@@ -197,7 +199,8 @@ void BlockRenderDataFeeder::blockDataTextureChangeUpdate(const DataUpdateEventMa
 				blockTextureId,
 				blockData->getTextureTileSize(),
 				blockData->getTextureSmallestCordTile(),
-				blockData->getTextureBlockTileSize()
+				blockData->getTextureBlockTileSize(),
+				blockData->getTextureBlockStateOffset()
 			);
 		} else {
 			BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(blockData->getTexturePath());
@@ -207,7 +210,8 @@ void BlockRenderDataFeeder::blockDataTextureChangeUpdate(const DataUpdateEventMa
 				blockTextureId,
 				blockData->getTextureTileSize(),
 				blockData->getTextureSmallestCordTile(),
-				blockData->getTextureBlockTileSize()
+				blockData->getTextureBlockTileSize(),
+				blockData->getTextureBlockStateOffset()
 			);
 		}
 	}
@@ -248,7 +252,8 @@ void BlockRenderDataFeeder::blockDataUsesTileMapTextureChangeUpdate(const DataUp
 				blockTextureId,
 				blockData->getTextureTileSize(),
 				blockData->getTextureSmallestCordTile(),
-				blockData->getTextureBlockTileSize()
+				blockData->getTextureBlockTileSize(),
+				blockData->getTextureBlockStateOffset()
 			);
 		} else {
 			BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(blockData->getTexturePath());
@@ -258,7 +263,8 @@ void BlockRenderDataFeeder::blockDataUsesTileMapTextureChangeUpdate(const DataUp
 				blockTextureId,
 				blockData->getTextureTileSize(),
 				blockData->getTextureSmallestCordTile(),
-				blockData->getTextureBlockTileSize()
+				blockData->getTextureBlockTileSize(),
+				blockData->getTextureBlockStateOffset()
 			);
 		}
 	}
@@ -289,7 +295,8 @@ void BlockRenderDataFeeder::blockDataTextureTileSizeChangeUpdate(const DataUpdat
 			blockTextureId,
 			blockData->getTextureTileSize(),
 			blockData->getTextureSmallestCordTile(),
-			blockData->getTextureBlockTileSize()
+			blockData->getTextureBlockTileSize(),
+			blockData->getTextureBlockStateOffset()
 		);
 	} else {
 		BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(blockData->getTexturePath());
@@ -299,7 +306,8 @@ void BlockRenderDataFeeder::blockDataTextureTileSizeChangeUpdate(const DataUpdat
 			blockTextureId,
 			blockData->getTextureTileSize(),
 			blockData->getTextureSmallestCordTile(),
-			blockData->getTextureBlockTileSize()
+			blockData->getTextureBlockTileSize(),
+			blockData->getTextureBlockStateOffset()
 		);
 	}
 }
@@ -329,7 +337,8 @@ void BlockRenderDataFeeder::blockDataTextureSmallestCordTileChangeUpdate(const D
 			blockTextureId,
 			blockData->getTextureTileSize(),
 			blockData->getTextureSmallestCordTile(),
-			blockData->getTextureBlockTileSize()
+			blockData->getTextureBlockTileSize(),
+			blockData->getTextureBlockStateOffset()
 		);
 	} else {
 		BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(blockData->getTexturePath());
@@ -339,7 +348,8 @@ void BlockRenderDataFeeder::blockDataTextureSmallestCordTileChangeUpdate(const D
 			blockTextureId,
 			blockData->getTextureTileSize(),
 			blockData->getTextureSmallestCordTile(),
-			blockData->getTextureBlockTileSize()
+			blockData->getTextureBlockTileSize(),
+			blockData->getTextureBlockStateOffset()
 		);
 	}
 }
@@ -369,7 +379,8 @@ void BlockRenderDataFeeder::blockDataTextureBlockTileSizeChangeUpdate(const Data
 			blockTextureId,
 			blockData->getTextureTileSize(),
 			blockData->getTextureSmallestCordTile(),
-			blockData->getTextureBlockTileSize()
+			blockData->getTextureBlockTileSize(),
+			blockData->getTextureBlockStateOffset()
 		);
 	} else {
 		BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(blockData->getTexturePath());
@@ -379,7 +390,8 @@ void BlockRenderDataFeeder::blockDataTextureBlockTileSizeChangeUpdate(const Data
 			blockTextureId,
 			blockData->getTextureTileSize(),
 			blockData->getTextureSmallestCordTile(),
-			blockData->getTextureBlockTileSize()
+			blockData->getTextureBlockTileSize(),
+			blockData->getTextureBlockStateOffset()
 		);
 	}
 }
