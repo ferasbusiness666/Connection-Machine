@@ -228,7 +228,7 @@ private:
 	std::unordered_map<std::pair<Position, Position>, std::vector<Position>> chunksUnderWire;
 	std::mutex mux; // sync can be relaxed in the future
 
-	std::unordered_map<Position, std::unordered_set<Position>> portStatePosToChunks;
+	std::unordered_map<Position, std::unordered_map<Position, unsigned int>> portStatePosToChunks;
 
 
 	// while edits are being made

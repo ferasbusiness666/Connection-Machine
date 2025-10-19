@@ -258,7 +258,7 @@ void VulkanChunker::moveBlock(Position curPos, Position newPos, Orientation newO
 	}
 	auto blockIter = curChunkIter->second.getRenderedBlocks().find(curPos);
 	if (blockIter == curChunkIter->second.getRenderedBlocks().end()) {
-		logError("Could not move block from {} to {} because it could not be found", "Vulkan", curPos, newPos);
+		logError("Could not move block from {} to {} because it could not be found", "VulkanChunker", curPos, newPos);
 		return;
 	}
 	RenderedBlock block = blockIter->second;
@@ -283,7 +283,7 @@ void VulkanChunker::addWire(std::pair<Position, Position> points, std::pair<FVec
 	std::vector<Position>& chunksUnderThisWire = chunksUnderWire[points];
 	chunksUnderThisWire.reserve(intersections.size());
 	for (const ChunkIntersection& intersection : intersections) {
-		portStatePosToChunks[points.first].insert(intersection.chunk);
+		portStatePosToChunks[points.first][intersection.chunk]++;
 		chunks[intersection.chunk].getRenderedWires()[points] = { intersection.start, intersection.end };
 		chunksUnderThisWire.push_back(intersection.chunk);
 		chunksToUpdate.insert(intersection.chunk);
@@ -300,6 +300,23 @@ void VulkanChunker::removeWire(std::pair<Position, Position> points) {
 			return;
 		}
 	}
+	auto portStateChunksIter = portStatePosToChunks.find(points.first);
+	if (portStateChunksIter != portStatePosToChunks.end()) {
+		if (portStateChunksIter->second.size() <= itr->second.size()) {
+			portStatePosToChunks.erase(portStateChunksIter);
+		} else {
+			for (Position chunkPos : itr->second) {
+				auto portStateChunkIter = portStateChunksIter->second.find(chunkPos);
+				if (portStateChunkIter != portStateChunksIter->second.end()) {
+					if (portStateChunkIter->second <= 1) {
+						portStateChunksIter->second.erase(portStateChunkIter);
+					} else {
+						portStateChunkIter->second--;
+					}
+				}
+			}
+		}
+	}
 	for (Position chunkPos : itr->second) {
 		auto iter = chunks.find(chunkPos);
 		if (iter != chunks.end()) {
@@ -307,6 +324,7 @@ void VulkanChunker::removeWire(std::pair<Position, Position> points) {
 			chunksToUpdate.insert(chunkPos);
 		}
 	}
+
 	chunksUnderWire.erase(itr);
 }
 
@@ -367,8 +385,8 @@ void VulkanChunker::updateSimulatorIds(const std::vector<SimulatorMappingUpdate>
 		} else {
 			auto iter = portStatePosToChunks.find(simulatorMappingUpdate.portPosition);
 			if (iter == portStatePosToChunks.end()) continue;
-			for (Position chunkPos : iter->second) {
-				auto chunkIter = chunks.find(chunkPos);
+			for (std::pair<Position, unsigned int> chunkPos : iter->second) {
+				auto chunkIter = chunks.find(chunkPos.first);
 				if (chunkIter == chunks.end()) continue;
 				std::optional<std::shared_ptr<VulkanChunkAllocation>> vulkanChunkAllocation = chunkIter->second.getAllocation();
 				if (!vulkanChunkAllocation) continue;
