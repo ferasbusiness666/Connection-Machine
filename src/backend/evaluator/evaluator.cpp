@@ -274,7 +274,6 @@ void Evaluator::edit_createConnection(
 	Position inputBlockPosition,
 	Position inputPosition
 ) {
-	logInfo("Creating connection from {} to {}", "Evaluator::edit_createConnection", outputPosition.toString(), inputPosition.toString());
 	std::set<CircuitPortDependency> circuitPortDependencies;
 	std::set<CircuitNode> circuitNodeDependencies;
 
@@ -283,13 +282,11 @@ void Evaluator::edit_createConnection(
 	if (!outputPoint.has_value()) {
 		return;
 	}
-	logInfo("Output point: gateId {}, portId {}", "Evaluator::edit_createConnection", outputPoint->gateId, outputPoint->portId);
 	std::optional<EvalConnectionPoint> inputPoint =
 		getConnectionPoint(evalCircuitId, inputPosition, Direction::IN, circuitPortDependencies, circuitNodeDependencies, false);
 	if (!inputPoint.has_value()) {
 		return;
 	}
-	logInfo("Input point: gateId {}, portId {}", "Evaluator::edit_createConnection", inputPoint->gateId, inputPoint->portId);
 	EvalConnection connection(outputPoint.value(), inputPoint.value());
 	if (!circuitPortDependencies.empty() || !circuitNodeDependencies.empty()) {
 		interCircuitConnections.push_back({ connection, circuitPortDependencies, circuitNodeDependencies });
