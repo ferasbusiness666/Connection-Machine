@@ -57,6 +57,12 @@ bool CircuitValidator::handleInvalidConnections() {
 
 	// count the connections
 	for (auto& conn : parsedCircuit.connections) {
+		const ParsedCircuit::BlockData* inputBlockData = parsedCircuit.getBlock(conn.inputBlockId);
+		const ParsedCircuit::BlockData* outputBlockData = parsedCircuit.getBlock(conn.outputBlockId);
+
+		if (inputBlockData && inputBlockData->type == BlockType::JUNCTION) conn.inputEndId = 0;
+		if (outputBlockData && outputBlockData->type == BlockType::JUNCTION) conn.outputEndId = 0;
+
 		++connectionCounts[conn];
 	}
 
@@ -68,7 +74,7 @@ bool CircuitValidator::handleInvalidConnections() {
 
 		if (--connectionCounts[reversePair] < 0) {
 			parsedCircuit.connections.push_back(reversePair);
-			logInfo("Added reciprocated connection between: ({} {}) and ({} {})", "CircuitValidator", conn.inputBlockId, conn.inputEndId, conn.outputBlockId, conn.outputEndId);
+			// logInfo("Added reciprocated connection between: ({} {}) and ({} {})", "CircuitValidator", conn.inputBlockId, conn.inputEndId, conn.outputBlockId, conn.outputEndId);
 			connectionCounts[reversePair] = 0;
 		}
 		++i;
