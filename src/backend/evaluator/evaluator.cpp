@@ -1043,22 +1043,12 @@ void Evaluator::traceOutwardsIC(
 
 void Evaluator::processDirtyNodes() {
 	for (const simulator_id_t id : dirtySimulatorIds) {
-		{
-			auto it = portSimulatorIdToEvalPositionMap.equal_range(id);
-			for (auto iter = it.first; iter != it.second; ++iter) {
-				const auto& [simulatorId, evalPosition] = *iter;
-				dirtyNodes.insert(evalPosition);
-			}
-			portSimulatorIdToEvalPositionMap.erase(id);
+		auto it = pinSimulatorIdToEvalPositionMap.equal_range(id);
+		for (auto iter = it.first; iter != it.second; ++iter) {
+			const auto& [simulatorId, evalPosition] = *iter;
+			dirtyNodes.insert(evalPosition);
 		}
-		{
-			auto it = pinSimulatorIdToEvalPositionMap.equal_range(id);
-			for (auto iter = it.first; iter != it.second; ++iter) {
-				const auto& [simulatorId, evalPosition] = *iter;
-				dirtyNodes.insert(evalPosition);
-			}
-			pinSimulatorIdToEvalPositionMap.erase(id);
-		}
+		pinSimulatorIdToEvalPositionMap.erase(id);
 	}
 	dirtySimulatorIds.clear();
 
@@ -1116,6 +1106,15 @@ void Evaluator::processDirtyNodes() {
 		const EvalPosition& evalPosition = dirtyPointsToProcess.at(i);
 		std::variant<simulator_id_t, std::vector<simulator_id_t>> pinSimId = pinSimIds.at(i);
 		simulatorMappingUpdates[evalPosition.evalCircuitId].push_back({ evalPosition.position, pinSimId, SimulatorMappingUpdateType::PIN });
+		if (std::holds_alternative<simulator_id_t>(pinSimId)) {
+			simulator_id_t singlePinSimId = std::get<simulator_id_t>(pinSimId);
+			pinSimulatorIdToEvalPositionMap.insert({ singlePinSimId, evalPosition });
+		} else {
+			const std::vector<simulator_id_t>& multiplePinSimIds = std::get<std::vector<simulator_id_t>>(pinSimId);
+			for (simulator_id_t multiplePinSimId : multiplePinSimIds) {
+				pinSimulatorIdToEvalPositionMap.insert({ multiplePinSimId, evalPosition });
+			}
+		}
 		// logInfo(
 		// 	"Processed dirty point at evalCircuitId {}, position {}, simulatorId {}",
 		// 	"Evaluator::processDirtyNodes",
