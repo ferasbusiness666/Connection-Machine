@@ -226,7 +226,7 @@ private:
 	std::unordered_map<BlockRenderDataId, unsigned int> blockTypesCount; // Used to regenerateAllChunksWithBlock
 
 	phmap::flat_hash_map<Position, Chunk> chunks;
-	phmap::flat_hash_map<std::pair<Position, Position>, std::vector<Position>> chunksUnderWire;
+	std::unordered_map<std::pair<Position, Position>, std::vector<Position>> chunksUnderWire;
 	std::mutex mux; // sync can be relaxed in the future
 
 	// while edits are being made

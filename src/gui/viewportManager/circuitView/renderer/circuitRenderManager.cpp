@@ -86,6 +86,7 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 				auto inputIter = renderedBlocks.find(inputBlockPosition);
 				if (inputIter == renderedBlocks.end()) {
 					logError("Could not find block at {} to add input connection to.", "CircuitRenderManager", inputBlockPosition);
+					continue;
 				}
 				inputIter->second.connectionsToOtherBlock.emplace(newConnection, outputBlockPosition);
 				MainRenderer::get().addWire(viewportId, newConnection, {

@@ -120,7 +120,7 @@ void Replacement::revert(SimPauseGuard& pauseGuard) {
 	}
 	static int depth = 0;
 	++depth;
-	logInfo("Reverting replacement at layer {} at depth {}", "Replacement::revert", layer, depth);
+	// logInfo("Reverting replacement at layer {} at depth {}", "Replacement::revert", layer, depth);
 	isReverting = true;
 	isEmpty = true;
 	for (const auto& conn : addedConnections) {
