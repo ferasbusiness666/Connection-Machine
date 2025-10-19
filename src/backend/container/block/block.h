@@ -69,6 +69,8 @@ public:
 	inline bool isConnectionInput(connection_end_id_t connectionId) const { return blockDataManager->isConnectionInput(type(), connectionId); }
 	inline bool isConnectionOutput(connection_end_id_t connectionId) const { return blockDataManager->isConnectionOutput(type(), connectionId); }
 	inline bool isConnectionBidirectional(connection_end_id_t connectionId) const { return blockDataManager->isConnectionBidirectional(type(), connectionId); }
+	inline bool isConnectionInputOrBidirectional(connection_end_id_t connectionId) const { return blockDataManager->isConnectionInputOrBidirectional(type(), connectionId); }
+	inline bool isConnectionOutputOrBidirectional(connection_end_id_t connectionId) const { return blockDataManager->isConnectionOutputOrBidirectional(type(), connectionId); }
 
 protected:
 	inline void destroy() { }

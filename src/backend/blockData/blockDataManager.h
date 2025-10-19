@@ -124,6 +124,14 @@ public:
 		if (!blockExists(type)) return false;
 		return blockData[type - 1].isConnectionBidirectional(connectionId);
 	}
+	inline bool isConnectionInputOrBidirectional(BlockType type, connection_end_id_t connectionId) const noexcept {
+		if (!blockExists(type)) return false;
+		return blockData[type - 1].isConnectionInputOrBidirectional(connectionId);
+	}
+	inline bool isConnectionOutputOrBidirectional(BlockType type, connection_end_id_t connectionId) const noexcept {
+		if (!blockExists(type)) return false;
+		return blockData[type - 1].isConnectionOutputOrBidirectional(connectionId);
+	}
 
 private:
 	std::vector<BlockData> blockData;

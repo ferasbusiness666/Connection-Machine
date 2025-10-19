@@ -271,6 +271,18 @@ public:
 		auto iter = connections.find(connectionId);
 		return iter != connections.end() && iter->second.portType == ConnectionData::PortType::BIDIRECTIONAL;
 	}
+	inline bool isConnectionInputOrBidirectional(connection_end_id_t connectionId) const noexcept {
+		if (defaultData) return connectionId == 0;
+		auto iter = connections.find(connectionId);
+		if (iter == connections.end()) return false;
+		return iter->second.portType != ConnectionData::PortType::OUTPUT;
+	}
+	inline bool isConnectionOutputOrBidirectional(connection_end_id_t connectionId) const noexcept {
+		if (defaultData) return connectionId == 1;
+		auto iter = connections.find(connectionId);
+		if (iter == connections.end()) return false;
+		return iter->second.portType != ConnectionData::PortType::INPUT;
+	}
 	inline ConnectionData::PortType getConnectionPortType(connection_end_id_t connectionId) const noexcept {
 		if (defaultData) {
 			if (connectionId == 0) return ConnectionData::PortType::INPUT;

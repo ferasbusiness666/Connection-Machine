@@ -835,11 +835,15 @@ void Evaluator::checkToCreateExternalConnections(SimPauseGuard& pauseGuard, eval
 		for (const auto& [connectionId, connectionOffset] : connections) {
 			Vector portOffset = connectionOffset.positionOnBlock;
 			Position portPosition = block->getPosition() + portOffset;
-			// Determine direction (input or output)
-			Direction direction = block->isConnectionInput(connectionId) ? Direction::IN : Direction::OUT;
-			// logInfo("Connection {} at position {} with direction {}", "Evaluator::checkToCreateExternalConnections", connectionId, portPosition.toString(), (direction
-			// == Direction::IN ? "IN" : "OUT"));
-			connectionDataList.push_back({ portPosition, direction });
+			// Determine direction (input or output or both)
+			bool connectionIsInput = block->isConnectionInputOrBidirectional(connectionId);
+			bool connectionIsOutput = block->isConnectionOutputOrBidirectional(connectionId);
+			if (connectionIsInput) {
+				connectionDataList.push_back({ portPosition, Direction::IN });
+			}
+			if (connectionIsOutput) {
+				connectionDataList.push_back({ portPosition, Direction::OUT });
+			}
 		}
 		if (block->type() == BlockType::SWITCH || block->type() == BlockType::BUTTON || block->type() == BlockType::TICK_BUTTON) {
 			connectionDataList.push_back({ position, Direction::IN });
@@ -947,7 +951,13 @@ void Evaluator::traceOutwardsIC(
 
 	for (auto iter = connectionIds.first; iter != connectionIds.second; ++iter) {
 		connection_end_id_t connectionEndId = iter->second;
-		if (parentCircuitBlock->isConnectionInput(connectionEndId) != (direction == Direction::IN)) {
+		// if (parentCircuitBlock->isConnectionInputOrBidirectional(connectionEndId) != (direction == Direction::IN)) {
+		// 	continue;
+		// }
+		if (direction == Direction::IN && !parentCircuitBlock->isConnectionOutputOrBidirectional(connectionEndId)) {
+			continue;
+		}
+		if (direction == Direction::OUT && !parentCircuitBlock->isConnectionInputOrBidirectional(connectionEndId)) {
 			continue;
 		}
 		std::optional<Position> connectionPosOpt = parentCircuitBlock->getConnectionPosition(connectionEndId);
@@ -956,11 +966,25 @@ void Evaluator::traceOutwardsIC(
 			continue;
 		}
 		Position connectionPos = connectionPosOpt.value();
-		const std::unordered_set<ConnectionEnd>* connectionEnds =
-			(direction == Direction::IN) ? parentCircuitBlock->getInputConnections(connectionPos) : parentCircuitBlock->getOutputConnections(connectionPos);
-		if (!connectionEnds) {
+		const std::unordered_set<ConnectionEnd>* connectionEnds1 = parentCircuitBlock->getBidirectionalConnections(connectionPos);
+		const std::unordered_set<ConnectionEnd>* connectionEnds2 = (direction == Direction::IN) ? parentCircuitBlock->getInputConnections(connectionPos) : parentCircuitBlock->getOutputConnections(connectionPos);
+		if (!connectionEnds1 && !connectionEnds2) {
 			// logError("Connection ends not found at position {}", "Evaluator::traceOutwardsIC", connectionPos.toString());
 			continue;
+		}
+
+		// merge the two sets
+		std::unordered_set<ConnectionEnd> const* connectionEnds;
+		if (connectionEnds1 && connectionEnds2) {
+			static thread_local std::unordered_set<ConnectionEnd> mergedConnectionEnds;
+			mergedConnectionEnds.clear();
+			mergedConnectionEnds.insert(connectionEnds1->begin(), connectionEnds1->end());
+			mergedConnectionEnds.insert(connectionEnds2->begin(), connectionEnds2->end());
+			connectionEnds = &mergedConnectionEnds;
+		} else if (connectionEnds1) {
+			connectionEnds = connectionEnds1;
+		} else {
+			connectionEnds = connectionEnds2;
 		}
 
 		circuitPortDependencies.insert({ circuitId, connectionEndId });
