@@ -1071,73 +1071,73 @@ void Evaluator::processDirtyNodes() {
 	}
 	dirtyMiddleIds.clear();
 
-	std::vector<EvalPosition> dirtyNodesToProcess;
-	std::vector<EvalConnectionPoint> connectionPointsToRequest;
-	std::vector<bool> sendBlockUpdate;
+	std::vector<EvalPosition> dirtyPointsToProcess;
+	std::vector<EvalConnectionPoint> pointToGatherPinSimIds;
+	std::vector<EvalConnectionPoint> blocksToGatherBlockSimIds;
+	std::unordered_set<middle_id_t> blocksToGatherBlockSimIdsSet;
 
 	for (const EvalPosition& evalPosition : dirtyNodes) {
+		Position position = evalPosition.position;
+		EvalCircuit* evalCircuit = evalCircuitContainer.getCircuit(evalPosition.evalCircuitId);
+		const SharedCircuit circuit = circuitManager.getCircuit(evalCircuit->getCircuitId());
+		const Block* block = circuit->getBlockContainer()->getBlock(position);
+		if (!block) [[unlikely]] {
+			logError("Block not found at position {}", "Evaluator::processDirtyNodes", position.toString());
+			continue;
+		}
+		BlockType blockType = block->type();
+		if (blockType == BlockType::NONE) {
+			continue;
+		}
+		const BlockData* blockData = blockDataManager.getBlockData(blockType);
+		bool shouldSendBlockUpdate = blockData->hasBlockState();
+		if (shouldSendBlockUpdate) {
+			middle_id_t middleId = evalCircuit->getNode(block->getPosition())->getId();
+			if (!blocksToGatherBlockSimIdsSet.contains(middleId)) {
+				blocksToGatherBlockSimIdsSet.insert(middleId);
+				blocksToGatherBlockSimIds.push_back({middleId, 0});
+			}
+		}
 		std::optional<EvalConnectionPoint> connectionPoint = getConnectionPoint(evalPosition.evalCircuitId, evalPosition.position, Direction::OUT);
 		if (!connectionPoint.has_value()) {
 			continue;
 		}
-		EvalCircuit* evalCircuit = evalCircuitContainer.getCircuit(evalPosition.evalCircuitId);
-		const BlockContainer* blockContainer = circuitManager.getCircuit(evalCircuit->getCircuitId())->getBlockContainer();
-		BlockType blockType = blockContainer->getBlock(evalPosition.position)->type();
-		BlockData* blockData = blockDataManager.getBlockData(blockType);
-		dirtyNodesToProcess.push_back(evalPosition);
-		connectionPointsToRequest.push_back(connectionPoint.value());
-		sendBlockUpdate.push_back(blockData->hasBlockState());
+		dirtyPointsToProcess.push_back(evalPosition);
+		pointToGatherPinSimIds.push_back(connectionPoint.value());
 	}
 	dirtyNodes.clear();
 
-	// std::vector<SimulatorStateAndPinSimId> simulatorIdPairs = evalSimulator->getSimulatorIds(connectionPointsToRequest);
-	std::vector<simulator_id_t> blockSimIds = evalSimulator->getBlockSimulatorIds(to_optional_vector(connectionPointsToRequest));
-	std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> pinSimIds = evalSimulator->getPinSimulatorIds(to_optional_vector(connectionPointsToRequest));
+	std::vector<simulator_id_t> blockSimIds = evalSimulator->getBlockSimulatorIds(to_optional_vector(blocksToGatherBlockSimIds));
+	std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> pinSimIds = evalSimulator->getPinSimulatorIds(to_optional_vector(pointToGatherPinSimIds));
 
 	std::unordered_map<eval_circuit_id_t, std::vector<SimulatorMappingUpdate>> simulatorMappingUpdates;
 
-	for (size_t i = 0; i < dirtyNodesToProcess.size(); ++i) {
-		const EvalPosition& evalPosition = dirtyNodesToProcess.at(i);
-		simulator_id_t blockSimId = blockSimIds.at(i);
+	for (int i = 0; i < dirtyPointsToProcess.size(); ++i) {
+		const EvalPosition& evalPosition = dirtyPointsToProcess.at(i);
 		std::variant<simulator_id_t, std::vector<simulator_id_t>> pinSimId = pinSimIds.at(i);
-		bool needsBlockUpdate = sendBlockUpdate.at(i);
-		// portSimulatorIdToEvalPositionMap.insert({ portSimId, evalPosition });
-		// pinSimulatorIdToEvalPositionMap.insert({ pinSimId, evalPosition });
-		portSimulatorIdToEvalPositionMap.insert({ blockSimId, evalPosition });
-		if (std::holds_alternative<simulator_id_t>(pinSimId)) {
-			simulator_id_t pinSimIdSingle = std::get<simulator_id_t>(pinSimId);
-			pinSimulatorIdToEvalPositionMap.insert({ pinSimIdSingle, evalPosition });
-		} else {
-			const std::vector<simulator_id_t>& pinSimIdVec = std::get<std::vector<simulator_id_t>>(pinSimId);
-			for (simulator_id_t pinSimIdSingle : pinSimIdVec) {
-				pinSimulatorIdToEvalPositionMap.insert({ pinSimIdSingle, evalPosition });
-			}
-		}
-		if (needsBlockUpdate) {
-			// logInfo(
-			// 	"Sending BLOCK update for evalCircuitId {} at position {} with value {}",
-			// 	"Evaluator::processDirtyNodes",
-			// 	evalPosition.evalCircuitId,
-			// 	evalPosition.position.toString(),
-			// 	std::to_string(blockSimId)
-			// );
-			simulatorMappingUpdates[evalPosition.evalCircuitId].push_back({ evalPosition.position, blockSimId, SimulatorMappingUpdateType::BLOCK });
-			// } else {
-			// 	simulatorMappingUpdates[evalPosition.evalCircuitId].push_back({
-			// 		evalPosition.position,
-			// 		(simulator_id_t)0,
-			// 		SimulatorMappingUpdateType::BLOCK
-			// 	});
-		}
+		simulatorMappingUpdates[evalPosition.evalCircuitId].push_back({ evalPosition.position, pinSimId, SimulatorMappingUpdateType::PIN });
 		// logInfo(
-		// 	"Sending PIN update for evalCircuitId {} at position {} with value {}",
+		// 	"Processed dirty point at evalCircuitId {}, position {}, simulatorId {}",
 		// 	"Evaluator::processDirtyNodes",
 		// 	evalPosition.evalCircuitId,
 		// 	evalPosition.position.toString(),
 		// 	std::to_string(pinSimId)
-		// );
-		simulatorMappingUpdates[evalPosition.evalCircuitId].push_back({ evalPosition.position, pinSimId, SimulatorMappingUpdateType::PIN });
+		// 	);
 	}
+	for (int i = 0; i < blocksToGatherBlockSimIds.size(); ++i) {
+		const EvalConnectionPoint& blockPoint = blocksToGatherBlockSimIds.at(i);
+		simulator_id_t blockSimId = blockSimIds.at(i);
+		EvalPosition evalPosition = middleIdToEvalPositionMap.at(blockPoint.gateId);
+		simulatorMappingUpdates[evalPosition.evalCircuitId].push_back({ evalPosition.position, blockSimId, SimulatorMappingUpdateType::BLOCK });
+		// logInfo(
+		// 	"Processed dirty block at evalCircuitId {}, position {}, simulatorId {}",
+		// 	"Evaluator::processDirtyNodes",
+		// 	evalPosition.evalCircuitId,
+		// 	evalPosition.position.toString(),
+		// 	std::to_string(blockSimId)
+		// );
+	}
+
 	for (const auto& [evalCircuitId, updates] : simulatorMappingUpdates) {
 		sendSimulatorMappingUpdate(evalCircuitId, updates);
 	}
