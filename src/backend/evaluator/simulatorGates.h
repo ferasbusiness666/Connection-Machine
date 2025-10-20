@@ -429,4 +429,68 @@ struct CopySelfOutputGate : public LogicGate {
 	}
 };
 
+struct PortsToIntGate : public SimulatorGate {
+	std::vector<simulator_id_t> inputPorts;
+
+	PortsToIntGate(simulator_id_t id, int numInputs) : SimulatorGate(id) {
+		inputPorts.resize(numInputs, 0);
+	}
+
+	void addInput(simulator_id_t inputId, connection_port_id_t portId) override {
+		if (portId >= inputPorts.size()) {
+			logError("Port ID out of range in PortsToIntGate::addInput", "PortsToIntGate::addInput");
+			return;
+		}
+		inputPorts[portId] = inputId;
+	}
+
+	void removeInput(simulator_id_t inputId, connection_port_id_t portId) override {
+		if (portId >= inputPorts.size()) {
+			logError("Port ID out of range in PortsToIntGate::removeInput", "PortsToIntGate::removeInput");
+			return;
+		}
+		if (inputPorts[portId] == inputId) {
+			inputPorts[portId] = 0;
+		}
+	}
+
+	void removeIdRefs(simulator_id_t otherId) override {
+		for (simulator_id_t& inputId : inputPorts) {
+			if (inputId == otherId) {
+				inputId = 0;
+			}
+		}
+	}
+
+	void resetState(bool realistic, std::vector<logic_state_t>& states) override {
+		states[id] = static_cast<logic_state_t>(0);
+	}
+
+	inline logic_state_t calculate(const std::vector<logic_state_t>& statesA) const noexcept {
+		unsigned int result = 0;
+		for (size_t i = 0; i < inputPorts.size(); ++i) {
+			simulator_id_t inputId = inputPorts[i];
+			if (inputId == 0) {
+				continue;
+			}
+			logic_state_t state = statesA[inputId];
+			if (state == logic_state_t::HIGH) {
+				result |= (1 << i);
+			}
+		}
+		return static_cast<logic_state_t>(result);
+	}
+
+	inline void tick(const std::vector<logic_state_t>& statesA, std::vector<logic_state_t>& statesB) noexcept {
+		statesB[id] = calculate(statesA);
+	}
+
+	simulator_id_t getIdOfOutputPort(connection_port_id_t portId) const override {
+		return id;
+	}
+	std::vector<simulator_id_t> getOutputSimIds() const override {
+		return {id};
+	}
+};
+
 #endif /* simulatorGates_h */

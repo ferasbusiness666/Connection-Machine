@@ -407,6 +407,15 @@ simulator_id_t LogicSimulator::addGate(const BlockType blockType) {
 		constantResetGates.back().resetState(evalConfig.isRealistic(), statesA);
 		constantResetGates.back().resetState(evalConfig.isRealistic(), statesB);
 		break;
+	case BlockType::COLOR_LIGHT:
+		simulatorId = portsToIntGates.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(portsToIntGates.back().getId());
+		extendDataVectors(simulatorId);
+		portsToIntGates.push_back({ simulatorId, 6 });
+		updateGateLocation(simulatorId, SimGateType::PORTS_TO_INT, portsToIntGates.size() - 1);
+		portsToIntGates.back().resetState(evalConfig.isRealistic(), statesA);
+		portsToIntGates.back().resetState(evalConfig.isRealistic(), statesB);
+		break;
+
 	// case BlockType::NONE:
 	// 	logError("Cannot add gate of type NONE", "LogicSimulator::addGate");
 	// 	return 0;
@@ -450,6 +459,7 @@ void LogicSimulator::removeGate(simulator_id_t simulatorId) {
 				case SimGateType::CONSTANT:        if (depIdx < constantGates.size())        constantGates[depIdx].removeIdRefs(outId); break;
 				case SimGateType::CONSTANT_RESET:  if (depIdx < constantResetGates.size())   constantResetGates[depIdx].removeIdRefs(outId); break;
 				case SimGateType::COPY_SELF_OUTPUT:if (depIdx < copySelfOutputGates.size())  copySelfOutputGates[depIdx].removeIdRefs(outId); break;
+				case SimGateType::PORTS_TO_INT:    if (depIdx < portsToIntGates.size())      portsToIntGates[depIdx].removeIdRefs(outId); break;
 				}
 			}
 			outputDependencies.erase(depIt);
@@ -481,6 +491,7 @@ void LogicSimulator::removeGate(simulator_id_t simulatorId) {
 	case SimGateType::CONSTANT:        if (!constantGates.empty())        fixMovedIndex(constantGates); break;
 	case SimGateType::CONSTANT_RESET:  if (!constantResetGates.empty())   fixMovedIndex(constantResetGates); break;
 	case SimGateType::COPY_SELF_OUTPUT:if (!copySelfOutputGates.empty())  fixMovedIndex(copySelfOutputGates); break;
+	case SimGateType::PORTS_TO_INT:    if (!portsToIntGates.empty())      fixMovedIndex(portsToIntGates); break;
 	}
 
 	removeGateLocation(simulatorId);
@@ -563,6 +574,11 @@ std::optional<simulator_id_t> LogicSimulator::getOutputPortId(simulator_id_t sim
 				return copySelfOutputGates[gateIndex].getIdOfOutputPort(portId);
 			}
 			break;
+		case SimGateType::PORTS_TO_INT:
+			if (gateIndex < portsToIntGates.size()) {
+				return portsToIntGates[gateIndex].getIdOfOutputPort(portId);
+			}
+			break;
 		}
 	}
 
@@ -628,6 +644,12 @@ void LogicSimulator::addInputToGate(simulator_id_t simId, simulator_id_t inputId
 		case SimGateType::COPY_SELF_OUTPUT:
 			if (gateIndex < copySelfOutputGates.size()) {
 				copySelfOutputGates[gateIndex].addInput(inputId, portId);
+				addOutputDependency(inputId, simId);
+			}
+			break;
+		case SimGateType::PORTS_TO_INT:
+			if (gateIndex < portsToIntGates.size()) {
+				portsToIntGates[gateIndex].addInput(inputId, portId);
 				addOutputDependency(inputId, simId);
 			}
 			break;
@@ -700,6 +722,12 @@ void LogicSimulator::removeInputFromGate(simulator_id_t simId, simulator_id_t in
 				removeOutputDependency(inputId, simId);
 			}
 			break;
+		case SimGateType::PORTS_TO_INT:
+			if (gateIndex < portsToIntGates.size()) {
+				portsToIntGates[gateIndex].removeInput(inputId, portId);
+				removeOutputDependency(inputId, simId);
+			}
+			break;
 		}
 		return;
 	}
@@ -741,6 +769,9 @@ std::optional<std::vector<simulator_id_t>> LogicSimulator::getOutputSimIdsFromGa
 		break;
 	case SimGateType::COPY_SELF_OUTPUT:
 		if (gateIndex < copySelfOutputGates.size()) return copySelfOutputGates[gateIndex].getOutputSimIds();
+		break;
+	case SimGateType::PORTS_TO_INT:
+		if (gateIndex < portsToIntGates.size()) return portsToIntGates[gateIndex].getOutputSimIds();
 		break;
 	}
 	return std::nullopt;
@@ -806,6 +837,10 @@ void LogicSimulator::regenerateJobs() {
 		JobInstruction* ji = makeJI(i, std::min(i + batch, copySelfOutputGates.size()));
 		allJobs.push_back(ThreadPool::Job{ &LogicSimulator::execCopySelfOutput, ji });
 	}
+	for (size_t i = 0; i < portsToIntGates.size(); i += batch) {
+		JobInstruction* ji = makeJI(i, std::min(i + batch, portsToIntGates.size()));
+		allJobs.push_back(ThreadPool::Job{ &LogicSimulator::execPortsToInt, ji });
+	}
 	unsigned int threadCount = min(allJobs.size(), evalConfig.getMaxThreadCount());
 	if (threadCount == 0 && allJobs.size() != 0) { threadCount = 1; }
 	jobs.clear();
@@ -859,4 +894,8 @@ void LogicSimulator::execConstantReset(void* jobInstruction) {
 void LogicSimulator::execCopySelfOutput(void* jobInstruction) {
 	auto* ji = static_cast<JobInstruction*>(jobInstruction);
 	for (size_t i = ji->start; i < ji->end; ++i) ji->self->copySelfOutputGates[i].tick(ji->self->statesA, ji->self->statesB);
+}
+void LogicSimulator::execPortsToInt(void* jobInstruction) {
+	auto* ji = static_cast<JobInstruction*>(jobInstruction);
+	for (size_t i = ji->start; i < ji->end; ++i) ji->self->portsToIntGates[i].tick(ji->self->statesA, ji->self->statesB);
 }
