@@ -362,7 +362,11 @@ struct TristateBufferGate : public SimulatorGate {
 			return logic_state_t::FLOATING;
 		}
 		// Enabled
-		return statesA[dataInput];
+		logic_state_t state = statesA[dataInput];
+		if (state == logic_state_t::FLOATING) {
+			return logic_state_t::UNDEFINED;
+		}
+		return state;
 	}
 
 	inline void tick(const std::vector<logic_state_t>& statesA, std::vector<logic_state_t>& statesB) noexcept {
