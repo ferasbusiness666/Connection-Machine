@@ -28,6 +28,7 @@ BlockType stringToBlockType(const std::string& str) {
 	if (str == "BUS_INTERFACE_1") return BlockType::BUS_INTERFACE_1;
 	if (str == "BUS_INTERFACE_2") return BlockType::BUS_INTERFACE_2;
 	if (str == "BUS_INTERFACE_3") return BlockType::BUS_INTERFACE_3;
+	if (str == "BUS_INTERFACE_4") return BlockType::BUS_INTERFACE_4;
 	return BlockType::CUSTOM;
 }
 
@@ -70,6 +71,7 @@ std::string blockTypeToString(BlockType type) {
 	case BlockType::BUS_INTERFACE_1: return "BUS_INTERFACE_1";
 	case BlockType::BUS_INTERFACE_2: return "BUS_INTERFACE_2";
 	case BlockType::BUS_INTERFACE_3: return "BUS_INTERFACE_3";
+	case BlockType::BUS_INTERFACE_4: return "BUS_INTERFACE_4";
 	case BlockType::CUSTOM: return "CUSTOM";
 	default: return "NONE";
 	}

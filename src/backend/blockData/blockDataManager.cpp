@@ -5,7 +5,7 @@
 void BlockDataManager::initializeDefaults() {
 	assert(blockData.size() == 0); // should call this before doing anything
 	// load default data
-	for (unsigned int i = 0; i < 24; i++) addBlock();
+	for (unsigned int i = 0; i < 26; i++) addBlock();
 
 	std::string mainTexturePath = (DirectoryManager::getResourceDirectory() / "logicTiles.png").string();
 
@@ -260,4 +260,30 @@ void BlockDataManager::initializeDefaults() {
 	}
 	busInterfaceBlockData3->setTexturePath((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
 	// busInterfaceBlockData3->setIsPlaceable(false);
+	// BUS_INTERFACE_4
+	BlockData* busInterfaceBlockData4 = getBlockData(BlockType::BUS_INTERFACE_4);
+	busInterfaceBlockData4->setName("Bus Interface 6 -> 1x6");
+	busInterfaceBlockData4->setDefaultData(false);
+	busInterfaceBlockData4->setIsBus(true);
+	busInterfaceBlockData4->setSize(Size(2, 6));
+	busInterfaceBlockData4->setConnectionBidirectional(Vector(1, 0), 0);
+	busInterfaceBlockData4->setConnectionBitConfiguration(0, std::vector<unsigned int>{ 0, 1, 2, 3, 4, 5 });
+	for (unsigned int i = 0; i < 6; ++i) {
+		busInterfaceBlockData4->setConnectionBidirectional(Vector(0, i), i + 1);
+		busInterfaceBlockData4->setConnectionBitConfiguration(i + 1, std::vector<unsigned int>{ i });
+	}
+	busInterfaceBlockData4->setTexturePath((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
+	// COLOR_LIGHT
+	BlockData* colorLightBlockData = getBlockData(BlockType::COLOR_LIGHT);
+	colorLightBlockData->setName("Color Light (6 bits)");
+	colorLightBlockData->setDefaultData(false);
+	colorLightBlockData->setConnectionInput(Vector(0), 0);
+	colorLightBlockData->setConnectionBitConfiguration(0, std::vector<unsigned int>{ 0, 1, 2, 3, 4, 5 });
+	colorLightBlockData->setTexturePath((DirectoryManager::getResourceDirectory() / "colorLight.png").string());
+	colorLightBlockData->setUsesTileMapTexture(true);
+	colorLightBlockData->setTextureTileSize({ 256, 256 });
+	colorLightBlockData->setTextureBlockTileSize({ 1, 1 });
+	colorLightBlockData->setTextureSmallestCordTile({ 0, 0 });
+	colorLightBlockData->setTextureBlockStateOffset({ 16, 256 });
+	colorLightBlockData->setIsPlaceable(false);
 }
