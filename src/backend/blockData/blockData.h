@@ -60,11 +60,7 @@ public:
 			}
 		}
 		unsigned int getMaxLaneIndex() const noexcept {
-			if (std::holds_alternative<unsigned int>(bitConfiguration)) {
-				return std::get<unsigned int>(bitConfiguration) - 1;
-			} else {
-				return std::get<std::vector<unsigned int>>(bitConfiguration).size() - 1;
-			}
+			return getBitWidth() - 1;
 		}
 		bool containsLaneId(unsigned int laneId) const noexcept {
 			if (std::holds_alternative<unsigned int>(bitConfiguration)) {
