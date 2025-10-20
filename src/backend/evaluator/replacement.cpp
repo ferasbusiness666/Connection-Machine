@@ -120,16 +120,16 @@ void Replacement::revert(SimPauseGuard& pauseGuard) {
 	isReverting = true;
 	isEmpty = true;
 	for (const auto& conn : addedConnections) {
-		replacer->pingId(pauseGuard, conn.source.gateId, 0);
-		replacer->pingId(pauseGuard, conn.destination.gateId, 0);
+		replacer->pingId(pauseGuard, conn.source.gateId, layer+1);
+		replacer->pingId(pauseGuard, conn.destination.gateId, layer+1);
 	}
 	for (const auto& conn : deletedConnections) {
-		replacer->pingId(pauseGuard, conn.source.gateId, 0);
-		replacer->pingId(pauseGuard, conn.destination.gateId, 0);
+		replacer->pingId(pauseGuard, conn.source.gateId, layer+1);
+		replacer->pingId(pauseGuard, conn.destination.gateId, layer+1);
 	}
 	for (const auto& conn : addedGates) {
-		replacer->pingId(pauseGuard, conn.id, 0);
-		replacer->pingId(pauseGuard, conn.id, 0);
+		replacer->pingId(pauseGuard, conn.id, layer+1);
+		replacer->pingId(pauseGuard, conn.id, layer+1);
 	}
 	for (const auto& conn : addedConnections) {
 		replacer->busInterfacePassthrough.removeConnection(pauseGuard, conn);
