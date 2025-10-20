@@ -159,29 +159,13 @@ struct ANDLikeGate : public MultiInputGate {
 	}
 
 	void removeInput(simulator_id_t inputId, connection_port_id_t portId) override {
-		for (size_t i = 0; i < inputs.size(); ++i) {
-			if (inputs[i] == inputId) {
-				inputs[i] = inputs.back();
-				inputs.pop_back();
-				if (lastInputToEarlyExit == i) {
-					lastInputToEarlyExit = 0;
-				}
-				break;
-			}
-		}
+		lastInputToEarlyExit = 0;
+		MultiInputGate::removeInput(inputId, portId);
 	}
 
 	void removeIdRefs(simulator_id_t otherId) override {
-		for (size_t i = 0; i < inputs.size(); ++i) {
-			if (inputs[i] == otherId) {
-				inputs[i] = inputs.back();
-				inputs.pop_back();
-				if (lastInputToEarlyExit == i) {
-					lastInputToEarlyExit = 0;
-				}
-				--i;
-			}
-		}
+		lastInputToEarlyExit = 0;
+		MultiInputGate::removeIdRefs(otherId);
 	}
 };
 
