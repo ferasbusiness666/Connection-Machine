@@ -64,14 +64,23 @@ public:
 	}
 
 	void removeInput(simulator_id_t inputId, connection_port_id_t portId) override {
-		auto it = std::find(inputs.begin(), inputs.end(), inputId);
-		if (it != inputs.end()) {
-			inputs.erase(it);
+		for (size_t i = 0; i < inputs.size(); ++i) {
+			if (inputs[i] == inputId) {
+				inputs[i] = inputs.back();
+				inputs.pop_back();
+				break;
+			}
 		}
 	}
 
 	void removeIdRefs(simulator_id_t otherId) override {
-		inputs.erase(std::remove(inputs.begin(), inputs.end(), otherId), inputs.end());
+		for (size_t i = 0; i < inputs.size(); ++i) {
+			if (inputs[i] == otherId) {
+				inputs[i] = inputs.back();
+				inputs.pop_back();
+				--i;
+			}
+		}
 	}
 
 protected:
@@ -113,20 +122,25 @@ struct ANDLikeGate : public MultiInputGate {
 	// Can be used for AND, OR, NAND, and NOR
 	bool inputsInverted;
 	bool outputInverted;
+	unsigned int lastInputToEarlyExit;
 
 	ANDLikeGate(simulator_id_t id, bool inputsInverted = false, bool outputInverted = false)
-		: MultiInputGate(id), inputsInverted(inputsInverted), outputInverted(outputInverted) {}
+		: MultiInputGate(id), inputsInverted(inputsInverted), outputInverted(outputInverted), lastInputToEarlyExit(0) {}
 
-	inline logic_state_t calculate(const std::vector<logic_state_t>& statesA) const noexcept {
+	inline logic_state_t calculate(const std::vector<logic_state_t>& statesA) noexcept {
 		if (inputs.empty()) [[unlikely]] {
 			return logic_state_t::LOW;
 		}
-		bool foundGoofyState = false;
 		const logic_state_t desiredState = (logic_state_t)inputsInverted;
-		for (const simulator_id_t inputId : inputs) {
-			const logic_state_t state = statesA[inputId];
+		if (statesA[inputs[lastInputToEarlyExit]] == desiredState) {
+			return (logic_state_t)outputInverted;
+		}
+		bool foundGoofyState = false;
+		for (unsigned int i = 0; i < inputs.size(); ++i) {
+			const logic_state_t state = statesA[inputs[i]];
 			// Early-out if the decisive (desired) state is present
 			if (state == desiredState) {
+				lastInputToEarlyExit = i; // remember the input that caused early exit so we can check it first next time
 				return (logic_state_t)outputInverted;
 			}
 			// Track any unknown/floating driver; only matters if no decisive state was found
@@ -142,6 +156,32 @@ struct ANDLikeGate : public MultiInputGate {
 	inline void realisticTick(const std::vector<logic_state_t>& statesA, std::vector<logic_state_t>& statesB) noexcept {
 		logic_state_t targetState = calculate(statesA);
 		applyRealisticTick(targetState, statesA, statesB);
+	}
+
+	void removeInput(simulator_id_t inputId, connection_port_id_t portId) override {
+		for (size_t i = 0; i < inputs.size(); ++i) {
+			if (inputs[i] == inputId) {
+				inputs[i] = inputs.back();
+				inputs.pop_back();
+				if (lastInputToEarlyExit == i) {
+					lastInputToEarlyExit = 0;
+				}
+				break;
+			}
+		}
+	}
+
+	void removeIdRefs(simulator_id_t otherId) override {
+		for (size_t i = 0; i < inputs.size(); ++i) {
+			if (inputs[i] == otherId) {
+				inputs[i] = inputs.back();
+				inputs.pop_back();
+				if (lastInputToEarlyExit == i) {
+					lastInputToEarlyExit = 0;
+				}
+				--i;
+			}
+		}
 	}
 };
 
