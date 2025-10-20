@@ -145,9 +145,8 @@ void SinglePlaceTool::updateElements() {
 Vector SinglePlaceTool::calculateElementOffset() const {
 	if (!circuit) return Vector(0, 0);
 	if (selectedBlock == BlockType::NONE) return Vector(0, 0);
-	Vector offset(0, 0);
 	if (selectedBlock == BlockType::JUNCTION_L || selectedBlock == BlockType::JUNCTION_H) {
-		offset = Vector(0, 2);
+		return orientation.transformVectorWithArea(Vector(0, 2), circuit->getBlockContainer()->getBlockDataManager()->getBlockSize(selectedBlock));
 	}
-	return orientation.transformVectorWithArea(offset, circuit->getBlockContainer()->getBlockDataManager()->getBlockSize(selectedBlock));
+	return Vector(0, 0);
 }
