@@ -64,6 +64,10 @@ struct EvalConnection {
 		return "EC( (" + std::to_string(source.gateId) + ", " + std::to_string(source.portId) + ") -> (" +
 			   std::to_string(destination.gateId) + ", " + std::to_string(destination.portId) + ") )";
 	}
+
+	EvalConnection reverse() const {
+		return EvalConnection(destination, source);
+	}
 };
 
 namespace std {

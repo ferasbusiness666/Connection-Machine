@@ -29,8 +29,7 @@ public:
 	}
 
 	void removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
-		pingOutputs(pauseGuard, gateId);
-		pingInputs(pauseGuard, gateId);
+		pingId(pauseGuard, gateId, 0);
 		busInterfacePassthrough.removeGate(pauseGuard, gateId);
 	}
 
@@ -100,15 +99,16 @@ public:
 	}
 
 	void makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
-		pingOutputs(pauseGuard, connection.source.gateId);
-		pingInputs(pauseGuard, connection.destination.gateId);
+		pingId(pauseGuard, connection.source.gateId, 0);
+		pingId(pauseGuard, connection.destination.gateId, 0);
 		busInterfacePassthrough.makeConnection(pauseGuard, connection);
 	}
 
 	void removeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
-		pingOutputs(pauseGuard, connection.source.gateId);
-		pingInputs(pauseGuard, connection.destination.gateId);
+		pingId(pauseGuard, connection.source.gateId, 0);
+		pingId(pauseGuard, connection.destination.gateId, 0);
 		busInterfacePassthrough.removeConnection(pauseGuard, connection);
+		busInterfacePassthrough.removeConnection(pauseGuard, connection.reverse());
 	}
 
 	inline double getAverageTickrate() const {
@@ -148,8 +148,7 @@ private:
 
 	Replacement& makeReplacement(int layer);
 	void cleanReplacements();
-	void pingOutputs(SimPauseGuard& pauseGuard, middle_id_t id, int minLayer = 0);
-	void pingInputs(SimPauseGuard& pauseGuard, middle_id_t id, int minLayer = 0);
+	void pingId(SimPauseGuard& pauseGuard, middle_id_t id, int minLayer);
 	EvalConnectionPoint getReplacementConnectionPoint(EvalConnectionPoint point) const;
 	std::vector<EvalConnectionPoint> getReplacementConnectionPoints(const std::vector<EvalConnectionPoint>& points) const;
 	std::vector<std::optional<EvalConnectionPoint>> getReplacementConnectionPoints(const std::vector<std::optional<EvalConnectionPoint>>& points) const;

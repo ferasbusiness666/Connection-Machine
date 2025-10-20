@@ -46,20 +46,11 @@ public:
 		revertCallbacks.push_back(std::move(callback));
 	}
 
-	void pingOutput(SimPauseGuard& pauseGuard, middle_id_t id) {
+	void pingId(SimPauseGuard& pauseGuard, middle_id_t id) {
 		if (isReverting) {
 			return;
 		}
-		if (idsToTrackOutputs.contains(id)) {
-			revert(pauseGuard);
-		}
-	}
-
-	void pingInput(SimPauseGuard& pauseGuard, middle_id_t id) {
-		if (isReverting) {
-			return;
-		}
-		if (idsToTrackInputs.contains(id)) {
+		if (idsToTrack.contains(id)) {
 			revert(pauseGuard);
 		}
 	}
@@ -70,19 +61,15 @@ public:
 
 	middle_id_t getNewId();
 
-	void trackOutput(middle_id_t id) {
-		idsToTrackOutputs.insert(id);
-	}
-	void trackInput(middle_id_t id) {
-		idsToTrackInputs.insert(id);
+	void trackId(middle_id_t id) {
+		idsToTrack.insert(id);
 	}
 	void trackConnection(EvalConnection conn) {
-		trackOutput(conn.source.gateId);
-		trackInput(conn.destination.gateId);
+		trackId(conn.source.gateId);
+		trackId(conn.destination.gateId);
 	}
 	void trackGate(middle_id_t id) {
-		trackOutput(id);
-		trackInput(id);
+		trackId(id);
 	}
 
 	int getLayer() const {
@@ -109,8 +96,7 @@ private:
 	std::vector<middle_id_t> reservedIds;
 	std::vector<ReplacementLayerEntry> replacementLayerEntries;
 	std::vector<ReplacementConnectionPointOverride> overriddenConnectionPoints;
-	std::set<middle_id_t> idsToTrackOutputs;
-	std::set<middle_id_t> idsToTrackInputs;
+	std::set<middle_id_t> idsToTrack;
 	std::vector<std::function<void(SimPauseGuard&)>> revertCallbacksWithPauseGuard;
 	std::vector<std::function<void()>> revertCallbacks;
 	bool isEmpty { true };

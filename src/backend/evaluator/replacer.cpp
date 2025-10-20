@@ -18,21 +18,12 @@ void Replacer::cleanReplacements() {
 	}
 }
 
-void Replacer::pingOutputs(SimPauseGuard& pauseGuard, middle_id_t id, int minLayer) {
+void Replacer::pingId(SimPauseGuard& pauseGuard, middle_id_t id, int minLayer) {
 	for (Replacement& replacement : replacements) {
 		if (replacement.getLayer() < minLayer) {
 			continue;
 		}
-		replacement.pingOutput(pauseGuard, id);
-	}
-}
-
-void Replacer::pingInputs(SimPauseGuard& pauseGuard, middle_id_t id, int minLayer) {
-	for (Replacement& replacement : replacements) {
-		if (replacement.getLayer() < minLayer) {
-			continue;
-		}
-		replacement.pingInput(pauseGuard, id);
+		replacement.pingId(pauseGuard, id);
 	}
 }
 
@@ -225,7 +216,7 @@ void Replacer::mergeJunctions(SimPauseGuard& pauseGuard, int layer) {
 			for (const EvalConnection& input : floodFillResult.inputsPullingFromJunctions) {
 				replacement.makeConnection(pauseGuard, EvalConnection(output, input.destination));
 			}
-			replacement.trackOutput(output.gateId);
+			replacement.trackId(output.gateId);
 		} else {
 			middle_id_t newJunctionId = replacement.getNewId();
 			BlockType typeOfJunction;
