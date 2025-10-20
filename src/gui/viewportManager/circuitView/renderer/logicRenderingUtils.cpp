@@ -12,9 +12,10 @@ FVector getInputOffset(BlockType blockType, connection_end_id_t connectionEndId)
 }
 
 FVector getOutputOffset(BlockType blockType, connection_end_id_t connectionEndId, Orientation orientation) {
+	// TODO: make this part of render block data
 	FVector offset = { 0.5, 0.5 };
-	if (blockType == BlockType::JUNCTION) return offset;
-	if (blockType == BlockType::BUS_INTERFACE) {
+	if (blockType == BlockType::JUNCTION || blockType == BlockType::JUNCTION_L || blockType == BlockType::JUNCTION_H) return offset;
+	if (blockType == BlockType::BUS_INTERFACE_1 || blockType == BlockType::BUS_INTERFACE_2 || blockType == BlockType::BUS_INTERFACE_3 || blockType == BlockType::BUS_INTERFACE_4) {
 		if (connectionEndId == 0) {
 			return offset + orientation * FVector(edgeDistance, 0.0f);
 		} else {
@@ -26,10 +27,11 @@ FVector getOutputOffset(BlockType blockType, connection_end_id_t connectionEndId
 }
 
 FVector getInputOffset(BlockType blockType, connection_end_id_t connectionEndId, Orientation orientation) {
+	// TODO: make this part of render block data
 	FVector offset = { 0.5, 0.5 };
-	if (blockType == BlockType::JUNCTION) return offset;
-	if (blockType == BlockType::BUS_INTERFACE) {
-		if (connectionEndId == 1) {
+	if (blockType == BlockType::JUNCTION || blockType == BlockType::JUNCTION_L || blockType == BlockType::JUNCTION_H) return offset;
+	if (blockType == BlockType::BUS_INTERFACE_1 || blockType == BlockType::BUS_INTERFACE_2 || blockType == BlockType::BUS_INTERFACE_3 || blockType == BlockType::BUS_INTERFACE_4) {
+		if (connectionEndId == 0) {
 			return offset + orientation * FVector(edgeDistance, 0.0f);
 		} else {
 			return offset + orientation * FVector(-edgeDistance, 0.0f);

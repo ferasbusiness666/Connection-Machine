@@ -1,4 +1,5 @@
 #include "vulkanInstance.h"
+#include "gui/sdl/sdlWindow.h"
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -52,7 +53,10 @@ VulkanInstance::~VulkanInstance() {
 
 VulkanDevice* VulkanInstance::getDevice() {
 	if (!device.has_value()) {
-		return nullptr;
+		logInfo("Creating tmp SDL window to create devise");
+		SdlWindow sdlWindow("tmp", 1, 1);
+		VkSurfaceKHR surface = sdlWindow.createVkSurface(getVkbInstance());
+		device.emplace(surface);
 	}
 	return &device.value();
 }
@@ -62,7 +66,6 @@ VulkanDevice* VulkanInstance::createOrGetDevice(VkSurfaceKHR surfaceForPresentin
 	if (!device.has_value()) {
 		device.emplace(surfaceForPresenting);
 	}
-
 	return &device.value();
 }
 

@@ -1,8 +1,8 @@
 #ifndef logicSimulator_h
 #define logicSimulator_h
 
+#include "backend/container/block/blockDefs.h"
 #include "simulatorGates.h"
-#include "gateType.h"
 #include "idProvider.h"
 #include "evalConfig.h"
 #include "threadPool.h"
@@ -16,7 +16,8 @@ enum class SimGateType : int {
 	TRISTATE_BUFFER = 5,
 	CONSTANT = 6,
 	CONSTANT_RESET = 7,
-	COPY_SELF_OUTPUT = 8
+	COPY_SELF_OUTPUT = 8,
+	PORTS_TO_INT = 9
 };
 
 class LogicSimulator {
@@ -35,7 +36,7 @@ public:
 	std::vector<logic_state_t> getStates(const std::vector<simulator_id_t>& ids) const;
 	std::optional<simulator_id_t> getOutputPortId(simulator_id_t simId, connection_port_id_t portId) const;
 
-	simulator_id_t addGate(const GateType gateType);
+	simulator_id_t addGate(const BlockType blockType);
 	void removeGate(simulator_id_t gateId);
 	void makeConnection(simulator_id_t sourceId, connection_port_id_t sourcePort, simulator_id_t destinationId, connection_port_id_t destinationPort);
 	void removeConnection(simulator_id_t sourceId, connection_port_id_t sourcePort, simulator_id_t destinationId, connection_port_id_t destinationPort);
@@ -75,6 +76,7 @@ private:
 	std::vector<ConstantGate> constantGates;
 	std::vector<ConstantResetGate> constantResetGates;
 	std::vector<CopySelfOutputGate> copySelfOutputGates;
+	std::vector<PortsToIntGate> portsToIntGates;
 
 	struct JobInstruction {
 		LogicSimulator* self;
@@ -89,8 +91,11 @@ private:
 	static void execXORRealistic(void* jobInstruction);
 	static void execTristate(void* jobInstruction);
 	static void execTristateRealistic(void* jobInstruction);
+	static void execSingleBuffer(void* jobInstruction);
+	static void execSingleBufferRealistic(void* jobInstruction);
 	static void execConstantReset(void* jobInstruction);
 	static void execCopySelfOutput(void* jobInstruction);
+	static void execPortsToInt(void* jobInstruction);
 
 	void tickANDGates(void* jobInstruction) {
 		auto* ji = static_cast<JobInstruction*>(jobInstruction);
@@ -120,6 +125,12 @@ private:
 		auto* ji = static_cast<JobInstruction*>(jobInstruction);
 		for (size_t i = ji->start; i < ji->end; ++i) {
 			copySelfOutputGates[i].tick(statesA, statesB);
+		}
+	}
+	void tickPortsToIntGates(void* jobInstruction) {
+		auto* ji = static_cast<JobInstruction*>(jobInstruction);
+		for (size_t i = ji->start; i < ji->end; ++i) {
+			portsToIntGates[i].tick(statesA, statesB);
 		}
 	}
 

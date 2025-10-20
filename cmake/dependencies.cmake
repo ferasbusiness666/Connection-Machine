@@ -71,7 +71,7 @@ function(add_main_dependencies)
 		CPMAddPackage(
 			NAME wasmtime
 			GITHUB_REPOSITORY bytecodealliance/wasmtime
-			GIT_TAG v35.0.0
+			GIT_TAG v37.0.2
 			DOWNLOAD_ONLY YES
 			EXCLUDE_FROM_ALL YES
 			SOURCE_DIR "${EXTERNAL_DIR}/wasmtime"
@@ -84,7 +84,7 @@ function(add_main_dependencies)
 		CPMAddPackage(
 			NAME wasmtime
 			GITHUB_REPOSITORY bytecodealliance/wasmtime
-			GIT_TAG v35.0.0
+			GIT_TAG v37.0.2
 			EXCLUDE_FROM_ALL YES
 			SOURCE_DIR "${EXTERNAL_DIR}/wasmtime"
 		)

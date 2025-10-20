@@ -1,8 +1,8 @@
 #include "evalWindow.h"
 
-#include "backend/evaluator/evaluatorManager.h"
-#include "backend/dataUpdateEventManager.h"
 #include "backend/circuit/circuitManager.h"
+#include "backend/dataUpdateEventManager.h"
+#include "backend/evaluator/evaluatorManager.h"
 
 #include "gui/mainWindow/circuitView/circuitViewWidget.h"
 #include "gui/mainWindow/mainWindow.h"
@@ -46,7 +46,8 @@ void EvalWindow::refreshSidebar(bool rebuildItems) {
 	const Address& address = view->getAddress();
 	Rml::Element* root = menuTree.getRootElement();
 	if (!root) return;
-	Rml::ElementList rows; root->GetElementsByTagName(rows, "li");
+	Rml::ElementList rows;
+	root->GetElementsByTagName(rows, "li");
 	for (auto* r : rows) r->SetClass("selected", false);
 
 	// Find the top-level evaluator row matching the active evaluator id
@@ -56,14 +57,22 @@ void EvalWindow::refreshSidebar(bool rebuildItems) {
 		if (idAttr.find('/') != std::string::npos) continue; // only top-level
 		Rml::Element* labelDiv = nullptr;
 		for (unsigned int i = 0; i < r->GetNumChildren(); ++i) {
-			if (r->GetChild(i)->GetTagName() == "div") { labelDiv = r->GetChild(i); break; }
+			if (r->GetChild(i)->GetTagName() == "div") {
+				labelDiv = r->GetChild(i);
+				break;
+			}
 		}
 		if (!labelDiv) continue;
 		std::string label = labelDiv->GetInnerRML();
 		std::stringstream ss(label);
-		std::string word; evaluator_id_t idParsed = 0; ss >> word >> idParsed;
+		std::string word;
+		evaluator_id_t idParsed = 0;
+		ss >> word >> idParsed;
 		if (ss.fail() || word != "Eval") continue;
-		if (idParsed == activeId) { evaluatorRow = r; break; }
+		if (idParsed == activeId) {
+			evaluatorRow = r;
+			break;
+		}
 	}
 	if (!evaluatorRow) return;
 
@@ -73,7 +82,8 @@ void EvalWindow::refreshSidebar(bool rebuildItems) {
 	for (int i = 0; i < address.size(); ++i) {
 		Position wanted = address.getPosition(i);
 		// Find UL under current LI
-		Rml::ElementList childLists; cur->GetElementsByTagName(childLists, "ul");
+		Rml::ElementList childLists;
+		cur->GetElementsByTagName(childLists, "ul");
 		if (childLists.empty()) break;
 		Rml::Element* ul = childLists[0];
 		Rml::Element* matchLi = nullptr;
@@ -82,7 +92,10 @@ void EvalWindow::refreshSidebar(bool rebuildItems) {
 			if (li->GetTagName() != "li") continue;
 			Rml::Element* div = nullptr;
 			for (unsigned int k = 0; k < li->GetNumChildren(); ++k) {
-				if (li->GetChild(k)->GetTagName() == "div") { div = li->GetChild(k); break; }
+				if (li->GetChild(k)->GetTagName() == "div") {
+					div = li->GetChild(k);
+					break;
+				}
 			}
 			if (!div) continue;
 			std::string text = div->GetInnerRML();
@@ -90,11 +103,16 @@ void EvalWindow::refreshSidebar(bool rebuildItems) {
 			if (lparen == std::string::npos || text.empty() || text.back() != ')') continue;
 			std::string coord = text.substr(lparen + 1, text.size() - lparen - 2);
 			std::stringstream ps(coord);
-			Position p{}; char comma = 0;
+			Position p{};
+			char comma = 0;
 			if (!(ps >> p.x)) continue;
-			ps >> comma; if (comma != ',') continue;
+			ps >> comma;
+			if (comma != ',') continue;
 			if (!(ps >> p.y)) continue;
-			if (p == wanted) { matchLi = li; break; }
+			if (p == wanted) {
+				matchLi = li;
+				break;
+			}
 		}
 		if (!matchLi) break; // stop descending if not found
 		selectedRow = matchLi;
@@ -156,21 +174,28 @@ void EvalWindow::selectEvaluatorForCircuit(circuit_id_t circuitId) {
 			evaluator_id_t wantedId = pair.first;
 			Rml::Element* root = menuTree.getRootElement();
 			if (!root) return;
-			Rml::ElementList rows; root->GetElementsByTagName(rows, "li");
+			Rml::ElementList rows;
+			root->GetElementsByTagName(rows, "li");
 			for (auto* r : rows) {
 				std::string idAttr = r->GetId();
 				if (idAttr.find('/') != std::string::npos) continue; // only top-level evaluators
 				Rml::Element* labelDiv = nullptr;
 				for (unsigned int i = 0; i < r->GetNumChildren(); ++i) {
-					if (r->GetChild(i)->GetTagName() == "div") { labelDiv = r->GetChild(i); break; }
+					if (r->GetChild(i)->GetTagName() == "div") {
+						labelDiv = r->GetChild(i);
+						break;
+					}
 				}
 				if (!labelDiv) continue;
 				std::string label = labelDiv->GetInnerRML();
 				std::stringstream ss(label);
-				std::string word; evaluator_id_t idParsed = 0; ss >> word >> idParsed;
+				std::string word;
+				evaluator_id_t idParsed = 0;
+				ss >> word >> idParsed;
 				if (ss.fail() || word != "Eval") continue;
 				if (idParsed != wantedId) continue;
-				Rml::ElementList all; root->GetElementsByTagName(all, "li");
+				Rml::ElementList all;
+				root->GetElementsByTagName(all, "li");
 				for (auto* a : all) a->SetClass("selected", false);
 				r->SetClass("selected", true);
 				return;
@@ -180,6 +205,4 @@ void EvalWindow::selectEvaluatorForCircuit(circuit_id_t circuitId) {
 	}
 }
 
-void EvalWindow::onCircuitCreatedSelect(const DataUpdateEventManager::EventData* eventData) {
-	refreshSidebar(true);
-}
+void EvalWindow::onCircuitCreatedSelect(const DataUpdateEventManager::EventData* eventData) { refreshSidebar(true); }

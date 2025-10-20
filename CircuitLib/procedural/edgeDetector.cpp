@@ -9,10 +9,9 @@ const char* defaultParameters = "(\"pulse width\": 3, \"{1:R,2:F,3:B}\": 2)";
 bool generateCircuit() {
 	int pulse = getParameter("pulse width");
 	int kind = getParameter("{1:R,2:F,3:B}");
-	
+
 	BlockType BlockType_AND = getPrimitiveType("AND");
 	BlockType BlockType_NOR = getPrimitiveType("NOR");
-	BlockType BlockType_XNOR = getPrimitiveType("XNOR");
 	BlockType BlockType_SWITCH = getPrimitiveType("SWITCH");
 	BlockType BlockType_LIGHT = getPrimitiveType("LIGHT");
 
@@ -28,9 +27,10 @@ bool generateCircuit() {
 		endGate = createBlockAtPosition(pulse+2, 0, 0, BlockType_AND);
 	else if (kind == 2)
 		endGate = createBlockAtPosition(pulse+2, 0, 0, BlockType_NOR);
-	else if (kind == 3)
+	else if (kind == 3) {
+		BlockType BlockType_XNOR = getPrimitiveType("XNOR");
 		endGate = createBlockAtPosition(pulse+2, 0, 0, BlockType_XNOR);
-	else {
+	} else {
 		logError("{1:R,2:F,3:B} should only be 1, 2, or 3 and nothing else!");
 		return false;
 	}

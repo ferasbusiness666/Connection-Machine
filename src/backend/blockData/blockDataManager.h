@@ -8,62 +8,12 @@ class BlockDataManager {
 public:
 	BlockDataManager(DataUpdateEventManager* dataUpdateEventManager) : dataUpdateEventManager(dataUpdateEventManager) { }
 
-	void initializeDefaults() {
-		assert(blockData.size() == 0); // should call this before doing anything
-		// load default data
-		for (unsigned int i = 0; i < 14; i++) addBlock();
-		getBlockData(BlockType::AND)->setName("And");
-		getBlockData(BlockType::OR)->setName("Or");
-		getBlockData(BlockType::XOR)->setName("Xor");
-		getBlockData(BlockType::NAND)->setName("Nand");
-		getBlockData(BlockType::NOR)->setName("Nor");
-		getBlockData(BlockType::XNOR)->setName("Xnor");
-		getBlockData(BlockType::JUNCTION)->setName("Junction");
-		// TRISTATE_BUFFER
-		getBlockData(BlockType::TRISTATE_BUFFER)->setName("Tristate Buffer");
-		getBlockData(BlockType::TRISTATE_BUFFER)->setDefaultData(false);
-		getBlockData(BlockType::TRISTATE_BUFFER)->setConnectionInput(Vector(0, 1), 0);
-		getBlockData(BlockType::TRISTATE_BUFFER)->setConnectionInput(Vector(0, 0), 1);
-		getBlockData(BlockType::TRISTATE_BUFFER)->setConnectionOutput(Vector(0, 1), 2);
-		getBlockData(BlockType::TRISTATE_BUFFER)->setSize(Size(1, 2));
-		// BUTTON
-		getBlockData(BlockType::BUTTON)->setName("Button");
-		getBlockData(BlockType::BUTTON)->setDefaultData(false);
-		getBlockData(BlockType::BUTTON)->setConnectionOutput(Vector(0), 0);
-		// TICK_BUTTON
-		getBlockData(BlockType::TICK_BUTTON)->setName("Tick Button");
-		getBlockData(BlockType::TICK_BUTTON)->setDefaultData(false);
-		getBlockData(BlockType::TICK_BUTTON)->setConnectionOutput(Vector(0), 0);
-		// SWITCH
-		getBlockData(BlockType::SWITCH)->setName("Switch");
-		getBlockData(BlockType::SWITCH)->setDefaultData(false);
-		getBlockData(BlockType::SWITCH)->setConnectionOutput(Vector(0), 0);
-		// CONSTANT
-		getBlockData(BlockType::CONSTANT)->setName("Constant");
-		getBlockData(BlockType::CONSTANT)->setDefaultData(false);
-		getBlockData(BlockType::CONSTANT)->setIsPlaceable(false);
-		getBlockData(BlockType::CONSTANT)->setConnectionOutput(Vector(0), 0);
-		// LIGHT
-		getBlockData(BlockType::LIGHT)->setName("Light");
-		getBlockData(BlockType::LIGHT)->setDefaultData(false);
-		getBlockData(BlockType::LIGHT)->setConnectionInput(Vector(0), 0);
-		// BUS_INTERFACE
-		getBlockData(BlockType::BUS_INTERFACE)->setName("Bus Interface");
-		getBlockData(BlockType::BUS_INTERFACE)->setDefaultData(false);
-		getBlockData(BlockType::BUS_INTERFACE)->setConnectionOutput(Vector(1, 0), 0);
-		getBlockData(BlockType::BUS_INTERFACE)->setConnectionBitAccess(0, {0,1,2,3,4,5,6,7});
-		getBlockData(BlockType::BUS_INTERFACE)->setConnectionInput(Vector(1, 0), 1);
-		getBlockData(BlockType::BUS_INTERFACE)->setConnectionBitAccess(1, {0,1,2,3,4,5,6,7});
-		for (int i = 0; i < 8; ++i) {
-			getBlockData(BlockType::BUS_INTERFACE)->setConnectionOutput(Vector(0, i), i*2 + 2);
-			getBlockData(BlockType::BUS_INTERFACE)->setConnectionInput(Vector(0, i), i*2 + 3);
-		}
-		getBlockData(BlockType::BUS_INTERFACE)->setSize(Size(2, 8));
-	}
+	void initializeDefaults();
 
 	inline BlockType addBlock() noexcept {
 		blockData.emplace_back((BlockType)(blockData.size() + 1), dataUpdateEventManager);
 		BlockType blockType = (BlockType)blockData.size();
+		dataUpdateEventManager->sendEvent<BlockType>("newBlockType", blockType);
 		// sending data events for default data
 		// pre
 		dataUpdateEventManager->sendEvent<std::pair<BlockType, Size>>("preBlockSizeChange", { blockType, Size(1) });
@@ -134,6 +84,18 @@ public:
 		if (!blockExists(type)) return std::nullopt;
 		return blockData[type - 1].getOutputConnectionId(vector, orientation);
 	}
+	inline  std::optional<connection_end_id_t> getBidirectionalConnectionId(BlockType type, Orientation orientation, Vector vector) const noexcept {
+		if (!blockExists(type)) return std::nullopt;
+		return blockData[type - 1].getBidirectionalConnectionId(vector, orientation);
+	}
+	inline  std::optional<connection_end_id_t> getInputOrBidirectionalConnectionId(BlockType type, Orientation orientation, Vector vector) const noexcept {
+		if (!blockExists(type)) return std::nullopt;
+		return blockData[type - 1].getInputOrBidirectionalConnectionId(vector, orientation);
+	}
+	inline  std::optional<connection_end_id_t> getOutputOrBidirectionalConnectionId(BlockType type, Orientation orientation, Vector vector) const noexcept {
+		if (!blockExists(type)) return std::nullopt;
+		return blockData[type - 1].getOutputOrBidirectionalConnectionId(vector, orientation);
+	}
 	inline std::optional<Vector> getConnectionVector(BlockType type, connection_end_id_t connectionId) const noexcept {
 		if (!blockExists(type)) return std::nullopt;
 		return blockData[type - 1].getConnectionVector(connectionId);
@@ -142,7 +104,6 @@ public:
 		if (!blockExists(type)) return std::nullopt;
 		return blockData[type - 1].getConnectionVector(connectionId, orientation);
 	}
-
 	inline connection_end_id_t getConnectionCount(BlockType type) const noexcept {
 		if (!blockExists(type)) return 0;
 		return blockData[type - 1].getConnectionCount();
@@ -159,6 +120,18 @@ public:
 		if (!blockExists(type)) return false;
 		return blockData[type - 1].isConnectionOutput(connectionId);
 	}
+	inline bool isConnectionBidirectional(BlockType type, connection_end_id_t connectionId) const noexcept {
+		if (!blockExists(type)) return false;
+		return blockData[type - 1].isConnectionBidirectional(connectionId);
+	}
+	inline bool isConnectionInputOrBidirectional(BlockType type, connection_end_id_t connectionId) const noexcept {
+		if (!blockExists(type)) return false;
+		return blockData[type - 1].isConnectionInputOrBidirectional(connectionId);
+	}
+	inline bool isConnectionOutputOrBidirectional(BlockType type, connection_end_id_t connectionId) const noexcept {
+		if (!blockExists(type)) return false;
+		return blockData[type - 1].isConnectionOutputOrBidirectional(connectionId);
+	}
 
 private:
 	std::vector<BlockData> blockData;
@@ -166,3 +139,4 @@ private:
 };
 
 #endif /* blockDataManager_h */
+

@@ -3,6 +3,7 @@
 #include "backend/evaluator/evaluatorManager.h"
 #include "backend/proceduralCircuits/generatedCircuit.h"
 #include "parsedCircuit.h"
+#include "backend/evaluator/evaluator.h"
 
 circuit_id_t CircuitManager::createNewCircuit(const std::string& name, const std::string& uuid, bool createEval) {
 	circuit_id_t id = getNewCircuitId();
@@ -84,6 +85,12 @@ circuit_id_t CircuitManager::createNewCircuit(const ParsedCircuit& parsedCircuit
 	blockData->setPrimitive(false);
 	blockData->setPath("Custom");
 	blockData->setSize(parsedCircuit.getSize());
+
+	blockData->setTexturePath(parsedCircuit.getTexturePath());
+	blockData->setUsesTileMapTexture(parsedCircuit.getUsesTileMapTexture());
+	blockData->setTextureTileSize(parsedCircuit.getTextureTileSize());
+	blockData->setTextureSmallestCordTile(parsedCircuit.getTextureSmallestCordTile());
+	blockData->setTextureBlockTileSize(parsedCircuit.getTextureBlockTileSize());
 
 	// Circuit Block Data
 	circuitBlockDataManager.newCircuitBlockData(id, blockType);

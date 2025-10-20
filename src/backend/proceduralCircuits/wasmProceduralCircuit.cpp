@@ -1,6 +1,5 @@
 #include "wasmProceduralCircuit.h"
 
-#include "backend/circuit/circuitBlockData.h"
 #include "generatedCircuitValidator.h"
 #include "../circuit/circuitManager.h"
 #include "computerAPI/circuits/circuitFileManager.h"
@@ -33,12 +32,17 @@ WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, Circu
 			else if (blockName == "NAND") return BlockType::NAND;
 			else if (blockName == "NOR") return BlockType::NOR;
 			else if (blockName == "XNOR") return BlockType::XNOR;
+			else if (blockName == "BUFFER") return BlockType::BUFFER;
+			else if (blockName == "NOT") return BlockType::NOT;
 			else if (blockName == "JUNCTION") return BlockType::JUNCTION;
 			else if (blockName == "TRISTATE_BUFFER") return BlockType::TRISTATE_BUFFER;
 			else if (blockName == "BUTTON") return BlockType::BUTTON;
 			else if (blockName == "TICK_BUTTON") return BlockType::TICK_BUTTON;
 			else if (blockName == "SWITCH") return BlockType::SWITCH;
-			else if (blockName == "CONSTANT") return BlockType::CONSTANT;
+			else if (blockName == "CONSTANT_OFF") return BlockType::CONSTANT_OFF;
+			else if (blockName == "CONSTANT_ON") return BlockType::CONSTANT_ON;
+			else if (blockName == "CONSTANT_Z") return BlockType::CONSTANT_Z;
+			else if (blockName == "CONSTANT_X") return BlockType::CONSTANT_X;
 			else if (blockName == "LIGHT") return BlockType::LIGHT;
 			return BlockType::NONE;
 		});
@@ -264,7 +268,7 @@ void WasmProceduralCircuit::WasmInstance::makeCircuit(const ProceduralCircuitPar
 	GeneratedCircuit* tmpCircuit = this->generatedCircuit;
 	unsigned int tmpPortId = portId;
 	unsigned int tmpBlockId = blockId;
-	
+
 	this->parameters = &parameters;
 	this->generatedCircuit = &generatedCircuit;
 	portId = 0;

@@ -8,44 +8,51 @@
 #include "computerAPI/directoryManager.h"
 #include "computerAPI/saveSettings.h"
 
+void registerSettings() {
+	Settings::registerSetting<SettingType::FILE_PATH>("Appearance/Font", (DirectoryManager::getResourceDirectory() / "gui/fonts/monaspace.otf").generic_string());
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/Save", Keybind(Keybind::KeyId::KI_S, Keybind::KeyMod::KM_CTRL));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/Save As", Keybind(Keybind::KeyId::KI_S, Keybind::KeyMod::KM_CTRL | Keybind::KeyMod::KM_SHIFT));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/Open", Keybind(Keybind::KeyId::KI_O, Keybind::KeyMod::KM_CTRL));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/New", Keybind(Keybind::KeyId::KI_N, Keybind::KeyMod::KM_CTRL));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Undo", Keybind(Keybind::KeyId::KI_Z, Keybind::KeyMod::KM_CTRL));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Redo", Keybind(Keybind::KeyId::KI_Z, Keybind::KeyMod::KM_CTRL | Keybind::KeyMod::KM_SHIFT));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Copy", Keybind(Keybind::KeyId::KI_C, Keybind::KeyMod::KM_CTRL));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Paste", Keybind(Keybind::KeyId::KI_V, Keybind::KeyMod::KM_CTRL));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/State Changer", Keybind(Keybind::KeyId::KI_I));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Connection", Keybind(Keybind::KeyId::KI_C));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Move", Keybind(Keybind::KeyId::KI_M));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Mode Changer", Keybind(Keybind::KeyId::KI_T));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Placement", Keybind(Keybind::KeyId::KI_P));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Selection Maker", Keybind(Keybind::KeyId::KI_S));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Rotate CCW", Keybind(Keybind::KeyId::KI_Q));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Rotate CW", Keybind(Keybind::KeyId::KI_E));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Confirm", Keybind(Keybind::KeyId::KI_E));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tool Invert Mode", Keybind(Keybind::KeyId::KI_Q));
+#ifdef __APPLE__
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Toggle Fullscreen", Keybind(Keybind::KeyId::KI_F, Keybind::KeyMod::KM_META | Keybind::KeyMod::KM_SHIFT));
+#else
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Toggle Fullscreen", Keybind(Keybind::KeyId::KI_F11));
+#endif
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Increase UI Scale", Keybind(Keybind::KeyId::KI_OEM_PLUS, Keybind::KeyMod::KM_CTRL));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Decrease UI Scale", Keybind(Keybind::KeyId::KI_OEM_MINUS, Keybind::KeyMod::KM_CTRL));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Reset UI Scale", Keybind(Keybind::KeyId::KI_0, Keybind::KeyMod::KM_CTRL));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Zoom", Keybind(Keybind::KeyId::KI_UNKNOWN, Keybind::KeyMod::KM_SHIFT));
+	Settings::registerSetting<SettingType::BOOL>("Keybinds/Camera/Scroll Panning", true);
+	Settings::registerSetting<SettingType::DECIMAL>("Appearance/UI Scale", 1.0);
+	Settings::registerSetting<SettingType::UINT>("Simulation/Max Thread Count", std::thread::hardware_concurrency() / 2);
+	SaveSettings save;
+	save.load();
+	// set font again incase another font was loaded because other fonts wont work for now
+	Settings::set<SettingType::FILE_PATH>("Appearance/Font", (DirectoryManager::getResourceDirectory() / "gui/fonts/monaspace.otf").generic_string());
+}
+
 int main(int argc, char* argv[]) {
 	// try {
 		// Set up directory manager
 		DirectoryManager::findDirectories();
 
-		// register settings
-		Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/Save", Keybind(Keybind::KeyId::KI_S, Keybind::KeyMod::KM_CTRL));
-		Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/Save As", Keybind(Keybind::KeyId::KI_S, Keybind::KeyMod::KM_CTRL | Keybind::KeyMod::KM_SHIFT));
-		Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/Open", Keybind(Keybind::KeyId::KI_O, Keybind::KeyMod::KM_CTRL));
-		Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/New", Keybind(Keybind::KeyId::KI_N, Keybind::KeyMod::KM_CTRL));
-		Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Undo", Keybind(Keybind::KeyId::KI_Z, Keybind::KeyMod::KM_CTRL));
-		Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Redo", Keybind(Keybind::KeyId::KI_Z, Keybind::KeyMod::KM_CTRL | Keybind::KeyMod::KM_SHIFT));
-		Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Copy", Keybind(Keybind::KeyId::KI_C, Keybind::KeyMod::KM_CTRL));
-		Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Paste", Keybind(Keybind::KeyId::KI_V, Keybind::KeyMod::KM_CTRL));
-		Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/State Changer", Keybind(Keybind::KeyId::KI_I));
-		Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Connection", Keybind(Keybind::KeyId::KI_C));
-		Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Move", Keybind(Keybind::KeyId::KI_M));
-		Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Mode Changer", Keybind(Keybind::KeyId::KI_T));
-		Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Placement", Keybind(Keybind::KeyId::KI_P));
-		Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Selection Maker", Keybind(Keybind::KeyId::KI_S));
-		Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Rotate CCW", Keybind(Keybind::KeyId::KI_Q));
-		Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Rotate CW", Keybind(Keybind::KeyId::KI_E));
-		Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Confirm", Keybind(Keybind::KeyId::KI_E));
-		Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tool Invert Mode", Keybind(Keybind::KeyId::KI_Q));
-#ifdef __APPLE__
-		Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Toggle Fullscreen", Keybind(Keybind::KeyId::KI_F, Keybind::KeyMod::KM_META | Keybind::KeyMod::KM_SHIFT));
-#else
-		Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Toggle Fullscreen", Keybind(Keybind::KeyId::KI_F11));
-#endif
-		Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Increase UI Scale", Keybind(Keybind::KeyId::KI_OEM_PLUS, Keybind::KeyMod::KM_CTRL));
-		Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Decrease UI Scale", Keybind(Keybind::KeyId::KI_OEM_MINUS, Keybind::KeyMod::KM_CTRL));
-		Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Reset UI Scale", Keybind(Keybind::KeyId::KI_0, Keybind::KeyMod::KM_CTRL));
-		Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Zoom", Keybind(Keybind::KeyId::KI_UNKNOWN, Keybind::KeyMod::KM_SHIFT));
-		Settings::registerSetting<SettingType::BOOL>("Keybinds/Camera/Scroll Panning", true);
-		Settings::registerSetting<SettingType::DECIMAL>("Appearance/UI Scale", 1.0);
-		Settings::registerSetting<SettingType::UINT>("Simulation/Max Thread Count", std::thread::hardware_concurrency() / 2);
-		SaveSettings save;
-		save.load();
+		registerSettings();
+
 		App::get().runLoop();
 		App::kill();
 	// } catch (const std::exception& e) {
@@ -55,6 +62,5 @@ int main(int argc, char* argv[]) {
 	// }
 
 	logInfo("Exiting Connection Machine...");
-	MainRenderer::kill();
 	return EXIT_SUCCESS;
 }

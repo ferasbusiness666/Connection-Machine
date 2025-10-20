@@ -5,7 +5,7 @@
 
 #include "gpu/mainRenderer.h"
 
-CircuitView::CircuitView(Environment* environment, ViewportId viewportId) : viewportId(viewportId), toolManager(environment , &eventRegister, viewportId, this) {
+CircuitView::CircuitView(Environment* environment, ViewportId viewportId) : viewportId(viewportId), toolManager(environment, &eventRegister, viewportId, this) {
 	MainRenderer::get().moveViewportView(viewportId, viewManager.getTopLeft(), viewManager.getBottomRight());
 	viewManager.setUpEvents(eventRegister);
 	viewManager.connectViewChanged(std::bind(&CircuitView::viewChanged, this));
@@ -30,8 +30,8 @@ void CircuitView::setBackend(Backend* backend) {
 		toolManager.setCircuit(nullptr);
 	}
 	if (dataUpdateEventManager) {
-		dataUpdateEventManager->sendEvent("circuitViewChangeEvaluator");
-		dataUpdateEventManager->sendEvent("circuitViewChangeCircuit");
+		dataUpdateEventManager->sendEvent("circuitViewChangeEvaluator", this->evaluator);
+		dataUpdateEventManager->sendEvent("circuitViewChangeCircuit", this->circuit);
 	}
 }
 
@@ -48,8 +48,8 @@ void CircuitView::setEvaluator(Backend* backend, evaluator_id_t evaluatorId, con
 			MainRenderer::get().setViewportEvaluator(viewportId, nullptr, Address());
 			toolManager.setCircuit(nullptr);
 			if (dataUpdateEventManager) {
-				dataUpdateEventManager->sendEvent("circuitViewChangeEvaluator");
-				dataUpdateEventManager->sendEvent("circuitViewChangeCircuit");
+				dataUpdateEventManager->sendEvent("circuitViewChangeEvaluator", this->evaluator);
+				dataUpdateEventManager->sendEvent("circuitViewChangeCircuit", this->circuit);
 			}
 		}
 	} else {
@@ -70,8 +70,8 @@ void CircuitView::setEvaluator(Backend* backend, evaluator_id_t evaluatorId, con
 			MainRenderer::get().setViewportEvaluator(viewportId, evaluator.get(), address);
 			toolManager.setCircuit(circuit.get());
 			if (dataUpdateEventManager) {
-				dataUpdateEventManager->sendEvent("circuitViewChangeEvaluator");
-				dataUpdateEventManager->sendEvent("circuitViewChangeCircuit");
+				dataUpdateEventManager->sendEvent("circuitViewChangeEvaluator", this->evaluator);
+				dataUpdateEventManager->sendEvent("circuitViewChangeCircuit", this->circuit);
 			}
 		}
 	}
@@ -90,8 +90,8 @@ void CircuitView::setEvaluator(Backend* backend, std::shared_ptr<Evaluator> eval
 			MainRenderer::get().setViewportEvaluator(viewportId, nullptr, Address());
 			toolManager.setCircuit(nullptr);
 			if (dataUpdateEventManager) {
-				dataUpdateEventManager->sendEvent("circuitViewChangeEvaluator");
-				dataUpdateEventManager->sendEvent("circuitViewChangeCircuit");
+				dataUpdateEventManager->sendEvent("circuitViewChangeEvaluator", this->evaluator);
+				dataUpdateEventManager->sendEvent("circuitViewChangeCircuit", this->circuit);
 			}
 		}
 	} else if (backend->getEvaluatorManager().getEvaluator(evaluator->getEvaluatorId()) != evaluator) {
@@ -110,8 +110,8 @@ void CircuitView::setEvaluator(Backend* backend, std::shared_ptr<Evaluator> eval
 		MainRenderer::get().setViewportEvaluator(viewportId, evaluator.get(), address);
 		toolManager.setCircuit(circuit.get());
 		if (dataUpdateEventManager) {
-			dataUpdateEventManager->sendEvent("circuitViewChangeEvaluator");
-			dataUpdateEventManager->sendEvent("circuitViewChangeCircuit");
+			dataUpdateEventManager->sendEvent("circuitViewChangeEvaluator", this->evaluator);
+			dataUpdateEventManager->sendEvent("circuitViewChangeCircuit", this->circuit);
 		}
 	}
 }
@@ -129,8 +129,8 @@ void CircuitView::setCircuit(Backend* backend, circuit_id_t circuitId) {
 			MainRenderer::get().setViewportEvaluator(viewportId, nullptr, Address());
 			toolManager.setCircuit(nullptr);
 			if (dataUpdateEventManager) {
-				dataUpdateEventManager->sendEvent("circuitViewChangeEvaluator");
-				dataUpdateEventManager->sendEvent("circuitViewChangeCircuit");
+				dataUpdateEventManager->sendEvent("circuitViewChangeEvaluator", this->evaluator);
+				dataUpdateEventManager->sendEvent("circuitViewChangeCircuit", this->circuit);
 			}
 		}
 	} else {
@@ -148,8 +148,8 @@ void CircuitView::setCircuit(Backend* backend, circuit_id_t circuitId) {
 			MainRenderer::get().setViewportEvaluator(viewportId, nullptr, Address());
 			toolManager.setCircuit(circuit.get());
 			if (dataUpdateEventManager) {
-				dataUpdateEventManager->sendEvent("circuitViewChangeEvaluator");
-				dataUpdateEventManager->sendEvent("circuitViewChangeCircuit");
+				dataUpdateEventManager->sendEvent("circuitViewChangeEvaluator", this->evaluator);
+				dataUpdateEventManager->sendEvent("circuitViewChangeCircuit", this->circuit);
 			}
 		}
 	}
@@ -169,8 +169,8 @@ void CircuitView::setCircuit(Backend* backend, SharedCircuit circuit) {
 			toolManager.setCircuit(nullptr);
 
 			if (dataUpdateEventManager) {
-				dataUpdateEventManager->sendEvent("circuitViewChangeEvaluator");
-				dataUpdateEventManager->sendEvent("circuitViewChangeCircuit");
+				dataUpdateEventManager->sendEvent("circuitViewChangeEvaluator", this->evaluator);
+				dataUpdateEventManager->sendEvent("circuitViewChangeCircuit", this->circuit);
 			}
 		}
 	} else if (backend->getCircuit(circuit->getCircuitId()) != circuit) {
@@ -186,8 +186,8 @@ void CircuitView::setCircuit(Backend* backend, SharedCircuit circuit) {
 		MainRenderer::get().setViewportEvaluator(viewportId, nullptr, Address());
 		toolManager.setCircuit(circuit.get());
 		if (dataUpdateEventManager) {
-			dataUpdateEventManager->sendEvent("circuitViewChangeEvaluator");
-			dataUpdateEventManager->sendEvent("circuitViewChangeCircuit");
+			dataUpdateEventManager->sendEvent("circuitViewChangeEvaluator", this->evaluator);
+			dataUpdateEventManager->sendEvent("circuitViewChangeCircuit", this->circuit);
 		}
 	}
 }

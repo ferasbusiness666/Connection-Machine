@@ -1,24 +1,22 @@
 #ifndef gateSubstituter_h
 #define gateSubstituter_h
 
-#include "replacer.h"
-#include "evalConfig.h"
-#include "evalConnection.h"
-#include "evalTypedef.h"
-#include "idProvider.h"
-#include "gateType.h"
 #include "logicSimulator.h"
+#include "evalConnection.h"
+#include "evalConfig.h"
+#include "evalDefs.h"
+#include "replacer.h"
 
 struct TrackedGate {
 	middle_id_t id;
-	GateType currentState;
-	GateType falseState;
-	GateType trueState;
+	BlockType currentState;
+	BlockType falseState;
+	BlockType trueState;
 	std::vector<EvalConnection> inputs;
 	std::vector<EvalConnection> outputs;
 	unsigned int numInputsForTrue;
 
-	GateType evaluate() {
+	BlockType evaluate() {
 		if (inputs.size() >= numInputsForTrue) {
 			return trueState;
 		} else {
@@ -60,10 +58,10 @@ struct TrackedGate {
 	}
 };
 
-struct TristateBuffer {
+struct GateWithLinkedIO {
 	middle_id_t id;
-	middle_id_t junctionId1;
-	middle_id_t junctionId2;
+	std::vector<middle_id_t> idsCreated;
+	std::unordered_map<connection_port_id_t, EvalConnectionPoint> linkedIO;
 };
 
 class GateSubstituter {
@@ -71,31 +69,34 @@ public:
 	GateSubstituter(
 		EvalConfig& evalConfig,
 		IdProvider<middle_id_t>& middleIdProvider,
-		std::vector<simulator_id_t>& dirtySimulatorIds) :
-		replacer(evalConfig, middleIdProvider, dirtySimulatorIds),
+		std::vector<simulator_id_t>& dirtySimulatorIds,
+		std::vector<middle_id_t>& dirtyMiddleIds,
+		BlockDataManager& blockDataManager) :
+		replacer(evalConfig, middleIdProvider, dirtySimulatorIds, dirtyMiddleIds, blockDataManager),
 		middleIdProvider(middleIdProvider) {}
 
-	void addGate(SimPauseGuard& pauseGuard, const GateType gateType, const middle_id_t gateId) {
-		if (gateType == GateType::DUMMY_INPUT || gateType == GateType::TICK_INPUT) {
-			addTrackedGate({ gateId, gateType, gateType, GateType::JUNCTION, {}, {}, 1 });
-		} else if (gateType == GateType::TRISTATE_BUFFER || gateType == GateType::TRISTATE_BUFFER_INVERTED) {
-			replacer.addGate(pauseGuard, gateType, gateId);
-			addTrackedTristateBuffer(pauseGuard, gateId);
-			return;
+	void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
+		if (tryAddGateWithLinkedIO(pauseGuard, blockType, gateId)) return;
+		if (blockType == BlockType::BUTTON || blockType == BlockType::SWITCH || blockType == BlockType::TICK_BUTTON) {
+			addTrackedGate({ gateId, blockType, blockType, BlockType::JUNCTION, {}, {}, 1 });
+			replacer.addGate(pauseGuard, blockType, gateId);
+		} else if (blockType == BlockType::LIGHT) {
+			replacer.addGate(pauseGuard, BlockType::JUNCTION, gateId);
+		} else {
+			replacer.addGate(pauseGuard, blockType, gateId);
 		}
-		replacer.addGate(pauseGuard, gateType, gateId); // this may need to be conditional in the future if we add more conditional gates
 	}
 	void removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
-		replacer.removeGate(pauseGuard, gateId);
-		if (isTrackedTristateBuffer(gateId)) {
-			deleteTrackedTristateBuffer(pauseGuard, gateId);
+		if (gatesWithLinkedIO.contains(gateId)) {
+			deleteGateWithLinkedIO(pauseGuard, gateId);
 		}
+		replacer.removeGate(pauseGuard, gateId);
 		deleteTrackedGate(gateId);
 		for (auto& trackedGate : trackedGates) {
 			bool success = trackedGate.second.removeReferencesToId(gateId);
 			if (success) {
 				TrackedGate& trackedGateRef = trackedGate.second;
-				GateType newState = trackedGateRef.evaluate();
+				BlockType newState = trackedGateRef.evaluate();
 				if (newState != trackedGateRef.currentState) {
 					trackedGateRef.currentState = newState;
 					replacer.removeGate(pauseGuard, trackedGateRef.id);
@@ -132,10 +133,7 @@ public:
 	inline std::vector<logic_state_t> getStatesFromSimulatorIds(const std::vector<simulator_id_t>& simulatorIds) const {
 		return replacer.getStatesFromSimulatorIds(simulatorIds);
 	}
-	inline std::vector<SimulatorStateAndPinSimId> getSimulatorIds(const std::vector<EvalConnectionPoint>& points) const {
-		return replacer.getSimulatorIds(points);
-	}
-	inline std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getBlockSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
+	inline std::vector<simulator_id_t> getBlockSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
 		return replacer.getBlockSimulatorIds(points);
 	}
 	inline std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getPinSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
@@ -147,16 +145,7 @@ public:
 	void makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
 		middle_id_t sourceGateId = connection.source.gateId;
 		middle_id_t destinationGateId = connection.destination.gateId;
-		if (isTrackedTristateBuffer(destinationGateId)) {
-			// redirect connection to junction
-			if (connection.destination.portId == 0) {
-				connection.destination.gateId = tristateBuffers.at(destinationGateId).junctionId1;
-			} else if (connection.destination.portId == 1) {
-				connection.destination.gateId = tristateBuffers.at(destinationGateId).junctionId2;
-			} else {
-				return;
-			}
-		}
+		redirectConnectionToLinked(connection);
 		if (trackedGates.contains(sourceGateId)) {
 			TrackedGate& trackedGate = trackedGates.at(sourceGateId);
 			trackedGate.addOutput(connection);
@@ -164,28 +153,32 @@ public:
 		if (trackedGates.contains(destinationGateId)) {
 			TrackedGate& trackedGate = trackedGates.at(destinationGateId);
 			trackedGate.addInput(connection);
-			GateType newState = trackedGate.evaluate();
-			if (newState != trackedGate.currentState) {
-				trackedGate.currentState = newState;
-				replacer.removeGate(pauseGuard, destinationGateId);
-				replacer.addGate(pauseGuard, newState, destinationGateId);
-				for (const auto& input : trackedGate.inputs) {
-					replacer.makeConnection(pauseGuard, input);
-				}
-				for (const auto& output : trackedGate.outputs) {
-					if (output.source.gateId == output.destination.gateId) {
-						continue;
-					}
-					replacer.makeConnection(pauseGuard, output);
-				}
+			BlockType newState = trackedGate.evaluate();
+			if (newState == trackedGate.currentState) {
+				replacer.makeConnection(pauseGuard, connection);
+				return;
 			}
+			trackedGate.currentState = newState;
+			replacer.removeGate(pauseGuard, destinationGateId);
+			replacer.addGate(pauseGuard, newState, destinationGateId);
+			for (const auto& input : trackedGate.inputs) {
+				replacer.makeConnection(pauseGuard, input);
+			}
+			for (const auto& output : trackedGate.outputs) {
+				if (output.source.gateId == output.destination.gateId) {
+					continue;
+				}
+				replacer.makeConnection(pauseGuard, output);
+			}
+			return;
 		}
 		replacer.makeConnection(pauseGuard, connection);
 	}
 	void removeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
-		replacer.removeConnection(pauseGuard, connection);
 		middle_id_t sourceGateId = connection.source.gateId;
 		middle_id_t destinationGateId = connection.destination.gateId;
+		redirectConnectionToLinked(connection);
+		replacer.removeConnection(pauseGuard, connection);
 		if (trackedGates.contains(sourceGateId)) {
 			TrackedGate& trackedGate = trackedGates.at(sourceGateId);
 			trackedGate.removeOutput(connection);
@@ -193,7 +186,7 @@ public:
 		if (trackedGates.contains(destinationGateId)) {
 			TrackedGate& trackedGate = trackedGates.at(destinationGateId);
 			trackedGate.removeInput(connection);
-			GateType newState = trackedGate.evaluate();
+			BlockType newState = trackedGate.evaluate();
 			if (newState != trackedGate.currentState) {
 				trackedGate.currentState = newState;
 				replacer.removeGate(pauseGuard, destinationGateId);
@@ -219,7 +212,7 @@ private:
 	Replacer replacer;
 	IdProvider<middle_id_t>& middleIdProvider;
 	std::unordered_map<middle_id_t, TrackedGate> trackedGates;
-	std::unordered_map<middle_id_t, TristateBuffer> tristateBuffers;
+	std::unordered_map<middle_id_t, GateWithLinkedIO> gatesWithLinkedIO;
 	void addTrackedGate(const TrackedGate& gate) {
 		trackedGates[gate.id] = gate;
 	}
@@ -229,25 +222,67 @@ private:
 	bool isTrackedGate(middle_id_t gateId) const {
 		return trackedGates.contains(gateId);
 	}
-	void addTrackedTristateBuffer(SimPauseGuard& simPauseGuard, middle_id_t bufferId) {
-		middle_id_t junctionId1 = middleIdProvider.getNewId();
-		middle_id_t junctionId2 = middleIdProvider.getNewId();
-		replacer.addGate(simPauseGuard, GateType::JUNCTION, junctionId1);
-		replacer.addGate(simPauseGuard, GateType::JUNCTION, junctionId2);
-		tristateBuffers[bufferId] = { bufferId, junctionId1, junctionId2 };
-		replacer.makeConnection(simPauseGuard, EvalConnection(EvalConnectionPoint(junctionId1, 0), EvalConnectionPoint(bufferId, 0)));
-		replacer.makeConnection(simPauseGuard, EvalConnection(EvalConnectionPoint(junctionId2, 0), EvalConnectionPoint(bufferId, 1)));
+	bool tryAddGateWithLinkedIO(SimPauseGuard& pauseGuard, BlockType blockType, middle_id_t gateId) {
+		if (blockType == BlockType::COLOR_LIGHT) { // this will be expanded later to be dynamic/automatic for all blocks that have non 1-bit inputs
+			replacer.addGate(pauseGuard, blockType, gateId);
+			middle_id_t busId = middleIdProvider.getNewId();
+			replacer.addGate(pauseGuard, BlockType::BUS_INTERFACE_4, busId);
+			GateWithLinkedIO gateWithLinkedIO { gateId, { busId }, { {0, { busId, 0 }} } };
+			for (connection_port_id_t portId = 0; portId < 6; ++portId) {
+				replacer.makeConnection(pauseGuard, EvalConnection(EvalConnectionPoint(busId, portId + 1), EvalConnectionPoint(gateId, portId)));
+			}
+			gatesWithLinkedIO[gateId] = std::move(gateWithLinkedIO);
+			return true;
+		}
+		auto configIter = blockTypesWithlinkedIO.find(blockType);
+		if (configIter == blockTypesWithlinkedIO.end()) {
+			return false;
+		}
+		replacer.addGate(pauseGuard, blockType, gateId);
+		GateWithLinkedIO gateWithLinkedIO { gateId, {}, {} };
+		for (connection_port_id_t portId : configIter->second) {
+			middle_id_t junctionId = middleIdProvider.getNewId();
+			replacer.addGate(pauseGuard, BlockType::JUNCTION, junctionId);
+			replacer.makeConnection(pauseGuard, EvalConnection(EvalConnectionPoint(junctionId, 0), EvalConnectionPoint(gateId, portId)));
+			gateWithLinkedIO.idsCreated.push_back(junctionId);
+			gateWithLinkedIO.linkedIO[portId] = EvalConnectionPoint(junctionId, 0);
+		}
+		gatesWithLinkedIO[gateId] = std::move(gateWithLinkedIO);
+		return true;
 	}
-	void deleteTrackedTristateBuffer(SimPauseGuard& simPauseGuard, middle_id_t bufferId) {
-		replacer.removeGate(simPauseGuard, tristateBuffers.at(bufferId).junctionId1);
-		replacer.removeGate(simPauseGuard, tristateBuffers.at(bufferId).junctionId2);
-		middleIdProvider.releaseId(tristateBuffers.at(bufferId).junctionId1);
-		middleIdProvider.releaseId(tristateBuffers.at(bufferId).junctionId2);
-		tristateBuffers.erase(bufferId);
+	void deleteGateWithLinkedIO(SimPauseGuard& pauseGuard, middle_id_t gateId) {
+		if (!gatesWithLinkedIO.contains(gateId)) {
+			return;
+		}
+		GateWithLinkedIO& gate = gatesWithLinkedIO.at(gateId);
+		for (middle_id_t middleId : gate.idsCreated) {
+			replacer.removeGate(pauseGuard, middleId);
+			middleIdProvider.releaseId(middleId);
+		}
+		gatesWithLinkedIO.erase(gateId);
 	}
-	bool isTrackedTristateBuffer(middle_id_t bufferId) const {
-		return tristateBuffers.contains(bufferId);
+	void redirectConnectionToLinked(EvalConnection& connection) {
+		middle_id_t sourceGateId = connection.source.gateId;
+		middle_id_t destinationGateId = connection.destination.gateId;
+		if (gatesWithLinkedIO.contains(destinationGateId)) {
+			GateWithLinkedIO& gate = gatesWithLinkedIO.at(destinationGateId);
+			if (gate.linkedIO.contains(connection.destination.portId)) {
+				connection.destination = gate.linkedIO.at(connection.destination.portId);
+			}
+		}
+		if (gatesWithLinkedIO.contains(sourceGateId)) {
+			GateWithLinkedIO& gate = gatesWithLinkedIO.at(sourceGateId);
+			if (gate.linkedIO.contains(connection.source.portId)) {
+				connection.source = gate.linkedIO.at(connection.source.portId);
+			}
+		}
 	}
+
+	std::map<BlockType, std::vector<connection_port_id_t>> blockTypesWithlinkedIO = {
+		{BlockType::TRISTATE_BUFFER, {0, 1}},
+		{BlockType::NOT, {0}},
+		{BlockType::BUFFER, {0}}
+	};
 };
 
 #endif /* gateSubstituter_h */

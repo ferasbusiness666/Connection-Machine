@@ -1,7 +1,7 @@
 #ifndef busInterfacePassthrough_h
 #define busInterfacePassthrough_h
 
-#include "gateType.h"
+#include "backend/blockData/blockDataManager.h"
 #include "simulatorOptimizer.h"
 
 class BusInterfacePassthrough {
@@ -9,16 +9,19 @@ public:
     BusInterfacePassthrough(
         EvalConfig& evalConfig,
         IdProvider<middle_id_t>& middleIdProvider,
-        std::vector<simulator_id_t>& dirtySimulatorIds
+        std::vector<simulator_id_t>& dirtySimulatorIds,
+        BlockDataManager& blockDataManager
     ) : simulatorOptimizer(evalConfig, middleIdProvider, dirtySimulatorIds),
-    dirtySimulatorIds(dirtySimulatorIds) {}
+    dirtySimulatorIds(dirtySimulatorIds),
+    blockDataManager(blockDataManager) {}
 
-    void addGate(SimPauseGuard& pauseGuard, const GateType gateType, const middle_id_t gateId) {
-        if (gateType == GateType::BUS_INTERFACE) {
-            busInterfaceIds.insert(gateId);
+    void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
+        BlockData* blockData = blockDataManager.getBlockData(blockType);
+        if (blockData->isBus()) {
+            busInterfaces[gateId] = blockType;
             return;
         }
-        simulatorOptimizer.addGate(pauseGuard, gateType, gateId);
+        simulatorOptimizer.addGate(pauseGuard, blockType, gateId);
     }
 
     void removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
@@ -44,8 +47,8 @@ public:
             }
             omittedConnections.erase(gateId);
         }
-        if (busInterfaceIds.contains(gateId)) {
-            busInterfaceIds.erase(gateId);
+        if (busInterfaces.contains(gateId)) {
+            busInterfaces.erase(gateId);
             dirtySimulatorIds.push_back(0);
         } else {
             simulatorOptimizer.removeGate(pauseGuard, gateId);
@@ -81,15 +84,15 @@ public:
     }
 
     inline simulator_id_t getBlockSimulatorId(EvalConnectionPoint point) const {
-        if (busInterfaceIds.contains(point.gateId)) {
-            return 1; // error state
+        if (busInterfaces.contains(point.gateId)) {
+            return 0;
         }
         return simulatorOptimizer.getBlockSimulatorId(point);
     }
 
     inline simulator_id_t getPinSimulatorId(EvalConnectionPoint point) const {
-        if (busInterfaceIds.contains(point.gateId)) {
-            return 1; // error state
+        if (busInterfaces.contains(point.gateId)) {
+            return 0;
         }
         return simulatorOptimizer.getPinSimulatorId(point);
     }
@@ -115,8 +118,8 @@ public:
     }
 
     void makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
-        if (busInterfaceIds.contains(connection.source.gateId) ||
-            busInterfaceIds.contains(connection.destination.gateId)) {
+        if (busInterfaces.contains(connection.source.gateId) ||
+            busInterfaces.contains(connection.destination.gateId)) {
             omittedConnections[connection.source.gateId].push_back(connection);
             omittedConnections[connection.destination.gateId].push_back(connection);
             dirtySimulatorIds.push_back(0);
@@ -126,8 +129,8 @@ public:
     }
 
     void removeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
-        if (busInterfaceIds.contains(connection.source.gateId) ||
-            busInterfaceIds.contains(connection.destination.gateId)) {
+        if (busInterfaces.contains(connection.source.gateId) ||
+            busInterfaces.contains(connection.destination.gateId)) {
             dirtySimulatorIds.push_back(0);
             omittedConnections[connection.source.gateId].erase(
                 std::remove_if(
@@ -154,11 +157,11 @@ public:
         return simulatorOptimizer.getAverageTickrate();
     }
 
-    GateType getGateType(middle_id_t middleId) const {
-        if (busInterfaceIds.contains(middleId)) {
-            return GateType::BUS_INTERFACE;
+    BlockType getBlockType(middle_id_t middleId) const {
+        if (busInterfaces.contains(middleId)) {
+            return busInterfaces.at(middleId);
         }
-        return simulatorOptimizer.getGateType(middleId);
+        return simulatorOptimizer.getBlockType(middleId);
     }
 
     std::vector<EvalConnection> getInputs(middle_id_t middleId) const {
@@ -170,7 +173,7 @@ public:
                 }
             }
         }
-        if (busInterfaceIds.contains(middleId)) {
+        if (busInterfaces.contains(middleId)) {
             return conns;
         }
         for (const EvalConnection& conn : simulatorOptimizer.getInputs(middleId)) {
@@ -188,7 +191,7 @@ public:
                 }
             }
         }
-        if (busInterfaceIds.contains(middleId)) {
+        if (busInterfaces.contains(middleId)) {
             return conns;
         }
         for (const EvalConnection& conn : simulatorOptimizer.getOutputs(middleId)) {
@@ -205,7 +208,7 @@ public:
                 }
             }
         }
-        if (busInterfaceIds.contains(middleId)) {
+        if (busInterfaces.contains(middleId)) {
             return count;
         }
         return count + simulatorOptimizer.getNumOutputs(middleId);
@@ -219,7 +222,7 @@ public:
                 }
             }
         }
-        if (busInterfaceIds.contains(middleId)) {
+        if (busInterfaces.contains(middleId)) {
             return count;
         }
         return count + simulatorOptimizer.getNumInputs(middleId);
@@ -227,8 +230,9 @@ public:
 private:
     SimulatorOptimizer simulatorOptimizer;
     std::unordered_map<middle_id_t, std::vector<EvalConnection>> omittedConnections;
-    std::unordered_set<middle_id_t> busInterfaceIds;
+    std::unordered_map<middle_id_t, BlockType> busInterfaces;
     std::vector<simulator_id_t>& dirtySimulatorIds;
+    BlockDataManager& blockDataManager;
 };
 
 #endif /* busInterfacePassthrough_h */

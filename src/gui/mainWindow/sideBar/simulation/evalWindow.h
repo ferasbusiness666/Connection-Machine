@@ -33,7 +33,6 @@ private:
 	MainWindow* mainWindow;
 	const EvaluatorManager* evaluatorManager;
 	const CircuitManager* circuitManager;
-
 };
 
 #endif /* evalWindow_h */

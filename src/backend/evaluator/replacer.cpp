@@ -1,346 +1,391 @@
 #include "replacer.h"
-#include "util/algorithm.h"
 
 Replacement& Replacer::makeReplacement(int layer) {
-    replacements.push_back(Replacement(
-        this,
-        &busInterfacePassthrough,
-        &middleIdProvider,
-        &replacedIds,
-        &replacedConnectionPoints,
-        &replacementIdLayers,
-        layer
-    ));
-    return replacements.back();
+	replacements.push_back(Replacement(
+		this,
+		layer
+	));
+	return replacements.back();
 }
 
 void Replacer::cleanReplacements() {
-    for (auto it = replacements.begin(); it != replacements.end();) {
-        if (it->getIsEmpty()) {
-            it = replacements.erase(it);
-        } else {
-            ++it;
-        }
-    }
+	for (auto it = replacements.begin(); it != replacements.end();) {
+		if (it->getIsEmpty()) {
+			it = replacements.erase(it);
+		} else {
+			++it;
+		}
+	}
 }
 
-void Replacer::pingOutputs(SimPauseGuard& pauseGuard, middle_id_t id) {
-    for (Replacement& replacement : replacements) {
-        replacement.pingOutput(pauseGuard, id);
-    }
-}
-
-void Replacer::pingInputs(SimPauseGuard& pauseGuard, middle_id_t id) {
-    for (Replacement& replacement : replacements) {
-        replacement.pingInput(pauseGuard, id);
-    }
+void Replacer::pingId(SimPauseGuard& pauseGuard, middle_id_t id, int minLayer) {
+	for (Replacement& replacement : replacements) {
+		if (replacement.getLayer() < minLayer) {
+			continue;
+		}
+		replacement.pingId(pauseGuard, id);
+	}
 }
 
 EvalConnectionPoint Replacer::getReplacementConnectionPoint(EvalConnectionPoint point) const {
-    if (replacedIds.contains(point.gateId)) {
-        EvalConnectionPoint newPoint = EvalConnectionPoint(replacedIds.at(point.gateId), point.portId);
-        if (newPoint != point) {
-            return getReplacementConnectionPoint(newPoint);
-        }
-        return newPoint;
-    }
-    if (replacedConnectionPoints.contains(point.gateId) && replacedConnectionPoints.at(point.gateId).contains(point.portId)) {
-        EvalConnectionPoint newPoint = replacedConnectionPoints.at(point.gateId).at(point.portId);
-        if (newPoint != point) {
-            return getReplacementConnectionPoint(newPoint);
-        }
-        return newPoint;
-    }
-    return point;
+	if (replacedIds.contains(point.gateId)) {
+		EvalConnectionPoint newPoint = EvalConnectionPoint(replacedIds.at(point.gateId), point.portId);
+		if (newPoint != point) {
+			return getReplacementConnectionPoint(newPoint);
+		}
+		return newPoint;
+	}
+	if (replacedConnectionPoints.contains(point.gateId) && replacedConnectionPoints.at(point.gateId).contains(point.portId)) {
+		EvalConnectionPoint newPoint = replacedConnectionPoints.at(point.gateId).at(point.portId);
+		if (newPoint != point) {
+			return getReplacementConnectionPoint(newPoint);
+		}
+		return newPoint;
+	}
+	return point;
 }
 
 std::vector<EvalConnectionPoint> Replacer::getReplacementConnectionPoints(const std::vector<EvalConnectionPoint>& points) const {
-    std::vector<EvalConnectionPoint> result;
-    result.reserve(points.size());
-    for (const EvalConnectionPoint& point : points) {
-        result.push_back(getReplacementConnectionPoint(point));
-    }
-    return result;
+	std::vector<EvalConnectionPoint> result;
+	result.reserve(points.size());
+	for (const EvalConnectionPoint& point : points) {
+		result.push_back(getReplacementConnectionPoint(point));
+	}
+	return result;
 }
 
 std::vector<std::optional<EvalConnectionPoint>> Replacer::getReplacementConnectionPoints(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
-    std::vector<std::optional<EvalConnectionPoint>> result;
-    result.reserve(points.size());
-    for (const std::optional<EvalConnectionPoint>& point : points) {
-        if (!point.has_value()) {
-            result.push_back(std::nullopt);
-            continue;
-        }
-        result.push_back(getReplacementConnectionPoint(point.value()));
-    }
-    return result;
+	std::vector<std::optional<EvalConnectionPoint>> result;
+	result.reserve(points.size());
+	for (const std::optional<EvalConnectionPoint>& point : points) {
+		if (!point.has_value()) {
+			result.push_back(std::nullopt);
+			continue;
+		}
+		result.push_back(getReplacementConnectionPoint(point.value()));
+	}
+	return result;
 }
 
-void Replacer::mergeBuses(SimPauseGuard& pauseGuard, int layer) {
-    std::vector<middle_id_t> allMiddleIds = middleIdProvider.getUsedIds();
-    for (const middle_id_t id : allMiddleIds) {
-        if (replacementIdLayers.contains(id)) {
-            if (replacementIdLayers.at(id) >= layer) {
-                continue;
-            }
-        }
-        // check if we're a bus interface
-        GateType gateType = busInterfacePassthrough.getGateType(id);
-        if (gateType != GateType::BUS_INTERFACE) {
-            continue;
-        }
-        BusFloodFillResult floodFillResult = busFloodFill(id);
-        logInfo("Merging " + std::to_string(floodFillResult.busIds.size()) + " bus interfaces and " + std::to_string(floodFillResult.junctionIds.size()) + " junctions.", "Replacer::mergeBuses");
-        Replacement& replacement = makeReplacement(layer);
-        middle_id_t virtualBusId = replacement.getNewId();
-        std::unordered_set<middle_id_t> busesMet;
-        for (const middle_id_t busId : floodFillResult.busIds) {
-            busesMet.insert(busId);
-        }
-        for (const EvalConnection& conn : floodFillResult.connectionsBetweenBusesAndJunctions) {
-            replacement.removeConnection(pauseGuard, conn);
-        }
-        for (const middle_id_t junctionId : floodFillResult.junctionIds) {
-            replacement.removeGate(pauseGuard, junctionId, virtualBusId);
-        }
-        std::vector<middle_id_t> pinJunctionIds = {};
-        std::vector<EvalConnection> sameBusConnections = {};
-        for (const EvalConnection& conn : floodFillResult.connectionsIntoBuses) {
-            int pin = conn.destination.portId / 2 - 1;
-            while (pin + 1 > pinJunctionIds.size()) {
-                middle_id_t newJunctionId = replacement.getNewId();
-                replacement.addGate(pauseGuard, GateType::JUNCTION, newJunctionId);
-                pinJunctionIds.push_back(newJunctionId);
-                logInfo("Created junction " + std::to_string(newJunctionId) + " for bus pin " + std::to_string(pin), "Replacer::mergeBuses");
-            }
-            if (busesMet.contains(conn.source.gateId)) {
-                sameBusConnections.push_back(conn);
-                continue;
-            }
-            middle_id_t junctionId = pinJunctionIds[pin];
-            replacement.removeConnection(pauseGuard, conn);
-            EvalConnection newConnection = EvalConnection(conn.source, EvalConnectionPoint(junctionId, 0));
-            replacement.makeConnection(pauseGuard, newConnection);
-            logInfo("Rerouted connection from " + conn.toString() + " to " + newConnection.toString(), "Replacer::mergeBuses");
-        }
-        for (const EvalConnection& conn : floodFillResult.connectionsOutOfBuses) {
-            int pin = conn.source.portId / 2 - 1;
-            while (pin + 1 > pinJunctionIds.size()) {
-                middle_id_t newJunctionId = replacement.getNewId();
-                replacement.addGate(pauseGuard, GateType::JUNCTION, newJunctionId);
-                pinJunctionIds.push_back(newJunctionId);
-                logInfo("Created junction " + std::to_string(newJunctionId) + " for bus pin " + std::to_string(pin), "Replacer::mergeBuses");
-            }
-            if (busesMet.contains(conn.destination.gateId)) {
-                continue;
-            }
-            middle_id_t junctionId = pinJunctionIds[pin];
-            replacement.removeConnection(pauseGuard, conn);
-            EvalConnection newConnection = EvalConnection(EvalConnectionPoint(junctionId, 0), conn.destination);
-            replacement.makeConnection(pauseGuard, newConnection);
-            logInfo("Rerouted connection from " + conn.toString() + " to " + newConnection.toString(), "Replacer::mergeBuses");
-        }
-        for (EvalConnection& conn : sameBusConnections) {
-            replacement.removeConnection(pauseGuard, conn);
-            int pinSource = conn.source.portId / 2 - 1;
-            int pinDest = conn.destination.portId / 2 - 1;
-            middle_id_t junctionIdSource = pinJunctionIds[pinSource];
-            middle_id_t junctionIdDest = pinJunctionIds[pinDest];
-            EvalConnection newConnection = EvalConnection(EvalConnectionPoint(junctionIdSource, 0), EvalConnectionPoint(junctionIdDest, 0));
-            replacement.makeConnection(pauseGuard, newConnection);
-            logInfo("Rerouted connection from " + conn.toString() + " to " + newConnection.toString(), "Replacer::mergeBuses");
-        }
-        std::unordered_map<connection_port_id_t, EvalConnectionPoint> pinsMapping = {};
-        pinsMapping[0] = EvalConnectionPoint(virtualBusId, 0);
-        pinsMapping[1] = EvalConnectionPoint(virtualBusId, 1);
-        for (size_t i = 0; i < pinJunctionIds.size(); i++) {
-            pinsMapping[i * 2 + 2] = EvalConnectionPoint(pinJunctionIds[i], 0);
-            pinsMapping[i * 2 + 3] = EvalConnectionPoint(pinJunctionIds[i], 0);
-        }
-        busContentsMap[virtualBusId] = {};
-        for (const middle_id_t pinJunctionId : pinJunctionIds) {
-            busContentsMap[virtualBusId].push_back(EvalConnectionPoint(pinJunctionId, 0));
-        }
-        for (const middle_id_t busId : floodFillResult.busIds) {
-            replacement.removeGate(pauseGuard, busId, pinsMapping);
-        }
-    }
+void Replacer::mergeBuses(SimPauseGuard& pauseGuard, int layer, int junctionOverpowerLayer) {
+	std::vector<middle_id_t> allMiddleIds = middleIdProvider.getUsedIds();
+	for (const middle_id_t id : allMiddleIds) {
+		if (replacementIdLayers.contains(id)) {
+			if (replacementIdLayers.at(id) >= layer) {
+				continue;
+			}
+		}
+		BlockType blockType = busInterfacePassthrough.getBlockType(id);
+		if (blockType == BlockType::NONE) {
+			continue;
+		}
+		const BlockData* blockData = blockDataManager.getBlockData(blockType);
+		if (!blockData->isBus()) {
+			continue;
+		}
+		unsigned int laneCount = blockData->getLaneCount();
+		for (unsigned int lane = 0; lane < laneCount; lane++) {
+			std::optional<middle_id_t> junctionId = getJunctionInsideBus(id, lane);
+			if (junctionId) {
+				continue;
+			}
+			mergeBusLane(pauseGuard, layer, junctionOverpowerLayer, id, lane);
+		}
+	}
 }
 
-Replacer::BusFloodFillResult Replacer::busFloodFill(middle_id_t busId) {
-    BusFloodFillResult result;
-    std::set<middle_id_t> visited;
-    std::queue<middle_id_t> queue;
-    queue.push(busId);
-    visited.insert(busId);
-    while (!queue.empty()) {
-        middle_id_t currentId = queue.front();
-        queue.pop();
-        GateType gateType = busInterfacePassthrough.getGateType(currentId);
-        if (gateType == GateType::BUS_INTERFACE) {
-            result.busIds.push_back(currentId);
-        } else if (gateType == GateType::JUNCTION) {
-            result.junctionIds.push_back(currentId);
-        } else {
-            logError("Bus flood fill encountered non-bus, non-junction gate. This should not happen.", "Replacer::busFloodFill");
-            continue;
-        }
-        std::vector<EvalConnection> outputs = busInterfacePassthrough.getOutputs(currentId);
-        std::vector<EvalConnection> inputs = busInterfacePassthrough.getInputs(currentId);
-        for (const EvalConnection& output : outputs) {
-            GateType outputGateType = busInterfacePassthrough.getGateType(output.destination.gateId);
-            bool isBusPort = (output.source.portId < 2 && (gateType == GateType::BUS_INTERFACE || gateType == GateType::JUNCTION));
-            if (isBusPort) {
-                if (visited.contains(output.destination.gateId)) {
-                    if (!contains(
-                        result.connectionsBetweenBusesAndJunctions.begin(),
-                        result.connectionsBetweenBusesAndJunctions.end(),
-                        output
-                    )) {
-                        result.connectionsBetweenBusesAndJunctions.push_back(output);
-                    }
-                    continue;
-                }
-                queue.push(output.destination.gateId);
-                visited.insert(output.destination.gateId);
-                result.connectionsBetweenBusesAndJunctions.push_back(output);
-                continue;
-            }
-            result.connectionsOutOfBuses.push_back(output);
-        }
-        for (const EvalConnection& input : inputs) {
-            GateType inputGateType = busInterfacePassthrough.getGateType(input.source.gateId);
-            bool isBusPort = (input.destination.portId < 2 && (gateType == GateType::BUS_INTERFACE || gateType == GateType::JUNCTION));
-            if (isBusPort) {
-                if (visited.contains(input.source.gateId)) {
-                    if (!contains(
-                        result.connectionsBetweenBusesAndJunctions.begin(),
-                        result.connectionsBetweenBusesAndJunctions.end(),
-                        input
-                    )) {
-                        result.connectionsBetweenBusesAndJunctions.push_back(input);
-                    }
-                    continue;
-                }
-                queue.push(input.source.gateId);
-                visited.insert(input.source.gateId);
-                result.connectionsBetweenBusesAndJunctions.push_back(input);
-                continue;
-            }
-            result.connectionsIntoBuses.push_back(input);
-        }
-    }
-    return result;
+void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, int layer, int junctionOverpowerLayer, middle_id_t id, unsigned int laneId) {
+	Replacement& replacement = makeReplacement(layer);
+	middle_id_t newJunctionId = replacement.getNewId();
+	replacement.addGate(pauseGuard, BlockType::JUNCTION, newJunctionId);
+	std::queue<BlockLane> mergeQueue;
+	std::unordered_set<BlockLane, BlockLane::Hash> visited;
+	mergeQueue.push({ id, laneId });
+	visited.insert({ id, laneId });
+	while (!mergeQueue.empty()) {
+		BlockLane current = mergeQueue.front();
+		mergeQueue.pop();
+		replacement.trackGate(current.blockId);
+		defineJunctionInsideBus(current.blockId, current.laneId, newJunctionId, replacement);
+		BlockType blockType = busInterfacePassthrough.getBlockType(current.blockId);
+		if (blockType == BlockType::JUNCTION) {
+			replacement.markIdAsReplaced(current.blockId, junctionOverpowerLayer);
+		}
+		// get all inputs/outputs, and add them to the queue if the lanes line up
+		std::vector<EvalConnection> inputs = busInterfacePassthrough.getInputs(current.blockId);
+		BlockData* blockData = blockDataManager.getBlockData(blockType);
+		for (const EvalConnection& input : inputs) {
+			const BlockData::ConnectionData* connectionData = blockData->getConnectionData(input.destination.portId);
+			unsigned int connectionLaneIndex = current.laneId;
+			if (blockType != BlockType::JUNCTION) {
+				if (!connectionData->containsLaneId(current.laneId)) {
+					continue;
+				}
+				connectionLaneIndex = connectionData->getIndexOfLaneId(current.laneId);
+				if (connectionData->getBitWidth() == 1) {
+					replacement.trackConnection(input);
+					replacement.removeConnection(pauseGuard, input);
+					replacement.makeConnection(pauseGuard, { input.source, { newJunctionId, 0 } });
+					replacement.overrideConnectionPoint(input.destination, { newJunctionId, 0 });
+					continue;
+				}
+			}
+			replacement.trackConnection(input);
+			middle_id_t sourceBlockId = input.source.gateId;
+			BlockType sourceBlockType = busInterfacePassthrough.getBlockType(sourceBlockId);
+			if (sourceBlockType == BlockType::NONE) {
+				continue;
+			}
+			unsigned int sourceLaneId = connectionLaneIndex;
+			if (sourceBlockType != BlockType::JUNCTION) {
+				const BlockData* sourceBlockData = blockDataManager.getBlockData(sourceBlockType);
+				const BlockData::ConnectionData* sourceConnectionData = sourceBlockData->getConnectionData(input.source.portId);
+				sourceLaneId = sourceConnectionData->getLaneId(connectionLaneIndex);
+			}
+			BlockLane sourceLane = { sourceBlockId, sourceLaneId };
+			if (!visited.contains(sourceLane)) {
+				mergeQueue.push(sourceLane);
+				visited.insert(sourceLane);
+			}
+		}
+		std::vector<EvalConnection> outputs = busInterfacePassthrough.getOutputs(current.blockId);
+		for (const EvalConnection& output : outputs) {
+			const BlockData::ConnectionData* connectionData = blockData->getConnectionData(output.source.portId);
+			unsigned int connectionLaneIndex = current.laneId;
+			if (blockType != BlockType::JUNCTION) {
+				if (!connectionData->containsLaneId(current.laneId)) {
+					continue;
+				}
+				connectionLaneIndex = connectionData->getIndexOfLaneId(current.laneId);
+				if (connectionData->getBitWidth() == 1) {
+					replacement.trackConnection(output);
+					replacement.removeConnection(pauseGuard, output);
+					replacement.makeConnection(pauseGuard, { { newJunctionId, 0 } , output.destination });
+					replacement.overrideConnectionPoint(output.source, { newJunctionId, 0 });
+					continue;
+				}
+			}
+			replacement.trackConnection(output);
+			middle_id_t destBlockId = output.destination.gateId;
+			BlockType destBlockType = busInterfacePassthrough.getBlockType(destBlockId);
+			if (destBlockType == BlockType::NONE) {
+				continue;
+			}
+			unsigned int destLaneId = connectionLaneIndex;
+			if (destBlockType != BlockType::JUNCTION) {
+				const BlockData* destBlockData = blockDataManager.getBlockData(destBlockType);
+				const BlockData::ConnectionData* destConnectionData = destBlockData->getConnectionData(output.destination.portId);
+				destLaneId = destConnectionData->getLaneId(connectionLaneIndex);
+			}
+			BlockLane destLane = { destBlockId, destLaneId };
+			if (!visited.contains(destLane)) {
+				mergeQueue.push(destLane);
+				visited.insert(destLane);
+			}
+		}
+	}
 }
+
+
 
 void Replacer::mergeJunctions(SimPauseGuard& pauseGuard, int layer) {
-    std::vector<middle_id_t> allMiddleIds = middleIdProvider.getUsedIds();
-    for (const middle_id_t id : allMiddleIds) {
-        if (replacementIdLayers.contains(id)) {
-            if (replacementIdLayers.at(id) >= layer) {
-                continue;
-            }
-        }
-        // check if we're a junction
-        GateType gateType = busInterfacePassthrough.getGateType(id);
-        if (gateType != GateType::JUNCTION) {
-            continue;
-        }
-        JunctionFloodFillResult floodFillResult = junctionFloodFill(id);
+	std::vector<middle_id_t> allMiddleIds = middleIdProvider.getUsedIds();
+	for (const middle_id_t id : allMiddleIds) {
+		if (replacementIdLayers.contains(id)) {
+			if (replacementIdLayers.at(id) >= layer) {
+				continue;
+			}
+		}
+		// check if we're a junction
+		BlockType blockType = busInterfacePassthrough.getBlockType(id);
+		if (!isJunctionType(blockType)) {
+			continue;
+		}
+		JunctionFloodFillResult floodFillResult = junctionFloodFill(id);
 
-        if (floodFillResult.outputsGoingIntoJunctions.size() == 0) {
-            continue;
-        }
+		if (floodFillResult.outputsGoingIntoJunctions.size() == 0 && floodFillResult.defaultState == logic_state_t::FLOATING) {
+			continue;
+		}
 
-        Replacement& replacement = makeReplacement(layer);
-        if (floodFillResult.outputsGoingIntoJunctions.size() == 1) {
-            EvalConnectionPoint output = floodFillResult.outputsGoingIntoJunctions.at(0);
-            for (const middle_id_t junctionId : floodFillResult.junctionIds) {
-                replacement.removeGate(pauseGuard, junctionId, { {0, output }, {1, output } });
-            }
-            for (const EvalConnection& input : floodFillResult.inputsPullingFromJunctions) {
-                replacement.makeConnection(pauseGuard, EvalConnection(output, input.destination));
-            }
-            replacement.trackOutput(output.gateId);
-        } else {
-            middle_id_t newJunctionId = replacement.getNewId();
-            replacement.addGate(pauseGuard, GateType::JUNCTION, newJunctionId);
-            for (const middle_id_t junctionId : floodFillResult.junctionIds) {
-                replacement.removeGate(pauseGuard, junctionId, newJunctionId);
-            }
-            for (const EvalConnection& input : floodFillResult.inputsPullingFromJunctions) {
-                replacement.makeConnection(pauseGuard, EvalConnection(EvalConnectionPoint(newJunctionId, 0), input.destination));
-            }
-            for (const EvalConnectionPoint& output : floodFillResult.outputsGoingIntoJunctions) {
-                replacement.makeConnection(pauseGuard, EvalConnection(output, EvalConnectionPoint(newJunctionId, 0)));
-            }
-            for (const EvalConnection& conn : floodFillResult.connectionsToReroute) {
-                EvalConnection newConnection = EvalConnection(EvalConnectionPoint(newJunctionId, 0), conn.destination);
-                replacement.removeConnection(pauseGuard, conn);
-                replacement.makeConnection(pauseGuard, newConnection);
-            }
-        }
-    }
+		Replacement& replacement = makeReplacement(layer);
+		if (floodFillResult.outputsGoingIntoJunctions.size() == 1 && floodFillResult.defaultState == logic_state_t::FLOATING) {
+			EvalConnectionPoint output = floodFillResult.outputsGoingIntoJunctions.at(0);
+			for (const middle_id_t junctionId : floodFillResult.junctionIds) {
+				replacement.removeGate(pauseGuard, junctionId, { {0, output }, {1, output } });
+			}
+			for (const EvalConnection& input : floodFillResult.inputsPullingFromJunctions) {
+				replacement.makeConnection(pauseGuard, EvalConnection(output, input.destination));
+			}
+			replacement.trackId(output.gateId);
+		} else {
+			middle_id_t newJunctionId = replacement.getNewId();
+			BlockType typeOfJunction;
+			if (floodFillResult.defaultState == logic_state_t::LOW) {
+				typeOfJunction = BlockType::JUNCTION_L;
+			} else if (floodFillResult.defaultState == logic_state_t::HIGH) {
+				typeOfJunction = BlockType::JUNCTION_H;
+			} else if (floodFillResult.defaultState == logic_state_t::UNDEFINED) {
+				typeOfJunction = BlockType::JUNCTION_X;
+			} else {
+				typeOfJunction = BlockType::JUNCTION;
+			}
+			replacement.addGate(pauseGuard, typeOfJunction, newJunctionId);
+			for (const middle_id_t junctionId : floodFillResult.junctionIds) {
+				replacement.removeGate(pauseGuard, junctionId, newJunctionId);
+			}
+			for (const EvalConnection& input : floodFillResult.inputsPullingFromJunctions) {
+				replacement.makeConnection(pauseGuard, EvalConnection(EvalConnectionPoint(newJunctionId, 0), input.destination));
+			}
+			for (const EvalConnectionPoint& output : floodFillResult.outputsGoingIntoJunctions) {
+				replacement.makeConnection(pauseGuard, EvalConnection(output, EvalConnectionPoint(newJunctionId, 0)));
+			}
+			for (const EvalConnection& conn : floodFillResult.connectionsToReroute) {
+				EvalConnection newConnection = EvalConnection(EvalConnectionPoint(newJunctionId, 0), conn.destination);
+				replacement.removeConnection(pauseGuard, conn);
+				replacement.makeConnection(pauseGuard, newConnection);
+			}
+		}
+	}
 }
 
 Replacer::JunctionFloodFillResult Replacer::junctionFloodFill(middle_id_t junctionId) {
-    JunctionFloodFillResult result;
-    std::set<middle_id_t> visited;
-    std::set<EvalConnectionPoint> visitedOutputs;
-    std::queue<middle_id_t> queue;
-    queue.push(junctionId);
-    visited.insert(junctionId);
-    while (!queue.empty()) {
-        middle_id_t currentId = queue.front();
-        queue.pop();
-        result.junctionIds.push_back(currentId);
-        std::vector<EvalConnection> outputs = busInterfacePassthrough.getOutputs(currentId);
-        std::vector<EvalConnection> inputs = busInterfacePassthrough.getInputs(currentId);
-        for (const EvalConnection& output : outputs) {
-            if (visited.contains(output.destination.gateId)) {
-                continue;
-            }
-            GateType outputGateType = busInterfacePassthrough.getGateType(output.destination.gateId);
-            if (outputGateType == GateType::JUNCTION) {
-                queue.push(output.destination.gateId);
-                visited.insert(output.destination.gateId);
-                continue;
-            }
-            result.inputsPullingFromJunctions.push_back(output);
-        }
-        for (const EvalConnection& input : inputs) {
-            if (visited.contains(input.source.gateId)) {
-                continue;
-            }
-            GateType inputGateType = busInterfacePassthrough.getGateType(input.source.gateId);
-            if (inputGateType == GateType::JUNCTION) {
-                queue.push(input.source.gateId);
-                visited.insert(input.source.gateId);
-                continue;
-            }
-            // not a junction going into a junction
-            if (visitedOutputs.contains(input.source)) {
-                continue;
-            }
-            visitedOutputs.insert(input.source);
-            result.outputsGoingIntoJunctions.push_back(input.source);
-            std::vector<EvalConnection> nodeOutputs = busInterfacePassthrough.getOutputs(input.source.gateId);
-            for (const EvalConnection& nodeOutput : nodeOutputs) {
-                if (nodeOutput.source.portId != input.source.portId) {
-                    continue; // only consider outputs from the same port
-                }
-                GateType nodeOutputGateType = busInterfacePassthrough.getGateType(nodeOutput.destination.gateId);
-                if (nodeOutputGateType == GateType::JUNCTION) {
-                    if (visited.contains(nodeOutput.destination.gateId)) {
-                        continue;
-                    }
-                    queue.push(nodeOutput.destination.gateId);
-                    visited.insert(nodeOutput.destination.gateId);
-                } else {
-                    result.connectionsToReroute.push_back(nodeOutput);
-                }
-            }
-        }
-    }
-    return result;
+	JunctionFloodFillResult result;
+	std::set<middle_id_t> visited;
+	std::set<EvalConnectionPoint> visitedOutputs;
+	std::queue<middle_id_t> queue;
+	queue.push(junctionId);
+	visited.insert(junctionId);
+	logic_state_t defaultState = logic_state_t::FLOATING;
+	while (!queue.empty()) {
+		middle_id_t currentId = queue.front();
+		queue.pop();
+		result.junctionIds.push_back(currentId);
+		std::vector<EvalConnection> outputs = busInterfacePassthrough.getOutputs(currentId);
+		std::vector<EvalConnection> inputs = busInterfacePassthrough.getInputs(currentId);
+		BlockType currentBlockType = busInterfacePassthrough.getBlockType(currentId);
+		if (currentBlockType == BlockType::JUNCTION_L) {
+			if (defaultState == logic_state_t::HIGH) {
+				defaultState = logic_state_t::UNDEFINED;
+			} else if (defaultState == logic_state_t::FLOATING) {
+				defaultState = logic_state_t::LOW;
+			}
+		} else if (currentBlockType == BlockType::JUNCTION_H) {
+			if (defaultState == logic_state_t::LOW) {
+				defaultState = logic_state_t::UNDEFINED;
+			} else if (defaultState == logic_state_t::FLOATING) {
+				defaultState = logic_state_t::HIGH;
+			}
+		} else if (currentBlockType == BlockType::JUNCTION_X) {
+			defaultState = logic_state_t::UNDEFINED;
+		}
+		for (const EvalConnection& output : outputs) {
+			if (visited.contains(output.destination.gateId)) {
+				continue;
+			}
+			BlockType outputBlockType = busInterfacePassthrough.getBlockType(output.destination.gateId);
+			if (isJunctionType(outputBlockType)) {
+				queue.push(output.destination.gateId);
+				visited.insert(output.destination.gateId);
+				continue;
+			}
+			result.inputsPullingFromJunctions.push_back(output);
+		}
+		for (const EvalConnection& input : inputs) {
+			if (visited.contains(input.source.gateId)) {
+				continue;
+			}
+			BlockType inputBlockType = busInterfacePassthrough.getBlockType(input.source.gateId);
+			if (isJunctionType(inputBlockType)) {
+				queue.push(input.source.gateId);
+				visited.insert(input.source.gateId);
+				continue;
+			}
+			// not a junction going into a junction
+			if (visitedOutputs.contains(input.source)) {
+				continue;
+			}
+			visitedOutputs.insert(input.source);
+			result.outputsGoingIntoJunctions.push_back(input.source);
+			std::vector<EvalConnection> nodeOutputs = busInterfacePassthrough.getOutputs(input.source.gateId);
+			for (const EvalConnection& nodeOutput : nodeOutputs) {
+				if (nodeOutput.source.portId != input.source.portId) {
+					continue; // only consider outputs from the same port
+				}
+				BlockType nodeOutputBlockType = busInterfacePassthrough.getBlockType(nodeOutput.destination.gateId);
+				if (isJunctionType(nodeOutputBlockType)) {
+					if (visited.contains(nodeOutput.destination.gateId)) {
+						continue;
+					}
+					queue.push(nodeOutput.destination.gateId);
+					visited.insert(nodeOutput.destination.gateId);
+				} else {
+					result.connectionsToReroute.push_back(nodeOutput);
+				}
+			}
+		}
+	}
+	result.defaultState = defaultState;
+	return result;
+}
+
+std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> Replacer::getPinSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
+	// return busInterfacePassthrough.getPinSimulatorIds(getReplacementConnectionPoints(points));
+	std::vector<std::optional<EvalConnectionPoint>> replacedPoints = getReplacementConnectionPoints(points);
+	std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> result;
+	result.reserve(replacedPoints.size());
+	for (const auto& point : replacedPoints) {
+		if (!point.has_value()) {
+			result.emplace_back(static_cast<simulator_id_t>(0));
+			continue;
+		}
+		BlockType blockType = busInterfacePassthrough.getBlockType(point->gateId);
+		if (blockType == BlockType::NONE) {
+			result.emplace_back(static_cast<simulator_id_t>(0));
+			continue;
+		}
+		if (blockType == BlockType::JUNCTION) {
+			if (busInternalJunctions.contains(point->gateId)) {
+				const BusInternalJunctionArray& busInternalJunctionArray = busInternalJunctions.at(point->gateId);
+				std::vector<simulator_id_t> simIds;
+				simIds.reserve(busInternalJunctionArray.junctionIds.size());
+				for (const middle_id_t junctionId : busInternalJunctionArray.junctionIds) {
+					simIds.push_back(busInterfacePassthrough.getPinSimulatorId(getReplacementConnectionPoint({junctionId, 0})));
+				}
+				if (simIds.size() == 1) {
+					result.emplace_back(simIds.at(0));
+				} else {
+					result.emplace_back(std::move(simIds));
+				}
+			} else {
+				simulator_id_t simId = busInterfacePassthrough.getPinSimulatorId(*point);
+				result.emplace_back(simId);
+			}
+		} else {
+			const BlockData* blockData = blockDataManager.getBlockData(blockType);
+			if (blockData && blockData->isBus()) {
+				const BlockData::ConnectionData* connectionData = blockData->getConnectionData(point->portId);
+				std::vector<simulator_id_t> simIds;
+				simIds.reserve(connectionData->getBitWidth());
+				if (busInternalJunctions.contains(point->gateId)) {
+					const BusInternalJunctionArray& busInternalJunctionArray = busInternalJunctions.at(point->gateId);
+					for (unsigned int laneIndex : connectionData->getLaneIds()) {
+						simIds.push_back(busInterfacePassthrough.getPinSimulatorId(getReplacementConnectionPoint({busInternalJunctionArray.junctionIds[laneIndex], 0})));
+					}
+				} else {
+					for (unsigned int laneIndex : connectionData->getLaneIds()) {
+						simIds.push_back(0);
+					}
+				}
+				if (simIds.size() == 1) {
+					result.emplace_back(simIds.at(0));
+				} else {
+					result.emplace_back(std::move(simIds));
+				}
+			} else {
+				simulator_id_t simId = busInterfacePassthrough.getPinSimulatorId(*point);
+				result.emplace_back(simId);
+			}
+		}
+	}
+	return result;
 }

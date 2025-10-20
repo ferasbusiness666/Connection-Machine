@@ -5,6 +5,9 @@
 #endif
 
 #include "gui/mainWindow/circuitView/circuitViewWidget.h"
+#include "gui/helper/saveCallback.h"
+
+#include <SDL3/SDL.h>
 
 std::optional<App> appSingleton;
 
@@ -16,22 +19,27 @@ App& App::get() {
 	return *appSingleton;
 }
 
-void App::kill() {
-	appSingleton.reset();
+void App::kill() { appSingleton.reset(); }
+
+App::App() { rml.emplace(&rmlSystemInterface, &rmlRenderInterface); }
+
+App::~App() {
+	windows.clear();
+	sdlWindows.clear();
+	rml.reset();
+	MainRenderer::kill();
 }
 
-App::App() : rml(&rmlSystemInterface, &rmlRenderInterface) {}
-
-std::shared_ptr<SdlWindow> App::registerWindow(const std::string& windowName) {
-	return sdlWindows.emplace_back(std::make_shared<SdlWindow>(windowName));
-}
+std::shared_ptr<SdlWindow> App::registerWindow(const std::string& windowName) { return sdlWindows.emplace_back(std::make_shared<SdlWindow>(windowName)); }
+std::shared_ptr<SdlWindow> App::registerWindow(const std::string& windowName, unsigned int width, unsigned int height) { return sdlWindows.emplace_back(std::make_shared<SdlWindow>(windowName, width, height)); }
 
 void App::deregisterWindow(std::shared_ptr<SdlWindow>& sdlWindow) {
 	auto iter = std::find(sdlWindows.begin(), sdlWindows.end(), sdlWindow);
 	if (iter != sdlWindows.end()) sdlWindows.erase(iter);
 }
+
 void App::deregisterWindow(const SdlWindow* sdlWindow) {
-	auto iter = std::find_if(sdlWindows.begin(), sdlWindows.end(), [sdlWindow](const std::shared_ptr<SdlWindow>& a){ return a.get() == sdlWindow; });
+	auto iter = std::find_if(sdlWindows.begin(), sdlWindows.end(), [sdlWindow](const std::shared_ptr<SdlWindow>& a) { return a.get() == sdlWindow; });
 	if (iter != sdlWindows.end()) sdlWindows.erase(iter);
 }
 
@@ -40,8 +48,14 @@ void App::newMainWindow() {
 	newlyCreatedWindowsNext.push_back(windows.back().get());
 }
 
-void App::closeMainWindow(const MainWindow* mainWindow) {
-	windowsToDestroy.push_back(mainWindow);
+bool App::closeMainWindow(const MainWindow* mainWindow) {
+	if (windows.size() == windowsToDestroy.size() + 1) {
+		startTryingToQuit();
+		return false;
+	} else {
+		windowsToDestroy.push_back(mainWindow);
+		return true;
+	}
 }
 
 #ifdef TRACY_PROFILER
@@ -63,20 +77,20 @@ void App::runLoop() {
 				switch (event.type) {
 				case SDL_EVENT_QUIT: {
 					// Main application quit (eg. ctrl-c in terminal)
-					running = false;
+					startTryingToQuit();
 					break;
 				}
-				case SDL_EVENT_WINDOW_CLOSE_REQUESTED: {
-					// Single window was closed, check which window was closed and remove it
-					for (auto itr = sdlWindows.begin(); itr != sdlWindows.end(); ++itr) {
-						std::shared_ptr<SdlWindow> sdlWindow = *itr;
-						if (sdlWindow->recieveEvent(event)) {
-							deregisterWindow(sdlWindow);
-							break;
-						}
-					}
-					break;
-				}
+				// case SDL_EVENT_WINDOW_CLOSE_REQUESTED: {
+				// 	// Single window was closed, check which window was closed and remove it
+				// 	for (auto itr = sdlWindows.begin(); itr != sdlWindows.end(); ++itr) {
+				// 		std::shared_ptr<SdlWindow> sdlWindow = *itr;
+				// 		if (sdlWindow->recieveEvent(event)) {
+				// 			deregisterWindow(sdlWindow);
+				// 			break;
+				// 		}
+				// 	}
+				// 	break;
+				// }
 				case SDL_EVENT_WINDOW_FOCUS_GAINED: {
 					// Window focus switched, check which window gained focus
 					for (auto& sdlWindow : sdlWindows) {
@@ -95,11 +109,7 @@ void App::runLoop() {
 						windowsToSendEvents.push_back(sdlWindows[i].get());
 					}
 					for (unsigned int i = 0; i < windowsToSendEvents.size(); ++i) {
-						if (std::any_of(
-							sdlWindows.begin(),
-							sdlWindows.end(),
-							[windowPtr = windowsToSendEvents[i]](const std::shared_ptr<SdlWindow>& a){ return a.get() == windowPtr; }
-						)) {
+						if (std::any_of(sdlWindows.begin(), sdlWindows.end(), [windowPtr = windowsToSendEvents[i]](const std::shared_ptr<SdlWindow>& a) { return a.get() == windowPtr; })) {
 							windowsToSendEvents[i]->recieveEvent(event);
 						}
 					}
@@ -107,11 +117,7 @@ void App::runLoop() {
 				}
 			}
 			for (unsigned int i = 0; i < windowsToDestroy.size(); ++i) {
-				auto iter = std::find_if(
-					windows.begin(),
-					windows.end(),
-					[mainWindow = windowsToDestroy[i]](const std::unique_ptr<MainWindow>& a){ return a.get() == mainWindow; }
-				);
+				auto iter = std::find_if(windows.begin(), windows.end(), [mainWindow = windowsToDestroy[i]](const std::unique_ptr<MainWindow>& a) { return a.get() == mainWindow; });
 				if (iter == windows.end()) {
 					logError("Could not find MainWindow when trying to close it.", "App");
 					return;
@@ -119,7 +125,6 @@ void App::runLoop() {
 				windows.erase(iter);
 			}
 			windowsToDestroy.clear();
-
 		}
 		// tell all windows to update rml
 		for (auto& sdlWindow : sdlWindows) {
@@ -132,8 +137,99 @@ void App::runLoop() {
 		}
 		newlyCreatedWindows = std::move(newlyCreatedWindowsNext);
 		newlyCreatedWindowsNext.clear();
+
+		for (const std::function<void()>& function : functionsToRunAtEndOfUpdate) {
+			function();
+		}
+		functionsToRunAtEndOfUpdate.clear();
+
 #ifdef TRACY_PROFILER
 		FrameMarkEnd(addLoopTracyName);
 #endif
 	}
+
 }
+
+void App::startTryingToQuit() {
+	if (tryingToQuit) return;
+	tasksToFinishToQuit = 0;
+	tryingToQuit = true;
+	auto windowIter = windows.begin();
+	while (windowIter->get()->getEnvironment() != &environment) {
+		++windowIter;
+		if (windowIter == windows.end()) {
+			logError("Could not find window to save with! TODO: create new window that saves can happen in!");
+			return;
+		}
+	}
+	for (auto& fileData : environment.getCircuitFileManager().getAllFiles()) {
+		if (fileData.second.lastSavedEdit.empty()) continue;
+		std::string message = "Do you want to save:\n";
+		std::vector<const std::string*> toSave;
+		for (auto lastSavedEdit : fileData.second.lastSavedEdit) {
+			const SharedCircuit& circuit = environment.getBackend().getCircuitManager().getCircuit(lastSavedEdit.first);
+			if (!circuit->isEditable()) continue;
+			if (lastSavedEdit.second == circuit->getEditCount()) continue;
+			message += circuit->getCircuitName() + "\n";
+			toSave.emplace_back(&circuit->getUUID());
+		}
+		if (toSave.size() == 0) continue;
+		++tasksToFinishToQuit;
+		windowIter->get()->getPopUpManager().addOptionsPopUp(message, {
+			std::make_pair("Save", [filePath=fileData.second.fileLocation, this]() {
+				logInfo("Saving {}", "", filePath);
+				environment.getCircuitFileManager().saveFile(filePath);
+				--tasksToFinishToQuit;
+				if (tasksToFinishToQuit == 0) running = false;
+			}),
+			std::make_pair("Dont Save", [this]() {
+				logInfo("\"Dont Save\" option picked.");
+				--tasksToFinishToQuit;
+				if (tasksToFinishToQuit == 0) running = false;
+			}),
+			std::make_pair("Cancel", [this]() {
+				logInfo("Canceling close.");
+				stopTryingToQuit();
+			})
+		});
+	}
+	for (auto& circuit : environment.getBackend().getCircuitManager().getCircuits()) {
+		if (environment.getCircuitFileManager().getSavePath(circuit.second->getUUID())) continue;
+		if (!circuit.second->isEditable()) continue;
+		++tasksToFinishToQuit;
+		windowIter->get()->getPopUpManager().addOptionsPopUp("Do you want to save: " + circuit.second->getCircuitName(), {
+			std::make_pair("Save", [window=windowIter->get(), uuid=circuit.second->getUUID(), this]() {
+				logInfo("Saving circuit {}", "", uuid);
+				#ifdef _WIN32
+				#define DOT ""
+				#else
+				#define DOT "."
+				#endif
+				static const SDL_DialogFileFilter filters[] = {
+					{ "Circuit Files",  DOT"cir" }
+				};
+				std::pair<CircuitFileManager*, std::string>* data = new std::pair<CircuitFileManager*, std::string>(&environment.getCircuitFileManager(), uuid);
+				SDL_ShowSaveFileDialog(
+					[](void* userData, const char* const* filePaths, int filter) {
+						SaveCallback(userData, filePaths, filter);
+						--(App::get().tasksToFinishToQuit);
+						if (App::get().tasksToFinishToQuit == 0) App::get().running = false;
+					},
+					data, nullptr, filters, 1, nullptr
+				);
+			}),
+			std::make_pair("Dont Save", [this]() {
+				logInfo("\"Dont Save\" option picked.");
+				--tasksToFinishToQuit;
+				if (tasksToFinishToQuit == 0) running = false;
+			}),
+			std::make_pair("Cancel", [this]() {
+				logInfo("Canceling close.");
+				stopTryingToQuit();
+			})
+		});
+	}
+	if (tasksToFinishToQuit == 0) running = false;
+}
+
+void App::stopTryingToQuit() { tryingToQuit = false; }

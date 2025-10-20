@@ -1,8 +1,7 @@
 #ifndef evalConnection_h
 #define evalConnection_h
 
-#include "logicState.h"
-#include "evalTypedef.h"
+#include "evalDefs.h"
 
 struct EvalConnectionPoint {
 	middle_id_t gateId;
@@ -65,6 +64,26 @@ struct EvalConnection {
 		return "EC( (" + std::to_string(source.gateId) + ", " + std::to_string(source.portId) + ") -> (" +
 			   std::to_string(destination.gateId) + ", " + std::to_string(destination.portId) + ") )";
 	}
+
+	EvalConnection reverse() const {
+		return EvalConnection(destination, source);
+	}
 };
+
+namespace std {
+	template <>
+	struct hash<EvalConnectionPoint> {
+		size_t operator()(const EvalConnectionPoint& point) const noexcept {
+			return EvalConnectionPoint::Hash {}(point);
+		}
+	};
+
+	template <>
+	struct hash<EvalConnection> {
+		size_t operator()(const EvalConnection& connection) const noexcept {
+			return EvalConnection::Hash {}(connection);
+		}
+	};
+}; // namespace std
 
 #endif /* evalConnection_h */

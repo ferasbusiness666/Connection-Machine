@@ -1,118 +1,56 @@
 #ifndef replacement_h
 #define replacement_h
 
-#include "busInterfacePassthrough.h"
+#include "backend/container/block/blockDefs.h"
 #include "evalConnection.h"
-#include "evalTypedef.h"
-#include "idProvider.h"
-#include "gateType.h"
 
+class SimPauseGuard;
 class Replacer;
 
 struct ReplacementGate {
-    middle_id_t id;
-	GateType type;
+	middle_id_t id;
+	BlockType type;
 };
 
 class Replacement {
 public:
 	Replacement(
 		Replacer* replacer,
-		BusInterfacePassthrough* busInterfacePassthrough,
-		IdProvider<middle_id_t>* middleIdProvider,
-		std::unordered_map<middle_id_t, middle_id_t>* replacedIds,
-		std::unordered_map<middle_id_t, std::unordered_map<connection_port_id_t, EvalConnectionPoint>>* replacedConnectionPoints,
-		std::unordered_map<middle_id_t, int>* replacementIdLayers,
 		int layer
 		) :
 		replacer(replacer),
-		busInterfacePassthrough(busInterfacePassthrough),
-		middleIdProvider(middleIdProvider),
-		replacedIds(replacedIds),
-		replacedConnectionPoints(replacedConnectionPoints),
-		replacementIdLayers(replacementIdLayers),
 		layer(layer) {}
 
-	void removeGate(SimPauseGuard& pauseGuard, middle_id_t gateId, std::unordered_map<connection_port_id_t, EvalConnectionPoint> replacementConnectionPoints) {
-		isEmpty = false;
-		// track connection removals
-		std::vector<EvalConnection> outputs = busInterfacePassthrough->getOutputs(gateId);
-		std::vector<EvalConnection> inputs = busInterfacePassthrough->getInputs(gateId);
-		for (const auto& conn : outputs) {
-			if (conn.destination.gateId != conn.source.gateId) {
-				deletedConnections.push_back(conn);
-			}
-		}
-		for (const auto& conn : inputs) {
-			deletedConnections.push_back(conn);
-		}
-		deletedGates.push_back({ gateId, busInterfacePassthrough->getGateType(gateId) });
-		idsToTrackInputs.insert(gateId);
-		idsToTrackOutputs.insert(gateId);
-		replacedConnectionPoints->insert({ gateId, replacementConnectionPoints });
-		busInterfacePassthrough->removeGate(pauseGuard, gateId);
-	}
+	void removeGate(SimPauseGuard& pauseGuard, middle_id_t gateId, std::unordered_map<connection_port_id_t, EvalConnectionPoint> replacementConnectionPoints);
 
-	void removeGate(SimPauseGuard& pauseGuard, middle_id_t gateId, middle_id_t replacementId) {
-		isEmpty = false;
-		// track connection removals
-		std::vector<EvalConnection> outputs = busInterfacePassthrough->getOutputs(gateId);
-		std::vector<EvalConnection> inputs = busInterfacePassthrough->getInputs(gateId);
-		for (const auto& conn : outputs) {
-			if (conn.destination.gateId != conn.source.gateId) {
-				deletedConnections.push_back(conn);
-			}
-		}
-		for (const auto& conn : inputs) {
-			deletedConnections.push_back(conn);
-		}
-		deletedGates.push_back({ gateId, busInterfacePassthrough->getGateType(gateId) });
-		idsToTrackInputs.insert(gateId);
-		idsToTrackOutputs.insert(gateId);
-		replacedIds->insert({ gateId, replacementId });
-		busInterfacePassthrough->removeGate(pauseGuard, gateId);
-		replacementIdLayers->insert({ replacementId, layer });
-	}
+	void removeGate(SimPauseGuard& pauseGuard, middle_id_t gateId, middle_id_t replacementId);
 
-	void addGate(SimPauseGuard& pauseGuard, GateType gateType, middle_id_t gateId) {
-		isEmpty = false;
-		busInterfacePassthrough->addGate(pauseGuard, gateType, gateId);
-		// we don't need to track, because nothing can happen to this gate
-		addedGates.push_back({ gateId, gateType });
-	}
+	void addGate(SimPauseGuard& pauseGuard, BlockType blockType, middle_id_t gateId);
 
-	void removeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
-		isEmpty = false;
-		busInterfacePassthrough->removeConnection(pauseGuard, connection);
-		idsToTrackInputs.insert(connection.destination.gateId);
-		idsToTrackOutputs.insert(connection.source.gateId);
-		deletedConnections.push_back(connection);
-	}
+	void removeConnection(SimPauseGuard& pauseGuard, EvalConnection connection);
 
-	void makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
-		isEmpty = false;
-		busInterfacePassthrough->makeConnection(pauseGuard, connection);
-		idsToTrackInputs.insert(connection.destination.gateId);
-		idsToTrackOutputs.insert(connection.source.gateId);
-		addedConnections.push_back(connection);
-	}
+	void makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection);
+
+	void overrideConnectionPoint(EvalConnectionPoint originalPoint, EvalConnectionPoint replacementPoint);
+
+	void markIdAsReplaced(middle_id_t originalId, int overpowerLayer);
 
 	void revert(SimPauseGuard& pauseGuard);
 
-	void pingOutput(SimPauseGuard& pauseGuard, middle_id_t id) {
-		if (isReverting) {
-			return;
-		}
-		if (idsToTrackOutputs.contains(id)) {
-			revert(pauseGuard);
-		}
+	void addRevertAction(std::function<void(SimPauseGuard&)> callback) {
+		isEmpty = false;
+		revertCallbacksWithPauseGuard.push_back(std::move(callback));
+	}
+	void addRevertAction(std::function<void()> callback) {
+		isEmpty = false;
+		revertCallbacks.push_back(std::move(callback));
 	}
 
-	void pingInput(SimPauseGuard& pauseGuard, middle_id_t id) {
+	void pingId(SimPauseGuard& pauseGuard, middle_id_t id) {
 		if (isReverting) {
 			return;
 		}
-		if (idsToTrackInputs.contains(id)) {
+		if (idsToTrack.contains(id)) {
 			revert(pauseGuard);
 		}
 	}
@@ -121,33 +59,46 @@ public:
 		return isEmpty;
 	}
 
-	middle_id_t getNewId() {
-		middle_id_t newId = middleIdProvider->getNewId();
-		reservedIds.push_back(newId);
-		return newId;
+	middle_id_t getNewId();
+
+	void trackId(middle_id_t id) {
+		idsToTrack.insert(id);
+	}
+	void trackConnection(EvalConnection conn) {
+		trackId(conn.source.gateId);
+		trackId(conn.destination.gateId);
+	}
+	void trackGate(middle_id_t id) {
+		trackId(id);
 	}
 
-	void trackOutput(middle_id_t id) {
-		idsToTrackOutputs.insert(id);
-	}
-	void trackInput(middle_id_t id) {
-		idsToTrackInputs.insert(id);
+	int getLayer() const {
+		return layer;
 	}
 
 private:
+	struct ReplacementLayerEntry {
+		middle_id_t id;
+	};
+	struct ReplacementConnectionPointOverride {
+		middle_id_t gateId;
+		connection_port_id_t portId;
+		std::optional<EvalConnectionPoint> previousPoint;
+	};
+
+	void trackReplacementLayer(middle_id_t id, int layer);
+
 	Replacer* replacer;
-	BusInterfacePassthrough* busInterfacePassthrough;
-	IdProvider<middle_id_t>* middleIdProvider;
-	std::unordered_map<middle_id_t, middle_id_t>* replacedIds;
-	std::unordered_map<middle_id_t, std::unordered_map<connection_port_id_t, EvalConnectionPoint>>* replacedConnectionPoints;
-	std::unordered_map<middle_id_t, int>* replacementIdLayers;
 	std::vector<ReplacementGate> addedGates;
 	std::vector<ReplacementGate> deletedGates;
 	std::vector<EvalConnection> addedConnections;
 	std::vector<EvalConnection> deletedConnections;
 	std::vector<middle_id_t> reservedIds;
-	std::set<middle_id_t> idsToTrackOutputs;
-	std::set<middle_id_t> idsToTrackInputs;
+	std::vector<ReplacementLayerEntry> replacementLayerEntries;
+	std::vector<ReplacementConnectionPointOverride> overriddenConnectionPoints;
+	std::set<middle_id_t> idsToTrack;
+	std::vector<std::function<void(SimPauseGuard&)>> revertCallbacksWithPauseGuard;
+	std::vector<std::function<void()>> revertCallbacks;
 	bool isEmpty { true };
 	bool isReverting { false };
 	int layer { 0 };

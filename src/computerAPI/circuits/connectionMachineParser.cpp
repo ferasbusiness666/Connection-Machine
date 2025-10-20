@@ -10,14 +10,25 @@ BlockType stringToBlockType(const std::string& str) {
 	if (str == "NAND") return BlockType::NAND;
 	if (str == "NOR") return BlockType::NOR;
 	if (str == "XNOR") return BlockType::XNOR;
+	if (str == "BUFFER") return BlockType::BUFFER;
+	if (str == "NOT") return BlockType::NOT;
 	if (str == "JUNCTION") return BlockType::JUNCTION;
+	if (str == "JUNCTION_L") return BlockType::JUNCTION_L;
+	if (str == "JUNCTION_H") return BlockType::JUNCTION_H;
+	if (str == "JUNCTION_X") return BlockType::JUNCTION_X;
 	if (str == "TRISTATE_BUFFER") return BlockType::TRISTATE_BUFFER;
 	if (str == "BUTTON") return BlockType::BUTTON;
 	if (str == "TICK_BUTTON") return BlockType::TICK_BUTTON;
 	if (str == "SWITCH") return BlockType::SWITCH;
-	if (str == "CONSTANT") return BlockType::CONSTANT;
+	if (str == "CONSTANT_OFF") return BlockType::CONSTANT_OFF;
+	if (str == "CONSTANT_ON") return BlockType::CONSTANT_ON;
+	if (str == "CONSTANT_Z") return BlockType::CONSTANT_Z;
+	if (str == "CONSTANT_X") return BlockType::CONSTANT_X;
 	if (str == "LIGHT") return BlockType::LIGHT;
-	if (str == "BUS_INTERFACE") return BlockType::BUS_INTERFACE;
+	if (str == "BUS_INTERFACE_1") return BlockType::BUS_INTERFACE_1;
+	if (str == "BUS_INTERFACE_2") return BlockType::BUS_INTERFACE_2;
+	if (str == "BUS_INTERFACE_3") return BlockType::BUS_INTERFACE_3;
+	if (str == "BUS_INTERFACE_4") return BlockType::BUS_INTERFACE_4;
 	return BlockType::CUSTOM;
 }
 
@@ -42,14 +53,25 @@ std::string blockTypeToString(BlockType type) {
 	case BlockType::NAND: return "NAND";
 	case BlockType::NOR: return "NOR";
 	case BlockType::XNOR: return "XNOR";
+	case BlockType::BUFFER: return "BUFFER";
+	case BlockType::NOT: return "NOT";
 	case BlockType::JUNCTION: return "JUNCTION";
+	case BlockType::JUNCTION_L: return "JUNCTION_L";
+	case BlockType::JUNCTION_H: return "JUNCTION_H";
+	case BlockType::JUNCTION_X: return "JUNCTION_X";
 	case BlockType::TRISTATE_BUFFER: return "TRISTATE_BUFFER";
 	case BlockType::BUTTON: return "BUTTON";
 	case BlockType::TICK_BUTTON: return "TICK_BUTTON";
 	case BlockType::SWITCH: return "SWITCH";
-	case BlockType::CONSTANT: return "CONSTANT";
+	case BlockType::CONSTANT_OFF: return "CONSTANT_OFF";
+	case BlockType::CONSTANT_ON: return "CONSTANT_ON";
+	case BlockType::CONSTANT_Z: return "CONSTANT_Z";
+	case BlockType::CONSTANT_X: return "CONSTANT_X";
 	case BlockType::LIGHT: return "LIGHT";
-	case BlockType::BUS_INTERFACE: return "BUS_INTERFACE";
+	case BlockType::BUS_INTERFACE_1: return "BUS_INTERFACE_1";
+	case BlockType::BUS_INTERFACE_2: return "BUS_INTERFACE_2";
+	case BlockType::BUS_INTERFACE_3: return "BUS_INTERFACE_3";
+	case BlockType::BUS_INTERFACE_4: return "BUS_INTERFACE_4";
 	case BlockType::CUSTOM: return "CUSTOM";
 	default: return "NONE";
 	}
@@ -150,6 +172,20 @@ std::vector<circuit_id_t> ConnectionMachineParser::load(const std::string& path)
 			std::string uuid;
 			inputFile >> uuid;
 			currentParsedCircuit->setUUID(uuid == "null" ? generate_uuid_v4() : uuid);
+		} else if (token == "texture:") {
+			std::string texturePath;
+			inputFile >> std::quoted(texturePath);
+			currentParsedCircuit->setTexturePath(texturePath);
+		} else if (token == "textureTileData:") {
+			int tileSizeX, tileSizeY, smallestCordTileX, smallestCordTileY, blockTileSizeX, blockTileSizeY;
+			inputFile >>
+				cToken >> tileSizeX >> cToken >> tileSizeY >> cToken >> cToken >>
+				cToken >> smallestCordTileX >> cToken >> smallestCordTileY >> cToken >> cToken >>
+				cToken >> blockTileSizeX >> cToken >> blockTileSizeY >> cToken;
+			currentParsedCircuit->setUsesTileMapTexture(true);
+			currentParsedCircuit->setTextureTileSize({tileSizeX, tileSizeY});
+			currentParsedCircuit->setTextureBlockTileSize({smallestCordTileX, smallestCordTileY});
+			currentParsedCircuit->setTextureBlockTileSize({blockTileSizeX, blockTileSizeY});
 		} else if (token == "blockId") {
 			// block id
 			int blockId;
@@ -292,6 +328,15 @@ bool ConnectionMachineParser::save(const CircuitFileManager::FileData& fileData,
 		outputFile << "UUID: " << circuit->getUUID() << "\n";
 		if (circuitBlockData) {
 			BlockData* blockData = circuitManager->getBlockDataManager()->getBlockData(circuitBlockData->getBlockType());
+			if (blockData->getTexturePath() != "") {
+				outputFile << "texture: " << std::quoted(blockData->getTexturePath()) << "\n";
+				if (blockData->getUsesTileMapTexture()) {
+					outputFile << "textureTileData: " <<
+						blockData->getTextureTileSize().toString() << ", " <<
+						blockData->getTextureSmallestCordTile().toString() << ", " <<
+						blockData->getTextureBlockTileSize().toString() << "\n";
+				}
+			}
 			outputFile << "size: " << blockData->getSize().toString() << "\n";
 			outputFile << "ports:\n";
 			for (auto pair : blockData->getConnections()) {
@@ -311,7 +356,7 @@ bool ConnectionMachineParser::save(const CircuitFileManager::FileData& fileData,
 				std::optional<std::string> name = blockData->getConnectionIdToName(pair.first);
 				if (!name) name = "";
 
-				outputFile << "\t(" << (pair.second.isInput ? "IN, " : "OUT, ") << pair.first << ", " << id << ", " << pair.second.positionOnBlock.toString() << ", \"" << *name << "\")\n";
+				outputFile << "\t(" << (pair.second.portType == BlockData::ConnectionData::PortType::INPUT ? "IN, " : "OUT, ") << pair.first << ", " << id << ", " << pair.second.positionOnBlock.toString() << ", \"" << *name << "\")\n";
 			}
 		}
 
