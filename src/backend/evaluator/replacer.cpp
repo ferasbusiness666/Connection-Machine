@@ -376,15 +376,7 @@ std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> Replacer:
 						}
 					}
 				} else {
-					if (std::holds_alternative<unsigned int>(connectionData->bitConfiguration)) {
-						for (unsigned int laneId = 0; laneId < std::get<unsigned int>(connectionData->bitConfiguration); laneId++) {
-							simIds.push_back(0);
-						}
-					} else {
-						for (unsigned int laneId : std::get<std::vector<unsigned int>>(connectionData->bitConfiguration)) {
-							simIds.push_back(0);
-						}
-					}
+					simIds.resize(connectionData->getBitWidth(), 0);
 				}
 				if (simIds.size() == 1) {
 					result.emplace_back(simIds.at(0));
