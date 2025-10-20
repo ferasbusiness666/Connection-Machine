@@ -77,7 +77,7 @@ public:
 			} else {
 				auto& vec = std::get<std::vector<unsigned int>>(bitConfiguration);
 				auto iter = std::find(vec.begin(), vec.end(), laneId);
-				if (iter != vec.end()) return vec.size();
+				if (iter == vec.end()) return vec.size();
 				return std::distance(vec.begin(), iter);
 			}
 		}
