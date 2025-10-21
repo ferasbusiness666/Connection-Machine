@@ -24,12 +24,10 @@ VulkanInstance::VulkanInstance() {
 	auto systemInfo = systemInfoRet.value();
 
 #ifndef NDEBUG
-	#if not __APPLE__
-		// Enable validation layers
-		if (systemInfo.validation_layers_available){
-			instanceBuilder.enable_validation_layers().set_debug_callback(&vulkanDebugCallback);
-		}
-	#endif
+	// Enable validation layers
+	if (systemInfo.validation_layers_available){
+		instanceBuilder.enable_validation_layers().set_debug_callback(&vulkanDebugCallback);
+	}
 #endif
 
 	// Create Vulkan Instance

@@ -19,8 +19,14 @@ void BlockTextureManager::init(VulkanDevice* device) {
 	textureArray->device = device;
 	textureArray->maxLayers = 1;
 	textureArray->nextFreeLayer = 0;
-	textureArray->image =
-		createImage(device, textureSize, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, false, textureArray->maxLayers);
+	textureArray->image = createImage(
+		device,
+		textureSize,
+		VK_FORMAT_R8G8B8A8_UNORM,
+		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+		false,
+		textureArray->maxLayers
+	);
 
 	// create layout and descriptor set
 	DescriptorLayoutBuilder textureLayoutBuilder;
@@ -134,7 +140,11 @@ void BlockTextureManager::removeBlockTexture(const std::string& path) {
 
 	auto iter = blockTextures.find(pathIter->second);
 	if (iter == blockTextures.end()) {
-		logError("Can't remove block texture with id \"{}\" when it doesn't exist. (THIS SHOULD NEVER HAPPEN!!! PLEASE REPORT!!!)", "BlockTextureManager", pathIter->second);
+		logError(
+			"Can't remove block texture with id \"{}\" when it doesn't exist. (THIS SHOULD NEVER HAPPEN!!! PLEASE REPORT!!!)",
+			"BlockTextureManager",
+			pathIter->second
+		);
 		return;
 	}
 	blockTextures.erase(iter);
@@ -149,7 +159,7 @@ void BlockTextureManager::removeBlockTexture(BlockTextureId blockTextureId) {
 	}
 	blockTextures.erase(iter);
 
-	auto pathIter = std::find_if(loadedTextureFiles.begin(), loadedTextureFiles.end(), [blockTextureId](const std::pair<std::string, BlockTextureId>& pair){
+	auto pathIter = std::find_if(loadedTextureFiles.begin(), loadedTextureFiles.end(), [blockTextureId](const std::pair<std::string, BlockTextureId>& pair) {
 		return pair.second == blockTextureId;
 	});
 	if (pathIter != loadedTextureFiles.end()) loadedTextureFiles.erase(pathIter);
@@ -176,10 +186,16 @@ BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId block
 }
 
 BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize) const {
-	return getBlockTextureCords(blockTextureId, tileSize, smallestCordTile, blockSize, Vec2Int(0, tileSize.y*blockSize.y));
+	return getBlockTextureCords(blockTextureId, tileSize, smallestCordTile, blockSize, Vec2Int(0, tileSize.y * blockSize.y));
 }
 
-BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize, Vec2Int textureStepSize) const {
+BlockTextureCords BlockTextureManager::getBlockTextureCords(
+	BlockTextureId blockTextureId,
+	Vec2Int tileSize,
+	Vec2Int smallestCordTile,
+	Vec2Int blockSize,
+	Vec2Int textureStepSize
+) const {
 	auto blockTextureIter = blockTextures.find(blockTextureId);
 	if (blockTextureIter == blockTextures.end()) {
 		logError("Could not find block texture with id {}", "BlockTextureManager", blockTextureId);
@@ -190,7 +206,10 @@ BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId block
 			(double)(blockTextureIter->second.textureOrigin.x + smallestCordTile.x * tileSize.x + 4) / (double)textureArray->textureSize.width,
 			(double)(blockTextureIter->second.textureOrigin.y + smallestCordTile.y * tileSize.y + 4) / (double)textureArray->textureSize.height
 		),
-		glm::vec2((double)(blockSize.x * tileSize.x - 8) / (double)textureArray->textureSize.width, (double)(blockSize.y * tileSize.y - 8) / (double)(textureArray->textureSize.height)),
+		glm::vec2(
+			(double)(blockSize.x * tileSize.x - 8) / (double)textureArray->textureSize.width,
+			(double)(blockSize.y * tileSize.y - 8) / (double)(textureArray->textureSize.height)
+		),
 		blockTextureIter->second.textureLayer,
 		glm::vec2((double)textureStepSize.x / (double)textureArray->textureSize.width, (double)textureStepSize.y / (double)textureArray->textureSize.height)
 	);
@@ -276,6 +295,7 @@ void BlockTextureManager::resizeTextureArray(uint32_t newLayerCount) {
 	auto oldImage = textureArray->image;
 	uint32_t oldLayerCount = textureArray->maxLayers;
 
+	// Create new image with transfer + sampled usage
 	AllocatedImage newImage = createImage(
 		dev,
 		textureArray->textureSize,
@@ -286,6 +306,34 @@ void BlockTextureManager::resizeTextureArray(uint32_t newLayerCount) {
 	);
 
 	dev->immediateSubmit([&](VkCommandBuffer cmd) {
+		// --- 1. Transition old image: SHADER_READ_ONLY_OPTIMAL -> TRANSFER_SRC_OPTIMAL
+		VkImageMemoryBarrier barrierOld{};
+		barrierOld.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		barrierOld.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		barrierOld.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		barrierOld.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		barrierOld.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		barrierOld.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrierOld.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrierOld.image = oldImage.image;
+		barrierOld.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, oldLayerCount };
+
+		// --- 2. Transition new image: UNDEFINED -> TRANSFER_DST_OPTIMAL
+		VkImageMemoryBarrier barrierNew{};
+		barrierNew.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		barrierNew.srcAccessMask = 0;
+		barrierNew.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrierNew.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		barrierNew.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		barrierNew.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrierNew.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrierNew.image = newImage.image;
+		barrierNew.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, newLayerCount };
+
+		VkImageMemoryBarrier barriers[] = { barrierOld, barrierNew };
+		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 2, barriers);
+
+		// --- 3. Copy each layer from old to new
 		for (uint32_t layer = 0; layer < oldLayerCount; layer++) {
 			VkImageCopy region{};
 			region.srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, layer, 1 };
@@ -293,12 +341,28 @@ void BlockTextureManager::resizeTextureArray(uint32_t newLayerCount) {
 			region.extent = { textureArray->textureSize.width, textureArray->textureSize.height, 1 };
 			vkCmdCopyImage(cmd, oldImage.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, newImage.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 		}
+
+		// --- 4. Transition new image: TRANSFER_DST_OPTIMAL -> SHADER_READ_ONLY_OPTIMAL
+		VkImageMemoryBarrier finalBarrier{};
+		finalBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		finalBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		finalBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		finalBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		finalBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		finalBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		finalBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		finalBarrier.image = newImage.image;
+		finalBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, newLayerCount };
+
+		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &finalBarrier);
 	});
 
+	// --- 5. Destroy old image and replace
 	destroyImage(oldImage);
 	textureArray->image = newImage;
 	textureArray->maxLayers = newLayerCount;
 
+	// --- 6. Update descriptor
 	DescriptorWriter writer;
 	writer.writeImage(0, newImage.imageView, textureArray->sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 	writer.updateSet(dev->getDevice(), textureArray->descriptor);
