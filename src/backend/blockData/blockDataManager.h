@@ -160,7 +160,7 @@ public:
 private:
 	std::vector<BlockData> blockData;
 	DataUpdateEventManager* dataUpdateEventManager;
-	std::map<std::vector<BusConnectionData>, BlockType> createdBusses;
+	std::map<std::vector<BusConnectionData>, BlockType> createdBuses;
 };
 
 #endif /* blockDataManager_h */

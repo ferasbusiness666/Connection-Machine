@@ -274,28 +274,29 @@ BlockType BlockDataManager::getBusBlock(std::vector<BusConnectionData> busConnec
 			return BlockType::NONE;
 		}
 	}
-	BlockType& blockType = createdBusses[busConnections];
-	if (blockType != BlockType::NONE) return blockType;
+	if (createdBuses.contains(busConnections)) {
+		return createdBuses.at(busConnections);
+	}
 
 	Size blockSize(1);
 	for (const BusConnectionData& busConnection : busConnections) {
 		blockSize.extentToFit(busConnection.positionOnBlock);
 	}
 
-	blockType = addBlock();
-	BlockData* busInterfaceBlockData4 = getBlockData(blockType);
-	busInterfaceBlockData4->setDefaultData(false);
-	busInterfaceBlockData4->setIsBus(true);
-	busInterfaceBlockData4->setSize(blockSize);
-	busInterfaceBlockData4->setTexturePath((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
+	BlockType blockType = addBlock();
+	BlockData* busInterfaceBlockData = getBlockData(blockType);
+	busInterfaceBlockData->setDefaultData(false);
+	busInterfaceBlockData->setIsBus(true);
+	busInterfaceBlockData->setSize(blockSize);
+	busInterfaceBlockData->setTexturePath((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
 	std::string name = "Bus Interface ";
 	unsigned int range = 0;
 	for (unsigned int i = 0; i < busConnections.size(); i++) {
-		busInterfaceBlockData4->setConnectionBidirectional(busConnections[i].positionOnBlock, i);
+		busInterfaceBlockData->setConnectionBidirectional(busConnections[i].positionOnBlock, i);
 		if (std::holds_alternative<unsigned int>(busConnections[i].bitConfiguration)) {
 			if (range != 0) { name += std::to_string(range) + "x1, "; range = 0; }
 			name += "1x" + std::to_string(std::get<unsigned int>(busConnections[i].bitConfiguration));
-			busInterfaceBlockData4->setConnectionBitConfiguration(i, std::get<unsigned int>(busConnections[i].bitConfiguration));
+			busInterfaceBlockData->setConnectionBitConfiguration(i, std::get<unsigned int>(busConnections[i].bitConfiguration));
 			if (i + 1 < busConnections.size()) name += ", ";
 		} else {
 			auto& vec = std::get<std::vector<unsigned int>>(busConnections[i].bitConfiguration);
@@ -318,10 +319,10 @@ BlockType BlockDataManager::getBusBlock(std::vector<BusConnectionData> busConnec
 				name += "}";
 				if (i + 1 < busConnections.size()) name += ", ";
 			}
-			busInterfaceBlockData4->setConnectionBitConfiguration(i, vec);
+			busInterfaceBlockData->setConnectionBitConfiguration(i, vec);
 		}
 	}
 	if (range != 0) name += std::to_string(range) + "x1, ";
-	busInterfaceBlockData4->setName(name);
+	busInterfaceBlockData->setName(name);
 	return blockType;
 }
