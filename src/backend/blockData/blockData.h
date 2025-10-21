@@ -35,17 +35,6 @@ public:
 				return std::get<std::vector<unsigned int>>(bitConfiguration).size();
 			}
 		}
-		std::vector<unsigned int> getLaneIds() const noexcept {
-			if (std::holds_alternative<unsigned int>(bitConfiguration)) {
-				std::vector<unsigned int> vec;
-				for (unsigned int i = 0; i < std::get<unsigned int>(bitConfiguration); i++) {
-					vec.push_back(i);
-				}
-				return vec;
-			} else {
-				return std::get<std::vector<unsigned int>>(bitConfiguration);
-			}
-		}
 		unsigned int getFirstLaneId() const noexcept {
 			if (std::holds_alternative<unsigned int>(bitConfiguration)) {
 				return 0;
@@ -66,8 +55,12 @@ public:
 			if (std::holds_alternative<unsigned int>(bitConfiguration)) {
 				return std::get<unsigned int>(bitConfiguration) - 1;
 			} else {
-				return std::get<std::vector<unsigned int>>(bitConfiguration).back();
+				auto& vec = std::get<std::vector<unsigned int>>(bitConfiguration);
+				return *std::max_element(vec.begin(), vec.end());
 			}
+		}
+		unsigned int getMaxLaneIndex() const noexcept {
+			return getBitWidth() - 1;
 		}
 		bool containsLaneId(unsigned int laneId) const noexcept {
 			if (std::holds_alternative<unsigned int>(bitConfiguration)) {
@@ -79,12 +72,12 @@ public:
 		}
 		unsigned int getIndexOfLaneId(unsigned int laneId) const noexcept {
 			if (std::holds_alternative<unsigned int>(bitConfiguration)) {
-				assert(laneId < std::get<unsigned int>(bitConfiguration));
+				if (laneId >= std::get<unsigned int>(bitConfiguration)) return std::get<unsigned int>(bitConfiguration);
 				return laneId;
 			} else {
 				auto& vec = std::get<std::vector<unsigned int>>(bitConfiguration);
 				auto iter = std::find(vec.begin(), vec.end(), laneId);
-				assert(iter != vec.end());
+				if (iter == vec.end()) return vec.size();
 				return std::distance(vec.begin(), iter);
 			}
 		}
@@ -323,9 +316,15 @@ public:
 		assert(isBus() && "Only bus blocks have lane ids");
 		std::vector<unsigned int> ports; // TODO: make this not linear search
 		for (auto& pair : connections) {
-			auto laneIds = pair.second.getLaneIds();
-			if (std::find(laneIds.begin(), laneIds.end(), laneId) != laneIds.end()) {
-				ports.push_back(pair.first);
+			if (std::holds_alternative<unsigned int>(pair.second.bitConfiguration)) {
+				if (laneId < std::get<unsigned int>(pair.second.bitConfiguration)) ports.push_back(pair.first);
+			} else {
+				for (unsigned int thisLaneId : std::get<std::vector<unsigned int>>(pair.second.bitConfiguration)) {
+					if (laneId == thisLaneId) {
+						ports.push_back(pair.first);
+						break;
+					}
+				}
 			}
 		}
 		return ports;
