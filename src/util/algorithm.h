@@ -108,4 +108,22 @@ inline std::vector<std::optional<T>> to_optional_vector(const std::vector<T>& in
 	return result;
 }
 
+template <typename T>
+struct std::hash<std::vector<T>> {
+	inline std::size_t operator()(std::vector<T> const& vec) const noexcept {
+		std::size_t seed = vec.size();
+		std::hash<T> hasher;
+
+		for (auto const& x : vec) {
+			std::size_t h = hasher(x);
+			h = ((h >> 16) ^ h) * 0x45d9f3b;
+			h = ((h >> 16) ^ h) * 0x45d9f3b;
+			h = (h >> 16) ^ h;
+
+			seed ^= h + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		}
+		return seed;
+	}
+};
+
 #endif /* algorithm_h */
