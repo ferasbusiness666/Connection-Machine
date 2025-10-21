@@ -73,7 +73,8 @@ public:
 		std::vector<middle_id_t>& dirtyMiddleIds,
 		BlockDataManager& blockDataManager) :
 		replacer(evalConfig, middleIdProvider, dirtySimulatorIds, dirtyMiddleIds, blockDataManager),
-		middleIdProvider(middleIdProvider) {}
+		middleIdProvider(middleIdProvider),
+		blockDataManager(blockDataManager) {}
 
 	void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
 		if (tryAddGateWithLinkedIO(pauseGuard, blockType, gateId)) return;
@@ -211,6 +212,7 @@ public:
 private:
 	Replacer replacer;
 	IdProvider<middle_id_t>& middleIdProvider;
+	BlockDataManager& blockDataManager;
 	std::unordered_map<middle_id_t, TrackedGate> trackedGates;
 	std::unordered_map<middle_id_t, GateWithLinkedIO> gatesWithLinkedIO;
 	void addTrackedGate(const TrackedGate& gate) {
@@ -226,10 +228,10 @@ private:
 		if (blockType == BlockType::COLOR_LIGHT) { // this will be expanded later to be dynamic/automatic for all blocks that have non 1-bit inputs
 			replacer.addGate(pauseGuard, blockType, gateId);
 			middle_id_t busId = middleIdProvider.getNewId();
-			replacer.addGate(pauseGuard, BlockType::BUS_INTERFACE_4, busId);
-			GateWithLinkedIO gateWithLinkedIO { gateId, { busId }, { {0, { busId, 0 }} } };
+			replacer.addGate(pauseGuard, blockDataManager.getBusBlock(6), busId);
+			GateWithLinkedIO gateWithLinkedIO { gateId, { busId }, { {0, { busId, 6 }} } };
 			for (connection_port_id_t portId = 0; portId < 6; ++portId) {
-				replacer.makeConnection(pauseGuard, EvalConnection(EvalConnectionPoint(busId, portId + 1), EvalConnectionPoint(gateId, portId)));
+				replacer.makeConnection(pauseGuard, EvalConnection(EvalConnectionPoint(busId, portId), EvalConnectionPoint(gateId, portId)));
 			}
 			gatesWithLinkedIO[gateId] = std::move(gateWithLinkedIO);
 			return true;
