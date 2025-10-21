@@ -185,15 +185,17 @@ void PopUpManager::addFeedbackPopup() { //feature request, bug report, feature c
 	feedback4use->SetAttribute("style", "width: 160px; height: 20px; background-color:#303030;");
 
 	dropdown->AddEventListener(Rml::EventId::Change, new EventPasser(
-	    [BugReportContainer,window](Rml::Event& e) {
+	    [BugReportContainer,BugReportContainerText,window](Rml::Event& e) {
 	        auto* select = dynamic_cast<Rml::ElementFormControlSelect*>(e.GetTargetElement());
 			if (select){
 				if (select->GetValue() == "Bug Report" || select->GetValue() == "bug"){
-					set_invisible(BugReportContainer,true);
+					set_invisible(BugReportContainer,false);
+					set_invisible(BugReportContainerText,false);
 					window->SetClass("pop-up-window-blocked", false);
 					window->SetClass("pop-up-window-blocked-bug-report", true);
 				} else {
-					set_invisible(BugReportContainer,false);
+					set_invisible(BugReportContainer,true);
+					set_invisible(BugReportContainerText,true);
 					window->SetClass("pop-up-window-blocked", true);
 					window->SetClass("pop-up-window-blocked-bug-report", false);
 				}
@@ -214,18 +216,29 @@ void PopUpManager::addFeedbackPopup() { //feature request, bug report, feature c
 	    "style",
 	    "display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 10px;"
 	);
-
+	Rml::Element* checkboxtext = BugReportContainerText->AppendChild(mainWindow->getRmlDocument()->CreateElement("text"));
+	Rml::Element* checkboxtext2 = BugReportContainerText->AppendChild(mainWindow->getRmlDocument()->CreateElement("text"));
+	Rml::Element* checkboxtext3 = BugReportContainerText->AppendChild(mainWindow->getRmlDocument()->CreateElement("text"));
+	Rml::Element* checkboxtext4 = BugReportContainerText->AppendChild(mainWindow->getRmlDocument()->CreateElement("text"));
+	Rml::Element* checkboxtext5 = BugReportContainerText->AppendChild(mainWindow->getRmlDocument()->CreateElement("text"));
 	Rml::Element* checkbox = BugReportContainer->AppendChild(mainWindow->getRmlDocument()->CreateElement("input"));
 	Rml::Element* checkbox2 = BugReportContainer->AppendChild(mainWindow->getRmlDocument()->CreateElement("input"));
 	Rml::Element* checkbox3 = BugReportContainer->AppendChild(mainWindow->getRmlDocument()->CreateElement("input"));
 	Rml::Element* checkbox4 = BugReportContainer->AppendChild(mainWindow->getRmlDocument()->CreateElement("input"));
 	Rml::Element* checkbox5 = BugReportContainer->AppendChild(mainWindow->getRmlDocument()->CreateElement("input"));
+
+	checkboxtext->SetInnerRML("Crashes");
+	checkboxtext2->SetInnerRML("Files");
+	checkboxtext3->SetInnerRML("Settings");
+	checkboxtext4->SetInnerRML("Logic");
+	checkboxtext5->SetInnerRML("User Interface");
 	checkbox->SetAttribute("type","checkbox");
 	checkbox2->SetAttribute("type","checkbox");
 	checkbox3->SetAttribute("type","checkbox");
 	checkbox4->SetAttribute("type","checkbox");
 	checkbox5->SetAttribute("type","checkbox");
-	set_invisible(BugReportContainer,false);
+	set_invisible(BugReportContainer,true);
+	set_invisible(BugReportContainerText,true);
 	
 	// Rml::Element* StepsToReproduceBugtitle = BugReportContainer->AppendChild(mainWindow->getRmlDocument()->CreateElement("p"));
 	// StepsToReproduceBugtitle->SetInnerRML("Steps to reproduce bug:");
@@ -296,13 +309,19 @@ void PopUpManager::addFeedbackPopup() { //feature request, bug report, feature c
     submitButton->SetInnerRML("Happy Submit");
     submitButton->SetClass("popup-button", true);
 	submitButton->AddEventListener(Rml::EventId::Click, new EventPasser(
-	    [deleteFunc = closePopup, textarea, dropdown](Rml::Event& event) {
+	    [deleteFunc = closePopup, textarea, dropdown,BugReportContainer,BugReportContainerText](Rml::Event& event) {
 	        // Retrieve the value from the textarea
 	        auto* textareaControl = dynamic_cast<Rml::ElementFormControlTextArea*>(textarea);
 			auto* select = dynamic_cast<Rml::ElementFormControlSelect*>(dropdown);
-			if (textareaControl && select)	
+			if (textareaControl && select)
 				logInfo("Dropdown Select: {}","",select->GetValue());
 				logInfo("Live text: {}","",textareaControl->GetValue());
+
+			if (select->GetValue() == "bug"){
+				for (int i = 0; i < BugReportContainer->GetNumChildren(); ++i){
+					logInfo("Value {} is {}","",BugReportContainerText->GetChild(i)->GetInnerRML(),BugReportContainer->GetChild(i)->HasAttribute("checked"));
+				}
+			}
 			logInfo("Feeling: happy","");
 	        // Close the popup
 	        deleteFunc();
@@ -313,13 +332,19 @@ void PopUpManager::addFeedbackPopup() { //feature request, bug report, feature c
     submitButton2->SetInnerRML("Medium Submit");
     submitButton2->SetClass("popup-button", true);
 	submitButton2->AddEventListener(Rml::EventId::Click, new EventPasser(
-	    [deleteFunc = closePopup, textarea, dropdown](Rml::Event& event) {
+	    [deleteFunc = closePopup, textarea, dropdown,BugReportContainer,BugReportContainerText](Rml::Event& event) {
 	        // Retrieve the value from the textarea
 	        auto* textareaControl = dynamic_cast<Rml::ElementFormControlTextArea*>(textarea);
 			auto* select = dynamic_cast<Rml::ElementFormControlSelect*>(dropdown);
 			if (textareaControl && select)	
 				logInfo("Dropdown Select: {}","",select->GetValue());
 				logInfo("Live text: {}","",textareaControl->GetValue());
+			
+				if (select->GetValue() == "bug"){
+				for (int i = 0; i < BugReportContainer->GetNumChildren(); ++i){
+					logInfo("Value {} is {}","",BugReportContainerText->GetChild(i)->GetInnerRML(),BugReportContainer->GetChild(i)->HasAttribute("checked"));
+				}
+			}
 			logInfo("Feeling: medium","");
 	        // Close the popup
 	        deleteFunc();
@@ -330,13 +355,20 @@ void PopUpManager::addFeedbackPopup() { //feature request, bug report, feature c
     submitButton3->SetInnerRML("Sad Submit");
     submitButton3->SetClass("popup-button", true);
 	submitButton3->AddEventListener(Rml::EventId::Click, new EventPasser(
-	    [deleteFunc = closePopup, textarea, dropdown](Rml::Event& event) {
+	    [deleteFunc = closePopup, textarea, dropdown,BugReportContainer,BugReportContainerText](Rml::Event& event) {
 	        // Retrieve the value from the textarea
 	        auto* textareaControl = dynamic_cast<Rml::ElementFormControlTextArea*>(textarea);
 			auto* select = dynamic_cast<Rml::ElementFormControlSelect*>(dropdown);
 			if (textareaControl && select)	
 				logInfo("Dropdown Select: {}","",select->GetValue());
 				logInfo("Live text: {}","",textareaControl->GetValue());
+
+			if (select->GetValue() == "bug"){
+				for (int i = 0; i < BugReportContainer->GetNumChildren(); ++i){
+					logInfo("Value {} is {}","",BugReportContainerText->GetChild(i)->GetInnerRML(),BugReportContainer->GetChild(i)->HasAttribute("checked"));
+				}
+			}
+			
 			logInfo("Feeling: sad","");
 	        // Close the popup
 	        deleteFunc();
