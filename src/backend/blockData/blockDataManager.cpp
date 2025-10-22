@@ -284,6 +284,7 @@ BlockType BlockDataManager::getBusBlock(std::vector<BusConnectionData> busConnec
 	}
 
 	BlockType blockType = addBlock();
+	createdBuses[busConnections] = blockType;
 	BlockData* busInterfaceBlockData = getBlockData(blockType);
 	busInterfaceBlockData->setDefaultData(false);
 	busInterfaceBlockData->setIsBus(true);
