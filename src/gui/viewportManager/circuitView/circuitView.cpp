@@ -9,6 +9,7 @@ CircuitView::CircuitView(Environment* environment, ViewportId viewportId) : view
 	MainRenderer::get().moveViewportView(viewportId, viewManager.getTopLeft(), viewManager.getBottomRight());
 	viewManager.setUpEvents(eventRegister);
 	viewManager.connectViewChanged(std::bind(&CircuitView::viewChanged, this));
+	tutorialManager(this);
 }
 
 void CircuitView::setBackend(Backend* backend) {
