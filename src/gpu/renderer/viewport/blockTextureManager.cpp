@@ -165,7 +165,7 @@ void BlockTextureManager::removeBlockTexture(BlockTextureId blockTextureId) {
 	if (pathIter != loadedTextureFiles.end()) loadedTextureFiles.erase(pathIter);
 }
 
-const int pixelInset = 60;
+const int pixelInset = 1;
 
 BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId blockTextureId) const {
 	auto blockTextureIter = blockTextures.find(blockTextureId);
@@ -173,18 +173,48 @@ BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId block
 		logError("Could not find block texture with id {}", "BlockTextureManager", blockTextureId);
 		return { glm::vec2(0, 0), glm::vec2(0, 0), 0, glm::vec2(0, 0) };
 	}
-	return BlockTextureCords(
-		glm::vec2(
-			(double)(blockTextureIter->second.textureOrigin.x + pixelInset) / (double)textureArray->textureSize.width,
-			(double)(blockTextureIter->second.textureOrigin.y + pixelInset) / (double)textureArray->textureSize.height
-		),
-		glm::vec2(
-			(double)(blockTextureIter->second.textureSize.x - pixelInset * 2) / (double)textureArray->textureSize.width,
-			(double)(blockTextureIter->second.textureSize.y - pixelInset * 2) / (double)textureArray->textureSize.height
-		),
-		blockTextureIter->second.textureLayer,
-		glm::vec2(0, 0)
-	);
+	if (blockTextureIter->second.textureSize.x == blockTextureIter->second.textureSize.y) {
+		return BlockTextureCords(
+			glm::vec2(
+				(double)(blockTextureIter->second.textureOrigin.x + pixelInset) / (double)textureArray->textureSize.width,
+				(double)(blockTextureIter->second.textureOrigin.y + pixelInset) / (double)textureArray->textureSize.height
+			),
+			glm::vec2(
+				(double)(blockTextureIter->second.textureSize.x - pixelInset * 2) / (double)textureArray->textureSize.width,
+				(double)(blockTextureIter->second.textureSize.y - pixelInset * 2) / (double)textureArray->textureSize.height
+			),
+			blockTextureIter->second.textureLayer,
+			glm::vec2(0, 0)
+		);
+	} else if (blockTextureIter->second.textureSize.x > blockTextureIter->second.textureSize.y) {
+		double otherPixelInset = (double)pixelInset * ((double)blockTextureIter->second.textureSize.x / (double)blockTextureIter->second.textureSize.y);
+		return BlockTextureCords(
+			glm::vec2(
+				((double)(blockTextureIter->second.textureOrigin.x) + otherPixelInset) / (double)textureArray->textureSize.width,
+				(double)(blockTextureIter->second.textureOrigin.y + pixelInset) / (double)textureArray->textureSize.height
+			),
+			glm::vec2(
+				((double)(blockTextureIter->second.textureSize.x) - otherPixelInset * 2.) / (double)textureArray->textureSize.width,
+				(double)(blockTextureIter->second.textureSize.y - pixelInset * 2) / (double)textureArray->textureSize.height
+			),
+			blockTextureIter->second.textureLayer,
+			glm::vec2(0, 0)
+		);
+	} else {
+		double otherPixelInset = (double)pixelInset * ((double)blockTextureIter->second.textureSize.y / (double)blockTextureIter->second.textureSize.x);
+		return BlockTextureCords(
+			glm::vec2(
+				(double)(blockTextureIter->second.textureOrigin.x + pixelInset) / (double)textureArray->textureSize.width,
+				((double)(blockTextureIter->second.textureOrigin.y) + otherPixelInset) / (double)textureArray->textureSize.height
+			),
+			glm::vec2(
+				(double)(blockTextureIter->second.textureSize.x - pixelInset * 2) / (double)textureArray->textureSize.width,
+				((double)(blockTextureIter->second.textureSize.y) - otherPixelInset * 2.) / (double)textureArray->textureSize.height
+			),
+			blockTextureIter->second.textureLayer,
+			glm::vec2(0, 0)
+		);
+	}
 }
 
 BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize) const {
@@ -203,18 +233,50 @@ BlockTextureCords BlockTextureManager::getBlockTextureCords(
 		logError("Could not find block texture with id {}", "BlockTextureManager", blockTextureId);
 		return { glm::vec2(0, 0), glm::vec2(0, 0), 0, glm::vec2(0, 0) };
 	}
-	return BlockTextureCords(
-		glm::vec2(
-			(double)(blockTextureIter->second.textureOrigin.x + smallestCordTile.x * tileSize.x + pixelInset) / (double)textureArray->textureSize.width,
-			(double)(blockTextureIter->second.textureOrigin.y + smallestCordTile.y * tileSize.y + pixelInset) / (double)textureArray->textureSize.height
-		),
-		glm::vec2(
-			(double)(blockSize.x * tileSize.x - pixelInset * 2) / (double)textureArray->textureSize.width,
-			(double)(blockSize.y * tileSize.y - pixelInset * 2) / (double)textureArray->textureSize.height
-		),
-		blockTextureIter->second.textureLayer,
-		glm::vec2((double)textureStepSize.x / (double)textureArray->textureSize.width, (double)textureStepSize.y / (double)textureArray->textureSize.height)
-	);
+	unsigned int pixelsWidth = blockSize.x * tileSize.x;
+	unsigned int pixelsHeight = blockSize.y * tileSize.y;
+	if (pixelsWidth == pixelsHeight) {
+		return BlockTextureCords(
+			glm::vec2(
+				(double)(blockTextureIter->second.textureOrigin.x + smallestCordTile.x * tileSize.x + pixelInset) / (double)textureArray->textureSize.width,
+				(double)(blockTextureIter->second.textureOrigin.y + smallestCordTile.y * tileSize.y + pixelInset) / (double)textureArray->textureSize.height
+			),
+			glm::vec2(
+				(double)(pixelsWidth - pixelInset * 2) / (double)textureArray->textureSize.width,
+				(double)(pixelsHeight - pixelInset * 2) / (double)textureArray->textureSize.height
+			),
+			blockTextureIter->second.textureLayer,
+			glm::vec2((double)textureStepSize.x / (double)textureArray->textureSize.width, (double)textureStepSize.y / (double)textureArray->textureSize.height)
+		);
+	} else if (pixelsWidth > pixelsHeight) {
+		double otherPixelInset = (double)pixelInset * ((double)pixelsWidth / (double)pixelsHeight);
+		return BlockTextureCords(
+			glm::vec2(
+				((double)(blockTextureIter->second.textureOrigin.x + smallestCordTile.x * tileSize.x) + otherPixelInset) / (double)textureArray->textureSize.width,
+				(double)(blockTextureIter->second.textureOrigin.y + smallestCordTile.y * tileSize.y + pixelInset) / (double)textureArray->textureSize.height
+			),
+			glm::vec2(
+				((double)pixelsWidth - otherPixelInset * 2.) / (double)textureArray->textureSize.width,
+				(double)(pixelsHeight - pixelInset * 2) / (double)textureArray->textureSize.height
+			),
+			blockTextureIter->second.textureLayer,
+			glm::vec2((double)textureStepSize.x / (double)textureArray->textureSize.width, (double)textureStepSize.y / (double)textureArray->textureSize.height)
+		);
+	} else {
+		double otherPixelInset = (double)pixelInset * ((double)pixelsHeight / (double)pixelsWidth);
+		return BlockTextureCords(
+			glm::vec2(
+				(double)(blockTextureIter->second.textureOrigin.x + smallestCordTile.x * tileSize.x + pixelInset) / (double)textureArray->textureSize.width,
+				((double)(blockTextureIter->second.textureOrigin.y + smallestCordTile.y * tileSize.y) + otherPixelInset) / (double)textureArray->textureSize.height
+			),
+			glm::vec2(
+				(double)(pixelsWidth - pixelInset * 2) / (double)textureArray->textureSize.width,
+				((double)pixelsHeight - otherPixelInset * 2.) / (double)textureArray->textureSize.height
+			),
+			blockTextureIter->second.textureLayer,
+			glm::vec2((double)textureStepSize.x / (double)textureArray->textureSize.width, (double)textureStepSize.y / (double)textureArray->textureSize.height)
+		);
+	}
 }
 
 void BlockTextureManager::cleanup() {
