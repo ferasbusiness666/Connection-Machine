@@ -29,9 +29,9 @@ typedef unsigned int BlockTextureId;
 
 struct BlockTexture {
 public:
-	BlockTexture(glm::vec2 textureOrigin, glm::vec2 textureSize, unsigned int textureLayer) : textureOrigin(textureOrigin), textureSize(textureSize), textureLayer(textureLayer) {}
-	glm::vec2 textureOrigin;
-	glm::vec2 textureSize;
+	BlockTexture(Vec2Int textureOrigin, Vec2Int textureSize, unsigned int textureLayer) : textureOrigin(textureOrigin), textureSize(textureSize), textureLayer(textureLayer) {}
+	Vec2Int textureOrigin;
+	Vec2Int textureSize;
 	unsigned int textureLayer;
 };
 
@@ -68,7 +68,7 @@ public:
 
 private:
 	// this needs to free pixels
-	void addTextureToArray(const stbi_uc* pixels, glm::vec2 textureSize, glm::vec2 texturePos, unsigned int textureLayer);
+	void addTextureToArray(const stbi_uc* pixels, Vec2Int textureSize, Vec2Int texturePos, unsigned int textureLayer);
 	void resizeTextureArray(uint32_t newLayerCount);
 
 	VulkanDevice* device;

@@ -67,7 +67,7 @@ BlockTextureId BlockTextureManager::addTexture(const std::string& path) {
 	stbi_image_free(pixels);
 
 	BlockTextureId blockTextureId = findUnusedKey<BlockTextureId>(blockTextures, 1);
-	blockTextures.try_emplace(blockTextureId, glm::vec2(0, 0), glm::vec2(textureWidth, texHeight), textureArray->nextFreeLayer);
+	blockTextures.try_emplace(blockTextureId, Vec2Int(0, 0), Vec2Int(textureWidth, texHeight), textureArray->nextFreeLayer);
 
 	loadedTextureFiles.emplace(path, blockTextureId);
 
@@ -113,7 +113,7 @@ BlockTextureId BlockTextureManager::addTexture(const stbi_uc* pixels, int textur
 	addTextureToArray(pixels, { textureWidth, textureHeight }, { 0, 0 }, textureArray->nextFreeLayer);
 
 	BlockTextureId blockTextureId = findUnusedKey<BlockTextureId>(blockTextures, 1);
-	blockTextures.try_emplace(blockTextureId, glm::vec2(0, 0), glm::vec2(textureWidth, textureHeight), textureArray->nextFreeLayer);
+	blockTextures.try_emplace(blockTextureId, Vec2Int(0, 0), Vec2Int(textureWidth, textureHeight), textureArray->nextFreeLayer);
 
 	textureArray->nextFreeLayer++;
 
@@ -165,6 +165,8 @@ void BlockTextureManager::removeBlockTexture(BlockTextureId blockTextureId) {
 	if (pathIter != loadedTextureFiles.end()) loadedTextureFiles.erase(pathIter);
 }
 
+const int pixelInset = 60;
+
 BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId blockTextureId) const {
 	auto blockTextureIter = blockTextures.find(blockTextureId);
 	if (blockTextureIter == blockTextures.end()) {
@@ -173,12 +175,12 @@ BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId block
 	}
 	return BlockTextureCords(
 		glm::vec2(
-			(double)(blockTextureIter->second.textureOrigin.x) / (double)textureArray->textureSize.width,
-			(double)(blockTextureIter->second.textureOrigin.y) / (double)textureArray->textureSize.height
+			(double)(blockTextureIter->second.textureOrigin.x + pixelInset) / (double)textureArray->textureSize.width,
+			(double)(blockTextureIter->second.textureOrigin.y + pixelInset) / (double)textureArray->textureSize.height
 		),
 		glm::vec2(
-			(double)(blockTextureIter->second.textureSize.x) / (double)textureArray->textureSize.width,
-			(double)(blockTextureIter->second.textureSize.y) / (double)textureArray->textureSize.height
+			(double)(blockTextureIter->second.textureSize.x - pixelInset * 2) / (double)textureArray->textureSize.width,
+			(double)(blockTextureIter->second.textureSize.y - pixelInset * 2) / (double)textureArray->textureSize.height
 		),
 		blockTextureIter->second.textureLayer,
 		glm::vec2(0, 0)
@@ -203,12 +205,12 @@ BlockTextureCords BlockTextureManager::getBlockTextureCords(
 	}
 	return BlockTextureCords(
 		glm::vec2(
-			(double)(blockTextureIter->second.textureOrigin.x + smallestCordTile.x * tileSize.x + 4) / (double)textureArray->textureSize.width,
-			(double)(blockTextureIter->second.textureOrigin.y + smallestCordTile.y * tileSize.y + 4) / (double)textureArray->textureSize.height
+			(double)(blockTextureIter->second.textureOrigin.x + smallestCordTile.x * tileSize.x + pixelInset) / (double)textureArray->textureSize.width,
+			(double)(blockTextureIter->second.textureOrigin.y + smallestCordTile.y * tileSize.y + pixelInset) / (double)textureArray->textureSize.height
 		),
 		glm::vec2(
-			(double)(blockSize.x * tileSize.x - 8) / (double)textureArray->textureSize.width,
-			(double)(blockSize.y * tileSize.y - 8) / (double)(textureArray->textureSize.height)
+			(double)(blockSize.x * tileSize.x - pixelInset * 2) / (double)textureArray->textureSize.width,
+			(double)(blockSize.y * tileSize.y - pixelInset * 2) / (double)textureArray->textureSize.height
 		),
 		blockTextureIter->second.textureLayer,
 		glm::vec2((double)textureStepSize.x / (double)textureArray->textureSize.width, (double)textureStepSize.y / (double)textureArray->textureSize.height)
@@ -225,7 +227,7 @@ void BlockTextureManager::cleanup() {
 	descriptorAllocator.cleanup();
 }
 
-void BlockTextureManager::addTextureToArray(const stbi_uc* pixels, glm::vec2 textureSize, glm::vec2 texPos, unsigned int textureLayer) {
+void BlockTextureManager::addTextureToArray(const stbi_uc* pixels, Vec2Int textureSize, Vec2Int texPos, unsigned int textureLayer) {
 	if (textureLayer >= textureArray->maxLayers) {
 		resizeTextureArray(textureLayer + 1);
 	}
