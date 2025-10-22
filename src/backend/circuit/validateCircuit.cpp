@@ -20,7 +20,7 @@ bool CircuitValidator::validateBlockData() {
 	if (size.h == 0)
 		size.h = 1;
 	for (auto& port : parsedCircuit.getConnectionPorts()) {
-		size.extentToFit(port.positionOnBlock);
+		size.extentToFitTartgetCell(port.positionOnBlock);
 	}
 	parsedCircuit.setSize(size);
 	return true;

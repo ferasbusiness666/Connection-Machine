@@ -6,7 +6,7 @@
 typedef unsigned int evaluator_id_t;
 typedef unsigned int eval_circuit_id_t;
 typedef unsigned int middle_id_t;
-typedef unsigned char connection_port_id_t;
+typedef unsigned int connection_port_id_t;
 typedef unsigned int simulator_id_t;
 
 enum class SimulatorMappingUpdateType {

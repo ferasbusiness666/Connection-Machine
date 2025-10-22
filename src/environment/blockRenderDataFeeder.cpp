@@ -1,6 +1,5 @@
 #include "blockRenderDataFeeder.h"
 
-#include "gui/viewportManager/circuitView/renderer/logicRenderingUtils.h"
 #include "computerAPI/directoryManager.h"
 
 #include "backend/backend.h"
@@ -120,7 +119,7 @@ void BlockRenderDataFeeder::blockDataSetConnectionUpdate(const DataUpdateEventMa
 		BlockPortRenderDataId blockPortRenderDataId = MainRenderer::get().addBlockPort(
 			iter->second.blockRenderDataId,
 			isInput,
-			blockData->getConnectionVector(data->get().second)->free() + (isInput ? getInputOffset(data->get().first, data->get().second) : getOutputOffset(data->get().first, data->get().second))
+			blockData->getConnectionVector(data->get().second)->free() + (isInput ? blockData->getConnectionPortOffset(data->get().second).value() : blockData->getConnectionPortOffset(data->get().second).value())
 		);
 		iter->second.blockPortRenderDataIds.try_emplace(data->get().second, blockPortRenderDataId);
 		return;
@@ -128,7 +127,7 @@ void BlockRenderDataFeeder::blockDataSetConnectionUpdate(const DataUpdateEventMa
 	MainRenderer::get().moveBlockPort(
 		iter->second.blockRenderDataId,
 		portIter->second,
-		blockData->getConnectionVector(data->get().second)->free() + (isInput ? getInputOffset(data->get().first, data->get().second) : getOutputOffset(data->get().first, data->get().second))
+		blockData->getConnectionVector(data->get().second)->free() + (isInput ? blockData->getConnectionPortOffset(data->get().second).value() : blockData->getConnectionPortOffset(data->get().second).value())
 	);
 }
 
