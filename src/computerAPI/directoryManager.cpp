@@ -8,6 +8,7 @@ std::filesystem::path DirectoryManager::projectDirectory("");
 std::filesystem::path DirectoryManager::configDirectory("");
 
 void DirectoryManager::findDirectories() {
+	logInfo("Finding directories", "DirectoryManager");
 	// only logic for finding resource directory right now, other will be set later somehow
 
 	// check for resources directory relative to executable

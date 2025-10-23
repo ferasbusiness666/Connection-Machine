@@ -3,11 +3,16 @@
 std::optional<MainRenderer> mainRendererSingleton;
 
 MainRenderer& MainRenderer::get() {
-	if (!mainRendererSingleton) mainRendererSingleton.emplace();
+	if (!mainRendererSingleton) {
+		logInfo("Creating MainRenderer", "MainRenderer");
+		mainRendererSingleton.emplace();
+		logInfo("MainRenderer created", "MainRenderer");
+	};
 	return *mainRendererSingleton;
 }
 
 void MainRenderer::kill() {
+	logInfo("Killing MainRenderer", "MainRenderer");
 	mainRendererSingleton.reset();
 }
 

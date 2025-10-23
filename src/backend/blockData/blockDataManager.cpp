@@ -4,6 +4,7 @@
 
 void BlockDataManager::initializeDefaults() {
 	assert(blockData.size() == 0); // should call this before doing anything
+	logInfo("Initializing default BlockData", "BlockDataManager");
 	// load default data
 	for (unsigned int i = 0; i < 22; i++) addBlock();
 
@@ -260,6 +261,7 @@ void BlockDataManager::initializeDefaults() {
 	assert(getBusBlock(2) == BlockType::BUS_INTERFACE_3);
 	// BUS_INTERFACE_4
 	assert(getBusBlock(6) == BlockType::BUS_INTERFACE_4);
+	logInfo("Default BlockData initialized", "BlockDataManager");
 }
 
 BlockType BlockDataManager::getBusBlock(unsigned int bitWidth) {

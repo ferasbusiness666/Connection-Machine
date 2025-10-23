@@ -6,6 +6,7 @@
 #include "gpu/mainRenderer.h"
 
 BlockRenderDataFeeder::BlockRenderDataFeeder(Backend* backend) : backend(backend), dataUpdateEventReceiver(backend->getDataUpdateEventManager()) {
+	logInfo("Initializing BlockRenderDataFeeder", "BlockRenderDataFeeder");
 	dataUpdateEventReceiver.linkFunction("newBlockType", std::bind(&BlockRenderDataFeeder::newBlockTypeUpdate, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("postBlockSizeChange", std::bind(&BlockRenderDataFeeder::postBlockSizeChangeUpdate, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("blockNameChange", std::bind(&BlockRenderDataFeeder::blockNameChangeUpdate, this, std::placeholders::_1));
@@ -21,6 +22,7 @@ BlockRenderDataFeeder::BlockRenderDataFeeder(Backend* backend) : backend(backend
 	dataUpdateEventReceiver.linkFunction("blockDataUsesTileMapTextureChange", std::bind(&BlockRenderDataFeeder::updateImageIfNotSpecified, this, std::placeholders::_1));
 
 	font = Freetype::get().loadFont(*Settings::get<SettingType::FILE_PATH>("Appearance/Font"), 64);
+	logInfo("BlockRenderDataFeeder initialized", "BlockRenderDataFeeder");
 }
 
 BlockRenderDataId BlockRenderDataFeeder::getBlockRenderDataId(BlockType blockType) const {

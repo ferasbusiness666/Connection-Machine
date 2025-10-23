@@ -13,17 +13,26 @@ std::optional<App> appSingleton;
 
 App& App::get() {
 	if (!appSingleton) {
+		logInfo("Creating App", "App");
 		appSingleton.emplace();
 		appSingleton->newMainWindow();
 	}
 	return *appSingleton;
 }
 
-void App::kill() { appSingleton.reset(); }
+void App::kill() {
+	logInfo("Killing App", "App");
+	appSingleton.reset();
+}
 
-App::App() { rml.emplace(&rmlSystemInterface, &rmlRenderInterface); }
+App::App() {
+	logInfo("Initializing App", "App");
+	rml.emplace(&rmlSystemInterface, &rmlRenderInterface);
+	logInfo("App initialized", "App");
+}
 
 App::~App() {
+	logInfo("Shutting down App", "App");
 	windows.clear();
 	sdlWindows.clear();
 	rml.reset();
@@ -44,11 +53,13 @@ void App::deregisterWindow(const SdlWindow* sdlWindow) {
 }
 
 void App::newMainWindow() {
+	logInfo("Creating new MainWindow", "App");
 	windows.push_back(std::make_unique<MainWindow>(&environment));
 	newlyCreatedWindowsNext.push_back(windows.back().get());
 }
 
 bool App::closeMainWindow(const MainWindow* mainWindow) {
+	logInfo("Closing MainWindow", "App");
 	if (windows.size() == windowsToDestroy.size() + 1) {
 		startTryingToQuit();
 		return false;
@@ -63,6 +74,7 @@ const char* const addLoopTracyName = "appLoop";
 #endif
 
 void App::runLoop() {
+	logInfo("Starting App loop", "App");
 	running = true;
 	while (running) {
 		// do texture updates

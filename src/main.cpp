@@ -9,6 +9,7 @@
 #include "computerAPI/saveSettings.h"
 
 void registerSettings() {
+	logInfo("Registering settings", "Main");
 	Settings::registerSetting<SettingType::FILE_PATH>("Appearance/Font", (DirectoryManager::getResourceDirectory() / "gui/fonts/monaspace.otf").generic_string());
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/Save", Keybind(Keybind::KeyId::KI_S, Keybind::KeyMod::KM_CTRL));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/Save As", Keybind(Keybind::KeyId::KI_S, Keybind::KeyMod::KM_CTRL | Keybind::KeyMod::KM_SHIFT));
@@ -59,7 +60,6 @@ int main(int argc, char* argv[]) {
 #endif
 		// Set up directory manager
 		DirectoryManager::findDirectories();
-
 		registerSettings();
 
 		App::get().runLoop();
