@@ -349,7 +349,7 @@ void VulkanChunker::regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDa
 		for (std::pair<const Position, RenderedBlock>& block : chunk.second.getRenderedBlocks()) {
 			if (block.second.blockRenderDataId == blockRenderDataId) {
 				foundType = true;
-				block.second.size = blockRenderData->size.free();
+				block.second.size = (block.second.orientation * blockRenderData->size).free();
 				block.second.textureIndex = blockRenderData->blockTextureCords.textureLayer;
 				block.second.textureOrigin = blockRenderData->blockTextureCords.textureOriginUV;
 				block.second.textureSize = blockRenderData->blockTextureCords.textureSizeUV;
