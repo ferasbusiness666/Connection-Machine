@@ -64,10 +64,10 @@ public:
 	void cleanup();
 
 	inline VkDescriptorSetLayout getDescriptorLayout() { return descriptorLayout; }
-    inline std::shared_ptr<BlockTextureArray> getTextureArray() { return textureArray; }
+    inline std::shared_ptr<BlockTextureArray> getTextureArray() { std::lock_guard<std::mutex> lock(descriptorMutex); return textureArray; }
 
 private:
-	// this needs to free pixels
+	void makeTextureArray(uint32_t newLayerCount, VkExtent3D textureSize);
 	void addTextureToArray(const stbi_uc* pixels, Vec2Int textureSize, Vec2Int texturePos, unsigned int textureLayer);
 	void resizeTextureArray(uint32_t newLayerCount);
 
@@ -76,6 +76,7 @@ private:
 	DescriptorAllocator descriptorAllocator;
 	VkDescriptorSetLayout descriptorLayout;
 
+	std::mutex descriptorMutex;
 	std::shared_ptr<BlockTextureArray> textureArray;
 	std::map<BlockTextureId, BlockTexture> blockTextures;
 	std::map<std::string, BlockTextureId> loadedTextureFiles;
