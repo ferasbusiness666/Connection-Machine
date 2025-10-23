@@ -1069,6 +1069,9 @@ void Evaluator::processDirtyNodes() {
 	for (const EvalPosition& evalPosition : dirtyNodes) {
 		Position position = evalPosition.position;
 		EvalCircuit* evalCircuit = evalCircuitContainer.getCircuit(evalPosition.evalCircuitId);
+		if (!evalCircuit) [[unlikely]] {
+			continue;
+		}
 		const SharedCircuit circuit = circuitManager.getCircuit(evalCircuit->getCircuitId());
 		const Block* block = circuit->getBlockContainer()->getBlock(position);
 		if (!block) [[unlikely]] {
