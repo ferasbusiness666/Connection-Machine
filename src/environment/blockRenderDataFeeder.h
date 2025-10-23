@@ -6,7 +6,9 @@
 #include "backend/container/block/connectionEnd.h"
 #include "backend/dataUpdateEventManager.h"
 
+class Font;
 class Backend;
+class BlockData;
 
 class BlockRenderDataFeeder {
 public:
@@ -24,16 +26,25 @@ public:
 	void blockDataTextureChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void blockDataUsesTileMapTextureChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void blockDataTextureTileChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
+	void updateImageIfNotSpecified(const DataUpdateEventManager::EventData* dataEvent);
 	void refreshBlockTexture(BlockType blockType);
+
+	void doBlockTextureUpdates();
 
 private:
 	struct RenderData {
 		RenderData(BlockRenderDataId blockRenderDataId) : blockRenderDataId(blockRenderDataId) {}
-		BlockRenderDataId blockRenderDataId;
+		BlockTextureId blockTextureId = 0;
+		BlockRenderDataId blockRenderDataId = 0;
 		std::map<connection_end_id_t, BlockPortRenderDataId> blockPortRenderDataIds;
 	};
 
-	BlockTextureId noTextureTexture;
+	std::set<BlockType> blockTexturesToUpdate;
+	std::shared_ptr<Font> font;
+
+	BlockTextureId getBlockTextureId(const BlockData* blockData, RenderData* renderData);
+
+	std::unordered_map<BlockTextureId, unsigned int> blockTextureIdUsage;
 
 	Backend* backend;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;

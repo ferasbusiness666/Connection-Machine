@@ -65,6 +65,9 @@ const char* const addLoopTracyName = "appLoop";
 void App::runLoop() {
 	running = true;
 	while (running) {
+		// do texture updates
+		environment.getBlockRenderDataFeeder().doBlockTextureUpdates();
+
 		// Wait for the next event (so we don't broork the cpu)
 		bool gotEvent = SDL_WaitEventTimeout(nullptr, 50);
 #ifdef TRACY_PROFILER

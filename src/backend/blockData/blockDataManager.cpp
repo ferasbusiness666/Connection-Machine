@@ -236,7 +236,6 @@ void BlockDataManager::initializeDefaults() {
 	colorLightBlockData->setConnectionInput(Vector(0), 0);
 	colorLightBlockData->setConnnectionPortOffset(0, FVector(0.5f - edgeDistance, 0.5f - sideShift));
 	colorLightBlockData->setConnectionBitConfiguration(0, std::vector<unsigned int>{ 0, 1, 2, 3, 4, 5 });
-	colorLightBlockData->setTexturePath((DirectoryManager::getResourceDirectory() / "colorLight.png").string());
 	colorLightBlockData->setUsesTileMapTexture(true);
 	colorLightBlockData->setTextureTileSize({ 256, 256 });
 	colorLightBlockData->setTextureBlockTileSize({ 1, 1 });
@@ -257,7 +256,6 @@ void BlockDataManager::initializeDefaults() {
 		busInterfaceBlockData2->setConnectionBidirectional(Vector(0, i), i + 1);
 		busInterfaceBlockData2->setConnectionBitConfiguration(i + 1, std::vector<unsigned int>{ i * 2, i * 2 + 1 });
 	}
-	busInterfaceBlockData2->setTexturePath((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
 	// BUS_INTERFACE_3
 	assert(getBusBlock(2) == BlockType::BUS_INTERFACE_3);
 	// BUS_INTERFACE_4
@@ -301,7 +299,6 @@ BlockType BlockDataManager::getBusBlock(std::vector<BusConnectionData> busConnec
 	busInterfaceBlockData->setDefaultData(false);
 	busInterfaceBlockData->setIsBus(true);
 	busInterfaceBlockData->setSize(blockSize);
-	// busInterfaceBlockData->setTexturePath((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
 	std::string name = "Bus Interface ";
 	unsigned int range = 0;
 	for (unsigned int i = 0; i < busConnections.size(); i++) {
