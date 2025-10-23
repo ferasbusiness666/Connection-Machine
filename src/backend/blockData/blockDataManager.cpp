@@ -245,8 +245,9 @@ void BlockDataManager::initializeDefaults() {
 	// BUS_INTERFACE_1
 	assert(getBusBlock(8) == BlockType::BUS_INTERFACE_1);
 	// BUS_INTERFACE_2
-	assert(addBlock() == BlockType::BUS_INTERFACE_2);
-	BlockData* busInterfaceBlockData2 = getBlockData(BlockType::BUS_INTERFACE_2);
+	BlockType busInterface2Type = addBlock();
+	assert(busInterface2Type == BlockType::BUS_INTERFACE_2);
+	BlockData* busInterfaceBlockData2 = getBlockData(busInterface2Type);
 	busInterfaceBlockData2->setName("Bus Interface 4x2 -> 1x8");
 	busInterfaceBlockData2->setDefaultData(false);
 	busInterfaceBlockData2->setIsBus(true);
