@@ -54,7 +54,9 @@ void registerSettings() {
 }
 
 int main(int argc, char* argv[]) {
+#ifdef MAIN_TRY_CATCH
 	try {
+#endif
 		// Set up directory manager
 		DirectoryManager::findDirectories();
 
@@ -62,11 +64,13 @@ int main(int argc, char* argv[]) {
 
 		App::get().runLoop();
 		App::kill();
+#ifdef MAIN_TRY_CATCH
 	} catch (const std::exception& e) {
 		// Top level fatal error catcher, logs issue
 		logFatalError("Exiting Connection Machine because of fatal error: '{}'", "", e.what());
 		return EXIT_FAILURE;
 	}
+#endif
 
 	logInfo("Exiting Connection Machine...");
 	return EXIT_SUCCESS;

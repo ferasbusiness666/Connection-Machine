@@ -37,6 +37,7 @@ option(CONNECTION_MACHINE_BUILD_CLI_APP "Build Connection Machine CLI App" ON)
 option(CONNECTION_MACHINE_DISTRIBUTE_APP "Distribute App" OFF)
 option(CONNECTION_MACHINE_BUILD_TESTS "Build Connection Machine Tests" OFF)
 option(CONNECTION_MACHINE_CODE_COVERAGE "Enable code coverage reporting" OFF)
+option(CONNECTION_MACHINE_TRY_CATCH "Enable try catch blocks around main loop" ON)
 option(RUN_TRACY_PROFILER "Enable runtime profiler" OFF)
 
 if(CONNECTION_MACHINE_BUILD_CLI_APP AND CONNECTION_MACHINE_BUILD_APP)
