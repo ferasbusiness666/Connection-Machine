@@ -4,6 +4,7 @@
 #include "glm/ext/vector_float2.hpp"
 #include "gpu/abstractions/vulkanDescriptor.h"
 #include "gpu/abstractions/vulkanImage.h"
+#include "util/rectPacker.h"
 #include "util/vec2.h"
 
 class VulkanDevice;
@@ -11,17 +12,16 @@ class VulkanDevice;
 #include <stb_image.h>
 
 struct BlockTextureArray {
-    VulkanDevice* device;
-    AllocatedImage image;
-    VkSampler sampler;
-    VkDescriptorSet descriptor;
+	DescriptorAllocator descriptorAllocator;
+	VulkanDevice* device;
+	AllocatedImage image;
+	VkSampler sampler;
+	VkDescriptorSet descriptor;
 	VkExtent3D textureSize;
 
-    uint32_t maxLayers;
-    uint32_t nextFreeLayer;
+	uint32_t layerCount;
 
-    BlockTextureArray() : device(nullptr), sampler(VK_NULL_HANDLE), descriptor(VK_NULL_HANDLE),
-                          maxLayers(0), nextFreeLayer(0) {}
+	BlockTextureArray() : device(nullptr), sampler(VK_NULL_HANDLE), descriptor(VK_NULL_HANDLE), layerCount(0) { }
 	~BlockTextureArray();
 };
 
@@ -29,18 +29,21 @@ typedef unsigned int BlockTextureId;
 
 struct BlockTexture {
 public:
-	BlockTexture(Vec2Int textureOrigin, Vec2Int textureSize, unsigned int textureLayer) : textureOrigin(textureOrigin), textureSize(textureSize), textureLayer(textureLayer) {}
+	BlockTexture(Vec2Int textureOrigin, Vec2Int textureSize, unsigned int textureLayer, RectPacker::RectID rectId) :
+		textureOrigin(textureOrigin), textureSize(textureSize), textureLayer(textureLayer), rectId((rectId)) { }
 	Vec2Int textureOrigin;
 	Vec2Int textureSize;
 	unsigned int textureLayer;
+	RectPacker::RectID rectId;
 };
 
 struct BlockTextureCords {
 public:
 	BlockTextureCords(glm::vec2 textureOriginUV, glm::vec2 textureSizeUV, unsigned int textureLayer, glm::vec2 textureUVStateStep) :
-		textureOriginUV(textureOriginUV), textureSizeUV(textureSizeUV), textureLayer(textureLayer), textureUVStateStep(textureUVStateStep) {}
+		textureOriginUV(textureOriginUV), textureSizeUV(textureSizeUV), textureLayer(textureLayer), textureUVStateStep(textureUVStateStep) { }
 	bool operator==(const BlockTextureCords& other) const {
-		return textureOriginUV == other.textureOriginUV && textureSizeUV == other.textureSizeUV && textureLayer == other.textureLayer && textureUVStateStep == other.textureUVStateStep;
+		return textureOriginUV == other.textureOriginUV && textureSizeUV == other.textureSizeUV && textureLayer == other.textureLayer &&
+			   textureUVStateStep == other.textureUVStateStep;
 	}
 	glm::vec2 textureUVStateStep;
 	glm::vec2 textureOriginUV;
@@ -64,7 +67,10 @@ public:
 	void cleanup();
 
 	inline VkDescriptorSetLayout getDescriptorLayout() { return descriptorLayout; }
-    inline std::shared_ptr<BlockTextureArray> getTextureArray() { std::lock_guard<std::mutex> lock(descriptorMutex); return textureArray; }
+	inline std::shared_ptr<BlockTextureArray> getTextureArray() {
+		std::lock_guard<std::mutex> lock(descriptorMutex);
+		return textureArray;
+	}
 
 private:
 	void makeTextureArray(uint32_t newLayerCount, VkExtent3D textureSize);
@@ -73,8 +79,10 @@ private:
 
 	VulkanDevice* device;
 
-	DescriptorAllocator descriptorAllocator;
 	VkDescriptorSetLayout descriptorLayout;
+
+	std::vector<bool> writtenLayers;
+	std::vector<RectPacker> layerRectPackers;
 
 	std::mutex descriptorMutex;
 	std::shared_ptr<BlockTextureArray> textureArray;

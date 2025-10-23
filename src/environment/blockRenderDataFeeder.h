@@ -16,6 +16,11 @@ public:
 
 	BlockRenderDataId getBlockRenderDataId(BlockType blockType) const;
 
+	void refreshBlockTexture(BlockType blockType);
+
+	void doBlockTextureUpdates();
+
+private:
 	void newBlockTypeUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void postBlockSizeChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void blockNameChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
@@ -27,11 +32,7 @@ public:
 	void blockDataUsesTileMapTextureChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void blockDataTextureTileChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void updateImageIfNotSpecified(const DataUpdateEventManager::EventData* dataEvent);
-	void refreshBlockTexture(BlockType blockType);
 
-	void doBlockTextureUpdates();
-
-private:
 	struct RenderData {
 		RenderData(BlockRenderDataId blockRenderDataId) : blockRenderDataId(blockRenderDataId) {}
 		BlockTextureId blockTextureId = 0;

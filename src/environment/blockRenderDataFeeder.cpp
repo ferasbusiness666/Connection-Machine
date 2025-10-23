@@ -13,12 +13,12 @@ BlockRenderDataFeeder::BlockRenderDataFeeder(Backend* backend) : backend(backend
 	dataUpdateEventReceiver.linkFunction("blockDataSetConnection", std::bind(&BlockRenderDataFeeder::blockDataSetConnectionUpdate, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("blockDataRemoveConnection", std::bind(&BlockRenderDataFeeder::blockDataRemoveConnectionUpdate, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("blockDataConnectionNameSet", std::bind(&BlockRenderDataFeeder::blockDataConnectionNameSetUpdate, this, std::placeholders::_1));
+	dataUpdateEventReceiver.linkFunction("blockDataTextureChange", std::bind(&BlockRenderDataFeeder::blockDataTextureChangeUpdate, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("blockDataUsesTileMapTextureChange", std::bind(&BlockRenderDataFeeder::blockDataUsesTileMapTextureChangeUpdate, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("blockDataTextureTileSizeChange", std::bind(&BlockRenderDataFeeder::blockDataTextureTileChangeUpdate, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("blockDataTextureSmallestCordTileChange", std::bind(&BlockRenderDataFeeder::blockDataTextureTileChangeUpdate, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("blockDataTextureBlockTileSizeChange", std::bind(&BlockRenderDataFeeder::blockDataTextureTileChangeUpdate, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("blockDataTextureBlockStateOffsetChange", std::bind(&BlockRenderDataFeeder::blockDataTextureTileChangeUpdate, this, std::placeholders::_1));
-	dataUpdateEventReceiver.linkFunction("blockDataUsesTileMapTextureChange", std::bind(&BlockRenderDataFeeder::updateImageIfNotSpecified, this, std::placeholders::_1));
 
 	font = Freetype::get().loadFont(*Settings::get<SettingType::FILE_PATH>("Appearance/Font"), 64);
 }
@@ -141,12 +141,6 @@ void BlockRenderDataFeeder::blockDataUsesTileMapTextureChangeUpdate(const DataUp
 }
 
 void BlockRenderDataFeeder::blockDataTextureTileChangeUpdate(const DataUpdateEventManager::EventData* dataEvent) {
-	const auto* data = dataEvent->cast<std::pair<BlockType, Vec2Int>>();
-	if (!data) return;
-	blockTexturesToUpdate.insert(data->get().first);
-}
-
-void BlockRenderDataFeeder::updateImageIfNotSpecified(const DataUpdateEventManager::EventData* dataEvent) {
 	const auto* data = dataEvent->cast<std::pair<BlockType, Vec2Int>>();
 	if (!data) return;
 	blockTexturesToUpdate.insert(data->get().first);
