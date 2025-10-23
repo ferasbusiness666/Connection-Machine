@@ -3,7 +3,9 @@
 #include "computerAPI/directoryManager.h"
 
 #include "backend/backend.h"
+#include "gpu/cpuImageEditor/cpuImage.h"
 #include "gpu/mainRenderer.h"
+#include "gpu/freetype/freetype.h"
 
 BlockRenderDataFeeder::BlockRenderDataFeeder(Backend* backend) : backend(backend), dataUpdateEventReceiver(backend->getDataUpdateEventManager()) {
 	dataUpdateEventReceiver.linkFunction("newBlockType", std::bind(&BlockRenderDataFeeder::newBlockTypeUpdate, this, std::placeholders::_1));
@@ -21,7 +23,23 @@ BlockRenderDataFeeder::BlockRenderDataFeeder(Backend* backend) : backend(backend
 	dataUpdateEventReceiver.linkFunction("blockDataTextureBlockStateOffsetChange", std::bind(&BlockRenderDataFeeder::blockDataTextureTileChangeUpdate, this, std::placeholders::_1));
 
 	MainRenderer::get().addBlockTexture((DirectoryManager::getResourceDirectory() / "logicTiles.png").string());
-	MainRenderer::get().addBlockTexture((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
+	// MainRenderer::get().addBlockTexture((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
+
+	CpuImage img({400, 400});
+
+	std::shared_ptr<Font> font = Freetype::get().loadFont(*Settings::get<SettingType::FILE_PATH>("Appearance/Font"), 64);
+	logInfo(font->getFontFamily());
+
+	// img.writeString(font, "Berman", {10, 100}, {255, 255, 255, 255}, Rotation::NINETY);
+	// img.writeString(font, "Berman", {80, 100}, {255, 255, 255, 255}, Rotation::ZERO);
+	// img.writeString(font, "Berman", {320, 300}, {255, 255, 255, 255}, Rotation::ONE_EIGHTY);
+	// img.writeString(font, "Berman", {380, 300}, {255, 255, 255, 255}, Rotation::TWO_SEVENTY);
+	img.writeStringInArea(font, "I hope this wraps YAY BERMAN BERMAN BERMAN JACK J connection machine", {10, 10}, {80, 200}, {255, 255, 255, 255}, Rotation::NINETY);
+	img.writeStringInArea(font, "I hope this wraps YAY BERMAN BERMAN BERMAN JACK J connection machine", {10, 200}, {100, 100}, {255, 255, 255, 255}, Rotation::ONE_EIGHTY);
+	img.writeStringInArea(font, "I hope this wraps YAY BERMAN BERMAN BERMAN JACK J connection machine", {10, 10}, {80, 200}, {255, 255, 255, 255}, Rotation::NINETY);
+	img.addRect({40, 40}, {320, 320}, {255, 0, 0, 100});
+
+	noTextureTexture = MainRenderer::get().addBlockTexture(img.getData(), img.getSize().x, img.getSize().y);
 }
 
 BlockRenderDataId BlockRenderDataFeeder::getBlockRenderDataId(BlockType blockType) const {
@@ -47,7 +65,7 @@ void BlockRenderDataFeeder::newBlockTypeUpdate(const DataUpdateEventManager::Eve
 
 	if (!blockData->getUsesTileMapTexture()) {
 		if (blockData->getTexturePath() == "") {
-			BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(DirectoryManager::getResourceDirectory() / "gateIcon.png");
+			BlockTextureId blockTextureId = noTextureTexture; //MainRenderer::get().addBlockTexture(DirectoryManager::getResourceDirectory() / "gateIcon.png");
 			if (blockTextureId == 0) return;
 			MainRenderer::get().setBlockTexture(blockRenderDataId, blockTextureId);
 		} else {
@@ -57,7 +75,7 @@ void BlockRenderDataFeeder::newBlockTypeUpdate(const DataUpdateEventManager::Eve
 		}
 	} else {
 		if (blockData->getTexturePath() == "") {
-			BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(DirectoryManager::getResourceDirectory() / "gateIcon.png");
+			BlockTextureId blockTextureId = noTextureTexture; //MainRenderer::get().addBlockTexture(DirectoryManager::getResourceDirectory() / "gateIcon.png");
 			if (blockTextureId == 0) return;
 			MainRenderer::get().setBlockTexture(
 				blockRenderDataId,
@@ -182,7 +200,7 @@ void BlockRenderDataFeeder::blockDataTextureChangeUpdate(const DataUpdateEventMa
 
 	if (!blockData->getUsesTileMapTexture()) {
 		if (blockData->getTexturePath() == "") {
-			BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(DirectoryManager::getResourceDirectory() / "gateIcon.png");
+			BlockTextureId blockTextureId = noTextureTexture; //MainRenderer::get().addBlockTexture(DirectoryManager::getResourceDirectory() / "gateIcon.png");
 			if (blockTextureId == 0) return;
 			MainRenderer::get().setBlockTexture(iter->second.blockRenderDataId, blockTextureId);
 		} else {
@@ -192,7 +210,7 @@ void BlockRenderDataFeeder::blockDataTextureChangeUpdate(const DataUpdateEventMa
 		}
 	} else {
 		if (blockData->getTexturePath() == "") {
-			BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(DirectoryManager::getResourceDirectory() / "gateIcon.png");
+			BlockTextureId blockTextureId =noTextureTexture; //MainRenderer::get().addBlockTexture(DirectoryManager::getResourceDirectory() / "gateIcon.png");
 			if (blockTextureId == 0) return;
 			MainRenderer::get().setBlockTexture(
 				iter->second.blockRenderDataId,
@@ -235,7 +253,7 @@ void BlockRenderDataFeeder::blockDataUsesTileMapTextureChangeUpdate(const DataUp
 
 	if (!blockData->getUsesTileMapTexture()) {
 		if (blockData->getTexturePath() == "") {
-			BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(DirectoryManager::getResourceDirectory() / "gateIcon.png");
+			BlockTextureId blockTextureId =noTextureTexture; // MainRenderer::get().addBlockTexture(DirectoryManager::getResourceDirectory() / "gateIcon.png");
 			if (blockTextureId == 0) return;
 			MainRenderer::get().setBlockTexture(iter->second.blockRenderDataId, blockTextureId);
 		} else {
@@ -245,7 +263,7 @@ void BlockRenderDataFeeder::blockDataUsesTileMapTextureChangeUpdate(const DataUp
 		}
 	} else {
 		if (blockData->getTexturePath() == "") {
-			BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(DirectoryManager::getResourceDirectory() / "gateIcon.png");
+			BlockTextureId blockTextureId = noTextureTexture; //MainRenderer::get().addBlockTexture(DirectoryManager::getResourceDirectory() / "gateIcon.png");
 			if (blockTextureId == 0) return;
 			MainRenderer::get().setBlockTexture(
 				iter->second.blockRenderDataId,
@@ -288,7 +306,7 @@ void BlockRenderDataFeeder::blockDataTextureTileChangeUpdate(const DataUpdateEve
 	}
 
 	if (blockData->getTexturePath() == "") {
-		BlockTextureId blockTextureId = MainRenderer::get().addBlockTexture(DirectoryManager::getResourceDirectory() / "gateIcon.png");
+		BlockTextureId blockTextureId = noTextureTexture; //MainRenderer::get().addBlockTexture(DirectoryManager::getResourceDirectory() / "gateIcon.png");
 		if (blockTextureId == 0) return;
 		MainRenderer::get().setBlockTexture(
 			iter->second.blockRenderDataId,

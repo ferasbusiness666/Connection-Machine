@@ -33,6 +33,8 @@ private:
 		std::map<connection_end_id_t, BlockPortRenderDataId> blockPortRenderDataIds;
 	};
 
+	BlockTextureId noTextureTexture;
+
 	Backend* backend;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 	std::map<BlockType, RenderData> blockTypeToRenderData;
