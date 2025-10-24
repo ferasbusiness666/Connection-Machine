@@ -1,8 +1,9 @@
 #include "setEvalPauseStateCommand.h"
 
+#include "backend/evaluator/evaluator.h"
 #include "environment/environment.h"
-#include "../commandManager.h"
 #include "util/runAtStartup.h"
+#include "../commandManager.h"
 
 runAtStartup(CommandManager::get().registerCommand(std::make_unique<SetEvalPauseStateCommand>());)
 
