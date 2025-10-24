@@ -7,6 +7,7 @@ list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR}\/gpu\/.*")
 list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR}\/environment\/blockRenderDataFeeder.cpp")
 list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR}\/main.cpp")
 list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR}\/app.cpp")
+list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR}\/util\/rectPacker.cpp")
 
 # ===================================== CREATE APP EXECUTABLE ========================================
 
