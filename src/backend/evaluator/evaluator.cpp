@@ -976,7 +976,7 @@ void Evaluator::traceOutwardsIC(
 		// merge the two sets
 		std::unordered_set<ConnectionEnd> const* connectionEnds;
 		if (connectionEnds1 && connectionEnds2) {
-			static thread_local std::unordered_set<ConnectionEnd> mergedConnectionEnds;
+			std::unordered_set<ConnectionEnd> mergedConnectionEnds;
 			mergedConnectionEnds.clear();
 			mergedConnectionEnds.insert(connectionEnds1->begin(), connectionEnds1->end());
 			mergedConnectionEnds.insert(connectionEnds2->begin(), connectionEnds2->end());
