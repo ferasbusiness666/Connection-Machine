@@ -406,7 +406,6 @@ void VulkanChunker::setEvaluator(Evaluator* evaluator, const Address& address) {
 	this->address = address;
 	this->evaluator = evaluator;
 	if (evaluator) {
-		logInfo("setEvaluator > connectListener");
 		evaluator->connectListener(this, address, std::bind(&VulkanChunker::updateSimulatorIds, this, std::placeholders::_1));
 	}
 	for (auto& pair : chunks) {

@@ -43,7 +43,6 @@ BlockTextureId BlockTextureManager::addTexture(const std::string& path) {
 		rectId = layerRectPackers[layer].tryAddRect({textureWidth, textureHeight});
 		if (rectId) {
 			pos = layerRectPackers[layer].getRect(rectId).first;
-			logInfo("Found locForTexture {}, layer: {}", "", pos, layer);
 			break;
 		}
 	}
@@ -108,7 +107,6 @@ BlockTextureId BlockTextureManager::addTexture(const stbi_uc* pixels, int textur
 		rectId = layerRectPackers[layer].tryAddRect({textureWidth, textureHeight});
 		if (rectId) {
 			pos = layerRectPackers[layer].getRect(rectId).first;
-			logInfo("Found locForTexture {}, layer: {}", "", pos, layer);
 			break;
 		}
 	}
