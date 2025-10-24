@@ -974,22 +974,19 @@ void Evaluator::traceOutwardsIC(
 		}
 
 		// merge the two sets
-		std::unordered_set<ConnectionEnd> const* connectionEnds;
+		std::unordered_set<ConnectionEnd> connectionEnds = {};
 		if (connectionEnds1 && connectionEnds2) {
-			std::unordered_set<ConnectionEnd> mergedConnectionEnds;
-			mergedConnectionEnds.clear();
-			mergedConnectionEnds.insert(connectionEnds1->begin(), connectionEnds1->end());
-			mergedConnectionEnds.insert(connectionEnds2->begin(), connectionEnds2->end());
-			connectionEnds = &mergedConnectionEnds;
+			connectionEnds.insert(connectionEnds1->begin(), connectionEnds1->end());
+			connectionEnds.insert(connectionEnds2->begin(), connectionEnds2->end());
 		} else if (connectionEnds1) {
-			connectionEnds = connectionEnds1;
+			connectionEnds = *connectionEnds1;
 		} else {
-			connectionEnds = connectionEnds2;
+			connectionEnds = *connectionEnds2;
 		}
 
 		circuitPortDependencies.insert({ circuitId, connectionEndId });
 
-		for (const ConnectionEnd& connectionEnd : *connectionEnds) {
+		for (const ConnectionEnd& connectionEnd : connectionEnds) {
 			const Block* targetBlock = parentCircuitBlockContainer->getBlock(connectionEnd.getBlockId());
 			if (!targetBlock) {
 				logError("Target block not found for connectionEnd {}", "Evaluator::traceOutwardsIC", connectionEnd.toString());
