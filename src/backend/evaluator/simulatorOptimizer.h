@@ -15,9 +15,9 @@ public:
 		simulator(evalConfig, dirtySimulatorIds),
 		evalConfig(evalConfig),
 		middleIdProvider(middleIdProvider) {
-		inputConnections.resize(1000);
-		outputConnections.resize(1000);
-		middleIds.resize(1000);
+		// inputConnections.resize(1000);
+		// outputConnections.resize(1000);
+		// middleToSimulatorIds.resize(1000);
 	}
 
 	void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId);
@@ -30,8 +30,8 @@ public:
 	};
 
 	std::optional<simulator_id_t> getSimIdFromMiddleId(middle_id_t middleId) const {
-		if (middleId < middleIds.size()) {
-			return middleIds[middleId];
+		if (middleId < middleToSimulatorIds.size()) {
+			return middleToSimulatorIds[middleId];
 		}
 		return std::nullopt;
 	}
@@ -195,8 +195,8 @@ private:
 	LogicSimulator simulator;
 	EvalConfig& evalConfig;
 	IdProvider<middle_id_t>& middleIdProvider;
-	std::vector<middle_id_t> simulatorIds; // maps simulator_id_t to middle_id_t
-	std::vector<simulator_id_t> middleIds; // maps middle_id_t to simulator_id_t
+	std::vector<middle_id_t> simulatorToMiddleIds; // maps simulator_id_t to middle_id_t
+	std::vector<simulator_id_t> middleToSimulatorIds; // maps middle_id_t to simulator_id_t
 
 	std::vector<std::vector<EvalConnection>> inputConnections;  // inputConnections[middleId] = connections TO this gate
 	std::vector<std::vector<EvalConnection>> outputConnections; // outputConnections[middleId] = connections FROM this gate

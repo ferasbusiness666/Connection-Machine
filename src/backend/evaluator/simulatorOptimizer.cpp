@@ -3,22 +3,22 @@
 void SimulatorOptimizer::addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
 	simulator_id_t simulatorId = simulator.addGate(blockType);
 
-	// if simulatorIds is too short, extend it
-	if (simulatorIds.size() <= simulatorId) {
-		simulatorIds.resize(simulatorId + 1);
+	// if simulatorToMiddleIds is too short, extend it
+	if (simulatorToMiddleIds.size() <= simulatorId) {
+		simulatorToMiddleIds.resize(simulatorId + 1);
 	}
-	simulatorIds[simulatorId] = gateId;
+	simulatorToMiddleIds[simulatorId] = gateId;
 
 	// Ensure connection tracking vectors are large enough
-	if (middleIds.size() <= gateId) {
-		middleIds.resize(gateId + 1);
+	if (middleToSimulatorIds.size() <= gateId) {
+		middleToSimulatorIds.resize(gateId + 1);
 	}
-	middleIds[gateId] = simulatorId;
+	middleToSimulatorIds[gateId] = simulatorId;
 	if (inputConnections.size() <= gateId) {
-		inputConnections.resize(gateId + 1);
+		inputConnections.resize(gateId + 1, std::vector<EvalConnection>());
 	}
 	if (outputConnections.size() <= gateId) {
-		outputConnections.resize(gateId + 1);
+		outputConnections.resize(gateId + 1, std::vector<EvalConnection>());
 	}
 	if (blockTypes.size() <= gateId) {
 		blockTypes.resize(gateId + 1, BlockType::NONE);
@@ -29,8 +29,8 @@ void SimulatorOptimizer::addGate(SimPauseGuard& pauseGuard, const BlockType bloc
 void SimulatorOptimizer::removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
 	// Find the gate in the simulator and remove it
 
-	if (gateId < middleIds.size()) {
-		simulator.removeGate(middleIds[gateId]);
+	if (gateId < simulatorToMiddleIds.size()) {
+		simulator.removeGate(simulatorToMiddleIds[gateId]);
 	}
 
 	// Clean up connection tracking
