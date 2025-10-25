@@ -5,10 +5,10 @@
 
 struct EvalConnectionPoint {
 	middle_id_t gateId;
-	connection_port_id_t portId;
+	connection_end_id_t portId;
 
 	EvalConnectionPoint() : gateId(0), portId(0) {};
-	EvalConnectionPoint(middle_id_t gateId, connection_port_id_t portId)
+	EvalConnectionPoint(middle_id_t gateId, connection_end_id_t portId)
 		: gateId(gateId), portId(portId) {}
 
 	bool operator==(const EvalConnectionPoint& other) const {
@@ -26,7 +26,7 @@ struct EvalConnectionPoint {
 	struct Hash {
 		std::size_t operator()(const EvalConnectionPoint& point) const noexcept {
 			return std::hash<middle_id_t>{}(point.gateId) ^
-				   (std::hash<connection_port_id_t>{}(point.portId) << 1);
+				   (std::hash<connection_end_id_t>{}(point.portId) << 1);
 		}
 	};
 
@@ -43,7 +43,7 @@ struct EvalConnection {
 	EvalConnection(EvalConnectionPoint source, EvalConnectionPoint destination)
 		: source(source), destination(destination) {}
 
-	EvalConnection(middle_id_t srcId, connection_port_id_t srcPort, middle_id_t destId, connection_port_id_t destPort)
+	EvalConnection(middle_id_t srcId, connection_end_id_t srcPort, middle_id_t destId, connection_end_id_t destPort)
 		: source(srcId, srcPort), destination(destId, destPort) {}
 
 	bool operator==(const EvalConnection& other) const {

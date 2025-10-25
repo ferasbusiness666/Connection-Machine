@@ -2,9 +2,11 @@
 #define connectionEnd_h
 
 #include "blockDefs.h"
+#include "util/id.h"
 class ConnectionContainer;
 
-typedef unsigned int connection_end_id_t;
+struct ConnectionEndIdTag;
+using connection_end_id_t = Id<ConnectionEndIdTag, unsigned int>;
 
 class ConnectionEnd {
 	friend ConnectionContainer;

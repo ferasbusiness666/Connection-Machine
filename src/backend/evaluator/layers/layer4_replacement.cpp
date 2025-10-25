@@ -5,7 +5,7 @@
 void Replacement::removeGate(
 	SimPauseGuard& pauseGuard,
 	middle_id_t gateId,
-	std::unordered_map<connection_port_id_t, EvalConnectionPoint> replacementConnectionPoints) {
+	std::unordered_map<connection_end_id_t, EvalConnectionPoint> replacementConnectionPoints) {
 	isEmpty = false;
 	// track connection removals
 	std::vector<EvalConnection> outputs = replacer->busInterfacePassthrough.getOutputs(gateId);

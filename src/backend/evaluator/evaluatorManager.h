@@ -2,6 +2,7 @@
 #define evaluatorManager_h
 
 #include "backend/circuit/circuit.h"
+#include "util/idProvider.h"
 #include "evalDefs.h"
 
 class CircuitManager;
@@ -28,6 +29,7 @@ public:
 	inline void destroyEvaluator(evaluator_id_t id) {
 		auto iter = evaluators.find(id);
 		if (iter != evaluators.end()) {
+			evaluatorIdProvider.releaseId(id);
 			evaluators.erase(iter);
 		}
 	}
@@ -43,11 +45,10 @@ public:
 	void applyDiff(DifferenceSharedPtr difference, circuit_id_t circuitId);
 
 private:
-	evaluator_id_t getNewEvaluatorId() { return ++lastId; }
+	IdProvider<evaluator_id_t> evaluatorIdProvider;
 
 	DataUpdateEventManager* dataUpdateEventManager;
 
-	evaluator_id_t lastId = 0;
 	std::map<evaluator_id_t, SharedEvaluator> evaluators;
 };
 

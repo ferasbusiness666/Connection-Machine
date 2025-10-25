@@ -3,6 +3,7 @@
 
 #include "backend/address.h"
 #include "util/idProvider.h"
+#include "util/idVector.h"
 #include "evalCircuit.h"
 
 struct EvalPosition {
@@ -56,10 +57,14 @@ public:
 	eval_circuit_id_t traverseToTopLevelIC(const Address& address) const;
 	eval_circuit_id_t traverseToTopLevelIC(eval_circuit_id_t startingPoint, const Address& address) const;
 
-	std::optional<eval_circuit_id_t> getCircuitId(eval_circuit_id_t evalCircuitId) const noexcept;
+	std::optional<circuit_id_t> getCircuitId(eval_circuit_id_t evalCircuitId) const noexcept;
+
+	auto ids() const {
+		return circuits.ids();
+	}
 
 private:
-	std::vector<EvalCircuit*> circuits;
+	IdVector<eval_circuit_id_t, EvalCircuit*> circuits;
 	IdProvider<eval_circuit_id_t> evalCircuitIdProvider;
 };
 

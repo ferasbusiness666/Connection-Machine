@@ -60,7 +60,7 @@ struct TrackedGate {
 struct GateWithLinkedIO {
 	middle_id_t id;
 	std::vector<middle_id_t> idsCreated;
-	std::unordered_map<connection_port_id_t, EvalConnectionPoint> linkedIO;
+	std::unordered_map<connection_end_id_t, EvalConnectionPoint> linkedIO;
 };
 
 class GateSubstituter {
@@ -228,9 +228,9 @@ private:
 			replacer.addGate(pauseGuard, blockType, gateId);
 			middle_id_t busId = middleIdProvider.getNewId();
 			replacer.addGate(pauseGuard, blockDataManager.getBusBlock(6), busId);
-			GateWithLinkedIO gateWithLinkedIO { gateId, { busId }, { {connection_port_id_t(0), { busId, connection_port_id_t(6) }} } };
-			for (connection_port_id_t::rep portId = 0; portId < 6; ++portId) {
-				replacer.makeConnection(pauseGuard, EvalConnection(EvalConnectionPoint(busId, connection_port_id_t(portId)), EvalConnectionPoint(gateId, connection_port_id_t(portId))));
+			GateWithLinkedIO gateWithLinkedIO { gateId, { busId }, { {connection_end_id_t(0), { busId, connection_end_id_t(6) }} } };
+			for (connection_end_id_t::rep portId = 0; portId < 6; ++portId) {
+				replacer.makeConnection(pauseGuard, EvalConnection(EvalConnectionPoint(busId, connection_end_id_t(portId)), EvalConnectionPoint(gateId, connection_end_id_t(portId))));
 			}
 			gatesWithLinkedIO[gateId] = std::move(gateWithLinkedIO);
 			return true;
@@ -241,12 +241,12 @@ private:
 		}
 		replacer.addGate(pauseGuard, blockType, gateId);
 		GateWithLinkedIO gateWithLinkedIO { gateId, {}, {} };
-		for (connection_port_id_t portId : configIter->second) {
+		for (connection_end_id_t portId : configIter->second) {
 			middle_id_t junctionId = middleIdProvider.getNewId();
 			replacer.addGate(pauseGuard, BlockType::JUNCTION, junctionId);
-			replacer.makeConnection(pauseGuard, EvalConnection(EvalConnectionPoint(junctionId, connection_port_id_t(0)), EvalConnectionPoint(gateId, portId)));
+			replacer.makeConnection(pauseGuard, EvalConnection(EvalConnectionPoint(junctionId, connection_end_id_t(0)), EvalConnectionPoint(gateId, portId)));
 			gateWithLinkedIO.idsCreated.push_back(junctionId);
-			gateWithLinkedIO.linkedIO[portId] = EvalConnectionPoint(junctionId, connection_port_id_t(0));
+			gateWithLinkedIO.linkedIO[portId] = EvalConnectionPoint(junctionId, connection_end_id_t(0));
 		}
 		gatesWithLinkedIO[gateId] = std::move(gateWithLinkedIO);
 		return true;
@@ -279,10 +279,10 @@ private:
 		}
 	}
 
-	std::map<BlockType, std::vector<connection_port_id_t>> blockTypesWithlinkedIO = {
-		{BlockType::TRISTATE_BUFFER, {connection_port_id_t(0), connection_port_id_t(1)}},
-		{BlockType::NOT, {connection_port_id_t(0)}},
-		{BlockType::BUFFER, {connection_port_id_t(0)}}
+	std::map<BlockType, std::vector<connection_end_id_t>> blockTypesWithlinkedIO = {
+		{BlockType::TRISTATE_BUFFER, {connection_end_id_t(0), connection_end_id_t(1)}},
+		{BlockType::NOT, {connection_end_id_t(0)}},
+		{BlockType::BUFFER, {connection_end_id_t(0)}}
 	};
 };
 

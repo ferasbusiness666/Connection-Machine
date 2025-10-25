@@ -60,7 +60,7 @@ void Evaluator::makeEdit(DifferenceSharedPtr difference, circuit_id_t circuitId)
 		SimPauseGuard pauseGuard = evalSimulator->beginEdit();
 		std::unique_lock lk(simMutex);
 		DiffCache diffCache(circuitManager);
-		for (eval_circuit_id_t evalCircuitId = 0; evalCircuitId < evalCircuitContainer.size(); evalCircuitId++) {
+		for (eval_circuit_id_t evalCircuitId : evalCircuitContainer.ids()) {
 			if (evalCircuitContainer.getCircuitId(evalCircuitId) == circuitId) {
 				makeEditInPlace(pauseGuard, evalCircuitId, difference, diffCache);
 			}
@@ -148,14 +148,14 @@ void Evaluator::edit_removeBlock(
 		return;
 	}
 	if (node->isIC()) {
-		eval_circuit_id_t icId = node->getId();
+		eval_circuit_id_t icId = node->getEvalCircuitId();
 		edit_deleteICContents(pauseGuard, icId);
 		evalCircuitContainer.removeCircuit(icId);
 		changedICs = true;
 		evalCircuit->removeNode(position);
 		return;
 	}
-	middle_id_t gateId = node->getId();
+	middle_id_t gateId = node->getMiddleId();
 	middleIdToEvalPositionMap.erase(gateId);
 	evalSimulator->removeGate(pauseGuard, gateId);
 	middleIdProvider.releaseId(gateId);
@@ -170,13 +170,13 @@ void Evaluator::edit_deleteICContents(SimPauseGuard& pauseGuard, eval_circuit_id
 	}
 	evalCircuit->forEachNode([&](Position pos, const CircuitNode& node) {
 		if (node.isIC()) {
-			eval_circuit_id_t icId = node.getId();
+			eval_circuit_id_t icId = node.getEvalCircuitId();
 			edit_deleteICContents(pauseGuard, icId);
 			evalCircuitContainer.removeCircuit(icId);
 			changedICs = true;
 			return;
 		}
-		middle_id_t gateId = node.getId();
+		middle_id_t gateId = node.getMiddleId();
 		middleIdToEvalPositionMap.erase(gateId);
 		evalSimulator->removeGate(pauseGuard, gateId);
 		middleIdProvider.releaseId(gateId);
@@ -363,7 +363,7 @@ void Evaluator::setCircuitIO(const DataUpdateEventManager::EventData* data) {
 	}
 	// use checkToCreateExternalConnections
 	// iterate over eval_circuit_id_t
-	for (eval_circuit_id_t evalCircuitId = 0; evalCircuitId < evalCircuitContainer.size(); evalCircuitId++) {
+	for (eval_circuit_id_t evalCircuitId : evalCircuitContainer.ids()) {
 		EvalCircuit* evalCircuit = evalCircuitContainer.getCircuit(evalCircuitId);
 		if (!evalCircuit) {
 			continue;
@@ -377,7 +377,7 @@ void Evaluator::setCircuitIO(const DataUpdateEventManager::EventData* data) {
 	processDirtyNodes();
 }
 
-std::optional<connection_port_id_t> Evaluator::getPortId(
+std::optional<connection_end_id_t> Evaluator::getPortId(
 	const circuit_id_t circuitId,
 	const Position blockPosition,
 	const Position portPosition,
@@ -391,7 +391,7 @@ std::optional<connection_port_id_t> Evaluator::getPortId(
 	return getPortId(blockContainer, blockPosition, portPosition, direction);
 }
 
-std::optional<connection_port_id_t> Evaluator::getPortId(
+std::optional<connection_end_id_t> Evaluator::getPortId(
 	const BlockContainer* blockContainer,
 	const Position blockPosition,
 	const Position portPosition,
@@ -454,25 +454,25 @@ std::optional<EvalConnectionPoint> Evaluator::getConnectionPoint(
 	case BlockType::BUTTON:
 	case BlockType::TICK_BUTTON:
 		if (direction == Direction::IN) [[likely]] {
-			return EvalConnectionPoint(node->getId(), 0);
+			return EvalConnectionPoint(node->getMiddleId(), 0);
 		}
 		break;
 	case BlockType::LIGHT:
 		if (direction == Direction::OUT) [[likely]] {
-			return EvalConnectionPoint(node->getId(), 0);
+			return EvalConnectionPoint(node->getMiddleId(), 0);
 		}
 		break;
 	default: break;
 	}
 
-	std::optional<connection_port_id_t> portId;
+	std::optional<connection_end_id_t> portId;
 	if (direction == Direction::IN) {
-		const std::optional<connection_port_id_t> port = block->getInputOrBidirectionalConnectionId(portPosition);
+		const std::optional<connection_end_id_t> port = block->getInputOrBidirectionalConnectionId(portPosition);
 		if (port) [[likely]] {
 			portId = port.value();
 		}
 	} else {
-		const std::optional<connection_port_id_t> port = block->getOutputOrBidirectionalConnectionId(portPosition);
+		const std::optional<connection_end_id_t> port = block->getOutputOrBidirectionalConnectionId(portPosition);
 		if (port) [[likely]] {
 			portId = port.value();
 		}
@@ -551,14 +551,14 @@ std::optional<EvalConnectionPoint> Evaluator::getConnectionPoint(
 	default: break;
 	}
 
-	std::optional<connection_port_id_t> portId;
+	std::optional<connection_end_id_t> portId;
 	if (direction == Direction::IN) {
-		const std::optional<connection_port_id_t> port = block->getInputOrBidirectionalConnectionId(portPosition);
+		const std::optional<connection_end_id_t> port = block->getInputOrBidirectionalConnectionId(portPosition);
 		if (port) [[likely]] {
 			portId = port.value();
 		}
 	} else {
-		const std::optional<connection_port_id_t> port = block->getOutputOrBidirectionalConnectionId(portPosition);
+		const std::optional<connection_end_id_t> port = block->getOutputOrBidirectionalConnectionId(portPosition);
 		if (port) [[likely]] {
 			portId = port.value();
 		}

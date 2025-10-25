@@ -498,7 +498,7 @@ void LogicSimulator::removeGate(simulator_id_t simulatorId) {
 	removeGateLocation(simulatorId);
 }
 
-void LogicSimulator::makeConnection(simulator_id_t sourceId, connection_port_id_t sourcePort, simulator_id_t destinationId, connection_port_id_t destinationPort) {
+void LogicSimulator::makeConnection(simulator_id_t sourceId, connection_end_id_t sourcePort, simulator_id_t destinationId, connection_end_id_t destinationPort) {
 	std::optional<simulator_id_t> actualSourceId = getOutputPortId(sourceId, sourcePort);
 
 	if (!actualSourceId.has_value()) {
@@ -509,7 +509,7 @@ void LogicSimulator::makeConnection(simulator_id_t sourceId, connection_port_id_
 	addInputToGate(destinationId, actualSourceId.value(), destinationPort);
 }
 
-void LogicSimulator::removeConnection(simulator_id_t sourceId, connection_port_id_t sourcePort, simulator_id_t destinationId, connection_port_id_t destinationPort) {
+void LogicSimulator::removeConnection(simulator_id_t sourceId, connection_end_id_t sourcePort, simulator_id_t destinationId, connection_end_id_t destinationPort) {
 	std::optional<simulator_id_t> actualSourceId = getOutputPortId(sourceId, sourcePort);
 	if (!actualSourceId.has_value()) {
 		logError("Cannot resolve actual source ID for disconnection", "LogicSimulator::removeConnection");
@@ -523,7 +523,7 @@ void LogicSimulator::endEdit() {
 	regenerateJobs();
 }
 
-std::optional<simulator_id_t> LogicSimulator::getOutputPortId(simulator_id_t simId, connection_port_id_t portId) const {
+std::optional<simulator_id_t> LogicSimulator::getOutputPortId(simulator_id_t simId, connection_end_id_t portId) const {
 	auto locationIt = gateLocations.find(simId);
 	if (locationIt != gateLocations.end()) {
 		SimGateType gateType = locationIt->second.gateType;
@@ -586,7 +586,7 @@ std::optional<simulator_id_t> LogicSimulator::getOutputPortId(simulator_id_t sim
 	return std::nullopt;
 }
 
-void LogicSimulator::addInputToGate(simulator_id_t simId, simulator_id_t inputId, connection_port_id_t portId) {
+void LogicSimulator::addInputToGate(simulator_id_t simId, simulator_id_t inputId, connection_end_id_t portId) {
 	dirtySimulatorIds.push_back(inputId);
 	auto locationIt = gateLocations.find(simId);
 	if (locationIt != gateLocations.end()) {
@@ -661,7 +661,7 @@ void LogicSimulator::addInputToGate(simulator_id_t simId, simulator_id_t inputId
 	logError("Gate not found for addInputToGate", "LogicSimulator::addInputToGate");
 }
 
-void LogicSimulator::removeInputFromGate(simulator_id_t simId, simulator_id_t inputId, connection_port_id_t portId) {
+void LogicSimulator::removeInputFromGate(simulator_id_t simId, simulator_id_t inputId, connection_end_id_t portId) {
 	dirtySimulatorIds.push_back(inputId);
 	auto locationIt = gateLocations.find(simId);
 	if (locationIt != gateLocations.end()) {

@@ -38,7 +38,7 @@ void CircuitView::setBackend(Backend* backend) {
 void CircuitView::setEvaluator(Backend* backend, evaluator_id_t evaluatorId, const Address& address) {
 	if (backend == nullptr) {
 		logError("When setting CircuitView's evaluator the backend was null. Failed to connect! Doing nothing!", "CircuitView");
-	} else if (evaluatorId == 0) {
+	} else if (evaluatorId == evaluator_id_t(0)) {
 		if (this->backend != backend) {
 			this->backend = backend;
 			dataUpdateEventManager = backend->getDataUpdateEventManager();

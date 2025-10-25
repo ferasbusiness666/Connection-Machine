@@ -36,12 +36,12 @@ public:
 
 	logic_state_t getState(simulator_id_t id) const;
 	std::vector<logic_state_t> getStates(const std::vector<simulator_id_t>& ids) const;
-	std::optional<simulator_id_t> getOutputPortId(simulator_id_t simId, connection_port_id_t portId) const;
+	std::optional<simulator_id_t> getOutputPortId(simulator_id_t simId, connection_end_id_t portId) const;
 
 	simulator_id_t addGate(const BlockType blockType);
 	void removeGate(simulator_id_t gateId);
-	void makeConnection(simulator_id_t sourceId, connection_port_id_t sourcePort, simulator_id_t destinationId, connection_port_id_t destinationPort);
-	void removeConnection(simulator_id_t sourceId, connection_port_id_t sourcePort, simulator_id_t destinationId, connection_port_id_t destinationPort);
+	void makeConnection(simulator_id_t sourceId, connection_end_id_t sourcePort, simulator_id_t destinationId, connection_end_id_t destinationPort);
+	void removeConnection(simulator_id_t sourceId, connection_end_id_t sourcePort, simulator_id_t destinationId, connection_end_id_t destinationPort);
 	void endEdit();
 
 	const std::vector<simulator_id_t> getOutputs(simulator_id_t simId);
@@ -56,8 +56,8 @@ private:
 	std::mutex cvMutex;
 	std::condition_variable cv;
 
-	std::vector<logic_state_t> statesA;
-	std::vector<logic_state_t> statesB;
+	IdVector<simulator_id_t, logic_state_t> statesA;
+	IdVector<simulator_id_t, logic_state_t> statesB;
 
 	mutable std::shared_mutex statesAMutex;
 	std::mutex statesBMutex;
@@ -188,8 +188,8 @@ private:
 		std::chrono::steady_clock::time_point& lastTickTime,
 		bool& isFirstTick);
 
-	void addInputToGate(simulator_id_t simId, simulator_id_t inputId, connection_port_id_t portId);
-	void removeInputFromGate(simulator_id_t simId, simulator_id_t inputId, connection_port_id_t portId);
+	void addInputToGate(simulator_id_t simId, simulator_id_t inputId, connection_end_id_t portId);
+	void removeInputFromGate(simulator_id_t simId, simulator_id_t inputId, connection_end_id_t portId);
 	std::optional<std::vector<simulator_id_t>> getOutputSimIdsFromGate(simulator_id_t simId) const;
 
 	void updateGateLocation(simulator_id_t gateId, SimGateType gateType, size_t gateIndex);
@@ -209,10 +209,9 @@ private:
 	void regenerateJobs();
 
 	void extendDataVectors(simulator_id_t id) {
-		simulator_id_t::rep index = id.get();
-		if (statesA.size() <= index) {
-			statesA.resize(index + 1, logic_state_t::UNDEFINED);
-			statesB.resize(index + 1, logic_state_t::UNDEFINED);
+		if (statesA.size() <= id) {
+			statesA.resizeWithOffset(id, 1, logic_state_t::UNDEFINED);
+			statesB.resizeWithOffset(id, 1, logic_state_t::UNDEFINED);
 		}
 	}
 

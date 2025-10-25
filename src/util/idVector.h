@@ -24,6 +24,8 @@ public:
     void reserve(id_type n)                      { storage_.reserve(to_index_(n)); }
     void resize(id_type n)                       { storage_.resize(to_index_(n)); }
     void resize(id_type n, const T& value)       { storage_.resize(to_index_(n), value); }
+    void resizeWithOffset(id_type n, int offset) { storage_.resize(to_index_(n) + offset); }
+    void resizeWithOffset(id_type n, int offset, const T& value) { storage_.resize(to_index_(n) + offset, value); }
 
     void clear() noexcept                        { storage_.clear(); }
 

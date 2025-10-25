@@ -6,21 +6,29 @@
 class CircuitNode {
 public:
 	static CircuitNode fromMiddle(middle_id_t id) {
-		return CircuitNode(id << 1);
+		return CircuitNode(id.get() << 1);
 	}
 	static CircuitNode fromIC(eval_circuit_id_t id) {
-		return CircuitNode((id << 1) | 1);
+		return CircuitNode((id.get() << 1) | 1);
 	}
 	inline bool isIC() const { return (id_and_type & 1) == 1; }
-	inline unsigned int getId() const { return id_and_type >> 1; }
-	inline bool operator==(const CircuitNode& other) const {
+	// inline unsigned int getId() const { return id_and_type >> 1; }
+	inline middle_id_t getMiddleId() const {
+		assert(!isIC() && "Attempted to get middle ID from an IC CircuitNode");
+		return middle_id_t(id_and_type >> 1);
+	}
+	inline eval_circuit_id_t getEvalCircuitId() const {
+		assert(isIC() && "Attempted to get eval circuit ID from a middle CircuitNode");
+		return eval_circuit_id_t(id_and_type >> 1);
+	}
+	inline bool operator==(const CircuitNode & other) const {
 		return id_and_type == other.id_and_type;
 	}
 	inline auto operator<=>(const CircuitNode& other) const {
 		return id_and_type <=> other.id_and_type;
 	}
 	inline std::string toString() const {
-		return isIC() ? "IC(" + std::to_string(getId()) + ")" : "mid(" + std::to_string(getId()) + ")";
+		return isIC() ? "IC(" + std::to_string(getEvalCircuitId()) + ")" : "mid(" + std::to_string(getMiddleId()) + ")";
 	}
 private:
 	explicit CircuitNode(unsigned int value) : id_and_type(value) {}

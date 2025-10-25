@@ -622,7 +622,7 @@ void BlockCreationWindow::updateSelected(std::string string) {
 	std::stringstream evalName(parts.front());
 	std::string str;
 	evaluator_id_t evalId;
-	evalName >> str >> evalId;
+	evalName >> str >> evalId.get();
 	Address address;
 	for (unsigned int i = 1; i < parts.size(); i++) {
 		std::string part = parts[i];

@@ -21,7 +21,7 @@ public:
 		replacer(replacer),
 		layer(layer) {}
 
-	void removeGate(SimPauseGuard& pauseGuard, middle_id_t gateId, std::unordered_map<connection_port_id_t, EvalConnectionPoint> replacementConnectionPoints);
+	void removeGate(SimPauseGuard& pauseGuard, middle_id_t gateId, std::unordered_map<connection_end_id_t, EvalConnectionPoint> replacementConnectionPoints);
 
 	void removeGate(SimPauseGuard& pauseGuard, middle_id_t gateId, middle_id_t replacementId);
 
@@ -82,7 +82,7 @@ private:
 	};
 	struct ReplacementConnectionPointOverride {
 		middle_id_t gateId;
-		connection_port_id_t portId;
+		connection_end_id_t portId;
 		std::optional<EvalConnectionPoint> previousPoint;
 	};
 
