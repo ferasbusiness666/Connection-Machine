@@ -2,6 +2,7 @@
 #define logicSimulator_h
 
 #include "backend/container/block/blockDefs.h"
+#include "backend/container/block/connectionEnd.h"
 #include "backend/evaluator/util/evalConfig.h"
 #include "backend/evaluator/evalDefs.h"
 #include "util/idProvider.h"

@@ -76,7 +76,7 @@ eval_circuit_id_t EvalCircuitContainer::traverseToTopLevelIC(eval_circuit_id_t s
 		if (!node.has_value() || !node->isIC()) {
 			return currentCircuitId;
 		}
-		currentCircuitId = node->getId();
+		currentCircuitId = node->getEvalCircuitId();
 	}
 	return currentCircuitId;
 }

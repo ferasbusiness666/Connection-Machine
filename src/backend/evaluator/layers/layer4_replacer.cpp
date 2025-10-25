@@ -126,8 +126,8 @@ void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, int layer, int junctionOv
 				if (connectionData->getBitWidth() == 1) {
 					replacement.trackConnection(input);
 					replacement.removeConnection(pauseGuard, input);
-					replacement.makeConnection(pauseGuard, { input.source, { newJunctionId, 0 } });
-					replacement.overrideConnectionPoint(input.destination, { newJunctionId, 0 });
+					replacement.makeConnection(pauseGuard, { input.source, { newJunctionId, connection_end_id_t(0) } });
+					replacement.overrideConnectionPoint(input.destination, { newJunctionId, connection_end_id_t(0) });
 					continue;
 				}
 			}
@@ -160,8 +160,8 @@ void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, int layer, int junctionOv
 				if (connectionData->getBitWidth() == 1) {
 					replacement.trackConnection(output);
 					replacement.removeConnection(pauseGuard, output);
-					replacement.makeConnection(pauseGuard, { { newJunctionId, 0 } , output.destination });
-					replacement.overrideConnectionPoint(output.source, { newJunctionId, 0 });
+					replacement.makeConnection(pauseGuard, { { newJunctionId, connection_end_id_t(0) } , output.destination });
+					replacement.overrideConnectionPoint(output.source, { newJunctionId, connection_end_id_t(0) });
 					continue;
 				}
 			}
@@ -211,7 +211,7 @@ void Replacer::mergeJunctions(SimPauseGuard& pauseGuard, int layer) {
 		if (floodFillResult.outputsGoingIntoJunctions.size() == 1 && floodFillResult.defaultState == logic_state_t::FLOATING) {
 			EvalConnectionPoint output = floodFillResult.outputsGoingIntoJunctions.at(0);
 			for (const middle_id_t junctionId : floodFillResult.junctionIds) {
-				replacement.removeGate(pauseGuard, junctionId, { {0, output }, {1, output } });
+				replacement.removeGate(pauseGuard, junctionId, { {connection_end_id_t(0), output }, {connection_end_id_t(1), output } });
 			}
 			for (const EvalConnection& input : floodFillResult.inputsPullingFromJunctions) {
 				replacement.makeConnection(pauseGuard, EvalConnection(output, input.destination));
@@ -234,13 +234,13 @@ void Replacer::mergeJunctions(SimPauseGuard& pauseGuard, int layer) {
 				replacement.removeGate(pauseGuard, junctionId, newJunctionId);
 			}
 			for (const EvalConnection& input : floodFillResult.inputsPullingFromJunctions) {
-				replacement.makeConnection(pauseGuard, EvalConnection(EvalConnectionPoint(newJunctionId, 0), input.destination));
+				replacement.makeConnection(pauseGuard, EvalConnection(EvalConnectionPoint(newJunctionId, connection_end_id_t(0)), input.destination));
 			}
 			for (const EvalConnectionPoint& output : floodFillResult.outputsGoingIntoJunctions) {
-				replacement.makeConnection(pauseGuard, EvalConnection(output, EvalConnectionPoint(newJunctionId, 0)));
+				replacement.makeConnection(pauseGuard, EvalConnection(output, EvalConnectionPoint(newJunctionId, connection_end_id_t(0))));
 			}
 			for (const EvalConnection& conn : floodFillResult.connectionsToReroute) {
-				EvalConnection newConnection = EvalConnection(EvalConnectionPoint(newJunctionId, 0), conn.destination);
+				EvalConnection newConnection = EvalConnection(EvalConnectionPoint(newJunctionId, connection_end_id_t(0)), conn.destination);
 				replacement.removeConnection(pauseGuard, conn);
 				replacement.makeConnection(pauseGuard, newConnection);
 			}
@@ -349,7 +349,7 @@ std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> Replacer:
 				std::vector<simulator_id_t> simIds;
 				simIds.reserve(busInternalJunctionArray.junctionIds.size());
 				for (const middle_id_t junctionId : busInternalJunctionArray.junctionIds) {
-					simIds.push_back(busInterfacePassthrough.getPinSimulatorId(getReplacementConnectionPoint({junctionId, 0})));
+					simIds.push_back(busInterfacePassthrough.getPinSimulatorId(getReplacementConnectionPoint({junctionId, connection_end_id_t(0)})));
 				}
 				if (simIds.size() == 1) {
 					result.emplace_back(simIds.at(0));
@@ -370,15 +370,15 @@ std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> Replacer:
 					const BusInternalJunctionArray& busInternalJunctionArray = busInternalJunctions.at(point->gateId);
 					if (std::holds_alternative<unsigned int>(connectionData->bitConfiguration)) {
 						for (unsigned int laneId = 0; laneId < std::get<unsigned int>(connectionData->bitConfiguration); laneId++) {
-							simIds.push_back(busInterfacePassthrough.getPinSimulatorId(getReplacementConnectionPoint({busInternalJunctionArray.junctionIds[laneId], 0})));
+							simIds.push_back(busInterfacePassthrough.getPinSimulatorId(getReplacementConnectionPoint({busInternalJunctionArray.junctionIds[laneId], connection_end_id_t(0)})));
 						}
 					} else {
 						for (unsigned int laneId : std::get<std::vector<unsigned int>>(connectionData->bitConfiguration)) {
-							simIds.push_back(busInterfacePassthrough.getPinSimulatorId(getReplacementConnectionPoint({busInternalJunctionArray.junctionIds[laneId], 0})));
+							simIds.push_back(busInterfacePassthrough.getPinSimulatorId(getReplacementConnectionPoint({busInternalJunctionArray.junctionIds[laneId], connection_end_id_t(0)})));
 						}
 					}
 				} else {
-					simIds.resize(connectionData->getBitWidth(), 0);
+					simIds.resize(connectionData->getBitWidth(), simulator_id_t(0));
 				}
 				if (simIds.size() == 1) {
 					result.emplace_back(simIds.at(0));

@@ -1,13 +1,14 @@
 #ifndef evalConnection_h
 #define evalConnection_h
 
+#include "backend/container/block/connectionEnd.h"
 #include "../evalDefs.h"
 
 struct EvalConnectionPoint {
 	middle_id_t gateId;
 	connection_end_id_t portId;
 
-	EvalConnectionPoint() : gateId(0), portId(0) {};
+	EvalConnectionPoint() : gateId(middle_id_t(0)), portId(connection_end_id_t(0)) {};
 	EvalConnectionPoint(middle_id_t gateId, connection_end_id_t portId)
 		: gateId(gateId), portId(portId) {}
 

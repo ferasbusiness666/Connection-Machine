@@ -3,6 +3,7 @@
 
 #include "backend/evaluator/util/evalConnection.h"
 #include "backend/container/block/blockDefs.h"
+#include "backend/container/block/connectionEnd.h"
 
 class SimPauseGuard;
 class Replacer;

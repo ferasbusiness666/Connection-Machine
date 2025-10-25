@@ -6,7 +6,7 @@ LogicSimulator::LogicSimulator(
 	std::vector<simulator_id_t>& dirtySimulatorIds) :
 	evalConfig(evalConfig),
 	dirtySimulatorIds(dirtySimulatorIds) {
-	evalConfig.subscribe([this]() {
+evalConfig.subscribe([this]() {
 		{
 			SimPauseGuard pauseGuard(*this);
 			this->regenerateJobs();
@@ -20,7 +20,7 @@ LogicSimulator::LogicSimulator(
 
 	simulationThread = std::thread(&LogicSimulator::simulationLoop, this);
 	extendDataVectors(simulatorIdProvider.getNewId()); // reserve the 0th id to be used as an invalid id
-	setState(0, logic_state_t::LOW);
+	setState(simulator_id_t(0), logic_state_t::LOW);
 }
 
 LogicSimulator::~LogicSimulator() {
@@ -179,8 +179,8 @@ void LogicSimulator::setState(simulator_id_t id, logic_state_t st) {
 
 	if (lkB.owns_lock() && lkA.owns_lock()) {
 		if (statesA.size() <= id) {
-			statesA.resize(id + 1, logic_state_t::UNDEFINED);
-			statesB.resize(id + 1, logic_state_t::UNDEFINED);
+			statesA.resizeWithOffset(id, 1, logic_state_t::UNDEFINED);
+			statesB.resizeWithOffset(id, 1, logic_state_t::UNDEFINED);
 		}
 		statesA[id] = st;
 		statesB[id] = st;
@@ -201,7 +201,7 @@ std::vector<logic_state_t> LogicSimulator::getStates(const std::vector<simulator
 	std::vector<logic_state_t> result(ids.size());
 	std::shared_lock lk(statesAMutex);
 	for (size_t i = 0; i < ids.size(); ++i) {
-		const size_t id = ids[i];
+		simulator_id_t id = ids[i];
 		if (id < statesA.size()) {
 			result[i] = statesA[id];
 		} else {

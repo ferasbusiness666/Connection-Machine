@@ -10,7 +10,7 @@ class DataUpdateEventManager;
 
 class EvaluatorManager {
 public:
-	EvaluatorManager(DataUpdateEventManager* dataUpdateEventManager) : dataUpdateEventManager(dataUpdateEventManager) {}
+	EvaluatorManager(DataUpdateEventManager* dataUpdateEventManager) : dataUpdateEventManager(dataUpdateEventManager), evaluatorIdProvider(1) {}
 
 	inline const std::map<evaluator_id_t, SharedEvaluator>& getEvaluators() const { return evaluators; }
 

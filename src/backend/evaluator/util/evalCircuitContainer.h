@@ -45,7 +45,7 @@ public:
 	std::optional<CircuitNode> getNode(Position pos, eval_circuit_id_t evalCircuitId) const noexcept;
 	EvalCircuit* getCircuit(eval_circuit_id_t evalCircuitId) const noexcept;
 
-	inline size_t size() const noexcept {
+	inline eval_circuit_id_t size() const noexcept {
 		return circuits.size();
 	}
 	inline bool empty() const noexcept {

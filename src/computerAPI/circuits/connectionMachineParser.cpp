@@ -161,12 +161,12 @@ std::vector<circuit_id_t> ConnectionMachineParser::load(const std::string& path)
 				inputFile >> std::ws;
 				if (inputFile.peek() != '(') break;
 				inputFile >> cToken;
-				connection_end_id_t endId;
+				unsigned int endId;
 				int blockId;
 				coordinate_t vecX, vecY;
 				std::string portName = "";
 				inputFile >> token >> endId >> cToken >> blockId >> cToken >> cToken >> vecX >> cToken >> vecY >> cToken >> cToken >> std::quoted(portName) >> cToken;
-				currentParsedCircuit->addConnectionPort(token == "IN,", endId, Vector(vecX, vecY), blockId, 0, portName);
+				currentParsedCircuit->addConnectionPort(token == "IN,", connection_end_id_t(endId), Vector(vecX, vecY), blockId, connection_end_id_t(0), portName);
 			}
 		} else if (token == "UUID:") {
 			std::string uuid;
@@ -230,7 +230,7 @@ std::vector<circuit_id_t> ConnectionMachineParser::load(const std::string& path)
 						logError("Failed to parse (blockid, connection_id) token", "ConnectionMachineParser");
 						break;
 					}
-					currentParsedCircuit->addConnection(blockId, connId, otherBlockId, otherConnId);
+					currentParsedCircuit->addConnection(blockId, connection_end_id_t(connId), otherBlockId, connection_end_id_t(otherConnId));
 				}
 			}
 		}
@@ -356,7 +356,7 @@ bool ConnectionMachineParser::save(const CircuitFileManager::FileData& fileData,
 				std::optional<std::string> name = blockData->getConnectionIdToName(pair.first);
 				if (!name) name = "";
 
-				outputFile << "\t(" << (pair.second.portType == BlockData::ConnectionData::PortType::INPUT ? "IN, " : "OUT, ") << pair.first << ", " << id << ", " << pair.second.positionOnBlock.toString() << ", \"" << *name << "\")\n";
+				outputFile << "\t(" << (pair.second.portType == BlockData::ConnectionData::PortType::INPUT ? "IN, " : "OUT, ") << std::to_string(pair.first) << ", " << id << ", " << pair.second.positionOnBlock.toString() << ", \"" << *name << "\")\n";
 			}
 		}
 
@@ -390,9 +390,9 @@ bool ConnectionMachineParser::save(const CircuitFileManager::FileData& fileData,
 			const ConnectionContainer& connectionContainer = block.getConnectionContainer();
 
 			for (auto& connectionIter : connectionContainer.getConnections()) {
-				outputFile << '\t' << "(connId:" << connectionIter.first << ')';
+				outputFile << '\t' << "(connId:" << std::to_string(connectionIter.first) << ')';
 				for (ConnectionEnd conn : connectionIter.second) {
-					outputFile << " (" << conn.getBlockId() << ' ' << conn.getConnectionId() << ')';
+					outputFile << " (" << conn.getBlockId() << ' ' << std::to_string(conn.getConnectionId()) << ')';
 				}
 				outputFile << '\n';
 			}

@@ -9,7 +9,7 @@ public:
 	using id_type = std::remove_cv_t<IdT>;
 	using rep = typename id_traits<id_type>::rep;
 
-	constexpr IdProvider() : nextId(0) {}
+	constexpr IdProvider(rep initialValue) : nextId(initialValue) {}
 
 	constexpr id_type getNewId() {
 		if (unusedIds.empty()) {
@@ -61,6 +61,31 @@ public:
 private:
 	rep nextId;
 	std::set<rep> unusedIds;
+};
+
+template<IdType IdT>
+class LinearIdProvider {
+public:
+	using id_type = std::remove_cv_t<IdT>;
+	using rep = typename id_traits<id_type>::rep;
+
+	constexpr LinearIdProvider(rep initialValue) : nextId(initialValue) {}
+
+	constexpr id_type getNewId() {
+		return id_type(nextId++);
+	}
+	constexpr id_type peekNext() const {
+		return id_type(nextId);
+	}
+	constexpr id_type lastIdProvided() const {
+		return idType(nextId - 1);
+	}
+	void reset() {
+		nextId = 0;
+	}
+
+private:
+	rep nextId;
 };
 
 #endif /* idProvider_h */

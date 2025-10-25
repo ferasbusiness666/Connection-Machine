@@ -3,7 +3,7 @@
 
 #include "backend/dataUpdateEventManager.h"
 #include "backend/settings/settings.h"
-#include "evalDefs.h"
+#include "backend/evaluator/evalDefs.h"
 
 class EvalConfig {
 public:

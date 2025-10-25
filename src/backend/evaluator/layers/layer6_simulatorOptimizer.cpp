@@ -5,23 +5,23 @@ void SimulatorOptimizer::addGate(SimPauseGuard& pauseGuard, const BlockType bloc
 
 	// if simulatorToMiddleIds is too short, extend it
 	if (simulatorToMiddleIds.size() <= simulatorId) {
-		simulatorToMiddleIds.resize(simulatorId + 1);
+		simulatorToMiddleIds.resizeWithOffset(simulatorId, 1);
 	}
 	simulatorToMiddleIds[simulatorId] = gateId;
 
 	// Ensure connection tracking vectors are large enough
 	if (middleToSimulatorIds.size() <= gateId) {
-		middleToSimulatorIds.resize(gateId + 1);
+		middleToSimulatorIds.resizeWithOffset(gateId, 1);
 	}
 	middleToSimulatorIds[gateId] = simulatorId;
 	if (inputConnections.size() <= gateId) {
-		inputConnections.resize(gateId + 1, std::vector<EvalConnection>());
+		inputConnections.resizeWithOffset(gateId, 1, std::vector<EvalConnection>());
 	}
 	if (outputConnections.size() <= gateId) {
-		outputConnections.resize(gateId + 1, std::vector<EvalConnection>());
+		outputConnections.resizeWithOffset(gateId, 1, std::vector<EvalConnection>());
 	}
 	if (blockTypes.size() <= gateId) {
-		blockTypes.resize(gateId + 1, BlockType::NONE);
+		blockTypes.resizeWithOffset(gateId, 1, BlockType::NONE);
 	}
 	blockTypes[gateId] = blockType;
 }
@@ -87,10 +87,10 @@ void SimulatorOptimizer::makeConnection(SimPauseGuard& pauseGuard, EvalConnectio
 	simulator.makeConnection(sourceId, sourcePort, destinationId, destinationPort);
 
 	if (inputConnections.size() <= destinationGateId) {
-		inputConnections.resize(destinationGateId + 1);
+		inputConnections.resizeWithOffset(destinationGateId, 1);
 	}
 	if (outputConnections.size() <= sourceGateId) {
-		outputConnections.resize(sourceGateId + 1);
+		outputConnections.resizeWithOffset(sourceGateId, 1);
 	}
 
 	// Add to connection tracking

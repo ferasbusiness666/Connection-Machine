@@ -49,7 +49,6 @@ public:
         }
         if (busInterfaces.contains(gateId)) {
             busInterfaces.erase(gateId);
-            dirtySimulatorIds.push_back(0);
         } else {
             simulatorOptimizer.removeGate(pauseGuard, gateId);
         }
@@ -85,14 +84,14 @@ public:
 
     inline simulator_id_t getBlockSimulatorId(EvalConnectionPoint point) const {
         if (busInterfaces.contains(point.gateId)) {
-            return 0;
+            return simulator_id_t(0);
         }
         return simulatorOptimizer.getBlockSimulatorId(point);
     }
 
     inline simulator_id_t getPinSimulatorId(EvalConnectionPoint point) const {
         if (busInterfaces.contains(point.gateId)) {
-            return 0;
+            return simulator_id_t(0);
         }
         return simulatorOptimizer.getPinSimulatorId(point);
     }
@@ -122,7 +121,6 @@ public:
             busInterfaces.contains(connection.destination.gateId)) {
             omittedConnections[connection.source.gateId].push_back(connection);
             omittedConnections[connection.destination.gateId].push_back(connection);
-            dirtySimulatorIds.push_back(0);
             return;
         }
         simulatorOptimizer.makeConnection(pauseGuard, connection);
@@ -131,7 +129,6 @@ public:
     void removeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
         if (busInterfaces.contains(connection.source.gateId) ||
             busInterfaces.contains(connection.destination.gateId)) {
-            dirtySimulatorIds.push_back(0);
             omittedConnections[connection.source.gateId].erase(
                 std::remove_if(
                     omittedConnections[connection.source.gateId].begin(),

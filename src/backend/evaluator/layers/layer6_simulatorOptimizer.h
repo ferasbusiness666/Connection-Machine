@@ -94,7 +94,7 @@ public:
 	simulator_id_t getPinSimulatorId(EvalConnectionPoint point) const {
 		std::optional<simulator_id_t> simIdOpt = getSimIdFromConnectionPoint(point);
 		if (!simIdOpt.has_value()) {
-			return 0;
+			return simulator_id_t(0);
 		}
 		int numOutputs = getNumOutputs(point.gateId);
 		if (numOutputs == 1) {
@@ -130,7 +130,7 @@ public:
 		result.reserve(points.size());
 		for (const auto& pointOpt : points) {
 			if (!pointOpt.has_value()) {
-				result.push_back(0);
+				result.push_back(simulator_id_t(0));
 				continue;
 			}
 			result.push_back(getBlockSimulatorId(pointOpt.value()));
@@ -142,7 +142,7 @@ public:
 		result.reserve(points.size());
 		for (const auto& pointOpt : points) {
 			if (!pointOpt.has_value()) {
-				result.push_back(0);
+				result.push_back(simulator_id_t(0));
 				continue;
 			}
 			result.push_back(getPinSimulatorId(pointOpt.value()));
@@ -195,12 +195,12 @@ private:
 	LogicSimulator simulator;
 	EvalConfig& evalConfig;
 	IdProvider<middle_id_t>& middleIdProvider;
-	std::vector<middle_id_t> simulatorToMiddleIds; // maps simulator_id_t to middle_id_t
-	std::vector<simulator_id_t> middleToSimulatorIds; // maps middle_id_t to simulator_id_t
+	IdVector<simulator_id_t, middle_id_t> simulatorToMiddleIds; // maps simulator_id_t to middle_id_t
+	IdVector<middle_id_t, simulator_id_t> middleToSimulatorIds; // maps middle_id_t to simulator_id_t
 
-	std::vector<std::vector<EvalConnection>> inputConnections;  // inputConnections[middleId] = connections TO this gate
-	std::vector<std::vector<EvalConnection>> outputConnections; // outputConnections[middleId] = connections FROM this gate
-	std::vector<BlockType> blockTypes; // maps middle_id_t to BlockType
+	IdVector<middle_id_t, std::vector<EvalConnection>> inputConnections;  // inputConnections[middleId] = connections TO this gate
+	IdVector<middle_id_t, std::vector<EvalConnection>> outputConnections; // outputConnections[middleId] = connections FROM this gate
+	IdVector<middle_id_t, BlockType> blockTypes; // maps middle_id_t to BlockType
 	bool isJunctionType(BlockType blockType) const {
 		return blockType == BlockType::JUNCTION || blockType == BlockType::JUNCTION_L || blockType == BlockType::JUNCTION_H || blockType == BlockType::JUNCTION_X;
 	}
