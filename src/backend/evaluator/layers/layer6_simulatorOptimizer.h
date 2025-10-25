@@ -58,7 +58,7 @@ public:
 		simIds.reserve(points.size());
 		for (const auto& point : points) {
 			std::optional<simulator_id_t> simIdOpt = getSimIdFromConnectionPoint(point);
-			simIds.push_back(simIdOpt.value_or(0));
+			simIds.push_back(simIdOpt.value_or(simulator_id_t(0)));
 		}
 		return simulator.getStates(simIds);
 	}
@@ -75,12 +75,12 @@ public:
 				if (isJunctionType(blockType)) {
 					// get the simId of the output
 					std::optional<simulator_id_t> simIdOpt = getSimIdFromConnectionPoint(output.destination);
-					simIds.push_back(simIdOpt.value_or(0));
+					simIds.push_back(simIdOpt.value_or(simulator_id_t(0)));
 					continue;
 				}
 			}
 			std::optional<simulator_id_t> simIdOpt = getSimIdFromConnectionPoint(point);
-			simIds.push_back(simIdOpt.value_or(0));
+			simIds.push_back(simIdOpt.value_or(simulator_id_t(0)));
 		}
 		return simulator.getStates(simIds);
 	}
@@ -89,7 +89,7 @@ public:
 	}
 	simulator_id_t getBlockSimulatorId(EvalConnectionPoint point) const {
 		std::optional<simulator_id_t> simIdOpt = getSimIdFromConnectionPoint(point);
-		return simIdOpt.value_or(0);
+		return simIdOpt.value_or(simulator_id_t(0));
 	}
 	simulator_id_t getPinSimulatorId(EvalConnectionPoint point) const {
 		std::optional<simulator_id_t> simIdOpt = getSimIdFromConnectionPoint(point);
@@ -104,7 +104,7 @@ public:
 			if (isJunctionType(blockType)) {
 				// get the simId of the output
 				std::optional<simulator_id_t> pinSimIdOpt = getSimIdFromConnectionPoint(output.destination);
-				return pinSimIdOpt.value_or(0);
+				return pinSimIdOpt.value_or(simulator_id_t(0));
 			}
 		}
 		return simIdOpt.value();
