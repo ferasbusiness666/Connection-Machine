@@ -7,7 +7,7 @@ struct EvalConnectionPoint {
 	middle_id_t gateId;
 	connection_port_id_t portId;
 
-	EvalConnectionPoint() = default;
+	EvalConnectionPoint() : gateId(0), portId(0) {};
 	EvalConnectionPoint(middle_id_t gateId, connection_port_id_t portId)
 		: gateId(gateId), portId(portId) {}
 
@@ -39,7 +39,7 @@ struct EvalConnection {
 	EvalConnectionPoint source;
 	EvalConnectionPoint destination;
 
-	EvalConnection() = default;
+	EvalConnection() : source(), destination() {};
 	EvalConnection(EvalConnectionPoint source, EvalConnectionPoint destination)
 		: source(source), destination(destination) {}
 

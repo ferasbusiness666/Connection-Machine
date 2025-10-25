@@ -94,10 +94,6 @@ void Evaluator::makeEditInPlace(SimPauseGuard& pauseGuard, eval_circuit_id_t eva
 		return;
 	}
 	const BlockContainer* blockContainer = circuit->getBlockContainer();
-	if (!blockContainer) {
-		logError("BlockContainer not found", "Evaluator::makeEditInPlace");
-		return;
-	}
 
 	logInfo("EVAL START DIFF: {}", "", evalCircuitId);
 	const std::vector<Difference::Modification>& modifications = difference->getModifications();
@@ -401,9 +397,6 @@ std::optional<connection_port_id_t> Evaluator::getPortId(
 		return std::nullopt;
 	}
 	const BlockContainer* blockContainer = circuit->getBlockContainer();
-	if (!blockContainer) [[unlikely]] {
-		return std::nullopt;
-	}
 	return getPortId(blockContainer, blockPosition, portPosition, direction);
 }
 
@@ -437,9 +430,6 @@ std::optional<EvalConnectionPoint> Evaluator::getConnectionPoint(const eval_circ
 		return std::nullopt;
 	}
 	const BlockContainer* blockContainer = circuit->getBlockContainer();
-	if (!blockContainer) [[unlikely]] {
-		return std::nullopt;
-	}
 	return getConnectionPoint(evalCircuitId, blockContainer, portPosition, direction);
 }
 
@@ -670,10 +660,6 @@ std::optional<middle_id_t> Evaluator::getMiddleId(const eval_circuit_id_t starti
 		return std::nullopt;
 	}
 	const BlockContainer* blockContainer = circuit->getBlockContainer();
-	if (!blockContainer) {
-		logError("BlockContainer not found", "Evaluator::getMiddleId");
-		return std::nullopt;
-	}
 	Position blockPosition = address.getPosition(address.size() - 1);
 	const Block* block = blockContainer->getBlock(blockPosition);
 	if (!block) {
@@ -728,10 +714,6 @@ logic_state_t Evaluator::getState(const Address& address) {
 		return logic_state_t::UNDEFINED;
 	}
 	const BlockContainer* blockContainer = circuit->getBlockContainer();
-	if (!blockContainer) {
-		logError("BlockContainer not found", "Evaluator::getState");
-		return logic_state_t::UNDEFINED;
-	}
 
 	std::optional<EvalConnectionPoint> connectionPointOpt = getConnectionPoint(evalCircuitId, blockContainer, address.getPosition(address.size() - 1), Direction::OUT);
 	if (!connectionPointOpt.has_value()) {
@@ -763,10 +745,6 @@ void Evaluator::setState(const Address& address, logic_state_t state) {
 		return;
 	}
 	const BlockContainer* blockContainer = circuit->getBlockContainer();
-	if (!blockContainer) {
-		logError("BlockContainer not found", "Evaluator::setState");
-		return;
-	}
 
 	std::optional<EvalConnectionPoint> connectionPointOpt = getConnectionPoint(evalCircuitId, blockContainer, address.getPosition(address.size() - 1), Direction::OUT);
 	if (connectionPointOpt.has_value()) {
@@ -811,10 +789,6 @@ void Evaluator::checkToCreateExternalConnections(SimPauseGuard& pauseGuard, eval
 		return;
 	}
 	const BlockContainer* blockContainer = circuit->getBlockContainer();
-	if (!blockContainer) {
-		logError("BlockContainer not found", "Evaluator::makeEditInPlace");
-		return;
-	}
 	const Block* block = blockContainer->getBlock(position);
 	if (!block) {
 		logError("Block not found at position {}", "Evaluator::checkToCreateExternalConnections", position.toString());
@@ -833,7 +807,7 @@ void Evaluator::checkToCreateExternalConnections(SimPauseGuard& pauseGuard, eval
 		Position portPosition;
 		Direction direction;
 	};
-	std::vector<ConnectionData> connectionDataList;
+	std::vector<ConnectionData> connectionDataList = {};
 	if (blockData->isDefaultData()) {
 		// logInfo("Block type {} is default data", "Evaluator::checkToCreateExternalConnections", static_cast<int>(block->type()));
 		connectionDataList.push_back({ position, Direction::IN });
@@ -842,16 +816,27 @@ void Evaluator::checkToCreateExternalConnections(SimPauseGuard& pauseGuard, eval
 		const auto& connections = blockData->getConnections();
 		// logInfo("Found {} connections for block type {}", "Evaluator::checkToCreateExternalConnections", connections.size(), static_cast<int>(block->type()));
 		for (const auto& [connectionId, connectionOffset] : connections) {
-			Vector portOffset = connectionOffset.positionOnBlock;
-			Position portPosition = block->getPosition() + portOffset;
 			// Determine direction (input or output or both)
 			bool connectionIsInput = block->isConnectionInputOrBidirectional(connectionId);
 			bool connectionIsOutput = block->isConnectionOutputOrBidirectional(connectionId);
+			if (!connectionIsInput && !connectionIsOutput) {
+				continue;
+			}
+			std::optional<Position> portPosition = block->getConnectionPosition(connectionId);
+			if (!portPosition.has_value()) {
+				logError(
+					"Port position not found for connection ID {} in block type {}",
+					"Evaluator::checkToCreateExternalConnections",
+					connectionId,
+					static_cast<int>(block->type())
+				);
+				continue;
+			}
 			if (connectionIsInput) {
-				connectionDataList.push_back({ portPosition, Direction::IN });
+				connectionDataList.push_back({ portPosition.value(), Direction::IN });
 			}
 			if (connectionIsOutput) {
-				connectionDataList.push_back({ portPosition, Direction::OUT });
+				connectionDataList.push_back({ portPosition.value(), Direction::OUT });
 			}
 		}
 		if (block->type() == BlockType::SWITCH || block->type() == BlockType::BUTTON || block->type() == BlockType::TICK_BUTTON) {
@@ -911,10 +896,6 @@ void Evaluator::traceOutwardsIC(
 		return;
 	}
 	const BlockContainer* innerBlockContainer = innerCircuit->getBlockContainer();
-	if (!innerBlockContainer) {
-		logError("BlockContainer for inner circuit ID {} not found", "Evaluator::traceOutwardsIC", evalCircuit->getCircuitId());
-		return;
-	}
 	const Block* block = innerBlockContainer->getBlock(position);
 	if (!block) {
 		logError("Block not found at position {}", "Evaluator::traceOutwardsIC", position.toString());
@@ -939,10 +920,6 @@ void Evaluator::traceOutwardsIC(
 		return;
 	}
 	const BlockContainer* parentCircuitBlockContainer = parentCircuit->getBlockContainer();
-	if (!parentCircuitBlockContainer) {
-		logError("BlockContainer not found", "Evaluator::traceOutwardsIC");
-		return;
-	}
 	std::optional<Position> parentCircuitPositionOpt = parentEvalCircuit->getPosition(CircuitNode::fromIC(evalCircuitId));
 	if (!parentCircuitPositionOpt.has_value()) {
 		logError("Parent circuit position not found for evalCircuitId {}", "Evaluator::traceOutwardsIC", evalCircuitId);
@@ -1163,10 +1140,6 @@ void Evaluator::dirtyBlockAt(Position position, eval_circuit_id_t evalCircuitId)
 		return;
 	}
 	const BlockContainer* blockContainer = circuit->getBlockContainer();
-	if (!blockContainer) {
-		logError("BlockContainer not found", "Evaluator::dirtyBlockAt");
-		return;
-	}
 	const Block* block = blockContainer->getBlock(position);
 	if (!block) {
 		logError("Block not found at position {}", "Evaluator::dirtyBlockAt", position.toString());
