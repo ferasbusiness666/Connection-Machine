@@ -61,6 +61,7 @@ public:
 	/* ----------- connections ----------- */
 	// -- getters --
 	bool connectionExists(Position outputPosition, Position inputPosition) const;
+	bool connectionExists(ConnectionEnd connectionEndA, ConnectionEnd connectionEndB) const;
 	const std::unordered_set<ConnectionEnd>* getInputConnections(Position position) const;
 	const std::unordered_set<ConnectionEnd>* getOutputConnections(Position position) const;
 	const std::unordered_set<ConnectionEnd>* getBidirectionalConnections(Position position) const;
