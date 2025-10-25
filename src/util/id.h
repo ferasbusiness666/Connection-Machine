@@ -86,7 +86,7 @@ namespace fmt {
 	template<class Tag, class Rep>
 	struct formatter<Id<Tag, Rep>> : formatter<Rep> {
 		template<typename FormatContext>
-		auto format(const Id<Tag, Rep>& id, FormatContext& ctx) {
+		auto format(const Id<Tag, Rep>& id, FormatContext& ctx) const {
 			return formatter<Rep>::format(id.get(), ctx);
 		}
 	};
