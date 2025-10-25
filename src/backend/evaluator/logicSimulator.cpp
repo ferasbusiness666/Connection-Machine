@@ -423,10 +423,13 @@ simulator_id_t LogicSimulator::addGate(const BlockType blockType) {
 		logError("Cannot add gate of type {}", "LogicSimulator::addGate", (unsigned int)blockType);
 		return 0;
 	}
+	logInfo("LogicSimulator::addGate ({}) -> simID: {}", "", blockType, simulatorId);
+
 	return simulatorId;
 }
 
 void LogicSimulator::removeGate(simulator_id_t simulatorId) {
+	logInfo("LogicSimulator::removeGate ({})", "", simulatorId);
 	auto locationIt = gateLocations.find(simulatorId);
 	if (locationIt == gateLocations.end()) {
 		logError("Cannot remove gate: not found " + std::to_string(simulatorId), "LogicSimulator::removeGate");
@@ -498,6 +501,7 @@ void LogicSimulator::removeGate(simulator_id_t simulatorId) {
 }
 
 void LogicSimulator::makeConnection(simulator_id_t sourceId, connection_port_id_t sourcePort, simulator_id_t destinationId, connection_port_id_t destinationPort) {
+	logInfo("LogicSimulator::makeConnection {} {} {} {}", "", sourceId, sourcePort, destinationId, destinationPort);
 	std::optional<simulator_id_t> actualSourceId = getOutputPortId(sourceId, sourcePort);
 
 	if (!actualSourceId.has_value()) {
@@ -509,6 +513,7 @@ void LogicSimulator::makeConnection(simulator_id_t sourceId, connection_port_id_
 }
 
 void LogicSimulator::removeConnection(simulator_id_t sourceId, connection_port_id_t sourcePort, simulator_id_t destinationId, connection_port_id_t destinationPort) {
+	logInfo("LogicSimulator::makeConnection {} {} {} {}", "", sourceId, sourcePort, destinationId, destinationPort);
 	std::optional<simulator_id_t> actualSourceId = getOutputPortId(sourceId, sourcePort);
 	if (!actualSourceId.has_value()) {
 		logError("Cannot resolve actual source ID for disconnection", "LogicSimulator::removeConnection");
@@ -518,6 +523,8 @@ void LogicSimulator::removeConnection(simulator_id_t sourceId, connection_port_i
 }
 
 void LogicSimulator::endEdit() {
+	logInfo("LogicSimulator::endEdit");
+
 	for (auto& gate : junctions) gate.doubleTick(statesA, statesB);
 	regenerateJobs();
 }
