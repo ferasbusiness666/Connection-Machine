@@ -78,8 +78,8 @@ void BlockDataManager::initializeDefaults() {
 	BlockData* buttonBlockData = getBlockData(BlockType::BUTTON);
 	buttonBlockData->setName("Button");
 	buttonBlockData->setDefaultData(false);
-	buttonBlockData->setConnectionOutput(Vector(0), connection_end_id_t(0);
-	buttonBlockData->setConnnectionPortOffset(0, FVector(0.5f + edgeDistance, 0.5f + sideShift));
+	buttonBlockData->setConnectionOutput(Vector(0), connection_end_id_t(0));
+	buttonBlockData->setConnnectionPortOffset(connection_end_id_t(0), FVector(0.5f + edgeDistance, 0.5f + sideShift));
 	buttonBlockData->setTexturePath(mainTexturePath);
 	buttonBlockData->setUsesTileMapTexture(true);
 	buttonBlockData->setTextureTileSize({ 256, 256 });
@@ -90,7 +90,7 @@ void BlockDataManager::initializeDefaults() {
 	tickButtonBlockData->setName("Tick Button");
 	tickButtonBlockData->setDefaultData(false);
 	tickButtonBlockData->setConnectionOutput(Vector(0), connection_end_id_t(0));
-	tickButtonBlockData->setConnnectionPortOffset(0, FVector(0.5f + edgeDistance, 0.5f + sideShift));
+	tickButtonBlockData->setConnnectionPortOffset(connection_end_id_t(0), FVector(0.5f + edgeDistance, 0.5f + sideShift));
 	tickButtonBlockData->setTexturePath(mainTexturePath);
 	tickButtonBlockData->setUsesTileMapTexture(true);
 	tickButtonBlockData->setTextureTileSize({ 256, 256 });

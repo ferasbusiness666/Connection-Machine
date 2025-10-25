@@ -61,7 +61,7 @@ VulkanChunkAllocation::VulkanChunkAllocation(
 			blockStateIndex[block.first] = simulatorIds.size();
 			positions.push_back(block.first);
 			indexes.push_back(simulatorIds.size());
-			simulatorIds.push_back(0);
+			simulatorIds.push_back(simulator_id_t(0));
 		}
 
 		if (evaluator) {
@@ -99,7 +99,7 @@ VulkanChunkAllocation::VulkanChunkAllocation(
 				portStateIndex[wire.first.first] = stateIdx;
 				positions.push_back(wire.first.first);
 				indexes.push_back(stateIdx);
-				simulatorIds.push_back(0);
+				simulatorIds.push_back(simulator_id_t(0));
 			}
 
 			WireInstance instance;
@@ -364,7 +364,7 @@ void VulkanChunker::updateSimulatorIds(const std::vector<SimulatorMappingUpdate>
 	for (const SimulatorMappingUpdate& simulatorMappingUpdate : simulatorMappingUpdates) {
 		const std::variant<simulator_id_t, std::vector<simulator_id_t>>& simIds = simulatorMappingUpdate.simulatorIds;
 		// for now, if we get multiple sim ids, just use the first one
-		simulator_id_t simulatorId = 0;
+		simulator_id_t simulatorId = simulator_id_t(0);
 		if (std::holds_alternative<std::vector<simulator_id_t>>(simulatorMappingUpdate.simulatorIds)) {
 			const std::vector<simulator_id_t>& vec = std::get<std::vector<simulator_id_t>>(simulatorMappingUpdate.simulatorIds);
 			if (!vec.empty()) {

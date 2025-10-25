@@ -2,6 +2,7 @@
 
 #include "backend/circuit/circuitManager.h"
 #include "util/algorithm.h"
+#include "util/id.h"
 #include "layers/layer2_evalSimulator.h"
 
 #ifdef TRACY_PROFILER
@@ -20,7 +21,7 @@ Evaluator::Evaluator(
 ) :
 	evaluatorId(evaluatorId), circuitManager(circuitManager), blockDataManager(blockDataManager), circuitBlockDataManager(circuitBlockDataManager),
 	evalCircuitContainer(), dataUpdateEventManager(dataUpdateEventManager), receiver(dataUpdateEventManager), evalConfig(dataUpdateEventManager, evaluatorId),
-	middleIdProvider(), evalSimulator(std::make_unique<EvalSimulator>(evalConfig, middleIdProvider, dirtySimulatorIds, dirtyMiddleIds, blockDataManager)) {
+	middleIdProvider(0), evalSimulator(std::make_unique<EvalSimulator>(evalConfig, middleIdProvider, dirtySimulatorIds, dirtyMiddleIds, blockDataManager)) {
 	const auto circuit = circuitManager.getCircuit(circuitId);
 	if (!circuit) {
 		logError("Circuit with ID {} not found", "Evaluator::Evaluator", circuitId);
@@ -38,7 +39,7 @@ Evaluator::Evaluator(
 }
 
 std::string Evaluator::getEvaluatorName() const {
-	std::optional<circuit_id_t> circuitId = evalCircuitContainer.getCircuitId(0);
+	std::optional<circuit_id_t> circuitId = evalCircuitContainer.getCircuitId(eval_circuit_id_t(0));
 	if (!circuitId.has_value()) {
 		return "Eval " + std::to_string(evaluatorId) + " (No Circuit)";
 	}
@@ -83,7 +84,7 @@ void Evaluator::makeEditInPlace(SimPauseGuard& pauseGuard, eval_circuit_id_t eva
 		return;
 	}
 
-	std::optional<eval_circuit_id_t> circuitId = evalCircuitContainer.getCircuitId(evalCircuitId);
+	std::optional<circuit_id_t> circuitId = evalCircuitContainer.getCircuitId(evalCircuitId);
 	if (!circuitId.has_value()) {
 		logError("EvalCircuit with id {} not found", "Evaluator::makeEditInPlace", evalCircuitId);
 		return;
@@ -1145,7 +1146,7 @@ void Evaluator::dirtyBlockAt(Position position, eval_circuit_id_t evalCircuitId)
 		logError("BlockData not found for block type {}", "Evaluator::dirtyBlockAt", static_cast<int>(block->type()));
 		return;
 	}
-	for (connection_end_id_t i = 0; i < blockData->getConnectionCount(); ++i) {
+	for (connection_end_id_t i : range(connection_end_id_t(0), blockData->getConnectionCount())) {
 		std::optional<Position> portPositionOpt = block->getConnectionPosition(i);
 		if (!portPositionOpt) {
 			logError("Port position not found for connection ID {}", "Evaluator::dirtyBlockAt", i);
@@ -1166,7 +1167,7 @@ std::vector<simulator_id_t> Evaluator::getBlockSimulatorIds(const Address& addre
 			connectionPoints.push_back(std::nullopt);
 			continue;
 		}
-		connectionPoints.push_back(EvalConnectionPoint(node->getId(), connection_end_id_t(0)));
+		connectionPoints.push_back(EvalConnectionPoint(node->getMiddleId(), connection_end_id_t(0)));
 	}
 	return evalSimulator->getBlockSimulatorIds(connectionPoints);
 }

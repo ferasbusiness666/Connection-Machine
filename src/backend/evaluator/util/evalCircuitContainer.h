@@ -36,7 +36,7 @@ struct std::hash<EvalPosition> {
 
 class EvalCircuitContainer {
 public:
-	EvalCircuitContainer() = default;
+	EvalCircuitContainer() : evalCircuitIdProvider(1) {};
 	EvalCircuitContainer(const EvalCircuitContainer&) = delete;
 	EvalCircuitContainer& operator=(const EvalCircuitContainer&) = delete;
 	eval_circuit_id_t addCircuit(eval_circuit_id_t parentEvalId, circuit_id_t circuitId);

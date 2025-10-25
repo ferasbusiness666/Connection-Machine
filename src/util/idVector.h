@@ -6,8 +6,9 @@
 template<IdType IdT, class T>
 class IdVector {
 public:
-    using id_type    = std::remove_cv_t<IdT>;
-    using rep        = typename id_traits<id_type>::rep;
+    using id_type = std::remove_cv_t<IdT>;
+    using tag = typename id_traits<id_type>::tag;
+    using rep = typename id_traits<id_type>::rep;
     using value_type = T;
 
     static_assert(std::is_integral_v<rep>, "Id::rep must be an integral type");
@@ -57,54 +58,9 @@ public:
         return i < storage_.size();
     }
 
-    class id_iterator {
-    public:
-        using iterator_category = std::random_access_iterator_tag;
-        using value_type        = id_type;
-        using difference_type   = std::ptrdiff_t;
-        using reference         = id_type;
-        using pointer           = void;
-
-        id_iterator() = default;
-        explicit id_iterator(id_type id) : id_(id) {}
-
-        reference operator*()  const { return id_; }
-        id_iterator& operator++()    { inc_(+1); return *this; }
-        id_iterator  operator++(int) { auto t=*this; ++(*this); return t; }
-        id_iterator& operator--()    { inc_(-1); return *this; }
-        id_iterator  operator--(int) { auto t=*this; --(*this); return t; }
-
-        id_iterator& operator+=(difference_type n) { add_(n); return *this; }
-        id_iterator& operator-=(difference_type n) { add_(-n); return *this; }
-        id_iterator  operator+(difference_type n) const { auto tmp=*this; tmp+=n; return tmp; }
-        id_iterator  operator-(difference_type n) const { auto tmp=*this; tmp-=n; return tmp; }
-
-        difference_type operator-(const id_iterator& o) const {
-            return static_cast<difference_type>(to_rep_(id_) - to_rep_(o.id_));
-        }
-
-        bool operator==(const id_iterator& o) const = default;
-        auto operator<=>(const id_iterator& o) const = default;
-
-    private:
-        static rep to_rep_(id_type x) { return x.get(); }
-        void inc_(int step) {
-            if constexpr (std::is_signed_v<rep>) id_ = id_type{to_rep_(id_.get() + step)};
-            else                                  id_ = id_type{to_rep_(id_.get() + to_rep_(step))};
-        }
-        void add_(difference_type n) {
-            if constexpr (std::is_signed_v<rep>) id_ = id_type{to_rep_(id_.get() + n)};
-            else                                  id_ = id_type{to_rep_(id_.get() + to_rep_(n))};
-        }
-        id_type id_{};
-    };
-
-    struct id_range {
-        id_iterator b, e;
-        id_iterator begin() const { return b; }
-        id_iterator end()   const { return e; }
-    };
-    id_range ids() const { return id_range{ id_iterator{begin_id()}, id_iterator{end_id()} }; }
+    IdRange<tag, rep> ids() const {
+        return range(begin_id(), end_id());
+    }
 
     auto begin() noexcept { return storage_.begin(); }
     auto end()   noexcept { return storage_.end(); }

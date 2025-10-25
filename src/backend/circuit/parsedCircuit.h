@@ -53,7 +53,7 @@ public:
 		connection_end_id_t connectionEndId;
 		Vector positionOnBlock;
 		block_id_t internalBlockId = 0;
-		connection_end_id_t internalBlockConnectionEndId = 0;
+		connection_end_id_t internalBlockConnectionEndId = connection_end_id_t(0);
 		std::string portName = "";
 	};
 

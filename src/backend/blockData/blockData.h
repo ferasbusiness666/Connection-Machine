@@ -112,7 +112,7 @@ public:
 	inline unsigned int getConnectionBitWidth(connection_end_id_t connectionId) const noexcept;
 	void setConnectionBitConfiguration(connection_end_id_t connectionId, std::variant<unsigned int, std::vector<unsigned int>> bitConfiguration) noexcept;
 	inline const std::variant<unsigned int, std::vector<unsigned int>>* getConnectionBitConfiguration(connection_end_id_t connectionId) const noexcept;
-	inline const std::vector<unsigned int> getPortsWithLaneId(unsigned int laneId) const noexcept;
+	inline const std::vector<connection_end_id_t> getPortsWithLaneId(unsigned int laneId) const noexcept;
 	inline unsigned int getLaneCount() const noexcept;
 	inline bool hasBlockState() const noexcept;
 
@@ -131,8 +131,8 @@ private:
 	Vec2Int textureBlockTileSize = { 1, 1 };
 	Vec2Int textureBlockStateOffset = { 0, 256 };
 	Size blockSize = Size(1);
-	connection_end_id_t inputConnectionCount = connection_end_id_t(0);
-	connection_end_id_t outputConnectionCount = connection_end_id_t(0);
+	unsigned int inputConnectionCount = 0;
+	unsigned int outputConnectionCount = 0;
 	std::unordered_map<connection_end_id_t, ConnectionData> connections;
 	BidirectionalMultiSecondKeyMap<connection_end_id_t, std::string> connectionIdNames;
 	DataUpdateEventManager* dataUpdateEventManager;
@@ -286,15 +286,15 @@ inline connection_end_id_t BlockData::getConnectionCount() const noexcept {
 }
 inline connection_end_id_t BlockData::getInputConnectionCount() const noexcept {
 	if (defaultData) return connection_end_id_t(1);
-	return inputConnectionCount;
+	return connection_end_id_t(inputConnectionCount);
 }
 inline connection_end_id_t BlockData::getOutputConnectionCount() const noexcept {
 	if (defaultData) return connection_end_id_t(1);
-	return outputConnectionCount;
+	return connection_end_id_t(outputConnectionCount);
 }
 inline connection_end_id_t BlockData::getBidirectionalConnectionCount() const noexcept {
 	if (defaultData) return connection_end_id_t(0);
-	return connections.size() - inputConnectionCount - outputConnectionCount;
+	return connection_end_id_t(connections.size() - inputConnectionCount - outputConnectionCount);
 }
 inline bool BlockData::connectionExists(connection_end_id_t connectionId) const noexcept {
 	if (defaultData) return connectionId <= connection_end_id_t(1);

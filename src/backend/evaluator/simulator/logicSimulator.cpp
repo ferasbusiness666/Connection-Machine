@@ -5,8 +5,9 @@ LogicSimulator::LogicSimulator(
 	EvalConfig& evalConfig,
 	std::vector<simulator_id_t>& dirtySimulatorIds) :
 	evalConfig(evalConfig),
-	dirtySimulatorIds(dirtySimulatorIds) {
-evalConfig.subscribe([this]() {
+	dirtySimulatorIds(dirtySimulatorIds),
+	simulatorIdProvider(0) {
+	evalConfig.subscribe([this]() {
 		{
 			SimPauseGuard pauseGuard(*this);
 			this->regenerateJobs();
@@ -421,7 +422,7 @@ simulator_id_t LogicSimulator::addGate(const BlockType blockType) {
 	// 	return 0;
 	default:
 		logError("Cannot add gate of type {}", "LogicSimulator::addGate", (unsigned int)blockType);
-		return 0;
+		return simulator_id_t(0);
 	}
 
 	return simulatorId;

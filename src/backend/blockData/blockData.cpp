@@ -14,8 +14,8 @@ void BlockData::setDefaultData(bool defaultData) noexcept {
 			dataUpdateEventManager->sendEvent<std::pair<BlockType, Size>>("preBlockSizeChange", { blockType, Size(1) });
 			sentPre = true;
 		}
-		dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataSetConnection", { blockType, 0 });
-		dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataSetConnection", { blockType, 1 });
+		dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataSetConnection", { blockType, connection_end_id_t(0) });
+		dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataSetConnection", { blockType, connection_end_id_t(1) });
 	}
 	this->defaultData = defaultData;
 	blockSize = Size(1);
@@ -28,10 +28,10 @@ void BlockData::setDefaultData(bool defaultData) noexcept {
 			dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataRemoveConnection", { blockType, connection.first });
 			dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connection.first });
 		}
-		dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, 0 });
-		dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, 1 });
-		dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataConnectionNameSet", { blockType, 0 });
-		dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataConnectionNameSet", { blockType, 1 });
+		dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connection_end_id_t(0) });
+		dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connection_end_id_t(1) });
+		dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataConnectionNameSet", { blockType, connection_end_id_t(0) });
+		dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataConnectionNameSet", { blockType, connection_end_id_t(1) });
 		connections.clear();
 	}
 	sendBlockDataUpdate();
@@ -159,7 +159,7 @@ void BlockData::setConnectionIdName(connection_end_id_t connectionId, const std:
 }
 
 std::optional<std::string> BlockData::getConnectionIdToName(connection_end_id_t connectionId) const {
-	if (defaultData) return connectionId == 1 ? "Out" : "In";
+	if (defaultData) return connectionId == connection_end_id_t(1) ? "Out" : "In";
 	const std::string* str = connectionIdNames.get(connectionId);
 	if (str) return *str;
 	return std::nullopt;

@@ -25,7 +25,7 @@ public:
 			unusedIds.erase(preferredId.get());
 			return preferredId;
 		}
-		if (preferredId == nextId || unusedIds.empty()) {
+		if (preferredId.get() == nextId || unusedIds.empty()) {
 			return id_type(nextId++);
 		} else {
 			rep id = *unusedIds.begin();

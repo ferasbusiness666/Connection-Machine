@@ -14,9 +14,58 @@ public:
 
 	friend constexpr bool operator==(Id, Id) = default;
 	friend constexpr auto operator<=>(const Id&, const Id&) = default;
+
+    class id_iterator {
+    public:
+        using iterator_category = std::random_access_iterator_tag;
+        using value_type        = Id<Tag, Rep>;
+        using difference_type   = std::ptrdiff_t;
+        using reference         = Id<Tag, Rep>;
+        using pointer           = void;
+
+        id_iterator() = default;
+        explicit id_iterator(Id<Tag, Rep> id) : x(id.get()) {}
+
+        reference operator*()  const { return Id<Tag, Rep>(x); }
+        id_iterator& operator++()    { ++x; return *this; }
+        id_iterator  operator++(int) { auto t=*this; ++(*this); return t; }
+        id_iterator& operator--()    { --x; return *this; }
+        id_iterator  operator--(int) { auto t=*this; --(*this); return t; }
+
+        id_iterator& operator+=(difference_type n) { x += n; return *this; }
+        id_iterator& operator-=(difference_type n) { x -= n; return *this; }
+        id_iterator  operator+(difference_type n) const { return *this+n; }
+        id_iterator  operator-(difference_type n) const { return *this-n; }
+
+        difference_type operator-(const id_iterator& o) const {
+            return static_cast<difference_type>(x - o.x);
+        }
+
+        bool operator==(const id_iterator& o) const = default;
+        auto operator<=>(const id_iterator& o) const = default;
+
+    private:
+		Rep x;
+    };
 private:
 	Rep value{};
 };
+
+template<class Tag, class Rep>
+class IdRange {
+public:
+	using id_iterator = typename Id<Tag, Rep>::id_iterator;
+	IdRange(Id<Tag, Rep> beginId, Id<Tag, Rep> endId) : b(id_iterator(beginId)), e(id_iterator(endId)) {}
+	id_iterator begin() const { return b; }
+	id_iterator end()   const { return e; }
+private:
+	id_iterator b, e;
+};
+
+template<class Tag, class Rep>
+IdRange<Tag, Rep> range(Id<Tag, Rep> beginId, Id<Tag, Rep> endId) {
+	return IdRange<Tag, Rep>(beginId, endId);
+}
 
 namespace std {
 	template<class Tag, class Rep>
