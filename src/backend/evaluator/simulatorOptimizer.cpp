@@ -29,8 +29,8 @@ void SimulatorOptimizer::addGate(SimPauseGuard& pauseGuard, const BlockType bloc
 void SimulatorOptimizer::removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
 	// Find the gate in the simulator and remove it
 
-	if (gateId < simulatorToMiddleIds.size()) {
-		simulator.removeGate(simulatorToMiddleIds[gateId]);
+	if (gateId < middleToSimulatorIds.size()) {
+		simulator.removeGate(middleToSimulatorIds[gateId]);
 	}
 
 	// Clean up connection tracking
