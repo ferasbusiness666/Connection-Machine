@@ -3,8 +3,7 @@
 
 #include "backend/dataUpdateEventManager.h"
 #include "backend/settings/settings.h"
-
-typedef unsigned int evaluator_id_t;
+#include "evalDefs.h"
 
 class EvalConfig {
 public:

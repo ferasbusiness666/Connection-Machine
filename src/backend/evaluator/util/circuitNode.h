@@ -8,7 +8,7 @@ public:
 	static CircuitNode fromMiddle(middle_id_t id) {
 		return CircuitNode(id << 1);
 	}
-	static CircuitNode fromIC(unsigned int id) {
+	static CircuitNode fromIC(eval_circuit_id_t id) {
 		return CircuitNode((id << 1) | 1);
 	}
 	inline bool isIC() const { return (id_and_type & 1) == 1; }

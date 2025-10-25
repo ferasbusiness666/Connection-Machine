@@ -166,7 +166,7 @@ private:
 			return std::nullopt;
 		}
 		middle_id_t junctionId = busInternalJunctionArray.junctionIds[laneId];
-		if (junctionId == 0) {
+		if (junctionId == middle_id_t(0)) {
 			return std::nullopt;
 		}
 		return junctionId;

@@ -228,9 +228,9 @@ private:
 			replacer.addGate(pauseGuard, blockType, gateId);
 			middle_id_t busId = middleIdProvider.getNewId();
 			replacer.addGate(pauseGuard, blockDataManager.getBusBlock(6), busId);
-			GateWithLinkedIO gateWithLinkedIO { gateId, { busId }, { {0, { busId, 6 }} } };
-			for (connection_port_id_t portId = 0; portId < 6; ++portId) {
-				replacer.makeConnection(pauseGuard, EvalConnection(EvalConnectionPoint(busId, portId), EvalConnectionPoint(gateId, portId)));
+			GateWithLinkedIO gateWithLinkedIO { gateId, { busId }, { {connection_port_id_t(0), { busId, connection_port_id_t(6) }} } };
+			for (connection_port_id_t::rep portId = 0; portId < 6; ++portId) {
+				replacer.makeConnection(pauseGuard, EvalConnection(EvalConnectionPoint(busId, connection_port_id_t(portId)), EvalConnectionPoint(gateId, connection_port_id_t(portId))));
 			}
 			gatesWithLinkedIO[gateId] = std::move(gateWithLinkedIO);
 			return true;
@@ -244,9 +244,9 @@ private:
 		for (connection_port_id_t portId : configIter->second) {
 			middle_id_t junctionId = middleIdProvider.getNewId();
 			replacer.addGate(pauseGuard, BlockType::JUNCTION, junctionId);
-			replacer.makeConnection(pauseGuard, EvalConnection(EvalConnectionPoint(junctionId, 0), EvalConnectionPoint(gateId, portId)));
+			replacer.makeConnection(pauseGuard, EvalConnection(EvalConnectionPoint(junctionId, connection_port_id_t(0)), EvalConnectionPoint(gateId, portId)));
 			gateWithLinkedIO.idsCreated.push_back(junctionId);
-			gateWithLinkedIO.linkedIO[portId] = EvalConnectionPoint(junctionId, 0);
+			gateWithLinkedIO.linkedIO[portId] = EvalConnectionPoint(junctionId, connection_port_id_t(0));
 		}
 		gatesWithLinkedIO[gateId] = std::move(gateWithLinkedIO);
 		return true;
@@ -280,9 +280,9 @@ private:
 	}
 
 	std::map<BlockType, std::vector<connection_port_id_t>> blockTypesWithlinkedIO = {
-		{BlockType::TRISTATE_BUFFER, {0, 1}},
-		{BlockType::NOT, {0}},
-		{BlockType::BUFFER, {0}}
+		{BlockType::TRISTATE_BUFFER, {connection_port_id_t(0), connection_port_id_t(1)}},
+		{BlockType::NOT, {connection_port_id_t(0)}},
+		{BlockType::BUFFER, {connection_port_id_t(0)}}
 	};
 };
 

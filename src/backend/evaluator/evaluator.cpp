@@ -28,7 +28,7 @@ Evaluator::Evaluator(
 	}
 	logInfo("Creating Evaluator with ID {} for Circuit ID {}", "Evaluator", evaluatorId, circuitId);
 	middleIdProvider.getNewId(); // reserve 0 for invalid
-	evalCircuitContainer.addCircuit(0, circuitId);
+	evalCircuitContainer.addCircuit(eval_circuit_id_t(0), circuitId);
 	const auto blockContainer = circuit->getBlockContainer();
 	const Difference difference = blockContainer->getCreationDifference();
 	receiver.linkFunction("circuitBlockDataConnectionPositionRemove", std::bind(&Evaluator::removeCircuitIO, this, std::placeholders::_1));

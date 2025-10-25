@@ -2,9 +2,9 @@
 #define logicSimulator_h
 
 #include "backend/container/block/blockDefs.h"
-#include "backend/evaluator/util/idProvider.h"
 #include "backend/evaluator/util/evalConfig.h"
 #include "backend/evaluator/evalDefs.h"
+#include "util/idProvider.h"
 #include "simulatorGates.h"
 #include "logicState.h"
 #include "threadPool.h"
@@ -209,9 +209,10 @@ private:
 	void regenerateJobs();
 
 	void extendDataVectors(simulator_id_t id) {
-		if (statesA.size() <= id) {
-			statesA.resize(id + 1, logic_state_t::UNDEFINED);
-			statesB.resize(id + 1, logic_state_t::UNDEFINED);
+		simulator_id_t::rep index = id.get();
+		if (statesA.size() <= index) {
+			statesA.resize(index + 1, logic_state_t::UNDEFINED);
+			statesB.resize(index + 1, logic_state_t::UNDEFINED);
 		}
 	}
 
