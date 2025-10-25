@@ -16,7 +16,6 @@ public:
     blockDataManager(blockDataManager) {}
 
     void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
-		logInfo("BusInterfacePassthrough::addGate {} {}", "", blockType, gateId);
         BlockData* blockData = blockDataManager.getBlockData(blockType);
         if (blockData->isBus()) {
             busInterfaces[gateId] = blockType;
@@ -26,7 +25,6 @@ public:
     }
 
     void removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
-		logInfo("BusInterfacePassthrough::removeGate {}", "", gateId);
         if (omittedConnections.contains(gateId)) {
             std::vector<EvalConnection> omittedConns = omittedConnections[gateId];
             for (const EvalConnection& conn : omittedConns) {
@@ -58,12 +56,10 @@ public:
     }
 
     inline SimPauseGuard beginEdit() {
-		logInfo("BusInterfacePassthrough::beginEdit");
         return simulatorOptimizer.beginEdit();
     }
 
     void endEdit(SimPauseGuard& pauseGuard) {
-		logInfo("BusInterfacePassthrough::endEdit");
         simulatorOptimizer.endEdit(pauseGuard);
     }
 
@@ -122,7 +118,6 @@ public:
     }
 
     void makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
-		logInfo("BusInterfacePassthrough::makeConnection {}", "", connection.toString());
         if (busInterfaces.contains(connection.source.gateId) ||
             busInterfaces.contains(connection.destination.gateId)) {
             omittedConnections[connection.source.gateId].push_back(connection);
@@ -134,7 +129,6 @@ public:
     }
 
     void removeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
-		logInfo("BusInterfacePassthrough::removeConnection {}", "", connection.toString());
         if (busInterfaces.contains(connection.source.gateId) ||
             busInterfaces.contains(connection.destination.gateId)) {
             dirtySimulatorIds.push_back(0);

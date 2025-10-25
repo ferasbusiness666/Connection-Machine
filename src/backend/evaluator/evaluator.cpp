@@ -95,44 +95,37 @@ void Evaluator::makeEditInPlace(SimPauseGuard& pauseGuard, eval_circuit_id_t eva
 	}
 	const BlockContainer* blockContainer = circuit->getBlockContainer();
 
-	logInfo("EVAL START DIFF: {}", "", evalCircuitId);
 	const std::vector<Difference::Modification>& modifications = difference->getModifications();
 	for (const Difference::Modification& modification : modifications) {
 		const auto& [modificationType, modificationData] = modification;
 		switch (modificationType) {
 		case Difference::ModificationType::REMOVED_BLOCK: {
 			const auto& [position, orientation, blockType] = std::get<Difference::block_modification_t>(modificationData);
-			logInfo("REMOVED_BLOCK {}, {}, {}", "", position, orientation, blockType);
 			edit_removeBlock(pauseGuard, evalCircuitId, diffCache, position, orientation, blockType);
 			break;
 		}
 		case Difference::ModificationType::PLACE_BLOCK: {
 			const auto& [position, orientation, blockType] = std::get<Difference::block_modification_t>(modificationData);
-			logInfo("PLACE_BLOCK {}, {}, {}", "", position, orientation, blockType);
 			edit_placeBlock(pauseGuard, evalCircuitId, diffCache, position, orientation, blockType);
 			break;
 		}
 		case Difference::ModificationType::MOVE_BLOCK: {
 			const auto& [curPosition, curOrientation, newPosition, newOrientation, finalMove] = std::get<Difference::move_modification_t>(modificationData);
-			logInfo("MOVE_BLOCK {}, {}, {}, {}", "", curPosition, curOrientation, newPosition, newOrientation);
 			edit_moveBlock(pauseGuard, evalCircuitId, diffCache, curPosition, curOrientation, newPosition, newOrientation, finalMove);
 			break;
 		}
 		case Difference::ModificationType::REMOVED_CONNECTION: {
 			const auto& [outputBlockPosition, outputPosition, inputBlockPosition, inputPosition] = std::get<Difference::connection_modification_t>(modificationData);
-			logInfo("REMOVED_CONNECTION {}, {}, {}, {}", "", outputBlockPosition, outputPosition, inputBlockPosition, inputPosition);
 			edit_removeConnection(pauseGuard, evalCircuitId, diffCache, blockContainer, outputBlockPosition, outputPosition, inputBlockPosition, inputPosition);
 			break;
 		}
 		case Difference::ModificationType::CREATED_CONNECTION: {
 			const auto& [outputBlockPosition, outputPosition, inputBlockPosition, inputPosition] = std::get<Difference::connection_modification_t>(modificationData);
-			logInfo("CREATED_CONNECTION {}, {}, {}, {}", "", outputBlockPosition, outputPosition, inputBlockPosition, inputPosition);
 			edit_createConnection(pauseGuard, evalCircuitId, diffCache, blockContainer, outputBlockPosition, outputPosition, inputBlockPosition, inputPosition);
 			break;
 		}
 		}
 	}
-	logInfo("EVAL END DIFF: {}", "", evalCircuitId);
 }
 
 void Evaluator::edit_removeBlock(
@@ -205,7 +198,6 @@ void Evaluator::edit_placeBlock(
 	}
 
 	middle_id_t gateId = middleIdProvider.getNewId();
-	logInfo("gateId: {}", "", gateId);
 	evalSimulator->addGate(pauseGuard, blockType, gateId);
 	middleIdToEvalPositionMap[gateId] = { position, evalCircuitId };
 	EvalCircuit* evalCircuit = evalCircuitContainer.getCircuit(evalCircuitId);
@@ -292,7 +284,6 @@ void Evaluator::edit_createConnection(
 		return;
 	}
 	EvalConnection connection(outputPoint.value(), inputPoint.value());
-	logInfo("gateId > gateId: {}", "", connection.toString());
 	if (!circuitPortDependencies.empty() || !circuitNodeDependencies.empty()) {
 		interCircuitConnections.push_back({ connection, circuitPortDependencies, circuitNodeDependencies });
 	}
