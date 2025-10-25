@@ -968,7 +968,7 @@ void Evaluator::traceOutwardsIC(
 		Position connectionPos = connectionPosOpt.value();
 		const std::unordered_set<ConnectionEnd>* connectionEnds1 = parentCircuitBlock->getBidirectionalConnections(connectionPos);
 		const std::unordered_set<ConnectionEnd>* connectionEnds2 = (direction == Direction::IN) ? parentCircuitBlock->getInputConnections(connectionPos) : parentCircuitBlock->getOutputConnections(connectionPos);
-		if (!connectionEnds1 || !connectionEnds2) {
+		if (!connectionEnds1 && !connectionEnds2) {
 			// logError("Connection ends not found at position {}", "Evaluator::traceOutwardsIC", connectionPos.toString());
 			continue;
 		}
