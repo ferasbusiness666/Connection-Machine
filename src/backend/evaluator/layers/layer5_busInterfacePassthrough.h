@@ -2,7 +2,7 @@
 #define busInterfacePassthrough_h
 
 #include "backend/blockData/blockDataManager.h"
-#include "simulatorOptimizer.h"
+#include "layer6_simulatorOptimizer.h"
 
 class BusInterfacePassthrough {
 public:

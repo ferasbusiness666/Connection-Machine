@@ -2,9 +2,11 @@
 #define logicSimulator_h
 
 #include "backend/container/block/blockDefs.h"
+#include "backend/evaluator/util/idProvider.h"
+#include "backend/evaluator/util/evalConfig.h"
+#include "backend/evaluator/evalDefs.h"
 #include "simulatorGates.h"
-#include "idProvider.h"
-#include "evalConfig.h"
+#include "logicState.h"
 #include "threadPool.h"
 
 enum class SimGateType : int {

@@ -1,7 +1,7 @@
 #ifndef evalConnection_h
 #define evalConnection_h
 
-#include "evalDefs.h"
+#include "../evalDefs.h"
 
 struct EvalConnectionPoint {
 	middle_id_t gateId;

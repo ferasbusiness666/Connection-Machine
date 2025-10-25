@@ -1,4 +1,6 @@
-#include "replacer.h"
+#include "layer4_replacer.h"
+
+#include "layer4_replacement.h"
 
 Replacement& Replacer::makeReplacement(int layer) {
 	replacements.push_back(Replacement(

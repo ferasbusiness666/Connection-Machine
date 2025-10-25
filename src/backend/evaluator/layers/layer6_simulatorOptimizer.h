@@ -1,10 +1,10 @@
 #ifndef simulatorOptimizer_h
 #define simulatorOptimizer_h
 
-#include "logicSimulator.h"
-#include "idProvider.h"
-#include "evalConnection.h"
-#include "evalConfig.h"
+#include "backend/evaluator/simulator/logicSimulator.h"
+#include "backend/evaluator/util/evalConnection.h"
+#include "backend/evaluator/util/idProvider.h"
+#include "backend/evaluator/util/evalConfig.h"
 
 class SimulatorOptimizer {
 public:

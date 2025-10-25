@@ -1,8 +1,8 @@
 #ifndef replacement_h
 #define replacement_h
 
+#include "backend/evaluator/util/evalConnection.h"
 #include "backend/container/block/blockDefs.h"
-#include "evalConnection.h"
 
 class SimPauseGuard;
 class Replacer;

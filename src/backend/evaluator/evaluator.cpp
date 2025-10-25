@@ -2,7 +2,7 @@
 
 #include "backend/circuit/circuitManager.h"
 #include "util/algorithm.h"
-#include "evalSimulator.h"
+#include "layers/layer2_evalSimulator.h"
 
 #ifdef TRACY_PROFILER
 #include <tracy/Tracy.hpp>

@@ -1,13 +1,13 @@
 #ifndef evaluator_h
 #define evaluator_h
 
-#include "diffCache.h"
-#include "evalCircuitContainer.h"
-#include "evalAddressTree.h"
-#include "evalConnection.h"
-#include "evalConfig.h"
-#include "directionEnum.h"
-#include "logicState.h"
+#include "util/diffCache.h"
+#include "util/evalCircuitContainer.h"
+#include "util/evalAddressTree.h"
+#include "util/evalConnection.h"
+#include "util/evalConfig.h"
+#include "util/directionEnum.h"
+#include "simulator/logicState.h"
 
 class DataUpdateEventManager;
 class CircuitManager;

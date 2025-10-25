@@ -1,7 +1,6 @@
-#include "replacement.h"
-#include "logicSimulator.h"
+#include "layer4_replacement.h"
 
-#include "replacer.h"
+#include "layer4_replacer.h"
 
 void Replacement::removeGate(
 	SimPauseGuard& pauseGuard,

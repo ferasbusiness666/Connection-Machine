@@ -1,8 +1,8 @@
 #ifndef replacer_h
 #define replacer_h
 
-#include "busInterfacePassthrough.h"
-#include "replacement.h"
+#include "layer5_busInterfacePassthrough.h"
+#include "layer4_replacement.h"
 
 struct SimulatorStateAndPinSimId {
 	std::variant<simulator_id_t, std::vector<simulator_id_t>> portSimIds;

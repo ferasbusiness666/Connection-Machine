@@ -1,4 +1,4 @@
-#include "simulatorOptimizer.h"
+#include "layer6_simulatorOptimizer.h"
 
 void SimulatorOptimizer::addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
 	simulator_id_t simulatorId = simulator.addGate(blockType);

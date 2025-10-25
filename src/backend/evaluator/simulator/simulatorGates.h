@@ -2,7 +2,7 @@
 #define simulatorGates_h
 
 #include "logicState.h"
-#include "evalDefs.h"
+#include "backend/evaluator/evalDefs.h"
 
 class SimulatorGate {
 public:
