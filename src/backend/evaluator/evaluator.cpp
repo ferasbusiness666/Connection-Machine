@@ -824,7 +824,7 @@ void Evaluator::checkToCreateExternalConnections(SimPauseGuard& pauseGuard, eval
 		Position portPosition;
 		Direction direction;
 	};
-	std::vector<ConnectionData> connectionDataList;
+	std::vector<ConnectionData> connectionDataList = {};
 	if (blockData->isDefaultData()) {
 		// logInfo("Block type {} is default data", "Evaluator::checkToCreateExternalConnections", static_cast<int>(block->type()));
 		connectionDataList.push_back({ position, Direction::IN });
@@ -833,16 +833,27 @@ void Evaluator::checkToCreateExternalConnections(SimPauseGuard& pauseGuard, eval
 		const auto& connections = blockData->getConnections();
 		// logInfo("Found {} connections for block type {}", "Evaluator::checkToCreateExternalConnections", connections.size(), static_cast<int>(block->type()));
 		for (const auto& [connectionId, connectionOffset] : connections) {
-			Vector portOffset = connectionOffset.positionOnBlock;
-			Position portPosition = block->getPosition() + portOffset;
 			// Determine direction (input or output or both)
 			bool connectionIsInput = block->isConnectionInputOrBidirectional(connectionId);
 			bool connectionIsOutput = block->isConnectionOutputOrBidirectional(connectionId);
+			if (!connectionIsInput && !connectionIsOutput) {
+				continue;
+			}
+			std::optional<Position> portPosition = block->getConnectionPosition(connectionId);
+			if (!portPosition.has_value()) {
+				logError(
+					"Port position not found for connection ID {} in block type {}",
+					"Evaluator::checkToCreateExternalConnections",
+					connectionId,
+					static_cast<int>(block->type())
+				);
+				continue;
+			}
 			if (connectionIsInput) {
-				connectionDataList.push_back({ portPosition, Direction::IN });
+				connectionDataList.push_back({ portPosition.value(), Direction::IN });
 			}
 			if (connectionIsOutput) {
-				connectionDataList.push_back({ portPosition, Direction::OUT });
+				connectionDataList.push_back({ portPosition.value(), Direction::OUT });
 			}
 		}
 		if (block->type() == BlockType::SWITCH || block->type() == BlockType::BUTTON || block->type() == BlockType::TICK_BUTTON) {
