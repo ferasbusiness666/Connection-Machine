@@ -238,6 +238,7 @@ void BlockDataManager::initializeDefaults() {
 	colorLightBlockData->setConnnectionPortOffset(0, FVector(0.5f - edgeDistance, 0.5f - sideShift));
 	colorLightBlockData->setConnectionBitConfiguration(0, std::vector<unsigned int>{ 0, 1, 2, 3, 4, 5 });
 	colorLightBlockData->setUsesTileMapTexture(true);
+	colorLightBlockData->setTexturePath((DirectoryManager::getResourceDirectory() / "colorLight.png").string());
 	colorLightBlockData->setTextureTileSize({ 256, 256 });
 	colorLightBlockData->setTextureBlockTileSize({ 1, 1 });
 	colorLightBlockData->setTextureSmallestCordTile({ 0, 0 });
