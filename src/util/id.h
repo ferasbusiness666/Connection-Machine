@@ -1,5 +1,6 @@
 #ifndef id_h
 #define id_h
+#include <fmt/core.h>
 
 template<class Tag, class Rep = std::uint32_t>
 class Id {
@@ -80,6 +81,17 @@ namespace std {
 		return std::to_string(id.get());
 	}
 };
+
+namespace fmt {
+	template<class Tag, class Rep>
+	struct formatter<Id<Tag, Rep>> : formatter<Rep> {
+		template<typename FormatContext>
+		auto format(const Id<Tag, Rep>& id, FormatContext& ctx) {
+			return formatter<Rep>::format(id.get(), ctx);
+		}
+	};
+}
+
 
 template<class>
 struct is_id : std::false_type {};
