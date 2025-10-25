@@ -116,13 +116,8 @@ void PopUpManager::savePopUp(const std::string& circuitUUID) {
 }
 
 void PopUpManager::saveAsPopUp(const std::string& circuitUUID) {
-	#ifdef _WIN32
-	#define DOT ""
-	#else
-	#define DOT "."
-	#endif
 	static const SDL_DialogFileFilter filters[] = {
-		{ "Circuit Files",  DOT"cir" }
+		{ "Circuit Files", "cir" }
 	};
 	std::pair<CircuitFileManager*, std::string>* data = new std::pair<CircuitFileManager*, std::string>(&mainWindow->getEnvironment()->getCircuitFileManager(), circuitUUID);
 	SDL_ShowSaveFileDialog(SaveCallback, data, nullptr, filters, 1, nullptr);
