@@ -1,5 +1,7 @@
 #include "network.h"
 
+#include <httplib.h>
+
 std::optional<Network> networkSingleton;
 
 Network& Network::get() {

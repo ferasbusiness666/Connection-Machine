@@ -1,8 +1,6 @@
 #ifndef network_h
 #define network_h
 
-#include <httplib.h>
-
 class Network {
 public:
     static Network& get();
