@@ -57,14 +57,6 @@ void registerSettings() {
 }
 
 int main(int argc, char* argv[]) {
-	Network& network = Network::get();
-	logInfo("Checking internet connection...", "Main");
-	if (network.checkConnectedToInternet()) {
-		logInfo("Internet connection detected.", "Main");
-	} else {
-		logInfo("No internet connection detected.", "Main");
-	}
-	network.kill();
 #ifdef MAIN_TRY_CATCH
 	try {
 #endif
