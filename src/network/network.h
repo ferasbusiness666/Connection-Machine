@@ -2,7 +2,6 @@
 #define network_h
 
 #include <httplib.h>
-#include "logging/logging.h"
 
 class Network {
 public:

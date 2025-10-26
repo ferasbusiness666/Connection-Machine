@@ -8,8 +8,6 @@
 #include "computerAPI/directoryManager.h"
 #include "computerAPI/saveSettings.h"
 
-#include "network/network.h"
-
 void registerSettings() {
 	logInfo("Registering settings", "Main");
 	Settings::registerSetting<SettingType::FILE_PATH>("Appearance/Font", (DirectoryManager::getResourceDirectory() / "gui/fonts/monaspace.otf").generic_string());

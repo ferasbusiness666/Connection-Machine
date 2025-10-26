@@ -1,10 +1,9 @@
 #ifndef id_h
 #define id_h
-#include <fmt/core.h>
 
-#define DECLARE_ID_TYPE(TypeName, TagName, RepType) \
-	struct TagName; \
-	using TypeName = Id<TagName, RepType>
+#define DECLARE_ID_TYPE(TypeName, RepType) \
+	struct TagName ## __TAG__; \
+	using TypeName = Id<TagName ## __TAG__, RepType>
 
 template<class Tag, class Rep>
 class Id {
@@ -20,7 +19,7 @@ public:
 	friend constexpr bool operator==(Id, Id) = default;
 	friend constexpr auto operator<=>(const Id&, const Id&) = default;
 
-    class id_iterator {
+    class iterator {
     public:
         using iterator_category = std::random_access_iterator_tag;
         using value_type        = Id<Tag, Rep>;
@@ -28,26 +27,26 @@ public:
         using reference         = Id<Tag, Rep>;
         using pointer           = void;
 
-        id_iterator() = default;
-        explicit id_iterator(Id<Tag, Rep> id) : x(id.get()) {}
+        iterator() = default;
+        explicit iterator(Id<Tag, Rep> id) : x(id.get()) {}
 
         reference operator*()  const { return Id<Tag, Rep>(x); }
-        id_iterator& operator++()    { ++x; return *this; }
-        id_iterator  operator++(int) { auto t=*this; ++(*this); return t; }
-        id_iterator& operator--()    { --x; return *this; }
-        id_iterator  operator--(int) { auto t=*this; --(*this); return t; }
+        iterator& operator++()    { ++x; return *this; }
+        iterator  operator++(int) { auto t=*this; ++(*this); return t; }
+        iterator& operator--()    { --x; return *this; }
+        iterator  operator--(int) { auto t=*this; --(*this); return t; }
 
-        id_iterator& operator+=(difference_type n) { x += n; return *this; }
-        id_iterator& operator-=(difference_type n) { x -= n; return *this; }
-        id_iterator  operator+(difference_type n) const { return *this+n; }
-        id_iterator  operator-(difference_type n) const { return *this-n; }
+        iterator& operator+=(difference_type n) { x += n; return *this; }
+        iterator& operator-=(difference_type n) { x -= n; return *this; }
+        iterator  operator+(difference_type n) const { return *this+n; }
+        iterator  operator-(difference_type n) const { return *this-n; }
 
-        difference_type operator-(const id_iterator& o) const {
+        difference_type operator-(const iterator& o) const {
             return static_cast<difference_type>(x - o.x);
         }
 
-        bool operator==(const id_iterator& o) const = default;
-        auto operator<=>(const id_iterator& o) const = default;
+        bool operator==(const iterator& o) const = default;
+        auto operator<=>(const iterator& o) const = default;
 
     private:
 		Rep x;
@@ -59,12 +58,12 @@ private:
 template<class Tag, class Rep>
 class IdRange {
 public:
-	using id_iterator = typename Id<Tag, Rep>::id_iterator;
-	IdRange(Id<Tag, Rep> beginId, Id<Tag, Rep> endId) : b(id_iterator(beginId)), e(id_iterator(endId)) {}
-	id_iterator begin() const { return b; }
-	id_iterator end()   const { return e; }
+	using iteratorerator = typename Id<Tag, Rep>::iteratorerator;
+	IdRange(Id<Tag, Rep> beginId, Id<Tag, Rep> endId) : b(iteratorerator(beginId)), e(iteratorerator(endId)) {}
+	iteratorerator begin() const { return b; }
+	iteratorerator end()   const { return e; }
 private:
-	id_iterator b, e;
+	iteratorerator b, e;
 };
 
 template<class Tag, class Rep>
