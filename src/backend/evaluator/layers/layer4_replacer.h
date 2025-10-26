@@ -1,8 +1,8 @@
 #ifndef replacer_h
 #define replacer_h
 
-#include "busInterfacePassthrough.h"
-#include "replacement.h"
+#include "layer5_busInterfacePassthrough.h"
+#include "layer4_replacement.h"
 
 struct SimulatorStateAndPinSimId {
 	std::variant<simulator_id_t, std::vector<simulator_id_t>> portSimIds;
@@ -120,7 +120,7 @@ private:
 	EvalConfig& evalConfig;
 	IdProvider<middle_id_t>& middleIdProvider;
 	std::vector<Replacement> replacements;
-	std::unordered_map<middle_id_t, std::unordered_map<connection_port_id_t, EvalConnectionPoint>> replacedConnectionPoints;
+	std::unordered_map<middle_id_t, std::unordered_map<connection_end_id_t, EvalConnectionPoint>> replacedConnectionPoints;
 	std::unordered_map<middle_id_t, middle_id_t> replacedIds;
 	std::unordered_map<middle_id_t, int> replacementIdLayers;
 
@@ -166,7 +166,7 @@ private:
 			return std::nullopt;
 		}
 		middle_id_t junctionId = busInternalJunctionArray.junctionIds[laneId];
-		if (junctionId == 0) {
+		if (junctionId == middle_id_t(0)) {
 			return std::nullopt;
 		}
 		return junctionId;
@@ -178,7 +178,7 @@ private:
 		}
 		BusInternalJunctionArray& busInternalJunctionArray = busInternalJunctions.at(busId);
 		if (busInternalJunctionArray.junctionIds.size() <= laneId) {
-			busInternalJunctionArray.junctionIds.resize(laneId + 1, 0);
+			busInternalJunctionArray.junctionIds.resize(laneId + 1, middle_id_t(0));
 		}
 		busInternalJunctionArray.junctionIds[laneId] = junctionId;
 		busInternalJunctionArray.numDefined += 1;
@@ -193,7 +193,7 @@ private:
 		dirtyMiddleIds.push_back(busId);
 		BusInternalJunctionArray& busInternalJunctionArray = busInternalJunctions.at(busId);
 		busInternalJunctionArray.numDefined -= 1;
-		busInternalJunctionArray.junctionIds[laneId] = 0;
+		busInternalJunctionArray.junctionIds[laneId] = middle_id_t(0);
 		if (busInternalJunctionArray.numDefined == 0) {
 			busInternalJunctions.erase(busId);
 			return;
@@ -214,7 +214,7 @@ private:
 		}
 		struct Hash {
 			size_t operator()(const BlockLane& value) const noexcept {
-				size_t seed = static_cast<size_t>(value.blockId);
+				size_t seed = static_cast<size_t>(value.blockId.get());
 				seed ^= static_cast<size_t>(value.laneId) + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2);
 				return seed;
 			}

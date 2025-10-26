@@ -20,7 +20,7 @@ public:
 					break;
 				}
 			}
-			iter = v2;
+			iter->second = v2;
 		}
 		T1Vals.emplace(v2, v1);
 	}
@@ -37,7 +37,7 @@ public:
 		T2Vals.erase(iter);
 	}
 
-	const T2* const get(const T1& key) {
+	const T2* get(const T1& key) const {
 		auto iter = T2Vals.find(key);
 		if (iter == T2Vals.end()) return nullptr;
 		return &(iter->second);

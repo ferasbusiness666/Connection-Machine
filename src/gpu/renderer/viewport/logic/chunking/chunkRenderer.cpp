@@ -3,7 +3,7 @@
 #include "gpu/renderer/viewport/blockTextureManager.h"
 #include "gpu/abstractions/vulkanShader.h"
 
-#include "backend/evaluator/logicState.h"
+#include "backend/evaluator/simulator/logicState.h"
 #include "computerAPI/fileLoader.h"
 #include "computerAPI/directoryManager.h"
 

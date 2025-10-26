@@ -2,12 +2,12 @@
 #define evalDefs_h
 
 #include "backend/position/position.h"
+#include "util/id.h"
 
-typedef unsigned int evaluator_id_t;
-typedef unsigned int eval_circuit_id_t;
-typedef unsigned int middle_id_t;
-typedef unsigned char connection_port_id_t;
-typedef unsigned int simulator_id_t;
+DECLARE_ID_TYPE(evaluator_id_t, EvaluatorIdTag, unsigned int);
+DECLARE_ID_TYPE(eval_circuit_id_t, EvalCircuitIdTag, unsigned int);
+DECLARE_ID_TYPE(middle_id_t, MiddleIdTag, unsigned int);
+DECLARE_ID_TYPE(simulator_id_t, SimulatorIdTag, unsigned int);
 
 enum class SimulatorMappingUpdateType {
 	BLOCK,

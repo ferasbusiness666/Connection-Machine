@@ -1,7 +1,7 @@
 #ifndef evalWindow_h
 #define evalWindow_h
 
-#include "backend/evaluator/evalAddressTree.h"
+#include "backend/evaluator/util/evalAddressTree.h"
 #include "gui/helper/menuTree.h"
 
 class EvaluatorManager;

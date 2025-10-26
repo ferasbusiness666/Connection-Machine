@@ -31,14 +31,14 @@ circuit_id_t EvaluatorICTest::createPassThroughIC(const std::string& name) {
     bd->setPath("Custom");
     bd->setSize(Size(1, 1));
 
-    bd->setConnectionInput(Vector(0, 0), 0);
-    bd->setConnectionOutput(Vector(0, 0), 1);
+    bd->setConnectionInput(Vector(0, 0), connection_end_id_t(0));
+    bd->setConnectionOutput(Vector(0, 0), connection_end_id_t(1));
 
     CircuitBlockDataManager* cbdm = cm.getCircuitBlockDataManager();
     CircuitBlockData* cbd = cbdm->getCircuitBlockData(childId);
 
-    cbd->setConnectionIdPosition(0, Position(0, 0));
-    cbd->setConnectionIdPosition(1, Position(0, 0));
+    cbd->setConnectionIdPosition(connection_end_id_t(0), Position(0, 0));
+    cbd->setConnectionIdPosition(connection_end_id_t(1), Position(0, 0));
 
     return childId;
 }
@@ -86,13 +86,13 @@ TEST_F(EvaluatorICTest, NestedICs_PropagateThroughLevels) {
     bd->setPrimitive(false);
     bd->setPath("Custom");
     bd->setSize(Size(1, 1));
-    bd->setConnectionInput(Vector(0, 0), 0);
-    bd->setConnectionOutput(Vector(0, 0), 1);
+    bd->setConnectionInput(Vector(0, 0), connection_end_id_t(0));
+    bd->setConnectionOutput(Vector(0, 0), connection_end_id_t(1));
 
     CircuitBlockData* cbd = cm.getCircuitBlockDataManager()->getCircuitBlockData(outerICId);
     ASSERT_TRUE(cbd);
-    cbd->setConnectionIdPosition(0, Position(0, 0));
-    cbd->setConnectionIdPosition(1, Position(0, 0));
+    cbd->setConnectionIdPosition(connection_end_id_t(0), Position(0, 0));
+    cbd->setConnectionIdPosition(connection_end_id_t(1), Position(0, 0));
 
     const Position pSwitch(idx, idx); ++idx;
     const Position pIC(idx, idx); ++idx;
@@ -115,8 +115,8 @@ TEST_F(EvaluatorICTest, SingleIC_MoveIOAndPropagatesSignal) {
     const circuit_id_t icId = createPassThroughIC("PassThrough");
     CircuitManager& cm = backend.getCircuitManager();
     CircuitBlockData* cbd = cm.getCircuitBlockDataManager()->getCircuitBlockData(icId);
-    cbd->setConnectionIdPosition(0, Position(1, 1));
-    cbd->setConnectionIdPosition(1, Position(1, 1));
+    cbd->setConnectionIdPosition(connection_end_id_t(0), Position(1, 1));
+    cbd->setConnectionIdPosition(connection_end_id_t(1), Position(1, 1));
 
     const BlockType icBlockType = getICBlockType(icId);
 
@@ -139,8 +139,8 @@ TEST_F(EvaluatorICTest, SingleIC_MoveIOAndPropagatesSignal) {
     evaluator->setState(Address(pSwitch), logic_state_t::LOW);
     EXPECT_EQ(evaluator->getState(Address(pLight)), logic_state_t::FLOATING);
 
-    cbd->setConnectionIdPosition(0, Position(0, 0));
-    cbd->setConnectionIdPosition(1, Position(0, 0));
+    cbd->setConnectionIdPosition(connection_end_id_t(0), Position(0, 0));
+    cbd->setConnectionIdPosition(connection_end_id_t(1), Position(0, 0));
 
     evaluator->setState(Address(pSwitch), logic_state_t::HIGH);
     EXPECT_EQ(evaluator->getState(Address(pLight)), logic_state_t::HIGH);

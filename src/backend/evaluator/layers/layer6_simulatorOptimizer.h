@@ -1,10 +1,10 @@
 #ifndef simulatorOptimizer_h
 #define simulatorOptimizer_h
 
-#include "logicSimulator.h"
-#include "idProvider.h"
-#include "evalConnection.h"
-#include "evalConfig.h"
+#include "backend/evaluator/simulator/logicSimulator.h"
+#include "backend/evaluator/util/evalConnection.h"
+#include "backend/evaluator/util/evalConfig.h"
+#include "util/idProvider.h"
 
 class SimulatorOptimizer {
 public:
@@ -15,9 +15,9 @@ public:
 		simulator(evalConfig, dirtySimulatorIds),
 		evalConfig(evalConfig),
 		middleIdProvider(middleIdProvider) {
-		inputConnections.resize(1000);
-		outputConnections.resize(1000);
-		middleIds.resize(1000);
+		// inputConnections.resize(1000);
+		// outputConnections.resize(1000);
+		// middleToSimulatorIds.resize(1000);
 	}
 
 	void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId);
@@ -30,8 +30,8 @@ public:
 	};
 
 	std::optional<simulator_id_t> getSimIdFromMiddleId(middle_id_t middleId) const {
-		if (middleId < middleIds.size()) {
-			return middleIds[middleId];
+		if (middleId < middleToSimulatorIds.size()) {
+			return middleToSimulatorIds[middleId];
 		}
 		return std::nullopt;
 	}
@@ -58,7 +58,7 @@ public:
 		simIds.reserve(points.size());
 		for (const auto& point : points) {
 			std::optional<simulator_id_t> simIdOpt = getSimIdFromConnectionPoint(point);
-			simIds.push_back(simIdOpt.value_or(0));
+			simIds.push_back(simIdOpt.value_or(simulator_id_t(0)));
 		}
 		return simulator.getStates(simIds);
 	}
@@ -75,12 +75,12 @@ public:
 				if (isJunctionType(blockType)) {
 					// get the simId of the output
 					std::optional<simulator_id_t> simIdOpt = getSimIdFromConnectionPoint(output.destination);
-					simIds.push_back(simIdOpt.value_or(0));
+					simIds.push_back(simIdOpt.value_or(simulator_id_t(0)));
 					continue;
 				}
 			}
 			std::optional<simulator_id_t> simIdOpt = getSimIdFromConnectionPoint(point);
-			simIds.push_back(simIdOpt.value_or(0));
+			simIds.push_back(simIdOpt.value_or(simulator_id_t(0)));
 		}
 		return simulator.getStates(simIds);
 	}
@@ -89,12 +89,12 @@ public:
 	}
 	simulator_id_t getBlockSimulatorId(EvalConnectionPoint point) const {
 		std::optional<simulator_id_t> simIdOpt = getSimIdFromConnectionPoint(point);
-		return simIdOpt.value_or(0);
+		return simIdOpt.value_or(simulator_id_t(0));
 	}
 	simulator_id_t getPinSimulatorId(EvalConnectionPoint point) const {
 		std::optional<simulator_id_t> simIdOpt = getSimIdFromConnectionPoint(point);
 		if (!simIdOpt.has_value()) {
-			return 0;
+			return simulator_id_t(0);
 		}
 		int numOutputs = getNumOutputs(point.gateId);
 		if (numOutputs == 1) {
@@ -104,7 +104,7 @@ public:
 			if (isJunctionType(blockType)) {
 				// get the simId of the output
 				std::optional<simulator_id_t> pinSimIdOpt = getSimIdFromConnectionPoint(output.destination);
-				return pinSimIdOpt.value_or(0);
+				return pinSimIdOpt.value_or(simulator_id_t(0));
 			}
 		}
 		return simIdOpt.value();
@@ -130,7 +130,7 @@ public:
 		result.reserve(points.size());
 		for (const auto& pointOpt : points) {
 			if (!pointOpt.has_value()) {
-				result.push_back(0);
+				result.push_back(simulator_id_t(0));
 				continue;
 			}
 			result.push_back(getBlockSimulatorId(pointOpt.value()));
@@ -142,7 +142,7 @@ public:
 		result.reserve(points.size());
 		for (const auto& pointOpt : points) {
 			if (!pointOpt.has_value()) {
-				result.push_back(0);
+				result.push_back(simulator_id_t(0));
 				continue;
 			}
 			result.push_back(getPinSimulatorId(pointOpt.value()));
@@ -195,12 +195,12 @@ private:
 	LogicSimulator simulator;
 	EvalConfig& evalConfig;
 	IdProvider<middle_id_t>& middleIdProvider;
-	std::vector<middle_id_t> simulatorIds; // maps simulator_id_t to middle_id_t
-	std::vector<simulator_id_t> middleIds; // maps middle_id_t to simulator_id_t
+	IdVector<simulator_id_t, middle_id_t> simulatorToMiddleIds; // maps simulator_id_t to middle_id_t
+	IdVector<middle_id_t, simulator_id_t> middleToSimulatorIds; // maps middle_id_t to simulator_id_t
 
-	std::vector<std::vector<EvalConnection>> inputConnections;  // inputConnections[middleId] = connections TO this gate
-	std::vector<std::vector<EvalConnection>> outputConnections; // outputConnections[middleId] = connections FROM this gate
-	std::vector<BlockType> blockTypes; // maps middle_id_t to BlockType
+	IdVector<middle_id_t, std::vector<EvalConnection>> inputConnections;  // inputConnections[middleId] = connections TO this gate
+	IdVector<middle_id_t, std::vector<EvalConnection>> outputConnections; // outputConnections[middleId] = connections FROM this gate
+	IdVector<middle_id_t, BlockType> blockTypes; // maps middle_id_t to BlockType
 	bool isJunctionType(BlockType blockType) const {
 		return blockType == BlockType::JUNCTION || blockType == BlockType::JUNCTION_L || blockType == BlockType::JUNCTION_H || blockType == BlockType::JUNCTION_X;
 	}

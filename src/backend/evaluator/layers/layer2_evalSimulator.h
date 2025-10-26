@@ -1,7 +1,7 @@
 #ifndef evalSimulator_h
 #define evalSimulator_h
 
-#include "gateSubstituter.h"
+#include "layer3_gateSubstituter.h"
 
 class EvalSimulator {
 public:

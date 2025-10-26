@@ -3,14 +3,14 @@
 eval_circuit_id_t EvalCircuitContainer::addCircuit(eval_circuit_id_t parentEvalId, circuit_id_t circuitId) {
 	eval_circuit_id_t newCircuitId = evalCircuitIdProvider.getNewId();
 	if (newCircuitId >= circuits.size()) {
-		circuits.resize(newCircuitId + 1, nullptr);
+		circuits.resizeWithOffset(newCircuitId, 1, nullptr);
 	}
 	circuits[newCircuitId] = new EvalCircuit(newCircuitId, parentEvalId, circuitId);
 	return newCircuitId;
 }
 
 void EvalCircuitContainer::removeCircuit(eval_circuit_id_t evalCircuitId) {
-	if (evalCircuitId < 0 || evalCircuitId >= static_cast<eval_circuit_id_t>(circuits.size())) {
+	if (evalCircuitId < eval_circuit_id_t(0) || evalCircuitId >= static_cast<eval_circuit_id_t>(circuits.size())) {
 		logError("Attempted to remove invalid circuit index: {}", "EvalCircuitContainer::removeCircuit", evalCircuitId);
 		return; // Invalid circuit index
 	}
@@ -43,7 +43,7 @@ EvalCircuit* EvalCircuitContainer::getCircuit(eval_circuit_id_t evalCircuitId) c
 	return circuits.at(evalCircuitId);
 }
 
-std::optional<eval_circuit_id_t> EvalCircuitContainer::getCircuitId(eval_circuit_id_t evalCircuitId) const noexcept {
+std::optional<circuit_id_t> EvalCircuitContainer::getCircuitId(eval_circuit_id_t evalCircuitId) const noexcept {
 	if (evalCircuitId >= static_cast<eval_circuit_id_t>(circuits.size())) {
 		return std::nullopt;
 	}
@@ -60,13 +60,13 @@ std::optional<eval_circuit_id_t> EvalCircuitContainer::traverse(eval_circuit_id_
 		if (!node.has_value() || !node->isIC()) {
 			return std::nullopt; // invalid path
 		}
-		currentCircuitId = node->getId();
+		currentCircuitId = node->getEvalCircuitId();
 	}
 	return currentCircuitId;
 }
 
 std::optional<eval_circuit_id_t> EvalCircuitContainer::traverse(const Address& address) const {
-	return traverse(0, address);
+	return traverse(eval_circuit_id_t(0), address);
 }
 
 eval_circuit_id_t EvalCircuitContainer::traverseToTopLevelIC(eval_circuit_id_t startingPoint, const Address& address) const {
@@ -76,11 +76,11 @@ eval_circuit_id_t EvalCircuitContainer::traverseToTopLevelIC(eval_circuit_id_t s
 		if (!node.has_value() || !node->isIC()) {
 			return currentCircuitId;
 		}
-		currentCircuitId = node->getId();
+		currentCircuitId = node->getEvalCircuitId();
 	}
 	return currentCircuitId;
 }
 
 eval_circuit_id_t EvalCircuitContainer::traverseToTopLevelIC(const Address& address) const {
-	return traverseToTopLevelIC(0, address);
+	return traverseToTopLevelIC(eval_circuit_id_t(0), address);
 }

@@ -1,13 +1,13 @@
 #ifndef evaluator_h
 #define evaluator_h
 
-#include "diffCache.h"
-#include "evalCircuitContainer.h"
-#include "evalAddressTree.h"
-#include "evalConnection.h"
-#include "evalConfig.h"
-#include "directionEnum.h"
-#include "logicState.h"
+#include "util/diffCache.h"
+#include "util/evalCircuitContainer.h"
+#include "util/evalAddressTree.h"
+#include "util/evalConnection.h"
+#include "util/evalConfig.h"
+#include "util/directionEnum.h"
+#include "simulator/logicState.h"
 
 class DataUpdateEventManager;
 class CircuitManager;
@@ -76,10 +76,10 @@ public:
 	bool getBoolState(const Address& address) { return toBool(getState(address)); };
 	void setState(const Address& address, logic_state_t state);
 	void setState(const Address& address, bool state) { setState(address, fromBool(state)); }
-	circuit_id_t getCircuitId() const { return evalCircuitContainer.getCircuitId(0).value_or(0); }
+	circuit_id_t getCircuitId() const { return evalCircuitContainer.getCircuitId(eval_circuit_id_t(0)).value_or(0); }
 	circuit_id_t getCircuitId(const Address& address) const {
 		std::shared_lock lk(simMutex);
-		eval_circuit_id_t evalCircuitId = 0;
+		eval_circuit_id_t evalCircuitId = eval_circuit_id_t(0);
 		for (int i = 0; i < address.size(); i++) {
 			std::optional<CircuitNode> node = evalCircuitContainer.getNode(address.getPosition(i), evalCircuitId);
 			if (!node.has_value()) {
@@ -87,7 +87,7 @@ public:
 				return getCircuitId(); // Invalid circuit ID
 			}
 			if (node->isIC()) {
-				evalCircuitId = node->getId();
+				evalCircuitId = node->getEvalCircuitId();
 			} else {
 				logError("Address {} does not point to an IC", "Evaluator::getCircuitId", address.toString());
 				return getCircuitId();
@@ -147,8 +147,8 @@ private:
 	std::optional<middle_id_t> getMiddleId(const eval_circuit_id_t startingPoint, const Address& address, const BlockContainer* blockContainer) const;
 	std::optional<middle_id_t> getMiddleId(const Address& address) const;
 
-	std::optional<connection_port_id_t> getPortId(const circuit_id_t circuitId, const Position blockPosition, const Position portPosition, Direction direction) const;
-	std::optional<connection_port_id_t> getPortId(const BlockContainer* blockContainer, const Position blockPosition, const Position portPosition, Direction direction) const;
+	std::optional<connection_end_id_t> getPortId(const circuit_id_t circuitId, const Position blockPosition, const Position portPosition, Direction direction) const;
+	std::optional<connection_end_id_t> getPortId(const BlockContainer* blockContainer, const Position blockPosition, const Position portPosition, Direction direction) const;
 	std::optional<EvalConnectionPoint> getConnectionPoint(const eval_circuit_id_t evalCircuitId, const Position portPosition, Direction direction) const;
 	std::optional<EvalConnectionPoint> getConnectionPoint(const eval_circuit_id_t evalCircuitId, const BlockContainer* blockContainer, const Position portPosition, Direction direction) const;
 	std::optional<EvalConnectionPoint> getConnectionPoint(

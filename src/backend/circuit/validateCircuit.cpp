@@ -20,7 +20,7 @@ bool CircuitValidator::validateBlockData() {
 	if (size.h == 0)
 		size.h = 1;
 	for (auto& port : parsedCircuit.getConnectionPorts()) {
-		size.extentToFit(port.positionOnBlock);
+		size.extentToFitTartgetCell(port.positionOnBlock);
 	}
 	parsedCircuit.setSize(size);
 	return true;
@@ -60,8 +60,8 @@ bool CircuitValidator::handleInvalidConnections() {
 		const ParsedCircuit::BlockData* inputBlockData = parsedCircuit.getBlock(conn.inputBlockId);
 		const ParsedCircuit::BlockData* outputBlockData = parsedCircuit.getBlock(conn.outputBlockId);
 
-		if (inputBlockData && inputBlockData->type == BlockType::JUNCTION) conn.inputEndId = 0;
-		if (outputBlockData && outputBlockData->type == BlockType::JUNCTION) conn.outputEndId = 0;
+		if (inputBlockData && inputBlockData->type == BlockType::JUNCTION) conn.inputEndId = connection_end_id_t(0);
+		if (outputBlockData && outputBlockData->type == BlockType::JUNCTION) conn.outputEndId = connection_end_id_t(0);
 	}
 
 	// ++connectionCounts[conn];

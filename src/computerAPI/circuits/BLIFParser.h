@@ -3,6 +3,7 @@
 
 #include "backend/circuit/parsedCircuit.h"
 #include "backend/circuit/circuit.h"
+#include "util/idProvider.h"
 #include "parsedCircuitLoader.h"
 #include "circuitFileManager.h"
 
@@ -18,7 +19,7 @@ private:
 		std::vector<std::pair<std::string, std::unordered_map<std::string, std::string>>> customBlocksToAdd;
 		std::unordered_map<std::string, ConnectionEnd> nameToConnectionEnd;
 		std::vector<std::pair<std::string, ConnectionEnd>> connectionsToMake;
-		connection_end_id_t endId;
+		LinearIdProvider<connection_end_id_t> endIdProvider {0};
 		coordinate_t inPortY;
 		coordinate_t outPortY;
 		block_id_t blockIdCounter;

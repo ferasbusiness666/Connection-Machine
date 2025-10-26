@@ -2,8 +2,9 @@
 #define evalCircuitContainer_h
 
 #include "backend/address.h"
+#include "util/idProvider.h"
+#include "util/idVector.h"
 #include "evalCircuit.h"
-#include "idProvider.h"
 
 struct EvalPosition {
 	Position position;
@@ -35,7 +36,7 @@ struct std::hash<EvalPosition> {
 
 class EvalCircuitContainer {
 public:
-	EvalCircuitContainer() = default;
+	EvalCircuitContainer() : evalCircuitIdProvider(0) {};
 	EvalCircuitContainer(const EvalCircuitContainer&) = delete;
 	EvalCircuitContainer& operator=(const EvalCircuitContainer&) = delete;
 	eval_circuit_id_t addCircuit(eval_circuit_id_t parentEvalId, circuit_id_t circuitId);
@@ -44,7 +45,7 @@ public:
 	std::optional<CircuitNode> getNode(Position pos, eval_circuit_id_t evalCircuitId) const noexcept;
 	EvalCircuit* getCircuit(eval_circuit_id_t evalCircuitId) const noexcept;
 
-	inline size_t size() const noexcept {
+	inline eval_circuit_id_t size() const noexcept {
 		return circuits.size();
 	}
 	inline bool empty() const noexcept {
@@ -56,10 +57,14 @@ public:
 	eval_circuit_id_t traverseToTopLevelIC(const Address& address) const;
 	eval_circuit_id_t traverseToTopLevelIC(eval_circuit_id_t startingPoint, const Address& address) const;
 
-	std::optional<eval_circuit_id_t> getCircuitId(eval_circuit_id_t evalCircuitId) const noexcept;
+	std::optional<circuit_id_t> getCircuitId(eval_circuit_id_t evalCircuitId) const noexcept;
+
+	auto ids() const {
+		return circuits.ids();
+	}
 
 private:
-	std::vector<EvalCircuit*> circuits;
+	IdVector<eval_circuit_id_t, EvalCircuit*> circuits;
 	IdProvider<eval_circuit_id_t> evalCircuitIdProvider;
 };
 
