@@ -148,8 +148,10 @@ void Evaluator::edit_removeBlock(
 		logError("Node at position {} not found", "Evaluator::edit_removeBlock", position.toString());
 		return;
 	}
+	removeDependentInterCircuitConnections(pauseGuard, node.value());
 	if (node->isIC()) {
 		eval_circuit_id_t icId = node->getEvalCircuitId();
+		EvalCircuit* icCircuit = evalCircuitContainer.getCircuit(icId);
 		edit_deleteICContents(pauseGuard, icId);
 		evalCircuitContainer.removeCircuit(icId);
 		changedICs = true;

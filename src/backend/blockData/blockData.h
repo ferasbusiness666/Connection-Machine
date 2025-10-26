@@ -258,7 +258,7 @@ inline std::optional<connection_end_id_t> BlockData::getOutputOrBidirectionalCon
 	}
 	Vector noOrientationVec = orientation.inverseTransformVectorWithArea(vector, orientation * blockSize);
 	for (auto& pair : connections) {
-		if (pair.second.positionOnBlock == noOrientationVec && (pair.second.portType != ConnectionData::PortType::OUTPUT || pair.second.portType != ConnectionData::PortType::BIDIRECTIONAL)) return pair.first;
+		if (pair.second.positionOnBlock == noOrientationVec && (pair.second.portType == ConnectionData::PortType::OUTPUT || pair.second.portType == ConnectionData::PortType::BIDIRECTIONAL)) return pair.first;
 	}
 	return std::nullopt;
 }
