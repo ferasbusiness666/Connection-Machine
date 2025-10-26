@@ -617,9 +617,11 @@ void Evaluator::edit_moveBlock(
 		changedICs = true;
 	}
 	removeDependentInterCircuitConnections(pauseGuard, node.value());
-	middle_id_t gateId = node->getMiddleId();
-	middleIdToEvalPositionMap.erase(gateId);
-	middleIdToEvalPositionMap[gateId] = { newPosition, evalCircuitId };
+	if (!node->isIC()){
+		middle_id_t gateId = node->getMiddleId();
+		middleIdToEvalPositionMap.erase(gateId);
+		middleIdToEvalPositionMap[gateId] = { newPosition, evalCircuitId };
+	}
 	evalCircuit->moveNode(curPosition, newPosition);
 	if (finalMove != MoveType::MULTI_BEGIN && finalMove != MoveType::MULTI_MIDDLE) {
 		checkToCreateExternalConnections(pauseGuard, evalCircuitId, newPosition);
