@@ -4,15 +4,10 @@
 #include "backend/position/position.h"
 #include "util/id.h"
 
-struct EvaluatorIdTag;
-struct EvalCircuitIdTag;
-struct MiddleIdTag;
-struct ConnectionPortIdTag;
-struct SimulatorIdTag;
-using evaluator_id_t = Id<EvaluatorIdTag, unsigned int>;
-using eval_circuit_id_t = Id<EvalCircuitIdTag, unsigned int>;
-using middle_id_t = Id<MiddleIdTag, unsigned int>;
-using simulator_id_t = Id<SimulatorIdTag, unsigned int>;
+DECLARE_ID_TYPE(evaluator_id_t, EvaluatorIdTag, unsigned int);
+DECLARE_ID_TYPE(eval_circuit_id_t, EvalCircuitIdTag, unsigned int);
+DECLARE_ID_TYPE(middle_id_t, MiddleIdTag, unsigned int);
+DECLARE_ID_TYPE(simulator_id_t, SimulatorIdTag, unsigned int);
 
 enum class SimulatorMappingUpdateType {
 	BLOCK,

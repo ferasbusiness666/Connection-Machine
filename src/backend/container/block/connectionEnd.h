@@ -5,8 +5,7 @@
 #include "util/id.h"
 class ConnectionContainer;
 
-struct ConnectionEndIdTag;
-using connection_end_id_t = Id<ConnectionEndIdTag, unsigned int>;
+DECLARE_ID_TYPE(connection_end_id_t, ConnectionEndIdTag, unsigned int);
 
 class ConnectionEnd {
 	friend ConnectionContainer;

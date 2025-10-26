@@ -2,7 +2,11 @@
 #define id_h
 #include <fmt/core.h>
 
-template<class Tag, class Rep = std::uint32_t>
+#define DECLARE_ID_TYPE(TypeName, TagName, RepType) \
+	struct TagName; \
+	using TypeName = Id<TagName, RepType>
+
+template<class Tag, class Rep>
 class Id {
 public:
 	using tag = Tag;
