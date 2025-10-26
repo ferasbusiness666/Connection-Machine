@@ -58,12 +58,12 @@ private:
 template<class Tag, class Rep>
 class IdRange {
 public:
-	using iteratorerator = typename Id<Tag, Rep>::iteratorerator;
-	IdRange(Id<Tag, Rep> beginId, Id<Tag, Rep> endId) : b(iteratorerator(beginId)), e(iteratorerator(endId)) {}
-	iteratorerator begin() const { return b; }
-	iteratorerator end()   const { return e; }
+	using iterator = typename Id<Tag, Rep>::iterator;
+	IdRange(Id<Tag, Rep> beginId, Id<Tag, Rep> endId) : b(iterator(beginId)), e(iterator(endId)) {}
+	iterator begin() const { return b; }
+	iterator end()   const { return e; }
 private:
-	iteratorerator b, e;
+	iterator b, e;
 };
 
 template<class Tag, class Rep>
