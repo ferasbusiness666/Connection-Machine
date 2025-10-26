@@ -242,6 +242,7 @@ function(add_app_dependencies)
 		GIT_TAG v0.26.0
 		EXCLUDE_FROM_ALL YES
 		SOURCE_DIR "${EXTERNAL_DIR}/cpp-httplib"
+		OPTIONS "HTTPLIB_REQUIRE_OPENSSL ON"
 	)
 	list(APPEND EXTERNAL_LINKS httplib)
 
