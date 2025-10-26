@@ -3,7 +3,6 @@
 
 #include "logicState.h"
 #include "backend/evaluator/evalDefs.h"
-#include "util/idVector.h"
 
 class SimulatorGate {
 public:

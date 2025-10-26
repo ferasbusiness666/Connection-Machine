@@ -2,8 +2,6 @@
 #define evalCircuitContainer_h
 
 #include "backend/address.h"
-#include "util/idProvider.h"
-#include "util/idVector.h"
 #include "evalCircuit.h"
 
 struct EvalPosition {
