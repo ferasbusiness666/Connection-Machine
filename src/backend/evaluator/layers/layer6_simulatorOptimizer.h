@@ -4,7 +4,6 @@
 #include "backend/evaluator/simulator/logicSimulator.h"
 #include "backend/evaluator/util/evalConnection.h"
 #include "backend/evaluator/util/evalConfig.h"
-#include "util/idProvider.h"
 
 class SimulatorOptimizer {
 public:

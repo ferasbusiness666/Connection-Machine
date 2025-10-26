@@ -6,7 +6,6 @@
 #include "util/evalAddressTree.h"
 #include "util/evalConnection.h"
 #include "util/evalConfig.h"
-#include "util/directionEnum.h"
 #include "simulator/logicState.h"
 
 class DataUpdateEventManager;

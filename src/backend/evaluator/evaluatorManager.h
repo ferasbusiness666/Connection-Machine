@@ -2,7 +2,6 @@
 #define evaluatorManager_h
 
 #include "backend/circuit/circuit.h"
-#include "util/idProvider.h"
 #include "evalDefs.h"
 
 class CircuitManager;
