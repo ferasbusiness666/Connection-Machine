@@ -6,6 +6,7 @@
 #include "gui/helper/saveCallback.h"
 #include "computerAPI/directoryManager.h"
 #include "app.h"
+#include "network/network.h"
 
 #include <RmlUi/Debugger.h>
 
@@ -130,7 +131,40 @@ void PopUpManager::addFeedbackPopup() {
 	popUpRoot->GetElementsByClassName(windowList, "pop-up-window");
 	Rml::Element* window = windowList.front();
 
-	Rml::Element* text = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("span"));
-	text->SetInnerRML("Testing");
-	text->SetClass("pop-up-text", true);
+	// Rml::Element* text = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("span"));
+	// text->SetInnerRML("Testing");
+	// text->SetClass("pop-up-text", true);
+
+	Rml::Element* titleLabel = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("label"));
+	titleLabel->SetInnerRML("Feedback Title:");
+	Rml::Element* titleInput = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("input"));
+	titleInput->SetAttribute("type", "text");
+	titleInput->SetClass("pop-up-input", true);
+	Rml::Element* descriptionLabel = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("label"));
+	descriptionLabel->SetInnerRML("Feedback Description:");
+	Rml::Element* descriptionInput = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("textarea"));
+	descriptionInput->SetClass("pop-up-textarea", true);
+	Rml::Element* actionsElement = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("span"));
+	actionsElement->SetClass("pop-up-actions", true);
+	Rml::ElementPtr sendButton = mainWindow->getRmlDocument()->CreateElement("button");
+	sendButton->AppendChild(std::move(mainWindow->getRmlDocument()->CreateTextNode("Send Feedback")));
+	sendButton->AddEventListener(Rml::EventId::Click, new EventPasser(
+		[deleteFunc = popUpData.second, titleInput, descriptionInput, this](Rml::Event& event) {
+			std::string title = titleInput->GetAttribute<Rml::String>("value", "");
+			std::string description = descriptionInput->GetAttribute<Rml::String>("value", "");
+			deleteFunc();
+			Network::sendFeedback(*this, title, description, {});
+		}
+	));
+	sendButton->SetClass("pop-up-action", true);
+	actionsElement->AppendChild(std::move(sendButton));
+	Rml::ElementPtr cancelButton = mainWindow->getRmlDocument()->CreateElement("button");
+	cancelButton->AppendChild(std::move(mainWindow->getRmlDocument()->CreateTextNode("Cancel")));
+	cancelButton->AddEventListener(Rml::EventId::Click, new EventPasser(
+		[deleteFunc = popUpData.second](Rml::Event& event) {
+			deleteFunc();
+		}
+	));
+	cancelButton->SetClass("pop-up-action", true);
+	actionsElement->AppendChild(std::move(cancelButton));
 }
