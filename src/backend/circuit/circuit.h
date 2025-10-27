@@ -37,6 +37,8 @@ public:
 	bool isEditable() { return editable; }
 	void setEditable(bool isEditable) { editable = isEditable; }
 
+	Position estimateCenter() const;
+
 	/* ----------- listener ----------- */
 	// subject to change
 	void connectListener(void* object, CircuitDiffListenerFunction func, unsigned int priority = 100);

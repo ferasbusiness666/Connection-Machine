@@ -1,9 +1,8 @@
 #include "viewManager.h"
 
-#include "backend/circuit/circuit.h"
-#include "../events/customEvents.h"
-#include "../events/eventRegister.h"
 #include "backend/position/position.h"
+#include "../events/eventRegister.h"
+#include "../events/customEvents.h"
 
 void ViewManager::setUpEvents(EventRegister& eventRegister) {
 	this->eventRegister = &eventRegister;

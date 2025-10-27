@@ -1,8 +1,8 @@
 #ifndef viewManager_h
 #define viewManager_h
 
-#include "backend/circuit/circuit.h"
 #include "backend/position/position.h"
+#include "backend/circuit/circuit.h"
 #include "util/vec2.h"
 
 class EventRegister;

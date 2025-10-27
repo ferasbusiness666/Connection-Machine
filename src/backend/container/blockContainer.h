@@ -117,6 +117,7 @@ private:
 	void removeBlockCells(const Block* block);
 	block_id_t getNewId() { return ++lastId; }
 
+
 	BlockType selfBlockType = BlockType::NONE;
 	CircuitManager* circuitManager;
 	BlockDataManager* blockDataManager;
