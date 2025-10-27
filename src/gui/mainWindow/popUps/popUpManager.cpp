@@ -12,15 +12,40 @@
 
 #include <SDL3/SDL.h>
 
-void PopUpManager::addOptionsPopUp(const std::string& message, const std::vector<std::pair<std::string, std::function<void()>>>& options, bool blocking) {
+void PopUpManager::addOptionsPopUp(const std::string& message, const std::optional<std::string>& smallMessage, const std::vector<std::pair<std::string, std::function<void()>>>& options, bool blocking) {
 	std::pair<Rml::Element*, std::function<void()>> popUpData = createPopUp(blocking);
 	Rml::Element* popUpRoot = popUpData.first;
 	Rml::ElementList windowList;
 	popUpRoot->GetElementsByClassName(windowList, "pop-up-window");
 	Rml::Element* window = windowList.front();
-	Rml::Element* text = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("span"));
-	text->SetInnerRML(message);
-	text->SetClass("pop-up-text", true);
+	// Rml::Element* text = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("span"));
+	// text->SetInnerRML(message);
+	// text->SetClass("pop-up-text", true);
+	// split message into multiple lines at \n
+	Rml::Element* textContainer = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
+	textContainer->SetClass("pop-up-text-container", true);
+	size_t start = 0;
+	while (start < message.size()) {
+		size_t end = message.find('\n', start);
+		if (end == std::string::npos) end = message.size();
+		std::string line = message.substr(start, end - start);
+		Rml::Element* lineElement = textContainer->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
+		lineElement->SetInnerRML(line);
+		lineElement->SetClass("pop-up-text-line", true);
+		start = end + 1;
+	}
+	if (smallMessage.has_value()) {
+		start = 0;
+		while (start < smallMessage->size()) {
+			size_t end = smallMessage->find('\n', start);
+			if (end == std::string::npos) end = smallMessage->size();
+			std::string line = smallMessage->substr(start, end - start);
+			Rml::Element* lineElement = textContainer->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
+			lineElement->SetInnerRML(line);
+			lineElement->SetClass("pop-up-text-small-line", true);
+			start = end + 1;
+		}
+	}
 	Rml::Element* actionsElement = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("span"));
 	actionsElement->SetClass("pop-up-actions", true);
 	for (const auto& option : options) {

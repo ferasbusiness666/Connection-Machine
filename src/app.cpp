@@ -6,6 +6,7 @@
 
 #include "gui/mainWindow/circuitView/circuitViewWidget.h"
 #include "gui/helper/saveCallback.h"
+#include "network/network.h"
 
 #include <SDL3/SDL.h>
 
@@ -75,6 +76,7 @@ const char* const addLoopTracyName = "appLoop";
 
 void App::runLoop() {
 	logInfo("Starting App loop", "App");
+	Network::checkForUpdates(get().windows[0]->getPopUpManager());
 	running = true;
 	while (running) {
 		// do texture updates

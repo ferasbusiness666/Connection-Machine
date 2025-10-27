@@ -63,6 +63,26 @@
 	font-weight: 500;
 }
 
+.pop-up-text-container {
+	width: 100%;
+	text-align: center;
+	margin-bottom: 12dp;
+}
+
+.pop-up-text-line {
+	margin: 4dp 0dp;
+	font-size: 20dp;
+	font-weight: 500;
+	display: block;
+}
+
+.pop-up-text-small-line {
+	font-size: 14dp;
+	color: #a0a0a0;
+	margin: 2dp 0dp;
+	display: block;
+}
+
 /* --- text input --- */
 
 .pop-up-textarea {
