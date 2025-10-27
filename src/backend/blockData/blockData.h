@@ -319,13 +319,13 @@ inline bool BlockData::isConnectionInputOrBidirectional(connection_end_id_t conn
 	if (defaultData) return connectionId == connection_end_id_t(0);
 	auto iter = connections.find(connectionId);
 	if (iter == connections.end()) return false;
-	return iter->second.portType == ConnectionData::PortType::INPUT || iter->second.portType == ConnectionData::PortType::BIDIRECTIONAL;
+	return iter->second.portType != ConnectionData::PortType::OUTPUT;
 }
 inline bool BlockData::isConnectionOutputOrBidirectional(connection_end_id_t connectionId) const noexcept {
 	if (defaultData) return connectionId == connection_end_id_t(1);
 	auto iter = connections.find(connectionId);
 	if (iter == connections.end()) return false;
-	return iter->second.portType == ConnectionData::PortType::OUTPUT || iter->second.portType == ConnectionData::PortType::BIDIRECTIONAL;
+	return iter->second.portType != ConnectionData::PortType::INPUT;
 }
 inline BlockData::ConnectionData::PortType BlockData::getConnectionPortType(connection_end_id_t connectionId) const noexcept {
 	if (defaultData) {
