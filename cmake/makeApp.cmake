@@ -2,7 +2,8 @@
 file(GLOB_RECURSE PROJECT_SOURCES
 	"${SOURCE_DIR}/*.cpp"
 )
-list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR}/cli/.*")
+string(REGEX REPLACE "([][+.*^$(){}|\\\\])" "\\\\\\1" SOURCE_DIR_REGEX "${SOURCE_DIR}")
+list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR_REGEX}/cli/.*")
 
 # ===================================== CREATE APP EXECUTABLE ========================================
 

@@ -27,7 +27,7 @@ void SetEvalPauseStateCommand::run(const std::vector<std::string>& args, Environ
         logError("Invalid state. Valid states are 0 for unpaused, 1 for paused.", "SetEvalPauseStateCommand");
         return;
     }
-    SharedEvaluator eval = environment.getBackend().getEvaluatorManager().getEvaluator(evalID);
+    SharedEvaluator eval = environment.getBackend().getEvaluatorManager().getEvaluator(evaluator_id_t(evalID));
     if (eval == nullptr) {
         logError("Unrecognized evaluator ID. Available evaluators can be found with the 'list_evaluators' command.", "SetEvalPauseStateCommand");
         return;
