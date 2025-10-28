@@ -4,9 +4,12 @@
 #include "backend/evaluator/util/evalConnection.h"
 #include "backend/container/block/blockDefs.h"
 #include "backend/container/block/connectionEnd.h"
+#include "util/id.h"
 
 class SimPauseGuard;
 class Replacer;
+
+DECLARE_ID_TYPE(replacement_id_t, unsigned int);
 
 struct ReplacementGate {
 	middle_id_t id;
@@ -88,6 +91,7 @@ private:
 	void trackReplacementLayer(middle_id_t id, int layer);
 
 	Replacer* replacer;
+	replacement_id_t id;
 	std::vector<ReplacementGate> addedGates;
 	std::vector<ReplacementGate> deletedGates;
 	std::vector<EvalConnection> addedConnections;
