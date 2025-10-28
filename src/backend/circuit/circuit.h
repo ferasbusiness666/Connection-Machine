@@ -37,8 +37,6 @@ public:
 	bool isEditable() { return editable; }
 	void setEditable(bool isEditable) { editable = isEditable; }
 
-	Position estimateCenter() const;
-
 	/* ----------- listener ----------- */
 	// subject to change
 	void connectListener(void* object, CircuitDiffListenerFunction func, unsigned int priority = 100);
@@ -89,6 +87,10 @@ public:
 	/* ----------- undo ----------- */
 	void undo();
 	void redo();
+
+	bool isOnStack(Position blockPosition) const {
+		return blockPosition.x == stackBottom.x;
+	}
 
 private:
 	void pushOntoStack(Position blockPosition, Difference * difference, MoveType moveType = MoveType::MULTI_BEGIN);

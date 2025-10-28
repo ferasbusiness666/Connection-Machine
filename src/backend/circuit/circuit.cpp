@@ -24,15 +24,6 @@ void Circuit::clear(bool clearUndoTree) {
 	}
 }
 
-Position Circuit::estimateCenter() const {
-	for (auto& pair : blockContainer) {
-		if (pair.second.getPosition().x != stackBottom.x) {
-			return pair.second.getPosition();
-		}
-	}
-	return Position();
-}
-
 void Circuit::connectListener(void* object, CircuitDiffListenerFunction func, unsigned int priority) {
 	listenerFunctions.emplace_back(object, priority, func);
 	std::sort(listenerFunctions.begin(), listenerFunctions.end(), [](const CircuitDiffListenerData& a, const CircuitDiffListenerData& b) { return a.priority < b.priority; });

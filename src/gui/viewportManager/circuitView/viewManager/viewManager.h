@@ -45,7 +45,7 @@ public:
 	Vec2 gridToView(FPosition position) const;
 	Vec2 gridToView(FVector vector) const;
 
-
+	void focus();
 
 private:
 	// helpers
@@ -75,7 +75,7 @@ private:
 
 	// view data per circuit
 	std::map<circuit_id_t, ViewPositioningData> perCircuitViewData;
-	circuit_id_t currentCircuitId = 0;
+	Circuit* currentCircuit = nullptr;
 
 	// view
 	FPosition viewCenter;

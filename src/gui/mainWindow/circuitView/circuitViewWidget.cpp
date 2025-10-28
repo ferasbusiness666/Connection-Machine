@@ -70,6 +70,10 @@ CircuitViewWidget::CircuitViewWidget(
 	// create keybind shortcuts and connect them
 	document->AddEventListener(Rml::EventId::Keydown, &keybindHandler);
 	keybindHandler.addListener(
+		"Keybinds/Camera/Home",
+		[this]() { circuitView->getViewManager().focus(); }
+	);
+	keybindHandler.addListener(
 		"Keybinds/Editing/Undo",
 		[this]() { if (circuitView->getCircuit()) circuitView->getCircuit()->undo(); }
 	);
