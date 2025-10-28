@@ -5,11 +5,10 @@
 
 #include "gpu/mainRenderer.h"
 
-CircuitView::CircuitView(Environment* environment, ViewportId viewportId) : viewportId(viewportId), toolManager(environment, &eventRegister, viewportId, this) {
+CircuitView::CircuitView(Environment* environment, ViewportId viewportId) : viewportId(viewportId), toolManager(environment, &eventRegister, viewportId, this), tutorialManager(this) {
 	MainRenderer::get().moveViewportView(viewportId, viewManager.getTopLeft(), viewManager.getBottomRight());
 	viewManager.setUpEvents(eventRegister);
 	viewManager.connectViewChanged(std::bind(&CircuitView::viewChanged, this));
-	tutorialManager(this);
 }
 
 void CircuitView::setBackend(Backend* backend) {

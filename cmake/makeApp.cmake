@@ -94,6 +94,7 @@ foreach(resource_path_relative IN LISTS RESOURCE_FILES)
 		COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${original_resource}" "${copied_resource}"
 		DEPENDS "${original_resource}"
 		COMMENT "Copying resource: ${resource_path_relative}"
+		VERBATIM
 	)
 
 	list(APPEND RESOURCE_FILES_COPIED "${copied_resource}")
@@ -125,6 +126,7 @@ foreach(shader_source IN LISTS SHADER_SOURCE_FILES)
 		COMMAND Vulkan::glslc "${shader_source}" "-o" "${compiled_shader}"
 		DEPENDS "${shader_source}"
 		COMMENT "Compiling shader: ${shader_source}"
+		VERBATIM
 	)
 
 	list(APPEND SHADER_PRODUCTS "${compiled_shader}")

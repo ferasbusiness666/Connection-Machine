@@ -5,6 +5,7 @@
 #include "viewManager/viewManager.h"
 #include "events/eventRegister.h"
 #include "tools/toolManager.h"
+#include "tutorialManager.h"
 
 #include "gpu/mainRendererDefs.h"
 

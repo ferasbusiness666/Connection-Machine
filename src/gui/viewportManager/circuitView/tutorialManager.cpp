@@ -7,6 +7,4 @@ TutorialManager::TutorialManager(CircuitView* circuitView) : circuitView(circuit
 
         
     }
-        void TutorialManager::StartTutorial() {
-            elementCreator.addBlockPreview();
-        }
+        
