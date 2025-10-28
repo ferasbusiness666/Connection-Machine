@@ -119,7 +119,8 @@ private:
 	BusInterfacePassthrough busInterfacePassthrough;
 	EvalConfig& evalConfig;
 	IdProvider<middle_id_t>& middleIdProvider;
-	std::vector<Replacement> replacements;
+	IdVector<replacement_id_t, std::optional<Replacement>> replacements;
+	IdProvider<replacement_id_t> replacementIdProvider { 0 };
 	std::unordered_map<middle_id_t, std::unordered_map<connection_end_id_t, EvalConnectionPoint>> replacedConnectionPoints;
 	std::unordered_map<middle_id_t, middle_id_t> replacedIds;
 	std::unordered_map<middle_id_t, int> replacementIdLayers;
@@ -230,6 +231,7 @@ private:
 	bool isJunctionType(BlockType blockType) const {
 		return blockType == BlockType::JUNCTION || blockType == BlockType::JUNCTION_L || blockType == BlockType::JUNCTION_H || blockType == BlockType::JUNCTION_X;
 	}
+	std::unordered_map<middle_id_t, std::set<replacement_id_t>> dependentReplacements;
 };
 
 #endif /* replacer_h */

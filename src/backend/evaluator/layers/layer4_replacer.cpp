@@ -3,29 +3,65 @@
 #include "layer4_replacement.h"
 
 Replacement& Replacer::makeReplacement(int layer) {
-	replacements.push_back(Replacement(
+	// replacements.emplace_back(
+	// 	this,
+	// 	layer
+	// );
+	// return replacements.back();
+	replacement_id_t newId = replacementIdProvider.getNewId();
+	if (replacements.size() <= newId) {
+		replacements.resizeWithOffset(newId, 1, std::nullopt);
+	}
+	replacements[newId] = Replacement(
 		this,
 		layer
-	));
-	return replacements.back();
+	);
+	return *replacements[newId];
 }
 
 void Replacer::cleanReplacements() {
-	for (auto it = replacements.begin(); it != replacements.end();) {
-		if (it->getIsEmpty()) {
-			it = replacements.erase(it);
-		} else {
-			++it;
+	// for (auto it = replacements.begin(); it != replacements.end();) {
+	// 	if (it->getIsEmpty()) {
+	// 		it = replacements.erase(it);
+	// 	} else {
+	// 		++it;
+	// 	}
+	// }
+	for (replacement_id_t id : replacementIdProvider.getUsedIds()) {
+		if (replacements[id] && replacements[id]->getIsEmpty()) {
+			replacements[id] = std::nullopt;
+			replacementIdProvider.releaseId(id);
 		}
 	}
 }
 
 void Replacer::pingId(SimPauseGuard& pauseGuard, middle_id_t id, int minLayer) {
-	for (Replacement& replacement : replacements) {
-		if (replacement.getLayer() < minLayer) {
-			continue;
+	// for (Replacement& replacement : replacements) {
+	// 	if (replacement.getLayer() < minLayer) {
+	// 		continue;
+	// 	}
+	// 	replacement.pingId(pauseGuard, id);
+	// }
+	auto node = dependentReplacements.extract(id);
+	if (node.empty()) {
+		return;
+	}
+	std::set<replacement_id_t>& replacementsSet = node.mapped();
+	std::set<replacement_id_t> remaining;
+	std::vector<replacement_id_t> toRevert;
+	for (replacement_id_t replacementId : replacementsSet) {
+		if (replacements[replacementId]->getLayer() < minLayer) {
+			remaining.insert(replacementId);
+		} else {
+			toRevert.push_back(replacementId);
 		}
-		replacement.pingId(pauseGuard, id);
+	}
+	if (!remaining.empty()) {
+		replacementsSet = std::move(remaining);
+		dependentReplacements.insert(std::move(node));
+	}
+	for (replacement_id_t replacementId : toRevert) {
+		replacements[replacementId]->revert(pauseGuard);
 	}
 }
 

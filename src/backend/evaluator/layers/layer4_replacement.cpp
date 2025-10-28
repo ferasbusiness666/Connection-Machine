@@ -160,9 +160,9 @@ void Replacement::revert(SimPauseGuard& pauseGuard) {
 	for (const auto& entry : replacementLayerEntries) {
 		replacer->replacementIdLayers.erase(entry.id);
 	}
-	for (const auto& id : reservedIds) {
-		replacer->middleIdProvider.releaseId(id);
-		replacer->replacementIdLayers.erase(id);
+	for (const auto& reservedId : reservedIds) {
+		replacer->middleIdProvider.releaseId(reservedId);
+		replacer->replacementIdLayers.erase(reservedId);
 	}
 	auto callbacksWithPauseGuard = std::move(revertCallbacksWithPauseGuard);
 	for (auto& callback : callbacksWithPauseGuard) {
@@ -176,6 +176,12 @@ void Replacement::revert(SimPauseGuard& pauseGuard) {
 			callback();
 		}
 	}
+	for (const auto idToTrack : idsToTrack) {
+		if (replacer->dependentReplacements.contains(idToTrack)) {
+			replacer->dependentReplacements.at(idToTrack).erase(id);
+		}
+	}
+
 	addedConnections.clear();
 	addedGates.clear();
 	deletedConnections.clear();
@@ -185,4 +191,9 @@ void Replacement::revert(SimPauseGuard& pauseGuard) {
 	replacementLayerEntries.clear();
 	overriddenConnectionPoints.clear();
 	isReverting = false;
+}
+
+void Replacement::trackId(middle_id_t middleId) {
+	replacer->dependentReplacements[middleId].insert(id);
+	idsToTrack.insert(middleId);
 }
