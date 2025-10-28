@@ -176,6 +176,12 @@ void Replacement::revert(SimPauseGuard& pauseGuard) {
 			callback();
 		}
 	}
+	for (const auto id : idsToTrack) {
+		if (replacer->dependentReplacements.contains(id)) {
+			replacer->dependentReplacements.at(id).erase(this);
+		}
+	}
+
 	addedConnections.clear();
 	addedGates.clear();
 	deletedConnections.clear();
@@ -185,4 +191,9 @@ void Replacement::revert(SimPauseGuard& pauseGuard) {
 	replacementLayerEntries.clear();
 	overriddenConnectionPoints.clear();
 	isReverting = false;
+}
+
+void Replacement::trackId(middle_id_t id) {
+	replacer->dependentReplacements[id].insert(this);
+	idsToTrack.insert(id);
 }

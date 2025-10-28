@@ -62,9 +62,7 @@ public:
 
 	middle_id_t getNewId();
 
-	void trackId(middle_id_t id) {
-		idsToTrack.insert(id);
-	}
+	void trackId(middle_id_t id);
 	void trackConnection(EvalConnection conn) {
 		trackId(conn.source.gateId);
 		trackId(conn.destination.gateId);

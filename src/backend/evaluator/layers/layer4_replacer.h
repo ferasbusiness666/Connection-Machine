@@ -230,6 +230,7 @@ private:
 	bool isJunctionType(BlockType blockType) const {
 		return blockType == BlockType::JUNCTION || blockType == BlockType::JUNCTION_L || blockType == BlockType::JUNCTION_H || blockType == BlockType::JUNCTION_X;
 	}
+	std::unordered_map<middle_id_t, std::set<Replacement*>> dependentReplacements;
 };
 
 #endif /* replacer_h */

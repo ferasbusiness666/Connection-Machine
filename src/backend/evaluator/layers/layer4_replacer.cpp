@@ -21,11 +21,21 @@ void Replacer::cleanReplacements() {
 }
 
 void Replacer::pingId(SimPauseGuard& pauseGuard, middle_id_t id, int minLayer) {
-	for (Replacement& replacement : replacements) {
-		if (replacement.getLayer() < minLayer) {
-			continue;
+	// for (Replacement& replacement : replacements) {
+	// 	if (replacement.getLayer() < minLayer) {
+	// 		continue;
+	// 	}
+	// 	replacement.pingId(pauseGuard, id);
+	// }
+	if (dependentReplacements.contains(id)) {
+		std::set<Replacement*>& replacementsSet = dependentReplacements.at(id);
+		for (Replacement* replacement : replacementsSet) {
+			if (replacement->getLayer() < minLayer) {
+				continue;
+			}
+			replacement->pingId(pauseGuard, id);
 		}
-		replacement.pingId(pauseGuard, id);
+		dependentReplacements.erase(id);
 	}
 }
 
