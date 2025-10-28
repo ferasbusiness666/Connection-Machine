@@ -119,7 +119,7 @@ private:
 	BusInterfacePassthrough busInterfacePassthrough;
 	EvalConfig& evalConfig;
 	IdProvider<middle_id_t>& middleIdProvider;
-	std::vector<Replacement> replacements;
+	std::deque<Replacement> replacements;
 	std::unordered_map<middle_id_t, std::unordered_map<connection_end_id_t, EvalConnectionPoint>> replacedConnectionPoints;
 	std::unordered_map<middle_id_t, middle_id_t> replacedIds;
 	std::unordered_map<middle_id_t, int> replacementIdLayers;

@@ -3,10 +3,10 @@
 #include "layer4_replacement.h"
 
 Replacement& Replacer::makeReplacement(int layer) {
-	replacements.push_back(Replacement(
+	replacements.emplace_back(
 		this,
 		layer
-	));
+	);
 	return replacements.back();
 }
 
@@ -27,15 +27,16 @@ void Replacer::pingId(SimPauseGuard& pauseGuard, middle_id_t id, int minLayer) {
 	// 	}
 	// 	replacement.pingId(pauseGuard, id);
 	// }
-	if (dependentReplacements.contains(id)) {
-		std::set<Replacement*>& replacementsSet = dependentReplacements.at(id);
-		for (Replacement* replacement : replacementsSet) {
-			if (replacement->getLayer() < minLayer) {
-				continue;
-			}
-			replacement->pingId(pauseGuard, id);
+	auto node = dependentReplacements.extract(id);
+	if (node.empty()) {
+		return;
+	}
+	std::set<Replacement*>& replacementsSet = node.mapped();
+	for (Replacement* replacement : replacementsSet) {
+		if (replacement->getLayer() < minLayer) {
+			continue;
 		}
-		dependentReplacements.erase(id);
+		replacement->pingId(pauseGuard, id);
 	}
 }
 
