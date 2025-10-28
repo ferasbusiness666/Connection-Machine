@@ -25,7 +25,7 @@ function(add_main_dependencies)
 	target_include_directories(cfgpath INTERFACE "${EXTERNAL_DIR}/cfgpath")
 	list(APPEND EXTERNAL_LINKS cfgpath)
 
-	# JSON
+	# # JSON # We dont use this anymore # yes we do
 	CPMAddPackage(
 		NAME nlohmann_json
 		GITHUB_REPOSITORY nlohmann/json
@@ -234,6 +234,17 @@ function(add_app_dependencies)
 		SOURCE_DIR "${EXTERNAL_DIR}/glm"
 	)
 	list(APPEND EXTERNAL_LINKS glm)
+
+	# httplib
+	CPMAddPackage(
+		NAME httplib
+		GITHUB_REPOSITORY yhirose/cpp-httplib
+		GIT_TAG v0.26.0
+		EXCLUDE_FROM_ALL YES
+		SOURCE_DIR "${EXTERNAL_DIR}/cpp-httplib"
+		OPTIONS "HTTPLIB_REQUIRE_OPENSSL ON"
+	)
+	list(APPEND EXTERNAL_LINKS httplib)
 
 	set(EXTERNAL_LINKS "${EXTERNAL_LINKS}" PARENT_SCOPE)
 endfunction()

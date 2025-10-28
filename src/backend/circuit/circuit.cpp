@@ -241,16 +241,24 @@ bool Circuit::tryInsertParsedCircuit(const ParsedCircuit& parsedCircuit, Positio
 	for (const auto& conn : parsedCircuit.getConns()) {
 		const ParsedCircuit::BlockData* parsedBlock = parsedCircuit.getBlock(conn.outputBlockId);
 		if (!parsedBlock) {
-			logError("Could not get block from parsed circuit while inserting block.", "Circuit");
+			logError("Could not get block {} from parsed circuit while inserting block.", "Circuit", conn.outputBlockId);
 			continue;
 		}
-		if (blockContainer.getBlockDataManager()->isConnectionInput(parsedBlock->type, conn.outputEndId)) {
+		const BlockData* outputBlockData = blockContainer.getBlockDataManager()->getBlockData(parsedBlock->type);
+		if (!outputBlockData) {
+			logError("Could not get block type {} from block data manager while inserting block.", "Circuit", parsedBlock->type);
+			continue;
+		}
+		if (outputBlockData->isConnectionInput(conn.outputEndId)) {
 			// skip inputs
 			continue;
 		}
-
 		ConnectionEnd output(realIds[conn.outputBlockId], conn.outputEndId);
 		ConnectionEnd input(realIds[conn.inputBlockId], conn.inputEndId);
+
+		if (blockContainer.connectionExists(output, input)) {
+			continue;
+		}
 		if (!blockContainer.tryCreateConnection(output, input, difference.get())) {
 			logError("Failed to create connection while inserting block (could be a duplicate connection in parsing):[{},{}] -> [{},{}]", "", conn.inputBlockId, conn.inputEndId, conn.outputBlockId, conn.outputEndId);
 		}
@@ -298,6 +306,9 @@ bool Circuit::tryInsertGeneratedCircuit(const GeneratedCircuit& generatedCircuit
 
 		ConnectionEnd output(realIds[conn.outputBlockId], conn.outputId);
 		ConnectionEnd input(realIds[conn.inputBlockId], conn.inputId);
+		if (blockContainer.connectionExists(output, input)) {
+			continue;
+		}
 		if (!blockContainer.tryCreateConnection(output, input, difference.get())) {
 			logError("Failed to create connection while inserting block (could be a duplicate connection in parsing):[{},{}] -> [{},{}]", "", conn.inputBlockId, conn.inputId, conn.outputBlockId, conn.outputId);
 		}
@@ -331,6 +342,12 @@ bool Circuit::tryInsertCopiedBlocks(const SharedCopiedBlocks& copiedBlocks, Posi
 		}
 	}
 	for (const std::pair<Position, Position>& conn : copiedBlocks->getCopiedConnections()) {
+		if (blockContainer.connectionExists(
+			position + transformAmount * (conn.second - copiedBlocks->getMinPosition()),
+			position + transformAmount * (conn.first - copiedBlocks->getMinPosition())
+		)) {
+			continue;
+		}
 		if (!blockContainer.tryCreateConnection(
 			position + transformAmount * (conn.second - copiedBlocks->getMinPosition()),
 			position + transformAmount * (conn.first - copiedBlocks->getMinPosition()),
@@ -597,6 +614,9 @@ void Circuit::popOffStack(Position position, Orientation transformAmount, bool r
 	const Block* block = blockContainer.getBlock(stackTop);
 	if (!block) {
 		logError("Can't find block on stack, this should never happen", "Circuit");
+		if (stackTop.y > stackBottom.y) {
+			stackTop.y--; // take one off the stack to try to save what I can
+		}
 		return;
 	}
 	stackTop.y -= block->size().h-1;

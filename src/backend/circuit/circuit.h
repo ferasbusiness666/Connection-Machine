@@ -88,6 +88,10 @@ public:
 	void undo();
 	void redo();
 
+	bool isOnStack(Position blockPosition) const {
+		return blockPosition.x == stackBottom.x;
+	}
+
 private:
 	void pushOntoStack(Position blockPosition, Difference * difference, MoveType moveType = MoveType::MULTI_BEGIN);
 	void popOffStack(Position position, Orientation transformAmount, bool resetRotation, Difference * difference, MoveType moveType = MoveType::MULTI_FINAL);

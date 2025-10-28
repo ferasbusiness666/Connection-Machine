@@ -1,5 +1,4 @@
 #include "singleConnectTool.h"
-#include "gui/viewportManager/circuitView/renderer/logicRenderingUtils.h"
 
 bool SingleConnectTool::makeConnection(const Event* event) {
 	if (!circuit) return false;
@@ -49,7 +48,7 @@ void SingleConnectTool::updateElements() {
 			} else {
 				std::optional<ConnectionEnd> outputConnectionEnd = circuit->getBlockContainer()->getOutputOrBidirectionalConnectionEnd(clickPosition);
 				if (!outputConnectionEnd) {
-					clicked = false;
+					reset();
 					bool valid = circuit->getBlockContainer()->getOutputOrBidirectionalConnectionEnd(lastPointerPosition).has_value();
 					elementCreator.addSelectionElement(SelectionElement(lastPointerPosition, !valid));
 				} else {
@@ -59,15 +58,18 @@ void SingleConnectTool::updateElements() {
 						std::optional<connection_end_id_t> inputEndId = inputBlock->getInputOrBidirectionalConnectionId(lastPointerPosition);
 						if (inputEndId) {
 							elementCreator.addConnectionPreview(ConnectionPreview(
-								clickPosition.free() + getOutputOffset(outputBlock->type(), outputConnectionEnd.value().getConnectionId(), outputBlock->getOrientation()),
-								lastPointerPosition.free() + getInputOffset(inputBlock->type(), inputEndId.value(), inputBlock->getOrientation())
+								clickPosition.free() + circuit->getBlockContainer()->getBlockDataManager()->getBlockData(outputBlock->type())->getConnectionPortOffset(
+									outputConnectionEnd.value().getConnectionId(), outputBlock->getOrientation()).value(),
+								lastPointerPosition.free() + circuit->getBlockContainer()->getBlockDataManager()->getBlockData(inputBlock->type())->getConnectionPortOffset(
+									inputEndId.value(), inputBlock->getOrientation()).value()
 							));
 							valid = true;
 						}
 					}
 					if (!valid) {
 						elementCreator.addHalfConnectionPreview(HalfConnectionPreview(
-							clickPosition.free() + getOutputOffset(outputBlock->type(), outputConnectionEnd->getConnectionId(), outputBlock->getOrientation()),
+							clickPosition.free() + circuit->getBlockContainer()->getBlockDataManager()->getBlockData(outputBlock->type())->getConnectionPortOffset(
+									outputConnectionEnd.value().getConnectionId(), outputBlock->getOrientation()).value(),
 							lastPointerFPosition
 						));
 					}

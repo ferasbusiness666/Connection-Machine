@@ -35,7 +35,7 @@ SimControlsManager::SimControlsManager(
 		[dataUpdateEventManager, circuitViewWidget](std::function<void(double)> func) {
 			std::shared_ptr<DataUpdateEventManager::DataUpdateEventReceiver> DUER = std::make_shared<DataUpdateEventManager::DataUpdateEventReceiver>(dataUpdateEventManager);
 			DUER->linkFunction("evaluatorTargetTickrateSet", [circuitViewWidget, func](const DataUpdateEventManager::EventData* dataEvent) {
-				auto data = dataEvent->cast<std::pair<unsigned int, double>>();
+				auto data = dataEvent->cast<std::pair<evaluator_id_t, double>>();
 				Evaluator* evaluator = circuitViewWidget->getCircuitView()->getEvaluator();
 				if (!evaluator) return;
 				if (data->get().first == evaluator->getEvaluatorId()) func(data->get().second);

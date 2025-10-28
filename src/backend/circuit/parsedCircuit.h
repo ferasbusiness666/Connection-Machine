@@ -53,7 +53,7 @@ public:
 		connection_end_id_t connectionEndId;
 		Vector positionOnBlock;
 		block_id_t internalBlockId = 0;
-		connection_end_id_t internalBlockConnectionEndId = 0;
+		connection_end_id_t internalBlockConnectionEndId = connection_end_id_t(0);
 		std::string portName = "";
 	};
 
@@ -146,8 +146,10 @@ public:
 private:
 	struct ConnectionHash {
 		size_t operator()(const ParsedCircuit::ConnectionData& p) const {
-			return std::hash<block_id_t>()(p.outputEndId) ^ std::hash<block_id_t>()(p.outputEndId) ^
-				std::hash<connection_end_id_t>()(p.outputBlockId) ^ std::hash<connection_end_id_t>()(p.inputBlockId);
+			return std::hash<block_id_t>()(p.outputBlockId) ^
+				std::hash<connection_end_id_t>()(p.outputEndId) ^
+				std::hash<block_id_t>()(p.inputBlockId) ^
+				std::hash<connection_end_id_t>()(p.inputEndId);
 		}
 	};
 
