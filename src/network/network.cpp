@@ -4,6 +4,24 @@
 #include <httplib.h>
 #include <nlohmann/json.hpp>
 
+std::optional<Network> Network::singletonInstance;
+
+Network& Network::get() {
+	if (!singletonInstance.has_value()) {
+		singletonInstance.emplace();
+	}
+	return singletonInstance.value();
+}
+void Network::kill() {
+	singletonInstance.reset();
+}
+
+Network::Network() : kvStore(KVStore::getStore("network")) {
+}
+
+Network::~Network() {
+}
+
 bool Network::checkConnectedToInternet() {
 	httplib::SSLClient cli("www.gstatic.com");
 	cli.set_connection_timeout(5, 0);
@@ -39,7 +57,7 @@ void Network::sendFeedback(PopUpManager& popUpManager, const std::string& title,
 		if (res && res->status / 100 == 2) {
 			popUpManager.addOptionsPopUp("Feedback sent successfully!", {{"OK", []() {}}}, true);
 		} else {
-			if (Network::checkConnectedToInternet()) {
+			if (Network::get().checkConnectedToInternet()) {
 				popUpManager.addOptionsPopUp("Feedback sending failed.", { {"OK", []() {}} }, true);
 			} else {
 				popUpManager.addOptionsPopUp("No internet connection.", { {"OK", []() {}} }, true);
@@ -51,9 +69,12 @@ void Network::sendFeedback(PopUpManager& popUpManager, const std::string& title,
 }
 
 void Network::checkForUpdates(PopUpManager& popUpManager) {
-	std::thread t([&popUpManager]() {
+	std::thread t([this, &popUpManager]() {
 		Version currentVersion = parseVersionString(PROJECT_VERSION);
 		logInfo("Checking for updates, current version: {}", "Network", currentVersion.toString());
+		std::string ignoredVersionStr = kvStore->get<KVType::STRING>("ignored_version").value_or("0.0.0");
+		Version ignoredVersion = parseVersionString(ignoredVersionStr);
+		logInfo("Minimum version to notify greater than: {}", "Network", ignoredVersion.toString());
 		httplib::SSLClient cli("api.github.com");
 		cli.set_read_timeout(10, 0);
 		cli.set_connection_timeout(5, 0);
@@ -76,17 +97,23 @@ void Network::checkForUpdates(PopUpManager& popUpManager) {
 					auto latestRelease = jsonResponse[0];
 					std::string latestVersionStr = latestRelease["tag_name"].get<std::string>();
 					Version latestVersion = parseVersionString(latestVersionStr);
-					logInfo("Latest version from update check: {}", "Network", latestVersion.toString());
-					if (latestVersion > currentVersion) {
-						std::string body = latestRelease["body"].get<std::string>();
-						std::string message = "A new version of Connection Machine is available!";
-						std::string smallMessage = "Current version: " + currentVersion.toString() + "\n";
-						smallMessage += "Latest version: " + latestVersion.toString() + "\n";
-						smallMessage += "Changes:\n" + body;
-						popUpManager.addOptionsPopUp(message, smallMessage, { {"OK", []() {}}, {"Ignore Version", [latestVersion]() {
-							// TODO: store ignored version and don't notify again until a newer version is available
-						}} }, true);
+					if (latestVersion <= ignoredVersion) {
+						logInfo("Latest version {} is less than or equal to ignored version {}, not notifying", "Network", latestVersion.toString(), ignoredVersion.toString());
+						return;
 					}
+					logInfo("Latest version from update check: {}", "Network", latestVersion.toString());
+					if (latestVersion <= currentVersion) {
+						logInfo("No update available", "Network");
+						return;
+					}
+					std::string body = latestRelease["body"].get<std::string>();
+					std::string message = "A new version of Connection Machine is available!";
+					std::string smallMessage = "Current version: " + currentVersion.toString() + "\n";
+					smallMessage += "Latest version: " + latestVersion.toString() + "\n";
+					smallMessage += "Changes:\n" + body;
+					popUpManager.addOptionsPopUp(message, smallMessage, { {"OK", []() {}}, {"Ignore Version", [this, latestVersion]() {
+						kvStore->set<KVType::STRING>("ignored_version", latestVersion.toString());
+					}} }, true);
 				} catch (const nlohmann::json::parse_error& e) {
 					logError("Failed to parse update check response JSON: {}", "Network", e.what());
 					return;

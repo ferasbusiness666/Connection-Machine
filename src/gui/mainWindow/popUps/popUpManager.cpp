@@ -178,7 +178,7 @@ void PopUpManager::addFeedbackPopup() {
 			std::string title = titleInput->GetAttribute<Rml::String>("value", "");
 			std::string description = descriptionInput->GetAttribute<Rml::String>("value", "");
 			deleteFunc();
-			Network::sendFeedback(*this, title, description, {});
+			Network::get().sendFeedback(*this, title, description, {});
 		}
 	));
 	sendButton->SetClass("pop-up-action", true);
