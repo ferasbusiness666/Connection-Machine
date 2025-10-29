@@ -1,7 +1,11 @@
 #include "kvStore.h"
+#include "directoryManager.h"
+
+#include <nlohmann/json.hpp>
 
 std::unordered_map<std::string, std::weak_ptr<KVStore>> KVStore::storeInstances;
 std::mutex KVStore::storeMutex;
+FileListener KVStore::fileListener(std::chrono::milliseconds(200));
 
 std::shared_ptr<KVStore> KVStore::getStore(const std::string& storeName) {
 	std::lock_guard<std::mutex> lock(storeMutex);
@@ -17,17 +21,44 @@ std::shared_ptr<KVStore> KVStore::getStore(const std::string& storeName) {
 	return sp;
 }
 
-KVStore::KVStore(std::string storeName)
-	: storeName(std::move(storeName)) {
+KVStore::KVStore(std::string storeName) : storeName(std::move(storeName)) {
+	loadFile();
+	path = (DirectoryManager::getConfigDirectory() / ("kv_" + this->storeName + ".json")).string();
+	fileWatchHandle = fileListener.watchFile(path, [this](const std::filesystem::path& path) {
+		loadFile();
+	});
 }
 
-KVStore::~KVStore() = default;
+KVStore::~KVStore() {
+	fileListener.stopWatching(path, fileWatchHandle);
+}
 
 template<KVType kvType>
 void KVStore::set(const std::string& key, const typename KVTypeToType<KVType(kvType)>::type& value) {
 	std::lock_guard<std::mutex> lock(instanceMutex);
 	store[key] = value;
+	nlohmann::json jsonData;
+	for (const auto& [k, v] : store) {
+		if (std::holds_alternative<std::string>(v)) {
+			jsonData[k] = std::get<std::string>(v);
+		} else if (std::holds_alternative<std::int64_t>(v)) {
+			jsonData[k] = std::get<std::int64_t>(v);
+		} else if (std::holds_alternative<std::uint64_t>(v)) {
+			jsonData[k] = std::get<std::uint64_t>(v);
+		} else if (std::holds_alternative<double>(v)) {
+			jsonData[k] = std::get<double>(v);
+		} else if (std::holds_alternative<bool>(v)) {
+			jsonData[k] = std::get<bool>(v);
+		}
+	}
+	std::ofstream file(path);
+	if (!file.is_open()) {
+		logError("Failed to open KVStore file '{}' for writing", "KVStore::set", path);
+		return;
+	}
+	file << jsonData.dump(4);
 }
+
 template<KVType kvType>
 std::optional<typename KVTypeToType<KVType(kvType)>::type>
 KVStore::get(const std::string& key) const {
@@ -38,4 +69,41 @@ KVStore::get(const std::string& key) const {
 	if (const T* p = std::get_if<T>(&it->second)) return *p;
 	logError("Type mismatch when getting key '{}' from KVStore '{}'", "KVStore", key, storeName);
 	return std::nullopt;
+}
+
+void KVStore::loadFile() {
+	std::lock_guard<std::mutex> lock(instanceMutex);
+	if (!std::filesystem::exists(path)) {
+		logInfo("KVStore file '{}' does not exist, starting with empty store", "KVStore::loadFile", path);
+		store.clear();
+		return;
+	}
+	std::ifstream file(path);
+	if (!file.is_open()) {
+		logError("Failed to open KVStore file '{}'", "KVStore::loadFile", path);
+		return;
+	}
+	try {
+		nlohmann::json jsonData;
+		file >> jsonData;
+		store.clear();
+		for (auto& [key, value] : jsonData.items()) {
+			if (value.is_string()) {
+				store[key] = value.get<std::string>();
+			} else if (value.is_number_unsigned()) {
+				store[key] = value.get<std::uint64_t>();
+			} else if (value.is_number_integer()) {
+				store[key] = value.get<std::int64_t>();
+			} else if (value.is_number_float()) {
+				store[key] = value.get<double>();
+			} else if (value.is_boolean()) {
+				store[key] = value.get<bool>();
+			} else {
+				logError("Unsupported value type for key '{}' in KVStore file '{}'", "KVStore::loadFile", key, path);
+			}
+		}
+		logInfo("Loaded KVStore file '{}'", "KVStore::loadFile", path);
+	} catch (const nlohmann::json::parse_error& e) {
+		logError("Failed to parse KVStore file '{}': {}", "KVStore::loadFile", path, e.what());
+	}
 }

@@ -1,6 +1,8 @@
 #ifndef kvStore_h
 #define kvStore_h
 
+#include "fileListener/fileListener.h"
+
 enum class KVType {
 	STRING,
 	INT,
@@ -42,9 +44,14 @@ private:
 	std::string storeName;
 	std::unordered_map<std::string, Value> store;
 	std::mutex instanceMutex;
+	std::string path;
+	FileListener::CallbackHandle fileWatchHandle;
 
 	static std::mutex storeMutex;
 	static std::unordered_map<std::string, std::weak_ptr<KVStore>> storeInstances;
+	static FileListener fileListener;
+
+	void loadFile();
 };
 
 #endif /* kvStore_h */
