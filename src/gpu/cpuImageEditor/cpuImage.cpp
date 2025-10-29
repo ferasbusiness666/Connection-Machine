@@ -27,7 +27,7 @@ void CpuImage::addRect(Vec2Int pos, Vec2Int size, Pixel color, bool mix) {
 }
 
 void CpuImage::blitAlphaTexture(
-	const std::uint8_t* texture,
+	const uint8_t* texture,
 	Vec2Int bufferSize,
 	Vec2Int bufferTexturePos,
 	Vec2Int size,
@@ -43,7 +43,7 @@ void CpuImage::blitAlphaTexture(
 	for (int x = 0; x < size.x; x++) {
 		for (int y = 0; y < size.y; y++) {
 			Vec2Int bufferPos = Vec2Int(x, y) + bufferTexturePos;
-			std::uint8_t textureAlpha = texture[bufferPos.x + bufferPos.y * bufferSize.x];
+			uint8_t textureAlpha = texture[bufferPos.x + bufferPos.y * bufferSize.x];
 
 			Vec2Int imgPixelPos = pos + rotateVector(Vec2Int(x, y), rotation);
 
