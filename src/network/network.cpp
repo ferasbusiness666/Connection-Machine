@@ -4,6 +4,24 @@
 #include <httplib.h>
 #include <nlohmann/json.hpp>
 
+std::optional<Network> Network::singletonInstance;
+
+Network& Network::get() {
+	if (!singletonInstance.has_value()) {
+		singletonInstance.emplace();
+	}
+	return singletonInstance.value();
+}
+void Network::kill() {
+	singletonInstance.reset();
+}
+
+Network::Network() : kvStore(KVStore::getStore("network")) {
+}
+
+Network::~Network() {
+}
+
 bool Network::checkConnectedToInternet() {
 	httplib::SSLClient cli("www.gstatic.com");
 	cli.set_connection_timeout(5, 0);
@@ -39,7 +57,7 @@ void Network::sendFeedback(PopUpManager& popUpManager, const std::string& title,
 		if (res && res->status / 100 == 2) {
 			popUpManager.addOptionsPopUp("Feedback sent successfully!", {{"OK", []() {}}}, true);
 		} else {
-			if (Network::checkConnectedToInternet()) {
+			if (Network::get().checkConnectedToInternet()) {
 				popUpManager.addOptionsPopUp("Feedback sending failed.", { {"OK", []() {}} }, true);
 			} else {
 				popUpManager.addOptionsPopUp("No internet connection.", { {"OK", []() {}} }, true);
