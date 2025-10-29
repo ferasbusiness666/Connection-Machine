@@ -22,21 +22,21 @@ std::shared_ptr<KVStore> KVStore::getStore(const std::string& storeName) {
 }
 
 KVStore::KVStore(std::string storeName) : storeName(std::move(storeName)) {
-	loadFile();
 	path = (DirectoryManager::getConfigDirectory() / ("kv_" + this->storeName + ".json")).string();
+	loadFile();
 	fileWatchHandle = fileListener.watchFile(path, [this](const std::filesystem::path& path) {
 		loadFile();
 	});
 }
 
 KVStore::~KVStore() {
+	std::lock_guard<std::mutex> lock(instanceMutex);
 	fileListener.stopWatching(path, fileWatchHandle);
 }
 
-template<KVType kvType>
-void KVStore::set(const std::string& key, const typename KVTypeToType<KVType(kvType)>::type& value) {
+void KVStore::setValueInternal(const std::string& key, Value value) {
 	std::lock_guard<std::mutex> lock(instanceMutex);
-	store[key] = value;
+	store[key] = std::move(value);
 	nlohmann::json jsonData;
 	for (const auto& [k, v] : store) {
 		if (std::holds_alternative<std::string>(v)) {
@@ -59,16 +59,11 @@ void KVStore::set(const std::string& key, const typename KVTypeToType<KVType(kvT
 	file << jsonData.dump(4);
 }
 
-template<KVType kvType>
-std::optional<typename KVTypeToType<KVType(kvType)>::type>
-KVStore::get(const std::string& key) const {
+std::optional<KVStore::Value> KVStore::getValueInternal(const std::string& key) const {
 	std::lock_guard<std::mutex> lock(instanceMutex);
 	auto it = store.find(key);
 	if (it == store.end()) return std::nullopt;
-	using T = typename KVTypeToType<KVType(kvType)>::type;
-	if (const T* p = std::get_if<T>(&it->second)) return *p;
-	logError("Type mismatch when getting key '{}' from KVStore '{}'", "KVStore", key, storeName);
-	return std::nullopt;
+	return it->second;
 }
 
 void KVStore::loadFile() {

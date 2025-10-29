@@ -43,7 +43,7 @@ private:
 
 	std::string storeName;
 	std::unordered_map<std::string, Value> store;
-	std::mutex instanceMutex;
+	mutable std::mutex instanceMutex;
 	std::string path;
 	FileListener::CallbackHandle fileWatchHandle;
 
@@ -52,6 +52,25 @@ private:
 	static FileListener fileListener;
 
 	void loadFile();
+	void setValueInternal(const std::string& key, Value value);
+	std::optional<Value> getValueInternal(const std::string& key) const;
 };
+
+template<KVType kvType>
+inline void KVStore::set(const std::string& key, const typename KVTypeToType<KVType(kvType)>::type& value) {
+	setValueInternal(key, KVStore::Value(value));
+}
+
+template<KVType kvType>
+inline std::optional<typename KVTypeToType<KVType(kvType)>::type>
+KVStore::get(const std::string& key) const {
+	auto rawValue = getValueInternal(key);
+	if (!rawValue) return std::nullopt;
+	using T = typename KVTypeToType<KVType(kvType)>::type;
+	KVStore::Value& storedValue = rawValue.value();
+	if (const T* p = std::get_if<T>(&storedValue)) return *p;
+	logError("Type mismatch when getting key '{}' from KVStore '{}'", "KVStore", key, storeName);
+	return std::nullopt;
+}
 
 #endif /* kvStore_h */
