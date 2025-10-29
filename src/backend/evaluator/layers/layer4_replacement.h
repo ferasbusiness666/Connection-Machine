@@ -20,10 +20,12 @@ class Replacement {
 public:
 	Replacement(
 		Replacer* replacer,
-		int layer
+		int layer,
+		replacement_id_t id
 		) :
 		replacer(replacer),
-		layer(layer) {}
+		layer(layer),
+		id(id) {}
 
 	void removeGate(SimPauseGuard& pauseGuard, middle_id_t gateId, std::unordered_map<connection_end_id_t, EvalConnectionPoint> replacementConnectionPoints);
 

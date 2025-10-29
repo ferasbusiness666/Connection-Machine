@@ -14,7 +14,8 @@ Replacement& Replacer::makeReplacement(int layer) {
 	}
 	replacements[newId] = Replacement(
 		this,
-		layer
+		layer,
+		newId
 	);
 	return *replacements[newId];
 }

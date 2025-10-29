@@ -22,6 +22,7 @@ void Replacement::removeGate(
 	trackId(gateId);
 	replacer->replacedConnectionPoints.insert({ gateId, replacementConnectionPoints });
 	replacer->busInterfacePassthrough.removeGate(pauseGuard, gateId);
+	trackReplacementLayer(gateId, layer);
 }
 
 void Replacement::removeGate(
@@ -101,13 +102,14 @@ void Replacement::markIdAsReplaced(
 middle_id_t Replacement::getNewId() {
 	middle_id_t newId = replacer->middleIdProvider.getNewId();
 	reservedIds.push_back(newId);
+	trackReplacementLayer(newId, layer);
 	return newId;
 }
 
-void Replacement::trackReplacementLayer(middle_id_t id, int layer) {
-	auto insertResult = replacer->replacementIdLayers.insert({ id, layer });
+void Replacement::trackReplacementLayer(middle_id_t middleId, int layer) {
+	auto insertResult = replacer->replacementIdLayers.insert({ middleId, layer });
 	if (insertResult.second) {
-		replacementLayerEntries.push_back({ id });
+		replacementLayerEntries.push_back({ middleId });
 	}
 }
 
@@ -115,7 +117,6 @@ void Replacement::revert(SimPauseGuard& pauseGuard) {
 	if (isReverting) {
 		return;
 	}
-	// logInfo("Reverting replacement at layer {} at depth {}", "Replacement::revert", layer, depth);
 	isReverting = true;
 	isEmpty = true;
 	for (const auto& conn : addedConnections) {
@@ -162,7 +163,6 @@ void Replacement::revert(SimPauseGuard& pauseGuard) {
 	}
 	for (const auto& reservedId : reservedIds) {
 		replacer->middleIdProvider.releaseId(reservedId);
-		replacer->replacementIdLayers.erase(reservedId);
 	}
 	auto callbacksWithPauseGuard = std::move(revertCallbacksWithPauseGuard);
 	for (auto& callback : callbacksWithPauseGuard) {
