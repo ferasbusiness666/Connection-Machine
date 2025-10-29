@@ -179,6 +179,7 @@ void BlockDataManager::initializeDefaults() {
 	// JUNCTION_L
 	BlockData* junctionLBlockData = getBlockData(BlockType::JUNCTION_L);
 	junctionLBlockData->setName("Pull-down Resistor");
+	junctionLBlockData->setPath("Hi-Z");
 	junctionLBlockData->setDefaultData(false);
 	junctionLBlockData->setSize(Size(1, 3));
 	junctionLBlockData->setConnectionBidirectional(Vector(0, 2), connection_end_id_t(0));
@@ -191,6 +192,7 @@ void BlockDataManager::initializeDefaults() {
 	// JUNCTION_H
 	BlockData* junctionHBlockData = getBlockData(BlockType::JUNCTION_H);
 	junctionHBlockData->setName("Pull-up Resistor");
+	junctionHBlockData->setPath("Hi-Z");
 	junctionHBlockData->setDefaultData(false);
 	junctionHBlockData->setSize(Size(1, 3));
 	junctionHBlockData->setConnectionBidirectional(Vector(0, 2), connection_end_id_t(0));
@@ -203,6 +205,7 @@ void BlockDataManager::initializeDefaults() {
 	// JUNCTION_X
 	BlockData* junctionXBlockData = getBlockData(BlockType::JUNCTION_X);
 	junctionXBlockData->setName("Pull-X Resistor");
+	junctionXBlockData->setPath("Hi-Z");
 	junctionXBlockData->setDefaultData(false);
 	junctionXBlockData->setSize(Size(1, 3));
 	junctionXBlockData->setConnectionBidirectional(Vector(0, 2), connection_end_id_t(0));
@@ -216,6 +219,7 @@ void BlockDataManager::initializeDefaults() {
 	// TRISTATE_BUFFER
 	BlockData* tristateBufferBlockData = getBlockData(BlockType::TRISTATE_BUFFER);
 	tristateBufferBlockData->setName("Tristate Buffer");
+	tristateBufferBlockData->setPath("Hi-Z");
 	tristateBufferBlockData->setDefaultData(false);
 	tristateBufferBlockData->setConnectionInput(Vector(0, 1), connection_end_id_t(0));
 	tristateBufferBlockData->setConnnectionPortOffset(connection_end_id_t(0), FVector(0.5f - edgeDistance, 0.5f - sideShift));
@@ -233,6 +237,7 @@ void BlockDataManager::initializeDefaults() {
 	// COLOR_LIGHT
 	BlockData* colorLightBlockData = getBlockData(BlockType::COLOR_LIGHT);
 	colorLightBlockData->setName("Color Light (6 bits)");
+	colorLightBlockData->setPath("Other");
 	colorLightBlockData->setDefaultData(false);
 	colorLightBlockData->setConnectionInput(Vector(0), connection_end_id_t(0));
 	colorLightBlockData->setConnnectionPortOffset(connection_end_id_t(0), FVector(0.5f - edgeDistance, 0.5f - sideShift));
@@ -249,7 +254,8 @@ void BlockDataManager::initializeDefaults() {
 	BlockType busInterface2Type = addBlock();
 	assert(busInterface2Type == BlockType::BUS_INTERFACE_2);
 	BlockData* busInterfaceBlockData2 = getBlockData(busInterface2Type);
-	busInterfaceBlockData2->setName("Bus Interface 4x2 -> 1x8");
+	busInterfaceBlockData2->setName("Bus 4x2 -> 1x8");
+	busInterfaceBlockData2->setPath("Other");
 	busInterfaceBlockData2->setDefaultData(false);
 	busInterfaceBlockData2->setIsBus(true);
 	busInterfaceBlockData2->setSize(Size(2, 4));
@@ -303,7 +309,7 @@ BlockType BlockDataManager::getBusBlock(std::vector<BusConnectionData> busConnec
 	busInterfaceBlockData->setDefaultData(false);
 	busInterfaceBlockData->setIsBus(true);
 	busInterfaceBlockData->setSize(blockSize);
-	std::string name = "Bus Interface ";
+	std::string name = "Bus ";
 	unsigned int range = 0;
 	for (unsigned int i = 0; i < busConnections.size(); i++) {
 		busInterfaceBlockData->setConnectionBidirectional(busConnections[i].positionOnBlock, connection_end_id_t(i));
@@ -338,5 +344,6 @@ BlockType BlockDataManager::getBusBlock(std::vector<BusConnectionData> busConnec
 	}
 	if (range != 0) name += std::to_string(range) + "x1, ";
 	busInterfaceBlockData->setName(name);
+	busInterfaceBlockData->setPath("Other");
 	return blockType;
 }

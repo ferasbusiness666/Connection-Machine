@@ -3,10 +3,10 @@
 
 typedef char block_data_index_t;
 
-typedef std::uint8_t block_size_t;
+typedef uint8_t block_size_t;
 typedef unsigned int block_id_t;
 
-enum BlockType : std::uint16_t {
+enum BlockType : uint16_t {
 	NONE,
 	AND,
 	OR,

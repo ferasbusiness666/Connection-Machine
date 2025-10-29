@@ -27,7 +27,7 @@ void CpuImage::addRect(Vec2Int pos, Vec2Int size, Pixel color, bool mix) {
 }
 
 void CpuImage::blitAlphaTexture(
-	const std::uint8_t* texture,
+	const uint8_t* texture,
 	Vec2Int bufferSize,
 	Vec2Int bufferTexturePos,
 	Vec2Int size,
@@ -43,7 +43,7 @@ void CpuImage::blitAlphaTexture(
 	for (int x = 0; x < size.x; x++) {
 		for (int y = 0; y < size.y; y++) {
 			Vec2Int bufferPos = Vec2Int(x, y) + bufferTexturePos;
-			std::uint8_t textureAlpha = texture[bufferPos.x + bufferPos.y * bufferSize.x];
+			uint8_t textureAlpha = texture[bufferPos.x + bufferPos.y * bufferSize.x];
 
 			Vec2Int imgPixelPos = pos + rotateVector(Vec2Int(x, y), rotation);
 
@@ -86,7 +86,7 @@ void CpuImage::writeString(std::shared_ptr<Font> font, const std::string& text, 
 	}
 }
 
-void CpuImage::writeStringInArea(std::shared_ptr<Font> font, const std::string& text, Vec2Int pos, Vec2Int areaSize, Pixel color, Rotation rotation, unsigned int startingFontSize) {
+void CpuImage::writeStringInArea(std::shared_ptr<Font> font, const std::string& text, Vec2Int pos, Vec2Int areaSize, Pixel color, Rotation rotation, bool centerV, bool centerH, unsigned int startingFontSize) {
 	if (!areaSize.withinArea({0, 0}, imgSize)) {
 		logError("Cant have writeStringInArea areaSize {}, be larger than img size {}", "CpuImage", areaSize, imgSize);
 		return;
@@ -96,6 +96,8 @@ void CpuImage::writeStringInArea(std::shared_ptr<Font> font, const std::string& 
 
 	Vec2Int rotatedAreaSize = areaSize;
 	if (rotation & 1) rotatedAreaSize = Vec2Int(rotatedAreaSize.y, rotatedAreaSize.x);
+
+	int startingYOffsetToCenterText = 0;
 
 	while (true) {
 		std::optional<Font::AtlasInfo> atlasInfo = font->getAtlasInfoDifferentSizeText(startingFontSize);
@@ -145,7 +147,10 @@ void CpuImage::writeStringInArea(std::shared_ptr<Font> font, const std::string& 
 
 			nextOriginPos.x += atlasMetric.advance.x;
 		}
-		if (!failed) break;
+		if (!failed) {
+			if ((rotation & 1 && centerH) || (!(rotation & 1) && centerV)) startingYOffsetToCenterText = (rotatedAreaSize.y - lowestY)/2;
+			break;
+		}
 		if (startingFontSize <= 1) {
 			logError("Could not fix text {} in area {}", "CpuImage", text, areaSize);
 			return;
@@ -158,11 +163,8 @@ void CpuImage::writeStringInArea(std::shared_ptr<Font> font, const std::string& 
 	const Font::AtlasInfo& atlasInfo = font->getAtlasInfo();
 
 	Vec2Int nextOriginPos;
-	bool failed = false;
-	int lowestY = 0;
-
 	std::string line;
-
+	int lineLength = 0;
 	for (char c : text) {
 		if (atlasInfo.metrics.size() <= c - 32) {
 			logInfo("Char {} out of font metrics range.", "CpuImage", c - 32);
@@ -170,16 +172,14 @@ void CpuImage::writeStringInArea(std::shared_ptr<Font> font, const std::string& 
 		}
 		const Font::AtlasMetric& atlasMetric = atlasInfo.metrics[c - 32];
 
-		if (!atlasMetric.size.withinArea({0, 0}, rotatedAreaSize)) {
-			failed = true;
-			break;
-		}
-
 		Vec2Int textOrigin = nextOriginPos + atlasMetric.bearing;
 		Vec2Int textOtherCorner = textOrigin + atlasMetric.size;
 
 		if (textOtherCorner.x > rotatedAreaSize.x) {
-			writeString(font, line, pos + rotateVectorWithArea(Vec2Int(0, nextOriginPos.y), rotatedAreaSize, rotation), color, rotation);
+			if ((rotation & 1 && centerV) || (!(rotation & 1) && centerH))
+				writeString(font, line, pos + rotateVectorWithArea(Vec2Int((rotatedAreaSize.x - lineLength)/2, nextOriginPos.y + startingYOffsetToCenterText), rotatedAreaSize, rotation), color, rotation);
+			else
+				writeString(font, line, pos + rotateVectorWithArea(Vec2Int(0, nextOriginPos.y + startingYOffsetToCenterText), rotatedAreaSize, rotation), color, rotation);
 			line = "";
 
 			nextOriginPos.x = 0;
@@ -190,26 +190,19 @@ void CpuImage::writeStringInArea(std::shared_ptr<Font> font, const std::string& 
 		}
 
 		if (textOrigin.y < 0) {
-			lowestY -= textOrigin.y;
 			nextOriginPos.y -= textOrigin.y;
 			textOtherCorner.y -= textOrigin.y;
 			textOrigin.y = 0;
 		}
-		if (textOtherCorner.y > lowestY) lowestY = textOtherCorner.y;
-		if (lowestY > rotatedAreaSize.y) {
-			failed = true;
-			break;
-		}
-
 		nextOriginPos.x += atlasMetric.advance.x;
 		line += c;
-	}
-	if (failed) {
-		logError("Could not not re fit text {} in area {} even tho fitting was already found.", "CpuImage", text, areaSize);
-		return;
+		lineLength = textOtherCorner.x;
 	}
 	if (!line.empty()) {
-		writeString(font, line, pos + rotateVectorWithArea(Vec2Int(0, nextOriginPos.y), rotatedAreaSize, rotation), color, rotation);
+		if ((rotation & 1 && centerV) || (!(rotation & 1) && centerH))
+			writeString(font, line, pos + rotateVectorWithArea(Vec2Int((rotatedAreaSize.x - lineLength)/2, nextOriginPos.y + startingYOffsetToCenterText), rotatedAreaSize, rotation), color, rotation);
+		else
+			writeString(font, line, pos + rotateVectorWithArea(Vec2Int(0, nextOriginPos.y + startingYOffsetToCenterText), rotatedAreaSize, rotation), color, rotation);
 	}
 
 	font->setSize(oldFontSize); // make sure to not break the font size
