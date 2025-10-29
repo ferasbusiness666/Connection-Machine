@@ -165,7 +165,11 @@ BlockTextureId BlockRenderDataFeeder::getBlockTextureId(const BlockData* blockDa
 			);
 			img.addRect(portTexturePos - Vec2Int(4,4), Vec2Int(8, 8), { 0, 0, 0, 255 });
 		}
-		img.writeStringInArea(font, blockData->getName(), { 75, 75 }, img.getSize() - Vec2Int(150, 150), { 255, 255, 255, 255 });
+		if (blockData->getSize().w >= blockData->getSize().h) {
+			img.writeStringInArea(font, blockData->getName(), { 75, 75 }, img.getSize() - Vec2Int(150, 150), { 255, 255, 255, 255 }, Rotation::ZERO, true, true);
+		} else {
+			img.writeStringInArea(font, blockData->getName(), { 75, 75 }, img.getSize() - Vec2Int(150, 150), { 255, 255, 255, 255 }, Rotation::NINETY, true, true);
+		}
 		blockTextureId = MainRenderer::get().addBlockTexture(img.getData(), img.getSize().x, img.getSize().y);
 	} else {
 		blockTextureId = MainRenderer::get().addBlockTexture(blockData->getTexturePath());
