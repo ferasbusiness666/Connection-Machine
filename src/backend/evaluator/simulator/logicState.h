@@ -1,7 +1,7 @@
 #ifndef logicState_h
 #define logicState_h
 
-enum class logic_state_t : unsigned char {
+enum class logic_state_t : std::uint8_t {
 	LOW = 0,
 	HIGH = 1,
 	FLOATING = 2,
@@ -41,6 +41,15 @@ inline std::string to_string(logic_state_t state) {
 		default:
 			return "UNKNOWN_STATE";
 	}
+}
+
+namespace fmt{
+	template <>
+	struct formatter<logic_state_t> : formatter<std::string> {
+		auto format(logic_state_t state, format_context& ctx) const {
+			return formatter<std::string>::format(::to_string(state), ctx);
+		}
+	};
 }
 
 #endif /* logicState_h */

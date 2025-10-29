@@ -7,20 +7,20 @@
 class CpuImage {
 public:
 	struct Pixel {
-		Pixel(unsigned char r=0, unsigned char g=0, unsigned char b=0, unsigned char a=255) : r(r), g(g), b(b), a(a) {}
-		unsigned char r;
-		unsigned char g;
-		unsigned char b;
-		unsigned char a;
+		Pixel(std::uint8_t r=0, std::uint8_t g=0, std::uint8_t b=0, std::uint8_t a=255) : r(r), g(g), b(b), a(a) {}
+		std::uint8_t r;
+		std::uint8_t g;
+		std::uint8_t b;
+		std::uint8_t a;
 	};
 
 	CpuImage(Vec2Int size, Pixel color = Pixel()) : img(size.x * size.y, color), imgSize(size) {}
-	const unsigned char* getData() const { return (unsigned char*)img.data(); }
+	const std::uint8_t* getData() const { return (std::uint8_t*)img.data(); }
 
 	Vec2Int getSize() const { return imgSize; }
 
 	void addRect(Vec2Int pos, Vec2Int size, Pixel color, bool mix = true);
-	void blitAlphaTexture(const unsigned char* texture, Vec2Int bufferSize, Vec2Int bufferTexturePos, Vec2Int size, Vec2Int pos, Pixel color, Rotation rotation = Rotation::ZERO);
+	void blitAlphaTexture(const std::uint8_t* texture, Vec2Int bufferSize, Vec2Int bufferTexturePos, Vec2Int size, Vec2Int pos, Pixel color, Rotation rotation = Rotation::ZERO);
 	Vec2Int blitChar(std::shared_ptr<Font> font, char c, Vec2Int pos, Pixel color, Rotation rotation = Rotation::ZERO);
 	void writeString(std::shared_ptr<Font> font, const std::string&, Vec2Int pos, Pixel color, Rotation rotation = Rotation::ZERO);
 	void writeStringInArea(std::shared_ptr<Font> font, const std::string& text, Vec2Int pos, Vec2Int areaSize, Pixel color, Rotation rotation = Rotation::ZERO, unsigned int startingFontSize = 0);
