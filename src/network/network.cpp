@@ -34,8 +34,8 @@ bool Network::checkConnectedToInternet() {
 	return false;
 }
 
-void Network::sendFeedback(PopUpManager& popUpManager, const std::string& title, const std::string& description, const std::vector<std::string>& attachments) {
-	std::thread t([&popUpManager, title, description, attachments]() {
+void Network::sendFeedback(PopUpManager& popUpManager, const std::string& title, const std::string& description, const std::vector<Network::Attachment>& attachments) {
+	std::thread t([this, &popUpManager, title, description, attachments]() {
 		httplib::SSLClient cli("api.connection-machine.com");
 		cli.set_read_timeout(10, 0);
 		cli.set_connection_timeout(5, 0);
@@ -54,18 +54,65 @@ void Network::sendFeedback(PopUpManager& popUpManager, const std::string& title,
 		if (res) {
 			logInfo("Feedback response content: {}", "Network", res->body);
 		}
-		if (res && res->status / 100 == 2) {
-			popUpManager.addOptionsPopUp("Feedback sent successfully!", {{"OK", []() {}}}, true);
-		} else {
+		if (res && res->status / 100 != 2) {
 			if (Network::get().checkConnectedToInternet()) {
 				popUpManager.addOptionsPopUp("Feedback sending failed.", { {"OK", []() {}} }, true);
 			} else {
 				popUpManager.addOptionsPopUp("No internet connection.", { {"OK", []() {}} }, true);
 			}
+			return;
 		}
+		if (attachments.empty()) {
+			popUpManager.addOptionsPopUp("Feedback submitted successfully!", { {"OK", []() {}} }, true);
+			return;
+		}
+		sendAttachments(popUpManager, attachments, nlohmann::json::parse(res->body)["uuid"].get<std::string>());
 	});
 	t.detach();
 	logInfo("Feedback thread dispatched", "Network");
+}
+
+void Network::sendAttachments(PopUpManager& popUpManager, const std::vector<Network::Attachment>& attachments, std::string reportUuid) {
+	std::thread t([this, &popUpManager, attachments, reportUuid]() {
+		httplib::SSLClient cli("api.connection-machine.com");
+		cli.set_read_timeout(10, 0);
+		cli.set_connection_timeout(5, 0);
+		cli.enable_server_certificate_verification(true);
+
+		std::vector<Attachment> attachmentsFailed;
+
+		for (const auto& attachment : attachments) {
+			const std::string content_type = attachment.contentType.empty() ? "application/octet-stream" : attachment.contentType;
+			std::string path = "/api/reports/";
+			path += reportUuid;
+			path += "/attachments?context=";
+			path += urlEncode(attachment.context);
+			logInfo("Uploading attachment with context \"{}\" ({} bytes) to {}", "Network", attachment.context, attachment.data.size(), path);
+			int kMaxAttempts = 2;
+			bool success = false;
+			for (int attempt = 1; attempt <= kMaxAttempts; ++attempt) {
+				httplib::Result res = cli.Post(path.c_str(), attachment.data, content_type.c_str());
+				logInfo("Attachment upload response: status={}, body(size={})", "Network",
+					res ? std::to_string(res->status) : "no response",
+					res ? std::to_string(res->body.size()) : "0");
+				if (res && res->status / 100 == 2) {
+					success = true;
+					break;
+				} else {
+					logError("Attachment upload attempt {}/{} failed for context '{}'", "Network", attempt, kMaxAttempts, attachment.context);
+				}
+			}
+			if (!success) {
+				attachmentsFailed.push_back(attachment);
+			}
+		}
+		if (!attachmentsFailed.empty()) {
+			popUpManager.addOptionsPopUp("Some or all attachments failed to upload.", { {"OK", []() {}} }, true);
+		} else {
+			popUpManager.addOptionsPopUp("Feedback submitted successfully!", { {"OK", []() {}} }, true);
+		}
+	});
+	t.detach();
 }
 
 void Network::checkForUpdates(PopUpManager& popUpManager) {
