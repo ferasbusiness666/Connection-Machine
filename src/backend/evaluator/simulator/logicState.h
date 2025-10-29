@@ -1,7 +1,7 @@
 #ifndef logicState_h
 #define logicState_h
 
-enum class logic_state_t : uint8_t {
+enum class logic_state_t : std::uint8_t {
 	LOW = 0,
 	HIGH = 1,
 	FLOATING = 2,

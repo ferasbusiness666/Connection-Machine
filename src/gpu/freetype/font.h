@@ -32,14 +32,14 @@ public:
 	void createAtlas();
 
 	const AtlasInfo& getAtlasInfo() const;
-	const std::vector<uint8_t>& getTexture() const;
+	const std::vector<std::uint8_t>& getTexture() const;
 
 	std::optional<Font::AtlasInfo> getAtlasInfoDifferentSizeText(uint32_t ptSize);
 
 private:
 	FT_Face face;
 	AtlasInfo atlas;
-	std::vector<uint8_t> texture;
+	std::vector<std::uint8_t> texture;
 	uint32_t fontSize;
 	std::string fontFamily;
 };

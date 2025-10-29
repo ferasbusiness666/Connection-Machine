@@ -95,4 +95,4 @@ void Font::createAtlas() {
 
 const Font::AtlasInfo& Font::getAtlasInfo() const { return atlas; }
 
-const std::vector<uint8_t>& Font::getTexture() const { return texture; }
+const std::vector<std::uint8_t>& Font::getTexture() const { return texture; }

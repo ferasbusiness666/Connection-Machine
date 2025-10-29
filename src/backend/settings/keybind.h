@@ -4,7 +4,7 @@
 class Keybind {
 public:
 	// Eunms exactly matches RmlUi's mapping (copied from RmlUi)
-	enum KeyId : uint8_t {
+	enum KeyId : std::uint8_t {
 		KI_UNKNOWN = 0,
 
 		KI_SPACE = 1,
@@ -206,7 +206,7 @@ public:
 		KI_LAST_CUSTOM_KEY = 250,
 	};
 
-	enum KeyMod : uint8_t {
+	enum KeyMod : std::uint8_t {
 		KM_UNKNOWN = 0,
 		KM_CTRL = 1 << 0,	   // Set if at least one Ctrl key is depressed.
 		KM_SHIFT = 1 << 1,	   // Set if at least one Shift key is depressed.

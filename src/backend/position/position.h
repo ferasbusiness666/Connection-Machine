@@ -109,8 +109,8 @@ private:
 		notDone = true;
 		cur -= cur != 0;
 	}
-	uint8_t xNeg;
-	uint8_t yNeg;
+	std::uint8_t xNeg;
+	std::uint8_t yNeg;
 	unsigned int end;
 	unsigned int cur = 0;
 	unsigned int width;
@@ -531,7 +531,7 @@ inline FPosition Position::free() const noexcept { return FPosition(x, y); }
 inline Position FPosition::snap() const noexcept { return Position(std::floor(x), std::floor(y)); }
 
 // ---- we also define block rotation here so ----
-enum Rotation : uint8_t {
+enum Rotation : std::uint8_t {
 	ZERO = 0,
 	NINETY = 1,
 	ONE_EIGHTY = 2,
@@ -583,11 +583,11 @@ inline constexpr Rotation rotate(Rotation rotation, bool clockWise) {
 	return (Rotation)((int)rotation - 1);
 }
 inline constexpr Rotation addRotations(Rotation rotationA, Rotation rotationB) {
-	uint8_t output = rotationA + rotationB;
-	if ((uint8_t)output > (uint8_t)Rotation::TWO_SEVENTY) output -= 4;
+	std::uint8_t output = rotationA + rotationB;
+	if ((std::uint8_t)output > (std::uint8_t)Rotation::TWO_SEVENTY) output -= 4;
 	return (Rotation)output;
 }
-inline constexpr Rotation rotationNeg(Rotation rotation) { return (Rotation)((4 - (uint8_t)rotation) & 0b11); }
+inline constexpr Rotation rotationNeg(Rotation rotation) { return (Rotation)((4 - (std::uint8_t)rotation) & 0b11); }
 inline constexpr Rotation subRotations(Rotation rotationA, Rotation rotationB) { return addRotations(rotationA, rotationNeg(rotationB)); }
 inline constexpr int getDegrees(Rotation rotation) { return rotation * 90; }
 inline Vector rotateVectorWithArea(Vector vector, Size size, Rotation rotationAmount) {
