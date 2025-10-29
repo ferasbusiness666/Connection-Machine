@@ -65,7 +65,7 @@ void Network::checkForUpdates(PopUpManager& popUpManager) {
 		};
 		httplib::Result res = cli.Get("/repos/Martian-Technologies/Connection-Machine/releases?per_page=1", headers);
 		if (res) {
-			logInfo("Update check response content: {}", "Network", res->body);
+			// logInfo("Update check response content: {}", "Network", res->body);
 			if (res->status / 100 == 2) {
 				try {
 					auto jsonResponse = nlohmann::json::parse(res->body);
