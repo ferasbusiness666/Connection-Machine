@@ -132,6 +132,15 @@ struct RenderedWire {
 typedef phmap::flat_hash_map<Position, RenderedBlock> RenderedBlocks;
 typedef phmap::flat_hash_map<std::pair<Position, Position>, RenderedWire> RenderedWires;
 
+struct PortStateRange {
+	size_t baseIndex = 0;
+	uint32_t laneCount = 0;
+
+	PortStateRange() = default;
+	PortStateRange(size_t baseIndex, uint32_t laneCount) : baseIndex(baseIndex), laneCount(laneCount) { }
+	inline bool isValid() const { return laneCount != 0; }
+};
+
 // TODO - maybe these should just be split into two different types
 class VulkanChunkAllocation {
 public:
@@ -148,7 +157,7 @@ public:
 
 	inline std::vector<simulator_id_t>& getStateSimulatorIds() { return simulatorIds; }
 	inline const phmap::flat_hash_map<Position, size_t>& getBlockStateIndex() const { return blockStateIndex; }
-	inline const phmap::flat_hash_map<Position, size_t>& getPortStateIndex() const { return portStateIndex; }
+	inline const phmap::flat_hash_map<Position, PortStateRange>& getPortStateIndex() const { return portStateIndex; }
 
 	inline bool isAllocationComplete() const { return true; }
 
@@ -164,7 +173,7 @@ private:
 
 	std::vector<simulator_id_t> simulatorIds;
 	phmap::flat_hash_map<Position, size_t> blockStateIndex;
-	phmap::flat_hash_map<Position, size_t> portStateIndex;
+	phmap::flat_hash_map<Position, PortStateRange> portStateIndex;
 };
 
 // ====================================================================================================================
