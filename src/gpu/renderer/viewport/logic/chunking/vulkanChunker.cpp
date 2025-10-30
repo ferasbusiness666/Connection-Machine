@@ -22,7 +22,7 @@ Position getChunk(Position in) {
 namespace {
 	// Match wireConstants.glsl::LINE_WIDTH to keep CPU/GPU visuals aligned.
 	constexpr float WIRE_LINE_WIDTH = 0.07f;
-	constexpr float BUS_WIRE_SPACING = WIRE_LINE_WIDTH * 1.6f;
+	constexpr float BUS_WIRE_SPACING = WIRE_LINE_WIDTH * 1.0f;
 	constexpr float DIRECTION_EPSILON = 1e-5f;
 
 	glm::vec2 computeBusOffset(const glm::vec2& pointA, const glm::vec2& pointB, uint32_t laneCount, uint32_t laneIndex) {
