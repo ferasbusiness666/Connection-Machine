@@ -26,6 +26,7 @@ namespace {
 	constexpr float DIRECTION_EPSILON = 1e-5f;
 
 	glm::vec2 computeBusOffset(const glm::vec2& pointA, const glm::vec2& pointB, uint32_t laneCount, uint32_t laneIndex) {
+		// TODO: should handle cases like the colored light where we want the offset to be tangent to the side of the block
 		if (laneCount <= 1) return glm::vec2(0.0f);
 
 		glm::vec2 direction = pointB - pointA;
@@ -57,7 +58,7 @@ VulkanChunkAllocation::VulkanChunkAllocation(
 	// TODO - maybe should use smaller size coordinates with one big offset
 
 	std::vector<Position> positions;
-	std::vector<size_t> indexes;
+	std::vector<size_t> indices;
 
 	// Generate block instances
 	if (blocks.size() > 0) {
@@ -81,19 +82,19 @@ VulkanChunkAllocation::VulkanChunkAllocation(
 			// blocks are added to state array
 			blockStateIndex[block.first] = simulatorIds.size();
 			positions.push_back(block.first);
-			indexes.push_back(simulatorIds.size());
+			indices.push_back(simulatorIds.size());
 			simulatorIds.push_back(simulator_id_t(0));
 		}
 
 		if (evaluator) {
 			std::vector<simulator_id_t> simIds = evaluator->getBlockSimulatorIds(address, positions);
 			for (size_t i = 0; i < simIds.size(); i++) {
-				simulatorIds[indexes[i]] = simIds[i];
+				simulatorIds[indices[i]] = simIds[i];
 			}
 		}
 
 		positions.clear();
-		indexes.clear();
+		indices.clear();
 
 		// upload block vertices
 		numBlockInstances = blockInstances.size();
@@ -114,7 +115,7 @@ VulkanChunkAllocation::VulkanChunkAllocation(
 		wireSegments.reserve(wires.size());
 
 		positions.clear();
-		indexes.clear();
+		indices.clear();
 		std::vector<uint32_t> laneCounts;
 		laneCounts.reserve(wires.size());
 
@@ -140,7 +141,7 @@ VulkanChunkAllocation::VulkanChunkAllocation(
 		}
 
 		laneCounts.resize(positions.size(), 1);
-		indexes.resize(positions.size());
+		indices.resize(positions.size());
 
 		for (size_t i = 0; i < positions.size(); i++) {
 			uint32_t laneCount = 1;
@@ -153,7 +154,7 @@ VulkanChunkAllocation::VulkanChunkAllocation(
 
 			size_t baseIndex = simulatorIds.size();
 			laneCounts[i] = laneCount;
-			indexes[i] = baseIndex;
+			indices[i] = baseIndex;
 			portStateIndex[positions[i]] = PortStateRange(baseIndex, laneCount);
 
 			for (uint32_t lane = 0; lane < laneCount; lane++) {
@@ -163,7 +164,7 @@ VulkanChunkAllocation::VulkanChunkAllocation(
 
 		if (evaluator) {
 			for (size_t i = 0; i < pinSimIds.size() && i < positions.size(); i++) {
-				size_t baseIndex = indexes[i];
+				size_t baseIndex = indices[i];
 				uint32_t laneCount = laneCounts[i];
 				if (std::holds_alternative<std::vector<simulator_id_t>>(pinSimIds[i])) {
 					const auto& vec = std::get<std::vector<simulator_id_t>>(pinSimIds[i]);
@@ -195,7 +196,7 @@ VulkanChunkAllocation::VulkanChunkAllocation(
 			size_t baseIndex = 0;
 			if (lookup != portRequestLookup.end()) {
 				laneCount = laneCounts[lookup->second];
-				baseIndex = indexes[lookup->second];
+				baseIndex = indices[lookup->second];
 			}
 			if (laneCount == 0) laneCount = 1;
 
