@@ -249,47 +249,41 @@ void BlockDataManager::initializeDefaults() {
 	colorLightBlockData->setTextureSmallestCordTile({ 0, 0 });
 	colorLightBlockData->setTextureBlockStateOffset({ 16, 256 });
 	// BUS_INTERFACE_1
-	assert(getBusBlock(8) == BlockType::BUS_INTERFACE_1);
+	BlockType busInterface1 = getBusBlock(8);
+	assert(busInterface1 == BlockType::BUS_INTERFACE_1);
 	// BUS_INTERFACE_2
-	BlockType busInterface2Type = addBlock();
-	assert(busInterface2Type == BlockType::BUS_INTERFACE_2);
-	BlockData* busInterfaceBlockData2 = getBlockData(busInterface2Type);
-	busInterfaceBlockData2->setName("Bus 4x2 -> 1x8");
-	busInterfaceBlockData2->setPath("Other");
-	busInterfaceBlockData2->setDefaultData(false);
-	busInterfaceBlockData2->setIsBus(true);
-	busInterfaceBlockData2->setSize(Size(2, 4));
-	busInterfaceBlockData2->setConnectionBidirectional(Vector(1, 0), connection_end_id_t(0));
-	busInterfaceBlockData2->setConnectionBitConfiguration(connection_end_id_t(0), std::vector<unsigned int>{ 0, 1, 2, 3, 4, 5, 6, 7 });
-	for (unsigned int i = 0; i < 4; ++i) {
-		busInterfaceBlockData2->setConnectionBidirectional(Vector(0, i), connection_end_id_t(i + 1));
-		busInterfaceBlockData2->setConnectionBitConfiguration(connection_end_id_t(i + 1), std::vector<unsigned int>{ i * 2, i * 2 + 1 });
-	}
+	BlockType busInterface2 = getBusBlock({
+		BusConnectionData(Vector(1, 0), std::vector<unsigned int>{ 0, 1, 2, 3, 4, 5, 6, 7 }),
+		BusConnectionData(Vector(0, 0), std::vector<unsigned int>{ 0, 1 }),
+		BusConnectionData(Vector(0, 1), std::vector<unsigned int>{ 2, 3 }),
+		BusConnectionData(Vector(0, 2), std::vector<unsigned int>{ 4, 5 }),
+		BusConnectionData(Vector(0, 3), std::vector<unsigned int>{ 6, 7 }),
+	});
+	assert(busInterface2 == BlockType::BUS_INTERFACE_2);
 	// BUS_INTERFACE_3
-	assert(getBusBlock(2) == BlockType::BUS_INTERFACE_3);
+	BlockType busInterface3 = getBusBlock(2);
+	assert(busInterface3 == BlockType::BUS_INTERFACE_3);
 	// BUS_INTERFACE_4
-	assert(getBusBlock(6) == BlockType::BUS_INTERFACE_4);
+	BlockType busInterface4 = getBusBlock(6);
+	assert(busInterface4 == BlockType::BUS_INTERFACE_4);
 	logInfo("Default BlockData initialized", "BlockDataManager");
 }
 
 BlockType BlockDataManager::getBusBlock(unsigned int bitWidth) {
 	std::vector<BusConnectionData> busConnections;
 	for (unsigned int i = 0; i < bitWidth; i++) {
-		busConnections.emplace_back(Vector(0, i), std::vector<unsigned int>{i});
+		busConnections.emplace_back(Vector(0, i), std::vector<unsigned int>{ i });
 	}
 	busConnections.emplace_back(Vector(1, 0), bitWidth);
 	return getBusBlock(busConnections);
 }
 
 BlockType BlockDataManager::getBusBlock(std::vector<BusConnectionData> busConnections) {
-	std::sort(
-		busConnections.begin(), busConnections.end(),
-		[](const BusConnectionData& a, const BusConnectionData& b) -> bool {
-			return (a.positionOnBlock.dx < b.positionOnBlock.dx) || (a.positionOnBlock.dx == b.positionOnBlock.dx && a.positionOnBlock.dy < b.positionOnBlock.dy);
-		}
-	);
+	std::sort(busConnections.begin(), busConnections.end(), [](const BusConnectionData& a, const BusConnectionData& b) -> bool {
+		return (a.positionOnBlock.dx < b.positionOnBlock.dx) || (a.positionOnBlock.dx == b.positionOnBlock.dx && a.positionOnBlock.dy < b.positionOnBlock.dy);
+	});
 	for (unsigned int i = 0; i < busConnections.size() - 1; i++) {
-		if (busConnections[i].positionOnBlock == busConnections[i+1].positionOnBlock) {
+		if (busConnections[i].positionOnBlock == busConnections[i + 1].positionOnBlock) {
 			logError("Can't have 2 bus ports at the same position {} on a block.", "", busConnections[i].positionOnBlock);
 			return BlockType::NONE;
 		}
@@ -314,7 +308,10 @@ BlockType BlockDataManager::getBusBlock(std::vector<BusConnectionData> busConnec
 	for (unsigned int i = 0; i < busConnections.size(); i++) {
 		busInterfaceBlockData->setConnectionBidirectional(busConnections[i].positionOnBlock, connection_end_id_t(i));
 		if (std::holds_alternative<unsigned int>(busConnections[i].bitConfiguration)) {
-			if (range != 0) { name += std::to_string(range) + "x1, "; range = 0; }
+			if (range != 0) {
+				name += std::to_string(range) + "x1, ";
+				range = 0;
+			}
 			name += "1x" + std::to_string(std::get<unsigned int>(busConnections[i].bitConfiguration));
 			busInterfaceBlockData->setConnectionBitConfiguration(connection_end_id_t(i), std::get<unsigned int>(busConnections[i].bitConfiguration));
 			if (i + 1 < busConnections.size()) name += ", ";
@@ -328,7 +325,10 @@ BlockType BlockDataManager::getBusBlock(std::vector<BusConnectionData> busConnec
 					range = 1;
 				}
 			} else {
-				if (range != 0) { name += std::to_string(range) + "x1, "; range = 0; }
+				if (range != 0) {
+					name += std::to_string(range) + "x1, ";
+					range = 0;
+				}
 				name += "{";
 				for (unsigned int j = 0; j < vec.size(); j++) {
 					name += std::to_string(vec[j]);
