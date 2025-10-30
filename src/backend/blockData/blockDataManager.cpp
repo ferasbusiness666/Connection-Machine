@@ -248,24 +248,6 @@ void BlockDataManager::initializeDefaults() {
 	colorLightBlockData->setTextureBlockTileSize({ 1, 1 });
 	colorLightBlockData->setTextureSmallestCordTile({ 0, 0 });
 	colorLightBlockData->setTextureBlockStateOffset({ 16, 256 });
-	// BUS_INTERFACE_1
-	BlockType busInterface1 = getBusBlock(8);
-	assert(busInterface1 == BlockType::BUS_INTERFACE_1);
-	// BUS_INTERFACE_2
-	BlockType busInterface2 = getBusBlock({
-		BusConnectionData(Vector(1, 0), std::vector<unsigned int>{ 0, 1, 2, 3, 4, 5, 6, 7 }),
-		BusConnectionData(Vector(0, 0), std::vector<unsigned int>{ 0, 1 }),
-		BusConnectionData(Vector(0, 1), std::vector<unsigned int>{ 2, 3 }),
-		BusConnectionData(Vector(0, 2), std::vector<unsigned int>{ 4, 5 }),
-		BusConnectionData(Vector(0, 3), std::vector<unsigned int>{ 6, 7 }),
-	});
-	assert(busInterface2 == BlockType::BUS_INTERFACE_2);
-	// BUS_INTERFACE_3
-	BlockType busInterface3 = getBusBlock(2);
-	assert(busInterface3 == BlockType::BUS_INTERFACE_3);
-	// BUS_INTERFACE_4
-	BlockType busInterface4 = getBusBlock(6);
-	assert(busInterface4 == BlockType::BUS_INTERFACE_4);
 	logInfo("Default BlockData initialized", "BlockDataManager");
 }
 
@@ -303,6 +285,7 @@ BlockType BlockDataManager::getBusBlock(std::vector<BusConnectionData> busConnec
 	busInterfaceBlockData->setDefaultData(false);
 	busInterfaceBlockData->setIsBus(true);
 	busInterfaceBlockData->setSize(blockSize);
+	busInterfaceBlockData->setIsPlaceable(false);
 	std::string name = "Bus ";
 	unsigned int range = 0;
 	for (unsigned int i = 0; i < busConnections.size(); i++) {
