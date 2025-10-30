@@ -156,19 +156,27 @@ BlockTextureId BlockRenderDataFeeder::getBlockTextureId(const BlockData* blockDa
 	BlockTextureId blockTextureId = 0;
 	if (blockData->getTexturePath().empty()) {
 		// create new block texture
-		CpuImage img({ blockData->getSize().w * 256, blockData->getSize().h * 256 }, { 0, 0, 0, 255 });
-		img.addRect({ 5, 5 }, img.getSize() - Vec2Int(10, 10), { 76, 76, 76, 255 });
+		int scale = 256;
+		if (blockData->getSize().w * scale > 4096 || blockData->getSize().h * scale > 4096) {
+			if (blockData->getSize().w > blockData->getSize().h) {
+				scale = 4069/blockData->getSize().w;
+			} else {
+				scale = 4069/blockData->getSize().h;
+			}
+		}
+		CpuImage img({ blockData->getSize().w * scale, blockData->getSize().h * scale }, { 0, 0, 0, 255 });
+		img.addRect({ 5*scale/256, 5*scale/256 }, img.getSize() - Vec2Int(10*scale/256, 10*scale/256), { 76, 76, 76, 255 });
 		for (const std::pair<connection_end_id_t, BlockData::ConnectionData>& connection : blockData->getConnections()) {
 			Vec2Int portTexturePos = (
-				Vec2Int(connection.second.positionOnBlock.dx * 256, connection.second.positionOnBlock.dy * 256) +
-				Vec2Int(connection.second.portOffset.dx * 256.f, connection.second.portOffset.dy * 256.f)
+				Vec2Int(connection.second.positionOnBlock.dx * scale, connection.second.positionOnBlock.dy * scale) +
+				Vec2Int(connection.second.portOffset.dx * (float)scale, connection.second.portOffset.dy * (float)scale)
 			);
-			img.addRect(portTexturePos - Vec2Int(4,4), Vec2Int(8, 8), { 0, 0, 0, 255 });
+			img.addRect(portTexturePos - Vec2Int(4*scale/256,4*scale/256), Vec2Int(max(8*scale/256, 1), max(8*scale/256, 1)), { 0, 0, 0, 255 });
 		}
 		if (blockData->getSize().w >= blockData->getSize().h) {
-			img.writeStringInArea(font, blockData->getName(), { 75, 75 }, img.getSize() - Vec2Int(150, 150), { 255, 255, 255, 255 }, Rotation::ZERO, true, true);
+			img.writeStringInArea(font, blockData->getName(), { 75*scale/256, 75*scale/256 }, img.getSize() - Vec2Int(150*scale/256, 150*scale/256), { 255, 255, 255, 255 }, Rotation::ZERO, true, true);
 		} else {
-			img.writeStringInArea(font, blockData->getName(), { 75, 75 }, img.getSize() - Vec2Int(150, 150), { 255, 255, 255, 255 }, Rotation::NINETY, true, true);
+			img.writeStringInArea(font, blockData->getName(), { 75*scale/256, 75*scale/256 }, img.getSize() - Vec2Int(150*scale/256, 150*scale/256), { 255, 255, 255, 255 }, Rotation::NINETY, true, true);
 		}
 		blockTextureId = MainRenderer::get().addBlockTexture(img.getData(), img.getSize().x, img.getSize().y);
 	} else {
