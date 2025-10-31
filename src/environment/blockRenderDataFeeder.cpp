@@ -159,9 +159,9 @@ BlockTextureId BlockRenderDataFeeder::getBlockTextureId(const BlockData* blockDa
 		int scale = 256;
 		if (blockData->getSize().w * scale > BLOCK_TEXTURE_SIZE || blockData->getSize().h * scale > BLOCK_TEXTURE_SIZE) {
 			if (blockData->getSize().w > blockData->getSize().h) {
-				scale = 4069/blockData->getSize().w;
+				scale = BLOCK_TEXTURE_SIZE/blockData->getSize().w;
 			} else {
-				scale = 4069/blockData->getSize().h;
+				scale = BLOCK_TEXTURE_SIZE/blockData->getSize().h;
 			}
 		}
 		CpuImage img({ blockData->getSize().w * scale, blockData->getSize().h * scale }, { 0, 0, 0, 255 });
