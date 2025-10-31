@@ -17,7 +17,7 @@ void BlockTextureManager::init(VulkanDevice* device) {
 	textureLayoutBuilder.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 	descriptorLayout = textureLayoutBuilder.build(device->getDevice(), VK_SHADER_STAGE_FRAGMENT_BIT);
 
-	makeTextureArray(1, { 4096, 4096, 1 });
+	makeTextureArray(1, { BLOCK_TEXTURE_SIZE, BLOCK_TEXTURE_SIZE, 1 });
 	while (layerRectPackers.size() < textureArray->layerCount) layerRectPackers.push_back(RectPacker(Vec2Int(textureArray->textureSize.width, textureArray->textureSize.height)));
 }
 
