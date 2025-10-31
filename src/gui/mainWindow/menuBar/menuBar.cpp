@@ -38,6 +38,8 @@ void MenuBar::triggerEvent(const std::string& name) {
 		App::get().newMainWindow();
 	} else if (name == "close-window") {
 		App::get().closeMainWindow(window);
+	} else if (name == "feedback"){
+		this->window->getPopUpManager().addFeedbackPopup();
 	} else {
 		logWarning("Event \"{}\" not reconized", "MenuBar", name);
 	}
