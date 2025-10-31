@@ -138,6 +138,51 @@ void set_invisible(Rml::Element* element, bool invisible){
 	
 }
 
+void PopUpManager::aboutConnectionMachine() {
+	auto [overlay, closePopup] = createPopUp(true);
+	Rml::ElementList windowList;
+    overlay->GetElementsByClassName(windowList, "pop-up-window");
+    if (windowList.empty()) return;
+    Rml::Element* window = windowList.front();
+	window->SetAttribute("style", "display: flex; flex-direction: row; width: 650px; height: 500px; background-color:#303030;");
+
+	Rml::Element* leftdiv = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
+	Rml::Element* rightdiv = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
+
+
+	Rml::Element* title = leftdiv->AppendChild(mainWindow->getRmlDocument()->CreateElement("p"));
+    title->SetInnerRML("About Connection Machine");
+    title->SetClass("popup-title", true);
+
+	Rml::Element* body = leftdiv->AppendChild(mainWindow->getRmlDocument()->CreateElement("p"));
+    body->SetInnerRML(
+		"Connection Machine is an open source project aiming to create an application for designing and simulating logic graph systems.");
+    body->SetClass("popup-title", true);
+
+
+	Rml::Element* body2 = leftdiv->AppendChild(mainWindow->getRmlDocument()->CreateElement("p"));
+    body2->SetInnerRML(
+		"github: https://github.com/Martian-Technologies/Connection-Machine <br />  \
+		website: https://connection-machine.com ");
+    body2->SetClass("popup-title", true);
+
+	Rml::Element* close = leftdiv->AppendChild(mainWindow->getRmlDocument()->CreateElement("button"));
+    close->SetInnerRML("Close");
+    close->SetClass("popup-button", true);
+	close->AddEventListener(Rml::EventId::Click, new EventPasser(
+	    [deleteFunc = closePopup](Rml::Event& event) {
+	        deleteFunc();
+	    }
+	));
+
+	// Rml::Element* logoimage = rightdiv->AppendChild(mainWindow->getRmlDocument()->CreateElement("img"));
+	// logoimage->setAttribute("style","src: Connection-Machine\\rescources\\gateIcon.ico;");
+
+	// Rml::Element* contribuertitle = rightdiv->AppendChild(mainWindow->getRmlDocument()->CreateElement("p"));
+    // contribuertitle->SetInnerRML("Contributers");
+    // contribuertitle->SetClass("popup-title", true);
+}
+
 void PopUpManager::addFeedbackPopup() { //feature request, bug report, feature complaint, feedback
     auto [overlay, closePopup] = createPopUp(true);
 

@@ -40,6 +40,8 @@ void MenuBar::triggerEvent(const std::string& name) {
 		App::get().closeMainWindow(window);
 	} else if (name == "feedback"){
 		this->window->getPopUpManager().addFeedbackPopup();
+	} else if (name == "about"){
+		this->window->getPopUpManager().aboutConnectionMachine();
 	} else {
 		logWarning("Event \"{}\" not reconized", "MenuBar", name);
 	}
