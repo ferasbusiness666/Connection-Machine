@@ -165,6 +165,10 @@ std::optional<std::string> BlockData::getConnectionIdToName(connection_end_id_t 
 	return std::nullopt;
 }
 
+// connection_end_id_t BlockData::getConnectionNameToId(const std::string& connectionName) const {
+// 	connection_end_id_t connectionId = connectionIdNames.get(connectionName);
+// }
+
 void BlockData::setConnnectionPortOffset(connection_end_id_t connectionId, FVector offset) {
 	if (!FSize(1).containsVector(offset)) {
 		logError("Can't set connection port offset to vector {} that makes it leave its cell", "BlockData", offset);

@@ -11,6 +11,8 @@
 #include "gui/helper/keybindHelpers.h"
 #include "gui/helper/eventPasser.h"
 
+#include "backend/circuitTestCase/circuitTestCase.h"
+
 #include "environment/environment.h"
 
 void LoadCallback(void* userData, const char* const* filePaths, int filter) {
@@ -113,6 +115,17 @@ CircuitViewWidget::CircuitViewWidget(
 		"Keybinds/File/New",
 		[this]() { newCircuit(); }
 	);
+	keybindHandler.addListener(
+		"Keybinds/File/Test Circuit",
+		[this, environment]() {
+			logInfo("Running Test!");
+			CircuitTestCase testCase;
+			std::cout << environment;
+			logInfo("Definitely Running Test!");
+			testCase.runTest(BlockType::TRISTATE_BUFFER, false, *environment);
+		}
+	);
+
 
 	Rml::Element* root = document->GetElementById("main-container");
 	root->AddEventListener(Rml::EventId::Mouseup, new EventPasser(
