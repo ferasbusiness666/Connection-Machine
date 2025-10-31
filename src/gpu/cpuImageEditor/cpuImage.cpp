@@ -1,5 +1,11 @@
 #include "cpuImage.h"
 
+void CpuImage::fill(Pixel color) {
+	for (Pixel& pixel : img) {
+		pixel = color;
+	}
+}
+
 void CpuImage::addRect(Vec2Int pos, Vec2Int size, Pixel color, bool mix) {
 	if (pos.x < 0 || pos.y < 0 || size.x < 0 || size.y < 0 || (pos.x + size.x) > imgSize.x || (pos.y + size.y) > imgSize.y) {
 		logError("addRect try out of range fill.", "CpuImage");
@@ -21,6 +27,42 @@ void CpuImage::addRect(Vec2Int pos, Vec2Int size, Pixel color, bool mix) {
 				imgColor.a = outA * 255.0f;
 			} else {
 				img[getBufferPos(pos + Vec2Int(x, y))] = color;
+			}
+		}
+	}
+}
+
+void CpuImage::addCircle(Vec2Int pos, double radius, Pixel color, bool antiAlias, bool mix) {
+	int xStart = static_cast<int>(-radius - 1);
+	int xEnd = static_cast<int>(radius + 1);
+	int yStart = static_cast<int>(-radius - 1);
+	int yEnd = static_cast<int>(radius + 1);
+	for (int x = xStart; x <= xEnd; x++) {
+		for (int y = yStart; y <= yEnd; y++) {
+			double distSq = static_cast<double>(x * x + y * y);
+			if (distSq > (radius + 1) * (radius + 1)) continue;
+			float alpha = 1.0f;
+			if (antiAlias) {
+				double dist = sqrt(distSq);
+				alpha = static_cast<float>(std::clamp(radius - dist, 0.0, 1.0));
+			}
+			Pixel drawColor = color;
+			drawColor.a = static_cast<std::uint8_t>(drawColor.a * alpha);
+			Vec2Int drawPos = Vec2Int(pos.x + x, pos.y + y);
+			if (drawPos.x < 0 || drawPos.y < 0 || drawPos.x >= imgSize.x || drawPos.y >= imgSize.y) continue;
+			if (mix) {
+				Pixel& imgColor = img[getBufferPos(drawPos)];
+
+				float srcA = drawColor.a / 255.0f;
+				float dstA = imgColor.a / 255.0f;
+				float outA = srcA + dstA * (1.0f - srcA);
+
+				imgColor.r = ((drawColor.r * srcA) + (imgColor.r * dstA * (1.0f - srcA))) / outA;
+				imgColor.g = ((drawColor.g * srcA) + (imgColor.g * dstA * (1.0f - srcA))) / outA;
+				imgColor.b = ((drawColor.b * srcA) + (imgColor.b * dstA * (1.0f - srcA))) / outA;
+				imgColor.a = outA * 255.0f;
+			} else {
+				img[getBufferPos(drawPos)] = drawColor;
 			}
 		}
 	}

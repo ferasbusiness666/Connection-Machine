@@ -2,6 +2,7 @@
 #define blockRenderDataFeeder_h
 
 #include "gpu/blockRenderDataManager.h"
+#include "gpu/cpuImageEditor/cpuImage.h"
 #include "backend/container/block/blockDefs.h"
 #include "backend/container/block/connectionEnd.h"
 #include "backend/dataUpdateEventManager.h"
@@ -50,6 +51,11 @@ private:
 	Backend* backend;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 	std::map<BlockType, RenderData> blockTypeToRenderData;
+
+	void putConnectionNipplesOntoImage(const BlockData* blockData, CpuImage& img, int scale);
+	void createTextureForCustomBlock(const BlockData* blockData, CpuImage& img, int scale);
+	void createTextureForBusBlock(const BlockData* blockData, CpuImage& img, int scale);
+	CpuImage padTexture(const CpuImage& img);
 };
 
 #endif /* blockRenderDataFeeder_h */
