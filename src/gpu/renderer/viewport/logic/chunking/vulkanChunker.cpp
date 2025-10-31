@@ -19,10 +19,11 @@ Position getChunk(Position in) {
 	return in;
 }
 
+const unsigned int maxLaneCountBeforeWireShrink = 8;
+constexpr float WIRE_LINE_WIDTH = 0.07f;
+
 namespace {
 	// Match wireConstants.glsl::LINE_WIDTH to keep CPU/GPU visuals aligned.
-	constexpr float WIRE_LINE_WIDTH = 0.07f;
-	constexpr float BUS_WIRE_SPACING = WIRE_LINE_WIDTH * 1.0f;
 	constexpr float DIRECTION_EPSILON = 1e-5f;
 
 	glm::vec2 computeBusOffset(const glm::vec2& pointA, const glm::vec2& pointB, uint32_t laneCount, uint32_t laneIndex) {
@@ -37,7 +38,7 @@ namespace {
 
 		glm::vec2 normal = glm::vec2(-direction.y, direction.x) / length;
 		float centeredIndex = static_cast<float>(laneIndex) - (static_cast<float>(laneCount - 1) * 0.5f);
-		return normal * (centeredIndex * BUS_WIRE_SPACING);
+		return normal * (centeredIndex * WIRE_LINE_WIDTH * std::min((float)maxLaneCountBeforeWireShrink / (float)laneCount, 1.f));
 	}
 }
 
@@ -145,10 +146,12 @@ VulkanChunkAllocation::VulkanChunkAllocation(
 
 		for (size_t i = 0; i < positions.size(); i++) {
 			uint32_t laneCount = 1;
-			if (i < pinSimIds.size() && std::holds_alternative<std::vector<simulator_id_t>>(pinSimIds[i])) {
-				const auto& vec = std::get<std::vector<simulator_id_t>>(pinSimIds[i]);
-				if (!vec.empty()) {
-					laneCount = static_cast<uint32_t>(vec.size());
+			if (pinSimIds.size() != 0 && std::holds_alternative<std::vector<simulator_id_t>>(pinSimIds[i])) {
+				const std::vector<simulator_id_t>& wireSimIds = std::get<std::vector<simulator_id_t>>(pinSimIds[i]);
+				if (wireSimIds.empty()) {
+					logError("pin simulator ids vector should not be empty. Pin: {}", "VulkanChunkAllocation", positions[i]);
+				} else {
+					laneCount = static_cast<uint32_t>(wireSimIds.size());
 				}
 			}
 
@@ -206,6 +209,7 @@ VulkanChunkAllocation::VulkanChunkAllocation(
 				WireInstance instance;
 				instance.pointA = segment.pointA + offset;
 				instance.pointB = segment.pointB + offset;
+				instance.wireWidth = WIRE_LINE_WIDTH * std::min((float)maxLaneCountBeforeWireShrink / (float)laneCount, 1.f);
 				instance.stateIndex = static_cast<uint32_t>(baseIndex + lane);
 
 				wireInstances.push_back(instance);
@@ -462,7 +466,7 @@ void VulkanChunker::updateSimulatorIds(const std::vector<SimulatorMappingUpdate>
 				simulatorId = std::get<simulator_id_t>(simIds);
 			}
 
-			auto chunkPos = getChunk(simulatorMappingUpdate.portPosition);
+			Position chunkPos = getChunk(simulatorMappingUpdate.portPosition);
 			auto chunkIter = chunks.find(chunkPos);
 			if (chunkIter == chunks.end()) continue;
 			std::optional<std::shared_ptr<VulkanChunkAllocation>> vulkanChunkAllocation = chunkIter->second.getAllocation();
@@ -484,15 +488,23 @@ void VulkanChunker::updateSimulatorIds(const std::vector<SimulatorMappingUpdate>
 				const PortStateRange& range = portStateIter->second;
 				if (!range.isValid()) continue;
 
-				std::vector<simulator_id_t>& targetIds = vulkanChunkAllocation.value()->getStateSimulatorIds();
+				std::vector<simulator_id_t>& chunkStateSimulatorIds = vulkanChunkAllocation.value()->getStateSimulatorIds();
 				if (std::holds_alternative<std::vector<simulator_id_t>>(simIds)) {
-					const std::vector<simulator_id_t>& vec = std::get<std::vector<simulator_id_t>>(simIds);
-					uint32_t laneCount = std::min(range.laneCount, static_cast<uint32_t>(vec.size()));
-					for (uint32_t lane = 0; lane < laneCount; lane++) {
-						targetIds[range.baseIndex + lane] = vec[lane];
+					const std::vector<simulator_id_t>& wireSimIds = std::get<std::vector<simulator_id_t>>(simIds);
+					uint32_t laneCount = wireSimIds.size();
+					if (laneCount != range.laneCount) {
+						chunksToUpdate.insert(chunkPos.first);
+					} else {
+						for (uint32_t lane = 0; lane < laneCount; lane++) {
+							chunkStateSimulatorIds[range.baseIndex + lane] = wireSimIds[lane];
+						}
 					}
 				} else {
-					targetIds[range.baseIndex] = std::get<simulator_id_t>(simIds);
+					if (1 != range.laneCount) {
+						chunksToUpdate.insert(chunkPos.first);
+					} else {
+						chunkStateSimulatorIds[range.baseIndex] = std::get<simulator_id_t>(simIds);
+					}
 				}
 			}
 		}

@@ -80,6 +80,7 @@ struct BlockInstance {
 struct WireInstance {
 	glm::vec2 pointA;
 	glm::vec2 pointB;
+	float wireWidth;
 	uint32_t stateIndex;
 
 	inline static std::vector<VkVertexInputBindingDescription> getBindingDescriptions() {
@@ -92,7 +93,7 @@ struct WireInstance {
     }
 
 	inline static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
-		std::vector<VkVertexInputAttributeDescription> attributeDescriptions(3);
+		std::vector<VkVertexInputAttributeDescription> attributeDescriptions(4);
 
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
@@ -106,8 +107,13 @@ struct WireInstance {
 
 		attributeDescriptions[2].binding = 0;
 		attributeDescriptions[2].location = 2;
-		attributeDescriptions[2].format = VK_FORMAT_R32_UINT;
-		attributeDescriptions[2].offset = offsetof(WireInstance, stateIndex);
+		attributeDescriptions[2].format = VK_FORMAT_R32_SFLOAT;
+		attributeDescriptions[2].offset = offsetof(WireInstance, wireWidth);
+
+		attributeDescriptions[3].binding = 0;
+		attributeDescriptions[3].location = 3;
+		attributeDescriptions[3].format = VK_FORMAT_R32_UINT;
+		attributeDescriptions[3].offset = offsetof(WireInstance, stateIndex);
 
 		return attributeDescriptions;
 	}
