@@ -2,18 +2,24 @@
 #define tutorialManager_h
 
 class CircuitView;
+class Environment;
 
 #include "renderer/elementCreator.h"
 
 class TutorialManager {
-    public:
-        TutorialManager(CircuitView* circuitView);
-        void StartTutorial();
-    private:
+public:
+	TutorialManager(Environment* environment, CircuitView* circuitView);
+	void StartTutorial();
+	void Stop();
 
-    CircuitView* circuitView;
-    ElementCreator elementCreator;
+private:
+	void checkTutorial(DifferenceSharedPtr, circuit_id_t);
 
+	SharedCircuit curentCircuit;
+
+	CircuitView* circuitView;
+	Environment* environment;
+	ElementCreator elementCreator;
 };
 
 #endif
