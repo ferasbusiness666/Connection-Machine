@@ -4,12 +4,14 @@
 #include "util/algorithm.h"
 
 SelectorWindow::SelectorWindow(
-	const BlockDataManager* blockDataManager,
+	BlockDataManager* blockDataManager,
 	DataUpdateEventManager* dataUpdateEventManager,
 	ProceduralCircuitManager* proceduralCircuitManager,
 	ToolManagerManager* toolManagerManager,
 	Rml::ElementDocument* document
-) : blockDataManager(blockDataManager), proceduralCircuitManager(proceduralCircuitManager), toolManagerManager(toolManagerManager), dataUpdateEventReceiver(dataUpdateEventManager), document(document) {
+) :
+	blockDataManager(blockDataManager), proceduralCircuitManager(proceduralCircuitManager), toolManagerManager(toolManagerManager),
+	dataUpdateEventReceiver(dataUpdateEventManager), document(document) {
 	Rml::Element* itemTreeParent = document->GetElementById("item-selection-tree");
 	menuTree.emplace(document, itemTreeParent, false);
 	menuTree->setListener(std::bind(&SelectorWindow::updateSelected, this, std::placeholders::_1));
@@ -28,10 +30,9 @@ SelectorWindow::SelectorWindow(
 	dataUpdateEventReceiver.linkFunction("setToolUpdate", [this](const DataUpdateEventManager::EventData*) { refreshSidebar(false); });
 
 	parameterMenu = document->GetElementById("parameter-menu");
-	parameterMenu->GetElementById("reset-parameters")->AddEventListener(Rml::EventId::Click, new EventPasser([this](Rml::Event& event) {setupProceduralCircuitParameterMenu();}));
-	parameterMenu->GetElementById("create-block")->AddEventListener(Rml::EventId::Click, new EventPasser(
-		[this](Rml::Event& event) {
-			if (!selectedProceduralCircuit) return;
+	parameterMenu->GetElementById("reset-parameters")->AddEventListener(Rml::EventId::Click, new EventPasser([this](Rml::Event& event) { setupParameterMenu(); }));
+	parameterMenu->GetElementById("create-block")->AddEventListener(Rml::EventId::Click, new EventPasser([this](Rml::Event& event) {
+		if (selectedProceduralCircuit) {
 			Rml::Element* parametersElement = parameterMenu->GetElementById("parameter-menu-parameters");
 
 			ProceduralCircuitParameters proceduralCircuitParameters;
@@ -53,8 +54,23 @@ SelectorWindow::SelectorWindow(
 				}
 			}
 			this->toolManagerManager->setBlock(selectedProceduralCircuit->getBlockType(proceduralCircuitParameters));
+		} else if (selectedBus) {
+			Rml::Element* parametersElement = parameterMenu->GetElementById("parameter-menu-parameters");
+			assert(parametersElement->GetNumChildren() == 1);
+			Rml::ElementList elements;
+			parametersElement->GetFirstChild()->GetElementsByClassName(elements, "parameter-input");
+			Rml::ElementFormControlInput* parameterInput = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements[0]);
+			std::string str = parameterInput->GetValue();
+			try {
+				int value = std::stoi(str);
+
+				this->toolManagerManager->setBlock(this->blockDataManager->getBusBlock(value));
+			} catch (std::exception const& ex) {
+				logError("Invalid bus bit width  {}. {}", "", str, ex.what());
+				return;
+			}
 		}
-	));
+	}));
 
 	refreshSidebar(true);
 }
@@ -74,6 +90,10 @@ void SelectorWindow::updateList() {
 	for (const auto& iter : proceduralCircuitManager->getProceduralCircuits()) {
 		std::vector<std::string>& path = paths.emplace_back(1, "Blocks");
 		stringSplitInto(iter.second->getPath(), '/', path);
+	}
+	{
+		std::vector<std::string>& path = paths.emplace_back(1, "Blocks");
+		stringSplitInto("Other/Bus", '/', path);
 	}
 	menuTree->setPaths(paths);
 }
@@ -97,7 +117,8 @@ void SelectorWindow::highlightActiveToolInSidebar() {
 	std::string activeToolId = std::string("Tools/") + activeTool + "-menu";
 	if (Rml::Element* activeElement = document->GetElementById(activeToolId)) {
 		if (Rml::Element* itemRoot = document->GetElementById("item-selection-tree")) {
-			Rml::ElementList rows; itemRoot->GetElementsByTagName(rows, "li");
+			Rml::ElementList rows;
+			itemRoot->GetElementsByTagName(rows, "li");
 			for (auto* row : rows) row->SetClass("selected", false);
 		}
 		activeElement->SetClass("selected", true);
@@ -108,7 +129,18 @@ void SelectorWindow::highlightActiveToolInSidebar() {
 			p = p->GetParentNode();
 		}
 	}
-	if (selectedProceduralCircuit) {
+	if (selectedBus) {
+		std::string elementId = std::string("Blocks/") + "Other/Bus" + "-menu";
+		Rml::Element* blockElement = document->GetElementById(elementId);
+		if (blockElement) {
+			blockElement->SetClass("selected", true);
+			Rml::Element* p = blockElement->GetParentNode();
+			while (p) {
+				if (p->GetTagName() == "li") p->SetClass("collapsed", false);
+				p = p->GetParentNode();
+			}
+		}
+	} else if (selectedProceduralCircuit) {
 		std::string elementId = std::string("Blocks/") + selectedProceduralCircuit->getPath() + "-menu";
 		Rml::Element* blockElement = document->GetElementById(elementId);
 		if (blockElement) {
@@ -150,12 +182,12 @@ void SelectorWindow::highlightActiveMode() {
 	if (item) item->SetClass("selected", true);
 }
 
-
 void SelectorWindow::updateSelected(const std::string& string) {
 	std::vector parts = stringSplit(string, '/');
 	if (parts.size() <= 1) return;
 	if (parts[0] == "Blocks") {
 		selectedProceduralCircuit = nullptr; // either it will be set or this should go away!
+		selectedBus = false;
 		std::string path = string.substr(7, string.size() - 7);
 		BlockType blockType = blockDataManager->getBlockType(path);
 		if (blockType == BlockType::NONE) {
@@ -164,10 +196,13 @@ void SelectorWindow::updateSelected(const std::string& string) {
 				selectedProceduralCircuit = proceduralCircuitManager->getProceduralCircuit(*uuid);
 				if (selectedProceduralCircuit) setupProceduralCircuitParameterMenu();
 				else logError("unknown block with path: {}", "SelectorWindow", path);
+			} else if (path == "Other/Bus") {
+				selectedBus = true;
+				setupBusParameterMenu();
 			}
 		}
-	toolManagerManager->setBlock(blockType);
-	if (!selectedProceduralCircuit) hideProceduralCircuitParameterMenu();
+		toolManagerManager->setBlock(blockType);
+		if (!(selectedProceduralCircuit || selectedBus)) hideParameterMenu();
 	} else if (parts[0] == "Tools") {
 		std::string toolPath = string.substr(6, string.size() - 6);
 		toolManagerManager->setTool(toolPath);
@@ -177,16 +212,24 @@ void SelectorWindow::updateSelected(const std::string& string) {
 	refreshSidebar(false);
 }
 
-void SelectorWindow::updateSelectedMode(const std::string& string) {
-	toolManagerManager->setMode(string);
+void SelectorWindow::updateSelectedMode(const std::string& string) { toolManagerManager->setMode(string); }
+
+void SelectorWindow::setupParameterMenu() {
+	if (selectedProceduralCircuit) {
+		setupProceduralCircuitParameterMenu();
+	} else if (selectedBus) {
+		setupBusParameterMenu();
+	} else {
+		hideParameterMenu();
+	}
 }
 
 void SelectorWindow::setupProceduralCircuitParameterMenu() {
 	if (!selectedProceduralCircuit) {
-		hideProceduralCircuitParameterMenu();
+		hideParameterMenu();
 		return;
 	}
-	parameterMenu->GetParentNode()->SetClass("invisible", false);
+	parameterMenu->SetClass("invisible", false);
 	parameterMenu->GetElementById("parameter-menu-active")->SetInnerRML(selectedProceduralCircuit->getProceduralCircuitName());
 	Rml::Element* parametersElement = parameterMenu->GetElementById("parameter-menu-parameters");
 
@@ -216,6 +259,36 @@ void SelectorWindow::setupProceduralCircuitParameterMenu() {
 	}
 }
 
-void SelectorWindow::hideProceduralCircuitParameterMenu() {
-	parameterMenu->GetParentNode()->SetClass("invisible", true);
+void SelectorWindow::setupBusParameterMenu() {
+	if (!selectedBus) {
+		hideParameterMenu();
+		return;
+	}
+	parameterMenu->SetClass("invisible", false);
+	parameterMenu->GetElementById("parameter-menu-active")->SetInnerRML("Bus");
+	Rml::Element* parametersElement = parameterMenu->GetElementById("parameter-menu-parameters");
+
+	while (parametersElement->GetNumChildren() > 0) parametersElement->RemoveChild(parametersElement->GetChild(0));
+
+	Rml::ElementPtr parameterDiv = document->CreateElement("div");
+	parameterDiv->SetClass("parameter", true);
+
+	Rml::ElementPtr parameterNameElement = document->CreateElement("span");
+	parameterNameElement->SetInnerRML("Bit width:");
+	parameterNameElement->SetClass("parameter-name", true);
+
+	Rml::XMLAttributes parameterInputAttributes;
+	parameterInputAttributes["type"] = "text";
+	parameterInputAttributes["maxlength"] = "8";
+	parameterInputAttributes["size"] = "8";
+	Rml::ElementPtr parameterInputElement = Rml::Factory::InstanceElement(document, "input", "input", parameterInputAttributes);
+	parameterInputElement->SetClass("parameter-input", true);
+	Rml::ElementFormControlInput* parameterInput = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(parameterInputElement.get());
+	parameterInput->SetValue(std::to_string(8));
+
+	parameterDiv->AppendChild(std::move(parameterNameElement));
+	parameterDiv->AppendChild(std::move(parameterInputElement));
+	parametersElement->AppendChild(std::move(parameterDiv));
 }
+
+void SelectorWindow::hideParameterMenu() { parameterMenu->SetClass("invisible", true); }

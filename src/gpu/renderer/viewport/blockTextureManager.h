@@ -7,6 +7,8 @@
 #include "util/rectPacker.h"
 #include "util/vec2.h"
 
+#define BLOCK_TEXTURE_SIZE 8192
+
 class VulkanDevice;
 
 #include <stb_image.h>

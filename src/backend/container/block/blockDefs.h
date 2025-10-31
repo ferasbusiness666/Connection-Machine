@@ -3,7 +3,7 @@
 
 typedef char block_data_index_t;
 
-typedef unsigned char block_size_t;
+typedef std::uint8_t block_size_t;
 typedef unsigned int block_id_t;
 
 enum BlockType : std::uint16_t {
@@ -30,10 +30,6 @@ enum BlockType : std::uint16_t {
 	CONSTANT_X,
 	LIGHT,
 	COLOR_LIGHT,
-	BUS_INTERFACE_1,
-	BUS_INTERFACE_2,
-	BUS_INTERFACE_3,
-	BUS_INTERFACE_4,
 	CUSTOM, // placeholder for custom blocks in parsed circuit
 };
 

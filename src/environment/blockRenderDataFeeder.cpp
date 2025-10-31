@@ -1,7 +1,6 @@
 #include "blockRenderDataFeeder.h"
 
 #include "backend/backend.h"
-#include "gpu/cpuImageEditor/cpuImage.h"
 #include "gpu/freetype/freetype.h"
 #include "gpu/mainRenderer.h"
 
@@ -156,17 +155,22 @@ BlockTextureId BlockRenderDataFeeder::getBlockTextureId(const BlockData* blockDa
 	BlockTextureId blockTextureId = 0;
 	if (blockData->getTexturePath().empty()) {
 		// create new block texture
-		CpuImage img({ blockData->getSize().w * 256, blockData->getSize().h * 256 }, { 0, 0, 0, 255 });
-		img.addRect({ 5, 5 }, img.getSize() - Vec2Int(10, 10), { 76, 76, 76, 255 });
-		for (const std::pair<connection_end_id_t, BlockData::ConnectionData>& connection : blockData->getConnections()) {
-			Vec2Int portTexturePos = (
-				Vec2Int(connection.second.positionOnBlock.dx * 256, connection.second.positionOnBlock.dy * 256) +
-				Vec2Int(connection.second.portOffset.dx * 256.f, connection.second.portOffset.dy * 256.f)
-			);
-			img.addRect(portTexturePos - Vec2Int(4,4), Vec2Int(8, 8), { 0, 0, 0, 255 });
+		int scale = 256;
+		if (blockData->getSize().w * scale > BLOCK_TEXTURE_SIZE || blockData->getSize().h * scale > BLOCK_TEXTURE_SIZE) {
+			if (blockData->getSize().w > blockData->getSize().h) {
+				scale = BLOCK_TEXTURE_SIZE/blockData->getSize().w;
+			} else {
+				scale = BLOCK_TEXTURE_SIZE/blockData->getSize().h;
+			}
 		}
-		img.writeStringInArea(font, blockData->getName(), { 75, 75 }, img.getSize() - Vec2Int(150, 150), { 255, 255, 255, 255 });
-		blockTextureId = MainRenderer::get().addBlockTexture(img.getData(), img.getSize().x, img.getSize().y);
+		CpuImage img({ blockData->getSize().w * scale, blockData->getSize().h * scale }, { 0, 0, 0, 255 });
+		if (blockData->isBus()) {
+			createTextureForBusBlock(blockData, img, scale);
+		} else {
+			createTextureForCustomBlock(blockData, img, scale);
+		}
+		CpuImage paddedImg = padTexture(img);
+		blockTextureId = MainRenderer::get().addBlockTexture(paddedImg.getData(), paddedImg.getSize().x, paddedImg.getSize().y);
 	} else {
 		blockTextureId = MainRenderer::get().addBlockTexture(blockData->getTexturePath());
 	}
@@ -183,6 +187,60 @@ BlockTextureId BlockRenderDataFeeder::getBlockTextureId(const BlockData* blockDa
 	renderData->blockTextureId = blockTextureId;
 	blockTextureIdUsage[blockTextureId]++;
 	return blockTextureId;
+}
+
+CpuImage BlockRenderDataFeeder::padTexture(const CpuImage& img) {
+	int width = img.getSize().x;
+	int height = img.getSize().y;
+	float xPadding = 1.0f;
+	float heightToWidthRatio = (float)height / (float)width;
+	float yPadding = xPadding * heightToWidthRatio;
+	if (yPadding < 1.0f) {
+		yPadding = 1.0f;
+		xPadding = yPadding / heightToWidthRatio;
+	}
+	int xPixelPadding = static_cast<int>(std::round(xPadding));
+	int yPixelPadding = static_cast<int>(std::round(yPadding));
+	Vec2Int newSize = Vec2Int(
+		width + 2 * xPixelPadding,
+		height + 2 * yPixelPadding
+	);
+	CpuImage paddedImg(newSize, { 0, 0, 0, 0 });
+	for (int y = 0; y < height + yPixelPadding * 2; y++) {
+		for (int x = 0; x < width + xPixelPadding * 2; x++) {
+			int srcX = std::clamp(x - xPixelPadding, 0, width - 1);
+			int srcY = std::clamp(y - yPixelPadding, 0, height - 1);
+			paddedImg.setPixel({ x, y }, img.getPixel({ srcX, srcY }));
+		}
+	}
+	return paddedImg;
+}
+
+void BlockRenderDataFeeder::putConnectionNipplesOntoImage(const BlockData* blockData, CpuImage& img, int scale) {
+	for (const std::pair<connection_end_id_t, BlockData::ConnectionData>& connection : blockData->getConnections()) {
+		Vec2Int portTexturePos = (
+			Vec2Int(connection.second.positionOnBlock.dx * scale, connection.second.positionOnBlock.dy * scale) +
+			Vec2Int(connection.second.portOffset.dx * (float)scale, connection.second.portOffset.dy * (float)scale)
+		);
+		int laneCount = connection.second.getBitWidth();
+		int nippleSize = std::max(9, std::min(9 * laneCount, 9 * 8));
+		img.addCircle(portTexturePos, nippleSize * scale / 256, { 0, 0, 0, 255 });
+	}
+}
+
+void BlockRenderDataFeeder::createTextureForCustomBlock(const BlockData* blockData, CpuImage& img, int scale) {
+	img.addRect({ 5 * scale / 256, 5 * scale / 256 }, img.getSize() - Vec2Int(10 * scale / 256, 10 * scale / 256), { 76, 76, 76, 255 });
+	putConnectionNipplesOntoImage(blockData, img, scale);
+	if (blockData->getSize().w >= blockData->getSize().h) {
+		img.writeStringInArea(font, blockData->getName(), { 75*scale/256, 75*scale/256 }, img.getSize() - Vec2Int(150*scale/256, 150*scale/256), { 255, 255, 255, 255 }, Rotation::ZERO, true, true);
+	} else {
+		img.writeStringInArea(font, blockData->getName(), { 75*scale/256, 75*scale/256 }, img.getSize() - Vec2Int(150*scale/256, 150*scale/256), { 255, 255, 255, 255 }, Rotation::NINETY, true, true);
+	}
+}
+
+void BlockRenderDataFeeder::createTextureForBusBlock(const BlockData* blockData, CpuImage& img, int scale) {
+	img.fill({ 0, 0, 0, 0 });
+	putConnectionNipplesOntoImage(blockData, img, scale);
 }
 
 void BlockRenderDataFeeder::doBlockTextureUpdates() {

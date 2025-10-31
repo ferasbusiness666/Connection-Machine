@@ -9,7 +9,7 @@
 class SelectorWindow {
 public:
 	SelectorWindow(
-		const BlockDataManager* blockDataManager,
+		BlockDataManager* blockDataManager,
 		DataUpdateEventManager* dataUpdateEventManager,
 		ProceduralCircuitManager* proceduralCircuitManager,
 		ToolManagerManager* toolManagerManager,
@@ -23,19 +23,22 @@ public:
 private:
 	void updateSelected(const std::string& string);
 	void updateSelectedMode(const std::string& string);
+	void setupParameterMenu();
 	void setupProceduralCircuitParameterMenu();
-	void hideProceduralCircuitParameterMenu();
+	void setupBusParameterMenu();
+	void hideParameterMenu();
 
 	void highlightActiveToolInSidebar();
 	void highlightActiveMode();
 
+	bool selectedBus = false;
 	SharedProceduralCircuit selectedProceduralCircuit = nullptr;
 
 	Rml::ElementDocument* document;
 	Rml::Element* parameterMenu;
 	std::optional<MenuTree> menuTree;
 	std::optional<ElementList> modeList;
-	const BlockDataManager* blockDataManager;
+	BlockDataManager* blockDataManager;
 	ProceduralCircuitManager* proceduralCircuitManager;
 	ToolManagerManager* toolManagerManager;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;

@@ -135,7 +135,7 @@ function(add_app_dependencies)
 	CPMAddPackage(
 		NAME volk
 		GITHUB_REPOSITORY zeux/volk
-		GIT_TAG 1.4.304
+		GIT_TAG 3f1e9f3549c6a0fe0c4901e0f6a2f66b6bb8de3f
 		EXCLUDE_FROM_ALL YES
 		SOURCE_DIR "${EXTERNAL_DIR}/volk"
 	)
@@ -162,7 +162,7 @@ function(add_app_dependencies)
 	CPMAddPackage(
 		NAME SDL3
 		GITHUB_REPOSITORY libsdl-org/SDL
-		GIT_TAG release-3.2.20
+		GIT_TAG d9ca0457b5c9f819c3af5f156880219c8d41da40
 		OPTIONS
 			"SDL_STATIC ON"
 		EXCLUDE_FROM_ALL YES

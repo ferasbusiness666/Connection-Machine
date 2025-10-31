@@ -14,7 +14,8 @@ Replacement& Replacer::makeReplacement(int layer) {
 	}
 	replacements[newId] = Replacement(
 		this,
-		layer
+		layer,
+		newId
 	);
 	return *replacements[newId];
 }
@@ -155,11 +156,14 @@ void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, int layer, int junctionOv
 		for (const EvalConnection& input : inputs) {
 			const BlockData::ConnectionData* connectionData = blockData->getConnectionData(input.destination.portId);
 			unsigned int connectionLaneIndex = current.laneId;
+			BlockType sourceBlockType = busInterfacePassthrough.getBlockType(input.source.gateId);
+
 			if (blockType != BlockType::JUNCTION) {
 				connectionLaneIndex = connectionData->getIndexOfLaneId(current.laneId);
 				if (connectionLaneIndex > connectionData->getMaxLaneIndex()) continue;
 
-				if (connectionData->getBitWidth() == 1) {
+				BlockData* sourceBlockData = blockDataManager.getBlockData(sourceBlockType);
+				if (!sourceBlockData->isBus() && connectionData->getBitWidth() == 1){
 					replacement.trackConnection(input);
 					replacement.removeConnection(pauseGuard, input);
 					replacement.makeConnection(pauseGuard, { input.source, { newJunctionId, connection_end_id_t(0) } });
@@ -169,7 +173,6 @@ void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, int layer, int junctionOv
 			}
 			replacement.trackConnection(input);
 			middle_id_t sourceBlockId = input.source.gateId;
-			BlockType sourceBlockType = busInterfacePassthrough.getBlockType(sourceBlockId);
 			if (sourceBlockType == BlockType::NONE) {
 				continue;
 			}
@@ -189,11 +192,12 @@ void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, int layer, int junctionOv
 		for (const EvalConnection& output : outputs) {
 			const BlockData::ConnectionData* connectionData = blockData->getConnectionData(output.source.portId);
 			unsigned int connectionLaneIndex = current.laneId;
+			BlockType destBlockType = busInterfacePassthrough.getBlockType(output.destination.gateId);
 			if (blockType != BlockType::JUNCTION) {
 				connectionLaneIndex = connectionData->getIndexOfLaneId(current.laneId);
 				if (connectionLaneIndex > connectionData->getMaxLaneIndex()) continue;
-
-				if (connectionData->getBitWidth() == 1) {
+				BlockData* destBlockData = blockDataManager.getBlockData(destBlockType);
+				if (!destBlockData->isBus() && connectionData->getBitWidth() == 1) {
 					replacement.trackConnection(output);
 					replacement.removeConnection(pauseGuard, output);
 					replacement.makeConnection(pauseGuard, { { newJunctionId, connection_end_id_t(0) } , output.destination });
@@ -203,7 +207,6 @@ void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, int layer, int junctionOv
 			}
 			replacement.trackConnection(output);
 			middle_id_t destBlockId = output.destination.gateId;
-			BlockType destBlockType = busInterfacePassthrough.getBlockType(destBlockId);
 			if (destBlockType == BlockType::NONE) {
 				continue;
 			}

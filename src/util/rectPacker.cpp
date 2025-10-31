@@ -33,7 +33,7 @@ RectPacker::RectID RectPacker::tryAddRect(Vec2Int size) {
 	if (!stbrp_pack_rects(m_context.get(), &rect, 1) || !rect.was_packed) return 0;
 
 	RectID id = m_nextID++;
-	logInfo("tryAddRect found pos {} for size {}", "RectPacker", Vec2Int(rect.x, rect.y), size);
+	// logInfo("tryAddRect found pos {} for size {}", "RectPacker", Vec2Int(rect.x, rect.y), size);
 	m_rects[id] = { Vec2Int(rect.x, rect.y), size };
 	return id;
 }

@@ -38,6 +38,7 @@ App::~App() {
 	sdlWindows.clear();
 	rml.reset();
 	MainRenderer::kill();
+	Network::kill();
 }
 
 std::shared_ptr<SdlWindow> App::registerWindow(const std::string& windowName) { return sdlWindows.emplace_back(std::make_shared<SdlWindow>(windowName)); }
@@ -76,7 +77,7 @@ const char* const addLoopTracyName = "appLoop";
 
 void App::runLoop() {
 	logInfo("Starting App loop", "App");
-	Network::checkForUpdates(get().windows[0]->getPopUpManager());
+	Network::get().checkForUpdates(get().windows[0]->getPopUpManager());
 	running = true;
 	while (running) {
 		// do texture updates

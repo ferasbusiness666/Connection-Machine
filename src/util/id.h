@@ -123,7 +123,7 @@ public:
 	using id_type = std::remove_cv_t<IdT>;
 	using rep = typename id_traits<id_type>::rep;
 
-	constexpr IdProvider(rep initialValue) : nextId(initialValue) {}
+	constexpr IdProvider(rep initialValue) : nextId(initialValue), initialValue(initialValue) {}
 
 	constexpr id_type getNewId() {
 		if (unusedIds.empty()) {
@@ -165,7 +165,7 @@ public:
 	}
 	std::vector<id_type> getUsedIds() const {
 		std::vector<id_type> usedIds;
-		for (rep id = 0; id < nextId; ++id) {
+		for (rep id = initialValue; id < nextId; ++id) {
 			if (!unusedIds.contains(id)) {
 				usedIds.push_back(id_type(id));
 			}
@@ -174,6 +174,7 @@ public:
 	}
 private:
 	rep nextId;
+	rep initialValue;
 	std::set<rep> unusedIds;
 };
 

@@ -19,6 +19,29 @@ Position getChunk(Position in) {
 	return in;
 }
 
+const unsigned int maxLaneCountBeforeWireShrink = 8;
+constexpr float WIRE_LINE_WIDTH = 0.07f;
+
+namespace {
+	// Match wireConstants.glsl::LINE_WIDTH to keep CPU/GPU visuals aligned.
+	constexpr float DIRECTION_EPSILON = 1e-5f;
+
+	glm::vec2 computeBusOffset(const glm::vec2& pointA, const glm::vec2& pointB, uint32_t laneCount, uint32_t laneIndex) {
+		// TODO: should handle cases like the colored light where we want the offset to be tangent to the side of the block
+		if (laneCount <= 1) return glm::vec2(0.0f);
+
+		glm::vec2 direction = pointB - pointA;
+		float length = glm::length(direction);
+		if (length < DIRECTION_EPSILON) {
+			return glm::vec2(0.0f);
+		}
+
+		glm::vec2 normal = glm::vec2(-direction.y, direction.x) / length;
+		float centeredIndex = static_cast<float>(laneIndex) - (static_cast<float>(laneCount - 1) * 0.5f);
+		return normal * (centeredIndex * WIRE_LINE_WIDTH * std::min((float)maxLaneCountBeforeWireShrink / (float)laneCount, 1.f));
+	}
+}
+
 // VulkanChunkAllocation
 // =========================================================================================================
 
@@ -36,7 +59,7 @@ VulkanChunkAllocation::VulkanChunkAllocation(
 	// TODO - maybe should use smaller size coordinates with one big offset
 
 	std::vector<Position> positions;
-	std::vector<size_t> indexes;
+	std::vector<size_t> indices;
 
 	// Generate block instances
 	if (blocks.size() > 0) {
@@ -60,19 +83,19 @@ VulkanChunkAllocation::VulkanChunkAllocation(
 			// blocks are added to state array
 			blockStateIndex[block.first] = simulatorIds.size();
 			positions.push_back(block.first);
-			indexes.push_back(simulatorIds.size());
+			indices.push_back(simulatorIds.size());
 			simulatorIds.push_back(simulator_id_t(0));
 		}
 
 		if (evaluator) {
 			std::vector<simulator_id_t> simIds = evaluator->getBlockSimulatorIds(address, positions);
 			for (size_t i = 0; i < simIds.size(); i++) {
-				simulatorIds[indexes[i]] = simIds[i];
+				simulatorIds[indices[i]] = simIds[i];
 			}
 		}
 
 		positions.clear();
-		indexes.clear();
+		indices.clear();
 
 		// upload block vertices
 		numBlockInstances = blockInstances.size();
@@ -83,45 +106,113 @@ VulkanChunkAllocation::VulkanChunkAllocation(
 
 	// Generate wire vertices
 	if (wires.size() > 0) {
-		std::vector<WireInstance> wireInstances;
-		wireInstances.reserve(wires.size());
-		for (const auto& wire : wires) {
+		struct WireSegment {
+			glm::vec2 pointA;
+			glm::vec2 pointB;
+			Position portPosition;
+		};
 
-			// get wire's index in state buffer
-			size_t stateIdx;
-			auto itr = portStateIndex.find(wire.first.first);
-			// check if wire state position is already in the state array
-			if (itr != portStateIndex.end()) {
-				stateIdx = itr->second;
-			} else {
-				// add address to state buffer
-				stateIdx = simulatorIds.size();
-				portStateIndex[wire.first.first] = stateIdx;
-				positions.push_back(wire.first.first);
-				indexes.push_back(stateIdx);
-				simulatorIds.push_back(simulator_id_t(0));
+		std::vector<WireSegment> wireSegments;
+		wireSegments.reserve(wires.size());
+
+		positions.clear();
+		indices.clear();
+		std::vector<uint32_t> laneCounts;
+		laneCounts.reserve(wires.size());
+
+		phmap::flat_hash_map<Position, size_t> portRequestLookup;
+
+		for (const auto& wire : wires) {
+			Position portPosition = wire.first.first;
+			wireSegments.push_back({
+				glm::vec2(wire.second.start.x, wire.second.start.y),
+				glm::vec2(wire.second.end.x, wire.second.end.y),
+				portPosition
+			});
+
+			auto [itr, inserted] = portRequestLookup.emplace(portPosition, positions.size());
+			if (inserted) {
+				positions.push_back(portPosition);
+			}
+		}
+
+		std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> pinSimIds;
+		if (evaluator) {
+			pinSimIds = evaluator->getPinSimulatorIds(address, positions);
+		}
+
+		laneCounts.resize(positions.size(), 1);
+		indices.resize(positions.size());
+
+		for (size_t i = 0; i < positions.size(); i++) {
+			uint32_t laneCount = 1;
+			if (pinSimIds.size() != 0 && std::holds_alternative<std::vector<simulator_id_t>>(pinSimIds[i])) {
+				const std::vector<simulator_id_t>& wireSimIds = std::get<std::vector<simulator_id_t>>(pinSimIds[i]);
+				if (wireSimIds.empty()) {
+					logError("pin simulator ids vector should not be empty. Pin: {}", "VulkanChunkAllocation", positions[i]);
+				} else {
+					laneCount = static_cast<uint32_t>(wireSimIds.size());
+				}
 			}
 
-			WireInstance instance;
-			instance.pointA = glm::vec2(wire.second.start.x, wire.second.start.y);
-			instance.pointB = glm::vec2(wire.second.end.x, wire.second.end.y);
-			instance.stateIndex = stateIdx;
+			size_t baseIndex = simulatorIds.size();
+			laneCounts[i] = laneCount;
+			indices[i] = baseIndex;
+			portStateIndex[positions[i]] = PortStateRange(baseIndex, laneCount);
 
-			wireInstances.push_back(instance);
+			for (uint32_t lane = 0; lane < laneCount; lane++) {
+				simulatorIds.push_back(simulator_id_t(0));
+			}
 		}
 
 		if (evaluator) {
-			std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> simIds = evaluator->getPinSimulatorIds(address, positions);
-			for (size_t i = 0; i < simIds.size(); i++) {
-				// for now, if we get multiple sim ids, just use the first one
-				if (std::holds_alternative<std::vector<simulator_id_t>>(simIds[i])) {
-					auto vec = std::get<std::vector<simulator_id_t>>(simIds[i]);
-					if (!vec.empty()) {
-						simulatorIds[indexes[i]] = vec[0];
+			for (size_t i = 0; i < pinSimIds.size() && i < positions.size(); i++) {
+				size_t baseIndex = indices[i];
+				uint32_t laneCount = laneCounts[i];
+				if (std::holds_alternative<std::vector<simulator_id_t>>(pinSimIds[i])) {
+					const auto& vec = std::get<std::vector<simulator_id_t>>(pinSimIds[i]);
+					for (uint32_t lane = 0; lane < laneCount && lane < vec.size(); lane++) {
+						simulatorIds[baseIndex + lane] = vec[lane];
 					}
 				} else {
-					simulatorIds[indexes[i]] = std::get<simulator_id_t>(simIds[i]);
+					simulatorIds[baseIndex] = std::get<simulator_id_t>(pinSimIds[i]);
 				}
+			}
+		}
+
+		size_t totalWireInstances = 0;
+		for (const WireSegment& segment : wireSegments) {
+			auto lookup = portRequestLookup.find(segment.portPosition);
+			uint32_t laneCount = 1;
+			if (lookup != portRequestLookup.end()) {
+				laneCount = laneCounts[lookup->second];
+			}
+			totalWireInstances += laneCount;
+		}
+
+		std::vector<WireInstance> wireInstances;
+		wireInstances.reserve(totalWireInstances);
+
+		for (const WireSegment& segment : wireSegments) {
+			auto lookup = portRequestLookup.find(segment.portPosition);
+			uint32_t laneCount = 1;
+			size_t baseIndex = 0;
+			if (lookup != portRequestLookup.end()) {
+				laneCount = laneCounts[lookup->second];
+				baseIndex = indices[lookup->second];
+			}
+			if (laneCount == 0) laneCount = 1;
+
+			for (uint32_t lane = 0; lane < laneCount; lane++) {
+				glm::vec2 offset = computeBusOffset(segment.pointA, segment.pointB, laneCount, lane);
+
+				WireInstance instance;
+				instance.pointA = segment.pointA + offset;
+				instance.pointB = segment.pointB + offset;
+				instance.wireWidth = WIRE_LINE_WIDTH * std::min((float)maxLaneCountBeforeWireShrink / (float)laneCount, 1.f);
+				instance.stateIndex = static_cast<uint32_t>(baseIndex + lane);
+
+				wireInstances.push_back(instance);
 			}
 		}
 
@@ -363,18 +454,19 @@ void VulkanChunker::regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDa
 void VulkanChunker::updateSimulatorIds(const std::vector<SimulatorMappingUpdate>& simulatorMappingUpdates) {
 	for (const SimulatorMappingUpdate& simulatorMappingUpdate : simulatorMappingUpdates) {
 		const std::variant<simulator_id_t, std::vector<simulator_id_t>>& simIds = simulatorMappingUpdate.simulatorIds;
-		// for now, if we get multiple sim ids, just use the first one
-		simulator_id_t simulatorId = simulator_id_t(0);
-		if (std::holds_alternative<std::vector<simulator_id_t>>(simulatorMappingUpdate.simulatorIds)) {
-			const std::vector<simulator_id_t>& vec = std::get<std::vector<simulator_id_t>>(simulatorMappingUpdate.simulatorIds);
-			if (!vec.empty()) {
-				simulatorId = vec[0];
-			}
-		} else {
-			simulatorId = std::get<simulator_id_t>(simulatorMappingUpdate.simulatorIds);
-		}
+
 		if (simulatorMappingUpdate.type == SimulatorMappingUpdateType::BLOCK) {
-			auto chunkPos = getChunk(simulatorMappingUpdate.portPosition);
+			simulator_id_t simulatorId = simulator_id_t(0);
+			if (std::holds_alternative<std::vector<simulator_id_t>>(simIds)) {
+				const std::vector<simulator_id_t>& vec = std::get<std::vector<simulator_id_t>>(simIds);
+				if (!vec.empty()) {
+					simulatorId = vec[0];
+				}
+			} else {
+				simulatorId = std::get<simulator_id_t>(simIds);
+			}
+
+			Position chunkPos = getChunk(simulatorMappingUpdate.portPosition);
 			auto chunkIter = chunks.find(chunkPos);
 			if (chunkIter == chunks.end()) continue;
 			std::optional<std::shared_ptr<VulkanChunkAllocation>> vulkanChunkAllocation = chunkIter->second.getAllocation();
@@ -390,9 +482,29 @@ void VulkanChunker::updateSimulatorIds(const std::vector<SimulatorMappingUpdate>
 				if (chunkIter == chunks.end()) continue;
 				std::optional<std::shared_ptr<VulkanChunkAllocation>> vulkanChunkAllocation = chunkIter->second.getAllocation();
 				if (!vulkanChunkAllocation) continue;
-				auto iter = vulkanChunkAllocation.value()->getPortStateIndex().find(simulatorMappingUpdate.portPosition);
-				if (iter != vulkanChunkAllocation.value()->getPortStateIndex().end()) {
-					vulkanChunkAllocation.value()->getStateSimulatorIds()[iter->second] = simulatorId;
+				auto portStateIter = vulkanChunkAllocation.value()->getPortStateIndex().find(simulatorMappingUpdate.portPosition);
+				if (portStateIter == vulkanChunkAllocation.value()->getPortStateIndex().end()) continue;
+
+				const PortStateRange& range = portStateIter->second;
+				if (!range.isValid()) continue;
+
+				std::vector<simulator_id_t>& chunkStateSimulatorIds = vulkanChunkAllocation.value()->getStateSimulatorIds();
+				if (std::holds_alternative<std::vector<simulator_id_t>>(simIds)) {
+					const std::vector<simulator_id_t>& wireSimIds = std::get<std::vector<simulator_id_t>>(simIds);
+					uint32_t laneCount = wireSimIds.size();
+					if (laneCount != range.laneCount) {
+						chunksToUpdate.insert(chunkPos.first);
+					} else {
+						for (uint32_t lane = 0; lane < laneCount; lane++) {
+							chunkStateSimulatorIds[range.baseIndex + lane] = wireSimIds[lane];
+						}
+					}
+				} else {
+					if (1 != range.laneCount) {
+						chunksToUpdate.insert(chunkPos.first);
+					} else {
+						chunkStateSimulatorIds[range.baseIndex] = std::get<simulator_id_t>(simIds);
+					}
 				}
 			}
 		}

@@ -119,9 +119,9 @@ scrollbarvertical {
 	background-color: #3b3b3b;
 }
 
-.connection-list-item:active {
+/* .connection-list-item:active {
 	background-color: #1d1d1d;
-}
+} */
 
 .connection-list-item.selected {
 	background-color: #2e2e2e;
@@ -215,4 +215,3 @@ scrollbarvertical {
 		flex-direction: column;
 	}
 }
-.connection-list-item:active { background-color: #1d1d1d; }
