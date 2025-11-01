@@ -233,7 +233,7 @@ void BlockRenderDataFeeder::putConnectionNipplesOntoImage(const BlockData* block
 			Vec2Int(connection.second.portOffset.dx * (float)scale, connection.second.portOffset.dy * (float)scale)
 		);
 		int laneCount = connection.second.getBitWidth();
-		int nippleSize = std::max(9, std::min(9 * laneCount, 9 * 8));
+		int nippleSize = std::max(11, std::min(11 * laneCount, 11 * 8));
 		img.addCircle(portTexturePos, nippleSize * scale / 256, { 0, 0, 0, 255 });
 	}
 }
@@ -250,7 +250,6 @@ void BlockRenderDataFeeder::createTextureForCustomBlock(const BlockData* blockDa
 
 void BlockRenderDataFeeder::createTextureForBusBlock(const BlockData* blockData, CpuImage& img, int scale) {
 	img.fill({ 0, 0, 0, 0 });
-	int maxRadius = 0;
 	int minY;
 	int maxY;
 	bool first = true;
@@ -260,22 +259,22 @@ void BlockRenderDataFeeder::createTextureForBusBlock(const BlockData* blockData,
 			Vec2Int(connection.second.portOffset.dx * (float)scale, connection.second.portOffset.dy * (float)scale)
 		);
 		int laneCount = connection.second.getBitWidth();
-		int nippleSize = std::max(9, std::min(9 * laneCount, 9 * 8)) * scale / 256;
-		if (nippleSize > maxRadius) maxRadius = nippleSize;
-		int thisMinY = portTexturePos.y - nippleSize;
-		int thisMaxY = portTexturePos.y + nippleSize;
+		int nippleSize = (std::max(9, std::min(9 * laneCount, 9 * 8)) + 4) * scale / 256;
+		int lineSize = std::max(9, std::min(5 * laneCount, 9 * 8))* scale / 256;
+		int thisMinY = portTexturePos.y - lineSize;
+		int thisMaxY = portTexturePos.y + lineSize;
 		if (first || thisMinY < minY) minY = thisMinY;
 		if (first || thisMaxY > maxY) maxY = thisMaxY;
 		first = false;
 		// {img.getSize().x / 2, portTexturePos.y}
-		img.addCircle(portTexturePos, nippleSize, { 76, 76, 76, 255 });
 		int x1 = img.getSize().x / 2;
 		int x2 = portTexturePos.x;
 		img.addRect(
-			{ std::min(x1, x2), portTexturePos.y - nippleSize },
-			{ std::abs(x1 - x2), nippleSize * 2 },
+			{ std::min(x1, x2), portTexturePos.y - lineSize },
+			{ std::abs(x1 - x2), lineSize * 2 },
 			{ 76, 76, 76, 255 }
 		);
+		img.addCircle(portTexturePos, nippleSize, { 0, 0, 0, 255 });
 	}
 
 	// int usingRadius = maxRadius;
