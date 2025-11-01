@@ -156,11 +156,16 @@ BlockTextureId BlockRenderDataFeeder::getBlockTextureId(const BlockData* blockDa
 	if (blockData->getTexturePath().empty()) {
 		// create new block texture
 		int scale = 256;
-		if (blockData->getSize().w * scale > BLOCK_TEXTURE_SIZE || blockData->getSize().h * scale > BLOCK_TEXTURE_SIZE) {
-			if (blockData->getSize().w > blockData->getSize().h) {
-				scale = BLOCK_TEXTURE_SIZE/blockData->getSize().w;
+		int width = blockData->getSize().w * scale;
+		int height = blockData->getSize().h * scale;
+		auto [xPadding, yPadding] = calculatePadding(width, height);
+		int paddedWidth = width + xPadding * 2;
+		int paddedHeight = height + yPadding * 2;
+		if (paddedWidth > BLOCK_TEXTURE_SIZE || paddedHeight > BLOCK_TEXTURE_SIZE) {
+			if (paddedWidth > paddedHeight) {
+				scale = (BLOCK_TEXTURE_SIZE - xPadding * 2) / blockData->getSize().w;
 			} else {
-				scale = BLOCK_TEXTURE_SIZE/blockData->getSize().h;
+				scale = (BLOCK_TEXTURE_SIZE - yPadding * 2) / blockData->getSize().h;
 			}
 		}
 		CpuImage img({ blockData->getSize().w * scale, blockData->getSize().h * scale }, { 0, 0, 0, 255 });
@@ -189,9 +194,7 @@ BlockTextureId BlockRenderDataFeeder::getBlockTextureId(const BlockData* blockDa
 	return blockTextureId;
 }
 
-CpuImage BlockRenderDataFeeder::padTexture(const CpuImage& img) {
-	int width = img.getSize().x;
-	int height = img.getSize().y;
+std::pair<int, int> BlockRenderDataFeeder::calculatePadding(int width, int height) {
 	float xPadding = 1.0f;
 	float heightToWidthRatio = (float)height / (float)width;
 	float yPadding = xPadding * heightToWidthRatio;
@@ -201,6 +204,13 @@ CpuImage BlockRenderDataFeeder::padTexture(const CpuImage& img) {
 	}
 	int xPixelPadding = static_cast<int>(std::round(xPadding));
 	int yPixelPadding = static_cast<int>(std::round(yPadding));
+	return { xPixelPadding, yPixelPadding };
+}
+
+CpuImage BlockRenderDataFeeder::padTexture(const CpuImage& img) {
+	int width = img.getSize().x;
+	int height = img.getSize().y;
+	auto [xPixelPadding, yPixelPadding] = calculatePadding(width, height);
 	Vec2Int newSize = Vec2Int(
 		width + 2 * xPixelPadding,
 		height + 2 * yPixelPadding
@@ -240,7 +250,33 @@ void BlockRenderDataFeeder::createTextureForCustomBlock(const BlockData* blockDa
 
 void BlockRenderDataFeeder::createTextureForBusBlock(const BlockData* blockData, CpuImage& img, int scale) {
 	img.fill({ 0, 0, 0, 0 });
-	putConnectionNipplesOntoImage(blockData, img, scale);
+	int maxRadius = 0;
+	int minY;
+	int maxY;
+	bool first = true;
+	for (const std::pair<connection_end_id_t, BlockData::ConnectionData>& connection : blockData->getConnections()) {
+		Vec2Int portTexturePos = (
+			Vec2Int(connection.second.positionOnBlock.dx * scale, connection.second.positionOnBlock.dy * scale) +
+			Vec2Int(connection.second.portOffset.dx * (float)scale, connection.second.portOffset.dy * (float)scale)
+		);
+		int laneCount = connection.second.getBitWidth();
+		int nippleSize = std::max(9, std::min(9 * laneCount, 9 * 8));
+		if (nippleSize > maxRadius) maxRadius = nippleSize;
+		int thisMinY = portTexturePos.y - nippleSize;
+		int thisMaxY = portTexturePos.y + nippleSize;
+		if (first || thisMinY < minY) minY = thisMinY;
+		if (first || thisMaxY > maxY) maxY = thisMaxY;
+		first = false;
+		img.addLine(portTexturePos, {img.getSize().x / 2, portTexturePos.y}, nippleSize * scale / 256, { 0, 0, 0, 255 });
+	}
+
+	img.addLine(
+		{ img.getSize().x / 2, minY + maxRadius },
+		{ img.getSize().x / 2, maxY - maxRadius },
+		maxRadius * scale / 256,
+		{ 0, 0, 0, 255 },
+		true
+	);
 }
 
 void BlockRenderDataFeeder::doBlockTextureUpdates() {

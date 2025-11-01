@@ -32,6 +32,48 @@ void CpuImage::addRect(Vec2Int pos, Vec2Int size, Pixel color, bool mix) {
 	}
 }
 
+float CpuImage::pointLineDistanceSquared(const Vec2Int& point, const Vec2Int& lineStart, const Vec2Int& lineEnd) {
+	int l2 = lineStart.distanceToSquared(lineEnd);
+	if (l2 == 0) return point.distanceToSquared(lineStart);
+	float t = std::clamp(static_cast<float>((point - lineStart).dot(lineEnd - lineStart)) / l2, 0.0f, 1.0f);
+	Vec2 projection = Vec2(lineEnd - lineStart) * t + lineStart;
+	return projection.distanceToSquared(point);
+}
+
+void CpuImage::addLine(Vec2Int startPos, Vec2Int endPos, unsigned int radius, Pixel color, bool mix) {
+	int minX = std::max(0, std::min(startPos.x, endPos.x) - static_cast<int>(radius));
+	int maxX = std::min(imgSize.x - 1, std::max(startPos.x, endPos.x) + static_cast<int>(radius));
+	int minY = std::max(0, std::min(startPos.y, endPos.y) - static_cast<int>(radius));
+	int maxY = std::min(imgSize.y - 1, std::max(startPos.y, endPos.y) + static_cast<int>(radius));
+	for (int x = minX; x <= maxX; x++) {
+		for (int y = minY; y <= maxY; y++) {
+			Vec2Int point = Vec2Int(x, y);
+			float distSq = pointLineDistanceSquared(point, startPos, endPos);
+			if (distSq > (radius + 1) * (radius + 1)) continue;
+			float alpha = 1.0f;
+			double dist = sqrt(distSq);
+			alpha = static_cast<float>(std::clamp(radius - dist, 0.0, 1.0));
+			Pixel drawColor = color;
+			drawColor.a = static_cast<std::uint8_t>(drawColor.a * alpha);
+			if (point.x < 0 || point.y < 0 || point.x >= imgSize.x || point.y >= imgSize.y) continue;
+			if (mix) {
+				Pixel& imgColor = img[getBufferPos(point)];
+
+				float srcA = drawColor.a / 255.0f;
+				float dstA = imgColor.a / 255.0f;
+				float outA = srcA + dstA * (1.0f - srcA);
+
+				imgColor.r = ((drawColor.r * srcA) + (imgColor.r * dstA * (1.0f - srcA))) / outA;
+				imgColor.g = ((drawColor.g * srcA) + (imgColor.g * dstA * (1.0f - srcA))) / outA;
+				imgColor.b = ((drawColor.b * srcA) + (imgColor.b * dstA * (1.0f - srcA))) / outA;
+				imgColor.a = outA * 255.0f;
+			} else {
+				img[getBufferPos(point)] = drawColor;
+			}
+		}
+	}
+}
+
 void CpuImage::addCircle(Vec2Int pos, double radius, Pixel color, bool antiAlias, bool mix) {
 	int xStart = static_cast<int>(-radius - 1);
 	int xEnd = static_cast<int>(radius + 1);
@@ -45,6 +87,8 @@ void CpuImage::addCircle(Vec2Int pos, double radius, Pixel color, bool antiAlias
 			if (antiAlias) {
 				double dist = sqrt(distSq);
 				alpha = static_cast<float>(std::clamp(radius - dist, 0.0, 1.0));
+			} else {
+				if (distSq > radius * radius) continue;
 			}
 			Pixel drawColor = color;
 			drawColor.a = static_cast<std::uint8_t>(drawColor.a * alpha);
