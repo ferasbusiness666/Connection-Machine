@@ -260,21 +260,32 @@ void BlockRenderDataFeeder::createTextureForBusBlock(const BlockData* blockData,
 			Vec2Int(connection.second.portOffset.dx * (float)scale, connection.second.portOffset.dy * (float)scale)
 		);
 		int laneCount = connection.second.getBitWidth();
-		int nippleSize = std::max(9, std::min(9 * laneCount, 9 * 8));
+		int nippleSize = std::max(9, std::min(9 * laneCount, 9 * 8)) * scale / 256;
 		if (nippleSize > maxRadius) maxRadius = nippleSize;
 		int thisMinY = portTexturePos.y - nippleSize;
 		int thisMaxY = portTexturePos.y + nippleSize;
 		if (first || thisMinY < minY) minY = thisMinY;
 		if (first || thisMaxY > maxY) maxY = thisMaxY;
 		first = false;
-		img.addLine(portTexturePos, {img.getSize().x / 2, portTexturePos.y}, nippleSize * scale / 256, { 0, 0, 0, 255 });
+		// {img.getSize().x / 2, portTexturePos.y}
+		img.addCircle(portTexturePos, nippleSize, { 76, 76, 76, 255 });
+		int x1 = img.getSize().x / 2;
+		int x2 = portTexturePos.x;
+		img.addRect(
+			{ std::min(x1, x2), portTexturePos.y - nippleSize },
+			{ std::abs(x1 - x2), nippleSize * 2 },
+			{ 76, 76, 76, 255 }
+		);
 	}
 
+	// int usingRadius = maxRadius;
+	int usingRadius = 9 * 4;
+
 	img.addLine(
-		{ img.getSize().x / 2, minY + maxRadius },
-		{ img.getSize().x / 2, maxY - maxRadius },
-		maxRadius * scale / 256,
-		{ 0, 0, 0, 255 },
+		{ img.getSize().x / 2, minY + usingRadius },
+		{ img.getSize().x / 2, maxY - usingRadius },
+		usingRadius * scale / 256 + 1,
+		{ 76, 76, 76, 255 },
 		true
 	);
 }
