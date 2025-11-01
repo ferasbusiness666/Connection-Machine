@@ -252,11 +252,19 @@ void BlockDataManager::initializeDefaults() {
 }
 
 BlockType BlockDataManager::getBusBlock(unsigned int bitWidth) {
+	return getBusBlock(bitWidth, 1);
+}
+
+BlockType BlockDataManager::getBusBlock(unsigned int numInputs, unsigned int inputBitwidth) {
 	std::vector<BusConnectionData> busConnections;
-	for (unsigned int i = 0; i < bitWidth; i++) {
-		busConnections.emplace_back(Vector(0, i), std::vector<unsigned int>{ i });
+	for (unsigned int i = 0; i < numInputs; i++) {
+		std::vector<unsigned int> bitConfig;
+		for (unsigned int j = 0; j < inputBitwidth; j++) {
+			bitConfig.push_back(i * inputBitwidth + j);
+		}
+		busConnections.emplace_back(Vector(0, i), bitConfig);
 	}
-	busConnections.emplace_back(Vector(1, 0), bitWidth);
+	busConnections.emplace_back(Vector(1, 0), numInputs * inputBitwidth);
 	return getBusBlock(busConnections);
 }
 

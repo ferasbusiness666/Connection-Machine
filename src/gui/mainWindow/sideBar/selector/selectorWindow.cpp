@@ -56,17 +56,21 @@ SelectorWindow::SelectorWindow(
 			this->toolManagerManager->setBlock(selectedProceduralCircuit->getBlockType(proceduralCircuitParameters));
 		} else if (selectedBus) {
 			Rml::Element* parametersElement = parameterMenu->GetElementById("parameter-menu-parameters");
-			assert(parametersElement->GetNumChildren() == 1);
+			assert(parametersElement->GetNumChildren() == 2);
 			Rml::ElementList elements;
-			parametersElement->GetFirstChild()->GetElementsByClassName(elements, "parameter-input");
-			Rml::ElementFormControlInput* parameterInput = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements[0]);
-			std::string str = parameterInput->GetValue();
+			parametersElement->GetChild(0)->GetElementsByClassName(elements, "parameter-input");
+			Rml::ElementFormControlInput* numInputsInput = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements[0]);
+			elements.clear();
+			parametersElement->GetChild(1)->GetElementsByClassName(elements, "parameter-input");
+			Rml::ElementFormControlInput* inputBitWidthInput = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements[0]);
+			std::string numInputsStr = numInputsInput->GetValue();
+			std::string inputBitWidthStr = inputBitWidthInput->GetValue();
 			try {
-				int value = std::stoi(str);
-
-				this->toolManagerManager->setBlock(this->blockDataManager->getBusBlock(value));
+				int numInputs = std::stoi(numInputsStr);
+				int inputBitWidth = std::stoi(inputBitWidthStr);
+				this->toolManagerManager->setBlock(this->blockDataManager->getBusBlock(numInputs, inputBitWidth));
 			} catch (std::exception const& ex) {
-				logError("Invalid bus bit width  {}. {}", "", str, ex.what());
+				logError("Invalid bus parameters: {} inputs of {} bits each. {}", "", numInputsStr, inputBitWidthStr, ex.what());
 				return;
 			}
 		}
@@ -239,7 +243,8 @@ void SelectorWindow::setupBusParameterMenu() {
 		return;
 	}
 	ProceduralCircuitParameters parameters;
-	parameters.parameters.emplace("Bit Width", 8);
+	parameters.parameters.emplace("Number of Ports", 8);
+	parameters.parameters.emplace("Port Bit Widths", 1);
 	addParametersToParameterMenu(parameters, "Bus");
 }
 
