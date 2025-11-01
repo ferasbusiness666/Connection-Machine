@@ -26,6 +26,8 @@ private:
 	void setupParameterMenu();
 	void setupProceduralCircuitParameterMenu();
 	void setupBusParameterMenu();
+	void addParametersToParameterMenu(const ProceduralCircuitParameters& parameters, const std::string& title);
+	Rml::ElementPtr makeParameterElement(const std::string& name, int defaultValue);
 	void hideParameterMenu();
 
 	void highlightActiveToolInSidebar();
