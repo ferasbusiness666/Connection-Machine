@@ -147,6 +147,7 @@ void Evaluator::edit_removeBlock(
 		logError("Node at position {} not found", "Evaluator::edit_removeBlock", position.toString());
 		return;
 	}
+	circuitNodeToBlockTypeMap.erase(node.value());
 	removeDependentInterCircuitConnections(pauseGuard, node.value());
 	if (node->isIC()) {
 		eval_circuit_id_t icId = node->getEvalCircuitId();
@@ -209,6 +210,7 @@ void Evaluator::edit_placeBlock(
 	}
 	CircuitNode node = CircuitNode::fromMiddle(gateId);
 	evalCircuit->setNode(position, node);
+	circuitNodeToBlockTypeMap[node] = blockType;
 	dirtyBlockAt(position, evalCircuitId);
 	checkToCreateExternalConnections(pauseGuard, evalCircuitId, position);
 }
@@ -286,10 +288,35 @@ void Evaluator::edit_createConnection(
 		return;
 	}
 	EvalConnection connection(outputPoint.value(), inputPoint.value());
+
+	if (!checkIfBitWidthsMatch(connection)) {
+		return;
+	}
+
 	if (!circuitPortDependencies.empty() || !circuitNodeDependencies.empty()) {
 		interCircuitConnections.push_back({ connection, circuitPortDependencies, circuitNodeDependencies });
 	}
 	evalSimulator->makeConnection(pauseGuard, connection);
+}
+
+bool Evaluator::checkIfBitWidthsMatch(
+	const EvalConnection& connection
+) const {
+	CircuitNode outputNode = CircuitNode::fromMiddle(connection.source.gateId);
+	CircuitNode inputNode = CircuitNode::fromMiddle(connection.destination.gateId);
+	if (!circuitNodeToBlockTypeMap.contains(outputNode) || !circuitNodeToBlockTypeMap.contains(inputNode)) {
+		logError("CircuitNode not found in circuitNodeToBlockTypeMap", "Evaluator::checkIfBitWidthsMatch");
+		return false;
+	}
+	BlockType outputBlockType = circuitNodeToBlockTypeMap.at(outputNode);
+	BlockType inputBlockType = circuitNodeToBlockTypeMap.at(inputNode);
+	BlockData* outputBlockData = blockDataManager.getBlockData(outputBlockType);
+	BlockData* inputBlockData = blockDataManager.getBlockData(inputBlockType);
+	connection_end_id_t outputConnectionEndId = connection.source.portId;
+	connection_end_id_t inputConnectionEndId = connection.destination.portId;
+	unsigned int outputBitWidth = outputBlockData->getConnectionBitWidth(outputConnectionEndId);
+	unsigned int inputBitWidth = inputBlockData->getConnectionBitWidth(inputConnectionEndId);
+	return outputBitWidth == inputBitWidth;
 }
 
 void Evaluator::removeDependentInterCircuitConnections(SimPauseGuard& pauseGuard, CircuitPortDependency circuitPortDependency) {
@@ -999,8 +1026,10 @@ void Evaluator::traceOutwardsIC(
 			} else {
 				evalConnection = EvalConnection(targetConnectionPoint, connectionPoint.value());
 			}
-			evalSimulator->makeConnection(pauseGuard, evalConnection);
-			interCircuitConnections.push_back({ evalConnection, circuitPortDependenciesCopy, circuitNodeDependenciesCopy });
+			if (checkIfBitWidthsMatch(evalConnection)) {
+				evalSimulator->makeConnection(pauseGuard, evalConnection);
+				interCircuitConnections.push_back({ evalConnection, circuitPortDependenciesCopy, circuitNodeDependenciesCopy });
+			}
 
 			traceOutwardsIC(
 				pauseGuard,
