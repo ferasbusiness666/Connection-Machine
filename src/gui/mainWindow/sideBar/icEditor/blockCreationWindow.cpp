@@ -74,9 +74,9 @@ BlockCreationWindow::BlockCreationWindow(
 	resetButton->AddEventListener("click", new EventPasser(std::bind(&BlockCreationWindow::resetMenu, this)));
 	// add
 	Rml::Element* addInputConnection = menu->GetElementById("connection-list-add-input");
-	addInputConnection->AddEventListener("click", new EventPasser(std::bind(&BlockCreationWindow::addListItem, this, true)));
+	addInputConnection->AddEventListener("click", new EventPasser([this](Rml::Event&) { this->addListItem(true); }));
 	Rml::Element* addOutputConnection = menu->GetElementById("connection-list-add-output");
-	addOutputConnection->AddEventListener("click", new EventPasser(std::bind(&BlockCreationWindow::addListItem, this, false)));
+	addOutputConnection->AddEventListener("click", new EventPasser([this](Rml::Event&) { this->addListItem(false); }));
 	// texture
 	menu->GetElementById("pick-texture")->AddEventListener("click", new EventPasser([this](Rml::Event& event) {
 		Circuit* circuit = this->mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
@@ -220,7 +220,7 @@ void BlockCreationWindow::updateFromMenu() {
 	BlockData* blockData = circuitManager->getBlockDataManager()->getBlockData(circuitBlockData->getBlockType());
 	std::string name;
 	Size size;
-	std::vector<std::tuple<connection_end_id_t, std::string, bool, Vector, Position>> portsData;
+	std::vector<std::tuple<connection_end_id_t, std::string, bool, Vector, Position, unsigned int>> portsData;
 	try {
 		// we dont update till the end because setting data will cause the UI to update
 		Rml::Element* ele = menu->GetElementById("name-input");
@@ -265,7 +265,12 @@ void BlockCreationWindow::updateFromMenu() {
 			row->GetElementsByClassName(elements, "connection-list-item-pos-y");
 			portBlockPosition.y = std::stoi(rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->GetValue());
 
-			portsData.emplace_back(endId, portName, true, portPositionOnBlock, portBlockPosition);
+			// bitWidth
+			elements.clear();
+			row->GetElementsByClassName(elements, "connection-list-item-bit-width");
+			unsigned int bitWidth = std::stoi(rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->GetValue());
+
+			portsData.emplace_back(endId, portName, true, portPositionOnBlock, portBlockPosition, bitWidth);
 		}
 		for (unsigned int i = 0; i < outputList->GetNumChildren(); i++) {
 			Rml::Element* row = outputList->GetChild(i);
@@ -292,8 +297,12 @@ void BlockCreationWindow::updateFromMenu() {
 			elements.clear();
 			row->GetElementsByClassName(elements, "connection-list-item-pos-y");
 			portBlockPosition.y = std::stoi(rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->GetValue());
+			// bitWidth
+			elements.clear();
+			row->GetElementsByClassName(elements, "connection-list-item-bit-width");
+			unsigned int bitWidth = std::stoi(rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->GetValue());
 
-			portsData.emplace_back(endId, portName, false, portPositionOnBlock, portBlockPosition);
+			portsData.emplace_back(endId, portName, false, portPositionOnBlock, portBlockPosition, bitWidth);
 		}
 
 	} catch (const std::exception& e) {
@@ -314,6 +323,11 @@ void BlockCreationWindow::updateFromMenu() {
 		connection_end_id_t endId = std::get<0>(row);
 		bool portIsInput = std::get<2>(row);
 		Vector portPositionOnBlock = std::get<3>(row);
+		unsigned int bitWidth = std::get<5>(row);
+		if (bitWidth == 0) {
+			logWarning("Can't update block data. Port bit width {} has to be more than 0.", "BlockCreationWindow", bitWidth);
+			return;
+		}
 		if (!portPositionOnBlock.widthInSize(size)) {
 			logWarning("Can't update block data. Port position {} is not on the block {}.", "BlockCreationWindow", portPositionOnBlock.toString(), size.toString());
 			return;
@@ -360,6 +374,7 @@ void BlockCreationWindow::updateFromMenu() {
 		bool portIsInput = std::get<2>(row);
 		Vector portPositionOnBlock = std::get<3>(row);
 		Position portBlockPosition = std::get<4>(row);
+		unsigned int bitWidth = std::get<5>(row);
 		if (blockData->connectionExists(endId)) {
 			if (blockData->isConnectionInput(endId) != portIsInput) blockData->removeConnection(endId);
 		}
@@ -367,6 +382,8 @@ void BlockCreationWindow::updateFromMenu() {
 		if (portIsInput) blockData->setConnectionInput(portPositionOnBlock, endId);
 		else blockData->setConnectionOutput(portPositionOnBlock, endId);
 		if (!portName.empty()) blockData->setConnectionIdName(endId, portName);
+
+		blockData->setConnectionBitConfiguration(endId, bitWidth);
 
 		circuitBlockData->setConnectionIdPosition(endId, portBlockPosition);
 	}
@@ -424,93 +441,26 @@ void BlockCreationWindow::resetMenu() {
 		bool isInputBool = iter.second.portType == BlockData::ConnectionData::INPUT;
 		Vector positionOnBlock = iter.second.positionOnBlock;
 		std::optional<std::string> connectionName = blockData->getConnectionIdToName(endId);
-		if (!connectionName) connectionName = "";
 		const Position* positionPtr = circuitBlockData->getConnectionIdToPosition(endId);
-		Rml::ElementPtr row = document->CreateElement("div");
-		// name
-		Rml::XMLAttributes nameAttributes;
-		nameAttributes["type"] = "text";
-		nameAttributes["maxlength"] = "7";
-		nameAttributes["size"] = "7";
-		Rml::ElementPtr name = Rml::Factory::InstanceElement(document, "input", "input", nameAttributes);
-		Rml::ElementFormControlInput* nameElement = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(name.get());
-		nameElement->SetValue(*connectionName);
-		// positionOnBlock
-		Rml::XMLAttributes positionOnBlockAttributes;
-		positionOnBlockAttributes["type"] = "text";
-		positionOnBlockAttributes["maxlength"] = "3";
-		positionOnBlockAttributes["size"] = "2";
-		Rml::ElementPtr positionOnBlockX = Rml::Factory::InstanceElement(document, "input", "input", positionOnBlockAttributes);
-		Rml::ElementPtr positionOnBlockY = Rml::Factory::InstanceElement(document, "input", "input", positionOnBlockAttributes);
-		Rml::ElementFormControlInput* positionOnBlockXElement = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(positionOnBlockX.get());
-		Rml::ElementFormControlInput* positionOnBlockYElement = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(positionOnBlockY.get());
-		positionOnBlockXElement->SetValue(std::to_string(positionOnBlock.dx));
-		positionOnBlockYElement->SetValue(std::to_string(positionOnBlock.dy));
-		// position
-		Rml::XMLAttributes positionAttributes;
-		positionAttributes["type"] = "text";
-		positionAttributes["maxlength"] = "6";
-		positionAttributes["size"] = "5";
-		Rml::ElementPtr positionX = Rml::Factory::InstanceElement(document, "input", "input", positionAttributes);
-		Rml::ElementPtr positionY = Rml::Factory::InstanceElement(document, "input", "input", positionAttributes);
-		Rml::ElementFormControlInput* positionXElement = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(positionX.get());
-		Rml::ElementFormControlInput* positionYElement = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(positionY.get());
-		if (positionPtr) {
-			positionXElement->SetValue(std::to_string(positionPtr->x));
-			positionYElement->SetValue(std::to_string(positionPtr->y));
-		} else {
-			positionXElement->SetValue("N/A");
-			positionYElement->SetValue("N/A");
-		}
-		Rml::ElementPtr setPositionButton = document->CreateElement("button");
-		setPositionButton->AppendChild(std::move(document->CreateTextNode("S")));
-		setPositionButton->AddEventListener(Rml::EventId::Click, new EventPasser([this, endId](Rml::Event& event) {
-			auto tool = std::dynamic_pointer_cast<PortSelector>(
-				mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getToolManager().selectTool(std::make_shared<PortSelector>())
-			);
-			if (tool) {
-				tool->setPort(endId, [this, endId](Position position) {
-					Rml::Element* row = document->GetElementById("ConnectionListItem Id: " + std::to_string(endId));
-					Rml::ElementList elements;
-					row->GetElementsByClassName(elements, "connection-list-item-pos-x");
-					rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->SetValue(std::to_string(position.x));
-					elements.clear();
-					row->GetElementsByClassName(elements, "connection-list-item-pos-y");
-					rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->SetValue(std::to_string(position.y));
-				});
-			}
-		}));
-		// add children and set classes
-		row->AppendChild(std::move(name))->SetClass("connection-list-item-name", true);
-		row->AppendChild(std::move(positionOnBlockX))->SetClass("connection-list-item-on-block-x", true);
-		row->AppendChild(std::move(positionOnBlockY))->SetClass("connection-list-item-on-block-y", true);
-		// Flex wrap breaker to force subsequent elements (block/global position + buttons) onto next line without pushing Port Y down
-		{
-			Rml::ElementPtr breaker = document->CreateElement("div");
-			row->AppendChild(std::move(breaker))->SetClass("connection-break", true);
-		}
-		row->AppendChild(std::move(positionX))->SetClass("connection-list-item-pos-x", true);
-		row->AppendChild(std::move(positionY))->SetClass("connection-list-item-pos-y", true);
-		row->AppendChild(std::move(setPositionButton))->SetClass("set-position-button", true);
-		// remove row button
-		Rml::ElementPtr remove = document->CreateElement("button");
-		remove->AppendChild(std::move(document->CreateTextNode("-")));
-		Rml::Element* removePtr = row->AppendChild(std::move(remove));
-		removePtr->SetClass("remove-connection-button", true);
-		// other data
-		row->SetClass("connection-list-item", true);
-		row->SetId("ConnectionListItem Id: " + std::to_string(endId));
-		if (isInputBool) {
-			Rml::Element* rowPtr = inputList->AppendChild(std::move(row));
-			removePtr->AddEventListener(Rml::EventId::Click, new EventPasser([this, rowPtr](Rml::Event& event) { inputList->RemoveChild(rowPtr); }));
-		} else {
-			Rml::Element* rowPtr = outputList->AppendChild(std::move(row));
-			removePtr->AddEventListener(Rml::EventId::Click, new EventPasser([this, rowPtr](Rml::Event& event) { outputList->RemoveChild(rowPtr); }));
-		}
+		addListItem(
+			isInputBool,
+			endId.get(),
+			connectionName.value_or(""),
+			positionOnBlock,
+			positionPtr ? std::optional<Position>(*positionPtr) : std::nullopt,
+			iter.second.getBitWidth()
+		);
 	}
 }
 
-void BlockCreationWindow::addListItem(bool isInput) {
+void BlockCreationWindow::addListItem(
+	bool isInput,
+	unsigned int endId,
+	const std::string& nameValue,
+	Vector posOnBlockValue,
+	std::optional<Position> posOfBlockValue,
+	unsigned int bitWidthValue
+) {
 	Circuit* circuit = mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 	if (!circuit) return;
 	circuit_id_t id = circuit->getCircuitId();
@@ -519,13 +469,14 @@ void BlockCreationWindow::addListItem(bool isInput) {
 	const BlockData* blockData = circuitManager->getBlockDataManager()->getBlockData(circuitBlockData->getBlockType());
 	if (!blockData) return;
 
-	unsigned int endId = 0;
-	while (true) {
-		while (blockData->connectionExists(connection_end_id_t(endId))) ++endId;
-		if (inputList->GetElementById("ConnectionListItem Id: " + std::to_string(endId)) == nullptr &&
-			outputList->GetElementById("ConnectionListItem Id: " + std::to_string(endId)) == nullptr)
-			break;
-		++endId;
+	if (endId == 0) {
+		while (true) {
+			while (blockData->connectionExists(connection_end_id_t(endId))) ++endId;
+			if (inputList->GetElementById("ConnectionListItem Id: " + std::to_string(endId)) == nullptr &&
+				outputList->GetElementById("ConnectionListItem Id: " + std::to_string(endId)) == nullptr)
+				break;
+			++endId;
+		}
 	}
 
 	Rml::ElementPtr row = document->CreateElement("div");
@@ -535,8 +486,8 @@ void BlockCreationWindow::addListItem(bool isInput) {
 	nameAttributes["maxlength"] = "7";
 	nameAttributes["size"] = "7";
 	Rml::ElementPtr name = Rml::Factory::InstanceElement(document, "input", "input", nameAttributes);
-	Rml::ElementFormControlInput* nameElement = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(name.get());
-	nameElement->SetValue("");
+	Rml::ElementFormControlInput* nameFormControl = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(name.get());
+	nameFormControl->SetValue(nameValue);
 	// positionOnBlock
 	Rml::XMLAttributes positionOnBlockAttributes;
 	positionOnBlockAttributes["type"] = "text";
@@ -544,21 +495,34 @@ void BlockCreationWindow::addListItem(bool isInput) {
 	positionOnBlockAttributes["size"] = "2";
 	Rml::ElementPtr positionOnBlockX = Rml::Factory::InstanceElement(document, "input", "input", positionOnBlockAttributes);
 	Rml::ElementPtr positionOnBlockY = Rml::Factory::InstanceElement(document, "input", "input", positionOnBlockAttributes);
-	Rml::ElementFormControlInput* positionOnBlockXElement = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(positionOnBlockX.get());
-	Rml::ElementFormControlInput* positionOnBlockYElement = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(positionOnBlockY.get());
-	positionOnBlockXElement->SetValue(std::to_string(0));
-	positionOnBlockYElement->SetValue(std::to_string(0));
-	// position
+	Rml::ElementFormControlInput* positionOnBlockXFormControl = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(positionOnBlockX.get());
+	Rml::ElementFormControlInput* positionOnBlockYFormControl = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(positionOnBlockY.get());
+	positionOnBlockXFormControl->SetValue(std::to_string(posOnBlockValue.dx));
+	positionOnBlockYFormControl->SetValue(std::to_string(posOnBlockValue.dy));
+	// positioy
 	Rml::XMLAttributes positionAttributes;
 	positionAttributes["type"] = "text";
 	positionAttributes["maxlength"] = "6";
 	positionAttributes["size"] = "5";
 	Rml::ElementPtr positionX = Rml::Factory::InstanceElement(document, "input", "input", positionAttributes);
 	Rml::ElementPtr positionY = Rml::Factory::InstanceElement(document, "input", "input", positionAttributes);
-	Rml::ElementFormControlInput* positionXElement = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(positionX.get());
-	Rml::ElementFormControlInput* positionYElement = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(positionY.get());
-	positionXElement->SetValue("N/A");
-	positionYElement->SetValue("N/A");
+	Rml::ElementFormControlInput* positionXFormControl = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(positionX.get());
+	Rml::ElementFormControlInput* positionYFormControl = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(positionY.get());
+	if (posOfBlockValue.has_value()) {
+		positionXFormControl->SetValue(std::to_string(posOfBlockValue->x));
+		positionYFormControl->SetValue(std::to_string(posOfBlockValue->y));
+	} else {
+		positionXFormControl->SetValue("N/A");
+		positionYFormControl->SetValue("N/A");
+	}
+	// bit width
+	Rml::XMLAttributes bitWidthAttributes;
+	bitWidthAttributes["type"] = "text";
+	bitWidthAttributes["maxlength"] = "2";
+	bitWidthAttributes["size"] = "4";
+	Rml::ElementPtr bitWidth = Rml::Factory::InstanceElement(document, "input", "input", positionAttributes);
+	Rml::ElementFormControlInput* bitWidthFormControl = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(bitWidth.get());
+	bitWidthFormControl->SetValue(std::to_string(bitWidthValue));
 
 	Rml::ElementPtr setPositionButton = document->CreateElement("button");
 	setPositionButton->AppendChild(std::move(document->CreateTextNode("S")));
@@ -579,33 +543,37 @@ void BlockCreationWindow::addListItem(bool isInput) {
 			});
 		}
 	}));
+
+	row->SetClass("connection-list-item", true);
+	row->SetId("ConnectionListItem Id: " + std::to_string(endId));
 	// add children and set classes
-	row->AppendChild(std::move(name))->SetClass("connection-list-item-name", true);
-	row->AppendChild(std::move(positionOnBlockX))->SetClass("connection-list-item-on-block-x", true);
-	row->AppendChild(std::move(positionOnBlockY))->SetClass("connection-list-item-on-block-y", true);
-	// Flex break element ensures second line starts after Port Y
-	{
-		Rml::ElementPtr breaker = document->CreateElement("div");
-		row->AppendChild(std::move(breaker))->SetClass("connection-break", true);
-	}
-	row->AppendChild(std::move(positionX))->SetClass("connection-list-item-pos-x", true);
-	row->AppendChild(std::move(positionY))->SetClass("connection-list-item-pos-y", true);
-	row->AppendChild(std::move(setPositionButton))->SetClass("set-position-button", true);
+	Rml::Element* rowInRow = row->AppendChild(document->CreateElement("div"));
+	rowInRow->AppendChild(std::move(document->CreateElement("h1")))->AppendChild(std::move(document->CreateTextNode("Name")));
+	rowInRow->AppendChild(std::move(name))->SetClass("connection-list-item-name", true);
+	rowInRow = row->AppendChild(document->CreateElement("div"));
+	rowInRow->AppendChild(std::move(document->CreateElement("h1")))->AppendChild(std::move(document->CreateTextNode("Port Pos")));
+	rowInRow->AppendChild(std::move(positionOnBlockX))->SetClass("connection-list-item-on-block-x", true);
+	rowInRow->AppendChild(std::move(positionOnBlockY))->SetClass("connection-list-item-on-block-y", true);
+	rowInRow = row->AppendChild(document->CreateElement("div"));
+	rowInRow->AppendChild(std::move(document->CreateElement("h1")))->AppendChild(std::move(document->CreateTextNode("Block Pos")));
+	rowInRow->AppendChild(std::move(positionX))->SetClass("connection-list-item-pos-x", true);
+	rowInRow->AppendChild(std::move(positionY))->SetClass("connection-list-item-pos-y", true);
+	rowInRow->AppendChild(std::move(setPositionButton))->SetClass("set-position-button", true);
+	rowInRow = row->AppendChild(document->CreateElement("div"));
+	rowInRow->AppendChild(std::move(document->CreateElement("h1")))->AppendChild(std::move(document->CreateTextNode("Bit width")));
+	rowInRow->AppendChild(std::move(bitWidth))->SetClass("connection-list-item-bit-width", true);
 	// remove row button
 	Rml::ElementPtr remove = document->CreateElement("button");
 	remove->AppendChild(std::move(document->CreateTextNode("-")));
-	Rml::Element* removePtr = row->AppendChild(std::move(remove));
-	removePtr->SetClass("remove-connection-button", true);
-	// other data
-	row->SetClass("connection-list-item", true);
-	row->SetId("ConnectionListItem Id: " + std::to_string(endId));
+	remove->SetClass("remove-connection-button", true);
 	if (isInput) {
 		Rml::Element* rowPtr = inputList->AppendChild(std::move(row));
-		removePtr->AddEventListener(Rml::EventId::Click, new EventPasser([this, rowPtr](Rml::Event& event) { inputList->RemoveChild(rowPtr); }));
+		remove->AddEventListener(Rml::EventId::Click, new EventPasser([this, rowPtr](Rml::Event& event) { inputList->RemoveChild(rowPtr); }));
 	} else {
 		Rml::Element* rowPtr = outputList->AppendChild(std::move(row));
-		removePtr->AddEventListener(Rml::EventId::Click, new EventPasser([this, rowPtr](Rml::Event& event) { outputList->RemoveChild(rowPtr); }));
+		remove->AddEventListener(Rml::EventId::Click, new EventPasser([this, rowPtr](Rml::Event& event) { outputList->RemoveChild(rowPtr); }));
 	}
+	rowInRow->AppendChild(std::move(remove));
 }
 
 void BlockCreationWindow::makePaths(std::vector<std::vector<std::string>>& paths, std::vector<std::string>& path, const EvalAddressTree& addressTree) {

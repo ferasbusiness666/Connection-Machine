@@ -23,7 +23,7 @@ public:
 	void resetMenu();
 
 private:
-	void addListItem(bool isInput);
+	void addListItem(bool isInput, unsigned int endId = 0, const std::string& nameValue = "", Vector posOnBlockValue = Vector(), std::optional<Position> posOfBlockValue = std::nullopt, unsigned int bitWidthValue = 1);
 	void updateSelected(std::string string);
 	void makePaths(std::vector<std::vector<std::string>>& paths, std::vector<std::string>& path, const EvalAddressTree& addressTree);
 
