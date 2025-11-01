@@ -309,13 +309,25 @@ bool Evaluator::checkIfBitWidthsMatch(
 		return false;
 	}
 	BlockType outputBlockType = circuitNodeToBlockTypeMap.at(outputNode);
+	unsigned int outputBitWidth;
+	if (outputBlockType == BlockType::SWITCH || outputBlockType == BlockType::BUTTON || outputBlockType == BlockType::TICK_BUTTON) {
+		outputBitWidth = 1;
+	} else {
+		BlockData* outputBlockData = blockDataManager.getBlockData(outputBlockType);
+		connection_end_id_t outputConnectionEndId = connection.source.portId;
+		outputBitWidth = outputBlockData->getConnectionBitWidth(outputConnectionEndId);
+	}
+
 	BlockType inputBlockType = circuitNodeToBlockTypeMap.at(inputNode);
-	BlockData* outputBlockData = blockDataManager.getBlockData(outputBlockType);
-	BlockData* inputBlockData = blockDataManager.getBlockData(inputBlockType);
-	connection_end_id_t outputConnectionEndId = connection.source.portId;
-	connection_end_id_t inputConnectionEndId = connection.destination.portId;
-	unsigned int outputBitWidth = outputBlockData->getConnectionBitWidth(outputConnectionEndId);
-	unsigned int inputBitWidth = inputBlockData->getConnectionBitWidth(inputConnectionEndId);
+	unsigned int inputBitWidth;
+	if (inputBlockType == BlockType::LIGHT) {
+		inputBitWidth = 1;
+	} else{
+		BlockData* inputBlockData = blockDataManager.getBlockData(inputBlockType);
+		connection_end_id_t inputConnectionEndId = connection.destination.portId;
+		inputBitWidth = inputBlockData->getConnectionBitWidth(inputConnectionEndId);
+	}
+
 	return outputBitWidth == inputBitWidth;
 }
 
