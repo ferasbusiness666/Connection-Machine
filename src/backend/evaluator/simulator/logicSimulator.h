@@ -46,6 +46,9 @@ public:
 
 	const std::vector<simulator_id_t> getOutputs(simulator_id_t simId);
 
+	bool stepBack();
+	bool stepForward();
+
 private:
 	EvalConfig& evalConfig;
 	std::thread simulationThread;
@@ -58,6 +61,24 @@ private:
 
 	IdVector<simulator_id_t, logic_state_t> statesA;
 	IdVector<simulator_id_t, logic_state_t> statesB;
+	std::array<IdVector<simulator_id_t, logic_state_t>, 1024> statesReplay;
+	int replayHead = 0;
+	int replayTail = 0;
+	bool viewingReplay = false;
+	int stateView = 0;
+	inline void advanceReplayHead() {
+		replayHead = (replayHead + 1) % statesReplay.size();
+		if (replayHead == replayTail) {
+			replayTail = (replayTail + 1) % statesReplay.size();
+		}
+		viewingReplay = false;
+	}
+	inline void invalidateReplay() {
+		replayTail = replayHead;
+		viewingReplay = false;
+	}
+
+	logic_state_t getStateUnlocked(simulator_id_t id) const;
 
 	mutable std::shared_mutex statesAMutex;
 	std::mutex statesBMutex;
@@ -98,6 +119,7 @@ private:
 	static void execConstantReset(void* jobInstruction);
 	static void execCopySelfOutput(void* jobInstruction);
 	static void execPortsToInt(void* jobInstruction);
+	static void saveReplayStates(void* jobInstruction);
 
 	void tickANDGates(void* jobInstruction) {
 		auto* ji = static_cast<JobInstruction*>(jobInstruction);
@@ -212,6 +234,9 @@ private:
 		if (statesA.size() <= id) {
 			statesA.resizeWithOffset(id, 1, logic_state_t::UNDEFINED);
 			statesB.resizeWithOffset(id, 1, logic_state_t::UNDEFINED);
+			for (IdVector<simulator_id_t, logic_state_t>& replayStates : statesReplay) {
+				replayStates.resizeWithOffset(id, 1, logic_state_t::UNDEFINED);
+			}
 		}
 	}
 

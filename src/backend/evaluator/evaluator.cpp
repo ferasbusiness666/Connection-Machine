@@ -1260,4 +1260,18 @@ void Evaluator::waitForSprintComplete() {
 	}
 }
 
+void Evaluator::stepBack() {
+	setPause(true);
+	bool success = evalSimulator->stepBack();
+	// TODO: give user feedback if can't step back further
+}
+
+void Evaluator::stepForward() {
+	setPause(true);
+	bool success = evalSimulator->stepForward();
+	if (!success) {
+		tickStep();
+	}
+}
+
 double Evaluator::getRealTickrate() const { return evalSimulator->getAverageTickrate(); }

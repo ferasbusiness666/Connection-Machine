@@ -55,6 +55,12 @@ public:
 	inline double getAverageTickrate() const {
 		return gateSubstituter.getAverageTickrate();
 	}
+	inline bool stepBack() {
+		return gateSubstituter.stepBack();
+	}
+	inline bool stepForward() {
+		return gateSubstituter.stepForward();
+	}
 private:
 	GateSubstituter gateSubstituter;
 };

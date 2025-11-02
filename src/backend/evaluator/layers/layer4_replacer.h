@@ -114,6 +114,12 @@ public:
 	inline double getAverageTickrate() const {
 		return busInterfacePassthrough.getAverageTickrate();
 	}
+	inline bool stepBack() {
+		return busInterfacePassthrough.stepBack();
+	}
+	inline bool stepForward() {
+		return busInterfacePassthrough.stepForward();
+	}
 
 private:
 	BusInterfacePassthrough busInterfacePassthrough;

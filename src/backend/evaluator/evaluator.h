@@ -63,7 +63,9 @@ public:
 		evalConfig.addSprint(nTicks);
 		waitForSprintComplete();
 	}
-	void tickStep() { tickStep (1); }
+	void tickStep() { tickStep(1); }
+	void stepBack();
+	void stepForward();
 	void setRealistic(bool realistic) { evalConfig.setRealistic(realistic); }
 	bool isRealistic() const { return evalConfig.isRealistic(); }
 	void setTickrate(double tickrate) { evalConfig.setTargetTickrate(tickrate); }

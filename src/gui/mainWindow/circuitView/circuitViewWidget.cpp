@@ -101,9 +101,16 @@ CircuitViewWidget::CircuitViewWidget(
 		}
 	);
 	keybindHandler.addListener(
-		"Keybinds/Simulation/Step",
+		"Keybinds/Simulation/Step Forward",
 		[this]() {
-			circuitView->getEvaluator()->tickStep();
+			circuitView->getEvaluator()->stepForward();
+			this->mainWindow->getSimControlsManager()->update();
+		}
+	);
+	keybindHandler.addListener(
+		"Keybinds/Simulation/Step Back",
+		[this]() {
+			circuitView->getEvaluator()->stepBack();
 			this->mainWindow->getSimControlsManager()->update();
 		}
 	);

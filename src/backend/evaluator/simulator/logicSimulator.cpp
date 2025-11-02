@@ -145,6 +145,7 @@ inline void LogicSimulator::tickOnce() {
 
 	threadPool.resetAndLoad(jobs);
 	threadPool.waitForCompletion(true);
+	advanceReplayHead();
 
 	for (auto& gate : junctions) gate.tick(statesB);
 	std::unique_lock lkCurEx(statesAMutex);
@@ -174,6 +175,9 @@ void LogicSimulator::processPendingStateChanges() {
 }
 
 void LogicSimulator::setState(simulator_id_t id, logic_state_t st) {
+	if (viewingReplay) {
+		return;
+	}
 	// we don't want to freeze up if the mutexes are locked, so we'll only set the state if we can successfully lock. otherwise, we'll wait until the next tick to set the states.
 	std::unique_lock lkB(statesBMutex, std::try_to_lock);
 	std::unique_lock lkA(statesAMutex, std::try_to_lock);
@@ -195,24 +199,30 @@ void LogicSimulator::setState(simulator_id_t id, logic_state_t st) {
 
 logic_state_t LogicSimulator::getState(simulator_id_t id) const {
 	std::shared_lock lk(statesAMutex);
-	return statesA[id];
+	return getStateUnlocked(id);
 }
 
 std::vector<logic_state_t> LogicSimulator::getStates(const std::vector<simulator_id_t>& ids) const {
 	std::vector<logic_state_t> result(ids.size());
 	std::shared_lock lk(statesAMutex);
 	for (size_t i = 0; i < ids.size(); ++i) {
-		simulator_id_t id = ids[i];
-		if (id < statesA.size()) {
-			result[i] = statesA[id];
-		} else {
-			result[i] = logic_state_t::UNDEFINED;
-		}
+		result[i] = getStateUnlocked(ids[i]);
 	}
 	return result;
 }
 
+logic_state_t LogicSimulator::getStateUnlocked(simulator_id_t id) const {
+	if (id >= statesA.size()) {
+		return logic_state_t::UNDEFINED;
+	}
+	if (viewingReplay) {
+		return statesReplay[stateView][id];
+	}
+	return statesA[id];
+}
+
 simulator_id_t LogicSimulator::addGate(const BlockType blockType) {
+	invalidateReplay();
 	simulator_id_t simulatorId;
 
 	switch (blockType) {
@@ -429,6 +439,7 @@ simulator_id_t LogicSimulator::addGate(const BlockType blockType) {
 }
 
 void LogicSimulator::removeGate(simulator_id_t simulatorId) {
+	invalidateReplay();
 	auto locationIt = gateLocations.find(simulatorId);
 	if (locationIt == gateLocations.end()) {
 		logError("Cannot remove gate: not found " + std::to_string(simulatorId), "LogicSimulator::removeGate");
@@ -500,6 +511,7 @@ void LogicSimulator::removeGate(simulator_id_t simulatorId) {
 }
 
 void LogicSimulator::makeConnection(simulator_id_t sourceId, connection_end_id_t sourcePort, simulator_id_t destinationId, connection_end_id_t destinationPort) {
+	invalidateReplay();
 	std::optional<simulator_id_t> actualSourceId = getOutputPortId(sourceId, sourcePort);
 
 	if (!actualSourceId.has_value()) {
@@ -511,6 +523,7 @@ void LogicSimulator::makeConnection(simulator_id_t sourceId, connection_end_id_t
 }
 
 void LogicSimulator::removeConnection(simulator_id_t sourceId, connection_end_id_t sourcePort, simulator_id_t destinationId, connection_end_id_t destinationPort) {
+	invalidateReplay();
 	std::optional<simulator_id_t> actualSourceId = getOutputPortId(sourceId, sourcePort);
 	if (!actualSourceId.has_value()) {
 		logError("Cannot resolve actual source ID for disconnection", "LogicSimulator::removeConnection");
@@ -843,6 +856,10 @@ void LogicSimulator::regenerateJobs() {
 		JobInstruction* ji = makeJI(i, std::min(i + batch, portsToIntGates.size()));
 		allJobs.push_back(ThreadPool::Job{ &LogicSimulator::execPortsToInt, ji });
 	}
+	for (size_t i = 0; i < statesA.size().get(); i += batch) {
+		JobInstruction* ji = makeJI(i, std::min(i + batch, static_cast<size_t>(statesA.size().get())));
+		allJobs.push_back(ThreadPool::Job{ &LogicSimulator::saveReplayStates, ji });
+	}
 	unsigned int threadCount = min(allJobs.size(), evalConfig.getMaxThreadCount());
 	if (threadCount == 0 && allJobs.size() != 0) { threadCount = 1; }
 	jobs.clear();
@@ -900,4 +917,38 @@ void LogicSimulator::execCopySelfOutput(void* jobInstruction) {
 void LogicSimulator::execPortsToInt(void* jobInstruction) {
 	auto* ji = static_cast<JobInstruction*>(jobInstruction);
 	for (size_t i = ji->start; i < ji->end; ++i) ji->self->portsToIntGates[i].tick(ji->self->statesA, ji->self->statesB);
+}
+void LogicSimulator::saveReplayStates(void* jobInstruction) {
+	auto* ji = static_cast<JobInstruction*>(jobInstruction);
+	IdVector<simulator_id_t, logic_state_t>& copyDestination = ji->self->statesReplay[ji->self->replayHead];
+	for (size_t i = ji->start; i < ji->end; ++i) {
+		copyDestination[simulator_id_t(i)] = ji->self->statesA[simulator_id_t(i)];
+	}
+}
+
+bool LogicSimulator::stepBack() {
+	if (!viewingReplay) {
+		if (replayHead == replayTail) {
+			return false;
+		}
+		viewingReplay = true;
+		stateView = (replayHead - 1) % statesReplay.size();
+		return true;
+	}
+	if (stateView == replayTail) {
+		return false;
+	}
+	stateView = (stateView - 1) % statesReplay.size();
+	return true;
+}
+
+bool LogicSimulator::stepForward() {
+	if (!viewingReplay) {
+		return false;
+	}
+	stateView = (stateView + 1) % statesReplay.size();
+	if (stateView == replayHead) {
+		viewingReplay = false;
+	}
+	return true;
 }
