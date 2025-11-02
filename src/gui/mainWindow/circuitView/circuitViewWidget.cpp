@@ -94,6 +94,16 @@ CircuitViewWidget::CircuitViewWidget(
 		[this]() { load(); }
 	);
 	keybindHandler.addListener(
+		"Keybinds/Simulation/Start Stop",
+		[this]() {
+			this->mainWindow->getSimControlsManager()->toggleSimulation();
+		}
+	);
+	keybindHandler.addListener(
+		"Keybinds/Simulation/Step",
+		[this]() { circuitView->getEvaluator()->tickStep(); }
+	);
+	keybindHandler.addListener(
 		"Keybinds/Editing/Copy",
 		[this]() { circuitView->getEventRegister().doEvent(Event("Copy")); }
 	);
