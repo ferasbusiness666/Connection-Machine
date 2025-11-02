@@ -120,6 +120,9 @@ public:
 	inline bool stepForward() {
 		return busInterfacePassthrough.stepForward();
 	}
+	inline bool isViewingReplay() const {
+		return busInterfacePassthrough.isViewingReplay();
+	}
 
 private:
 	BusInterfacePassthrough busInterfacePassthrough;

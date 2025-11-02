@@ -1274,4 +1274,8 @@ void Evaluator::stepForward() {
 	}
 }
 
+bool Evaluator::isViewingReplay() const {
+	return evalSimulator->isViewingReplay();
+}
+
 double Evaluator::getRealTickrate() const { return evalSimulator->getAverageTickrate(); }

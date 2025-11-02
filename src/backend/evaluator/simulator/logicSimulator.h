@@ -48,6 +48,9 @@ public:
 
 	bool stepBack();
 	bool stepForward();
+	inline bool isViewingReplay() const {
+		return viewingReplay;
+	}
 
 private:
 	EvalConfig& evalConfig;

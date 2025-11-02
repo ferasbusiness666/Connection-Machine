@@ -197,6 +197,9 @@ public:
 		SimPauseGuard pauseGuard(simulator);
 		return simulator.stepForward();
 	}
+	inline bool isViewingReplay() const {
+		return simulator.isViewingReplay();
+	}
 
 private:
 	LogicSimulator simulator;
