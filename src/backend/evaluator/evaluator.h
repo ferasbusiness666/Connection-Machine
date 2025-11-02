@@ -148,14 +148,18 @@ private:
 
 	std::optional<connection_end_id_t> getPortId(const circuit_id_t circuitId, const Position blockPosition, const Position portPosition, Direction direction) const;
 	std::optional<connection_end_id_t> getPortId(const BlockContainer* blockContainer, const Position blockPosition, const Position portPosition, Direction direction) const;
-	std::optional<EvalConnectionPoint> getConnectionPoint(const eval_circuit_id_t evalCircuitId, const Position portPosition, Direction direction) const;
-	std::optional<EvalConnectionPoint> getConnectionPoint(const eval_circuit_id_t evalCircuitId, const BlockContainer* blockContainer, const Position portPosition, Direction direction) const;
+	std::optional<EvalConnectionPoint> getConnectionPoint(
+		const eval_circuit_id_t evalCircuitId,
+		const Position portPosition,
+		Direction direction
+	) const;
 	std::optional<EvalConnectionPoint> getConnectionPoint(
 		const eval_circuit_id_t evalCircuitId,
 		const Position portPosition,
 		Direction direction,
 		std::set<CircuitPortDependency>& circuitPortDependencies,
 		std::set<CircuitNode>& circuitNodeDependencies,
+		std::set<EvalPosition>& visitedEvalPositions,
 		bool isInterCircuit
 	) const;
 
@@ -168,7 +172,8 @@ private:
 		Direction direction,
 		const EvalConnectionPoint& targetConnectionPoint,
 		std::set<CircuitPortDependency>& circuitPortDependencies,
-		std::set<CircuitNode>& circuitNodeDependencies
+		std::set<CircuitNode>& circuitNodeDependencies,
+		std::set<EvalPosition>& visitedEvalPositions
 	);
 	std::vector<simulator_id_t> dirtySimulatorIds;
 	std::vector<middle_id_t> dirtyMiddleIds;
