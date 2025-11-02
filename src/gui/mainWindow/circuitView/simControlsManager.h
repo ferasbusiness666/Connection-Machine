@@ -13,12 +13,12 @@ class SimControlsManager {
 public:
 	SimControlsManager(Rml::ElementDocument* document, std::shared_ptr<CircuitViewWidget> circuitViewWidget, DataUpdateEventManager* dataUpdateEventManager);
 	void update();
+
+private:
 	void toggleSimulation();
 	void setRealistic();
 	void limitSpeed();
 	void setTPS();
-
-private:
 
 	bool doSetTPS = false;
 

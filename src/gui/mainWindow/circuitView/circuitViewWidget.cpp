@@ -96,12 +96,16 @@ CircuitViewWidget::CircuitViewWidget(
 	keybindHandler.addListener(
 		"Keybinds/Simulation/Start Stop",
 		[this]() {
-			this->mainWindow->getSimControlsManager()->toggleSimulation();
+			circuitView->getEvaluator()->togglePause();
+			this->mainWindow->getSimControlsManager()->update();
 		}
 	);
 	keybindHandler.addListener(
 		"Keybinds/Simulation/Step",
-		[this]() { circuitView->getEvaluator()->tickStep(); }
+		[this]() {
+			circuitView->getEvaluator()->tickStep();
+			this->mainWindow->getSimControlsManager()->update();
+		}
 	);
 	keybindHandler.addListener(
 		"Keybinds/Editing/Copy",

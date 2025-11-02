@@ -16,7 +16,7 @@ void registerSettings() {
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/Open", Keybind(Keybind::KeyId::KI_O, Keybind::KeyMod::KM_CTRL));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/New", Keybind(Keybind::KeyId::KI_N, Keybind::KeyMod::KM_CTRL));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Simulation/Start Stop", Keybind(Keybind::KeyId::KI_SPACE));
-	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Simulation/Step", Keybind(Keybind::KeyId::KI_OEM_6)); // ] key
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Simulation/Step", Keybind(Keybind::KeyId::KI_RIGHT));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Undo", Keybind(Keybind::KeyId::KI_Z, Keybind::KeyMod::KM_CTRL));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Redo", Keybind(Keybind::KeyId::KI_Z, Keybind::KeyMod::KM_CTRL | Keybind::KeyMod::KM_SHIFT));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Copy", Keybind(Keybind::KeyId::KI_C, Keybind::KeyMod::KM_CTRL));
