@@ -3,47 +3,47 @@ Circuit: "JK Flip Flop"
 UUID: 19975e43-7bf0-4be5-ae6d-384abf2a9be9
 size: 2x3
 ports:
-	(IN, 1, (8, -3), <0, 1>, "CLK", 1)
-	(IN, 2, (2, -2), <0, 2>, "K", 1)
-	(OUT, 3, (13, -4), <1, 0>, "Q", 1)
-	(IN, 4, (2, -4), <0, 0>, "J", 1)
-	(OUT, 5, (13, -2), <1, 2>, "Q'", 1)
+	(OUT, 5, (13, -2), <1, 2>, <0.900000, 0.500000>, "Q'", 1)
+	(IN, 4, (2, -4), <0, 0>, <0.100000, 0.500000>, "J", 1)
+	(OUT, 3, (13, -4), <1, 0>, <0.900000, 0.500000>, "Q", 1)
+	(IN, 2, (2, -2), <0, 2>, <0.100000, 0.500000>, "K", 1)
+	(IN, 1, (8, -3), <0, 1>, <0.100000, 0.500000>, "CLK", 1)
 blockId 20 AND 5 -5 NINETY_FLIPPED
 	(connId:0) (8 1) (11 1)
-	(connId:1) (19 0) (12 0)
+	(connId:1) (12 0) (19 0)
 blockId 19 OR 7 -4 ZERO
 	(connId:1) (9 0)
-	(connId:0) (17 1) (5 1) (20 1)
+	(connId:0) (5 1) (17 1) (20 1)
 blockId 18 NOR 11 -2 ZERO
 	(connId:0) (11 1) (16 1)
-	(connId:1) (11 0) (3 0) (17 0)
+	(connId:1) (17 0) (3 0) (11 0)
 blockId 17 AND 5 -1 TWO_SEVENTY
-	(connId:1) (19 0) (12 0)
+	(connId:1) (12 0) (19 0)
 	(connId:0) (6 0) (4 0) (18 1)
 blockId 16 NOR 10 -2 ZERO
 	(connId:0) (1 0) (14 1)
 	(connId:1) (18 0)
 blockId 15 NAND 9 -4 ZERO
 	(connId:0) (9 1) (14 1)
-	(connId:1) (10 0) (14 0)
+	(connId:1) (14 0) (10 0)
 blockId 14 NAND 9 -2 ZERO
-	(connId:1) (15 0) (16 0)
+	(connId:1) (16 0) (15 0)
 	(connId:0) (13 1) (15 1)
 blockId 13 NAND 8 -2 ZERO
 	(connId:0) (1 0) (12 1)
 	(connId:1) (14 0)
 blockId 12 NOR 7 -2 ZERO
 	(connId:1) (13 0)
-	(connId:0) (17 1) (5 1) (20 1)
+	(connId:0) (5 1) (17 1) (20 1)
 blockId 11 NOR 11 -4 ZERO
-	(connId:1) (18 0) (20 0) (2 0)
+	(connId:1) (2 0) (20 0) (18 0)
 	(connId:0) (10 1) (18 1)
 blockId 10 NOR 10 -4 ZERO
 	(connId:1) (11 0)
 	(connId:0) (1 0) (15 1)
 blockId 9 NAND 8 -4 ZERO
-	(connId:0) (1 0) (19 1)
 	(connId:1) (15 0)
+	(connId:0) (1 0) (19 1)
 blockId 8 NOR 4 -5 ZERO
 	(connId:0) (4 0) (6 0)
 	(connId:1) (20 0)
@@ -51,15 +51,15 @@ blockId 7 NOT 4 -3 ZERO
 	(connId:0) (6 0)
 	(connId:1) (5 0)
 blockId 6 SWITCH 2 -2 ZERO
-	(connId:0) (17 0) (7 0) (8 0)
+	(connId:0) (8 0) (7 0) (17 0)
 blockId 5 AND 5 -3 ZERO
-	(connId:1) (19 0) (12 0)
+	(connId:1) (12 0) (19 0)
 	(connId:0) (4 0) (7 1)
 blockId 4 SWITCH 2 -4 ZERO
-	(connId:0) (17 0) (5 0) (8 0)
+	(connId:0) (8 0) (5 0) (17 0)
 blockId 3 LIGHT 13 -2 ZERO
 	(connId:0) (18 1)
 blockId 2 LIGHT 13 -4 ZERO
 	(connId:0) (11 1)
 blockId 1 SWITCH 8 -3 ZERO
-	(connId:0) (10 0) (9 0) (16 0) (13 0)
+	(connId:0) (13 0) (16 0) (9 0) (10 0)

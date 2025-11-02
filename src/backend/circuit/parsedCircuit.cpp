@@ -17,10 +17,11 @@ void ParsedCircuit::addConnectionPort(
 	connection_end_id_t connectionEndId,
 	std::optional<Position> positionOfBlock,
 	Vector positionOnBlock,
+	FVector portOffset,
 	const std::string& portName,
 	unsigned int bitWidth
 ) {
-	ports.emplace_back(isInput, connectionEndId, positionOfBlock, positionOnBlock, portName, bitWidth);
+	ports.emplace_back(isInput, connectionEndId, positionOfBlock, positionOnBlock, portOffset, portName, bitWidth);
 	valid = false;
 }
 // void ParsedCircuit::addConnectionPort(

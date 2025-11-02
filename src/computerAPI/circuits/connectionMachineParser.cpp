@@ -169,6 +169,7 @@ std::vector<circuit_id_t> ConnectionMachineParser::load(const std::string& path)
 					unsigned int endId;
 					std::optional<Position> positionOfBlock;
 					coordinate_t vecX, vecY;
+					f_coordinate_t offsetX, offsetY;
 					std::string portName = "";
 					inputFile >> token >> endId >> cToken >> cToken;
 					if (cToken == 'N') {
@@ -178,7 +179,7 @@ std::vector<circuit_id_t> ConnectionMachineParser::load(const std::string& path)
 						inputFile >> posX >> cToken >> posY >> cToken;
 						positionOfBlock = Position(posX, posY);
 					}
-					inputFile >> cToken >> cToken >> vecX >> cToken >> vecY >> cToken >> cToken >> std::quoted(portName) >> cToken >> cToken;
+					inputFile >> cToken >> cToken >> vecX >> cToken >> vecY >> cToken >> cToken >> cToken >> offsetX >> cToken >> offsetY >> cToken >> cToken >> std::quoted(portName) >> cToken >> cToken;
 					unsigned int bitWidth = 1;
 					if (cToken == '[') {
 						logError("IC cant have array of bits as input bitWidth");
@@ -204,7 +205,8 @@ std::vector<circuit_id_t> ConnectionMachineParser::load(const std::string& path)
 							bitWidth = 1;
 						}
 					}
-					currentParsedCircuit->addConnectionPort(token == "IN,", connection_end_id_t(endId), *positionOfBlock, Vector(vecX, vecY), portName, bitWidth);
+					inputFile >> cToken;
+					currentParsedCircuit->addConnectionPort(token == "IN,", connection_end_id_t(endId), *positionOfBlock, Vector(vecX, vecY), FVector(offsetX, offsetY), portName, bitWidth);
 				}
 			}
 		} else if (token == "UUID:") {
@@ -428,7 +430,7 @@ bool ConnectionMachineParser::save(const CircuitFileManager::FileData& fileData,
 				outputFile << "\t(" << (pair.second.portType == BlockData::ConnectionData::PortType::INPUT ? "IN, " : "OUT, ") << std::to_string(pair.first) << ", ";
 				if (position) outputFile << fmt::to_string(*position);
 				else outputFile<< "NONE";
-				outputFile << ", " << pair.second.positionOnBlock.toString() << ", \"" << *name << "\", " << std::to_string(pair.second.getBitWidth()) << ")\n";
+				outputFile << ", " << pair.second.positionOnBlock.toString() << ", " << pair.second.portOffset.toString() << ", \"" << *name << "\", " << std::to_string(pair.second.getBitWidth()) << ")\n";
 			}
 		}
 

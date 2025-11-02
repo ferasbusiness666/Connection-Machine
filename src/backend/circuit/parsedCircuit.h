@@ -48,9 +48,10 @@ public:
 			connection_end_id_t connectionEndId,
 			std::optional<Position> positionOfBlock,
 			Vector positionOnBlock,
+			FVector portOffset,
 			const std::string& portName = "",
 			unsigned int bitWidth = 1
-		) : isInput(isInput), connectionEndId(connectionEndId), positionOfBlock(positionOfBlock), positionOnBlock(positionOnBlock), portName(portName), bitWidth(bitWidth) { }
+		) : isInput(isInput), connectionEndId(connectionEndId), positionOfBlock(positionOfBlock), positionOnBlock(positionOnBlock), portOffset(portOffset), portName(portName), bitWidth(bitWidth) { }
 		// ConnectionPort(
 		// 	bool isInput,
 		// 	connection_end_id_t connectionEndId,
@@ -60,6 +61,7 @@ public:
 		bool isInput;
 		connection_end_id_t connectionEndId;
 		Vector positionOnBlock;
+		FVector portOffset = FVector(0.5f, 0.5f);
 		block_id_t internalBlockId = 0;
 		std::optional<Position> positionOfBlock = std::nullopt;
 		connection_end_id_t internalBlockConnectionEndId = connection_end_id_t(0);
@@ -80,6 +82,7 @@ public:
 		connection_end_id_t connectionEndId,
 		std::optional<Position> positionOfBlock,
 		Vector positionOnBlock,
+		FVector portOffset,
 		const std::string& portName = "",
 		unsigned int bitWidth = 1
 	);

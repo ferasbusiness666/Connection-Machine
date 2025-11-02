@@ -129,6 +129,7 @@ circuit_id_t CircuitManager::createNewCircuit(const ParsedCircuit& parsedCircuit
 			circuitBlockData->setConnectionIdPosition(port.connectionEndId, port.positionOfBlock.value());
 		}
 		blockData->setConnectionBitConfiguration(port.connectionEndId, port.bitWidth);
+		blockData->setConnnectionPortOffset(port.connectionEndId, port.portOffset);
 	}
 
 	dataUpdateEventManager->sendEvent("blockDataUpdate");
