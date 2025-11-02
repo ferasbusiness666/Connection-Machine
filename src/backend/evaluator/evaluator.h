@@ -175,6 +175,7 @@ private:
 	std::unordered_set<EvalPosition> dirtyNodes;
 	std::unordered_multimap<simulator_id_t, EvalPosition> pinSimulatorIdToEvalPositionMap;
 	std::unordered_map<middle_id_t, EvalPosition> middleIdToEvalPositionMap;
+	std::unordered_map<CircuitNode, BlockType> circuitNodeToBlockTypeMap;
 
 	std::map<void*, SimulatorMappingUpdateListener> listeners;
 	void sendSimulatorMappingUpdate(eval_circuit_id_t targetEvalCircuitId, const std::vector<SimulatorMappingUpdate>& updates) {
@@ -187,6 +188,9 @@ private:
 
 	void processDirtyNodes();
 	void dirtyBlockAt(Position position, eval_circuit_id_t evalCircuitId);
+	bool checkIfBitWidthsMatch(
+		const EvalConnection& connection
+	) const;
 
 	mutable std::shared_mutex simMutex;
 };

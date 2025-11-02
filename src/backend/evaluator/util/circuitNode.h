@@ -35,4 +35,13 @@ private:
 	unsigned int id_and_type;
 };
 
+namespace std {
+	template<>
+	struct hash<CircuitNode> {
+		size_t operator()(const CircuitNode& node) const noexcept {
+			return std::hash<unsigned int>()(node.isIC() ? (node.getEvalCircuitId().get() << 1) | 1 : (node.getMiddleId().get() << 1));
+		}
+	};
+}
+
 #endif /* circuitNode_h */
