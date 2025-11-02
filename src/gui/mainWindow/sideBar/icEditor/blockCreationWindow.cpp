@@ -212,6 +212,8 @@ BlockCreationWindow::BlockCreationWindow(
 	resetMenu();
 }
 
+constexpr float edgeDistanceIC = 0.4f;
+
 void BlockCreationWindow::updateFromMenu() {
 	Circuit* circuit = mainWindow->getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 	if (!circuit || !(circuit->isEditable())) return;
@@ -220,7 +222,7 @@ void BlockCreationWindow::updateFromMenu() {
 	BlockData* blockData = circuitManager->getBlockDataManager()->getBlockData(circuitBlockData->getBlockType());
 	std::string name;
 	Size size;
-	std::vector<std::tuple<connection_end_id_t, std::string, bool, Vector, Position, unsigned int>> portsData;
+	std::vector<std::tuple<connection_end_id_t, std::string, bool, Vector, FVector, Position, unsigned int>> portsData;
 	try {
 		// we dont update till the end because setting data will cause the UI to update
 		Rml::Element* ele = menu->GetElementById("name-input");
@@ -256,6 +258,16 @@ void BlockCreationWindow::updateFromMenu() {
 			elements.clear();
 			row->GetElementsByClassName(elements, "connection-list-item-on-block-y");
 			portPositionOnBlock.dy = std::stoi(rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->GetValue());
+			elements.clear();
+			row->GetElementsByClassName(elements, "connection-list-item-switch-port-offset");
+			char portOffset = rmlui_dynamic_cast<Rml::ElementText*>(elements.front()->GetChild(0))->GetText().front();
+			FVector portOffsetVec = FVector(0.5f, 0.5f);
+			switch (portOffset) {
+			case 'L': portOffsetVec = FVector(0.5f - edgeDistanceIC, 0.5f/* - sideShift*/); break;
+			case 'R': portOffsetVec = FVector(0.5f + edgeDistanceIC, 0.5f/* + sideShift*/); break;
+			case 'U': portOffsetVec = FVector(0.5f/* - sideShift*/, 0.5f - edgeDistanceIC); break;
+			case 'D': portOffsetVec = FVector(0.5f/* + sideShift*/, 0.5f + edgeDistanceIC); break;
+			}
 			// get port block position
 			Position portBlockPosition;
 			elements.clear();
@@ -270,7 +282,7 @@ void BlockCreationWindow::updateFromMenu() {
 			row->GetElementsByClassName(elements, "connection-list-item-bit-width");
 			unsigned int bitWidth = std::stoi(rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->GetValue());
 
-			portsData.emplace_back(endId, portName, true, portPositionOnBlock, portBlockPosition, bitWidth);
+			portsData.emplace_back(endId, portName, true, portPositionOnBlock, portOffsetVec, portBlockPosition, bitWidth);
 		}
 		for (unsigned int i = 0; i < outputList->GetNumChildren(); i++) {
 			Rml::Element* row = outputList->GetChild(i);
@@ -289,6 +301,16 @@ void BlockCreationWindow::updateFromMenu() {
 			elements.clear();
 			row->GetElementsByClassName(elements, "connection-list-item-on-block-y");
 			portPositionOnBlock.dy = std::stoi(rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->GetValue());
+			elements.clear();
+			row->GetElementsByClassName(elements, "connection-list-item-switch-port-offset");
+			char portOffset = rmlui_dynamic_cast<Rml::ElementText*>(elements.front()->GetChild(0))->GetText().front();
+			FVector portOffsetVec = FVector(0.5f, 0.5f);
+			switch (portOffset) {
+			case 'L': portOffsetVec = FVector(0.5f - edgeDistanceIC, 0.5f/* - sideShift*/); break;
+			case 'R': portOffsetVec = FVector(0.5f + edgeDistanceIC, 0.5f/* + sideShift*/); break;
+			case 'U': portOffsetVec = FVector(0.5f/* - sideShift*/, 0.5f - edgeDistanceIC); break;
+			case 'D': portOffsetVec = FVector(0.5f/* + sideShift*/, 0.5f + edgeDistanceIC); break;
+			}
 			// get port block position
 			Position portBlockPosition;
 			elements.clear();
@@ -302,7 +324,7 @@ void BlockCreationWindow::updateFromMenu() {
 			row->GetElementsByClassName(elements, "connection-list-item-bit-width");
 			unsigned int bitWidth = std::stoi(rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->GetValue());
 
-			portsData.emplace_back(endId, portName, false, portPositionOnBlock, portBlockPosition, bitWidth);
+			portsData.emplace_back(endId, portName, false, portPositionOnBlock, portOffsetVec, portBlockPosition, bitWidth);
 		}
 
 	} catch (const std::exception& e) {
@@ -323,7 +345,7 @@ void BlockCreationWindow::updateFromMenu() {
 		connection_end_id_t endId = std::get<0>(row);
 		bool portIsInput = std::get<2>(row);
 		Vector portPositionOnBlock = std::get<3>(row);
-		unsigned int bitWidth = std::get<5>(row);
+		unsigned int bitWidth = std::get<6>(row);
 		if (bitWidth == 0) {
 			logWarning("Can't update block data. Port bit width {} has to be more than 0.", "BlockCreationWindow", bitWidth);
 			return;
@@ -373,8 +395,9 @@ void BlockCreationWindow::updateFromMenu() {
 		std::string portName = std::get<1>(row);
 		bool portIsInput = std::get<2>(row);
 		Vector portPositionOnBlock = std::get<3>(row);
-		Position portBlockPosition = std::get<4>(row);
-		unsigned int bitWidth = std::get<5>(row);
+		FVector portOffset = std::get<4>(row);
+		Position portBlockPosition = std::get<5>(row);
+		unsigned int bitWidth = std::get<6>(row);
 		if (blockData->connectionExists(endId)) {
 			if (blockData->isConnectionInput(endId) != portIsInput) blockData->removeConnection(endId);
 		}
@@ -384,6 +407,7 @@ void BlockCreationWindow::updateFromMenu() {
 		if (!portName.empty()) blockData->setConnectionIdName(endId, portName);
 
 		blockData->setConnectionBitConfiguration(endId, bitWidth);
+		blockData->setConnnectionPortOffset(endId, portOffset);
 
 		circuitBlockData->setConnectionIdPosition(endId, portBlockPosition);
 	}
@@ -442,11 +466,17 @@ void BlockCreationWindow::resetMenu() {
 		Vector positionOnBlock = iter.second.positionOnBlock;
 		std::optional<std::string> connectionName = blockData->getConnectionIdToName(endId);
 		const Position* positionPtr = circuitBlockData->getConnectionIdToPosition(endId);
+		char portOffset = 'C';
+		if (iter.second.portOffset == FVector(0.5f - edgeDistanceIC, 0.5f/* - sideShift*/)) portOffset = 'L';
+		else if (iter.second.portOffset == FVector(0.5f + edgeDistanceIC, 0.5f/* + sideShift*/)) portOffset = 'R';
+		else if (iter.second.portOffset == FVector(0.5f/* - sideShift*/, 0.5f - edgeDistanceIC)) portOffset = 'U';
+		else if (iter.second.portOffset == FVector(0.5f/* + sideShift*/, 0.5f + edgeDistanceIC)) portOffset = 'D';
 		addListItem(
 			isInputBool,
 			endId.get(),
 			connectionName.value_or(""),
 			positionOnBlock,
+			portOffset,
 			positionPtr ? std::optional<Position>(*positionPtr) : std::nullopt,
 			iter.second.getBitWidth()
 		);
@@ -458,6 +488,7 @@ void BlockCreationWindow::addListItem(
 	unsigned int endId,
 	const std::string& nameValue,
 	Vector posOnBlockValue,
+	char portOffsetValue,
 	std::optional<Position> posOfBlockValue,
 	unsigned int bitWidthValue
 ) {
@@ -499,7 +530,26 @@ void BlockCreationWindow::addListItem(
 	Rml::ElementFormControlInput* positionOnBlockYFormControl = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(positionOnBlockY.get());
 	positionOnBlockXFormControl->SetValue(std::to_string(posOnBlockValue.dx));
 	positionOnBlockYFormControl->SetValue(std::to_string(posOnBlockValue.dy));
-	// positioy
+	Rml::ElementPtr switchPortOffset = document->CreateElement("button");
+	switchPortOffset->AppendChild(std::move(document->CreateTextNode(std::string(1, portOffsetValue))));
+	switchPortOffset->AddEventListener(Rml::EventId::Click, new EventPasser([this, endId](Rml::Event& event) {
+		Rml::Element* row = document->GetElementById("ConnectionListItem Id: " + std::to_string(endId));
+		if (row == nullptr) return;
+		Rml::ElementList elements;
+		row->GetElementsByClassName(elements, "connection-list-item-switch-port-offset");
+		Rml::ElementText* textElement = rmlui_dynamic_cast<Rml::ElementText*>(elements.front()->GetChild(0));
+		if (!textElement) return;
+		char portOffset = textElement->GetText().front();
+		switch (portOffset) {
+		case 'C': portOffset = 'L'; break;
+		case 'L': portOffset = 'R'; break;
+		case 'R': portOffset = 'U'; break;
+		case 'U': portOffset = 'D'; break;
+		case 'D': portOffset = 'C'; break;
+		}
+		textElement->SetText(std::string(1, portOffset));
+	}));
+	// position
 	Rml::XMLAttributes positionAttributes;
 	positionAttributes["type"] = "text";
 	positionAttributes["maxlength"] = "6";
@@ -554,6 +604,7 @@ void BlockCreationWindow::addListItem(
 	rowInRow->AppendChild(std::move(document->CreateElement("h1")))->AppendChild(std::move(document->CreateTextNode("Port Pos")));
 	rowInRow->AppendChild(std::move(positionOnBlockX))->SetClass("connection-list-item-on-block-x", true);
 	rowInRow->AppendChild(std::move(positionOnBlockY))->SetClass("connection-list-item-on-block-y", true);
+	rowInRow->AppendChild(std::move(switchPortOffset))->SetClass("connection-list-item-switch-port-offset", true);
 	rowInRow = row->AppendChild(document->CreateElement("div"));
 	rowInRow->AppendChild(std::move(document->CreateElement("h1")))->AppendChild(std::move(document->CreateTextNode("Block Pos")));
 	rowInRow->AppendChild(std::move(positionX))->SetClass("connection-list-item-pos-x", true);
