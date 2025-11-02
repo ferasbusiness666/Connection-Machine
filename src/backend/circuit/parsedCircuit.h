@@ -46,15 +46,25 @@ public:
 		ConnectionPort(
 			bool isInput,
 			connection_end_id_t connectionEndId,
+			std::optional<Position> positionOfBlock,
 			Vector positionOnBlock,
-			const std::string& portName = ""
-		) : isInput(isInput), connectionEndId(connectionEndId), positionOnBlock(positionOnBlock), portName(portName) { }
+			const std::string& portName = "",
+			unsigned int bitWidth = 1
+		) : isInput(isInput), connectionEndId(connectionEndId), positionOfBlock(positionOfBlock), positionOnBlock(positionOnBlock), portName(portName), bitWidth(bitWidth) { }
+		// ConnectionPort(
+		// 	bool isInput,
+		// 	connection_end_id_t connectionEndId,
+		// 	Vector positionOnBlock,
+		// 	const std::string& portName = ""
+		// ) : isInput(isInput), connectionEndId(connectionEndId), positionOnBlock(positionOnBlock), portName(portName) { }
 		bool isInput;
 		connection_end_id_t connectionEndId;
 		Vector positionOnBlock;
 		block_id_t internalBlockId = 0;
+		std::optional<Position> positionOfBlock = std::nullopt;
 		connection_end_id_t internalBlockConnectionEndId = connection_end_id_t(0);
 		std::string portName = "";
+		unsigned int bitWidth = 1;
 	};
 
 	void addConnectionPort(
@@ -68,9 +78,17 @@ public:
 	void addConnectionPort(
 		bool isInput,
 		connection_end_id_t connectionEndId,
+		std::optional<Position> positionOfBlock,
 		Vector positionOnBlock,
-		const std::string& portName = ""
+		const std::string& portName = "",
+		unsigned int bitWidth = 1
 	);
+	// void addConnectionPort(
+	// 	bool isInput,
+	// 	connection_end_id_t connectionEndId,
+	// 	Vector positionOnBlock,
+	// 	const std::string& portName = ""
+	// );
 	const std::vector<ConnectionPort>& getConnectionPorts() const { return ports; }
 
 	void addBlock(block_id_t id, FPosition pos, Orientation orientation, BlockType type);
