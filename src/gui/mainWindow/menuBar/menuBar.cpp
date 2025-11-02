@@ -28,6 +28,8 @@ void MenuBar::initialize(Rml::Element* element) {
 void MenuBar::triggerEvent(const std::string& name) {
 	if (name == "setting") {
 		settingsWindow->toggleVisibility();
+	} else if (name == "feedback") {
+		window->getPopUpManager().addFeedbackPopup();
 	} else if (name == "file-new") {
 		window->getActiveCircuitViewWidget()->newCircuit();
 	} else if (name == "file-open") {

@@ -6,20 +6,46 @@
 #include "gui/helper/saveCallback.h"
 #include "computerAPI/directoryManager.h"
 #include "app.h"
+#include "network/network.h"
 
 #include <RmlUi/Debugger.h>
 
 #include <SDL3/SDL.h>
 
-void PopUpManager::addOptionsPopUp(const std::string& message, const std::vector<std::pair<std::string, std::function<void()>>>& options, bool blocking) {
+void PopUpManager::addOptionsPopUp(const std::string& message, const std::optional<std::string>& smallMessage, const std::vector<std::pair<std::string, std::function<void()>>>& options, bool blocking) {
 	std::pair<Rml::Element*, std::function<void()>> popUpData = createPopUp(blocking);
 	Rml::Element* popUpRoot = popUpData.first;
 	Rml::ElementList windowList;
 	popUpRoot->GetElementsByClassName(windowList, "pop-up-window");
 	Rml::Element* window = windowList.front();
-	Rml::Element* text = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("span"));
-	text->SetInnerRML(message);
-	text->SetClass("pop-up-text", true);
+	// Rml::Element* text = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("span"));
+	// text->SetInnerRML(message);
+	// text->SetClass("pop-up-text", true);
+	// split message into multiple lines at \n
+	Rml::Element* textContainer = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
+	textContainer->SetClass("pop-up-text-container", true);
+	size_t start = 0;
+	while (start < message.size()) {
+		size_t end = message.find('\n', start);
+		if (end == std::string::npos) end = message.size();
+		std::string line = message.substr(start, end - start);
+		Rml::Element* lineElement = textContainer->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
+		lineElement->SetInnerRML(line);
+		lineElement->SetClass("pop-up-text-line", true);
+		start = end + 1;
+	}
+	if (smallMessage.has_value()) {
+		start = 0;
+		while (start < smallMessage->size()) {
+			size_t end = smallMessage->find('\n', start);
+			if (end == std::string::npos) end = smallMessage->size();
+			std::string line = smallMessage->substr(start, end - start);
+			Rml::Element* lineElement = textContainer->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
+			lineElement->SetInnerRML(line);
+			lineElement->SetClass("pop-up-text-small-line", true);
+			start = end + 1;
+		}
+	}
 	Rml::Element* actionsElement = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("span"));
 	actionsElement->SetClass("pop-up-actions", true);
 	for (const auto& option : options) {
@@ -117,7 +143,7 @@ void PopUpManager::savePopUp(const std::string& circuitUUID) {
 
 void PopUpManager::saveAsPopUp(const std::string& circuitUUID) {
 	static const SDL_DialogFileFilter filters[] = {
-		{ "Circuit Files",  ".cir" }
+		{ "Circuit Files", "cir" }
 	};
 	std::pair<CircuitFileManager*, std::string>* data = new std::pair<CircuitFileManager*, std::string>(&mainWindow->getEnvironment()->getCircuitFileManager(), circuitUUID);
 	SDL_ShowSaveFileDialog(SaveCallback, data, nullptr, filters, 1, nullptr);
@@ -135,7 +161,7 @@ void set_invisible(Rml::Element* element, bool invisible){
 			element->GetChild(i)->SetClass("invisible",false);
 		}
 	}
-	
+
 }
 
 void PopUpManager::aboutConnectionMachine() {
@@ -191,31 +217,31 @@ void PopUpManager::addFeedbackPopup() { //feature request, bug report, feature c
     if (windowList.empty()) return;
     Rml::Element* window = windowList.front();
 
-    
+
 	Rml::Element* title = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("p"));
     title->SetInnerRML("Please give us any feedback!");
     title->SetClass("popup-title", true);
 
 	Rml::ElementPtr el_ptr = Rml::Factory::InstanceElement(
 	    window, "select", "select", Rml::XMLAttributes());
-	
+
 	Rml::Element* el = el_ptr.get();
-	
+
 	auto* dropdown = dynamic_cast<Rml::ElementFormControlSelect*>(el);
 	if (!dropdown)
-	    return; 
-	
+	    return;
+
 	dropdown->SetClass("popup-dropdown", true);
 	dropdown->SetClass("surface-pop", true);
 	dropdown->SetAttribute("id", "feedback_select");
 	dropdown->SetAttribute("style", "width: 160px; height: 20px; background-color:#303030;");
-	
+
 	int feedback1 = dropdown->Add("Feedback", "feedback");
 	int feedback2 = dropdown->Add("Bug Report", "bug");
 	int feedback3 = dropdown->Add("Feature Request", "request");
 	int feedback4 = dropdown->Add("Feature Complaint", "complaint");
 	dropdown->SetSelection(0);
-	
+
 	window->AppendChild(std::move(el_ptr));
 	Rml::Element* BugReportContainerText = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
 	Rml::Element* BugReportContainer = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
@@ -245,17 +271,17 @@ void PopUpManager::addFeedbackPopup() { //feature request, bug report, feature c
 					window->SetClass("pop-up-window-blocked-bug-report", false);
 				}
 			}
-	        
+
 	    }
 	));
-	
+
 	BugReportContainerText->SetClass("bug-report-container-text", true);
 	BugReportContainerText->SetAttribute(
 	    "style",
 	    "display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 10px;"
 	);
-	
-	
+
+
 	BugReportContainer->SetClass("bug-report-container", true);
 	BugReportContainer->SetAttribute(
 	    "style",
@@ -284,7 +310,7 @@ void PopUpManager::addFeedbackPopup() { //feature request, bug report, feature c
 	checkbox5->SetAttribute("type","checkbox");
 	set_invisible(BugReportContainer,true);
 	set_invisible(BugReportContainerText,true);
-	
+
 	// Rml::Element* StepsToReproduceBugtitle = BugReportContainer->AppendChild(mainWindow->getRmlDocument()->CreateElement("p"));
 	// StepsToReproduceBugtitle->SetInnerRML("Steps to reproduce bug:");
 
@@ -302,7 +328,7 @@ void PopUpManager::addFeedbackPopup() { //feature request, bug report, feature c
 	// 		} else {
 	// 			StepsToReproduceBugtextarea->SetInnerRML("Enter Here.");
 	// 		}
-			
+
 	//     }
 	// ));
 	// StepsToReproduceBugtextarea->AddEventListener(Rml::EventId::Keyup, new EventPasser(
@@ -330,7 +356,7 @@ void PopUpManager::addFeedbackPopup() { //feature request, bug report, feature c
 			} else {
 				textarea->SetInnerRML("Enter Here.");
 			}
-			
+
 	    }
 	));
 	textarea->AddEventListener(Rml::EventId::Keyup, new EventPasser(
@@ -381,10 +407,10 @@ void PopUpManager::addFeedbackPopup() { //feature request, bug report, feature c
 	        // Retrieve the value from the textarea
 	        auto* textareaControl = dynamic_cast<Rml::ElementFormControlTextArea*>(textarea);
 			auto* select = dynamic_cast<Rml::ElementFormControlSelect*>(dropdown);
-			if (textareaControl && select)	
+			if (textareaControl && select)
 				logInfo("Dropdown Select: {}","",select->GetValue());
 				logInfo("Live text: {}","",textareaControl->GetValue());
-			
+
 				if (select->GetValue() == "bug"){
 				for (int i = 0; i < BugReportContainer->GetNumChildren(); ++i){
 					logInfo("Value {} is {}","",BugReportContainerText->GetChild(i)->GetInnerRML(),BugReportContainer->GetChild(i)->HasAttribute("checked"));
@@ -404,7 +430,7 @@ void PopUpManager::addFeedbackPopup() { //feature request, bug report, feature c
 	        // Retrieve the value from the textarea
 	        auto* textareaControl = dynamic_cast<Rml::ElementFormControlTextArea*>(textarea);
 			auto* select = dynamic_cast<Rml::ElementFormControlSelect*>(dropdown);
-			if (textareaControl && select)	
+			if (textareaControl && select)
 				logInfo("Dropdown Select: {}","",select->GetValue());
 				logInfo("Live text: {}","",textareaControl->GetValue());
 
@@ -413,11 +439,47 @@ void PopUpManager::addFeedbackPopup() { //feature request, bug report, feature c
 					logInfo("Value {} is {}","",BugReportContainerText->GetChild(i)->GetInnerRML(),BugReportContainer->GetChild(i)->HasAttribute("checked"));
 				}
 			}
-			
+
 			logInfo("Feeling: sad","");
 	        // Close the popup
 	        deleteFunc();
 	    }
 	));
 
+	// Rml::Element* text = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("span"));
+	// text->SetInnerRML("Testing");
+	// text->SetClass("pop-up-text", true);
+
+	Rml::Element* titleLabel = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("label"));
+	titleLabel->SetInnerRML("Feedback Title:");
+	Rml::Element* titleInput = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("input"));
+	titleInput->SetAttribute("type", "text");
+	titleInput->SetClass("pop-up-input", true);
+	Rml::Element* descriptionLabel = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("label"));
+	descriptionLabel->SetInnerRML("Feedback Description:");
+	Rml::Element* descriptionInput = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("textarea"));
+	descriptionInput->SetClass("pop-up-textarea", true);
+	Rml::Element* actionsElement = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("span"));
+	actionsElement->SetClass("pop-up-actions", true);
+	Rml::ElementPtr sendButton = mainWindow->getRmlDocument()->CreateElement("button");
+	sendButton->AppendChild(std::move(mainWindow->getRmlDocument()->CreateTextNode("Send Feedback")));
+	sendButton->AddEventListener(Rml::EventId::Click, new EventPasser(
+		[deleteFunc = popUpData.second, titleInput, descriptionInput, this](Rml::Event& event) {
+			std::string title = titleInput->GetAttribute<Rml::String>("value", "");
+			std::string description = descriptionInput->GetAttribute<Rml::String>("value", "");
+			deleteFunc();
+			Network::get().sendFeedback(*this, title, description, {});
+		}
+	));
+	sendButton->SetClass("pop-up-action", true);
+	actionsElement->AppendChild(std::move(sendButton));
+	Rml::ElementPtr cancelButton = mainWindow->getRmlDocument()->CreateElement("button");
+	cancelButton->AppendChild(std::move(mainWindow->getRmlDocument()->CreateTextNode("Cancel")));
+	cancelButton->AddEventListener(Rml::EventId::Click, new EventPasser(
+		[deleteFunc = popUpData.second](Rml::Event& event) {
+			deleteFunc();
+		}
+	));
+	cancelButton->SetClass("pop-up-action", true);
+	actionsElement->AppendChild(std::move(cancelButton));
 }

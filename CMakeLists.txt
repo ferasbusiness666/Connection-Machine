@@ -20,7 +20,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # ======================================== PROJECT SETUP ========================================
 set(BUILD_SHARED_LIBS OFF) # Don't build shared libs
-project(Connection_Machine VERSION 0.11.0)
+project(Connection_Machine VERSION 0.12.0)
 if (APPLE)
 	set(APP_NAME "Connection Machine") # name of the bundle
 else()
@@ -37,19 +37,12 @@ option(CONNECTION_MACHINE_BUILD_CLI_APP "Build Connection Machine CLI App" ON)
 option(CONNECTION_MACHINE_DISTRIBUTE_APP "Distribute App" OFF)
 option(CONNECTION_MACHINE_BUILD_TESTS "Build Connection Machine Tests" OFF)
 option(CONNECTION_MACHINE_CODE_COVERAGE "Enable code coverage reporting" OFF)
+option(CONNECTION_MACHINE_TRY_CATCH "Enable try catch blocks around main loop" ON)
 option(RUN_TRACY_PROFILER "Enable runtime profiler" OFF)
 
 if(CONNECTION_MACHINE_BUILD_CLI_APP AND CONNECTION_MACHINE_BUILD_APP)
 	message("Do not build both cli and non cli app at once")
 	set(CONNECTION_MACHINE_BUILD_CLI_APP OFF)
-endif()
-
-if(CONNECTION_MACHINE_BUILD_CLI_APP)
-	list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR}\/gui\/.*")
-	list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR}\/gpu\/.*")
-	list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR}\/environment\/blockRenderDataFeeder.cpp")
-	list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR}\/main.cpp")
-	list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR}\/app.cpp")
 endif()
 
 if(MSVC)

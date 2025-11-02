@@ -2,9 +2,10 @@
 #define connectionEnd_h
 
 #include "blockDefs.h"
+#include "util/id.h"
 class ConnectionContainer;
 
-typedef unsigned int connection_end_id_t;
+DECLARE_ID_TYPE(connection_end_id_t, unsigned int);
 
 class ConnectionEnd {
 	friend ConnectionContainer;
@@ -17,7 +18,7 @@ public:
 	bool operator==(ConnectionEnd other) const { return other.connectionId == connectionId && other.blockId == blockId; }
 
 	std::string toString() const {
-		return "ConnectionEnd(blockId=" + std::to_string(blockId) + ", connectionId=" + std::to_string(connectionId) + ")"; 
+		return "ConnectionEnd(blockId=" + std::to_string(blockId) + ", connectionId=" + std::to_string(connectionId) + ")";
 	}
 private:
 	void setBlockId(block_id_t id) { blockId = id; }

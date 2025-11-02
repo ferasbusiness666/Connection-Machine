@@ -36,6 +36,7 @@
 
 RmlSystemInterface::RmlSystemInterface()
 {
+	logInfo("Initializing RmlUI System Interface...");
 #if SDL_MAJOR_VERSION >= 3
 	cursor_default = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_DEFAULT);
 	cursor_move = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_MOVE);
@@ -176,6 +177,8 @@ bool RmlSDL::InputEventHandler(Rml::Context* context, SDL_Window* window, SDL_Ev
 	constexpr auto event_text_input = SDL_EVENT_TEXT_INPUT;
 	constexpr auto event_window_size_changed = SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED;
 	constexpr auto event_window_leave = SDL_EVENT_WINDOW_MOUSE_LEAVE;
+	constexpr auto event_drop_file = SDL_EVENT_DROP_FILE;
+	constexpr auto event_drop_file_mouse_motion = SDL_EVENT_DROP_POSITION;
 	// constexpr auto event_gesture = GESTURE_MULTIGESTURE;
 	constexpr auto rmlsdl_true = true;
 	constexpr auto rmlsdl_false = false;
@@ -287,7 +290,24 @@ bool RmlSDL::InputEventHandler(Rml::Context* context, SDL_Window* window, SDL_Ev
 		context->SetDensityIndependentPixelRatio(display_scale);
 	}
 	break;
-#endif
+	#endif
+	case event_drop_file:
+	{
+		Rml::Element* target = context->GetElementAtPoint(Rml::Vector2f(ev.drop.x * windowScalingSize, ev.drop.y * windowScalingSize));
+		if (!target) break;
+
+		const char* filePath = ev.drop.data;
+		Rml::Dictionary parameters;
+		parameters["file_path"] = filePath;
+
+		result = target->DispatchEvent(RmlSDL::getRmlDropFileEventId(), parameters);
+	}
+	break;
+	case event_drop_file_mouse_motion:
+	{
+		result = context->ProcessMouseMove(int(ev.drop.x * windowScalingSize), int(ev.drop.y * windowScalingSize), GetKeyModifierState());
+	}
+	break;
 
 	RMLSDL_WINDOW_EVENTS_END
 
@@ -529,4 +549,12 @@ int RmlSDL::GetKeyModifierState() {
 		retval |= Rml::Input::KM_CAPSLOCK;
 
 	return retval;
+}
+
+Rml::EventId rmlDropFileEventId = Rml::EventId::Invalid;
+
+Rml::EventId RmlSDL::getRmlDropFileEventId() {
+	if (rmlDropFileEventId == Rml::EventId::Invalid)
+		rmlDropFileEventId = Rml::RegisterEventType("dropFile", true, true);
+	return rmlDropFileEventId;
 }

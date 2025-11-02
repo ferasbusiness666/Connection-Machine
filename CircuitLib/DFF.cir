@@ -1,7 +1,7 @@
-version_6
+version_7
 Circuit: "DFF"
 UUID: d76f150e-28ee-48a3-8703-92b89613a0ed
-size: <2, 2>
+size: 2x2
 ports:
 	(OUT, 3, 13, <1, 1>, "Q'")
 	(OUT, 2, 7, <1, 0>, "Q")
@@ -35,7 +35,7 @@ blockId 4 NAND 3 1 ZERO
 	(connId:1) (6 0) (11 0)
 	(connId:0) (2 1) (6 1)
 blockId 3 SWITCH 0 1 ZERO
-	(connId:0) (2 0) (1 0) (11 0) (9 0)
+	(connId:0) (2 0) (9 0) (1 0) (11 0)
 blockId 2 NAND 2 1 ZERO
 	(connId:1) (4 0)
 	(connId:0) (3 0) (12 1)

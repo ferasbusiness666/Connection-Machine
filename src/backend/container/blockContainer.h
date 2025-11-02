@@ -61,18 +61,22 @@ public:
 	/* ----------- connections ----------- */
 	// -- getters --
 	bool connectionExists(Position outputPosition, Position inputPosition) const;
-	const phmap::flat_hash_set<ConnectionEnd>* getInputConnections(Position position) const;
-	const phmap::flat_hash_set<ConnectionEnd>* getOutputConnections(Position position) const;
+	bool connectionExists(ConnectionEnd connectionEndA, ConnectionEnd connectionEndB) const;
+	const std::unordered_set<ConnectionEnd>* getInputConnections(Position position) const;
+	const std::unordered_set<ConnectionEnd>* getOutputConnections(Position position) const;
+	const std::unordered_set<ConnectionEnd>* getBidirectionalConnections(Position position) const;
 	const std::optional<ConnectionEnd> getInputConnectionEnd(Position position) const;
 	const std::optional<ConnectionEnd> getOutputConnectionEnd(Position position) const;
+	const std::optional<ConnectionEnd> getBidirectionalConnectionEnd(Position position) const;
+	const std::optional<ConnectionEnd> getInputOrBidirectionalConnectionEnd(Position position) const;
+	const std::optional<ConnectionEnd> getOutputOrBidirectionalConnectionEnd(Position position) const;
 
 	unsigned int getBitwidthOfJunction(Position position) const { return getBitwidthOfJunction(getBlock(position)); }
 	unsigned int getBitwidthOfJunction(block_id_t blockId) const { return getBitwidthOfJunction(getBlock(blockId)); }
 
-
 	// -- setters --
 	// Trys to creates a connection. Returns if successful. Pass a Difference* to read the what changes were made.
-	bool tryCreateConnection(ConnectionEnd outputConnectionEnd, ConnectionEnd inputConnectionEnd, Difference* difference);
+	bool tryCreateConnection(ConnectionEnd connectionEndA, ConnectionEnd connectionEndB, Difference* difference);
 	// Trys to creates a connection. Returns if successful. Pass a Difference* to read the what changes were made.
 	bool tryCreateConnection(Position outputPosition, Position inputPosition, Difference* difference);
 	// Trys to remove a connection. Returns if successful. Pass a Difference* to read the what changes were made.
@@ -112,6 +116,7 @@ private:
 	void placeBlockCells(const Block* block);
 	void removeBlockCells(const Block* block);
 	block_id_t getNewId() { return ++lastId; }
+
 
 	BlockType selfBlockType = BlockType::NONE;
 	CircuitManager* circuitManager;
