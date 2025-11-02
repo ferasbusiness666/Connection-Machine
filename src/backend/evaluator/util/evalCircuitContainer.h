@@ -21,6 +21,13 @@ struct EvalPosition {
 	inline bool operator==(const EvalPosition& other) const {
 		return position == other.position && evalCircuitId == other.evalCircuitId;
 	}
+
+	inline auto operator<=>(const EvalPosition& other) const {
+		if (auto cmp = evalCircuitId <=> other.evalCircuitId; cmp != 0) {
+			return cmp;
+		}
+		return position <=> other.position;
+	}
 };
 
 template<>

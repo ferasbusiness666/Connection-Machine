@@ -196,6 +196,12 @@ struct Position {
 
 	inline bool operator==(Position position) const noexcept { return x == position.x && y == position.y; }
 	inline bool operator!=(Position position) const noexcept { return !operator==(position); }
+	inline auto operator<=>(Position position) const noexcept {
+		if (auto cmp = x <=> position.x; cmp != 0) {
+			return cmp;
+		}
+		return y <=> position.y;
+	}
 	inline bool withinArea(Position small, Position large) const noexcept { return small.x <= x && small.y <= y && large.x >= x && large.y >= y; }
 
 	inline coordinate_t manhattenDistanceTo(Position position) const noexcept { return Abs(x - position.x) + Abs(y - position.y); }
