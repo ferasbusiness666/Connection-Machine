@@ -230,6 +230,9 @@ public:
     inline bool stepForward() {
         return simulatorOptimizer.stepForward();
     }
+    inline bool isViewingReplay() const {
+        return simulatorOptimizer.isViewingReplay();
+    }
 private:
     SimulatorOptimizer simulatorOptimizer;
     std::unordered_map<middle_id_t, std::vector<EvalConnection>> omittedConnections;

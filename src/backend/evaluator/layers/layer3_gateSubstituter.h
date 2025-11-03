@@ -213,6 +213,9 @@ public:
 	inline bool stepForward() {
 		return replacer.stepForward();
 	}
+	inline bool isViewingReplay() const {
+		return replacer.isViewingReplay();
+	}
 
 private:
 	Replacer replacer;
