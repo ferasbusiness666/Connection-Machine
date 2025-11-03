@@ -7,6 +7,8 @@
 CornerLog::CornerLog(Rml::ElementDocument* document) : document(document) {
 	cornerLogElement = document->GetElementById("corner-log");
 	Settings::registerListener<SettingType::DECIMAL>("Corner Log/Message Timeout", [this](const double& timeout) { this->timeout = timeout; } );
+	const double* timeout = Settings::get<SettingType::DECIMAL>("Corner Log/Message Timeout");
+	if (timeout) this->timeout = *timeout;
 }
 
 void CornerLog::updateMessages() {
