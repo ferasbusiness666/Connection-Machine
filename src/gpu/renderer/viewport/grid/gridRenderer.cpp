@@ -41,7 +41,7 @@ void GridRenderer::render(Frame& frame, const glm::mat4& viewMatrix, float viewS
 	glm::vec4 gradientColor(0.0f, 0.0f, 0.0f, 0.1f);
 	// 174, 164, 249
 	if (evaluator && evaluator->isViewingReplay()) {
-		gradientColor = glm::vec4(174.0f / 255.0f, 164.0f / 255.0f, 249.0f / 255.0f, 0.5f);
+		gradientColor = glm::vec4(124.0f / 255.0f, 114.0f / 255.0f, 209.0f / 255.0f, 0.15f);
 	}
 
 	GridPushConstants pushConstants {
@@ -53,7 +53,7 @@ void GridRenderer::render(Frame& frame, const glm::mat4& viewMatrix, float viewS
 
 	// bind pipeline
 	vkCmdBindPipeline(frame.mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getHandle());
-		
+
 	// bind push constants
 	pipeline.cmdPushConstants(frame.mainCommandBuffer, &pushConstants);
 

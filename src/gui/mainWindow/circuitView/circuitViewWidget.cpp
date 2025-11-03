@@ -96,22 +96,28 @@ CircuitViewWidget::CircuitViewWidget(
 	keybindHandler.addListener(
 		"Keybinds/Simulation/Start Stop",
 		[this]() {
-			circuitView->getEvaluator()->togglePause();
-			this->mainWindow->getSimControlsManager()->update();
+			if (circuitView->getEvaluator()) {
+				circuitView->getEvaluator()->togglePause();
+				this->mainWindow->getSimControlsManager()->update();
+			}
 		}
 	);
 	keybindHandler.addListener(
 		"Keybinds/Simulation/Step Forward",
 		[this]() {
-			circuitView->getEvaluator()->stepForward();
-			this->mainWindow->getSimControlsManager()->update();
+			if (circuitView->getEvaluator()) {
+				circuitView->getEvaluator()->stepForward();
+				this->mainWindow->getSimControlsManager()->update();
+			}
 		}
 	);
 	keybindHandler.addListener(
 		"Keybinds/Simulation/Step Back",
 		[this]() {
-			circuitView->getEvaluator()->stepBack();
-			this->mainWindow->getSimControlsManager()->update();
+			if (circuitView->getEvaluator()) {
+				circuitView->getEvaluator()->stepBack();
+				this->mainWindow->getSimControlsManager()->update();
+			}
 		}
 	);
 	keybindHandler.addListener(
