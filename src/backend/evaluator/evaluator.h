@@ -66,6 +66,8 @@ public:
 	void tickStep() { tickStep(1); }
 	bool stepBack();
 	void stepForward();
+	bool skipBack();
+	bool skipForward();
 	bool isViewingReplay() const;
 	void setRealistic(bool realistic) { evalConfig.setRealistic(realistic); }
 	bool isRealistic() const { return evalConfig.isRealistic(); }

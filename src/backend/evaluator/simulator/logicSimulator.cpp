@@ -952,3 +952,11 @@ bool LogicSimulator::stepForward() {
 	}
 	return true;
 }
+
+bool LogicSimulator::skipBack() {
+
+}
+
+bool LogicSimulator::skipForward() {
+
+}

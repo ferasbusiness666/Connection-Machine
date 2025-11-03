@@ -1273,6 +1273,16 @@ void Evaluator::stepForward() {
 	}
 }
 
+bool Evaluator::skipBack() {
+	setPause(true);
+	return evalSimulator->skipBack();
+}
+
+bool Evaluator::skipForward() {
+	setPause(true);
+	return evalSimulator->skipForward();
+}
+
 bool Evaluator::isViewingReplay() const {
 	return evalSimulator->isViewingReplay();
 }

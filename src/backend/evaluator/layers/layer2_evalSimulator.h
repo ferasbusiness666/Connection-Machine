@@ -61,6 +61,12 @@ public:
 	inline bool stepForward() {
 		return gateSubstituter.stepForward();
 	}
+	inline bool skipBack() {
+		return gateSubstituter.skipBack();
+	}
+	inline bool skipForward() {
+		return gateSubstituter.skipForward();
+	}
 	inline bool isViewingReplay() const {
 		return gateSubstituter.isViewingReplay();
 	}

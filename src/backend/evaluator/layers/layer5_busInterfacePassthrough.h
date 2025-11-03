@@ -230,6 +230,12 @@ public:
     inline bool stepForward() {
         return simulatorOptimizer.stepForward();
     }
+    inline bool skipBack() {
+        return simulatorOptimizer.skipBack();
+    }
+    inline bool skipForward() {
+        return simulatorOptimizer.skipForward();
+    }
     inline bool isViewingReplay() const {
         return simulatorOptimizer.isViewingReplay();
     }

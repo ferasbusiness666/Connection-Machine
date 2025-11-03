@@ -130,6 +130,35 @@ CircuitViewWidget::CircuitViewWidget(
 		}
 	);
 	keybindHandler.addListener(
+		"Keybinds/Simulation/Skip Forward",
+		[this]() {
+			if (circuitView->getEvaluator()) {
+				if (circuitView->getEvaluator()->skipForward()) {
+					this->mainWindow->getSimControlsManager()->update();
+				} else {
+					this->mainWindow->logError("Cant skip forward simulation with no simulation data");
+				}
+				this->mainWindow->getSimControlsManager()->update();
+			} else {
+				this->mainWindow->logError("Cant skip forward simulation when there is none");
+			}
+		}
+	);
+	keybindHandler.addListener(
+		"Keybinds/Simulation/Skip Back",
+		[this]() {
+			if (circuitView->getEvaluator()) {
+				if (circuitView->getEvaluator()->skipBack()) {
+					this->mainWindow->getSimControlsManager()->update();
+				} else {
+					this->mainWindow->logError("Cant skip back simulation with no simulation data");
+				}
+			} else {
+				this->mainWindow->logError("Cant skip back simulation when there is none");
+			}
+		}
+	);
+	keybindHandler.addListener(
 		"Keybinds/Editing/Copy",
 		[this]() { circuitView->getEventRegister().doEvent(Event("Copy")); }
 	);

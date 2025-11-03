@@ -48,6 +48,8 @@ public:
 
 	bool stepBack();
 	bool stepForward();
+	bool skipBack();
+	bool skipForward();
 	inline bool isViewingReplay() const {
 		return viewingReplay;
 	}

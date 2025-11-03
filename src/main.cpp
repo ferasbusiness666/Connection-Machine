@@ -18,6 +18,8 @@ void registerSettings() {
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Simulation/Start Stop", Keybind(Keybind::KeyId::KI_SPACE));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Simulation/Step Forward", Keybind(Keybind::KeyId::KI_RIGHT));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Simulation/Step Back", Keybind(Keybind::KeyId::KI_LEFT));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Simulation/Skip Forward", Keybind(Keybind::KeyId::KI_RIGHT, Keybind::KeyMod::KM_CTRL));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Simulation/Skip Back", Keybind(Keybind::KeyId::KI_LEFT, Keybind::KeyMod::KM_CTRL));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Undo", Keybind(Keybind::KeyId::KI_Z, Keybind::KeyMod::KM_CTRL));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Redo", Keybind(Keybind::KeyId::KI_Z, Keybind::KeyMod::KM_CTRL | Keybind::KeyMod::KM_SHIFT));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Copy", Keybind(Keybind::KeyId::KI_C, Keybind::KeyMod::KM_CTRL));
