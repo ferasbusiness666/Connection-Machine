@@ -67,6 +67,7 @@ private:
 	IdVector<simulator_id_t, logic_state_t> statesA;
 	IdVector<simulator_id_t, logic_state_t> statesB;
 	std::array<IdVector<simulator_id_t, logic_state_t>, 1024> statesReplay;
+	std::array<bool, 1024> setStateUsed = { false };
 	int replayHead = 0;
 	int replayTail = 0;
 	bool viewingReplay = false;

@@ -168,6 +168,7 @@ void LogicSimulator::processPendingStateChanges() {
 
 			statesA[change.id] = change.state;
 			statesB[change.id] = change.state;
+			setStateUsed[replayHead] = true;
 			localQueue.pop();
 		}
 		for (auto& gate : junctions) gate.doubleTick(statesA, statesB);
@@ -189,6 +190,7 @@ void LogicSimulator::setState(simulator_id_t id, logic_state_t st) {
 		}
 		statesA[id] = st;
 		statesB[id] = st;
+		setStateUsed[replayHead] = true;
 		for (auto& gate : junctions) gate.doubleTick(statesA, statesB);
 	} else {
 		std::lock_guard<std::mutex> lock(stateChangeQueueMutex);
@@ -954,9 +956,38 @@ bool LogicSimulator::stepForward() {
 }
 
 bool LogicSimulator::skipBack() {
-
+	if (!viewingReplay) {
+		if (replayHead == replayTail) {
+			return false;
+		}
+		viewingReplay = true;
+		stateView = (replayHead - 1) % statesReplay.size();
+	}
+	if (stateView == replayTail) {
+		return false;
+	}
+	while (stateView != replayTail) {
+		stateView = (stateView - 1) % statesReplay.size();
+		if (setStateUsed[(stateView + 1) % statesReplay.size()]) {
+			return true;
+		}
+	}
+	return true;
 }
 
 bool LogicSimulator::skipForward() {
-
+	if (!viewingReplay) {
+		return false;
+	}
+	while (stateView != replayHead) {
+		stateView = (stateView + 1) % statesReplay.size();
+		if (stateView == replayHead) {
+			viewingReplay = false;
+			return true;
+		}
+		if (setStateUsed[stateView]) {
+			return true;
+		}
+	}
+	return true;
 }
