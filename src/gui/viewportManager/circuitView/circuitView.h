@@ -5,6 +5,7 @@
 #include "viewManager/viewManager.h"
 #include "events/eventRegister.h"
 #include "tools/toolManager.h"
+#include "tutorialManager.h"
 
 #include "gpu/mainRendererDefs.h"
 
@@ -31,8 +32,13 @@ public:
 	inline ToolManager& getToolManager() { return toolManager; }
 	inline const ToolManager& getToolManager() const { return toolManager; }
 
+	inline TutorialManager& getTutorialManager() { return tutorialManager; }
+	inline const TutorialManager& getTutorialManager() const { return tutorialManager; }
+
 	inline ViewManager& getViewManager() { return viewManager; }
 	inline const ViewManager& getViewManager() const { return viewManager; }
+
+	inline ViewportId getViewportId() const { return viewportId; }
 
 	inline Backend* getBackend() { return backend; }
 	inline const Backend* getBackend() const { return backend; }
@@ -61,6 +67,7 @@ private:
 	EventRegister eventRegister;
 	ViewManager viewManager;
 	ToolManager toolManager;
+	TutorialManager tutorialManager;
 };
 
 #endif /* circuitView_h */

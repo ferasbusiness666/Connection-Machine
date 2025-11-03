@@ -182,6 +182,15 @@ CircuitViewWidget::CircuitViewWidget(
 		"Keybinds/File/New",
 		[this]() { newCircuit(); }
 	);
+	keybindHandler.addListener(
+		Rml::Input::KeyIdentifier::KI_J,
+		[this]() { circuitView->getTutorialManager().StartTutorial(); }
+	);
+	keybindHandler.addListener(
+		Rml::Input::KeyIdentifier::KI_K,
+		[this]() { circuitView->getTutorialManager().Stop(); }
+	);
+	
 
 	Rml::Element* root = document->GetElementById("main-container");
 	root->AddEventListener(Rml::EventId::Mouseup, new EventPasser(
