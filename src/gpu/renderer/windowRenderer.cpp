@@ -17,7 +17,8 @@ WindowRenderer::WindowRenderer(SdlWindow* sdlWindow) : sdlWindow(sdlWindow) {
 	frames.init(device);
 
 	// set up swapchain and subrenderer
-	windowSize = sdlWindow->getSize();
+	std::pair<uint32_t, uint32_t> sdlWindowSize = sdlWindow->getSize();
+	windowSize ={max(sdlWindowSize.first, 1), max(sdlWindowSize.second, 1)}; // should stop vulkan validation error
 	swapchain.init(device, surface, windowSize);
 	createRenderPass();
 	swapchain.createFramebuffers(renderPass);
@@ -52,7 +53,7 @@ WindowRenderer::~WindowRenderer() {
 void WindowRenderer::resize(std::pair<uint32_t, uint32_t> windowSize) {
 	std::lock_guard<std::mutex> lock(windowSizeMux);
 
-	this->windowSize = windowSize;
+	this->windowSize = {max(windowSize.first, 1), max(windowSize.second, 1)}; // should stop vulkan validation error
 
 	swapchainRecreationNeeded = true;
 }

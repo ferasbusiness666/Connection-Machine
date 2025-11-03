@@ -7,10 +7,8 @@
 #include "gpu/mainRenderer.h"
 
 #include "gui/mainWindow/circuitView/circuitViewWidget.h"
-#include "gui/mainWindow/menuBar/menuBar.h"
 #include "gui/rml/rmlRenderInterface.h"
 #include "gui/rml/rmlSystemInterface.h"
-#include "settingsWindow/settingsWindow.h"
 
 #include "app.h"
 
@@ -103,9 +101,13 @@ MainWindow::MainWindow(Environment* environment) :
 
 	simControlsManager.emplace(rmlDocument, getCircuitViewWidget(0), environment->getBackend().getDataUpdateEventManager());
 
-	SettingsWindow* settingsWindow = new SettingsWindow(rmlDocument);
+	settingsWindow.emplace(rmlDocument);
 
-	MenuBar* menuBar = new MenuBar(rmlDocument, settingsWindow, this);
+	menuBar.emplace(rmlDocument, &settingsWindow.value(), this);
+
+	cornerLog.emplace(rmlDocument);
+
+	cornerLog->log("THIS IS MY FIRST MESSAGE");
 
 	// keybind handling
 	rmlDocument->AddEventListener(Rml::EventId::Keydown, &keybindHandler);
@@ -132,7 +134,7 @@ MainWindow::MainWindow(Environment* environment) :
 		// Rml::LoadFontFace(fontFilePath);
 		logInfo("loaded, {}", "", fontFilePath);
 	});
-	
+
 }
 
 MainWindow::~MainWindow() {
@@ -185,6 +187,7 @@ void MainWindow::updateRml() {
 	for (auto& circuitViewWidget : circuitViewWidgets) {
 		circuitViewWidget->updateTps();
 	}
+	cornerLog->updateMessages();
 }
 
 void MainWindow::createCircuitViewWidget(Rml::Element* element) {

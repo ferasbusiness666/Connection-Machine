@@ -7,8 +7,11 @@
 #include "gui/sdl/sdlWindow.h"
 
 #include "circuitView/simControlsManager.h"
+#include "cornerLog.h"
 #include "gui/helper/keybindHandler.h"
+#include "gui/mainWindow/menuBar/menuBar.h"
 #include "popUps/popUpManager.h"
+#include "settingsWindow/settingsWindow.h"
 #include "sideBar/icEditor/blockCreationWindow.h"
 #include "sideBar/selector/selectorWindow.h"
 #include "sideBar/simulation/evalWindow.h"
@@ -35,6 +38,19 @@ public:
 	const Rml::ElementDocument* getRmlDocument() const { return rmlDocument; }
 
 	PopUpManager& getPopUpManager() { return popUpManager; }
+
+	// logging
+	// CornerLog& getCornerLog() { return cornerLog.value(); } // dont need this with the other functions here
+	void log(const std::string& message) { cornerLog->log(message); }
+	template <typename... Args>
+	void log(const fmt::format_string<Args...>& formatString, Args&&... args) {
+		cornerLog->log(formatString, std::forward<Args>(args)...);
+	}
+	void logError(const std::string& message) { cornerLog->logError(message); }
+	template <typename... Args>
+	void logError(const fmt::format_string<Args...>& formatString, Args&&... args) {
+		cornerLog->logError(formatString, std::forward<Args>(args)...);
+	}
 
 	bool recieveEvent(SDL_Event& event);
 	void updateRml();
@@ -71,6 +87,9 @@ private:
 	std::optional<EvalWindow> evalWindow;
 	std::optional<BlockCreationWindow> blockCreationWindow;
 	std::optional<SimControlsManager> simControlsManager;
+	std::optional<SettingsWindow> settingsWindow;
+	std::optional<MenuBar> menuBar;
+	std::optional<CornerLog> cornerLog;
 
 	std::vector<std::pair<std::string, const std::vector<std::pair<std::string, std::function<void()>>>>> popUpsToAdd;
 

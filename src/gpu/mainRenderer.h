@@ -28,7 +28,7 @@ public:
 
 	// Windows ==================================================================================================================================
 	WindowId registerWindow(SdlWindow* window);
-	void resizeWindow(WindowId windowId, glm::vec2 size);
+	void resizeWindow(WindowId windowId, std::pair<uint32_t, uint32_t> size);
 	void deregisterWindow(WindowId windowId);
 
 	// RmlUI ====================================================================================================================================

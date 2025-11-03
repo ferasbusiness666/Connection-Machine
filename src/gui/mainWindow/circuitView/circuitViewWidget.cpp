@@ -99,6 +99,8 @@ CircuitViewWidget::CircuitViewWidget(
 			if (circuitView->getEvaluator()) {
 				circuitView->getEvaluator()->togglePause();
 				this->mainWindow->getSimControlsManager()->update();
+			} else {
+				this->mainWindow->logError("Cant stop simulation when there is none");
 			}
 		}
 	);
@@ -108,6 +110,8 @@ CircuitViewWidget::CircuitViewWidget(
 			if (circuitView->getEvaluator()) {
 				circuitView->getEvaluator()->stepForward();
 				this->mainWindow->getSimControlsManager()->update();
+			} else {
+				this->mainWindow->logError("Cant step simulation when there is none");
 			}
 		}
 	);
@@ -115,8 +119,13 @@ CircuitViewWidget::CircuitViewWidget(
 		"Keybinds/Simulation/Step Back",
 		[this]() {
 			if (circuitView->getEvaluator()) {
-				circuitView->getEvaluator()->stepBack();
-				this->mainWindow->getSimControlsManager()->update();
+				if (circuitView->getEvaluator()->stepBack()) {
+					this->mainWindow->getSimControlsManager()->update();
+				} else {
+					this->mainWindow->logError("Cant back step simulation with no simulation data");
+				}
+			} else {
+				this->mainWindow->logError("Cant back step simulation when there is none");
 			}
 		}
 	);
@@ -258,6 +267,7 @@ CircuitViewWidget::CircuitViewWidget(
 				circuit_id_t id = ids.back();
 				if (id == 0) {
 					logError("Error", "Failed to load circuit file.");
+					this->mainWindow->logError("Failed to load circuit.");
 				} else {
 					circuitView->setCircuit(circuitView->getBackend(), id);
 					for (auto& iter : circuitView->getBackend()->getEvaluatorManager().getEvaluators()) {
@@ -333,10 +343,18 @@ void CircuitViewWidget::setStatusBar(const std::string& text) {
 // Called via Ctrl-S keybind
 void CircuitViewWidget::save() {
 	if (circuitView->getCircuit()) mainWindow->getPopUpManager().savePopUp(circuitView->getCircuit()->getUUID());
+	else {
+		logWarning("Could not save because non circuit was selected.", "CircuitViewWidget");
+		mainWindow->log("Could not save because non circuit was selected.");
+	}
 }
 
 void CircuitViewWidget::asSave() {
 	if (circuitView->getCircuit()) mainWindow->getPopUpManager().saveAsPopUp(circuitView->getCircuit()->getUUID());
+	else {
+		logWarning("Could not save because non circuit was selected.", "CircuitViewWidget");
+		mainWindow->log("Could not save because non circuit was selected.");
+	}
 }
 
 // for drag and drop load directly onto this circuit view widget

@@ -64,7 +64,7 @@ public:
 		waitForSprintComplete();
 	}
 	void tickStep() { tickStep(1); }
-	void stepBack();
+	bool stepBack();
 	void stepForward();
 	bool isViewingReplay() const;
 	void setRealistic(bool realistic) { evalConfig.setRealistic(realistic); }

@@ -137,7 +137,9 @@ std::pair<Rml::Element*, std::function<void()>> PopUpManager::createPopUp(bool b
 }
 
 void PopUpManager::savePopUp(const std::string& circuitUUID) {
-	if (!mainWindow->getEnvironment()->getCircuitFileManager().save(circuitUUID)) {
+	if (mainWindow->getEnvironment()->getCircuitFileManager().save(circuitUUID)) {
+		mainWindow->log("Circuit was successfully saved.");
+	} else {
 		// if failed to save the circuit with out a path
 		saveAsPopUp(circuitUUID);
 	}
@@ -145,9 +147,8 @@ void PopUpManager::savePopUp(const std::string& circuitUUID) {
 
 void PopUpManager::saveAsPopUp(const std::string& circuitUUID) {
 	static const SDL_DialogFileFilter filters[] = { { "Circuit Files", "cir" } };
-	std::pair<CircuitFileManager*, std::string>* data =
-		new std::pair<CircuitFileManager*, std::string>(&mainWindow->getEnvironment()->getCircuitFileManager(), circuitUUID);
-	SDL_ShowSaveFileDialog(SaveCallback, data, nullptr, filters, 1, nullptr);
+	std::pair<CircuitFileManager*, std::string>* data = new std::pair<CircuitFileManager*, std::string>(&mainWindow->getEnvironment()->getCircuitFileManager(), circuitUUID);
+	SDL_ShowSaveFileDialog(SaveCallback, data, nullptr, filters, 1, nullptr); // should call mainWindow->log("Circuit was successfully saved.");
 }
 
 void set_invisible(Rml::Element* element, bool invisible) {

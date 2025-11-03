@@ -50,3 +50,26 @@ body {
 	height: 100%;
 	z-index: 2000;
 }
+
+#corner-log {
+	pointer-events: none;
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	width: 40%;
+	height: 100%;
+}
+
+#corner-log p {
+	padding-left: 0.5em;
+	padding-right: 0.5em;
+	width: 100%;
+	background-color: #0000004e;
+}
+
+.corner-log .corner-log-error * {
+	color: rgb(125, 0, 0);
+}

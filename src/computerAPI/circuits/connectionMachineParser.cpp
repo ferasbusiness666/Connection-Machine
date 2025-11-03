@@ -288,7 +288,7 @@ std::vector<circuit_id_t> ConnectionMachineParser::load(const std::string& path)
 						}
 						blockType = circuitManager->getBlockDataManager()->getBusBlock(busConnections);
 					} else {
-						logError("Count not find Circuit or ProceduralCircuit or Bus with UUID: {}", "ConnectionMachineParser", blockTypeStr);
+						logError("Could not find Circuit or ProceduralCircuit or Bus with UUID: {}", "ConnectionMachineParser", blockTypeStr);
 						return circuitIds;
 					}
 				}

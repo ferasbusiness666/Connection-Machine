@@ -1260,10 +1260,9 @@ void Evaluator::waitForSprintComplete() {
 	}
 }
 
-void Evaluator::stepBack() {
+bool Evaluator::stepBack() {
 	setPause(true);
-	bool success = evalSimulator->stepBack();
-	// TODO: give user feedback if can't step back further
+	return evalSimulator->stepBack();
 }
 
 void Evaluator::stepForward() {
