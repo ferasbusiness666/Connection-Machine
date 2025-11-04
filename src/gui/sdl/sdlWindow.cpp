@@ -2,6 +2,20 @@
 #include "util/fastMath.h"
 #include "app.h"
 
+#include <SDL3/SDL_events.h>
+
+bool resizingEventWatcher(void* data, SDL_Event* event) {
+	if (event->type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
+		SDL_Window* win = SDL_GetWindowFromID(event->window.windowID);
+		if (((SdlWindow*)data)->getHandle() == win) {
+			if (((SdlWindow*)data)->doRecieveEvent) {
+				((SdlWindow*)data)->doRecieveEvent(*event);
+			}
+		}
+	}
+	return 0;
+}
+
 SdlWindow::SdlWindow(const std::string& name, unsigned int width, unsigned int height) {
 	logInfo("Creating SDL window...");
 
@@ -10,6 +24,8 @@ SdlWindow::SdlWindow(const std::string& name, unsigned int width, unsigned int h
 	{
 		throwFatalError("SDL could not create window! SDL_Error: " + std::string(SDL_GetError()));
 	}
+
+	SDL_AddEventWatch(resizingEventWatcher, this);
 
 	int winW, winH, drawW, drawH;
 	SDL_GetWindowSize(handle, &winW, &winH);
@@ -33,18 +49,18 @@ SdlWindow::~SdlWindow() {
 }
 
 bool SdlWindow::recieveEvent(SDL_Event& event) {
-		if (doRecieveEvent) {
-			return doRecieveEvent(event);
-		}
-		if (isThisMyEvent(event)) {
-			if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
-				App::get().deregisterWindow(this);
-			}
-			return true;
-		}
-
-		return false;
+	if (doRecieveEvent) {
+		return doRecieveEvent(event);
 	}
+	if (isThisMyEvent(event)) {
+		if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
+			App::get().deregisterWindow(this);
+		}
+		return true;
+	}
+
+	return false;
+}
 
 bool SdlWindow::isThisMyEvent(const SDL_Event& event) {
 	if (event.type == 2050) return true; // the fuck is this? - jack quay jamison

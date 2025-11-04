@@ -189,6 +189,25 @@ public:
 	inline double getAverageTickrate() const {
 		return simulator.getAverageTickrate();
 	}
+	inline bool stepBack() {
+		SimPauseGuard pauseGuard(simulator);
+		return simulator.stepBack();
+	}
+	inline bool stepForward() {
+		SimPauseGuard pauseGuard(simulator);
+		return simulator.stepForward();
+	}
+	inline bool skipBack() {
+		SimPauseGuard pauseGuard(simulator);
+		return simulator.skipBack();
+	}
+	inline bool skipForward() {
+		SimPauseGuard pauseGuard(simulator);
+		return simulator.skipForward();
+	}
+	inline bool isViewingReplay() const {
+		return simulator.isViewingReplay();
+	}
 
 private:
 	LogicSimulator simulator;

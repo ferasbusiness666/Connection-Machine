@@ -20,3 +20,32 @@ ToolManagerManager::ToolManagerManager(DataUpdateEventManager* dataUpdateEventMa
 	ToolManagerManager::registerTool<ModeChangerTool>();
 	// ToolManagerManager::registerTool<PortSelector>(); // dont register the tool because it does not go in the menu
 }
+
+void ToolManagerManager::cycleActiveToolMode(int direction) {
+	if (activeTool.empty()) {
+		return;
+	}
+
+	auto toolIter = tools.find(activeTool);
+	if (toolIter == tools.end()) {
+		return;
+	}
+
+	const std::vector<std::string> modes = toolIter->second->getModes();
+	if (modes.size() <= 1) {
+		return;
+	}
+
+	int currentIndex = 0;
+	auto modeIter = lastToolModes.find(activeTool);
+	if (modeIter != lastToolModes.end()) {
+		auto foundIter = std::find(modes.begin(), modes.end(), modeIter->second);
+		if (foundIter != modes.end()) {
+			currentIndex = std::distance(modes.begin(), foundIter);
+		}
+	}
+
+	int newIndex = (currentIndex + direction) % modes.size();
+
+	setMode(modes[newIndex]);
+}

@@ -44,7 +44,7 @@ public:
 	void disconnectListener(void* object);
 
 	// allows accese to BlockContainer getters (never null)
-	inline const BlockContainer* getBlockContainer() const { return &blockContainer; }
+	inline const BlockContainer& getBlockContainer() const { return blockContainer; }
 
 	/* ----------- blocks ----------- */
 	// Trys to insert a block. Returns if successful.

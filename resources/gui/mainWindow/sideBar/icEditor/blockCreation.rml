@@ -27,7 +27,6 @@
 					<button id="pick-new-texture" class="btn btn-sm">Pick Texture</button>
 					<button id="reload-texture" class="btn btn-sm">Reload Texture</button>
 					<button id="remove-texture" class="btn btn-sm">Remove Texture</button>
-					<!-- <button id="embed-texture" class="btn btn-sm">Embed in .cir</button> -->
 					<div class="form-row-2">
 						<input id="texture-uses-tilemap" type="checkbox" />
 						<label class="form-label" for="uses tilemap">Uses Tilemap</label>
@@ -53,10 +52,8 @@
 			</div>
 			<div id="connection-menu" class="surface-raised pad-sm">
 				<div class="section-header">Inputs <button id="connection-list-add-input" class="btn btn-outline btn-sm"><span>Add Input</span></button></div>
-				<div id="connection-list-input-headers" class="connection-list-headers">Name | Port X/Y | Block X/Y</div>
 				<div id="connection-list-input" class="connection-list scroll-y alt-rows"></div>
 				<div class="section-header">Outputs <button id="connection-list-add-output" class="btn btn-outline btn-sm"><span>Add Output</span></button></div>
-				<div id="connection-list-output-headers" class="connection-list-headers">Name | Port X/Y | Block X/Y</div>
 				<div id="connection-list-output" class="connection-list scroll-y alt-rows"></div>
 			</div>
 			<div class="form-actions">

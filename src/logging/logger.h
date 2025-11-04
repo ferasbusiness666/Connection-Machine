@@ -1,7 +1,7 @@
 #ifndef logger_h
 #define logger_h
 
-enum LogType {
+enum class LogType {
 	Info = 1,
 	Warning = 2,
 	Error = 4,

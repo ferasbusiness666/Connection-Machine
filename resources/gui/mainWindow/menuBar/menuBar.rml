@@ -10,6 +10,7 @@
 				<div class="dropdown">
 					<button class="menu-item" id="setting">Setting</button>
 					<button class="menu-item" id="feedback">Feedback</button>
+					<button class="menu-item" id="about">About</button>
 				</div>
 			</div>
 

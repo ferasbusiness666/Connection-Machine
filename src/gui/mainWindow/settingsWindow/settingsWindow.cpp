@@ -18,6 +18,8 @@ SettingsWindow::SettingsWindow(Rml::ElementDocument* document) : contentManager(
 	contentManager.load();
 }
 
+SettingsWindow::~SettingsWindow() = default;
+
 void SettingsWindow::connectCategoryListeners() {
 	// Rml::ElementList items;
 	// Rml::ElementUtilities::GetElementsByClassName(items, context->GetElementById("navigation-panel"), "nav-item");

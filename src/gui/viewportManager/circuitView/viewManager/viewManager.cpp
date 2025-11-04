@@ -129,7 +129,7 @@ void ViewManager::focus() {
 		bool first = true;
 		Position topLeft;
 		Size size;
-		for (auto& pair : *(currentCircuit->getBlockContainer())) {
+		for (auto& pair : currentCircuit->getBlockContainer()) {
 			if (!currentCircuit->isOnStack(pair.second.getPosition())) {
 				if (first) {
 					first = false;

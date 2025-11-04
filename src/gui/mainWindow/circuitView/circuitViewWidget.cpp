@@ -94,6 +94,71 @@ CircuitViewWidget::CircuitViewWidget(
 		[this]() { load(); }
 	);
 	keybindHandler.addListener(
+		"Keybinds/Simulation/Start Stop",
+		[this]() {
+			if (circuitView->getEvaluator()) {
+				circuitView->getEvaluator()->togglePause();
+				this->mainWindow->getSimControlsManager()->update();
+			} else {
+				this->mainWindow->logError("Cant stop simulation when there is none");
+			}
+		}
+	);
+	keybindHandler.addListener(
+		"Keybinds/Simulation/Step Forward",
+		[this]() {
+			if (circuitView->getEvaluator()) {
+				circuitView->getEvaluator()->stepForward();
+				this->mainWindow->getSimControlsManager()->update();
+			} else {
+				this->mainWindow->logError("Cant step simulation when there is none");
+			}
+		}
+	);
+	keybindHandler.addListener(
+		"Keybinds/Simulation/Step Back",
+		[this]() {
+			if (circuitView->getEvaluator()) {
+				if (circuitView->getEvaluator()->stepBack()) {
+					this->mainWindow->getSimControlsManager()->update();
+				} else {
+					this->mainWindow->logError("Cant back step simulation with no simulation data");
+				}
+			} else {
+				this->mainWindow->logError("Cant back step simulation when there is none");
+			}
+		}
+	);
+	keybindHandler.addListener(
+		"Keybinds/Simulation/Skip Forward",
+		[this]() {
+			if (circuitView->getEvaluator()) {
+				if (circuitView->getEvaluator()->skipForward()) {
+					this->mainWindow->getSimControlsManager()->update();
+				} else {
+					this->mainWindow->logError("Cant skip forward simulation with no simulation data");
+				}
+				this->mainWindow->getSimControlsManager()->update();
+			} else {
+				this->mainWindow->logError("Cant skip forward simulation when there is none");
+			}
+		}
+	);
+	keybindHandler.addListener(
+		"Keybinds/Simulation/Skip Back",
+		[this]() {
+			if (circuitView->getEvaluator()) {
+				if (circuitView->getEvaluator()->skipBack()) {
+					this->mainWindow->getSimControlsManager()->update();
+				} else {
+					this->mainWindow->logError("Cant skip back simulation with no simulation data");
+				}
+			} else {
+				this->mainWindow->logError("Cant skip back simulation when there is none");
+			}
+		}
+	);
+	keybindHandler.addListener(
 		"Keybinds/Editing/Copy",
 		[this]() { circuitView->getEventRegister().doEvent(Event("Copy")); }
 	);
@@ -114,18 +179,25 @@ CircuitViewWidget::CircuitViewWidget(
 		[this]() { circuitView->getEventRegister().doEvent(Event("Tool Invert Mode")); }
 	);
 	keybindHandler.addListener(
+		"Keybinds/Editing/Tools/Cycle Mode",
+		[this]() { this->mainWindow->getToolManagerManager().cycleActiveToolMode(); }
+	);
+	keybindHandler.addListener(
+		"Keybinds/Editing/Tools/Cycle Mode Back",
+		[this]() { this->mainWindow->getToolManagerManager().cycleActiveToolMode(-1); }
+	);
+	keybindHandler.addListener(
 		"Keybinds/File/New",
 		[this]() { newCircuit(); }
 	);
 	keybindHandler.addListener(
-		Rml::Input::KeyIdentifier::KI_J,
+		"Keybinds/Tutorial/Start",
 		[this]() { circuitView->getTutorialManager().StartTutorial(); }
 	);
 	keybindHandler.addListener(
-		Rml::Input::KeyIdentifier::KI_K,
+		"Keybinds/Tutorial/Stop",
 		[this]() { circuitView->getTutorialManager().Stop(); }
 	);
-	
 
 	Rml::Element* root = document->GetElementById("main-container");
 	root->AddEventListener(Rml::EventId::Mouseup, new EventPasser(
@@ -240,6 +312,7 @@ CircuitViewWidget::CircuitViewWidget(
 				circuit_id_t id = ids.back();
 				if (id == 0) {
 					logError("Error", "Failed to load circuit file.");
+					this->mainWindow->logError("Failed to load circuit.");
 				} else {
 					circuitView->setCircuit(circuitView->getBackend(), id);
 					for (auto& iter : circuitView->getBackend()->getEvaluatorManager().getEvaluators()) {
@@ -315,10 +388,18 @@ void CircuitViewWidget::setStatusBar(const std::string& text) {
 // Called via Ctrl-S keybind
 void CircuitViewWidget::save() {
 	if (circuitView->getCircuit()) mainWindow->getPopUpManager().savePopUp(circuitView->getCircuit()->getUUID());
+	else {
+		logWarning("Could not save because non circuit was selected.", "CircuitViewWidget");
+		mainWindow->log("Could not save because non circuit was selected.");
+	}
 }
 
 void CircuitViewWidget::asSave() {
 	if (circuitView->getCircuit()) mainWindow->getPopUpManager().saveAsPopUp(circuitView->getCircuit()->getUUID());
+	else {
+		logWarning("Could not save because non circuit was selected.", "CircuitViewWidget");
+		mainWindow->log("Could not save because non circuit was selected.");
+	}
 }
 
 // for drag and drop load directly onto this circuit view widget

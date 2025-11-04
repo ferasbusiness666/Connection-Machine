@@ -55,6 +55,7 @@ private:
 	void putConnectionNipplesOntoImage(const BlockData* blockData, CpuImage& img, int scale);
 	void createTextureForCustomBlock(const BlockData* blockData, CpuImage& img, int scale);
 	void createTextureForBusBlock(const BlockData* blockData, CpuImage& img, int scale);
+	std::pair<int, int> calculatePadding(int width, int height);
 	CpuImage padTexture(const CpuImage& img);
 };
 

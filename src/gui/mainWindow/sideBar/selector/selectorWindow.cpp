@@ -56,17 +56,21 @@ SelectorWindow::SelectorWindow(
 			this->toolManagerManager->setBlock(selectedProceduralCircuit->getBlockType(proceduralCircuitParameters));
 		} else if (selectedBus) {
 			Rml::Element* parametersElement = parameterMenu->GetElementById("parameter-menu-parameters");
-			assert(parametersElement->GetNumChildren() == 1);
+			assert(parametersElement->GetNumChildren() == 2);
 			Rml::ElementList elements;
-			parametersElement->GetFirstChild()->GetElementsByClassName(elements, "parameter-input");
-			Rml::ElementFormControlInput* parameterInput = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements[0]);
-			std::string str = parameterInput->GetValue();
+			parametersElement->GetChild(0)->GetElementsByClassName(elements, "parameter-input");
+			Rml::ElementFormControlInput* numInputsInput = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements[0]);
+			elements.clear();
+			parametersElement->GetChild(1)->GetElementsByClassName(elements, "parameter-input");
+			Rml::ElementFormControlInput* inputBitWidthInput = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements[0]);
+			std::string numInputsStr = numInputsInput->GetValue();
+			std::string inputBitWidthStr = inputBitWidthInput->GetValue();
 			try {
-				int value = std::stoi(str);
-
-				this->toolManagerManager->setBlock(this->blockDataManager->getBusBlock(value));
+				int numInputs = std::stoi(numInputsStr);
+				int inputBitWidth = std::stoi(inputBitWidthStr);
+				this->toolManagerManager->setBlock(this->blockDataManager->getBusBlock(numInputs, inputBitWidth));
 			} catch (std::exception const& ex) {
-				logError("Invalid bus bit width  {}. {}", "", str, ex.what());
+				logError("Invalid bus parameters: {} inputs of {} bits each. {}", "", numInputsStr, inputBitWidthStr, ex.what());
 				return;
 			}
 		}
@@ -229,34 +233,8 @@ void SelectorWindow::setupProceduralCircuitParameterMenu() {
 		hideParameterMenu();
 		return;
 	}
-	parameterMenu->SetClass("invisible", false);
-	parameterMenu->GetElementById("parameter-menu-active")->SetInnerRML(selectedProceduralCircuit->getProceduralCircuitName());
-	Rml::Element* parametersElement = parameterMenu->GetElementById("parameter-menu-parameters");
 
-	while (parametersElement->GetNumChildren() > 0) parametersElement->RemoveChild(parametersElement->GetChild(0));
-
-	const ProceduralCircuitParameters& parameters = selectedProceduralCircuit->getParameterDefaults();
-	for (const std::pair<std::string, int>& pair : parameters.parameters) {
-		Rml::ElementPtr parameterDiv = document->CreateElement("div");
-		parameterDiv->SetClass("parameter", true);
-
-		Rml::ElementPtr parameterNameElement = document->CreateElement("span");
-		parameterNameElement->SetInnerRML(pair.first + ":");
-		parameterNameElement->SetClass("parameter-name", true);
-
-		Rml::XMLAttributes parameterInputAttributes;
-		parameterInputAttributes["type"] = "text";
-		parameterInputAttributes["maxlength"] = "8";
-		parameterInputAttributes["size"] = "8";
-		Rml::ElementPtr parameterInputElement = Rml::Factory::InstanceElement(document, "input", "input", parameterInputAttributes);
-		parameterInputElement->SetClass("parameter-input", true);
-		Rml::ElementFormControlInput* parameterInput = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(parameterInputElement.get());
-		parameterInput->SetValue(std::to_string(pair.second));
-
-		parameterDiv->AppendChild(std::move(parameterNameElement));
-		parameterDiv->AppendChild(std::move(parameterInputElement));
-		parametersElement->AppendChild(std::move(parameterDiv));
-	}
+	addParametersToParameterMenu(selectedProceduralCircuit->getParameterDefaults(), selectedProceduralCircuit->getProceduralCircuitName());
 }
 
 void SelectorWindow::setupBusParameterMenu() {
@@ -264,17 +242,31 @@ void SelectorWindow::setupBusParameterMenu() {
 		hideParameterMenu();
 		return;
 	}
+	ProceduralCircuitParameters parameters;
+	parameters.parameters.emplace("Number of Ports", 8);
+	parameters.parameters.emplace("Port Bit Widths", 1);
+	addParametersToParameterMenu(parameters, "Bus");
+}
+
+void SelectorWindow::addParametersToParameterMenu(const ProceduralCircuitParameters& parameters, const std::string& title) {
 	parameterMenu->SetClass("invisible", false);
-	parameterMenu->GetElementById("parameter-menu-active")->SetInnerRML("Bus");
+	parameterMenu->GetElementById("parameter-menu-active")->SetInnerRML(title);
 	Rml::Element* parametersElement = parameterMenu->GetElementById("parameter-menu-parameters");
 
 	while (parametersElement->GetNumChildren() > 0) parametersElement->RemoveChild(parametersElement->GetChild(0));
 
+	for (const std::pair<std::string, int>& pair : parameters.parameters) {
+		Rml::ElementPtr parameterDiv = makeParameterElement(pair.first, pair.second);
+		parametersElement->AppendChild(std::move(parameterDiv));
+	}
+}
+
+Rml::ElementPtr SelectorWindow::makeParameterElement(const std::string& name, int defaultValue) {
 	Rml::ElementPtr parameterDiv = document->CreateElement("div");
 	parameterDiv->SetClass("parameter", true);
 
 	Rml::ElementPtr parameterNameElement = document->CreateElement("span");
-	parameterNameElement->SetInnerRML("Bit width:");
+	parameterNameElement->SetInnerRML(name + ":");
 	parameterNameElement->SetClass("parameter-name", true);
 
 	Rml::XMLAttributes parameterInputAttributes;
@@ -284,11 +276,11 @@ void SelectorWindow::setupBusParameterMenu() {
 	Rml::ElementPtr parameterInputElement = Rml::Factory::InstanceElement(document, "input", "input", parameterInputAttributes);
 	parameterInputElement->SetClass("parameter-input", true);
 	Rml::ElementFormControlInput* parameterInput = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(parameterInputElement.get());
-	parameterInput->SetValue(std::to_string(8));
+	parameterInput->SetValue(std::to_string(defaultValue));
 
 	parameterDiv->AppendChild(std::move(parameterNameElement));
 	parameterDiv->AppendChild(std::move(parameterInputElement));
-	parametersElement->AppendChild(std::move(parameterDiv));
+	return parameterDiv;
 }
 
 void SelectorWindow::hideParameterMenu() { parameterMenu->SetClass("invisible", true); }

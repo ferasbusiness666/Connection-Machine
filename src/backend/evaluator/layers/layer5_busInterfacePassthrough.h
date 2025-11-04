@@ -224,6 +224,21 @@ public:
         }
         return count + simulatorOptimizer.getNumInputs(middleId);
     }
+    inline bool stepBack() {
+        return simulatorOptimizer.stepBack();
+    }
+    inline bool stepForward() {
+        return simulatorOptimizer.stepForward();
+    }
+    inline bool skipBack() {
+        return simulatorOptimizer.skipBack();
+    }
+    inline bool skipForward() {
+        return simulatorOptimizer.skipForward();
+    }
+    inline bool isViewingReplay() const {
+        return simulatorOptimizer.isViewingReplay();
+    }
 private:
     SimulatorOptimizer simulatorOptimizer;
     std::unordered_map<middle_id_t, std::vector<EvalConnection>> omittedConnections;

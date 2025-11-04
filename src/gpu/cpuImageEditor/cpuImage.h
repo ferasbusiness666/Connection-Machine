@@ -32,6 +32,7 @@ public:
 
 private:
 	unsigned int getBufferPos(Vec2Int pos) const { return pos.x + pos.y * imgSize.x; }
+	static float pointLineDistanceSquared(const Vec2Int& point, const Vec2Int& lineStart, const Vec2Int& lineEnd);
 
 	std::vector<Pixel> img;
 	Vec2Int imgSize;

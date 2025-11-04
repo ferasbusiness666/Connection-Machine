@@ -33,6 +33,11 @@
 	height: 250dp;
 }
 
+.pop-up-window-blocked-bug-report {
+	width: 400dp;
+	height: 350dp;
+}
+
 .pop-up-window-not-blocked {
 	width: 100%;
 	height: 100%;

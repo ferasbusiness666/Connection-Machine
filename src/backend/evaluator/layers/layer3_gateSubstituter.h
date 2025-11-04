@@ -207,6 +207,21 @@ public:
 	inline double getAverageTickrate() const {
 		return replacer.getAverageTickrate();
 	}
+	inline bool stepBack() {
+		return replacer.stepBack();
+	}
+	inline bool stepForward() {
+		return replacer.stepForward();
+	}
+	inline bool skipBack() {
+		return replacer.skipBack();
+	}
+	inline bool skipForward() {
+		return replacer.skipForward();
+	}
+	inline bool isViewingReplay() const {
+		return replacer.isViewingReplay();
+	}
 
 private:
 	Replacer replacer;
