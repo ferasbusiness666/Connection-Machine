@@ -16,6 +16,7 @@ public:
 
 private:
 	void checkTutorial(DifferenceSharedPtr, circuit_id_t);
+	void checkTutorialState(Position pos, bool state);
 
 	void basicTutorial();
 	void basicTutorialPart1();

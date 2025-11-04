@@ -4,6 +4,10 @@
 #include "../events/customEvents.h"
 #include "gpu/mainRendererDefs.h"
 
+void CircuitTool::sendEventToCircuitView(const Event& event) {
+	eventRegister->doEvent(event);
+}
+
 bool CircuitTool::sendEvent(const Event* event) {
 	auto events = registeredEvents;
 	for (const auto& pair : events) {

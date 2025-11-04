@@ -31,6 +31,8 @@ protected:
 	void unregisterFunction(std::string eventName);
 	void unregisterFunctions();
 
+	void sendEventToCircuitView(const Event& event);
+
 	void setStatusBar(const std::string& text);
 
 	virtual void reset() { elementCreator.clear(); }
