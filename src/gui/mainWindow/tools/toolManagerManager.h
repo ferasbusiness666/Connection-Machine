@@ -46,10 +46,12 @@ public:
 			view->getToolManager().setMode(mode);
 		}
 
-		dataUpdateEventManager->sendEvent("setToolModeUpdate");
-
 		lastToolModes[activeTool] = mode;
+
+		dataUpdateEventManager->sendEvent("setToolModeUpdate");
 	}
+
+	void cycleActiveToolMode(int direction = 1);
 
 	// Returns the last stored mode for the active tool, if any.
 	inline std::optional<std::string> getActiveToolMode() {

@@ -34,6 +34,9 @@ public:
 
 	SimControlsManager* getSimControlsManager() { return simControlsManager.has_value() ? &simControlsManager.value() : nullptr; }
 
+	ToolManagerManager& getToolManagerManager() { return toolManagerManager; }
+	const ToolManagerManager& getToolManagerManager() const { return toolManagerManager; }
+
 	Rml::ElementDocument* getRmlDocument() { return rmlDocument; }
 	const Rml::ElementDocument* getRmlDocument() const { return rmlDocument; }
 
