@@ -97,6 +97,7 @@ std::vector<circuit_id_t> ConnectionMachineParser::load(const std::string& path)
 	inputFile >> token;
 
 	unsigned int version;
+	const unsigned int latestVersion = 8;
 	if (token == "version_8") {
 		version = 8;
 	} else if (token == "version_7") {
@@ -130,6 +131,9 @@ std::vector<circuit_id_t> ConnectionMachineParser::load(const std::string& path)
 			circuitFileManager->loadFromFile(fPath);
 		} else if (token == "Circuit:") {
 			if (currentParsedCircuit) {
+				if (version != latestVersion) {
+					currentParsedCircuit->setOldFileVersion(true);
+				}
 				circuit_id_t circuitId = loadParsedCircuit(*currentParsedCircuit);
 				if (circuitId != 0) circuitIds.push_back(circuitId);
 				currentParsedCircuit = nullptr;
@@ -321,6 +325,9 @@ std::vector<circuit_id_t> ConnectionMachineParser::load(const std::string& path)
 		}
 	}
 	if (currentParsedCircuit) {
+		if (version != latestVersion) {
+			currentParsedCircuit->setOldFileVersion(true);
+		}
 		circuit_id_t circuitId = loadParsedCircuit(*currentParsedCircuit);
 		if (circuitId != 0) circuitIds.push_back(circuitId);
 	}
@@ -481,9 +488,19 @@ bool ConnectionMachineParser::save(const CircuitFileManager::FileData& fileData,
 			outputFile << "blockId " << itr->first << ' ' << blockTypeStr << ' ' << pos.x << ' ' << pos.y << ' ' << orientationToString(block.getOrientation()) << '\n';
 			const ConnectionContainer& connectionContainer = block.getConnectionContainer();
 
+			std::vector<connection_end_id_t> connectionIds;
 			for (auto& connectionIter : connectionContainer.getConnections()) {
-				outputFile << '\t' << "(connId:" << std::to_string(connectionIter.first) << ')';
-				for (ConnectionEnd conn : connectionIter.second) {
+				connectionIds.push_back(connectionIter.first);
+			}
+			std::sort(connectionIds.begin(), connectionIds.end());
+			for (connection_end_id_t connectionId : connectionIds) {
+				outputFile << '\t' << "(connId:" << std::to_string(connectionId) << ')';
+				std::vector<ConnectionEnd> connections;
+				for (ConnectionEnd conn : *connectionContainer.getConnections(connectionId)) {
+					connections.push_back(conn);
+				}
+				std::sort(connections.begin(), connections.end());
+				for (ConnectionEnd conn : connections) {
 					outputFile << " (" << conn.getBlockId() << ' ' << std::to_string(conn.getConnectionId()) << ')';
 				}
 				outputFile << '\n';

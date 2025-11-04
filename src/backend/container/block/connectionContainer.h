@@ -2,10 +2,9 @@
 #define connectionContainer_h
 
 #include "connectionEnd.h"
-class BlockContainer;
 
 class ConnectionContainer {
-	friend BlockContainer;
+	friend class BlockContainer;
 public:
 	inline const std::unordered_map<connection_end_id_t, std::unordered_set<ConnectionEnd>>& getConnections() const { return connections; }
 

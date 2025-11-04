@@ -133,6 +133,9 @@ public:
 	Size getSize() const { return size; }
 	void setSize(Size size) { this->size = size; valid = false; }
 
+	bool isOldFileVersion() const { return oldFileVersion; }
+	void setOldFileVersion(bool oldFileVersion) { this->oldFileVersion = oldFileVersion; }
+
 	void markAsCustom() { isCustomBlock = true; }
 	bool isCustom() const { return isCustomBlock; }
 	bool isValid() const { return valid; }
@@ -155,6 +158,8 @@ private:
 
 	std::unordered_map<block_id_t, BlockData> blocks;
 	std::vector<ConnectionData> connections;
+
+	bool oldFileVersion = false;
 
 	bool valid = true;
 };

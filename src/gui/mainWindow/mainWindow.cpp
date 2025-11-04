@@ -107,8 +107,6 @@ MainWindow::MainWindow(Environment* environment) :
 
 	cornerLog.emplace(rmlDocument);
 
-	cornerLog->log("THIS IS MY FIRST MESSAGE");
-
 	// keybind handling
 	rmlDocument->AddEventListener(Rml::EventId::Keydown, &keybindHandler);
 	keybindHandler.addListener("Keybinds/Editing/Paste", [this]() { toolManagerManager.setTool("paste tool"); });

@@ -198,7 +198,6 @@ CircuitViewWidget::CircuitViewWidget(
 		Rml::Input::KeyIdentifier::KI_K,
 		[this]() { circuitView->getTutorialManager().Stop(); }
 	);
-	
 
 	Rml::Element* root = document->GetElementById("main-container");
 	root->AddEventListener(Rml::EventId::Mouseup, new EventPasser(
