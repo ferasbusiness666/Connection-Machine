@@ -144,10 +144,17 @@ void PopUpManager::aboutConnectionMachine() {
     overlay->GetElementsByClassName(windowList, "pop-up-window");
     if (windowList.empty()) return;
     Rml::Element* window = windowList.front();
-	window->SetAttribute("style", "display: flex; flex-direction: row; width: 650px; height: 500px; background-color:#303030;");
+	window->SetAttribute("style", "display: flex; flex-direction: column; width: 650px; height: 500px; background-color:#303030;");
 
-	Rml::Element* leftdiv = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
-	Rml::Element* rightdiv = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
+	Rml::Element* leftandright = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
+	leftandright->SetAttribute("style", "display: flex; flex-direction: row; width: 650px; height: 500px; background-color:#303030;");
+
+	Rml::Element* leftbuffer = leftandright->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
+	leftbuffer->SetAttribute("style", "display: flex; flex-direction: column; width: 20px; height: 300px; background-color:#303030;");
+
+	Rml::Element* leftdiv = leftandright->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
+	leftdiv->SetAttribute("style", "display: flex; flex-direction: column; width: 450px; height: 300px; background-color:#303030;");
+	//Rml::Element* rightdiv = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
 
 
 	Rml::Element* title = leftdiv->AppendChild(mainWindow->getRmlDocument()->CreateElement("p"));
@@ -162,11 +169,57 @@ void PopUpManager::aboutConnectionMachine() {
 
 	Rml::Element* body2 = leftdiv->AppendChild(mainWindow->getRmlDocument()->CreateElement("p"));
     body2->SetInnerRML(
-		"github: https://github.com/Martian-Technologies/Connection-Machine <br />  \
+		"<br /> github: https://github.com/Martian-Technologies/<br />Connection-Machine <br />  \
 		website: https://connection-machine.com ");
     body2->SetClass("popup-title", true);
 
-	Rml::Element* close = leftdiv->AppendChild(mainWindow->getRmlDocument()->CreateElement("button"));
+	
+	Rml::Element* rightbuffer = leftandright->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
+	rightbuffer->SetAttribute("style", "display: flex; flex-direction: column; width: 30px; height: 300px; background-color:#303030;");
+
+    Rml::Element* rightdiv = leftandright->AppendChild(mainWindow->getRmlDocument()->CreateElement("div"));
+    rightdiv->SetAttribute("style", "display: flex; flex-direction: column; width: 150px; height: 450px; background-color:#303030;");
+
+    // Add a logo (adjust the src path to your actual asset)
+    Rml::Element* logo = rightdiv->AppendChild(mainWindow->getRmlDocument()->CreateElement("img"));
+    logo->SetAttribute("src", "../../gateIcon.png");
+    logo->SetAttribute("style", "width: 100px; height: 100px; margin-bottom: 20px;");
+
+    // Add contributor names
+    Rml::Element* contributorsTitle = rightdiv->AppendChild(mainWindow->getRmlDocument()->CreateElement("p"));
+    contributorsTitle->SetInnerRML("Contributors:");
+    contributorsTitle->SetClass("popup-subtitle", true);
+
+    Rml::Element* contributorsList = rightdiv->AppendChild(mainWindow->getRmlDocument()->CreateElement("ul"));
+
+	std::vector<std::string> contributors = {
+        "Ben Herman",
+		"Niknal",
+		"Jack J",
+		"Connor K",
+		"James P",
+		"Gregory L",
+		"Sam C",
+		"August B",
+		"Nick C",
+		"Matthew D",
+		"Dante L",
+		"Tiffany C",
+		"Patrick C",
+		"Nathan C",
+		"Alek K ",
+    };
+
+	// Rml::Element* contributorsList = rightdiv->AppendChild(mainWindow->getRmlDocument()->CreateElement("li"));
+	std::string all_contributors = "";
+    for (const auto& name : contributors){
+		all_contributors = all_contributors + name.c_str() + "<br />";
+	}
+	contributorsList->SetInnerRML(all_contributors);
+	contributorsList->SetAttribute("style", "margin: 4px 0;");
+
+
+	Rml::Element* close = window->AppendChild(mainWindow->getRmlDocument()->CreateElement("button"));
     close->SetInnerRML("Close");
     close->SetClass("popup-button", true);
 	close->AddEventListener(Rml::EventId::Click, new EventPasser(
@@ -175,12 +228,6 @@ void PopUpManager::aboutConnectionMachine() {
 	    }
 	));
 
-	// Rml::Element* logoimage = rightdiv->AppendChild(mainWindow->getRmlDocument()->CreateElement("img"));
-	// logoimage->setAttribute("style","src: Connection-Machine\\rescources\\gateIcon.ico;");
-
-	// Rml::Element* contribuertitle = rightdiv->AppendChild(mainWindow->getRmlDocument()->CreateElement("p"));
-    // contribuertitle->SetInnerRML("Contributers");
-    // contribuertitle->SetClass("popup-title", true);
 }
 
 void PopUpManager::addFeedbackPopup() { //feature request, bug report, feature complaint, feedback
