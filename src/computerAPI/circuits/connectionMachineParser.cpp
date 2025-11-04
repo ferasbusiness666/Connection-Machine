@@ -97,6 +97,7 @@ std::vector<circuit_id_t> ConnectionMachineParser::load(const std::string& path)
 	inputFile >> token;
 
 	unsigned int version;
+	const unsigned int latestVersion = 8;
 	if (token == "version_8") {
 		version = 8;
 	} else if (token == "version_7") {
@@ -130,6 +131,9 @@ std::vector<circuit_id_t> ConnectionMachineParser::load(const std::string& path)
 			circuitFileManager->loadFromFile(fPath);
 		} else if (token == "Circuit:") {
 			if (currentParsedCircuit) {
+				if (version != latestVersion) {
+					currentParsedCircuit->setOldFileVersion(true);
+				}
 				circuit_id_t circuitId = loadParsedCircuit(*currentParsedCircuit);
 				if (circuitId != 0) circuitIds.push_back(circuitId);
 				currentParsedCircuit = nullptr;
@@ -321,6 +325,9 @@ std::vector<circuit_id_t> ConnectionMachineParser::load(const std::string& path)
 		}
 	}
 	if (currentParsedCircuit) {
+		if (version != latestVersion) {
+			currentParsedCircuit->setOldFileVersion(true);
+		}
 		circuit_id_t circuitId = loadParsedCircuit(*currentParsedCircuit);
 		if (circuitId != 0) circuitIds.push_back(circuitId);
 	}

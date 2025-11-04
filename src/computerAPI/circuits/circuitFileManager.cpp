@@ -81,8 +81,8 @@ bool CircuitFileManager::save(const std::string& UUID) {
 		unsigned long long currentEditCount = circuit->getEditCount();
 		unsigned long long lastSaved = fileData.lastSavedEdit.at(UUID);
 		if (lastSaved >= currentEditCount) {
-			logInfo("No changes to save ({})", "CircuitFileManager", iter->second);
-			return true;
+			logInfo("No changes to save ({}). Saving anyways", "CircuitFileManager", iter->second);
+			// return true;
 		}
 		// fileData.lastSavedEdit[UUID] = currentEditCount; // Should this be here? Move into ConnectionMachineParser?
 	} else {
@@ -242,6 +242,9 @@ circuit_id_t CircuitFileManager::loadParsedCircuit(ParsedCircuit& parsedCircuit)
 		SharedCircuit circuit = circuitManager->getCircuit(id);
 		FileData* fileData = setSaveFilePathAndGetFileData(circuit->getUUID(), parsedCircuit.getAbsoluteFilePath(), false); // we do not want ot add .cir because this file already exists
 		fileData->lastSavedEdit[circuit->getUUID()] = circuit->getEditCount();
+		if (parsedCircuit.isOldFileVersion()) {
+			circuit->addEdit(); // old files have data that should be updated because we want to kee pold files up to date
+		}
 	}
 
 	return id; // 0 if circuit creation failed
