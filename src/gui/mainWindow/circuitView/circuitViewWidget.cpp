@@ -116,7 +116,7 @@ CircuitViewWidget::CircuitViewWidget(
 		[this]() { newCircuit(); }
 	);
 	keybindHandler.addListener(
-		"Keybinds/File/Test Circuit",
+		"Keybinds/File/(DEBUG) Test Circuit",
 		[this, environment]() {
 			logInfo("Running Test!");
 			CircuitTestCase testCase;
