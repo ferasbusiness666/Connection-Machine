@@ -10,7 +10,7 @@
 
 CircuitRenderManager::CircuitRenderManager(Circuit* circuit, ViewportId viewportId) : circuit(circuit), viewportId(viewportId) {
 	circuit->connectListener(this, [this](DifferenceSharedPtr diff, circuit_id_t circuitId) {if (circuitId == this->circuit->getCircuitId()) addDifference(diff); });
-	addDifference(circuit->getBlockContainer()->getCreationDifferenceShared());
+	addDifference(circuit->getBlockContainer().getCreationDifferenceShared());
 }
 
 CircuitRenderManager::~CircuitRenderManager() {
@@ -30,7 +30,7 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 
 	MainRenderer::get().startMakingEdits(viewportId);
 
-	const BlockDataManager* blockDataManager = circuit->getBlockContainer()->getBlockDataManager();
+	const BlockDataManager* blockDataManager = circuit->getBlockContainer().getBlockDataManager();
 	for (const auto& modification : diff->getModifications()) {
 		const auto& [modificationType, modificationData] = modification;
 		switch (modificationType) {
@@ -71,9 +71,9 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 			}
 			outputIter->second.connectionsToOtherBlock.emplace(newConnection, inputBlockPosition);
 
-			std::optional<ConnectionEnd> outputConnectionEnd = circuit->getBlockContainer()->getOutputOrBidirectionalConnectionEnd(outputPosition);
+			std::optional<ConnectionEnd> outputConnectionEnd = circuit->getBlockContainer().getOutputOrBidirectionalConnectionEnd(outputPosition);
 			if (!outputConnectionEnd) continue;
-			std::optional<ConnectionEnd> inputConnectionEnd = circuit->getBlockContainer()->getInputOrBidirectionalConnectionEnd(inputPosition);
+			std::optional<ConnectionEnd> inputConnectionEnd = circuit->getBlockContainer().getInputOrBidirectionalConnectionEnd(inputPosition);
 			if (!inputConnectionEnd) continue;
 
 			// only need both if it is a different block
@@ -174,7 +174,7 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 					Vector inputVec = transformAmount.transformVectorWithArea(posPair.second - curPosition, blockSize);
 					Position inputPos = newPosition + inputVec;
 					if (moveType == MoveType::SINGLE || moveType == MoveType::MULTI_FINAL) {
-						const BlockData* blockData = circuit->getBlockContainer()->getBlockDataManager()->getBlockData(iter->second.type);
+						const BlockData* blockData = circuit->getBlockContainer().getBlockDataManager()->getBlockData(iter->second.type);
 						std::optional<connection_end_id_t> outputEndId = blockData->getOutputOrBidirectionalConnectionId(outputVec, newOrientation);
 						if (!outputEndId) continue;
 						std::optional<connection_end_id_t> inputEndId = blockData->getInputOrBidirectionalConnectionId(inputVec, newOrientation);
@@ -199,11 +199,11 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 						Vector inputVec = transformAmount.transformVectorWithArea(posPair.second - curPosition, blockSize);
 						Position inputPos = newPosition + inputVec;
 						if ((moveType == MoveType::SINGLE || moveType == MoveType::MULTI_FINAL) && otherBlockPos.x != 10000000) {
-							std::optional<connection_end_id_t> outputEndId = circuit->getBlockContainer()->getBlockDataManager()->getOutputOrBidirectionalConnectionId(
+							std::optional<connection_end_id_t> outputEndId = circuit->getBlockContainer().getBlockDataManager()->getOutputOrBidirectionalConnectionId(
 								otherIter->second.type, otherIter->second.orientation, posPair.first - otherBlockPos
 							);
 							if (!outputEndId) continue;
-							std::optional<connection_end_id_t> inputEndId = circuit->getBlockContainer()->getBlockDataManager()->getInputOrBidirectionalConnectionId(
+							std::optional<connection_end_id_t> inputEndId = circuit->getBlockContainer().getBlockDataManager()->getInputOrBidirectionalConnectionId(
 								iter->second.type, newOrientation, inputVec
 							);
 							if (!inputEndId) continue;
@@ -219,11 +219,11 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 						Vector outputVec = transformAmount.transformVectorWithArea(posPair.first - curPosition, blockSize);
 						Position outputPos = newPosition + outputVec;
 						if ((moveType == MoveType::SINGLE || moveType == MoveType::MULTI_FINAL) && otherBlockPos.x != 10000000) {
-							std::optional<connection_end_id_t> outputEndId = circuit->getBlockContainer()->getBlockDataManager()->getOutputOrBidirectionalConnectionId(
+							std::optional<connection_end_id_t> outputEndId = circuit->getBlockContainer().getBlockDataManager()->getOutputOrBidirectionalConnectionId(
 								iter->second.type, newOrientation, outputVec
 							);
 							if (!outputEndId) continue;
-							std::optional<connection_end_id_t> inputEndId = circuit->getBlockContainer()->getBlockDataManager()->getInputOrBidirectionalConnectionId(
+							std::optional<connection_end_id_t> inputEndId = circuit->getBlockContainer().getBlockDataManager()->getInputOrBidirectionalConnectionId(
 								otherIter->second.type, otherIter->second.orientation, posPair.second - otherBlockPos
 							);
 							if (!inputEndId) continue;

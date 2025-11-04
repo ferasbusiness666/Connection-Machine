@@ -23,7 +23,7 @@ bool LogicToucher::press(const Event* event) {
 		return false;
 	} else {
 		clickPosition = lastPointerPosition;
-		const Block* block = circuit->getBlockContainer()->getBlock(clickPosition);
+		const Block* block = circuit->getBlockContainer().getBlock(clickPosition);
 		if (block) {
 			switch (block->type()) {
 			case BlockType::CONSTANT_OFF: {
@@ -55,7 +55,7 @@ bool LogicToucher::unpress(const Event* event) {
 	if (!evaluator) return false;
 
 	if (clicked) {
-		const Block* block = circuit->getBlockContainer()->getBlock(clickPosition);
+		const Block* block = circuit->getBlockContainer().getBlock(clickPosition);
 		if (block && block->type() == BlockType::BUTTON) {
 			Address address = circuitView->getAddress();
 			address.addBlockId(clickPosition);
@@ -73,14 +73,14 @@ bool LogicToucher::pointerMove(const Event* event) {
 	if (!evaluator) return false;
 
 	if (clicked && lastPointerPosition != clickPosition) {
-		const Block* block = circuit->getBlockContainer()->getBlock(clickPosition);
+		const Block* block = circuit->getBlockContainer().getBlock(clickPosition);
 		if (block && block->type() == BlockType::BUTTON) {
 			Address address = circuitView->getAddress();
 			address.addBlockId(clickPosition);
 			evaluator->setState(address, false);
 		}
 		clickPosition = lastPointerPosition;
-		block = circuit->getBlockContainer()->getBlock(clickPosition);
+		block = circuit->getBlockContainer().getBlock(clickPosition);
 		if (block) {
 			switch (block->type()) {
 			case BlockType::CONSTANT_OFF: {

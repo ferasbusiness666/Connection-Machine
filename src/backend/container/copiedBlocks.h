@@ -7,7 +7,7 @@ class BlockContainer;
 
 class CopiedBlocks {
 public:
-	CopiedBlocks(const BlockContainer* blockContainer, SharedSelection selection);
+	CopiedBlocks(const BlockContainer& blockContainer, SharedSelection selection);
 
 	struct CopiedBlockData {
 		BlockType blockType;

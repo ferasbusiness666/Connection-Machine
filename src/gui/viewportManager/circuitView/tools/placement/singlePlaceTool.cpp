@@ -132,9 +132,9 @@ void SinglePlaceTool::updateElements() {
 	if (!pointerInView) return;
 	if (selectedBlock != BlockType::NONE) {
 		if (!circuit) return;
-		Size size = circuit->getBlockContainer()->getBlockDataManager()->getBlockSize(selectedBlock, orientation);
+		Size size = circuit->getBlockContainer().getBlockDataManager()->getBlockSize(selectedBlock, orientation);
 		Position placingPosition = lastPointerPosition - calculateElementOffset();
-		bool cantPlace = circuit->getBlockContainer()->checkCollision(placingPosition, orientation, selectedBlock);
+		bool cantPlace = circuit->getBlockContainer().checkCollision(placingPosition, orientation, selectedBlock);
 		elementCreator.addSelectionElement(SelectionElement(placingPosition, placingPosition + size.getLargestVectorInArea(), cantPlace));
 		elementCreator.addBlockPreview(BlockPreview(environment->getBlockRenderDataFeeder().getBlockRenderDataId(selectedBlock), placingPosition, orientation));
 	} else {
@@ -146,7 +146,7 @@ Vector SinglePlaceTool::calculateElementOffset() const {
 	if (!circuit) return Vector(0, 0);
 	if (selectedBlock == BlockType::NONE) return Vector(0, 0);
 	if (selectedBlock == BlockType::JUNCTION_L || selectedBlock == BlockType::JUNCTION_H) {
-		return orientation.transformVectorWithArea(Vector(0, 2), circuit->getBlockContainer()->getBlockDataManager()->getBlockSize(selectedBlock));
+		return orientation.transformVectorWithArea(Vector(0, 2), circuit->getBlockContainer().getBlockDataManager()->getBlockSize(selectedBlock));
 	}
 	return Vector(0, 0);
 }

@@ -31,9 +31,9 @@ void GetBlockDataCommand::run(const std::vector<std::string>& args, Environment&
         return;
     }
 
-    const BlockContainer* blockContainer = cir->getBlockContainer();
+    const BlockContainer& blockContainer = cir->getBlockContainer();
     Position pos = Position(xPos, yPos);
-    const Block* block = blockContainer->getBlock(pos);
+    const Block* block = blockContainer.getBlock(pos);
     if (block == nullptr) {
         logInfo("No block at position {}.", "GetBlockDataCommand", pos);
 		return;
@@ -48,7 +48,7 @@ void GetBlockDataCommand::run(const std::vector<std::string>& args, Environment&
     for (auto portIter = connections.begin(); portIter != connections.end(); portIter++) {
         logInfo("{} (ID: {})>:", "GetBlockDataCommand", blockData->getConnectionIdToName(portIter->first).value_or("Port"), portIter->first);
         for (auto connsIter = portIter->second.begin(); connsIter != portIter->second.end(); connsIter++) {
-            const Block* connBlock = blockContainer->getBlock(connsIter->getBlockId());
+            const Block* connBlock = blockContainer.getBlock(connsIter->getBlockId());
             logInfo("\t>{}:{} (ID: {}) @ {}", "GetBlockDataCommand", blockData->getConnectionIdToName(connsIter->getConnectionId()).value_or("Port"), blockDataManager->getName(connBlock->type()), connsIter->getBlockId(), connBlock->getPosition());
         }
 

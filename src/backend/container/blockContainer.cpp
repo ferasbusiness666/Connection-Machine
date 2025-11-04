@@ -49,7 +49,7 @@ unsigned int BlockContainer::getBlockTypeCountRecursive(BlockType blockType) con
 		circuit_id_t circuitId = circuitManager->getCircuitBlockDataManager()->getCircuitId((BlockType)i);
 		if (circuitId == 0) continue;
 		SharedCircuit circuit = circuitManager->getCircuit(circuitId);
-		count += circuit->getBlockContainer()->getBlockTypeCountRecursive(blockType) * blockTypeCounts[i];
+		count += circuit->getBlockContainer().getBlockTypeCountRecursive(blockType) * blockTypeCounts[i];
 	}
 	return count;
 }
@@ -73,7 +73,7 @@ bool BlockContainer::canInsertBlocktype(BlockType blockType) const {
 	if (selfBlockType == blockType || !blockDataManager->blockExists(blockType))
 		return false;
 	circuit_id_t circuitId = circuitManager->getCircuitBlockDataManager()->getCircuitId(blockType);
-	if (circuitId != 0 && circuitManager->getCircuit(circuitId)->getBlockContainer()->getBlockTypeCountRecursive(selfBlockType) != 0)
+	if (circuitId != 0 && circuitManager->getCircuit(circuitId)->getBlockContainer().getBlockTypeCountRecursive(selfBlockType) != 0)
 		return false;
 	return true;
 }

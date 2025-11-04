@@ -33,31 +33,31 @@ void TutorialManager::Stop() {
 void TutorialManager::checkTutorial(DifferenceSharedPtr, circuit_id_t) { basicTutorial(); }
 
 void TutorialManager::basicTutorial() {
-	const BlockContainer* blockContainer = curentCircuit->getBlockContainer();
+	const BlockContainer& blockContainer = curentCircuit->getBlockContainer();
 	
 	if (tutorialState == 0) {
 		basicTutorialPart1();
 	}
-	if (tutorialState == 1 && blockContainer->getBlock(Position(0, 0)) != nullptr && blockContainer->getBlock(Position(0, 0))->type() == BlockType::SWITCH &&
-		blockContainer->getBlock(Position(0, 2)) != nullptr && blockContainer->getBlock(Position(0, 2))->type() == BlockType::SWITCH) {
+	if (tutorialState == 1 && blockContainer.getBlock(Position(0, 0)) != nullptr && blockContainer.getBlock(Position(0, 0))->type() == BlockType::SWITCH &&
+		blockContainer.getBlock(Position(0, 2)) != nullptr && blockContainer.getBlock(Position(0, 2))->type() == BlockType::SWITCH) {
 		tutorialState++;
 	}
 	if (tutorialState == 2) {
 		basicTutorialPart2();
 	}
-	if (tutorialState == 3 && blockContainer->getBlock(Position(2, 1)) != nullptr && blockContainer->getBlock(Position(2, 1))->type() == BlockType::AND) {
+	if (tutorialState == 3 && blockContainer.getBlock(Position(2, 1)) != nullptr && blockContainer.getBlock(Position(2, 1))->type() == BlockType::AND) {
 		tutorialState++;
 	}
 	if (tutorialState == 4) {
 		basicTutorialPart3();
 	}
-	if (tutorialState == 5 && blockContainer->connectionExists(Position(0, 0), Position(2, 1)) && blockContainer->connectionExists(Position(0, 2), Position(2, 1))) {
+	if (tutorialState == 5 && blockContainer.connectionExists(Position(0, 0), Position(2, 1)) && blockContainer.connectionExists(Position(0, 2), Position(2, 1))) {
 		tutorialState++;
 	}
 	if (tutorialState == 6) {
 		basicTutorialPart4();
 	}
-	if (tutorialState == 7 && blockContainer->getBlock(Position(4, 1)) != nullptr && blockContainer->getBlock(Position(4, 1))->type() == BlockType::LIGHT && blockContainer->connectionExists(Position(2, 1), Position(4, 1))) {
+	if (tutorialState == 7 && blockContainer.getBlock(Position(4, 1)) != nullptr && blockContainer.getBlock(Position(4, 1))->type() == BlockType::LIGHT && blockContainer.connectionExists(Position(2, 1), Position(4, 1))) {
 		tutorialState++;
 	}
 	if (tutorialState == 8) {
@@ -69,7 +69,7 @@ void TutorialManager::basicTutorial() {
 	if (tutorialState == 10) {
 		basicTutorialPart6();
 	}
-	if (tutorialState == 11 && blockContainer->getBlock(Position(2, 0)) != nullptr && blockContainer->getBlock(Position(2, 0))->type() == BlockType::LIGHT) {
+	if (tutorialState == 11 && blockContainer.getBlock(Position(2, 0)) != nullptr && blockContainer.getBlock(Position(2, 0))->type() == BlockType::LIGHT) {
 		Stop();
 	}
 }

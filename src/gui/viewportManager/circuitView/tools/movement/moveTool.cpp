@@ -102,7 +102,7 @@ void MoveTool::updateElements() {
 		flattenSelection(activeSelectionHelper->getSelection(), positions);
 		std::vector<BlockPreview::Block> blocks;
 		for (Position position : positions) {
-			const Block* block = circuit->getBlockContainer()->getBlock(position);
+			const Block* block = circuit->getBlockContainer().getBlock(position);
 			if (!block) continue;
 			if (blocksSet.contains(block)) continue;
 			blocksSet.insert(block);

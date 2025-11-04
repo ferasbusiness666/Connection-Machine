@@ -355,8 +355,8 @@ bool ConnectionMachineParser::save(const CircuitFileManager::FileData& fileData,
 	for (const std::string& UUID : fileData.UUIDs) {
 		SharedCircuit circuit = circuitManager->getCircuit(UUID);
 		if (!circuit) continue;
-		const BlockContainer* blockContainer = circuit->getBlockContainer();
-		for (auto itr = blockContainer->begin(); itr != blockContainer->end(); ++itr) {
+		const BlockContainer& blockContainer = circuit->getBlockContainer();
+		for (auto itr = blockContainer.begin(); itr != blockContainer.end(); ++itr) {
 			BlockData* blockData = circuitManager->getBlockDataManager()->getBlockData(itr->second.type());
 			if (!blockData) {
 				logError("Could not find block data for block {}", "ConnectionMachineParser", std::to_string(itr->second.type()));
@@ -415,7 +415,7 @@ bool ConnectionMachineParser::save(const CircuitFileManager::FileData& fileData,
 		SharedCircuit circuit = circuitManager->getCircuit(UUID);
 		if (!circuit) continue;
 		;
-		const BlockContainer* blockContainer = circuit->getBlockContainer();
+		const BlockContainer& blockContainer = circuit->getBlockContainer();
 		const CircuitBlockData* circuitBlockData = circuitManager->getCircuitBlockDataManager()->getCircuitBlockData(circuit->getCircuitId());
 		outputFile << "Circuit: \"" << circuit->getCircuitName() << "\"\n";
 		outputFile << "UUID: " << circuit->getUUID() << "\n";
@@ -441,7 +441,7 @@ bool ConnectionMachineParser::save(const CircuitFileManager::FileData& fileData,
 			}
 		}
 
-		for (auto itr = blockContainer->begin(); itr != blockContainer->end(); ++itr) {
+		for (auto itr = blockContainer.begin(); itr != blockContainer.end(); ++itr) {
 			const Block& block = itr->second;
 			Position pos = block.getPosition();
 

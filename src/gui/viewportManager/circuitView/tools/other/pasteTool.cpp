@@ -54,7 +54,7 @@ void PasteTool::updateElements() {
 		for (const CopiedBlocks::CopiedBlockData& block : copiedBlocks->getCopiedBlocks()) {
 			blocks.emplace_back(
 				environment->getBlockRenderDataFeeder().getBlockRenderDataId(block.blockType),
-				lastPointerPosition + transformAmount * (block.position - copiedBlocks->getMinPosition()) - transformAmount.transformVectorWithArea(Vector(0), circuit->getBlockContainer()->getBlockDataManager()->getBlockSize(block.blockType, block.orientation)),
+				lastPointerPosition + transformAmount * (block.position - copiedBlocks->getMinPosition()) - transformAmount.transformVectorWithArea(Vector(0), circuit->getBlockContainer().getBlockDataManager()->getBlockSize(block.blockType, block.orientation)),
 				transformAmount * block.orientation
 			);
 		}
@@ -76,7 +76,7 @@ bool PasteTool::validatePlacement() const {
 
 	for (const CopiedBlocks::CopiedBlockData& block : copiedBlocks->getCopiedBlocks()) {
 		Position testPos = block.position + totalOffset;
-		if (circuit->getBlockContainer()->checkCollision(testPos)) {
+		if (circuit->getBlockContainer().checkCollision(testPos)) {
 			return false;
 		}
 	}

@@ -14,7 +14,7 @@ public:
 		}
 		auto circuit = circuitManager.getCircuit(circuitId);
 		if (circuit) {
-			auto difference = std::make_shared<Difference>(circuit->getBlockContainer()->getCreationDifference());
+			auto difference = std::make_shared<Difference>(circuit->getBlockContainer().getCreationDifference());
 			cache[circuitId] = difference;
 			return difference;
 		}
