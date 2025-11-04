@@ -191,11 +191,11 @@ CircuitViewWidget::CircuitViewWidget(
 		[this]() { newCircuit(); }
 	);
 	keybindHandler.addListener(
-		Rml::Input::KeyIdentifier::KI_J,
+		"Keybinds/Tutorial/Start",
 		[this]() { circuitView->getTutorialManager().StartTutorial(); }
 	);
 	keybindHandler.addListener(
-		Rml::Input::KeyIdentifier::KI_K,
+		"Keybinds/Tutorial/Stop",
 		[this]() { circuitView->getTutorialManager().Stop(); }
 	);
 
