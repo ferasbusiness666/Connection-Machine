@@ -37,6 +37,9 @@ namespace {
 		}
 
 		glm::vec2 normal = glm::vec2(-direction.y, direction.x) / length;
+		if (normal.y < 0.f || (normal.y == 0.f && normal.x > 0.f)) {
+			normal *= -1.f;
+		}
 		float centeredIndex = static_cast<float>(laneIndex) - (static_cast<float>(laneCount - 1) * 0.5f);
 		return normal * (centeredIndex * WIRE_LINE_WIDTH * std::min((float)maxLaneCountBeforeWireShrink / (float)laneCount, 1.f));
 	}
