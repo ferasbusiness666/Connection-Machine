@@ -179,12 +179,11 @@ CircuitViewWidget::CircuitViewWidget(
 		[this]() { circuitView->getEventRegister().doEvent(Event("Tool Invert Mode")); }
 	);
 	keybindHandler.addListener(
-		Rml::Input::KeyIdentifier::KI_TAB,
+		"Keybinds/Editing/Tools/Cycle Mode",
 		[this]() { this->mainWindow->getToolManagerManager().cycleActiveToolMode(); }
 	);
 	keybindHandler.addListener(
-		Rml::Input::KeyIdentifier::KI_TAB,
-		Rml::Input::KeyModifier::KM_SHIFT,
+		"Keybinds/Editing/Tools/Cycle Mode Back",
 		[this]() { this->mainWindow->getToolManagerManager().cycleActiveToolMode(-1); }
 	);
 	keybindHandler.addListener(
