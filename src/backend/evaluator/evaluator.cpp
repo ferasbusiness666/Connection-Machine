@@ -1194,10 +1194,15 @@ void Evaluator::dirtyBlockAt(Position position, eval_circuit_id_t evalCircuitId)
 		logError("BlockData not found for block type {}", "Evaluator::dirtyBlockAt", static_cast<int>(block->type()));
 		return;
 	}
-	for (connection_end_id_t i : range(connection_end_id_t(0), blockData->getConnectionCount())) {
-		std::optional<Position> portPositionOpt = block->getConnectionPosition(i);
+	if (blockData->isDefaultData()) {
+		dirtyNodes.insert({ position, evalCircuitId });
+		return;
+	}
+	const std::unordered_map<connection_end_id_t, BlockData::ConnectionData>& connections = blockData->getConnections();
+	for (const auto& [connectionId, connectionData] : connections) {
+		std::optional<Position> portPositionOpt = block->getConnectionPosition(connectionId);
 		if (!portPositionOpt) {
-			logError("Port position not found for connection ID {}", "Evaluator::dirtyBlockAt", i);
+			logError("Port position not found for connection ID {}", "Evaluator::dirtyBlockAt", connectionId);
 			continue;
 		}
 		dirtyNodes.insert({ portPositionOpt.value(), evalCircuitId });
