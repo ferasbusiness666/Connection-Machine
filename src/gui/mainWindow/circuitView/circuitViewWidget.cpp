@@ -179,6 +179,15 @@ CircuitViewWidget::CircuitViewWidget(
 		[this]() { circuitView->getEventRegister().doEvent(Event("Tool Invert Mode")); }
 	);
 	keybindHandler.addListener(
+		Rml::Input::KeyIdentifier::KI_TAB,
+		[this]() { this->mainWindow->getToolManagerManager().cycleActiveToolMode(); }
+	);
+	keybindHandler.addListener(
+		Rml::Input::KeyIdentifier::KI_TAB,
+		Rml::Input::KeyModifier::KM_SHIFT,
+		[this]() { this->mainWindow->getToolManagerManager().cycleActiveToolMode(-1); }
+	);
+	keybindHandler.addListener(
 		"Keybinds/File/New",
 		[this]() { newCircuit(); }
 	);
