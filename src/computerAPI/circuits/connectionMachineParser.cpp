@@ -488,9 +488,19 @@ bool ConnectionMachineParser::save(const CircuitFileManager::FileData& fileData,
 			outputFile << "blockId " << itr->first << ' ' << blockTypeStr << ' ' << pos.x << ' ' << pos.y << ' ' << orientationToString(block.getOrientation()) << '\n';
 			const ConnectionContainer& connectionContainer = block.getConnectionContainer();
 
+			std::vector<connection_end_id_t> connectionIds;
 			for (auto& connectionIter : connectionContainer.getConnections()) {
-				outputFile << '\t' << "(connId:" << std::to_string(connectionIter.first) << ')';
-				for (ConnectionEnd conn : connectionIter.second) {
+				connectionIds.push_back(connectionIter.first);
+			}
+			std::sort(connectionIds.begin(), connectionIds.end());
+			for (connection_end_id_t connectionId : connectionIds) {
+				outputFile << '\t' << "(connId:" << std::to_string(connectionId) << ')';
+				std::vector<ConnectionEnd> connections;
+				for (ConnectionEnd conn : *connectionContainer.getConnections(connectionId)) {
+					connections.push_back(conn);
+				}
+				std::sort(connections.begin(), connections.end());
+				for (ConnectionEnd conn : connections) {
 					outputFile << " (" << conn.getBlockId() << ' ' << std::to_string(conn.getConnectionId()) << ')';
 				}
 				outputFile << '\n';
