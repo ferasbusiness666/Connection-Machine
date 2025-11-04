@@ -3,7 +3,7 @@
 
 typedef char block_data_index_t;
 
-typedef unsigned char block_size_t;
+typedef std::uint8_t block_size_t;
 typedef unsigned int block_id_t;
 
 enum BlockType : std::uint16_t {
@@ -14,15 +14,22 @@ enum BlockType : std::uint16_t {
 	NAND,
 	NOR,
 	XNOR,
+	BUFFER,
+	NOT,
 	JUNCTION,
+	JUNCTION_L,
+	JUNCTION_H,
+	JUNCTION_X,
 	TRISTATE_BUFFER,
-	//TIMER,
 	BUTTON,
 	TICK_BUTTON,
 	SWITCH,
-	CONSTANT,
+	CONSTANT_OFF,
+	CONSTANT_ON,
+	CONSTANT_Z,
+	CONSTANT_X,
 	LIGHT,
-	BUS_INTERFACE,
+	COLOR_LIGHT,
 	CUSTOM, // placeholder for custom blocks in parsed circuit
 };
 

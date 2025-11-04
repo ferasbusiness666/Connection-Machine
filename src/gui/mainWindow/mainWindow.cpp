@@ -31,7 +31,7 @@ MainWindow::MainWindow(Environment* environment) :
 	// create rmlUI document
 	rmlDocument = rmlContext->LoadDocument(DirectoryManager::getResourceDirectory().generic_string() + "/gui/mainWindow/mainWindow.rml");
 
-	// SdlWindow* sdlWindow2 = App::get().registerWindow("Debugger").get();
+	// SdlWindow* sdlWindow2 = App::get().registerWindow("Debugger", 350, 800).get();
 	// WindowId windowId2 = MainRenderer::get().registerWindow(sdlWindow2);
 	// Rml::Context* rmlContext2 = Rml::CreateContext("Debugger", Rml::Vector2i(sdlWindow2->getSize().first, sdlWindow2->getSize().second));
 	// if (rmlContext2) {
@@ -99,7 +99,7 @@ MainWindow::MainWindow(Environment* environment) :
 	);
 
 	Rml::Element* blockCreationMenu = rmlDocument->GetElementById("block-creation-form");
-	blockCreationWindow.emplace(&(environment->getBackend().getCircuitManager()), this, environment->getBackend().getDataUpdateEventManager(), &toolManagerManager, rmlDocument, blockCreationMenu);
+	blockCreationWindow.emplace(&(environment->getBackend().getCircuitManager()), environment, this, environment->getBackend().getDataUpdateEventManager(), &toolManagerManager, rmlDocument, blockCreationMenu);
 
 	simControlsManager.emplace(rmlDocument, getCircuitViewWidget(0), environment->getBackend().getDataUpdateEventManager());
 
@@ -151,29 +151,6 @@ bool MainWindow::recieveEvent(SDL_Event& event) {
 			App::get().deregisterWindow(sdlWindow.get());
 		}
 		return true;
-	}
-
-	if (event.type == SDL_EVENT_DROP_FILE) {
-		std::string file = event.drop.data;
-		std::cout << file << "\n";
-		std::vector<circuit_id_t> ids = getActiveCircuitViewWidget()->getFileManager()->loadFromFile(file);
-		if (ids.empty()) {
-			// logError("Error", "Failed to load circuit file."); // Not a error! It is valid to load 0 circuits.
-		} else {
-			circuit_id_t id = ids.back();
-			if (id == 0) {
-				logError("Error", "Failed to load circuit file.");
-			} else {
-				getActiveCircuitViewWidget()->getCircuitView()->setCircuit(&environment->getBackend(), id);
-				// circuitViewWidget->getCircuitView()->getBackend()->linkCircuitViewWithCircuit(circuitViewWidget->getCircuitView(), id);
-				for (auto& iter : environment->getBackend().getEvaluatorManager().getEvaluators()) {
-					if (iter.second->getCircuitId(Address()) == id) {
-						getActiveCircuitViewWidget()->getCircuitView()->setEvaluator(&environment->getBackend(), iter.first);
-						// circuitViewWidget->getCircuitView()->getBackend()->linkCircuitViewWithEvaluator(circuitViewWidget->getCircuitView(), iter.first, Address());
-					}
-				}
-			}
-		}
 	}
 
 	// send event to RML

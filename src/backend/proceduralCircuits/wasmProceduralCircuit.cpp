@@ -1,6 +1,5 @@
 #include "wasmProceduralCircuit.h"
 
-#include "backend/circuit/circuitBlockData.h"
 #include "generatedCircuitValidator.h"
 #include "../circuit/circuitManager.h"
 #include "computerAPI/circuits/circuitFileManager.h"
@@ -33,12 +32,17 @@ WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, Circu
 			else if (blockName == "NAND") return BlockType::NAND;
 			else if (blockName == "NOR") return BlockType::NOR;
 			else if (blockName == "XNOR") return BlockType::XNOR;
+			else if (blockName == "BUFFER") return BlockType::BUFFER;
+			else if (blockName == "NOT") return BlockType::NOT;
 			else if (blockName == "JUNCTION") return BlockType::JUNCTION;
 			else if (blockName == "TRISTATE_BUFFER") return BlockType::TRISTATE_BUFFER;
 			else if (blockName == "BUTTON") return BlockType::BUTTON;
 			else if (blockName == "TICK_BUTTON") return BlockType::TICK_BUTTON;
 			else if (blockName == "SWITCH") return BlockType::SWITCH;
-			else if (blockName == "CONSTANT") return BlockType::CONSTANT;
+			else if (blockName == "CONSTANT_OFF") return BlockType::CONSTANT_OFF;
+			else if (blockName == "CONSTANT_ON") return BlockType::CONSTANT_ON;
+			else if (blockName == "CONSTANT_Z") return BlockType::CONSTANT_Z;
+			else if (blockName == "CONSTANT_X") return BlockType::CONSTANT_X;
 			else if (blockName == "LIGHT") return BlockType::LIGHT;
 			return BlockType::NONE;
 		});
@@ -86,18 +90,18 @@ WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, Circu
 
 	wasmtime::Func createConnectionFunc = wasmtime::Func::wrap(*Wasm::getStore(),
 		[thisPtrPtr](int32_t outputBlockId, int32_t outputPortId, int32_t inputBlockId, int32_t inputPortId) {
-			(*thisPtrPtr)->generatedCircuit->addConnection(outputBlockId, outputPortId, inputBlockId, inputPortId);
+			(*thisPtrPtr)->generatedCircuit->addConnection(outputBlockId, connection_end_id_t(outputPortId), inputBlockId, connection_end_id_t(inputPortId));
 		});
 
 	wasmtime::Func addConnectionInputFunc = wasmtime::Func::wrap(*Wasm::getStore(),
 		[thisPtrPtr](int32_t portX, int32_t portY, int32_t internalBlockId, int32_t internalBlockPortId) {
-			(*thisPtrPtr)->generatedCircuit->addConnectionPort(true, (*thisPtrPtr)->portId, Vector(portX, portY), internalBlockId, internalBlockPortId, "Port" + std::to_string((*thisPtrPtr)->portId));
+			(*thisPtrPtr)->generatedCircuit->addConnectionPort(true, connection_end_id_t((*thisPtrPtr)->portId), Vector(portX, portY), internalBlockId, connection_end_id_t(internalBlockPortId), "Port" + std::to_string((*thisPtrPtr)->portId));
 			++((*thisPtrPtr)->portId);
 		});
 
 	wasmtime::Func addConnectionOutputFunc = wasmtime::Func::wrap(*Wasm::getStore(),
 		[thisPtrPtr](int32_t portX, int32_t portY, int32_t internalBlockId, int32_t internalBlockPortId) {
-			(*thisPtrPtr)->generatedCircuit->addConnectionPort(false, (*thisPtrPtr)->portId, Vector(portX, portY), internalBlockId, internalBlockPortId, "Port" + std::to_string((*thisPtrPtr)->portId));
+			(*thisPtrPtr)->generatedCircuit->addConnectionPort(false, connection_end_id_t((*thisPtrPtr)->portId), Vector(portX, portY), internalBlockId, connection_end_id_t(internalBlockPortId), "Port" + std::to_string((*thisPtrPtr)->portId));
 			++((*thisPtrPtr)->portId);
 		});
 
@@ -264,7 +268,7 @@ void WasmProceduralCircuit::WasmInstance::makeCircuit(const ProceduralCircuitPar
 	GeneratedCircuit* tmpCircuit = this->generatedCircuit;
 	unsigned int tmpPortId = portId;
 	unsigned int tmpBlockId = blockId;
-	
+
 	this->parameters = &parameters;
 	this->generatedCircuit = &generatedCircuit;
 	portId = 0;

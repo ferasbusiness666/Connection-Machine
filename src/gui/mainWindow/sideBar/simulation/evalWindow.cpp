@@ -66,10 +66,10 @@ void EvalWindow::refreshSidebar(bool rebuildItems) {
 		std::string label = labelDiv->GetInnerRML();
 		std::stringstream ss(label);
 		std::string word;
-		evaluator_id_t idParsed = 0;
+		unsigned int idParsed = 0;
 		ss >> word >> idParsed;
 		if (ss.fail() || word != "Eval") continue;
-		if (idParsed == activeId) {
+		if (evaluator_id_t(idParsed) == activeId) {
 			evaluatorRow = r;
 			break;
 		}
@@ -145,7 +145,7 @@ void EvalWindow::updateSelected(std::string string) {
 	std::vector<std::string> parts = stringSplit(string, '/');
 	std::stringstream evalName(parts.front());
 	std::string str;
-	evaluator_id_t evalId;
+	unsigned int evalId;
 	evalName >> str >> evalId;
 	Address address;
 	for (unsigned int i = 1; i < parts.size(); i++) {
@@ -163,7 +163,7 @@ void EvalWindow::updateSelected(std::string string) {
 	}
 
 	CircuitView* circuitView = mainWindow->getActiveCircuitViewWidget()->getCircuitView();
-	circuitView->setEvaluator(circuitView->getBackend(), evalId, address);
+	circuitView->setEvaluator(circuitView->getBackend(), evaluator_id_t(evalId), address);
 	refreshSidebar(false);
 }
 
@@ -190,10 +190,10 @@ void EvalWindow::selectEvaluatorForCircuit(circuit_id_t circuitId) {
 				std::string label = labelDiv->GetInnerRML();
 				std::stringstream ss(label);
 				std::string word;
-				evaluator_id_t idParsed = 0;
+				unsigned int idParsed = 0;
 				ss >> word >> idParsed;
 				if (ss.fail() || word != "Eval") continue;
-				if (idParsed != wantedId) continue;
+				if (evaluator_id_t(idParsed) != wantedId) continue;
 				Rml::ElementList all;
 				root->GetElementsByTagName(all, "li");
 				for (auto* a : all) a->SetClass("selected", false);

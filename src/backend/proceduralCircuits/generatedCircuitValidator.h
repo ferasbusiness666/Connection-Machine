@@ -15,8 +15,8 @@ public:
 private:
 	struct ConnectionHash {
 		size_t operator()(const GeneratedCircuit::ConnectionData& connectionData) const {
-			return std::hash<block_id_t>()(connectionData.outputId) ^ std::hash<block_id_t>()(connectionData.inputId) ^
-				   std::hash<connection_end_id_t>()(connectionData.outputBlockId) ^ std::hash<connection_end_id_t>()(connectionData.inputBlockId);
+			return std::hash<block_id_t>()(connectionData.outputBlockId) ^ std::hash<connection_end_id_t>()(connectionData.outputId) ^
+				   std::hash<block_id_t>()(connectionData.inputBlockId) ^ std::hash<connection_end_id_t>()(connectionData.inputId);
 		}
 	};
 

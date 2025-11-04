@@ -3,12 +3,9 @@
 #include "gpu/renderer/viewport/blockTextureManager.h"
 #include "gpu/abstractions/vulkanShader.h"
 
-#include "backend/evaluator/logicState.h"
+#include "backend/evaluator/simulator/logicState.h"
 #include "computerAPI/fileLoader.h"
 #include "computerAPI/directoryManager.h"
-
-#include "util/vec2.h"
-
 
 #ifdef TRACY_PROFILER
 	#include <tracy/Tracy.hpp>
@@ -73,7 +70,6 @@ void ChunkRenderer::render(Frame& frame, const glm::mat4& viewMatrix, Evaluator*
 #ifdef TRACY_PROFILER
 	ZoneScoped;
 #endif
-
 	// save chunk data to frame
 	for (auto& chunk : chunks) {
 		frame.lifetime.push(chunk);
@@ -82,9 +78,6 @@ void ChunkRenderer::render(Frame& frame, const glm::mat4& viewMatrix, Evaluator*
 	// shared push constants
 	ChunkPushConstants pushConstants{};
 	pushConstants.mvp = viewMatrix;
-	Vec2 uvCellSize = device->getBlockTextureManager().getTileset().getCellUVSize();
-	pushConstants.uvCellSizeX = uvCellSize.x;
-	pushConstants.uvCellSizeY = uvCellSize.y;
 
 	// fill state buffers
 	for (std::shared_ptr<VulkanChunkAllocation> chunk : chunks) {
@@ -112,7 +105,7 @@ void ChunkRenderer::render(Frame& frame, const glm::mat4& viewMatrix, Evaluator*
 		blockPipeline.cmdPushConstants(frame.mainCommandBuffer, &pushConstants);
 
 		// bind texture descriptor
-		std::shared_ptr<BlockTexture> blockTexture = device->getBlockTextureManager().getTexture();
+		std::shared_ptr<BlockTextureArray> blockTexture = device->getBlockTextureManager().getTextureArray();
 		frame.lifetime.push(blockTexture);
 		vkCmdBindDescriptorSets(frame.mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, blockPipeline.getLayout(), 1, 1, &blockTexture->descriptor, 0, nullptr);
 

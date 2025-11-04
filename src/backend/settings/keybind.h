@@ -4,7 +4,7 @@
 class Keybind {
 public:
 	// Eunms exactly matches RmlUi's mapping (copied from RmlUi)
-	enum KeyId : unsigned char {
+	enum KeyId : std::uint8_t {
 		KI_UNKNOWN = 0,
 
 		KI_SPACE = 1,
@@ -206,7 +206,7 @@ public:
 		KI_LAST_CUSTOM_KEY = 250,
 	};
 
-	enum KeyMod : unsigned char {
+	enum KeyMod : std::uint8_t {
 		KM_UNKNOWN = 0,
 		KM_CTRL = 1 << 0,	   // Set if at least one Ctrl key is depressed.
 		KM_SHIFT = 1 << 1,	   // Set if at least one Shift key is depressed.
@@ -452,7 +452,7 @@ public:
 #endif
         	else if (token == "SHIFT") {
             	result |= 2U;
-        	} 
+        	}
         	else {
             	//find and replace ' "' with ' {"' and repace '")' with '",i})' copy paste all ~200 items into map and match with num
 				//all because microsoft hates if statements

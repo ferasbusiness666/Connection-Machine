@@ -55,12 +55,12 @@ bool Circuit::tryRemoveBlock(Position position) {
 	return out;
 }
 
-bool Circuit::tryMoveBlock(Position positionOfBlock, Position position) {
+bool Circuit::tryMoveBlock(Position positionOfBlock, Position position, Orientation transformAmount) {
 #ifdef TRACY_PROFILER
 	ZoneScoped;
 #endif
 	DifferenceSharedPtr difference = std::make_shared<Difference>();
-	bool out = blockContainer.tryMoveBlock(positionOfBlock, position, Orientation(), difference.get());
+	bool out = blockContainer.tryMoveBlock(positionOfBlock, position, transformAmount, difference.get());
 	assert(out != difference->empty());
 	sendDifference(std::move(difference));
 	return out;
@@ -139,6 +139,13 @@ void Circuit::setType(const SharedSelection& selection, BlockType type) {
 	sendDifference(std::move(difference));
 }
 
+bool Circuit::setType(Position positionOfBlock, BlockType type) {
+	DifferenceSharedPtr difference = std::make_shared<Difference>();
+	bool output = blockContainer.trySetType(positionOfBlock, type, difference.get());
+	sendDifference(std::move(difference));
+	return output;
+}
+
 void Circuit::setType(const SharedSelection& selection, BlockType type, Difference* difference) {
 
 	// Cell Selection
@@ -156,7 +163,7 @@ void Circuit::setType(const SharedSelection& selection, BlockType type, Differen
 	}
 }
 
-void Circuit::tryInsertOverArea(Position cellA, Position cellB, Orientation transformAmount, BlockType blockType) {
+void Circuit::tryInsertOverArea(Position cellA, Position cellB, Orientation orientation, BlockType blockType) {
 #ifdef TRACY_PROFILER
 	ZoneScoped;
 #endif
@@ -166,7 +173,7 @@ void Circuit::tryInsertOverArea(Position cellA, Position cellB, Orientation tran
 	DifferenceSharedPtr difference = std::make_shared<Difference>();
 	for (coordinate_t x = cellA.x; x <= cellB.x; x++) {
 		for (coordinate_t y = cellA.y; y <= cellB.y; y++) {
-			blockContainer.tryInsertBlock(Position(x, y), transformAmount, blockType, difference.get());
+			blockContainer.tryInsertBlock(Position(x, y), orientation, blockType, difference.get());
 		}
 	}
 	sendDifference(std::move(difference));
@@ -234,16 +241,24 @@ bool Circuit::tryInsertParsedCircuit(const ParsedCircuit& parsedCircuit, Positio
 	for (const auto& conn : parsedCircuit.getConns()) {
 		const ParsedCircuit::BlockData* parsedBlock = parsedCircuit.getBlock(conn.outputBlockId);
 		if (!parsedBlock) {
-			logError("Could not get block from parsed circuit while inserting block.", "Circuit");
+			logError("Could not get block {} from parsed circuit while inserting block.", "Circuit", conn.outputBlockId);
 			continue;
 		}
-		if (blockContainer.getBlockDataManager()->isConnectionInput(parsedBlock->type, conn.outputEndId)) {
+		const BlockData* outputBlockData = blockContainer.getBlockDataManager()->getBlockData(parsedBlock->type);
+		if (!outputBlockData) {
+			logError("Could not get block type {} from block data manager while inserting block.", "Circuit", parsedBlock->type);
+			continue;
+		}
+		if (outputBlockData->isConnectionInput(conn.outputEndId)) {
 			// skip inputs
 			continue;
 		}
-
 		ConnectionEnd output(realIds[conn.outputBlockId], conn.outputEndId);
 		ConnectionEnd input(realIds[conn.inputBlockId], conn.inputEndId);
+
+		if (blockContainer.connectionExists(output, input)) {
+			continue;
+		}
 		if (!blockContainer.tryCreateConnection(output, input, difference.get())) {
 			logError("Failed to create connection while inserting block (could be a duplicate connection in parsing):[{},{}] -> [{},{}]", "", conn.inputBlockId, conn.inputEndId, conn.outputBlockId, conn.outputEndId);
 		}
@@ -291,6 +306,9 @@ bool Circuit::tryInsertGeneratedCircuit(const GeneratedCircuit& generatedCircuit
 
 		ConnectionEnd output(realIds[conn.outputBlockId], conn.outputId);
 		ConnectionEnd input(realIds[conn.inputBlockId], conn.inputId);
+		if (blockContainer.connectionExists(output, input)) {
+			continue;
+		}
 		if (!blockContainer.tryCreateConnection(output, input, difference.get())) {
 			logError("Failed to create connection while inserting block (could be a duplicate connection in parsing):[{},{}] -> [{},{}]", "", conn.inputBlockId, conn.inputId, conn.outputBlockId, conn.outputId);
 		}
@@ -324,6 +342,12 @@ bool Circuit::tryInsertCopiedBlocks(const SharedCopiedBlocks& copiedBlocks, Posi
 		}
 	}
 	for (const std::pair<Position, Position>& conn : copiedBlocks->getCopiedConnections()) {
+		if (blockContainer.connectionExists(
+			position + transformAmount * (conn.second - copiedBlocks->getMinPosition()),
+			position + transformAmount * (conn.first - copiedBlocks->getMinPosition())
+		)) {
+			continue;
+		}
 		if (!blockContainer.tryCreateConnection(
 			position + transformAmount * (conn.second - copiedBlocks->getMinPosition()),
 			position + transformAmount * (conn.first - copiedBlocks->getMinPosition()),
@@ -590,6 +614,9 @@ void Circuit::popOffStack(Position position, Orientation transformAmount, bool r
 	const Block* block = blockContainer.getBlock(stackTop);
 	if (!block) {
 		logError("Can't find block on stack, this should never happen", "Circuit");
+		if (stackTop.y > stackBottom.y) {
+			stackTop.y--; // take one off the stack to try to save what I can
+		}
 		return;
 	}
 	stackTop.y -= block->size().h-1;

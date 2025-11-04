@@ -2,11 +2,14 @@
 #define blockRenderDataFeeder_h
 
 #include "gpu/blockRenderDataManager.h"
+#include "gpu/cpuImageEditor/cpuImage.h"
 #include "backend/container/block/blockDefs.h"
 #include "backend/container/block/connectionEnd.h"
 #include "backend/dataUpdateEventManager.h"
 
+class Font;
 class Backend;
+class BlockData;
 
 class BlockRenderDataFeeder {
 public:
@@ -14,6 +17,11 @@ public:
 
 	BlockRenderDataId getBlockRenderDataId(BlockType blockType) const;
 
+	void refreshBlockTexture(BlockType blockType);
+
+	void doBlockTextureUpdates();
+
+private:
 	void newBlockTypeUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void postBlockSizeChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void blockNameChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
@@ -21,17 +29,34 @@ public:
 	void blockDataSetConnectionUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void blockDataRemoveConnectionUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void blockDataConnectionNameSetUpdate(const DataUpdateEventManager::EventData* dataEvent);
+	void blockDataTextureChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
+	void blockDataUsesTileMapTextureChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
+	void blockDataTextureTileChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
+	void updateImageIfNotSpecified(const DataUpdateEventManager::EventData* dataEvent);
 
-private:
-	struct RenderIdData {
-		RenderIdData(BlockRenderDataId blockRenderDataId) : blockRenderDataId(blockRenderDataId) {}
-		BlockRenderDataId blockRenderDataId;
+	struct RenderData {
+		RenderData(BlockRenderDataId blockRenderDataId) : blockRenderDataId(blockRenderDataId) {}
+		BlockTextureId blockTextureId = 0;
+		BlockRenderDataId blockRenderDataId = 0;
 		std::map<connection_end_id_t, BlockPortRenderDataId> blockPortRenderDataIds;
 	};
 
+	std::set<BlockType> blockTexturesToUpdate;
+	std::shared_ptr<Font> font;
+
+	BlockTextureId getBlockTextureId(const BlockData* blockData, RenderData* renderData);
+
+	std::unordered_map<BlockTextureId, unsigned int> blockTextureIdUsage;
+
 	Backend* backend;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
-	std::map<BlockType, RenderIdData> blockTypeToRenderIdData;
+	std::map<BlockType, RenderData> blockTypeToRenderData;
+
+	void putConnectionNipplesOntoImage(const BlockData* blockData, CpuImage& img, int scale);
+	void createTextureForCustomBlock(const BlockData* blockData, CpuImage& img, int scale);
+	void createTextureForBusBlock(const BlockData* blockData, CpuImage& img, int scale);
+	std::pair<int, int> calculatePadding(int width, int height);
+	CpuImage padTexture(const CpuImage& img);
 };
 
 #endif /* blockRenderDataFeeder_h */

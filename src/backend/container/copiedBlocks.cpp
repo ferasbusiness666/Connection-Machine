@@ -30,8 +30,8 @@ CopiedBlocks::CopiedBlocks(const BlockContainer* blockContainer, SharedSelection
 			std::optional<Vector> connectionVector = blockData->getConnectionVector(iter.first, block->getOrientation());
 			if (!connectionVector) continue;
 			Position connectionPosition = block->getPosition() + connectionVector.value();
-			bool isInput = blockData->isConnectionInput(iter.first);
-			const phmap::flat_hash_set<ConnectionEnd>* otherConnections = block->getConnectionContainer().getConnections(iter.first);
+			BlockData::ConnectionData::PortType portType = blockData->getConnectionPortType(iter.first);
+			auto otherConnections = block->getConnectionContainer().getConnections(iter.first);
 			if (!otherConnections) continue;
 			for (ConnectionEnd connectionEnd : *otherConnections) {
 				const Block* otherBlock = blockContainer->getBlock(connectionEnd.getBlockId());
@@ -41,12 +41,18 @@ CopiedBlocks::CopiedBlocks(const BlockContainer* blockContainer, SharedSelection
 					if (positions.contains(*iter)) { skipConnection = false; break; }
 				}
 				if (skipConnection) continue;
-				std::optional<Vector> otherConnectionVector = blockContainer->getBlockDataManager()->getBlockData(otherBlock->type())->getConnectionVector(
+				const BlockData* otherBlockData = blockContainer->getBlockDataManager()->getBlockData(otherBlock->type());
+				std::optional<Vector> otherConnectionVector = otherBlockData->getConnectionVector(
 					connectionEnd.getConnectionId(), otherBlock->getOrientation()
 				);
 				if (!otherConnectionVector) continue;
 				Position otherConnectionPosition = otherBlock->getPosition() + otherConnectionVector.value();
-				if (isInput) connections.emplace_back(connectionPosition, otherConnectionPosition);
+				if (portType == BlockData::ConnectionData::PortType::INPUT) connections.emplace_back(connectionPosition, otherConnectionPosition);
+				else if (portType == BlockData::ConnectionData::PortType::BIDIRECTIONAL) {
+					if (otherBlockData->isConnectionOutputOrBidirectional(connectionEnd.getConnectionId())) {
+						connections.emplace_back(connectionPosition, otherConnectionPosition);
+					}
+				}
 				// else connections.emplace_back(otherConnectionPosition, connectionPosition);
 			}
 		}

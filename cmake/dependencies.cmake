@@ -25,7 +25,7 @@ function(add_main_dependencies)
 	target_include_directories(cfgpath INTERFACE "${EXTERNAL_DIR}/cfgpath")
 	list(APPEND EXTERNAL_LINKS cfgpath)
 
-	# JSON
+	# # JSON # We dont use this anymore # yes we do
 	CPMAddPackage(
 		NAME nlohmann_json
 		GITHUB_REPOSITORY nlohmann/json
@@ -71,7 +71,7 @@ function(add_main_dependencies)
 		CPMAddPackage(
 			NAME wasmtime
 			GITHUB_REPOSITORY bytecodealliance/wasmtime
-			GIT_TAG v35.0.0
+			GIT_TAG v37.0.2
 			DOWNLOAD_ONLY YES
 			EXCLUDE_FROM_ALL YES
 			SOURCE_DIR "${EXTERNAL_DIR}/wasmtime"
@@ -84,7 +84,7 @@ function(add_main_dependencies)
 		CPMAddPackage(
 			NAME wasmtime
 			GITHUB_REPOSITORY bytecodealliance/wasmtime
-			GIT_TAG v35.0.0
+			GIT_TAG v37.0.2
 			EXCLUDE_FROM_ALL YES
 			SOURCE_DIR "${EXTERNAL_DIR}/wasmtime"
 		)
@@ -135,7 +135,7 @@ function(add_app_dependencies)
 	CPMAddPackage(
 		NAME volk
 		GITHUB_REPOSITORY zeux/volk
-		GIT_TAG 1.4.304
+		GIT_TAG 3f1e9f3549c6a0fe0c4901e0f6a2f66b6bb8de3f
 		EXCLUDE_FROM_ALL YES
 		SOURCE_DIR "${EXTERNAL_DIR}/volk"
 	)
@@ -162,7 +162,7 @@ function(add_app_dependencies)
 	CPMAddPackage(
 		NAME SDL3
 		GITHUB_REPOSITORY libsdl-org/SDL
-		GIT_TAG release-3.2.20
+		GIT_TAG d9ca0457b5c9f819c3af5f156880219c8d41da40
 		OPTIONS
 			"SDL_STATIC ON"
 		EXCLUDE_FROM_ALL YES
@@ -234,6 +234,17 @@ function(add_app_dependencies)
 		SOURCE_DIR "${EXTERNAL_DIR}/glm"
 	)
 	list(APPEND EXTERNAL_LINKS glm)
+
+	# httplib
+	CPMAddPackage(
+		NAME httplib
+		GITHUB_REPOSITORY yhirose/cpp-httplib
+		GIT_TAG v0.26.0
+		EXCLUDE_FROM_ALL YES
+		SOURCE_DIR "${EXTERNAL_DIR}/cpp-httplib"
+		OPTIONS "HTTPLIB_REQUIRE_OPENSSL ON"
+	)
+	list(APPEND EXTERNAL_LINKS httplib)
 
 	set(EXTERNAL_LINKS "${EXTERNAL_LINKS}" PARENT_SCOPE)
 endfunction()

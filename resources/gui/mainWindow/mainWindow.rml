@@ -1,9 +1,9 @@
 <rml>
 	<head>
 		<title>Connection Machine</title>
-		<link type="text/rcss" href="../helper/elementList.rcss"/>
-		<link type="text/rcss" href="../helper/menuTree.rcss"/>
 		<link type="text/rcss" href="../helper/base.rcss"/>
+		<link type="text/rcss" href="../helper/menuTree.rcss"/>
+		<link type="text/rcss" href="../helper/elementList.rcss"/>
 		<link type="text/rcss" href="mainWindow.rcss"/>
 		<link type="text/rcss" href="popUpWindow/popUpWindow.rcss"/>
 		<link type="text/template" href="menuBar/menuBar.rml"/>

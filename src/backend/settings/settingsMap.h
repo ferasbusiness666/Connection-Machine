@@ -3,7 +3,7 @@
 
 #include "keybind.h"
 
-enum SettingType {
+enum class SettingType {
 	VOID,
 	STRING,
 	INT,
@@ -18,7 +18,7 @@ template<SettingType settingType>
 struct SettingTypeToType {
 	static_assert(
 		settingType == SettingType::VOID,
-		"Invalid SettingType. Must ."
+		"Invalid SettingType. Must be VOID."
 	);
 	using type = void;
 };
