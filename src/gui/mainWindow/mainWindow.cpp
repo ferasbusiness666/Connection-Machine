@@ -120,6 +120,10 @@ MainWindow::MainWindow(Environment* environment) :
 	keybindHandler.addListener("Keybinds/Window/Increase UI Scale", [this]() { offsetUiScale(kUiScaleStep); });
 	keybindHandler.addListener("Keybinds/Window/Decrease UI Scale", [this]() { offsetUiScale(-kUiScaleStep); });
 	keybindHandler.addListener("Keybinds/Window/Reset UI Scale", [this]() { applyUiScale(1.0f); });
+	Settings::registerListener<SettingType::BOOL>("Keybinds/Settings/Match Keyboard Layout", [this](const bool& value) {
+		Keybind::setEnableLayoutTransform(value);
+		settingsWindow->reloadContent();
+	});
 
 	const double* initialUiScale = Settings::get<SettingType::DECIMAL>("Appearance/UI Scale");
 	applyUiScale(initialUiScale ? static_cast<float>(*initialUiScale) : 1.0f);
