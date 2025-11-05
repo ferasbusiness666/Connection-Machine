@@ -1,10 +1,6 @@
 #ifndef keybind_h
 #define keybind_h
 
-#ifdef BUILDING_APP
-#include "gui/rml/scancodeToKeyIdentifier.h"
-#endif
-
 class Keybind {
 public:
 	// Enums exactly matches RmlUi's mapping (copied from RmlUi)
@@ -230,8 +226,6 @@ public:
 	Keybind(std::string keyString) {this->keyCombined = tokeyCombined(keyString); }
 	bool operator==(Keybind keybind) const { return keybind.getKeyCombined() == keyCombined; }
 	bool operator!=(Keybind keybind) const { return keybind.getKeyCombined() != keyCombined; }
-
-	static void setEnableLayoutTransform(bool enable) { sEnableLayoutTransform = enable; }
 
 	unsigned int getKeyCombined() const { return keyCombined; }
 	std::string toString() const { return toString(false); }
@@ -639,20 +633,7 @@ private:
 	{"OEM Clear", KeyId::KI_OEM_CLEAR},
 };
 
-	inline static bool sEnableLayoutTransform = true;
-
-	inline KeyId transformKeyIdForLayout(KeyId keyid) const {
-#ifdef BUILDING_APP
-		if (!sEnableLayoutTransform) {
-#endif
-			return keyid;
-#ifdef BUILDING_APP
-		}
-		Rml::Input::KeyIdentifier ki = static_cast<Rml::Input::KeyIdentifier>(keyid);
-		Rml::Input::KeyIdentifier transformed_ki = RmlSDL::TransformKeyIdentifierForLayout(ki);
-		return static_cast<KeyId>(transformed_ki);
-#endif
-	};
+	KeyId transformKeyIdForLayout(KeyId keyid) const;
 
 };
 
