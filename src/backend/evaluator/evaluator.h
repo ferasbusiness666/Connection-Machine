@@ -73,6 +73,8 @@ public:
 	bool isRealistic() const { return evalConfig.isRealistic(); }
 	void setTickrate(double tickrate) { evalConfig.setTargetTickrate(tickrate); }
 	double getTickrate() const { return evalConfig.getTargetTickrate(); }
+	void increaseTickrateSeq();
+	void decreaseTickrateSeq();
 	void setUseTickrate(bool useTickrate) { evalConfig.setTickrateLimiter(useTickrate); }
 	bool getUseTickrate() const { return evalConfig.isTickrateLimiterEnabled(); }
 	double getRealTickrate() const;

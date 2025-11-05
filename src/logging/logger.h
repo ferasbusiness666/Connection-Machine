@@ -21,7 +21,7 @@ public:
 private:
 	std::filesystem::path outputFile;
 	std::mutex loggingMutex;
-	
+
 	std::ofstream outputFileStream;
 };
 

@@ -1,5 +1,5 @@
-#ifndef functions_h
-#define functions_h
+#ifndef cm_h
+#define cm_h
 
 #if defined(__clang__) || defined(__GNUC__)
 #define externalFunction(functionName) __attribute__((import_module("env"))) __attribute__((import_name(#functionName)))
@@ -44,4 +44,4 @@ extern "C"
 }
 #endif
 
-#endif /* functions_h */
+#endif /* cm_h */
