@@ -1,9 +1,11 @@
 #ifndef keybind_h
 #define keybind_h
 
+#include "gui/rml/scancodeToKeyIdentifier.h"
+
 class Keybind {
 public:
-	// Eunms exactly matches RmlUi's mapping (copied from RmlUi)
+	// Enums exactly matches RmlUi's mapping (copied from RmlUi)
 	enum KeyId : std::uint8_t {
 		KI_UNKNOWN = 0,
 
@@ -254,7 +256,7 @@ public:
 				keyString += "META";
 			#endif
 		};
-		KeyId key = (KeyId)(keyCombined >> 8);
+		KeyId key = transformKeyIdForLayout((KeyId)(keyCombined >> 8));
 		if (key != 0) {
 			if (keyString.size()) keyString += " + ";
 			switch (key) {
@@ -631,6 +633,13 @@ private:
 	{"PA1", KeyId::KI_PA1},
 	{"OEM Clear", KeyId::KI_OEM_CLEAR},
 };
+
+	inline KeyId transformKeyIdForLayout(KeyId keyid) const {
+		Rml::Input::KeyIdentifier ki = static_cast<Rml::Input::KeyIdentifier>(keyid);
+		Rml::Input::KeyIdentifier transformed_ki = RmlSDL::TransformKeyIdentifierForLayout(ki);
+		return static_cast<KeyId>(transformed_ki);
+	};
+
 };
 
 template <> struct std::hash<Keybind> {

@@ -255,14 +255,14 @@ bool RmlSDL::InputEventHandler(Rml::Context* context, SDL_Window* window, SDL_Ev
 	break;
 	case event_key_down:
 	{
-		result = context->ProcessKeyDown(ConvertKey(GetScancode(ev)), GetKeyModifierState());
+		result = context->ProcessKeyDown(ScancodeToKeyIdentifier(GetScancode(ev)), GetKeyModifierState());
 		if (GetScancode(ev) == SDL_SCANCODE_RETURN || GetScancode(ev) == SDL_SCANCODE_RETURN2 || GetScancode(ev) == SDL_SCANCODE_KP_ENTER)
 			result &= context->ProcessTextInput(Rml::String("\n"));
 	}
 	break;
 	case event_key_up:
 	{
-		result = context->ProcessKeyUp(ConvertKey(GetScancode(ev)), GetKeyModifierState());
+		result = context->ProcessKeyUp(ScancodeToKeyIdentifier(GetScancode(ev)), GetKeyModifierState());
 	}
 	break;
 	case event_text_input:
