@@ -1293,3 +1293,95 @@ bool Evaluator::isViewingReplay() const {
 }
 
 double Evaluator::getRealTickrate() const { return evalSimulator->getAverageTickrate(); }
+
+namespace {
+
+// Tunable tolerance for floating-point comparisons
+inline constexpr double EPS = 1e-12;
+
+// Decompose x > 0 as x = m * 10^k with m in [1, 10)
+inline void decompose(double x, double& m, int& k) {
+    // Start with a log10-based estimate for speed
+    double lg = std::log10(x);
+    // Add a tiny epsilon to stabilize near powers of 10
+    k = static_cast<int>(std::floor(lg + EPS));
+    double p = std::pow(10.0, k);
+    m = x / p;
+
+    // Correct any edge drift so m in [1, 10)
+    while (m < 1.0) { m *= 10.0; --k; }
+    while (m >= 10.0) { m /= 10.0; ++k; }
+}
+
+// True if m is (within EPS) an integer in {1,2,...,9}
+inline bool is_seq_mantissa(double m) {
+    double r = std::round(m);
+    return std::abs(m - r) <= EPS && r >= 1.0 && r <= 9.0;
+}
+
+// Smallest sequence value strictly greater than x
+inline double next_in_sequence(double x) {
+    if (!(x > 0.0)) return std::numeric_limits<double>::quiet_NaN();
+
+    double m; int k;
+    decompose(x, m, k);
+
+    if (is_seq_mantissa(m)) {
+        int mi = static_cast<int>(std::llround(m));
+        if (mi < 9) {
+            return (mi + 1) * std::pow(10.0, k);
+        } else {
+            // mi == 9 -> roll to 1 * 10^(k+1)
+            return std::pow(10.0, k + 1);
+        }
+    } else {
+        // Ceil within the decade
+        int cm = static_cast<int>(std::ceil(m - EPS)); // bias to avoid ceil(1.000...+tiny)=2
+        if (cm <= 9) {
+            return cm * std::pow(10.0, k);
+        } else {
+            // Hit 10 -> roll to next decade
+            return std::pow(10.0, k + 1);
+        }
+    }
+}
+
+// Largest sequence value strictly less than x
+inline double prev_in_sequence(double x) {
+    if (!(x > 0.0)) return std::numeric_limits<double>::quiet_NaN();
+
+    double m; int k;
+    decompose(x, m, k);
+
+    if (is_seq_mantissa(m)) {
+        int mi = static_cast<int>(std::llround(m));
+        if (mi > 1) {
+            return (mi - 1) * std::pow(10.0, k);
+        } else {
+            // mi == 1 -> roll back to 9 * 10^(k-1)
+            return 9.0 * std::pow(10.0, k - 1);
+        }
+    } else {
+        // Floor within the decade
+        int fm = static_cast<int>(std::floor(m + EPS)); // bias to avoid floor(0.999...-tiny)=0
+        if (fm >= 1) {
+            return fm * std::pow(10.0, k);
+        } else {
+            // Fell below 1 -> use previous decade's 9
+            return 9.0 * std::pow(10.0, k - 1);
+        }
+    }
+}
+
+}
+
+void Evaluator::increaseTickrateSeq() {
+	double currentTickrate = getTickrate();
+	double newTickrate = next_in_sequence(currentTickrate);
+	setTickrate(newTickrate);
+}
+void Evaluator::decreaseTickrateSeq() {
+	double currentTickrate = getTickrate();
+	double newTickrate = std::max(0.1, prev_in_sequence(currentTickrate));
+	setTickrate(newTickrate);
+}

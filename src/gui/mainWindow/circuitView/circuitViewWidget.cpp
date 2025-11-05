@@ -96,37 +96,59 @@ CircuitViewWidget::CircuitViewWidget(
 	keybindHandler.addListener(
 		"Keybinds/Simulation/Start Stop",
 		[this]() {
-			if (circuitView->getEvaluator()) {
-				circuitView->getEvaluator()->togglePause();
-				this->mainWindow->getSimControlsManager()->update();
-			} else {
-				this->mainWindow->logError("Cant stop simulation when there is none");
+			if (!circuitView->getEvaluator()) {
+				this->mainWindow->logError("Cant start simulation when there is none");
+				return;
 			}
+			circuitView->getEvaluator()->togglePause();
+			this->mainWindow->getSimControlsManager()->update();
 		}
 	);
 	keybindHandler.addListener(
 		"Keybinds/Simulation/Step Forward",
 		[this]() {
-			if (circuitView->getEvaluator()) {
-				circuitView->getEvaluator()->stepForward();
-				this->mainWindow->getSimControlsManager()->update();
-			} else {
+			if (!circuitView->getEvaluator()) {
 				this->mainWindow->logError("Cant step simulation when there is none");
+				return;
 			}
+			circuitView->getEvaluator()->stepForward();
+			this->mainWindow->getSimControlsManager()->update();
 		}
 	);
 	keybindHandler.addListener(
 		"Keybinds/Simulation/Step Back",
 		[this]() {
-			if (circuitView->getEvaluator()) {
-				if (circuitView->getEvaluator()->stepBack()) {
-					this->mainWindow->getSimControlsManager()->update();
-				} else {
-					this->mainWindow->logError("Cant back step simulation with no simulation data");
-				}
-			} else {
+			if (!circuitView->getEvaluator()) {
 				this->mainWindow->logError("Cant back step simulation when there is none");
+				return;
 			}
+			if (circuitView->getEvaluator()->stepBack()) {
+				this->mainWindow->getSimControlsManager()->update();
+			} else {
+				this->mainWindow->logError("Cant back step simulation with no simulation data");
+			}
+		}
+	);
+	keybindHandler.addListener(
+		"Keybinds/Simulation/Increase Speed",
+		[this]() {
+			if (!circuitView->getEvaluator()) {
+				this->mainWindow->logError("Cant change simulation speed when there is none");
+				return;
+			}
+			circuitView->getEvaluator()->increaseTickrateSeq();
+			this->mainWindow->getSimControlsManager()->update();
+		}
+	);
+	keybindHandler.addListener(
+		"Keybinds/Simulation/Decrease Speed",
+		[this]() {
+			if (!circuitView->getEvaluator()) {
+				this->mainWindow->logError("Cant change simulation speed when there is none");
+				return;
+			}
+			circuitView->getEvaluator()->decreaseTickrateSeq();
+			this->mainWindow->getSimControlsManager()->update();
 		}
 	);
 	keybindHandler.addListener(
