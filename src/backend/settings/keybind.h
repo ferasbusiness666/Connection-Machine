@@ -1,7 +1,9 @@
 #ifndef keybind_h
 #define keybind_h
 
+#ifdef BUILDING_APP
 #include "gui/rml/scancodeToKeyIdentifier.h"
+#endif
 
 class Keybind {
 public:
@@ -639,12 +641,16 @@ private:
 	inline static bool sEnableLayoutTransform = true;
 
 	inline KeyId transformKeyIdForLayout(KeyId keyid) const {
+#ifdef BUILDING_APP
 		if (!sEnableLayoutTransform) {
+#endif
 			return keyid;
+#ifdef BUILDING_APP
 		}
 		Rml::Input::KeyIdentifier ki = static_cast<Rml::Input::KeyIdentifier>(keyid);
 		Rml::Input::KeyIdentifier transformed_ki = RmlSDL::TransformKeyIdentifierForLayout(ki);
 		return static_cast<KeyId>(transformed_ki);
+#endif
 	};
 
 };
