@@ -20,7 +20,7 @@ bool generateCircuit() {
 
 	importFile("andGate.wasm");
 	char buffer [50];
-	// snprintf(buffer, 50, "(\"size\": %d)", w);
+	snprintf(buffer, 50, "(\"size\": %d)", w);
 	BlockType andGate = getProceduralCircuitType("8a92b940-456a-4d81-bc40-1f6e8bef4464", buffer);
 	createBlockAtPosition(-3, 0, 0, andGate);
 
