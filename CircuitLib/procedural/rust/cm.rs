@@ -1,0 +1,51 @@
+#![allow(non_camel_case_types)]
+#![allow(dead_code)]
+
+pub type BlockType = u32;
+pub type connection_end_id_t = u32;
+pub type block_size_t = u8;
+pub type block_id_t = i32;
+pub type cord_t = i32;
+pub type Rotation = i8;
+
+extern "C" {
+    // File & parameter functions
+    pub fn importFile(path: *const u8) -> u32;
+    pub fn getParameter(key: *const u8) -> i32;
+
+    // Block type functions
+    pub fn getPrimitiveType(name: *const u8) -> BlockType;
+    pub fn getNonPrimitiveType(uuid: *const u8) -> BlockType;
+    pub fn getProceduralCircuitType(uuid: *const u8, params: *const u8) -> BlockType;
+
+    // Block creation
+    pub fn createBlock(block_type: BlockType) -> block_id_t;
+    pub fn createBlockAtPosition(x: cord_t, y: cord_t, rotation: Rotation, block_type: BlockType) -> block_id_t;
+
+    // Connection functions
+    pub fn createConnection(
+        source_block_id: block_id_t,
+        source_port_id: connection_end_id_t,
+        destination_block_id: block_id_t,
+        destination_port_id: connection_end_id_t,
+    );
+
+    pub fn addConnectionInput(
+        external_port_x: cord_t,
+        external_port_y: cord_t,
+        internal_block_id: block_id_t,
+        internal_port_id: connection_end_id_t,
+    );
+
+    pub fn addConnectionOutput(
+        external_port_x: cord_t,
+        external_port_y: cord_t,
+        internal_block_id: block_id_t,
+        internal_port_id: connection_end_id_t,
+    );
+
+    // Misc
+    pub fn setSize(width: cord_t, height: cord_t);
+    pub fn logInfo(msg: *const u8);
+    pub fn logError(msg: *const u8);
+}

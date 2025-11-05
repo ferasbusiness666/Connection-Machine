@@ -1,4 +1,4 @@
-#include "functions.h"
+#include "cm.h"
 
 extern "C" {
 
@@ -45,7 +45,7 @@ bool generateCircuit() {
 				block_id_t AandB = createBlockAtPosition(0, i*2+1, 0, BlockType_AND); // A & B
 				createConnection(A, 0, AandB, 0);
 				createConnection(B, 0, AandB, 0);
-				
+
 				block_id_t AxorBandC = createBlockAtPosition(1, i*2+1, 0, BlockType_AND); // (A ^ B) & C
 				createConnection(AxorB, 1, AxorBandC, 0);
 				createConnection(C, 1, AxorBandC, 0);

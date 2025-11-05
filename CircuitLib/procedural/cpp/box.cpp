@@ -1,4 +1,4 @@
-#include "functions.h"
+#include "cm.h"
 
 #include <cstdio>
 
@@ -20,12 +20,12 @@ bool generateCircuit() {
 
 	importFile("andGate.wasm");
 	char buffer [50];
-	sprintf(buffer, "(\"size\": %d)", w);
+	// snprintf(buffer, 50, "(\"size\": %d)", w);
 	BlockType andGate = getProceduralCircuitType("8a92b940-456a-4d81-bc40-1f6e8bef4464", buffer);
 	createBlockAtPosition(-3, 0, 0, andGate);
 
 	if (w != 1 && h != 1) {
-		sprintf(buffer, "(\"w\": %d, \"h\": %d)", w-1, h-1);
+		snprintf(buffer, 50, "(\"w\": %d, \"h\": %d)", w-1, h-1);
 		BlockType smaller = getProceduralCircuitType(UUID, buffer);
 		createBlockAtPosition(0, 0, 0, smaller);
 	}
