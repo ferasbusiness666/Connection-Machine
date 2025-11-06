@@ -51,6 +51,7 @@ void registerSettings() {
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Zoom", Keybind(Keybind::KeyId::KI_UNKNOWN, Keybind::KeyMod::KM_SHIFT));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Home", Keybind(Keybind::KeyId::KI_F));
 	Settings::registerSetting<SettingType::BOOL>("Keybinds/Camera/Scroll Panning", true);
+	Settings::registerSetting<SettingType::BOOL>("Keybinds/Settings/Match Keyboard Layout", true);
 	Settings::registerSetting<SettingType::DECIMAL>("Appearance/UI Scale", 1.0);
 	Settings::registerSetting<SettingType::UINT>("Simulation/Max Thread Count", std::thread::hardware_concurrency() / 2);
 	Settings::registerSetting<SettingType::DECIMAL>("Corner Log/Message Timeout", 3.f);

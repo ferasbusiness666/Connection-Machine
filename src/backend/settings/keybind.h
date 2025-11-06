@@ -3,7 +3,7 @@
 
 class Keybind {
 public:
-	// Eunms exactly matches RmlUi's mapping (copied from RmlUi)
+	// Enums exactly matches RmlUi's mapping (copied from RmlUi)
 	enum KeyId : std::uint8_t {
 		KI_UNKNOWN = 0,
 
@@ -228,7 +228,8 @@ public:
 	bool operator!=(Keybind keybind) const { return keybind.getKeyCombined() != keyCombined; }
 
 	unsigned int getKeyCombined() const { return keyCombined; }
-	std::string toString() const {
+	std::string toString() const { return toString(false); }
+	std::string toString(bool convertForLayoutForceDisable) const {
 		std::string keyString;
 		if (keyCombined & 4U) {
 			if (keyString.size()) keyString += " + ";
@@ -254,7 +255,7 @@ public:
 				keyString += "META";
 			#endif
 		};
-		KeyId key = (KeyId)(keyCombined >> 8);
+		KeyId key = convertForLayoutForceDisable ? (KeyId)(keyCombined >> 8) : transformKeyIdForLayout((KeyId)(keyCombined >> 8));
 		if (key != 0) {
 			if (keyString.size()) keyString += " + ";
 			switch (key) {
@@ -631,6 +632,9 @@ private:
 	{"PA1", KeyId::KI_PA1},
 	{"OEM Clear", KeyId::KI_OEM_CLEAR},
 };
+
+	KeyId transformKeyIdForLayout(KeyId keyid) const;
+
 };
 
 template <> struct std::hash<Keybind> {

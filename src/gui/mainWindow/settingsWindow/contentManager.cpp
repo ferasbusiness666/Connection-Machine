@@ -13,6 +13,15 @@ ContentManager::ContentManager(Rml::ElementDocument* document) : document(docume
 }
 
 void ContentManager::load() {
+	activeItem.clear();
+	lastPressedKeys = Keybind();
+
+	if (contentPanel) {
+		while (contentPanel->GetNumChildren() > 0) {
+			contentPanel->RemoveChild(contentPanel->GetFirstChild());
+		}
+	}
+
 	const auto& mapKeys = Settings::getSettingsMap().getAllKeys();
 	std::vector<std::vector<std::string>> vecPaths(mapKeys.size());
 	int i = 0;
