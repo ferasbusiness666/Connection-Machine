@@ -3,6 +3,8 @@
 #include "gpu/vulkanDevice.h"
 #include "util/algorithm.h"
 
+#include <stb_image.h>
+
 BlockTextureArray::~BlockTextureArray() {
 	destroyImage(image);
 	vkDestroySampler(device->getDevice(), sampler, nullptr);
@@ -99,7 +101,7 @@ void BlockTextureManager::refreshBlockTexture(const std::string& path) {
 	stbi_image_free(pixels);
 }
 
-BlockTextureId BlockTextureManager::addTexture(const stbi_uc* pixels, int textureWidth, int textureHeight) {
+BlockTextureId BlockTextureManager::addTexture(const unsigned char* pixels, int textureWidth, int textureHeight) {
 	unsigned int layer;
 	Vec2Int pos;
 	RectPacker::RectID rectId;
@@ -126,7 +128,7 @@ BlockTextureId BlockTextureManager::addTexture(const stbi_uc* pixels, int textur
 	return blockTextureId;
 }
 
-void BlockTextureManager::updateBlockTexture(const stbi_uc* pixels, BlockTextureId blockTextureId) {
+void BlockTextureManager::updateBlockTexture(const unsigned char* pixels, BlockTextureId blockTextureId) {
 	auto iter = blockTextures.find(blockTextureId);
 	if (iter == blockTextures.end()) {
 		logError("Can't update block texture with id \"{}\" when it doesn't exist.", "BlockTextureManager", blockTextureId);

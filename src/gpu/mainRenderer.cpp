@@ -163,11 +163,11 @@ void MainRenderer::refreshBlockTexture(const std::string& path) {
 	vulkanInstance.getDevice()->getBlockTextureManager().refreshBlockTexture(path);
 }
 
-BlockTextureId MainRenderer::addBlockTexture(const stbi_uc* pixels, int textureWidth, int textureHeight) {
+BlockTextureId MainRenderer::addBlockTexture(const unsigned char* pixels, int textureWidth, int textureHeight) {
 	return vulkanInstance.getDevice()->getBlockTextureManager().addTexture(pixels, textureWidth, textureHeight);
 }
 
-void MainRenderer::updateBlockTexture(const stbi_uc* pixels, BlockTextureId blockTextureId) {
+void MainRenderer::updateBlockTexture(const unsigned char* pixels, BlockTextureId blockTextureId) {
 	vulkanInstance.getDevice()->getBlockTextureManager().updateBlockTexture(pixels, blockTextureId);
 }
 
