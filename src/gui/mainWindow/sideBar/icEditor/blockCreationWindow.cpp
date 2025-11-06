@@ -473,6 +473,7 @@ void BlockCreationWindow::resetMenu() {
 		else if (iter.second.portOffset == FVector(0.5f/* + sideShift*/, 0.5f + edgeDistanceIC)) portOffset = 'D';
 		addListItem(
 			isInputBool,
+			false,
 			endId.get(),
 			connectionName.value_or(""),
 			positionOnBlock,
@@ -485,6 +486,7 @@ void BlockCreationWindow::resetMenu() {
 
 void BlockCreationWindow::addListItem(
 	bool isInput,
+	bool findUnusedEndId,
 	unsigned int endId,
 	const std::string& nameValue,
 	Vector posOnBlockValue,
@@ -500,8 +502,7 @@ void BlockCreationWindow::addListItem(
 	const BlockData* blockData = circuitManager->getBlockDataManager()->getBlockData(circuitBlockData->getBlockType());
 	if (!blockData) return;
 
-	if (endId == 0) {
-		endId++;
+	if (findUnusedEndId) {
 		while (true) {
 			while (blockData->connectionExists(connection_end_id_t(endId))) ++endId;
 			if (inputList->GetElementById("ConnectionListItem Id: " + std::to_string(endId)) == nullptr &&

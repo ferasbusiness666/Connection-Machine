@@ -108,6 +108,7 @@ void BlockRenderDataFeeder::blockDataRemoveConnectionUpdate(const DataUpdateEven
 		return;
 	}
 	MainRenderer::get().removeBlockPort(iter->second.blockRenderDataId, portIter->second);
+	iter->second.blockPortRenderDataIds.erase(portIter);
 }
 
 void BlockRenderDataFeeder::blockDataConnectionNameSetUpdate(const DataUpdateEventManager::EventData* dataEvent) {

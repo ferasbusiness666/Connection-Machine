@@ -316,11 +316,7 @@ const std::optional<ConnectionEnd> BlockContainer::getOutputOrBidirectionalConne
 bool BlockContainer::tryCreateConnection(ConnectionEnd connectionEndA, ConnectionEnd connectionEndB, Difference* difference) {
 	if (connectionEndA.getConnectionId() == connectionEndB.getConnectionId() && connectionEndA.getBlockId() == connectionEndB.getBlockId()) return false; // ports cant self connect
 	Block* blockA = getBlock_(connectionEndA.getBlockId());
-	if (!blockA) return false;
-	if (blockA->getConnectionContainer().hasConnection(
-		connectionEndA.getConnectionId(),
-		ConnectionEnd(connectionEndB.getBlockId(), connectionEndB.getConnectionId())
-	)) return false;
+	if (!blockA || blockA->getConnectionContainer().hasConnection(connectionEndA.getConnectionId(), connectionEndB)) return false;
 	const BlockData* blockABlockData = blockDataManager->getBlockData(blockA->type());
 	BlockData::ConnectionData::PortType portAType = blockABlockData->getConnectionPortType(connectionEndA.getConnectionId());
 	if (portAType == BlockData::ConnectionData::PortType::NONE) return false;
@@ -424,25 +420,28 @@ bool BlockContainer::tryCreateConnection(Position outputPosition, Position input
 	return false;
 }
 
-bool BlockContainer::tryRemoveConnection(ConnectionEnd outputConnectionEnd, ConnectionEnd inputConnectionEnd, Difference* difference) {
-	if (outputConnectionEnd.getConnectionId() == inputConnectionEnd.getConnectionId() && outputConnectionEnd.getBlockId() == inputConnectionEnd.getBlockId()) return false; // ports cant self connect
-	Block* input = getBlock_(inputConnectionEnd.getBlockId());
-	if (!input) return false;
-	const BlockData* inputBlockData = blockDataManager->getBlockData(input->type());
-	BlockData::ConnectionData::PortType inputPortType = inputBlockData->getConnectionPortType(inputConnectionEnd.getConnectionId());
-	if (inputPortType == BlockData::ConnectionData::PortType::OUTPUT || inputPortType == BlockData::ConnectionData::PortType::NONE) return false;
-	Block* output = getBlock_(outputConnectionEnd.getBlockId());
-	if (!output) return false;
-	const BlockData* outputBlockData = blockDataManager->getBlockData(output->type());
-	BlockData::ConnectionData::PortType outputPortType = outputBlockData->getConnectionPortType(outputConnectionEnd.getConnectionId());
-	if (outputPortType == BlockData::ConnectionData::PortType::INPUT || outputPortType == BlockData::ConnectionData::PortType::NONE) return false;
-	if (input->getConnectionContainer().tryRemoveConnection(inputConnectionEnd.getConnectionId(), outputConnectionEnd)) {
-		bool secondSuc = output->getConnectionContainer().tryRemoveConnection(outputConnectionEnd.getConnectionId(), inputConnectionEnd);
+bool BlockContainer::tryRemoveConnection(ConnectionEnd connectionEndB, ConnectionEnd connectionEndA, Difference* difference) {
+	if (connectionEndA.getConnectionId() == connectionEndB.getConnectionId() && connectionEndA.getBlockId() == connectionEndB.getBlockId()) return false; // ports cant self connect
+	Block* blockA = getBlock_(connectionEndA.getBlockId());
+	if (!blockA) return false;
+	if (blockA->getConnectionContainer().tryRemoveConnection(connectionEndA.getConnectionId(), connectionEndB)) {
+		Block* blockB = getBlock_(connectionEndB.getBlockId());
+		assert(blockB);
+		bool secondSuc = blockB->getConnectionContainer().tryRemoveConnection(connectionEndB.getConnectionId(), connectionEndA);
 		assert(secondSuc);
-		difference->addRemovedConnection(
-			output->getPosition(), output->getConnectionPosition(outputConnectionEnd.getConnectionId()).value(),
-			input->getPosition(), input->getConnectionPosition(inputConnectionEnd.getConnectionId()).value()
-		);
+		BlockData::ConnectionData::PortType portAType = blockDataManager->getBlockData(blockA->type())->getConnectionPortType(connectionEndA.getConnectionId());
+		BlockData::ConnectionData::PortType portBType = blockDataManager->getBlockData(blockB->type())->getConnectionPortType(connectionEndB.getConnectionId());
+		if (portAType == BlockData::ConnectionData::PortType::INPUT || portBType == BlockData::ConnectionData::PortType::OUTPUT) {
+			difference->addRemovedConnection(
+				blockB->getPosition(), blockB->getConnectionPosition(connectionEndB.getConnectionId()).value(),
+				blockA->getPosition(), blockA->getConnectionPosition(connectionEndA.getConnectionId()).value()
+			);
+		} else {
+			difference->addCreatedConnection(
+				blockA->getPosition(), blockA->getConnectionPosition(connectionEndA.getConnectionId()).value(),
+				blockB->getPosition(), blockB->getConnectionPosition(connectionEndB.getConnectionId()).value()
+			);
+		}
 		return true;
 	}
 	return false;
@@ -482,25 +481,37 @@ void BlockContainer::addConnectionPort(BlockType blockType, connection_end_id_t 
 
 void BlockContainer::removeConnectionPort(BlockType blockType, connection_end_id_t endId, Difference* difference) {
 	if (blockTypeCounts.size() <= blockType || blockTypeCounts[blockType] == 0) return;
+	BlockData::ConnectionData::PortType portType = blockDataManager->getBlockData(blockType)->getConnectionPortType(endId);
+	if (portType == BlockData::ConnectionData::PortType::NONE) {
+		logError("Called removeConnectionPort on non existent port id {} for block type {}", "BlockContainer", endId, blockType);
+		return;
+	}
 	for (auto& pair : blocks) {
 		Block& block = pair.second;
 		if (block.type() != blockType) continue;
-		bool isInput = block.isConnectionInput(endId);
 		std::optional<Position> connectionPosition = block.getConnectionPosition(endId);
-		if (!connectionPosition) continue;
-		const ConnectionContainer& connectionContainer = block.getConnectionContainer();
-		auto connections = connectionContainer.getConnections(endId);
+		assert(connectionPosition);
+		auto connections = block.getConnectionContainer().getConnections(endId);
 		if (!connections) continue;
 		const std::unordered_set<ConnectionEnd> connectionsCopy = *connections;
 		for (auto& connectionEnd : connectionsCopy) {
-			Block* otherBlock = getBlock_(connectionEnd.getBlockId());
-			if (otherBlock && otherBlock->getConnectionContainer().tryRemoveConnection(connectionEnd.getConnectionId(), ConnectionEnd(block.id(), endId))) {
-				bool secondSuc = block.getConnectionContainer().tryRemoveConnection(endId, connectionEnd);
+			if (block.getConnectionContainer().tryRemoveConnection(endId, connectionEnd)) {
+				Block* otherBlock = getBlock_(connectionEnd.getBlockId());
+				assert(otherBlock);
+				bool secondSuc = otherBlock->getConnectionContainer().tryRemoveConnection(connectionEnd.getConnectionId(), ConnectionEnd(block.id(), endId));
 				assert(secondSuc);
-				std::optional otherPosition = otherBlock->getConnectionPosition(connectionEnd.getConnectionId());
-				if (!otherPosition) continue;
-				if (isInput) difference->addRemovedConnection(otherBlock->getPosition(), otherPosition.value(), block.getPosition(), connectionPosition.value());
-				else difference->addRemovedConnection(block.getPosition(), connectionPosition.value(), otherBlock->getPosition(), otherPosition.value());
+				BlockData::ConnectionData::PortType otherPortType = blockDataManager->getBlockData(otherBlock->type())->getConnectionPortType(connectionEnd.getConnectionId());
+				if (portType == BlockData::ConnectionData::PortType::INPUT || otherPortType == BlockData::ConnectionData::PortType::OUTPUT) {
+					difference->addRemovedConnection(
+						otherBlock->getPosition(), otherBlock->getConnectionPosition(connectionEnd.getConnectionId()).value(),
+						block.getPosition(), connectionPosition.value()
+					);
+				} else {
+					difference->addRemovedConnection(
+						block.getPosition(), connectionPosition.value(),
+						otherBlock->getPosition(), otherBlock->getConnectionPosition(connectionEnd.getConnectionId()).value()
+					);
+				}
 			}
 		}
 	}

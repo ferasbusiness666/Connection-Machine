@@ -23,7 +23,16 @@ public:
 	void resetMenu();
 
 private:
-	void addListItem(bool isInput, unsigned int endId = 0, const std::string& nameValue = "", Vector posOnBlockValue = Vector(), char portOffsetValue = 'C', std::optional<Position> posOfBlockValue = std::nullopt, unsigned int bitWidthValue = 1);
+	void addListItem(
+		bool isInput,
+		bool findUnusedEndId = true,
+		unsigned int endId = 0,
+		const std::string& nameValue = "",
+		Vector posOnBlockValue = Vector(),
+		char portOffsetValue = 'C',
+		std::optional<Position> posOfBlockValue = std::nullopt,
+		unsigned int bitWidthValue = 1
+	);
 	void updateSelected(std::string string);
 	void makePaths(std::vector<std::vector<std::string>>& paths, std::vector<std::string>& path, const EvalAddressTree& addressTree);
 
