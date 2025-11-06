@@ -501,6 +501,7 @@ void BlockCreationWindow::addListItem(
 	if (!blockData) return;
 
 	if (endId == 0) {
+		endId++;
 		while (true) {
 			while (blockData->connectionExists(connection_end_id_t(endId))) ++endId;
 			if (inputList->GetElementById("ConnectionListItem Id: " + std::to_string(endId)) == nullptr &&

@@ -128,6 +128,10 @@ void BlockData::removeConnection(connection_end_id_t connectionId) noexcept {
 	sendBlockDataUpdate();
 }
 void BlockData::setConnectionInput(Vector positionOnBlock, connection_end_id_t connectionId) noexcept {
+	if (connectionId == connection_end_id_t(0)) {
+		logError("Cant create connection with Id 0.", "BlockData");
+		return;
+	}
 	dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataSetConnection", { blockType, connectionId });
 	connections.insert_or_assign(connectionId, ConnectionData(positionOnBlock, ConnectionData::PortType::INPUT));
 	inputConnectionCount++;
@@ -136,6 +140,10 @@ void BlockData::setConnectionInput(Vector positionOnBlock, connection_end_id_t c
 }
 // trys to set a connection output in the block. Returns success.
 void BlockData::setConnectionOutput(Vector positionOnBlock, connection_end_id_t connectionId) noexcept {
+	if (connectionId == connection_end_id_t(0)) {
+		logError("Cant create connection with Id 0.", "BlockData");
+		return;
+	}
 	dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataSetConnection", { blockType, connectionId });
 	connections.insert_or_assign(connectionId, ConnectionData(positionOnBlock, ConnectionData::PortType::OUTPUT));
 	outputConnectionCount++;
@@ -144,6 +152,10 @@ void BlockData::setConnectionOutput(Vector positionOnBlock, connection_end_id_t 
 }
 
 void BlockData::setConnectionBidirectional(Vector positionOnBlock, connection_end_id_t connectionId) noexcept {
+	if (connectionId == connection_end_id_t(0)) {
+		logError("Cant create connection with Id 0.", "BlockData");
+		return;
+	}
 	dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataSetConnection", { blockType, connectionId });
 	connections.insert_or_assign(connectionId, ConnectionData(positionOnBlock, ConnectionData::PortType::BIDIRECTIONAL));
 	dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connectionId });
