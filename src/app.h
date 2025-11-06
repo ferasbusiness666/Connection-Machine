@@ -31,7 +31,7 @@ public:
 	void stopTryingToQuit();
 
 private:
-	Environment environment;
+	Environment environment {true};
 
 	RmlRenderInterface rmlRenderInterface;
 	RmlSystemInterface rmlSystemInterface;

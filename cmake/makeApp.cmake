@@ -3,7 +3,7 @@ file(GLOB_RECURSE PROJECT_SOURCES
 	"${SOURCE_DIR}/*.cpp"
 )
 string(REGEX REPLACE "([][+.*^$(){}|\\\\])" "\\\\\\1" SOURCE_DIR_REGEX "${SOURCE_DIR}")
-list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR_REGEX}/cli/.*")
+list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR_REGEX}/cli/main.cpp$")
 
 # ===================================== CREATE APP EXECUTABLE ========================================
 
@@ -39,6 +39,7 @@ endif()
 if (CONNECTION_MACHINE_TRY_CATCH)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE "MAIN_TRY_CATCH")
 endif()
+target_compile_definitions(${PROJECT_NAME} PRIVATE "BUILDING_APP")
 target_compile_definitions(${PROJECT_NAME} PRIVATE "PROJECT_VERSION=\"${PROJECT_VERSION}\"")
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${APP_NAME}")
 

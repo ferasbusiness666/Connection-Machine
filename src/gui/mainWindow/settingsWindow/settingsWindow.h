@@ -14,6 +14,7 @@ public:
 	~SettingsWindow();
 
 	void toggleVisibility();
+	void reloadContent();
 	bool isVisible() const { return visible; };
 
 private:

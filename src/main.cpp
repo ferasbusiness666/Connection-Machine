@@ -2,6 +2,7 @@
 #include <SDL3/SDL_main.h>
 
 #include "app.h"
+#include "cli/cliApp.h"
 #include "backend/settings/keybind.h"
 #include "backend/settings/settings.h"
 #include "backend/settings/settingsMap.h"
@@ -51,6 +52,7 @@ void registerSettings() {
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Zoom", Keybind(Keybind::KeyId::KI_UNKNOWN, Keybind::KeyMod::KM_SHIFT));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Home", Keybind(Keybind::KeyId::KI_F));
 	Settings::registerSetting<SettingType::BOOL>("Keybinds/Camera/Scroll Panning", true);
+	Settings::registerSetting<SettingType::BOOL>("Keybinds/Settings/Match Keyboard Layout", true);
 	Settings::registerSetting<SettingType::DECIMAL>("Appearance/UI Scale", 1.0);
 	Settings::registerSetting<SettingType::UINT>("Simulation/Max Thread Count", std::thread::hardware_concurrency() / 2);
 	Settings::registerSetting<SettingType::DECIMAL>("Corner Log/Message Timeout", 3.f);
@@ -71,6 +73,17 @@ int main(int argc, char* argv[]) {
 #ifdef MAIN_TRY_CATCH
 	try {
 #endif
+		// if command line args are "--cli" run cli app
+		// TODO: proper arg parsing
+		if (argc > 1) {
+			std::string firstArg = argv[1];
+			if (firstArg == "--cli") {
+				logInfo("Starting Connection Machine in CLI mode...");
+				CliApp cliApp;
+				logInfo("Exiting Connection Machine CLI...");
+				return EXIT_SUCCESS;
+			}
+		}
 		// Set up directory manager
 		DirectoryManager::findDirectories();
 		registerSettings();

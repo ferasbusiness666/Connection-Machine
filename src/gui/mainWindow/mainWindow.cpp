@@ -143,8 +143,14 @@ MainWindow::~MainWindow() {
 }
 
 bool MainWindow::recieveEvent(SDL_Event& event) {
+	if (event.type == SDL_EVENT_KEYMAP_CHANGED) {
+		if (settingsWindow) {
+			settingsWindow->reloadContent();
+		}
+	}
+
 	// check if we want this event
-	if (!sdlWindow->isThisMyEvent(event)) return false;
+	if (!sdlWindow->isThisMyEvent(event)) return event.type == SDL_EVENT_KEYMAP_CHANGED;
 
 	if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
 		if (App::get().closeMainWindow(this)) {
@@ -228,6 +234,10 @@ void MainWindow::applyUiScale(float scale) {
 		}
 	}
 	rmlContext->SetDensityIndependentPixelRatio(displayScale * uiScale);
+
+	if (settingsWindow) {
+		settingsWindow->reloadContent();
+	}
 
 	rmlContext->Update();
 	for (auto circuitViewWidget : circuitViewWidgets) {
