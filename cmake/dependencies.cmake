@@ -25,7 +25,7 @@ function(add_main_dependencies)
 	target_include_directories(cfgpath INTERFACE "${EXTERNAL_DIR}/cfgpath")
 	list(APPEND EXTERNAL_LINKS cfgpath)
 
-	# # JSON # We dont use this anymore # yes we do
+	# JSON
 	CPMAddPackage(
 		NAME nlohmann_json
 		GITHUB_REPOSITORY nlohmann/json
