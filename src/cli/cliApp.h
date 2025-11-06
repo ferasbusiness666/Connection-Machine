@@ -24,7 +24,7 @@ public:
     }
 
 private:
-	Environment environment;
+	Environment environment {false};
 };
 
 #endif

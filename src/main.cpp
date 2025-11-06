@@ -2,6 +2,7 @@
 #include <SDL3/SDL_main.h>
 
 #include "app.h"
+#include "cli/cliApp.h"
 #include "backend/settings/keybind.h"
 #include "backend/settings/settings.h"
 #include "backend/settings/settingsMap.h"
@@ -72,6 +73,17 @@ int main(int argc, char* argv[]) {
 #ifdef MAIN_TRY_CATCH
 	try {
 #endif
+		// if command line args are "--cli" run cli app
+		// TODO: proper arg parsing
+		if (argc > 1) {
+			std::string firstArg = argv[1];
+			if (firstArg == "--cli") {
+				logInfo("Starting Connection Machine in CLI mode...");
+				CliApp cliApp;
+				logInfo("Exiting Connection Machine CLI...");
+				return EXIT_SUCCESS;
+			}
+		}
 		// Set up directory manager
 		DirectoryManager::findDirectories();
 		registerSettings();
