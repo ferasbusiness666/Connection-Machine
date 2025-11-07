@@ -8,7 +8,7 @@ class BlockDataManager;
 
 class GeneratedCircuitValidator {
 public:
-	GeneratedCircuitValidator(GeneratedCircuit& generatedCircuit, BlockDataManager* blockDataManager) :
+	GeneratedCircuitValidator(GeneratedCircuit& generatedCircuit, BlockDataManager& blockDataManager) :
 		generatedCircuit(generatedCircuit), blockDataManager(blockDataManager) {
 		validate();
 	}
@@ -38,7 +38,7 @@ private:
 		return id;
 	}
 
-	BlockDataManager* blockDataManager;
+	BlockDataManager& blockDataManager;
 	GeneratedCircuit& generatedCircuit;
 	std::unordered_set<Position> occupiedPositions;
 };

@@ -10,7 +10,9 @@ std::map<std::string, std::unique_ptr<ToolManagerManager::BaseToolTypeMaker>> To
 #include "gui/viewportManager/circuitView/tools/placement/blockPlacementTool.h"
 #include "gui/viewportManager/circuitView/tools/selection/selectionMakerTool.h"
 
-ToolManagerManager::ToolManagerManager(DataUpdateEventManager* dataUpdateEventManager) : dataUpdateEventManager(dataUpdateEventManager) {
+#include "environment/environment.h"
+
+ToolManagerManager::ToolManagerManager(Environment& environment) : environment(environment), dataUpdateEventManager(environment.getBackend().getDataUpdateEventManager()) {
 	ToolManagerManager::registerTool<ConnectionTool>();
 	ToolManagerManager::registerTool<MoveTool>();
 	ToolManagerManager::registerTool<BlockPlacementTool>();

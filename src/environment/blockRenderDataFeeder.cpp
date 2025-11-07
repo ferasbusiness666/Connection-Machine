@@ -4,7 +4,7 @@
 #include "gpu/freetype/freetype.h"
 #include "gpu/mainRenderer.h"
 
-BlockRenderDataFeeder::BlockRenderDataFeeder(Backend* backend) : backend(backend), dataUpdateEventReceiver(backend->getDataUpdateEventManager()) {
+BlockRenderDataFeeder::BlockRenderDataFeeder(Backend& backend) : backend(backend), dataUpdateEventReceiver(backend.getDataUpdateEventManager()) {
 	dataUpdateEventReceiver.linkFunction("newBlockType", std::bind(&BlockRenderDataFeeder::newBlockTypeUpdate, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("postBlockSizeChange", std::bind(&BlockRenderDataFeeder::postBlockSizeChangeUpdate, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("blockNameChange", std::bind(&BlockRenderDataFeeder::blockNameChangeUpdate, this, std::placeholders::_1));
@@ -74,7 +74,7 @@ void BlockRenderDataFeeder::blockDataSetConnectionUpdate(const DataUpdateEventMa
 		return;
 	}
 	auto portIter = iter->second.blockPortRenderDataIds.find(data->get().second);
-	const BlockData* blockData = backend->getBlockDataManager()->getBlockData(data->get().first);
+	const BlockData* blockData = backend.getBlockDataManager().getBlockData(data->get().first);
 	bool isInput = blockData->isConnectionInput(data->get().second);
 	if (portIter == iter->second.blockPortRenderDataIds.end()) {
 		BlockPortRenderDataId blockPortRenderDataId = MainRenderer::get().addBlockPort(
@@ -124,7 +124,7 @@ void BlockRenderDataFeeder::blockDataConnectionNameSetUpdate(const DataUpdateEve
 		logError("Failed to find BlockPortRenderDataId for BlockType {}, connection_end_id {}", "BlockRenderDataFeeder", data->get().first, data->get().second);
 		return;
 	}
-	const BlockData* blockData = backend->getBlockDataManager()->getBlockData(data->get().first);
+	const BlockData* blockData = backend.getBlockDataManager().getBlockData(data->get().first);
 	MainRenderer::get().setBlockPortName(iter->second.blockRenderDataId, portIter->second, *blockData->getConnectionIdToName(data->get().second));
 }
 
@@ -292,7 +292,7 @@ void BlockRenderDataFeeder::createTextureForBusBlock(const BlockData* blockData,
 
 void BlockRenderDataFeeder::doBlockTextureUpdates() {
 	for (BlockType blockType : blockTexturesToUpdate) {
-		const BlockData* blockData = backend->getBlockDataManager()->getBlockData(blockType);
+		const BlockData* blockData = backend.getBlockDataManager().getBlockData(blockType);
 		if (!blockData) {
 			logError("Failed to find BlockData for BlockType {}", "BlockRenderDataFeeder", blockType);
 			return;

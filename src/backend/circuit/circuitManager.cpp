@@ -7,7 +7,7 @@
 
 circuit_id_t CircuitManager::createNewCircuit(const std::string& name, const std::string& uuid, bool createEval) {
 	circuit_id_t id = getNewCircuitId();
-	const SharedCircuit circuit = std::make_shared<Circuit>(id, this, &blockDataManager, dataUpdateEventManager, name, uuid);
+	const SharedCircuit circuit = std::make_shared<Circuit>(id, *this, blockDataManager, dataUpdateEventManager, name, uuid);
 	circuits.emplace(id, circuit);
 	UUIDToCircuits.emplace(uuid, circuit);
 	for (auto& [object, funcData] : listenerFunctions) {
@@ -17,8 +17,8 @@ circuit_id_t CircuitManager::createNewCircuit(const std::string& name, const std
 	setupBlockData(id);
 
 	if (createEval) {
-		auto evaluatorId = evaluatorManager->createNewEvaluator(*this, id);
-		SharedEvaluator eval = evaluatorManager->getEvaluator(evaluatorId);
+		auto evaluatorId = evaluatorManager.createNewEvaluator(*this, id);
+		SharedEvaluator eval = evaluatorManager.getEvaluator(evaluatorId);
 		eval->setPause(false);
 		eval->setUseTickrate(true);
 		eval->setTickrate(40);
@@ -27,8 +27,8 @@ circuit_id_t CircuitManager::createNewCircuit(const std::string& name, const std
 	return id;
 }
 
-CircuitManager::CircuitManager(DataUpdateEventManager* dataUpdateEventManager, EvaluatorManager* evaluatorManager, CircuitFileManager* fileManager) :
-	blockDataManager(dataUpdateEventManager), circuitBlockDataManager(dataUpdateEventManager), proceduralCircuitManager(this, dataUpdateEventManager, fileManager),
+CircuitManager::CircuitManager(DataUpdateEventManager& dataUpdateEventManager, EvaluatorManager& evaluatorManager, CircuitFileManager& fileManager) :
+	blockDataManager(dataUpdateEventManager), circuitBlockDataManager(dataUpdateEventManager), proceduralCircuitManager(*this, dataUpdateEventManager, fileManager),
 	dataUpdateEventManager(dataUpdateEventManager), dataUpdateEventReceiver(dataUpdateEventManager), evaluatorManager(evaluatorManager) {
 	dataUpdateEventReceiver.linkFunction("postBlockSizeChange", [this](const DataUpdateEventManager::EventData* eventData) {
 		linkedFunctionForUpdates<Vector>(eventData);
@@ -63,7 +63,7 @@ circuit_id_t CircuitManager::createNewCircuit(const ParsedCircuit& parsedCircuit
 			logWarning("Dependency Circuit with UUID {} already exists; not creating custom block.", "CircuitManager", uuid);
 			return possibleExistingCircuit->getCircuitId();
 		} else {
-			if (getProceduralCircuitManager()->getProceduralCircuit(uuid)) {
+			if (getProceduralCircuitManager().getProceduralCircuit(uuid)) {
 				logWarning("Dependency Circuit with UUID {} already exists as ProceduralCircuit. Can't create block.", "CircuitManager", uuid);
 				return 0;
 			}
@@ -132,7 +132,7 @@ circuit_id_t CircuitManager::createNewCircuit(const ParsedCircuit& parsedCircuit
 		blockData->setConnnectionPortOffset(port.connectionEndId, port.portOffset);
 	}
 
-	dataUpdateEventManager->sendEvent("blockDataUpdate");
+	dataUpdateEventManager.sendEvent("blockDataUpdate");
 
 	return id;
 }
@@ -197,7 +197,7 @@ circuit_id_t CircuitManager::createNewCircuit(const GeneratedCircuit& generatedC
 		}
 	}
 
-	dataUpdateEventManager->sendEvent("blockDataUpdate");
+	dataUpdateEventManager.sendEvent("blockDataUpdate");
 
 	return id;
 }
@@ -308,5 +308,5 @@ void CircuitManager::updateExistingCircuit(circuit_id_t id, const GeneratedCircu
 		}
 	}
 
-	dataUpdateEventManager->sendEvent("blockDataUpdate");
+	dataUpdateEventManager.sendEvent("blockDataUpdate");
 }

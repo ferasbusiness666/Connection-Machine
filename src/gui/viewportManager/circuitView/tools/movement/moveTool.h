@@ -6,6 +6,7 @@
 
 class MoveTool : public CircuitTool {
 public:
+	using CircuitTool::CircuitTool;
 	void reset() override final;
 	void activate() override final;
 

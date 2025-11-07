@@ -61,7 +61,7 @@ void App::deregisterWindow(const SdlWindow* sdlWindow) {
 
 void App::newMainWindow() {
 	logInfo("Creating new MainWindow", "App");
-	windows.push_back(std::make_unique<MainWindow>(&environment));
+	windows.push_back(std::make_unique<MainWindow>(environment));
 	newlyCreatedWindowsNext.push_back(windows.back().get());
 }
 
@@ -178,7 +178,7 @@ void App::startTryingToQuit() {
 	tasksToFinishToQuit = 0;
 	tryingToQuit = true;
 	auto windowIter = windows.begin();
-	while (windowIter->get()->getEnvironment() != &environment) {
+	while (&windowIter->get()->getEnvironment() != &environment) {
 		++windowIter;
 		if (windowIter == windows.end()) {
 			logError("Could not find window to save with! TODO: create new window that saves can happen in!");

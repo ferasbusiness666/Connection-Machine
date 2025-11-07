@@ -10,9 +10,9 @@ class CircuitManager;
 
 class BlockContainer {
 public:
-	inline BlockContainer(CircuitManager* circuitManager, BlockDataManager* blockDataManager) : circuitManager(circuitManager), blockDataManager(blockDataManager) { }
+	inline BlockContainer(CircuitManager& circuitManager, BlockDataManager& blockDataManager) : circuitManager(circuitManager), blockDataManager(blockDataManager) { }
 
-	inline BlockDataManager* getBlockDataManager() const { return blockDataManager; }
+	inline BlockDataManager& getBlockDataManager() const { return blockDataManager; }
 
 	void clear(Difference* difference);
 
@@ -119,8 +119,8 @@ private:
 
 
 	BlockType selfBlockType = BlockType::NONE;
-	CircuitManager* circuitManager;
-	BlockDataManager* blockDataManager;
+	CircuitManager& circuitManager;
+	BlockDataManager& blockDataManager;
 	block_id_t lastId = 0;
 	Sparse2d<Cell> grid;
 	std::unordered_map<block_id_t, Block> blocks;

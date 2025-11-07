@@ -17,7 +17,7 @@ Evaluator::Evaluator(
 	BlockDataManager& blockDataManager,
 	CircuitBlockDataManager& circuitBlockDataManager,
 	circuit_id_t circuitId,
-	DataUpdateEventManager* dataUpdateEventManager
+	DataUpdateEventManager& dataUpdateEventManager
 ) :
 	evaluatorId(evaluatorId), circuitManager(circuitManager), blockDataManager(blockDataManager), circuitBlockDataManager(circuitBlockDataManager),
 	evalCircuitContainer(), dataUpdateEventManager(dataUpdateEventManager), receiver(dataUpdateEventManager), evalConfig(dataUpdateEventManager, evaluatorId),
@@ -68,7 +68,7 @@ void Evaluator::makeEdit(DifferenceSharedPtr difference, circuit_id_t circuitId)
 		evalSimulator->endEdit(pauseGuard);
 	}
 	if (changedICs) {
-		dataUpdateEventManager->sendEvent("addressTreeMakeBranch");
+		dataUpdateEventManager.sendEvent("addressTreeMakeBranch");
 	}
 	processDirtyNodes();
 }

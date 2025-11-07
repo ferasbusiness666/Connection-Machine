@@ -10,10 +10,10 @@
 #include "util/algorithm.h"
 
 EvalWindow::EvalWindow(
-	const EvaluatorManager* evaluatorManager,
-	const CircuitManager* circuitManager,
-	MainWindow* mainWindow,
-	DataUpdateEventManager* dataUpdateEventManager,
+	const EvaluatorManager& evaluatorManager,
+	const CircuitManager& circuitManager,
+	MainWindow& mainWindow,
+	DataUpdateEventManager& dataUpdateEventManager,
 	Rml::ElementDocument* document,
 	Rml::Element* parent
 ) : menuTree(document, parent, true, false), dataUpdateEventReceiver(dataUpdateEventManager), evaluatorManager(evaluatorManager), circuitManager(circuitManager), mainWindow(mainWindow) {
@@ -29,7 +29,7 @@ EvalWindow::EvalWindow(
 
 void EvalWindow::updateList() {
 	std::vector<std::vector<std::string>> paths;
-	for (auto pair : this->evaluatorManager->getEvaluators()) {
+	for (auto pair : this->evaluatorManager.getEvaluators()) {
 		std::vector<std::string> path({ pair.second->getEvaluatorName() });
 		makePaths(paths, path, pair.second->buildAddressTree());
 	}
@@ -38,7 +38,7 @@ void EvalWindow::updateList() {
 
 void EvalWindow::refreshSidebar(bool rebuildItems) {
 	if (rebuildItems) updateList();
-	CircuitView* view = mainWindow->getActiveCircuitViewWidget() ? mainWindow->getActiveCircuitViewWidget()->getCircuitView() : nullptr;
+	CircuitView* view = mainWindow.getActiveCircuitViewWidget() ? mainWindow.getActiveCircuitViewWidget()->getCircuitView() : nullptr;
 	if (!view) return;
 	Evaluator* activeEval = view->getEvaluator();
 	if (!activeEval) return;
@@ -134,7 +134,7 @@ void EvalWindow::makePaths(std::vector<std::vector<std::string>>& paths, std::ve
 		paths.push_back(path);
 	} else {
 		for (auto& pair : branches) {
-			path.push_back(circuitManager->getCircuit(pair.second.getContainerId())->getCircuitName() + pair.first.toString());
+			path.push_back(circuitManager.getCircuit(pair.second.getContainerId())->getCircuitName() + pair.first.toString());
 			makePaths(paths, path, pair.second);
 			path.pop_back();
 		}
@@ -162,14 +162,13 @@ void EvalWindow::updateSelected(std::string string) {
 		address.addBlockId(position);
 	}
 
-	CircuitView* circuitView = mainWindow->getActiveCircuitViewWidget()->getCircuitView();
-	circuitView->setEvaluator(circuitView->getBackend(), evaluator_id_t(evalId), address);
+	CircuitView* circuitView = mainWindow.getActiveCircuitViewWidget()->getCircuitView();
+	circuitView->setEvaluator(evaluator_id_t(evalId), address);
 	refreshSidebar(false);
 }
 
 void EvalWindow::selectEvaluatorForCircuit(circuit_id_t circuitId) {
-	if (!this->evaluatorManager) return;
-	for (auto& pair : this->evaluatorManager->getEvaluators()) {
+	for (auto& pair : evaluatorManager.getEvaluators()) {
 		if (pair.second->getCircuitId() == circuitId) {
 			evaluator_id_t wantedId = pair.first;
 			Rml::Element* root = menuTree.getRootElement();

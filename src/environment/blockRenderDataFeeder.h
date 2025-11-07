@@ -13,7 +13,7 @@ class BlockData;
 
 class BlockRenderDataFeeder {
 public:
-	BlockRenderDataFeeder(Backend* backend);
+	BlockRenderDataFeeder(Backend& backend);
 
 	BlockRenderDataId getBlockRenderDataId(BlockType blockType) const;
 
@@ -48,7 +48,7 @@ private:
 
 	std::unordered_map<BlockTextureId, unsigned int> blockTextureIdUsage;
 
-	Backend* backend;
+	Backend& backend;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 	std::map<BlockType, RenderData> blockTypeToRenderData;
 

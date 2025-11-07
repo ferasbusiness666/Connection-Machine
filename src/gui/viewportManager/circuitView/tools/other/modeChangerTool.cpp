@@ -19,7 +19,7 @@ void ModeChangerTool::reset() {
 	CircuitTool::reset();
 	if (!activeSelectionHelper) {
 		mode = "Area";
-		activeSelectionHelper = std::make_shared<AreaCreationTool>();
+		activeSelectionHelper = std::make_shared<AreaCreationTool>(environment);
 	}
 	activeSelectionHelper->restart();
 	updateElements();
@@ -41,10 +41,10 @@ void ModeChangerTool::activate() {
 void ModeChangerTool::setMode(std::string toolMode) {
 	if (mode != toolMode) {
 		if (toolMode == "Area") {
-			activeSelectionHelper = std::make_shared<AreaCreationTool>();
+			activeSelectionHelper = std::make_shared<AreaCreationTool>(environment);
 			mode = toolMode;
 		} else if (toolMode == "Tensor") {
-			activeSelectionHelper = std::make_shared<TensorCreationTool>();
+			activeSelectionHelper = std::make_shared<TensorCreationTool>(environment);
 			mode = toolMode;
 		} else {
 			logError("Tool mode \"{}\" could not be found", "", toolMode);

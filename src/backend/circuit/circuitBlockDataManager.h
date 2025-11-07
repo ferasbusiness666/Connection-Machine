@@ -5,7 +5,10 @@
 
 class CircuitBlockDataManager {
 public:
-	CircuitBlockDataManager(DataUpdateEventManager* dataUpdateEventManager) : dataUpdateEventManager(dataUpdateEventManager), dataUpdateEventReceiver(dataUpdateEventManager) {
+	CircuitBlockDataManager(const CircuitBlockDataManager&) = delete;
+    CircuitBlockDataManager& operator=(const CircuitBlockDataManager&) = delete;
+
+	CircuitBlockDataManager(DataUpdateEventManager& dataUpdateEventManager) : dataUpdateEventManager(dataUpdateEventManager), dataUpdateEventReceiver(dataUpdateEventManager) {
 		dataUpdateEventReceiver.linkFunction("blockDataRemoveConnection", [this](const DataUpdateEventManager::EventData* eventData) {
 			auto eventWithData = eventData->cast<std::pair<BlockType, connection_end_id_t>>();
 			if (!eventWithData) return;
@@ -84,7 +87,7 @@ public:
 	}
 
 private:
-	DataUpdateEventManager* dataUpdateEventManager;
+	DataUpdateEventManager& dataUpdateEventManager;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 	std::map<BlockType, circuit_id_t> blockTypeToCircuitId;
 	std::map<circuit_id_t, CircuitBlockData> circuitBlockData;

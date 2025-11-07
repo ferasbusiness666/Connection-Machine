@@ -16,8 +16,8 @@
 #include "computerAPI/directoryManager.h"
 #include "environment/environment.h"
 
-MainWindow::MainWindow(Environment* environment) :
-	sdlWindow(App::get().registerWindow("Connection Machine")), environment(environment), toolManagerManager(environment->getBackend().getDataUpdateEventManager()), popUpManager(this) {
+MainWindow::MainWindow(Environment& environment) :
+	sdlWindow(App::get().registerWindow("Connection Machine")), environment(environment), toolManagerManager(environment), popUpManager(*this) {
 	sdlWindow->setRecieveEventFunction(std::bind(&MainWindow::recieveEvent, this, std::placeholders::_1));
 	sdlWindow->setRenderFunction(std::bind(&MainWindow::updateRml, this));
 
@@ -79,27 +79,27 @@ MainWindow::MainWindow(Environment* environment) :
 	// eval menutree
 	Rml::Element* evalTreeParent = rmlDocument->GetElementById("eval-tree");
 	evalWindow.emplace(
-		&(environment->getBackend().getEvaluatorManager()),
-		&(environment->getBackend().getCircuitManager()),
-		this,
-		environment->getBackend().getDataUpdateEventManager(),
+		environment.getBackend().getEvaluatorManager(),
+		environment.getBackend().getCircuitManager(),
+		*this,
+		environment.getBackend().getDataUpdateEventManager(),
 		rmlDocument,
 		evalTreeParent
 	);
 
 	//  blocks/tools menutree
 	selectorWindow.emplace(
-		environment->getBackend().getBlockDataManager(),
-		environment->getBackend().getDataUpdateEventManager(),
-		environment->getBackend().getCircuitManager().getProceduralCircuitManager(),
-		&toolManagerManager,
+		environment.getBackend().getBlockDataManager(),
+		environment.getBackend().getDataUpdateEventManager(),
+		environment.getBackend().getCircuitManager().getProceduralCircuitManager(),
+		toolManagerManager,
 		rmlDocument
 	);
 
 	Rml::Element* blockCreationMenu = rmlDocument->GetElementById("block-creation-form");
-	blockCreationWindow.emplace(&(environment->getBackend().getCircuitManager()), environment, this, environment->getBackend().getDataUpdateEventManager(), &toolManagerManager, rmlDocument, blockCreationMenu);
+	blockCreationWindow.emplace(environment.getBackend().getCircuitManager(), environment, *this, environment.getBackend().getDataUpdateEventManager(), toolManagerManager, rmlDocument, blockCreationMenu);
 
-	simControlsManager.emplace(rmlDocument, getCircuitViewWidget(0), environment->getBackend().getDataUpdateEventManager());
+	simControlsManager.emplace(rmlDocument, getCircuitViewWidget(0), environment.getBackend().getDataUpdateEventManager());
 
 	settingsWindow.emplace(rmlDocument);
 
@@ -195,8 +195,7 @@ void MainWindow::updateRml() {
 }
 
 void MainWindow::createCircuitViewWidget(Rml::Element* element) {
-	circuitViewWidgets.push_back(std::make_shared<CircuitViewWidget>(environment, rmlDocument, this, windowId, element));
-	circuitViewWidgets.back()->getCircuitView()->setBackend(&environment->getBackend());
+	circuitViewWidgets.push_back(std::make_shared<CircuitViewWidget>(environment, rmlDocument, *this, windowId, element));
 	toolManagerManager.addCircuitView(circuitViewWidgets.back()->getCircuitView());
 	activeCircuitViewWidget = circuitViewWidgets.back(); // if it is created, it should be used
 }

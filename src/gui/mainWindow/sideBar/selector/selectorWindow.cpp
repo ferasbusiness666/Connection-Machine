@@ -4,10 +4,10 @@
 #include "util/algorithm.h"
 
 SelectorWindow::SelectorWindow(
-	BlockDataManager* blockDataManager,
-	DataUpdateEventManager* dataUpdateEventManager,
-	ProceduralCircuitManager* proceduralCircuitManager,
-	ToolManagerManager* toolManagerManager,
+	BlockDataManager& blockDataManager,
+	DataUpdateEventManager& dataUpdateEventManager,
+	ProceduralCircuitManager& proceduralCircuitManager,
+	ToolManagerManager& toolManagerManager,
 	Rml::ElementDocument* document
 ) :
 	blockDataManager(blockDataManager), proceduralCircuitManager(proceduralCircuitManager), toolManagerManager(toolManagerManager),
@@ -53,7 +53,7 @@ SelectorWindow::SelectorWindow(
 					return;
 				}
 			}
-			this->toolManagerManager->setBlock(selectedProceduralCircuit->getBlockType(proceduralCircuitParameters));
+			this->toolManagerManager.setBlock(selectedProceduralCircuit->getBlockType(proceduralCircuitParameters));
 		} else if (selectedBus) {
 			Rml::Element* parametersElement = parameterMenu->GetElementById("parameter-menu-parameters");
 			assert(parametersElement->GetNumChildren() == 2);
@@ -68,7 +68,7 @@ SelectorWindow::SelectorWindow(
 			try {
 				int numInputs = std::stoi(numInputsStr);
 				int inputBitWidth = std::stoi(inputBitWidthStr);
-				this->toolManagerManager->setBlock(this->blockDataManager->getBusBlock(numInputs, inputBitWidth));
+				this->toolManagerManager.setBlock(this->blockDataManager.getBusBlock(numInputs, inputBitWidth));
 			} catch (std::exception const& ex) {
 				logError("Invalid bus parameters: {} inputs of {} bits each. {}", "", numInputsStr, inputBitWidthStr, ex.what());
 				return;
@@ -81,17 +81,17 @@ SelectorWindow::SelectorWindow(
 
 void SelectorWindow::updateList() {
 	std::vector<std::vector<std::string>> paths;
-	for (unsigned int blockType = 1; blockType <= blockDataManager->maxBlockId(); blockType++) {
-		if (!blockDataManager->isPlaceable((BlockType)blockType)) continue;
+	for (unsigned int blockType = 1; blockType <= blockDataManager.maxBlockId(); blockType++) {
+		if (!blockDataManager.isPlaceable((BlockType)blockType)) continue;
 		std::vector<std::string>& path = paths.emplace_back(1, "Blocks");
-		stringSplitInto(blockDataManager->getPath((BlockType)blockType), '/', path);
-		path.push_back(blockDataManager->getName((BlockType)blockType));
+		stringSplitInto(blockDataManager.getPath((BlockType)blockType), '/', path);
+		path.push_back(blockDataManager.getName((BlockType)blockType));
 	}
-	for (const auto& iter : toolManagerManager->getAllTools()) {
+	for (const auto& iter : toolManagerManager.getAllTools()) {
 		std::vector<std::string>& path = paths.emplace_back(1, "Tools");
 		stringSplitInto(iter.first, '/', path);
 	}
-	for (const auto& iter : proceduralCircuitManager->getProceduralCircuits()) {
+	for (const auto& iter : proceduralCircuitManager.getProceduralCircuits()) {
 		std::vector<std::string>& path = paths.emplace_back(1, "Blocks");
 		stringSplitInto(iter.second->getPath(), '/', path);
 	}
@@ -103,7 +103,7 @@ void SelectorWindow::updateList() {
 }
 
 void SelectorWindow::updateToolModeOptions() {
-	auto modes = toolManagerManager->getActiveToolModes();
+	auto modes = toolManagerManager.getActiveToolModes();
 	modeList->setItems(modes.value_or(std::vector<std::string>()));
 	highlightActiveMode();
 }
@@ -116,7 +116,7 @@ void SelectorWindow::refreshSidebar(bool rebuildItems) {
 
 void SelectorWindow::highlightActiveToolInSidebar() {
 	if (!menuTree) return;
-	const std::string& activeTool = toolManagerManager->getActiveTool();
+	const std::string& activeTool = toolManagerManager.getActiveTool();
 	if (activeTool.empty()) return;
 	std::string activeToolId = std::string("Tools/") + activeTool + "-menu";
 	if (Rml::Element* activeElement = document->GetElementById(activeToolId)) {
@@ -156,10 +156,10 @@ void SelectorWindow::highlightActiveToolInSidebar() {
 			}
 		}
 	} else {
-		BlockType selectedBlock = toolManagerManager->getSelectedBlock();
+		BlockType selectedBlock = toolManagerManager.getSelectedBlock();
 		if (selectedBlock != BlockType::NONE) {
-			std::string blockPath = blockDataManager->getPath(selectedBlock);
-			std::string blockName = blockDataManager->getName(selectedBlock);
+			std::string blockPath = blockDataManager.getPath(selectedBlock);
+			std::string blockName = blockDataManager.getName(selectedBlock);
 			std::string elementId = "Blocks/";
 			if (!blockPath.empty()) elementId += blockPath + "/";
 			elementId += blockName + "-menu";
@@ -180,7 +180,7 @@ void SelectorWindow::highlightActiveMode() {
 	for (unsigned int i = 0; i < modeList->getSize(); i++) {
 		modeList->getItem(i)->SetClass("selected", false);
 	}
-	std::optional<std::string> mode = toolManagerManager->getActiveToolMode();
+	std::optional<std::string> mode = toolManagerManager.getActiveToolMode();
 	if (!mode) return;
 	Rml::Element* item = modeList->getItem(*mode);
 	if (item) item->SetClass("selected", true);
@@ -193,11 +193,11 @@ void SelectorWindow::updateSelected(const std::string& string) {
 		selectedProceduralCircuit = nullptr; // either it will be set or this should go away!
 		selectedBus = false;
 		std::string path = string.substr(7, string.size() - 7);
-		BlockType blockType = blockDataManager->getBlockType(path);
+		BlockType blockType = blockDataManager.getBlockType(path);
 		if (blockType == BlockType::NONE) {
-			const std::string* uuid = proceduralCircuitManager->getProceduralCircuitUUID(path);
+			const std::string* uuid = proceduralCircuitManager.getProceduralCircuitUUID(path);
 			if (uuid) {
-				selectedProceduralCircuit = proceduralCircuitManager->getProceduralCircuit(*uuid);
+				selectedProceduralCircuit = proceduralCircuitManager.getProceduralCircuit(*uuid);
 				if (selectedProceduralCircuit) setupProceduralCircuitParameterMenu();
 				else logError("unknown block with path: {}", "SelectorWindow", path);
 			} else if (path == "Other/Bus") {
@@ -205,18 +205,18 @@ void SelectorWindow::updateSelected(const std::string& string) {
 				setupBusParameterMenu();
 			}
 		}
-		toolManagerManager->setBlock(blockType);
+		toolManagerManager.setBlock(blockType);
 		if (!(selectedProceduralCircuit || selectedBus)) hideParameterMenu();
 	} else if (parts[0] == "Tools") {
 		std::string toolPath = string.substr(6, string.size() - 6);
-		toolManagerManager->setTool(toolPath);
+		toolManagerManager.setTool(toolPath);
 	} else {
 		logError("Do not recognize cadegory {}", "SelectorWindow", parts[0]);
 	}
 	refreshSidebar(false);
 }
 
-void SelectorWindow::updateSelectedMode(const std::string& string) { toolManagerManager->setMode(string); }
+void SelectorWindow::updateSelectedMode(const std::string& string) { toolManagerManager.setMode(string); }
 
 void SelectorWindow::setupParameterMenu() {
 	if (selectedProceduralCircuit) {

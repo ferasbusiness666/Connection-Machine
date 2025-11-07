@@ -22,15 +22,15 @@ class Environment;
 
 class MainWindow {
 public:
-	MainWindow(Environment* environment);
+	MainWindow(Environment& environment);
 	~MainWindow();
 
 	// no copy
 	MainWindow(const MainWindow&) = delete;
 	MainWindow& operator=(const MainWindow&) = delete;
 
-	Environment* getEnvironment() { return environment; }
-	const Environment* getEnvironment() const { return environment; }
+	Environment& getEnvironment() { return environment; }
+	const Environment& getEnvironment() const { return environment; }
 
 	SimControlsManager* getSimControlsManager() { return simControlsManager.has_value() ? &simControlsManager.value() : nullptr; }
 
@@ -74,7 +74,7 @@ private:
 	void applyUiScale(float scale);
 
 	WindowId windowId;
-	Environment* environment;
+	Environment& environment;
 
 	// inputs and tools
 	KeybindHandler keybindHandler;

@@ -20,7 +20,9 @@ typedef std::function<void(DifferenceSharedPtr, circuit_id_t)> CircuitDiffListen
 class Circuit {
 	friend class CircuitManager;
 public:
-	Circuit(circuit_id_t circuitId, CircuitManager* circuitManager, BlockDataManager* blockDataManager, DataUpdateEventManager* dataUpdateEventManager, const std::string& name, const std::string& uuid);
+	Circuit(circuit_id_t circuitId, CircuitManager& circuitManager, BlockDataManager& blockDataManager, DataUpdateEventManager& dataUpdateEventManager, const std::string& name, const std::string& uuid);
+	Circuit(const Circuit&) = delete;
+    Circuit& operator=(const Circuit&) = delete;
 
 	void clear(bool clearUndoTree = false);
 
@@ -123,7 +125,7 @@ private:
 	std::string circuitUUID;
 	circuit_id_t circuitId;
 	BlockContainer blockContainer;
-	DataUpdateEventManager* dataUpdateEventManager;
+	DataUpdateEventManager& dataUpdateEventManager;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 
 	struct CircuitDiffListenerData {

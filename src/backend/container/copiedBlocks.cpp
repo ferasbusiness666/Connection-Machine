@@ -25,7 +25,7 @@ CopiedBlocks::CopiedBlocks(const BlockContainer& blockContainer, SharedSelection
 			block->getPosition(),
 			block->getOrientation()
 		);
-		const BlockData* blockData = blockContainer.getBlockDataManager()->getBlockData(block->type());
+		const BlockData* blockData = blockContainer.getBlockDataManager().getBlockData(block->type());
 		for (auto& iter : block->getConnectionContainer().getConnections()) {
 			std::optional<Vector> connectionVector = blockData->getConnectionVector(iter.first, block->getOrientation());
 			if (!connectionVector) continue;
@@ -41,7 +41,7 @@ CopiedBlocks::CopiedBlocks(const BlockContainer& blockContainer, SharedSelection
 					if (positions.contains(*iter)) { skipConnection = false; break; }
 				}
 				if (skipConnection) continue;
-				const BlockData* otherBlockData = blockContainer.getBlockDataManager()->getBlockData(otherBlock->type());
+				const BlockData* otherBlockData = blockContainer.getBlockDataManager().getBlockData(otherBlock->type());
 				std::optional<Vector> otherConnectionVector = otherBlockData->getConnectionVector(
 					connectionEnd.getConnectionId(), otherBlock->getOrientation()
 				);

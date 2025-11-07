@@ -168,7 +168,7 @@ typedef std::shared_ptr<ParsedCircuit> SharedParsedCircuit;
 
 class CircuitValidator {
 public:
-	CircuitValidator(ParsedCircuit& parsedCircuit, BlockDataManager* blockDataManager) : parsedCircuit(parsedCircuit), blockDataManager(blockDataManager) { validate(); }
+	CircuitValidator(ParsedCircuit& parsedCircuit, BlockDataManager& blockDataManager) : parsedCircuit(parsedCircuit), blockDataManager(blockDataManager) { validate(); }
 private:
 	struct ConnectionHash {
 		size_t operator()(const ParsedCircuit::ConnectionData& p) const {
@@ -200,7 +200,7 @@ private:
 		return id;
 	}
 
-	BlockDataManager* blockDataManager;
+	BlockDataManager& blockDataManager;
 	ParsedCircuit& parsedCircuit;
 	std::unordered_set<Position> occupiedPositions;
 };

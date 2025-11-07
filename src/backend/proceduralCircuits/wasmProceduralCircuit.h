@@ -3,18 +3,23 @@
 
 #include "proceduralCircuit.h"
 
-#include "backend/wasm/wasm.h"
+#include <wasmtime.hh>
 
 class CircuitFileManager;
 
 class WasmProceduralCircuit : public ProceduralCircuit {
 public:
+	WasmProceduralCircuit(const WasmProceduralCircuit&) = delete;
+    WasmProceduralCircuit& operator=(const WasmProceduralCircuit&) = delete;
+
 	class WasmInstance {
 	public:
-		WasmInstance(wasmtime::Module module, CircuitManager* circuitManager, CircuitFileManager* fileManager);
+		WasmInstance(wasmtime::Module module, CircuitManager& circuitManager, CircuitFileManager& fileManager);
 		WasmInstance(WasmInstance&& wasmInstance);
-
 		WasmInstance& operator=(WasmInstance&& wasmInstance);
+		WasmInstance(const WasmInstance&) = delete;
+		WasmInstance& operator=(const WasmInstance&) = delete;
+
 
 		void makeCircuit(const ProceduralCircuitParameters& parameters, GeneratedCircuit& generatedCircuit);
 
@@ -48,8 +53,8 @@ public:
 	};
 
 	WasmProceduralCircuit(
-		CircuitManager* circuitManager,
-		DataUpdateEventManager* dataUpdateEventManager,
+		CircuitManager& circuitManager,
+		DataUpdateEventManager& dataUpdateEventManager,
 		WasmInstance&& wasmInstance
 	);
 	WasmProceduralCircuit(WasmProceduralCircuit&& other);

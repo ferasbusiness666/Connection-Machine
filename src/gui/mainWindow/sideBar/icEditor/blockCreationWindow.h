@@ -10,11 +10,11 @@ class MainWindow;
 class BlockCreationWindow {
 public:
 	BlockCreationWindow(
-		CircuitManager* circuitManager,
-		Environment* environment,
-		MainWindow* mainWindow,
-		DataUpdateEventManager* dataUpdateEventManager,
-		ToolManagerManager* toolManagerManager,
+		CircuitManager& circuitManager,
+		Environment& environment,
+		MainWindow& mainWindow,
+		DataUpdateEventManager& dataUpdateEventManager,
+		ToolManagerManager& toolManagerManager,
 		Rml::ElementDocument* document,
 		Rml::Element* menu
 	);
@@ -41,10 +41,10 @@ private:
 	Rml::Element* inputList;
 	Rml::Element* menu;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
-	MainWindow* mainWindow;
-	Environment* environment;
-	CircuitManager* circuitManager;
-	ToolManagerManager* toolManagerManager;
+	MainWindow& mainWindow;
+	Environment& environment;
+	CircuitManager& circuitManager;
+	ToolManagerManager& toolManagerManager;
 };
 
 #endif /* blockCreationWindow_h */

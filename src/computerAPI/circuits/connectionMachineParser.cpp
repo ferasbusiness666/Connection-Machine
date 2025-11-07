@@ -128,7 +128,7 @@ std::vector<circuit_id_t> ConnectionMachineParser::load(const std::string& path)
 			// std::filesystem::path(importFileName).
 			std::filesystem::path fullPath = std::filesystem::absolute(std::filesystem::path(path)).parent_path() / importFileName;
 			const std::string& fPath = std::filesystem::weakly_canonical(fullPath).generic_string();
-			circuitFileManager->loadFromFile(fPath);
+			circuitFileManager.loadFromFile(fPath);
 		} else if (token == "Circuit:") {
 			if (currentParsedCircuit) {
 				if (version != latestVersion) {
@@ -238,11 +238,11 @@ std::vector<circuit_id_t> ConnectionMachineParser::load(const std::string& path)
 			BlockType blockType = stringToBlockType(blockTypeStr);
 
 			if (blockType == BlockType::CUSTOM) {
-				SharedCircuit circuit = circuitManager->getCircuit(blockTypeStr);
+				SharedCircuit circuit = circuitManager.getCircuit(blockTypeStr);
 				if (circuit) {
-					blockType = circuitManager->getCircuitBlockDataManager()->getCircuitBlockData(circuit->getCircuitId())->getBlockType();
+					blockType = circuitManager.getCircuitBlockDataManager().getCircuitBlockData(circuit->getCircuitId())->getBlockType();
 				} else {
-					SharedProceduralCircuit proceduralCircuit = circuitManager->getProceduralCircuitManager()->getProceduralCircuit(blockTypeStr);
+					SharedProceduralCircuit proceduralCircuit = circuitManager.getProceduralCircuitManager().getProceduralCircuit(blockTypeStr);
 					if (proceduralCircuit) {
 						blockType = proceduralCircuit->getBlockType(ProceduralCircuitParameters(inputFile));
 					} else if (blockTypeStr == "Bus") {
@@ -283,14 +283,14 @@ std::vector<circuit_id_t> ConnectionMachineParser::load(const std::string& path)
 								inputFile >> bitWidth;
 								if (bitWidth != 0) {
 									busConnections.emplace_back(Vector(portPosX, portPosY), bitWidth);
-									blockType = circuitManager->getBlockDataManager()->getBusBlock(bitWidth);
+									blockType = circuitManager.getBlockDataManager().getBusBlock(bitWidth);
 								} else {
 									logError("Invalid bit width {} loaded from file.", "ConnectionMachineParser", bitWidth);
 									return circuitIds;
 								}
 							}
 						}
-						blockType = circuitManager->getBlockDataManager()->getBusBlock(busConnections);
+						blockType = circuitManager.getBlockDataManager().getBusBlock(busConnections);
 					} else {
 						logError("Could not find Circuit or ProceduralCircuit or Bus with UUID: {}", "ConnectionMachineParser", blockTypeStr);
 						return circuitIds;
@@ -353,18 +353,18 @@ bool ConnectionMachineParser::save(const CircuitFileManager::FileData& fileData,
 	std::set<std::string> pathImports;
 	std::map<std::string, std::set<std::string>> inFileDependencies;
 	for (const std::string& UUID : fileData.UUIDs) {
-		SharedCircuit circuit = circuitManager->getCircuit(UUID);
+		SharedCircuit circuit = circuitManager.getCircuit(UUID);
 		if (!circuit) continue;
 		const BlockContainer& blockContainer = circuit->getBlockContainer();
 		for (auto itr = blockContainer.begin(); itr != blockContainer.end(); ++itr) {
-			BlockData* blockData = circuitManager->getBlockDataManager()->getBlockData(itr->second.type());
+			BlockData* blockData = circuitManager.getBlockDataManager().getBlockData(itr->second.type());
 			if (!blockData) {
 				logError("Could not find block data for block {}", "ConnectionMachineParser", std::to_string(itr->second.type()));
 				continue;
 			}
 			if (blockData->isPrimitive() || !imports.insert(blockData->getBlockType()).second) continue;
-			circuit_id_t subCircuitId = circuitManager->getCircuitBlockDataManager()->getCircuitId(blockData->getBlockType());
-			const CircuitBlockData* subCircuitBlockData = circuitManager->getCircuitBlockDataManager()->getCircuitBlockData(subCircuitId);
+			circuit_id_t subCircuitId = circuitManager.getCircuitBlockDataManager().getCircuitId(blockData->getBlockType());
+			const CircuitBlockData* subCircuitBlockData = circuitManager.getCircuitBlockDataManager().getCircuitBlockData(subCircuitId);
 			if (!subCircuitBlockData) {
 				logError("Could not find save path for depedecy {}", "ConnectionMachineParser", subCircuitId);
 				continue;
@@ -375,10 +375,10 @@ bool ConnectionMachineParser::save(const CircuitFileManager::FileData& fileData,
 			if (subProceduralCircuitUUID) {
 				subUUID = &(subProceduralCircuitUUID.value());
 			} else {
-				SharedCircuit circuit = circuitManager->getCircuit(subCircuitId);
+				SharedCircuit circuit = circuitManager.getCircuit(subCircuitId);
 				subUUID = &(circuit->getUUID());
 			}
-			subSavePath = circuitFileManager->getSavePath(*subUUID);
+			subSavePath = circuitFileManager.getSavePath(*subUUID);
 			if (!subSavePath) {
 				logError("Could not find save path for depedecy {}", "ConnectionMachineParser", *subUUID);
 				continue;
@@ -412,15 +412,15 @@ bool ConnectionMachineParser::save(const CircuitFileManager::FileData& fileData,
 			continue;
 		}
 		UUIDsAlreadyInFile.emplace(UUID);
-		SharedCircuit circuit = circuitManager->getCircuit(UUID);
+		SharedCircuit circuit = circuitManager.getCircuit(UUID);
 		if (!circuit) continue;
 		;
 		const BlockContainer& blockContainer = circuit->getBlockContainer();
-		const CircuitBlockData* circuitBlockData = circuitManager->getCircuitBlockDataManager()->getCircuitBlockData(circuit->getCircuitId());
+		const CircuitBlockData* circuitBlockData = circuitManager.getCircuitBlockDataManager().getCircuitBlockData(circuit->getCircuitId());
 		outputFile << "Circuit: \"" << circuit->getCircuitName() << "\"\n";
 		outputFile << "UUID: " << circuit->getUUID() << "\n";
 		if (circuitBlockData) {
-			BlockData* blockData = circuitManager->getBlockDataManager()->getBlockData(circuitBlockData->getBlockType());
+			BlockData* blockData = circuitManager.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
 			if (blockData->getTexturePath() != "") {
 				outputFile << "texture: " << std::quoted(blockData->getTexturePath()) << "\n";
 				if (blockData->getUsesTileMapTexture()) {
@@ -445,7 +445,7 @@ bool ConnectionMachineParser::save(const CircuitFileManager::FileData& fileData,
 			const Block& block = itr->second;
 			Position pos = block.getPosition();
 
-			const BlockData* blockData = circuitManager->getBlockDataManager()->getBlockData(block.type());
+			const BlockData* blockData = circuitManager.getBlockDataManager().getBlockData(block.type());
 			std::string blockTypeStr;
 			if (blockData->isBus()) {
 				blockTypeStr = "Bus (";
@@ -469,16 +469,16 @@ bool ConnectionMachineParser::save(const CircuitFileManager::FileData& fileData,
 				}
 				blockTypeStr += ")";
 			} else if (!blockData->isPrimitive()) {
-				circuit_id_t subCircuitId = circuitManager->getCircuitBlockDataManager()->getCircuitId(block.type());
+				circuit_id_t subCircuitId = circuitManager.getCircuitBlockDataManager().getCircuitId(block.type());
 				const std::optional<std::string>& proceduralCircuitUUID =
-					circuitManager->getCircuitBlockDataManager()->getCircuitBlockData(subCircuitId)->getProceduralCircuitUUID();
+					circuitManager.getCircuitBlockDataManager().getCircuitBlockData(subCircuitId)->getProceduralCircuitUUID();
 				if (proceduralCircuitUUID.has_value()) {
 					const ProceduralCircuitParameters* proceduralCircuitParameters =
-						circuitManager->getProceduralCircuitManager()->getProceduralCircuit(proceduralCircuitUUID.value())->getProceduralCircuitParameters(subCircuitId);
+						circuitManager.getProceduralCircuitManager().getProceduralCircuit(proceduralCircuitUUID.value())->getProceduralCircuitParameters(subCircuitId);
 
 					blockTypeStr = '"' + proceduralCircuitUUID.value() + "\" " + (proceduralCircuitParameters->toString());
 				} else {
-					const SharedCircuit circuit = circuitManager->getCircuit(subCircuitId);
+					const SharedCircuit circuit = circuitManager.getCircuit(subCircuitId);
 					blockTypeStr = '"' + circuit->getUUID() + '"';
 				}
 			} else {

@@ -9,10 +9,10 @@
 class SelectorWindow {
 public:
 	SelectorWindow(
-		BlockDataManager* blockDataManager,
-		DataUpdateEventManager* dataUpdateEventManager,
-		ProceduralCircuitManager* proceduralCircuitManager,
-		ToolManagerManager* toolManagerManager,
+		BlockDataManager& blockDataManager,
+		DataUpdateEventManager& dataUpdateEventManager,
+		ProceduralCircuitManager& proceduralCircuitManager,
+		ToolManagerManager& toolManagerManager,
 		Rml::ElementDocument* document
 	);
 
@@ -40,9 +40,9 @@ private:
 	Rml::Element* parameterMenu;
 	std::optional<MenuTree> menuTree;
 	std::optional<ElementList> modeList;
-	BlockDataManager* blockDataManager;
-	ProceduralCircuitManager* proceduralCircuitManager;
-	ToolManagerManager* toolManagerManager;
+	BlockDataManager& blockDataManager;
+	ProceduralCircuitManager& proceduralCircuitManager;
+	ToolManagerManager& toolManagerManager;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 };
 

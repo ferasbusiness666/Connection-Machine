@@ -11,17 +11,20 @@
 class Environment {
 public:
 	Environment(bool loadBlockRenderDataFeeder) :
-		backend(&circuitFileManager),
-		circuitFileManager(&backend.getCircuitManager()),
+		backend(circuitFileManager),
+		circuitFileManager(backend.getCircuitManager()),
 		fileListener(std::chrono::milliseconds(200)) {
 #ifndef CLI
 		if (loadBlockRenderDataFeeder) {
-			blockRenderDataFeeder.emplace(&backend);
+			blockRenderDataFeeder.emplace(backend);
 		}
 #endif // CLI
-		backend.getBlockDataManager()->initializeDefaults();
+		backend.getBlockDataManager().initializeDefaults();
 		logInfo("Environment initialized", "Environment");
 	}
+	Environment(const Environment&) = delete;
+	Environment& operator=(const Environment&) = delete;
+
 
 	const Backend& getBackend() const { return backend; }
 	Backend& getBackend() { return backend; }

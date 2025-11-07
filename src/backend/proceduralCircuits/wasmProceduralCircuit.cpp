@@ -1,10 +1,12 @@
 #include "wasmProceduralCircuit.h"
 
-#include "generatedCircuitValidator.h"
+#include "generatedCircuit.h"
+#include "backend/wasm/wasm.h"
 #include "../circuit/circuitManager.h"
 #include "computerAPI/circuits/circuitFileManager.h"
 
-WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, CircuitManager* circuitManager, CircuitFileManager* fileManager) : circuitManager(circuitManager), fileManager(fileManager), thisPtr(std::make_unique<WasmInstance*>(this)) {
+
+WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, CircuitManager& circuitManager, CircuitFileManager& fileManager) : circuitManager(&circuitManager), fileManager(&fileManager), thisPtr(std::make_unique<WasmInstance*>(this)) {
 	WasmInstance** thisPtrPtr = thisPtr.get();
 	wasmtime::Func importFileFunc = wasmtime::Func::wrap(*Wasm::getStore(),
 		[thisPtrPtr](int32_t fileStrOffset) -> int32_t {
@@ -54,7 +56,7 @@ WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, Circu
 			if (circuit) {
 				return circuit->getBlockType();
 			}
-			SharedProceduralCircuit proceduralCircuit = (*thisPtrPtr)->circuitManager->getProceduralCircuitManager()->getProceduralCircuit(UUID);
+			SharedProceduralCircuit proceduralCircuit = (*thisPtrPtr)->circuitManager->getProceduralCircuitManager().getProceduralCircuit(UUID);
 			if (proceduralCircuit) {
 				logError("To get the BlockType of a ProceduralCircuit you need to use \"getProceduralCircuitType\" not \"getNonPrimitiveType\"", "WasmProceduralCircuit::WasmInstance");
 			}
@@ -65,7 +67,7 @@ WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, Circu
 	wasmtime::Func getProceduralCircuitTypeFunc = wasmtime::Func::wrap(*Wasm::getStore(),
 		[thisPtrPtr](int32_t UUIDStrOffset, int32_t parametersStrOffset) -> int32_t {
 			std::string UUID = (*thisPtrPtr)->wasmToString(UUIDStrOffset);
-			SharedProceduralCircuit proceduralCircuit = (*thisPtrPtr)->circuitManager->getProceduralCircuitManager()->getProceduralCircuit(UUID);
+			SharedProceduralCircuit proceduralCircuit = (*thisPtrPtr)->circuitManager->getProceduralCircuitManager().getProceduralCircuit(UUID);
 			if (proceduralCircuit) {
 				std::stringstream ss((*thisPtrPtr)->wasmToString(parametersStrOffset));
 				return proceduralCircuit->getBlockType(ProceduralCircuitParameters(ss));
@@ -291,8 +293,8 @@ std::string WasmProceduralCircuit::WasmInstance::wasmToString(int32_t wasmPtr) {
 }
 
 WasmProceduralCircuit::WasmProceduralCircuit(
-	CircuitManager* circuitManager,
-	DataUpdateEventManager* dataUpdateEventManager,
+	CircuitManager& circuitManager,
+	DataUpdateEventManager& dataUpdateEventManager,
 	WasmInstance&& wasmInstance
 ) : ProceduralCircuit(circuitManager, dataUpdateEventManager, wasmInstance.getName(), wasmInstance.getUUID()), wasmInstance(std::move(wasmInstance)) {
 	setParameterDefaults(this->wasmInstance.getDefaultParameters());

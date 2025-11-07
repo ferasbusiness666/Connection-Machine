@@ -9,10 +9,10 @@ class Environment;
 
 class TutorialManager {
 public:
-	TutorialManager(Environment* environment, CircuitView* circuitView);
+	TutorialManager(Environment& environment, CircuitView& circuitView);
 	void StartTutorial();
 	void Stop();
-	
+
 
 private:
 	void checkTutorial(DifferenceSharedPtr, circuit_id_t);
@@ -30,7 +30,7 @@ private:
 
 	CircuitView* circuitView;
 	ViewManager viewManager;
-	Environment* environment;
+	Environment& environment;
 	ElementCreator elementCreator;
 
 	int tutorialState;

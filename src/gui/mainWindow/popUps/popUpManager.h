@@ -7,7 +7,7 @@ class MainWindow;
 
 class PopUpManager {
 public:
-	PopUpManager(MainWindow* mainWindow) : mainWindow(mainWindow) {}
+	PopUpManager(MainWindow& mainWindow) : mainWindow(mainWindow) {}
 
 	void addOptionsPopUp(const std::string& message, const std::vector<std::pair<std::string, std::function<void()>>>& options, bool blocking = true) {
 		addOptionsPopUp(message, std::nullopt, options, blocking);
@@ -21,7 +21,7 @@ public:
 	void saveAsPopUp(const std::string& circuitUUID);
 
 private:
-	MainWindow* mainWindow;
+	MainWindow& mainWindow;
 };
 
 #endif /* popUpManager_h */

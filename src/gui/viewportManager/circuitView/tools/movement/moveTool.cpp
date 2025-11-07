@@ -8,7 +8,7 @@ void MoveTool::reset() {
 	CircuitTool::reset();
 	if (!activeSelectionHelper) {
 		mode = "Area";
-		activeSelectionHelper = std::make_shared<AreaCreationTool>();
+		activeSelectionHelper = std::make_shared<AreaCreationTool>(environment);
 	}
 	transformAmount = Orientation();
 	activeSelectionHelper->restart();
@@ -31,10 +31,10 @@ void MoveTool::activate() {
 void MoveTool::setMode(std::string toolMode) {
 	if (mode != toolMode) {
 		if (toolMode == "Area") {
-			activeSelectionHelper = std::make_shared<AreaCreationTool>();
+			activeSelectionHelper = std::make_shared<AreaCreationTool>(environment);
 			mode = toolMode;
 		} else if (toolMode == "Tensor") {
-			activeSelectionHelper = std::make_shared<TensorCreationTool>();
+			activeSelectionHelper = std::make_shared<TensorCreationTool>(environment);
 			mode = toolMode;
 		} else {
 			logError("Tool mode \"{}\" could not be found", "", toolMode);
@@ -107,7 +107,7 @@ void MoveTool::updateElements() {
 			if (blocksSet.contains(block)) continue;
 			blocksSet.insert(block);
 			blocks.emplace_back(
-				environment->getBlockRenderDataFeeder().getBlockRenderDataId(block->type()),
+				environment.getBlockRenderDataFeeder().getBlockRenderDataId(block->type()),
 				lastPointerPosition + transformAmount * (block->getPosition() - selectionOrigin) - transformAmount.transformVectorWithArea(Vector(0), block->size()),
 				transformAmount * block->getOrientation()
 			);

@@ -44,8 +44,10 @@ public:
 		BlockDataManager& blockDataManager,
 		CircuitBlockDataManager& circuitBlockDataManager,
 		circuit_id_t circuitId,
-		DataUpdateEventManager* dataUpdateEventManager
+		DataUpdateEventManager& dataUpdateEventManager
 	);
+	Evaluator(const Evaluator&) = delete;
+    Evaluator& operator=(const Evaluator&) = delete;
 	~Evaluator();
 
 	inline evaluator_id_t getEvaluatorId() const { return evaluatorId; }
@@ -126,7 +128,7 @@ private:
 	CircuitManager& circuitManager;
 	BlockDataManager& blockDataManager;
 	CircuitBlockDataManager& circuitBlockDataManager;
-	DataUpdateEventManager* dataUpdateEventManager;
+	DataUpdateEventManager& dataUpdateEventManager;
 	DataUpdateEventManager::DataUpdateEventReceiver receiver;
 	EvalCircuitContainer evalCircuitContainer;
 	EvalConfig evalConfig;

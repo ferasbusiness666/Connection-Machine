@@ -3,21 +3,21 @@
 #include "circuitView.h"
 #include "environment/environment.h"
 
-TutorialManager::TutorialManager(Environment* environment, CircuitView* circuitView) :
-	circuitView(circuitView), elementCreator(circuitView->getViewportId()), environment(environment), tutorialRunning(false) { }
+TutorialManager::TutorialManager(Environment& environment, CircuitView& circuitView) :
+	circuitView(&circuitView), elementCreator(circuitView.getViewportId()), environment(environment), tutorialRunning(false) { }
 
 void TutorialManager::StartTutorial() {
 	if (tutorialRunning) return;
 	tutorialRunning = true;
 	tutorialState = 0;
-	circuit_id_t circuitId = circuitView->getBackend()->getCircuitManager().createNewCircuit(false);
-	std::optional<evaluator_id_t> evaluatorId = circuitView->getBackend()->createEvaluator(circuitId);
+	circuit_id_t circuitId = circuitView->getBackend().getCircuitManager().createNewCircuit(false);
+	std::optional<evaluator_id_t> evaluatorId = circuitView->getBackend().createEvaluator(circuitId);
 	if (!evaluatorId) return;
-	circuitView->setEvaluator(circuitView->getBackend(), evaluatorId.value());
-	
-	evaluator = circuitView->getBackend()->getEvaluator(evaluatorId.value());
-	SharedCircuit circuit = circuitView->getBackend()->getCircuitManager().getCircuit(circuitId);
-	curentCircuit = circuitView->getBackend()->getCircuitManager().getCircuit(circuitId);
+	circuitView->setEvaluator(evaluatorId.value());
+
+	evaluator = circuitView->getBackend().getEvaluator(evaluatorId.value());
+	SharedCircuit circuit = circuitView->getBackend().getCircuitManager().getCircuit(circuitId);
+	curentCircuit = circuitView->getBackend().getCircuitManager().getCircuit(circuitId);
 	curentCircuit->connectListener(this, std::bind(&TutorialManager::checkTutorial, this, std::placeholders::_1, std::placeholders::_2));
 	basicTutorial();
 }
@@ -34,7 +34,7 @@ void TutorialManager::checkTutorial(DifferenceSharedPtr, circuit_id_t) { basicTu
 
 void TutorialManager::basicTutorial() {
 	const BlockContainer& blockContainer = curentCircuit->getBlockContainer();
-	
+
 	if (tutorialState == 0) {
 		basicTutorialPart1();
 	}
@@ -77,14 +77,14 @@ void TutorialManager::basicTutorial() {
 void TutorialManager::basicTutorialPart1() {
 	logInfo("Welcome to the Connetion Machine tutorial.");
 	logInfo("Click the 'Switch' button on the left side menu, and click to place 2 switches where prompted.");
-	elementCreator.addBlockPreview(BlockPreview(environment->getBlockRenderDataFeeder().getBlockRenderDataId(BlockType::SWITCH), Position(0, 0), Orientation()));
-	elementCreator.addBlockPreview(BlockPreview(environment->getBlockRenderDataFeeder().getBlockRenderDataId(BlockType::SWITCH), Position(0, 2), Orientation()));
+	elementCreator.addBlockPreview(BlockPreview(environment.getBlockRenderDataFeeder().getBlockRenderDataId(BlockType::SWITCH), Position(0, 0), Orientation()));
+	elementCreator.addBlockPreview(BlockPreview(environment.getBlockRenderDataFeeder().getBlockRenderDataId(BlockType::SWITCH), Position(0, 2), Orientation()));
 	tutorialState++;
 }
 void TutorialManager::basicTutorialPart2() {
 	logInfo("Click the 'AND' button on the left side menu, and click to place an AND block where prompted.");
 	logInfo("The AND block takes in any amount of inputs, and outputs 'ON' only when ALL inputs are 'ON' and outputs 'OFF' otherwise.");
-	elementCreator.addBlockPreview(BlockPreview(environment->getBlockRenderDataFeeder().getBlockRenderDataId(BlockType::AND), Position(2, 1), Orientation()));
+	elementCreator.addBlockPreview(BlockPreview(environment.getBlockRenderDataFeeder().getBlockRenderDataId(BlockType::AND), Position(2, 1), Orientation()));
 	tutorialState++;
 }
 void TutorialManager::basicTutorialPart3() {
@@ -99,7 +99,7 @@ void TutorialManager::basicTutorialPart3() {
 }
 void TutorialManager::basicTutorialPart4() {
 	logInfo("Finally, click the 'LIGHT' button and place a light, then connect the AND block's output to the LIGHT.");
-	elementCreator.addBlockPreview(BlockPreview(environment->getBlockRenderDataFeeder().getBlockRenderDataId(BlockType::LIGHT), Position(4, 1), Orientation()));
+	elementCreator.addBlockPreview(BlockPreview(environment.getBlockRenderDataFeeder().getBlockRenderDataId(BlockType::LIGHT), Position(4, 1), Orientation()));
 	elementCreator.addConnectionPreview(ConnectionPreview(FPosition(2, 1), FPosition(4, 1)));
 	tutorialState++;
 }
@@ -109,6 +109,6 @@ void TutorialManager::basicTutorialPart5() {
 }
 void TutorialManager::basicTutorialPart6() {
 	logInfo("Place a light where prompted to move on to the next tutorial.");
-	elementCreator.addBlockPreview(BlockPreview(environment->getBlockRenderDataFeeder().getBlockRenderDataId(BlockType::LIGHT), Position(2, 0), Orientation()));
+	elementCreator.addBlockPreview(BlockPreview(environment.getBlockRenderDataFeeder().getBlockRenderDataId(BlockType::LIGHT), Position(2, 0), Orientation()));
 	tutorialState++;
 }

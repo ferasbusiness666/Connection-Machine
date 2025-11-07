@@ -33,11 +33,11 @@ bool BlockContainer::checkCollision(Position positionA, Position positionB, bloc
 }
 
 bool BlockContainer::checkCollision(Position position, Orientation orientation, BlockType blockType) const {
-	return checkCollision(position, position + blockDataManager->getBlockSize(blockType, orientation).getLargestVectorInArea());
+	return checkCollision(position, position + blockDataManager.getBlockSize(blockType, orientation).getLargestVectorInArea());
 }
 
 bool BlockContainer::checkCollision(Position position, Orientation orientation, BlockType blockType, block_id_t idToIgnore) const {
-	return checkCollision(position, position + blockDataManager->getBlockSize(blockType, orientation).getLargestVectorInArea(), idToIgnore);
+	return checkCollision(position, position + blockDataManager.getBlockSize(blockType, orientation).getLargestVectorInArea(), idToIgnore);
 }
 
 unsigned int BlockContainer::getBlockTypeCountRecursive(BlockType blockType) const {
@@ -46,9 +46,9 @@ unsigned int BlockContainer::getBlockTypeCountRecursive(BlockType blockType) con
 	if (blockTypeCounts.size() > blockType) count += blockTypeCounts[blockType];
 	for (unsigned int i = 0; i < blockTypeCounts.size(); i++) {
 		if ((BlockType)i == blockType || blockTypeCounts[i] == 0) continue;
-		circuit_id_t circuitId = circuitManager->getCircuitBlockDataManager()->getCircuitId((BlockType)i);
+		circuit_id_t circuitId = circuitManager.getCircuitBlockDataManager().getCircuitId((BlockType)i);
 		if (circuitId == 0) continue;
-		SharedCircuit circuit = circuitManager->getCircuit(circuitId);
+		SharedCircuit circuit = circuitManager.getCircuit(circuitId);
 		count += circuit->getBlockContainer().getBlockTypeCountRecursive(blockType) * blockTypeCounts[i];
 	}
 	return count;
@@ -70,10 +70,10 @@ bool BlockContainer::tryInsertBlock(Position position, Orientation orientation, 
 }
 
 bool BlockContainer::canInsertBlocktype(BlockType blockType) const {
-	if (selfBlockType == blockType || !blockDataManager->blockExists(blockType))
+	if (selfBlockType == blockType || !blockDataManager.blockExists(blockType))
 		return false;
-	circuit_id_t circuitId = circuitManager->getCircuitBlockDataManager()->getCircuitId(blockType);
-	if (circuitId != 0 && circuitManager->getCircuit(circuitId)->getBlockContainer().getBlockTypeCountRecursive(selfBlockType) != 0)
+	circuit_id_t circuitId = circuitManager.getCircuitBlockDataManager().getCircuitId(blockType);
+	if (circuitId != 0 && circuitManager.getCircuit(circuitId)->getBlockContainer().getBlockTypeCountRecursive(selfBlockType) != 0)
 		return false;
 	return true;
 }
@@ -85,7 +85,7 @@ bool BlockContainer::tryRemoveBlock(Position position, Difference* difference) {
 	Block& block = iter->second;
 	removeBlockCells(&block);
 	// make sure to remove all connections from this block
-	const BlockData* blockData = blockDataManager->getBlockData(block.type());
+	const BlockData* blockData = blockDataManager.getBlockData(block.type());
 	for (auto& connectionIter : block.getConnectionContainer().getConnections()) {
 		std::optional<Position> connectionPosition = block.getPosition() + blockData->getConnectionVector(connectionIter.first, block.getOrientation()).value();
 		if (!connectionPosition) continue;
@@ -187,7 +187,7 @@ bool BlockContainer::trySetType(Position positionOfBlock, BlockType type, Differ
 	tryInsertBlock(pos, rot, type, difference);
 	Block* newBlock = getBlock_(pos);
 	if (!newBlock) return false;
-	const BlockData* blockData = blockDataManager->getBlockData(type);
+	const BlockData* blockData = blockDataManager.getBlockData(type);
 	for (const auto& connectionData : connections) {
 		ConnectionEnd end(newBlock->id(), connectionData.first);
 		BlockData::ConnectionData::PortType portType = blockData->getConnectionPortType(connectionData.first);
@@ -202,7 +202,7 @@ bool BlockContainer::trySetType(Position positionOfBlock, BlockType type, Differ
 		} else {
 			for (ConnectionEnd otherEnd : connectionData.second) {
 				const Block* otherBlock = getBlock(otherEnd.getBlockId());
-				if (blockDataManager->isConnectionInput(otherBlock->type(), otherEnd.getConnectionId())) tryCreateConnection(end, otherEnd, difference);
+				if (blockDataManager.isConnectionInput(otherBlock->type(), otherEnd.getConnectionId())) tryCreateConnection(end, otherEnd, difference);
 				else tryCreateConnection(otherEnd, end, difference);
 			}
 		}
@@ -317,12 +317,12 @@ bool BlockContainer::tryCreateConnection(ConnectionEnd connectionEndA, Connectio
 	if (connectionEndA.getConnectionId() == connectionEndB.getConnectionId() && connectionEndA.getBlockId() == connectionEndB.getBlockId()) return false; // ports cant self connect
 	Block* blockA = getBlock_(connectionEndA.getBlockId());
 	if (!blockA || blockA->getConnectionContainer().hasConnection(connectionEndA.getConnectionId(), connectionEndB)) return false;
-	const BlockData* blockABlockData = blockDataManager->getBlockData(blockA->type());
+	const BlockData* blockABlockData = blockDataManager.getBlockData(blockA->type());
 	BlockData::ConnectionData::PortType portAType = blockABlockData->getConnectionPortType(connectionEndA.getConnectionId());
 	if (portAType == BlockData::ConnectionData::PortType::NONE) return false;
 	Block* blockB = getBlock_(connectionEndB.getBlockId());
 	if (!blockB) return false;
-	const BlockData* blockBBlockData = blockDataManager->getBlockData(blockB->type());
+	const BlockData* blockBBlockData = blockDataManager.getBlockData(blockB->type());
 	BlockData::ConnectionData::PortType portBType = blockBBlockData->getConnectionPortType(connectionEndB.getConnectionId());
 	if (
 		portBType == BlockData::ConnectionData::PortType::NONE ||
@@ -372,7 +372,7 @@ bool BlockContainer::tryCreateConnection(ConnectionEnd connectionEndA, Connectio
 bool BlockContainer::tryCreateConnection(Position outputPosition, Position inputPosition, Difference* difference) {
 	Block* input = getBlock_(inputPosition);
 	if (!input) return false;
-	const BlockData* inputBlockData = blockDataManager->getBlockData(input->type());
+	const BlockData* inputBlockData = blockDataManager.getBlockData(input->type());
 	std::optional<connection_end_id_t> inputConnectionId = inputBlockData->getInputConnectionId(inputPosition - input->getPosition(), input->getOrientation());
 	BlockData::ConnectionData::PortType inputPortType = BlockData::ConnectionData::PortType::INPUT;
 	if (!inputConnectionId) {
@@ -383,7 +383,7 @@ bool BlockContainer::tryCreateConnection(Position outputPosition, Position input
 	}
 	Block* output = getBlock_(outputPosition);
 	if (!output) return false;
-	const BlockData* outputBlockData = blockDataManager->getBlockData(output->type());
+	const BlockData* outputBlockData = blockDataManager.getBlockData(output->type());
 	std::optional<connection_end_id_t> outputConnectionId = outputBlockData->getOutputConnectionId(outputPosition - output->getPosition(), output->getOrientation());
 	BlockData::ConnectionData::PortType outputPortType = BlockData::ConnectionData::PortType::OUTPUT;
 	if (!outputConnectionId) {
@@ -429,8 +429,8 @@ bool BlockContainer::tryRemoveConnection(ConnectionEnd connectionEndB, Connectio
 		assert(blockB);
 		bool secondSuc = blockB->getConnectionContainer().tryRemoveConnection(connectionEndB.getConnectionId(), connectionEndA);
 		assert(secondSuc);
-		BlockData::ConnectionData::PortType portAType = blockDataManager->getBlockData(blockA->type())->getConnectionPortType(connectionEndA.getConnectionId());
-		BlockData::ConnectionData::PortType portBType = blockDataManager->getBlockData(blockB->type())->getConnectionPortType(connectionEndB.getConnectionId());
+		BlockData::ConnectionData::PortType portAType = blockDataManager.getBlockData(blockA->type())->getConnectionPortType(connectionEndA.getConnectionId());
+		BlockData::ConnectionData::PortType portBType = blockDataManager.getBlockData(blockB->type())->getConnectionPortType(connectionEndB.getConnectionId());
 		if (portAType == BlockData::ConnectionData::PortType::INPUT || portBType == BlockData::ConnectionData::PortType::OUTPUT) {
 			difference->addRemovedConnection(
 				blockB->getPosition(), blockB->getConnectionPosition(connectionEndB.getConnectionId()).value(),
@@ -450,7 +450,7 @@ bool BlockContainer::tryRemoveConnection(ConnectionEnd connectionEndB, Connectio
 bool BlockContainer::tryRemoveConnection(Position outputPosition, Position inputPosition, Difference* difference) {
 	Block* input = getBlock_(inputPosition);
 	if (!input) return false;
-	const BlockData* inputBlockData = blockDataManager->getBlockData(input->type());
+	const BlockData* inputBlockData = blockDataManager.getBlockData(input->type());
 	std::optional<connection_end_id_t> inputConnectionId = inputBlockData->getInputConnectionId(inputPosition - input->getPosition(), input->getOrientation());
 	BlockData::ConnectionData::PortType inputPortType = BlockData::ConnectionData::PortType::INPUT;
 	if (!inputConnectionId) {
@@ -461,7 +461,7 @@ bool BlockContainer::tryRemoveConnection(Position outputPosition, Position input
 	}
 	Block* output = getBlock_(outputPosition);
 	if (!output) return false;
-	const BlockData* outputBlockData = blockDataManager->getBlockData(output->type());
+	const BlockData* outputBlockData = blockDataManager.getBlockData(output->type());
 	std::optional<connection_end_id_t> outputConnectionId = outputBlockData->getOutputConnectionId(outputPosition - output->getPosition(), output->getOrientation());
 	BlockData::ConnectionData::PortType outputPortType = BlockData::ConnectionData::PortType::OUTPUT;
 	if (!outputConnectionId) {
@@ -481,7 +481,7 @@ void BlockContainer::addConnectionPort(BlockType blockType, connection_end_id_t 
 
 void BlockContainer::removeConnectionPort(BlockType blockType, connection_end_id_t endId, Difference* difference) {
 	if (blockTypeCounts.size() <= blockType || blockTypeCounts[blockType] == 0) return;
-	BlockData::ConnectionData::PortType portType = blockDataManager->getBlockData(blockType)->getConnectionPortType(endId);
+	BlockData::ConnectionData::PortType portType = blockDataManager.getBlockData(blockType)->getConnectionPortType(endId);
 	if (portType == BlockData::ConnectionData::PortType::NONE) {
 		logError("Called removeConnectionPort on non existent port id {} for block type {}", "BlockContainer", endId, blockType);
 		return;
@@ -500,7 +500,7 @@ void BlockContainer::removeConnectionPort(BlockType blockType, connection_end_id
 				assert(otherBlock);
 				bool secondSuc = otherBlock->getConnectionContainer().tryRemoveConnection(connectionEnd.getConnectionId(), ConnectionEnd(block.id(), endId));
 				assert(secondSuc);
-				BlockData::ConnectionData::PortType otherPortType = blockDataManager->getBlockData(otherBlock->type())->getConnectionPortType(connectionEnd.getConnectionId());
+				BlockData::ConnectionData::PortType otherPortType = blockDataManager.getBlockData(otherBlock->type())->getConnectionPortType(connectionEnd.getConnectionId());
 				if (portType == BlockData::ConnectionData::PortType::INPUT || otherPortType == BlockData::ConnectionData::PortType::OUTPUT) {
 					difference->addRemovedConnection(
 						otherBlock->getPosition(), otherBlock->getConnectionPosition(connectionEnd.getConnectionId()).value(),
@@ -518,7 +518,7 @@ void BlockContainer::removeConnectionPort(BlockType blockType, connection_end_id
 }
 
 void BlockContainer::placeBlockCells(Position position, Orientation orientation, BlockType type, block_id_t blockId) {
-	for (auto iter = blockDataManager->getBlockSize(type, orientation).iter(); iter; iter++) {
+	for (auto iter = blockDataManager.getBlockSize(type, orientation).iter(); iter; iter++) {
 		insertCell(position + *iter, Cell(blockId));
 	}
 }
@@ -627,7 +627,7 @@ unsigned int BlockContainer::getBitwidthOfJunction(const Block* block) const {
 		for (const auto& connection : connections.second) {
 			const Block* connectedBlock = getBlock(connection.getBlockId());
 			if (connectedBlock->type() != BlockType::JUNCTION) {
-				return getBlockDataManager()->getBlockData(connectedBlock->type())->getConnectionBitWidth(connection.getConnectionId());
+				return getBlockDataManager().getBlockData(connectedBlock->type())->getConnectionBitWidth(connection.getConnectionId());
 			}
 		}
 	}
@@ -648,7 +648,7 @@ unsigned int BlockContainer::getBitwidthOfJunction(block_id_t blockId, std::unor
 		for (const auto& connection : connections.second) {
 			const Block* connectedBlock = getBlock(connection.getBlockId());
 			if (connectedBlock->type() != BlockType::JUNCTION) {
-				return getBlockDataManager()->getBlockData(connectedBlock->type())->getConnectionBitWidth(connection.getConnectionId());
+				return getBlockDataManager().getBlockData(connectedBlock->type())->getConnectionBitWidth(connection.getConnectionId());
 			}
 		}
 	}

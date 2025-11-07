@@ -5,7 +5,7 @@
 
 class ConnectionTool : public CircuitTool {
 public:
-	ConnectionTool();
+	ConnectionTool(const Environment& environment);
 
 	void activate() override final;
 

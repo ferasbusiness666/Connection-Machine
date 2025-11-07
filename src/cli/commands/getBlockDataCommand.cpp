@@ -39,17 +39,17 @@ void GetBlockDataCommand::run(const std::vector<std::string>& args, Environment&
 		return;
     }
 
-    const BlockDataManager* blockDataManager = environment.getBackend().getBlockDataManager();
-    const BlockData* blockData = blockDataManager->getBlockData(block->type());
+    const BlockDataManager& blockDataManager = environment.getBackend().getBlockDataManager();
+    const BlockData* blockData = blockDataManager.getBlockData(block->type());
     logInfo("Info for block at position {}", "GetBlockDataCommand", pos);
-    logInfo("Type: {}, ID: {}", "GetBlockDataCommand", blockDataManager->getName(block->type()), block->id());
+    logInfo("Type: {}, ID: {}", "GetBlockDataCommand", blockDataManager.getName(block->type()), block->id());
     logInfo("Connections:", "GetBlockDataCommand");
     const auto connections = block->getConnectionContainer().getConnections();
     for (auto portIter = connections.begin(); portIter != connections.end(); portIter++) {
         logInfo("{} (ID: {})>:", "GetBlockDataCommand", blockData->getConnectionIdToName(portIter->first).value_or("Port"), portIter->first);
         for (auto connsIter = portIter->second.begin(); connsIter != portIter->second.end(); connsIter++) {
             const Block* connBlock = blockContainer.getBlock(connsIter->getBlockId());
-            logInfo("\t>{}:{} (ID: {}) @ {}", "GetBlockDataCommand", blockData->getConnectionIdToName(connsIter->getConnectionId()).value_or("Port"), blockDataManager->getName(connBlock->type()), connsIter->getBlockId(), connBlock->getPosition());
+            logInfo("\t>{}:{} (ID: {}) @ {}", "GetBlockDataCommand", blockData->getConnectionIdToName(connsIter->getConnectionId()).value_or("Port"), blockDataManager.getName(connBlock->type()), connsIter->getBlockId(), connBlock->getPosition());
         }
 
     }

@@ -1,6 +1,6 @@
 #include "proceduralCircuitManager.h"
 
-ProceduralCircuitManager::ProceduralCircuitManager(CircuitManager* circuitManager, DataUpdateEventManager* dataUpdateEventManager, CircuitFileManager* fileManager) :
+ProceduralCircuitManager::ProceduralCircuitManager(CircuitManager& circuitManager, DataUpdateEventManager& dataUpdateEventManager, CircuitFileManager& fileManager) :
 	circuitManager(circuitManager), dataUpdateEventManager(dataUpdateEventManager), dataUpdateEventReceiver(dataUpdateEventManager), fileManager(fileManager) {
 	dataUpdateEventReceiver.linkFunction("proceduralCircuitPathUpdate", [this](const DataUpdateEventManager::EventData* eventData) {
 		auto data = eventData->cast<std::string>();
@@ -37,7 +37,7 @@ const std::string* ProceduralCircuitManager::createWasmProceduralCircuit(wasmtim
 		SharedWasmProceduralCircuit wasmProceduralCircuit = std::make_shared<WasmProceduralCircuit>(circuitManager, dataUpdateEventManager, std::move(wasmInstance));
 		pathToUUID.emplace(wasmProceduralCircuit->getPath(), wasmProceduralCircuit->getUUID());
 		proceduralCircuits.emplace(wasmProceduralCircuit->getUUID(), wasmProceduralCircuit);
-		dataUpdateEventManager->sendEvent<std::string>("proceduralCircuitPathUpdate", wasmProceduralCircuit->getUUID());
+		dataUpdateEventManager.sendEvent<std::string>("proceduralCircuitPathUpdate", wasmProceduralCircuit->getUUID());
 		return &(wasmProceduralCircuit->getUUID());
 	}
 	return nullptr;

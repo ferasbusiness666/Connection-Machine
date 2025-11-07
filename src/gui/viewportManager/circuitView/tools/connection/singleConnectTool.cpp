@@ -58,9 +58,9 @@ void SingleConnectTool::updateElements() {
 						std::optional<connection_end_id_t> inputEndId = inputBlock->getInputOrBidirectionalConnectionId(lastPointerPosition);
 						if (inputEndId) {
 							elementCreator.addConnectionPreview(ConnectionPreview(
-								clickPosition.free() + circuit->getBlockContainer().getBlockDataManager()->getBlockData(outputBlock->type())->getConnectionPortOffset(
+								clickPosition.free() + circuit->getBlockContainer().getBlockDataManager().getBlockData(outputBlock->type())->getConnectionPortOffset(
 									outputConnectionEnd.value().getConnectionId(), outputBlock->getOrientation()).value(),
-								lastPointerPosition.free() + circuit->getBlockContainer().getBlockDataManager()->getBlockData(inputBlock->type())->getConnectionPortOffset(
+								lastPointerPosition.free() + circuit->getBlockContainer().getBlockDataManager().getBlockData(inputBlock->type())->getConnectionPortOffset(
 									inputEndId.value(), inputBlock->getOrientation()).value()
 							));
 							valid = true;
@@ -68,7 +68,7 @@ void SingleConnectTool::updateElements() {
 					}
 					if (!valid) {
 						elementCreator.addHalfConnectionPreview(HalfConnectionPreview(
-							clickPosition.free() + circuit->getBlockContainer().getBlockDataManager()->getBlockData(outputBlock->type())->getConnectionPortOffset(
+							clickPosition.free() + circuit->getBlockContainer().getBlockDataManager().getBlockData(outputBlock->type())->getConnectionPortOffset(
 									outputConnectionEnd.value().getConnectionId(), outputBlock->getOrientation()).value(),
 							lastPointerFPosition
 						));

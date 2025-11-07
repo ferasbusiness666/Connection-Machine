@@ -35,9 +35,9 @@ public:
 		inline unsigned int getIndexOfLaneId(unsigned int laneId) const noexcept;
 	};
 
-	BlockData(BlockType blockType, DataUpdateEventManager* dataUpdateEventManager);
+	BlockData(BlockType blockType, DataUpdateEventManager& dataUpdateEventManager);
 
-	inline void sendBlockDataUpdate() { dataUpdateEventManager->sendEvent("blockDataUpdate"); }
+	inline void sendBlockDataUpdate() { dataUpdateEventManager.sendEvent("blockDataUpdate"); }
 
 	void setDefaultData(bool defaultData) noexcept;
 	inline bool isDefaultData() const noexcept { return defaultData; }
@@ -136,7 +136,7 @@ private:
 	unsigned int outputConnectionCount = 0;
 	std::unordered_map<connection_end_id_t, ConnectionData> connections;
 	BidirectionalMultiSecondKeyMap<connection_end_id_t, std::string> connectionIdNames;
-	DataUpdateEventManager* dataUpdateEventManager;
+	DataUpdateEventManager& dataUpdateEventManager;
 };
 
 // defaults for good connection pos

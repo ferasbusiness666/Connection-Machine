@@ -7,9 +7,9 @@ evaluator_id_t EvaluatorManager::createNewEvaluator(CircuitManager& circuitManag
 	evaluator_id_t id = evaluatorIdProvider.getNewId();
 	evaluators.emplace(
 		id,
-		std::make_shared<Evaluator>(id, circuitManager, *circuitManager.getBlockDataManager(), *circuitManager.getCircuitBlockDataManager(), circuitId, dataUpdateEventManager)
+		std::make_shared<Evaluator>(id, circuitManager, circuitManager.getBlockDataManager(), circuitManager.getCircuitBlockDataManager(), circuitId, dataUpdateEventManager)
 	);
-	dataUpdateEventManager->sendEvent("addressTreeMakeBranch");
+	dataUpdateEventManager.sendEvent("addressTreeMakeBranch");
 	return id;
 }
 

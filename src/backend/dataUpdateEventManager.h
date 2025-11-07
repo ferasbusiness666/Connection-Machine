@@ -6,12 +6,14 @@ class DataUpdateEventManager {
 public:
 	template <class T>
 	class EventDataWithValue;
+
 	class EventData {
 	public:
 		virtual ~EventData() { }
 		template <class V>
 		inline const DataUpdateEventManager::EventDataWithValue<V>* cast() const;
 	};
+
 	template <class T>
 	class EventDataWithValue : public EventData {
 	public:
@@ -26,12 +28,15 @@ public:
 	class DataUpdateEventReceiver {
 		friend class DataUpdateEventManager;
 	public:
-		DataUpdateEventReceiver(DataUpdateEventManager* eventManager);
-		DataUpdateEventReceiver(const DataUpdateEventReceiver& other);
+		DataUpdateEventReceiver(DataUpdateEventManager& eventManager);
 		DataUpdateEventReceiver(DataUpdateEventReceiver&& other);
-		DataUpdateEventReceiver& operator=(const DataUpdateEventReceiver& other);
+		// will just create the DataUpdateEventReceiver as if it was passed the eventManager in other
+		DataUpdateEventReceiver(const DataUpdateEventReceiver& other) : DataUpdateEventReceiver(*other.eventManager) {}
+		// // will just reset the DataUpdateEventReceiver and set it up as if it was passed the eventManager in other
+		// DataUpdateEventReceiver& operator=(const DataUpdateEventReceiver& other) { reset(*other.eventManager); return *this; }
 		~DataUpdateEventReceiver();
 
+		void reset(DataUpdateEventManager& eventManager) { clearAllLinks(); this->eventManager = &eventManager; }
 		void linkFunction(const std::string& eventName, std::function<void(const EventData*)> function) { functions[eventName] = function; }
 		void clearAllLinks() { functions.clear(); }
 
@@ -40,6 +45,9 @@ public:
 		DataUpdateEventManager* eventManager = nullptr;
 	};
 
+	DataUpdateEventManager() = default;
+	DataUpdateEventManager(const DataUpdateEventManager& other) = delete;
+	DataUpdateEventManager& operator=(const DataUpdateEventManager& other) = delete;
 	~DataUpdateEventManager();
 
 	void sendEvent(const std::string& eventName) {

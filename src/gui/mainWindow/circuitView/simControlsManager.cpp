@@ -10,7 +10,7 @@
 SimControlsManager::SimControlsManager(
 	Rml::ElementDocument* document,
 	std::shared_ptr<CircuitViewWidget> circuitViewWidget,
-	DataUpdateEventManager* dataUpdateEventManager
+	DataUpdateEventManager& dataUpdateEventManager
 ) : circuitViewWidget(circuitViewWidget), dataUpdateEventReceiver(dataUpdateEventManager) {
 	toggleSimElement = document->GetElementById("toggle-simulation");
 	realisticElement = document->GetElementById("realistic-button");
@@ -32,8 +32,8 @@ SimControlsManager::SimControlsManager(
 			Evaluator* evaluator = this->circuitViewWidget->getCircuitView()->getEvaluator();
 			if (evaluator) evaluator->setTickrate(value);
 		},
-		[dataUpdateEventManager, circuitViewWidget](std::function<void(double)> func) {
-			std::shared_ptr<DataUpdateEventManager::DataUpdateEventReceiver> DUER = std::make_shared<DataUpdateEventManager::DataUpdateEventReceiver>(dataUpdateEventManager);
+		[dataUpdateEventManager = &dataUpdateEventManager, circuitViewWidget](std::function<void(double)> func) {
+			std::shared_ptr<DataUpdateEventManager::DataUpdateEventReceiver> DUER = std::make_shared<DataUpdateEventManager::DataUpdateEventReceiver>(*dataUpdateEventManager);
 			DUER->linkFunction("evaluatorTargetTickrateSet", [circuitViewWidget, func](const DataUpdateEventManager::EventData* dataEvent) {
 				auto data = dataEvent->cast<std::pair<evaluator_id_t, double>>();
 				Evaluator* evaluator = circuitViewWidget->getCircuitView()->getEvaluator();

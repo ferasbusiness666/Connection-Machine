@@ -3,8 +3,8 @@
 #include "tensorConnectTool.h"
 #include "singleConnectTool.h"
 
-ConnectionTool::ConnectionTool() {
-	activeConnectionTool = std::make_shared<SingleConnectTool>();
+ConnectionTool::ConnectionTool(const Environment& environment) : CircuitTool(environment) {
+	activeConnectionTool = std::make_shared<SingleConnectTool>(environment);
 }
 
 void ConnectionTool::activate() {
@@ -17,9 +17,9 @@ void ConnectionTool::setMode(std::string toolMode) {
 	if (mode != toolMode) {
 		SharedCircuitTool newActiveConnectionTool;
 		if (toolMode == "Single") {
-			newActiveConnectionTool = std::make_shared<SingleConnectTool>();
+			newActiveConnectionTool = std::make_shared<SingleConnectTool>(environment);
 		} else if (toolMode == "Tensor") {
-			newActiveConnectionTool = std::make_shared<TensorConnectTool>();
+			newActiveConnectionTool = std::make_shared<TensorConnectTool>(environment);
 		} else {
 			logError("Tool mode \"{}\" could not be found", "", toolMode);
 			return;
