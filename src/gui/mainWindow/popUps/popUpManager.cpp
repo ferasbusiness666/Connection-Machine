@@ -218,7 +218,7 @@ void PopUpManager::aboutConnectionMachine() {
 
 	std::vector<std::string> contributors = {
         "Ben Herman",
-		"Niknal",
+		"Nikita Lurye",
 		"Jack J",
 		"Connor K",
 		"James P",
