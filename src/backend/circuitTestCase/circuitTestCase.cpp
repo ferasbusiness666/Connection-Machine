@@ -3,10 +3,10 @@
 #include "backend/blockData/blockData.h"
 
 bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environment& environment) {
-    Backend backend = environment.getBackend();
-    CircuitManager cirManager = backend.getCircuitManager();
-    EvaluatorManager evalManager = backend.getEvaluatorManager();
-    BlockDataManager* blockDataManager = backend.getBlockDataManager();
+    Backend& backend = environment.getBackend();
+    CircuitManager& cirManager = backend.getCircuitManager();
+    const EvaluatorManager& evalManager = backend.getEvaluatorManager();
+    BlockDataManager& blockDataManager = backend.getBlockDataManager();
 
     circuit_id_t cirId = cirManager.createNewCircuit();
     SharedCircuit cir = cirManager.getCircuit(cirId);
@@ -16,8 +16,8 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
         logError("Couldn't insert test circuit block {}", "circuitTestCase", "blockType");
         return false;
     }
-    
-    const BlockData* blockData = blockDataManager->getBlockData(blockType);
+
+    const BlockData* blockData = blockDataManager.getBlockData(blockType);
     std::unordered_map<connection_end_id_t, BlockData::ConnectionData> connections = blockData->getConnections();
     // change implementation of this when BlockData::getConnectionNameToId is implemented
     std::unordered_multimap<std::string, Position> nameToConnectedBlockPosition;

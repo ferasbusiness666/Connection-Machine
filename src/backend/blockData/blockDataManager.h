@@ -6,25 +6,27 @@
 
 class BlockDataManager {
 public:
-	BlockDataManager(DataUpdateEventManager* dataUpdateEventManager) : dataUpdateEventManager(dataUpdateEventManager) { }
+	BlockDataManager(DataUpdateEventManager& dataUpdateEventManager) : dataUpdateEventManager(dataUpdateEventManager) { }
+	BlockDataManager(const BlockDataManager&) = delete;
+    BlockDataManager& operator=(const BlockDataManager&) = delete;
 
 	void initializeDefaults();
 
 	inline BlockType addBlock() noexcept {
 		blockData.emplace_back((BlockType)(blockData.size() + 1), dataUpdateEventManager);
 		BlockType blockType = (BlockType)blockData.size();
-		dataUpdateEventManager->sendEvent<BlockType>("newBlockType", blockType);
+		dataUpdateEventManager.sendEvent<BlockType>("newBlockType", blockType);
 		// sending data events for default data
 		// pre
-		dataUpdateEventManager->sendEvent<std::pair<BlockType, Size>>("preBlockSizeChange", { blockType, Size(1) });
-		dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataSetConnection", { blockType, 0 });
-		dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataSetConnection", { blockType, 1 });
+		dataUpdateEventManager.sendEvent<std::pair<BlockType, Size>>("preBlockSizeChange", { blockType, Size(1) });
+		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataSetConnection", { blockType, connection_end_id_t(0) });
+		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataSetConnection", { blockType, connection_end_id_t(1) });
 		// post
-		dataUpdateEventManager->sendEvent<std::pair<BlockType, Size>>("postBlockSizeChange", { blockType, Size(1) });
-		dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, 0 });
-		dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, 1 });
-		dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataConnectionNameSet", { blockType, 0 });
-		dataUpdateEventManager->sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataConnectionNameSet", { blockType, 1 });
+		dataUpdateEventManager.sendEvent<std::pair<BlockType, Size>>("postBlockSizeChange", { blockType, Size(1) });
+		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connection_end_id_t(0) });
+		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connection_end_id_t(1) });
+		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataConnectionNameSet", { blockType, connection_end_id_t(0) });
+		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataConnectionNameSet", { blockType, connection_end_id_t(1) });
 		sendBlockDataUpdate();
 		return blockType;
 	}
@@ -38,7 +40,7 @@ public:
 		return BlockType::NONE;
 	}
 
-	inline void sendBlockDataUpdate() { dataUpdateEventManager->sendEvent("blockDataUpdate"); }
+	inline void sendBlockDataUpdate() { dataUpdateEventManager.sendEvent("blockDataUpdate"); }
 
 	inline const BlockData* getBlockData(BlockType type) const noexcept {
 		if (!blockExists(type)) return nullptr;
@@ -111,7 +113,7 @@ public:
 		return blockData[type - 1].getConnectionVector(connectionId, orientation);
 	}
 	inline connection_end_id_t getConnectionCount(BlockType type) const noexcept {
-		if (!blockExists(type)) return 0;
+		if (!blockExists(type)) return connection_end_id_t(0);
 		return blockData[type - 1].getConnectionCount();
 	}
 	inline bool connectionExists(BlockType type, connection_end_id_t connectionId) const noexcept {
@@ -140,6 +142,7 @@ public:
 	}
 
 	BlockType getBusBlock(unsigned int bitwith);
+	BlockType getBusBlock(unsigned int numInputs, unsigned int inputBitwidth);
 	struct BusConnectionData {
 		Vector positionOnBlock;
 		std::variant<unsigned int, std::vector<unsigned int>> bitConfiguration = static_cast<unsigned int>(1);
@@ -159,7 +162,7 @@ public:
 
 private:
 	std::vector<BlockData> blockData;
-	DataUpdateEventManager* dataUpdateEventManager;
+	DataUpdateEventManager& dataUpdateEventManager;
 	std::map<std::vector<BusConnectionData>, BlockType> createdBuses;
 };
 

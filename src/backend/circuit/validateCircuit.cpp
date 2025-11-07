@@ -60,8 +60,8 @@ bool CircuitValidator::handleInvalidConnections() {
 		const ParsedCircuit::BlockData* inputBlockData = parsedCircuit.getBlock(conn.inputBlockId);
 		const ParsedCircuit::BlockData* outputBlockData = parsedCircuit.getBlock(conn.outputBlockId);
 
-		if (inputBlockData && inputBlockData->type == BlockType::JUNCTION) conn.inputEndId = 0;
-		if (outputBlockData && outputBlockData->type == BlockType::JUNCTION) conn.outputEndId = 0;
+		if (inputBlockData && inputBlockData->type == BlockType::JUNCTION) conn.inputEndId = connection_end_id_t(0);
+		if (outputBlockData && outputBlockData->type == BlockType::JUNCTION) conn.outputEndId = connection_end_id_t(0);
 	}
 
 	// ++connectionCounts[conn];
@@ -99,7 +99,7 @@ bool CircuitValidator::setOverlapsUnpositioned() {
 
 		Position intPos = block.position.snap();
 
-		BlockData* blockData = blockDataManager->getBlockData(block.type);
+		BlockData* blockData = blockDataManager.getBlockData(block.type);
 		if (!blockData) {
 			logError("Could not find block type data for block type: {}", "CircuitValidator", (unsigned int)block.type);
 		}
@@ -189,7 +189,7 @@ bool CircuitValidator::handleUnpositionedBlocks() {
 	// preprocess connected component connections
 	std::vector<std::unordered_map<block_id_t, std::vector<block_id_t>>> componentAdjs(components.size());
 	for (const ParsedCircuit::ConnectionData& conn : parsedCircuit.connections) {
-		if (blockDataManager->isConnectionInput(parsedCircuit.blocks.at(conn.outputBlockId).type, conn.outputEndId)) {
+		if (blockDataManager.isConnectionInput(parsedCircuit.blocks.at(conn.outputBlockId).type, conn.outputEndId)) {
 			int cc = blockToComponent[conn.inputBlockId];
 			componentAdjs[cc][conn.inputBlockId].push_back(conn.outputBlockId);
 		}
@@ -315,7 +315,7 @@ bool CircuitValidator::handleUnpositionedBlocks() {
 				}
 
 				// check block dimensions in case of custom block
-				BlockData* blockData = blockDataManager->getBlockData(block.type);
+				BlockData* blockData = blockDataManager.getBlockData(block.type);
 				if (!blockData) {
 					logError("Could not find block type data for block type: {}", "CircuitValidator", (unsigned int)block.type);
 				}

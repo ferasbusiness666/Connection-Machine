@@ -1,5 +1,5 @@
 #ifndef testCircuitCommand_h
-#define testCitcuitCommand_h
+#define testCircuitCommand_h
 
 #include "../command.h"
 

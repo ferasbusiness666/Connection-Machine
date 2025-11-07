@@ -20,7 +20,9 @@ typedef std::function<void(DifferenceSharedPtr, circuit_id_t)> CircuitDiffListen
 class Circuit {
 	friend class CircuitManager;
 public:
-	Circuit(circuit_id_t circuitId, CircuitManager* circuitManager, BlockDataManager* blockDataManager, DataUpdateEventManager* dataUpdateEventManager, const std::string& name, const std::string& uuid);
+	Circuit(circuit_id_t circuitId, CircuitManager& circuitManager, BlockDataManager& blockDataManager, DataUpdateEventManager& dataUpdateEventManager, const std::string& name, const std::string& uuid);
+	Circuit(const Circuit&) = delete;
+    Circuit& operator=(const Circuit&) = delete;
 
 	void clear(bool clearUndoTree = false);
 
@@ -44,7 +46,7 @@ public:
 	void disconnectListener(void* object);
 
 	// allows accese to BlockContainer getters (never null)
-	inline const BlockContainer* getBlockContainer() const { return &blockContainer; }
+	inline const BlockContainer& getBlockContainer() const { return blockContainer; }
 
 	/* ----------- blocks ----------- */
 	// Trys to insert a block. Returns if successful.
@@ -88,6 +90,10 @@ public:
 	void undo();
 	void redo();
 
+	bool isOnStack(Position blockPosition) const {
+		return blockPosition.x == stackBottom.x;
+	}
+
 private:
 	void pushOntoStack(Position blockPosition, Difference * difference, MoveType moveType = MoveType::MULTI_BEGIN);
 	void popOffStack(Position position, Orientation transformAmount, bool resetRotation, Difference * difference, MoveType moveType = MoveType::MULTI_FINAL);
@@ -119,7 +125,7 @@ private:
 	std::string circuitUUID;
 	circuit_id_t circuitId;
 	BlockContainer blockContainer;
-	DataUpdateEventManager* dataUpdateEventManager;
+	DataUpdateEventManager& dataUpdateEventManager;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 
 	struct CircuitDiffListenerData {

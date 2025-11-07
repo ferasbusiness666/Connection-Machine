@@ -2,12 +2,12 @@
 #define evalDefs_h
 
 #include "backend/position/position.h"
+#include "util/id.h"
 
-typedef unsigned int evaluator_id_t;
-typedef unsigned int eval_circuit_id_t;
-typedef unsigned int middle_id_t;
-typedef unsigned int connection_port_id_t;
-typedef unsigned int simulator_id_t;
+DECLARE_ID_TYPE(evaluator_id_t, unsigned int);
+DECLARE_ID_TYPE(eval_circuit_id_t, unsigned int);
+DECLARE_ID_TYPE(middle_id_t, unsigned int);
+DECLARE_ID_TYPE(simulator_id_t, unsigned int);
 
 enum class SimulatorMappingUpdateType {
 	BLOCK,
@@ -26,6 +26,14 @@ struct SimulatorMappingUpdateListener {
 	eval_circuit_id_t evalCircuitId;
 	std::function<void(const std::vector<SimulatorMappingUpdate>&)> callback;
 };
+
+enum class Direction {
+	IN,
+	OUT,
+};
+inline Direction operator!(Direction dir) {
+	return (dir == Direction::IN) ? Direction::OUT : Direction::IN;
+}
 
 class Evaluator;
 typedef std::shared_ptr<class Evaluator> SharedEvaluator;

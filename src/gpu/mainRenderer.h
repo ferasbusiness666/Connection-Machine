@@ -28,7 +28,7 @@ public:
 
 	// Windows ==================================================================================================================================
 	WindowId registerWindow(SdlWindow* window);
-	void resizeWindow(WindowId windowId, glm::vec2 size);
+	void resizeWindow(WindowId windowId, std::pair<uint32_t, uint32_t> size);
 	void deregisterWindow(WindowId windowId);
 
 	// RmlUI ====================================================================================================================================
@@ -58,8 +58,8 @@ public:
 	BlockTextureId addBlockTexture(const std::string& path);
 	BlockTextureId addBlockTexture(const std::filesystem::path& path);
 	void refreshBlockTexture(const std::string& path);
-	BlockTextureId addBlockTexture(const stbi_uc* pixels, int textureWidth, int textureHeight);
-	void updateBlockTexture(const stbi_uc* pixels, BlockTextureId blockTextureId);
+	BlockTextureId addBlockTexture(const unsigned char* pixels, int textureWidth, int textureHeight);
+	void updateBlockTexture(const unsigned char* pixels, BlockTextureId blockTextureId);
 	void removeBlockTexture(const std::string& path);
 	void removeBlockTexture(BlockTextureId blockTextureId);
 	void setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId);

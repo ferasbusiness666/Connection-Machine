@@ -6,7 +6,7 @@
 
 class ToolManagerManager {
 public:
-	ToolManagerManager(DataUpdateEventManager* dataUpdateEventManager);
+	ToolManagerManager(Environment& environment);
 
 	void addCircuitView(CircuitView* circuitView) { circuitViews.insert(circuitView); }
 	void removeCircuitView(CircuitView* circuitView) { circuitViews.erase(circuitView); }
@@ -25,7 +25,7 @@ public:
 		if (iter == tools.end()) return;
 		activeTool = std::move(toolName);
 		for (auto view : circuitViews) {
-			view->getToolManager().selectTool(iter->second->getInstance());
+			view->getToolManager().selectTool(iter->second->getInstance(environment));
 			auto toolModeIter = lastToolModes.find(activeTool);
 			if (toolModeIter != lastToolModes.end()) view->getToolManager().setMode(toolModeIter->second);
 			if (activeTool == "placement") {
@@ -46,10 +46,12 @@ public:
 			view->getToolManager().setMode(mode);
 		}
 
-		dataUpdateEventManager->sendEvent("setToolModeUpdate");
-
 		lastToolModes[activeTool] = mode;
+
+		dataUpdateEventManager.sendEvent("setToolModeUpdate");
 	}
+
+	void cycleActiveToolMode(int direction = 1);
 
 	// Returns the last stored mode for the active tool, if any.
 	inline std::optional<std::string> getActiveToolMode() {
@@ -94,16 +96,16 @@ public:
 private:
 	struct BaseToolTypeMaker {
 		virtual ~BaseToolTypeMaker() { }
-		virtual SharedCircuitTool getInstance() const = 0;
+		virtual SharedCircuitTool getInstance(const Environment& environment) const = 0;
 		virtual std::vector<std::string> getModes() const = 0;
 	};
 	template <class T> struct ToolTypeMaker : public BaseToolTypeMaker {
-		SharedCircuitTool getInstance() const override final { return std::make_shared<T>(); }
+		SharedCircuitTool getInstance(const Environment& environment) const override final { return std::make_shared<T>(environment); }
 		std::vector<std::string> getModes() const override final { return T::getModes_(); }
 	};
 
 	inline void sendChangedSignal() {
-		dataUpdateEventManager->sendEvent("setToolUpdate");
+		dataUpdateEventManager.sendEvent("setToolUpdate");
 		for (auto pair : listenerFunctions) pair.second(*this);
 	}
 
@@ -115,7 +117,8 @@ private:
 
 	std::map<std::string, std::string> lastToolModes;
 
-	DataUpdateEventManager* dataUpdateEventManager;
+	const Environment& environment;
+	DataUpdateEventManager& dataUpdateEventManager;
 
 	static std::map<std::string, std::unique_ptr<BaseToolTypeMaker>> tools;
 };

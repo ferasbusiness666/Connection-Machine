@@ -3,7 +3,7 @@
 #include "gpu/renderer/viewport/blockTextureManager.h"
 #include "gpu/abstractions/vulkanShader.h"
 
-#include "backend/evaluator/logicState.h"
+#include "backend/evaluator/simulator/logicState.h"
 #include "computerAPI/fileLoader.h"
 #include "computerAPI/directoryManager.h"
 
@@ -37,6 +37,7 @@ void ChunkRenderer::init(VulkanDevice* device, VkRenderPass& renderPass) {
 	blockPipelineInfo.pushConstants.push_back({VK_SHADER_STAGE_VERTEX_BIT, sizeof(ChunkPushConstants)});
 	blockPipelineInfo.descriptorSets.push_back(stateBufferDescriptorSetLayout);
 	blockPipelineInfo.descriptorSets.push_back(device->getBlockTextureManager().getDescriptorLayout());
+	blockPipelineInfo.sampleCount = device->getMaxUsableSampleCount();
 	blockPipeline.init(device, blockPipelineInfo);
 
 	PipelineInformation wirePipelineInfo{};
@@ -47,6 +48,7 @@ void ChunkRenderer::init(VulkanDevice* device, VkRenderPass& renderPass) {
 	wirePipelineInfo.vertexAttributeDescriptions = WireInstance::getAttributeDescriptions();
 	wirePipelineInfo.pushConstants.push_back({VK_SHADER_STAGE_VERTEX_BIT, sizeof(ChunkPushConstants)});
 	wirePipelineInfo.descriptorSets.push_back(stateBufferDescriptorSetLayout);
+	wirePipelineInfo.sampleCount = device->getMaxUsableSampleCount();
 	wirePipeline.init(device, wirePipelineInfo);
 
 	// destroy shader modules since we won't be recreating pipelines

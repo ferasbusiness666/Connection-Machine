@@ -21,13 +21,13 @@ WindowId MainRenderer::registerWindow(SdlWindow* sdlWindow) {
 	return lastWindowId;
 }
 
-void MainRenderer::resizeWindow(WindowId windowId, glm::vec2 size) {
+void MainRenderer::resizeWindow(WindowId windowId, std::pair<uint32_t, uint32_t> size) {
 	auto iter = windowRenderers.find(windowId);
 	if (iter == windowRenderers.end()) {
 		logError("Failed to call resizeWindow on non existent window {}.", "MainRenderer", windowId);
 		return;
 	}
-	iter->second.resize({size.x, size.y});
+	iter->second.resize(size);
 }
 
 void MainRenderer::deregisterWindow(WindowId windowId) {
@@ -73,12 +73,6 @@ Rml::CompiledGeometryHandle MainRenderer::compileGeometry(WindowId windowId, Rml
 }
 
 void MainRenderer::releaseGeometry(WindowId windowId, Rml::CompiledGeometryHandle geometry) {
-	// auto iter = windowRenderers.find(windowId);
-	// if (iter == windowRenderers.end()) {
-	// 	logError("Failed to call ReleaseGeometry on non existent window {}", "MainRenderer", windowId);
-	// 	return;
-	// }
-	// iter->second.getRmlRenderer().releaseGeometry(geometry);
 	VulkanDevice* device = vulkanInstance.getDevice();
 	if (!device) {
 		logError("Failed to call CompileGeometry. No Vulkan device found", "MainRenderer");
@@ -88,12 +82,6 @@ void MainRenderer::releaseGeometry(WindowId windowId, Rml::CompiledGeometryHandl
 }
 
 Rml::TextureHandle MainRenderer::loadTexture(WindowId windowId, Rml::Vector2i& texture_dimensions, const Rml::String& source) {
-	// auto iter = windowRenderers.find(windowId);
-	// if (iter == windowRenderers.end()) {
-	// 	logError("Failed to call loadTexture on non existent window {}", "MainRenderer", windowId);
-	// 	return (Rml::TextureHandle)0;
-	// }
-	// return iter->second.getRmlRenderer().loadTexture(texture_dimensions, source);
 	VulkanDevice* device = vulkanInstance.getDevice();
 	if (!device) {
 		logError("Failed to call CompileGeometry. No Vulkan device found", "MainRenderer");
@@ -103,12 +91,6 @@ Rml::TextureHandle MainRenderer::loadTexture(WindowId windowId, Rml::Vector2i& t
 }
 
 Rml::TextureHandle MainRenderer::generateTexture(WindowId windowId, Rml::Span<const Rml::byte> source, Rml::Vector2i source_dimensions) {
-	// auto iter = windowRenderers.find(windowId);
-	// if (iter == windowRenderers.end()) {
-	// 	logError("Failed to call generateTexture on non existent window {}", "MainRenderer", windowId);
-	// 	return (Rml::TextureHandle)0;
-	// }
-	// return iter->second.getRmlRenderer().generateTexture(source, source_dimensions);
 	VulkanDevice* device = vulkanInstance.getDevice();
 	if (!device) {
 		logError("Failed to call CompileGeometry. No Vulkan device found", "MainRenderer");
@@ -118,12 +100,6 @@ Rml::TextureHandle MainRenderer::generateTexture(WindowId windowId, Rml::Span<co
 }
 
 void MainRenderer::releaseTexture(WindowId windowId, Rml::TextureHandle texture_handle) {
-	// auto iter = windowRenderers.find(windowId);
-	// if (iter == windowRenderers.end()) {
-	// 	logError("Failed to call releaseTexture on non existent window {}", "MainRenderer", windowId);
-	// 	return;
-	// }
-	// iter->second.getRmlRenderer().releaseTexture(texture_handle);
 	VulkanDevice* device = vulkanInstance.getDevice();
 	if (!device) {
 		logError("Failed to call CompileGeometry. No Vulkan device found", "MainRenderer");
@@ -187,11 +163,11 @@ void MainRenderer::refreshBlockTexture(const std::string& path) {
 	vulkanInstance.getDevice()->getBlockTextureManager().refreshBlockTexture(path);
 }
 
-BlockTextureId MainRenderer::addBlockTexture(const stbi_uc* pixels, int textureWidth, int textureHeight) {
+BlockTextureId MainRenderer::addBlockTexture(const unsigned char* pixels, int textureWidth, int textureHeight) {
 	return vulkanInstance.getDevice()->getBlockTextureManager().addTexture(pixels, textureWidth, textureHeight);
 }
 
-void MainRenderer::updateBlockTexture(const stbi_uc* pixels, BlockTextureId blockTextureId) {
+void MainRenderer::updateBlockTexture(const unsigned char* pixels, BlockTextureId blockTextureId) {
 	vulkanInstance.getDevice()->getBlockTextureManager().updateBlockTexture(pixels, blockTextureId);
 }
 
@@ -263,7 +239,7 @@ void MainRenderer::moveViewport(ViewportId viewportId, WindowId windowId, glm::v
 		logError("moving viewport to other window not supported yet");
 		return;
 	}
-	viewportIter->second.updateViewFrame(origin, size);
+	viewportIter->second.updateViewFrame(origin, {std::max(size.x, 1.f), std::max(size.y, 1.f)});
 }
 
 void MainRenderer::moveViewportView(ViewportId viewportId, FPosition topLeft, FPosition bottomRight) {

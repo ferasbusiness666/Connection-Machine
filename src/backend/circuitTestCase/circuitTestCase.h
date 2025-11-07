@@ -2,7 +2,7 @@
 #define circuitTestCase_h
 
 #include "environment/environment.h"
-#include "backend/evaluator/logicState.h"
+#include "backend/evaluator/simulator/logicState.h"
 
 class CircuitTestCase {
 public:

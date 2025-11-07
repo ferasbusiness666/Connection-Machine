@@ -9,7 +9,9 @@ class DataUpdateEventManager;
 
 class EvaluatorManager {
 public:
-	EvaluatorManager(DataUpdateEventManager* dataUpdateEventManager) : dataUpdateEventManager(dataUpdateEventManager) {}
+	EvaluatorManager(DataUpdateEventManager& dataUpdateEventManager) : dataUpdateEventManager(dataUpdateEventManager), evaluatorIdProvider(1) {}
+	EvaluatorManager(const EvaluatorManager&) = delete;
+    EvaluatorManager& operator=(const EvaluatorManager&) = delete;
 
 	inline const std::map<evaluator_id_t, SharedEvaluator>& getEvaluators() const { return evaluators; }
 
@@ -28,6 +30,7 @@ public:
 	inline void destroyEvaluator(evaluator_id_t id) {
 		auto iter = evaluators.find(id);
 		if (iter != evaluators.end()) {
+			evaluatorIdProvider.releaseId(id);
 			evaluators.erase(iter);
 		}
 	}
@@ -43,11 +46,10 @@ public:
 	void applyDiff(DifferenceSharedPtr difference, circuit_id_t circuitId);
 
 private:
-	evaluator_id_t getNewEvaluatorId() { return ++lastId; }
+	IdProvider<evaluator_id_t> evaluatorIdProvider;
 
-	DataUpdateEventManager* dataUpdateEventManager;
+	DataUpdateEventManager& dataUpdateEventManager;
 
-	evaluator_id_t lastId = 0;
 	std::map<evaluator_id_t, SharedEvaluator> evaluators;
 };
 

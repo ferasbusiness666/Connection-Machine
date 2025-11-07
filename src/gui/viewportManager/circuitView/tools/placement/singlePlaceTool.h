@@ -5,6 +5,7 @@
 
 class SinglePlaceTool : public BaseBlockPlacementTool {
 public:
+	using BaseBlockPlacementTool::BaseBlockPlacementTool;
 	inline void reset() override final { memset(clicks, 'n', 2); updateElements(); }
 
 	void activate() override final;

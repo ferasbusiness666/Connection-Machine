@@ -6,6 +6,7 @@
 
 #include "gui/mainWindow/circuitView/circuitViewWidget.h"
 #include "gui/helper/saveCallback.h"
+#include "network/network.h"
 
 #include <SDL3/SDL.h>
 
@@ -38,6 +39,7 @@ void App::preShutdownStep() {
 	sdlWindows.clear();
 	rml.reset();
 	MainRenderer::kill();
+	Network::kill();
 }
 
 App::~App() {
@@ -59,7 +61,7 @@ void App::deregisterWindow(const SdlWindow* sdlWindow) {
 
 void App::newMainWindow() {
 	logInfo("Creating new MainWindow", "App");
-	windows.push_back(std::make_unique<MainWindow>(&environment));
+	windows.push_back(std::make_unique<MainWindow>(environment));
 	newlyCreatedWindowsNext.push_back(windows.back().get());
 }
 
@@ -80,6 +82,7 @@ const char* const addLoopTracyName = "appLoop";
 
 void App::runLoop() {
 	logInfo("Starting App loop", "App");
+	Network::get().checkForUpdates(get().windows[0]->getPopUpManager());
 	running = true;
 	while (running) {
 		// do texture updates
@@ -175,7 +178,7 @@ void App::startTryingToQuit() {
 	tasksToFinishToQuit = 0;
 	tryingToQuit = true;
 	auto windowIter = windows.begin();
-	while (windowIter->get()->getEnvironment() != &environment) {
+	while (&windowIter->get()->getEnvironment() != &environment) {
 		++windowIter;
 		if (windowIter == windows.end()) {
 			logError("Could not find window to save with! TODO: create new window that saves can happen in!");
@@ -220,13 +223,8 @@ void App::startTryingToQuit() {
 		windowIter->get()->getPopUpManager().addOptionsPopUp("Do you want to save: " + circuit.second->getCircuitName(), {
 			std::make_pair("Save", [window=windowIter->get(), uuid=circuit.second->getUUID(), this]() {
 				logInfo("Saving circuit {}", "", uuid);
-				#ifdef _WIN32
-				#define DOT ""
-				#else
-				#define DOT "."
-				#endif
 				static const SDL_DialogFileFilter filters[] = {
-					{ "Circuit Files",  DOT"cir" }
+					{ "Circuit Files",  "cir" }
 				};
 				std::pair<CircuitFileManager*, std::string>* data = new std::pair<CircuitFileManager*, std::string>(&environment.getCircuitFileManager(), uuid);
 				SDL_ShowSaveFileDialog(

@@ -86,8 +86,8 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-    void* pUserData) {
-
+    void* pUserData
+) {
 	switch (messageSeverity) {
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
 		logInfo(pCallbackData->pMessage, "VK Validation");

@@ -3,6 +3,8 @@
 #include "gpu/vulkanDevice.h"
 #include "util/algorithm.h"
 
+#include <stb_image.h>
+
 BlockTextureArray::~BlockTextureArray() {
 	destroyImage(image);
 	vkDestroySampler(device->getDevice(), sampler, nullptr);
@@ -17,7 +19,7 @@ void BlockTextureManager::init(VulkanDevice* device) {
 	textureLayoutBuilder.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 	descriptorLayout = textureLayoutBuilder.build(device->getDevice(), VK_SHADER_STAGE_FRAGMENT_BIT);
 
-	makeTextureArray(1, { 4096, 4096, 1 });
+	makeTextureArray(1, { BLOCK_TEXTURE_SIZE, BLOCK_TEXTURE_SIZE, 1 });
 	while (layerRectPackers.size() < textureArray->layerCount) layerRectPackers.push_back(RectPacker(Vec2Int(textureArray->textureSize.width, textureArray->textureSize.height)));
 }
 
@@ -99,7 +101,7 @@ void BlockTextureManager::refreshBlockTexture(const std::string& path) {
 	stbi_image_free(pixels);
 }
 
-BlockTextureId BlockTextureManager::addTexture(const stbi_uc* pixels, int textureWidth, int textureHeight) {
+BlockTextureId BlockTextureManager::addTexture(const unsigned char* pixels, int textureWidth, int textureHeight) {
 	unsigned int layer;
 	Vec2Int pos;
 	RectPacker::RectID rectId;
@@ -126,7 +128,7 @@ BlockTextureId BlockTextureManager::addTexture(const stbi_uc* pixels, int textur
 	return blockTextureId;
 }
 
-void BlockTextureManager::updateBlockTexture(const stbi_uc* pixels, BlockTextureId blockTextureId) {
+void BlockTextureManager::updateBlockTexture(const unsigned char* pixels, BlockTextureId blockTextureId) {
 	auto iter = blockTextures.find(blockTextureId);
 	if (iter == blockTextures.end()) {
 		logError("Can't update block texture with id \"{}\" when it doesn't exist.", "BlockTextureManager", blockTextureId);

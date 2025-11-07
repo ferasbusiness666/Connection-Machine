@@ -3,8 +3,8 @@
 
 class Keybind {
 public:
-	// Eunms exactly matches RmlUi's mapping (copied from RmlUi)
-	enum KeyId : unsigned char {
+	// Enums exactly matches RmlUi's mapping (copied from RmlUi)
+	enum KeyId : std::uint8_t {
 		KI_UNKNOWN = 0,
 
 		KI_SPACE = 1,
@@ -206,7 +206,7 @@ public:
 		KI_LAST_CUSTOM_KEY = 250,
 	};
 
-	enum KeyMod : unsigned char {
+	enum KeyMod : std::uint8_t {
 		KM_UNKNOWN = 0,
 		KM_CTRL = 1 << 0,	   // Set if at least one Ctrl key is depressed.
 		KM_SHIFT = 1 << 1,	   // Set if at least one Shift key is depressed.
@@ -228,7 +228,8 @@ public:
 	bool operator!=(Keybind keybind) const { return keybind.getKeyCombined() != keyCombined; }
 
 	unsigned int getKeyCombined() const { return keyCombined; }
-	std::string toString() const {
+	std::string toString() const { return toString(false); }
+	std::string toString(bool convertForLayoutForceDisable) const {
 		std::string keyString;
 		if (keyCombined & 4U) {
 			if (keyString.size()) keyString += " + ";
@@ -254,7 +255,7 @@ public:
 				keyString += "META";
 			#endif
 		};
-		KeyId key = (KeyId)(keyCombined >> 8);
+		KeyId key = convertForLayoutForceDisable ? (KeyId)(keyCombined >> 8) : transformKeyIdForLayout((KeyId)(keyCombined >> 8));
 		if (key != 0) {
 			if (keyString.size()) keyString += " + ";
 			switch (key) {
@@ -452,7 +453,7 @@ public:
 #endif
         	else if (token == "SHIFT") {
             	result |= 2U;
-        	} 
+        	}
         	else {
             	//find and replace ' "' with ' {"' and repace '")' with '",i})' copy paste all ~200 items into map and match with num
 				//all because microsoft hates if statements
@@ -631,6 +632,9 @@ private:
 	{"PA1", KeyId::KI_PA1},
 	{"OEM Clear", KeyId::KI_OEM_CLEAR},
 };
+
+	KeyId transformKeyIdForLayout(KeyId keyid) const;
+
 };
 
 template <> struct std::hash<Keybind> {

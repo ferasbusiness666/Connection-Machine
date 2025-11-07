@@ -5,7 +5,7 @@
 
 #include <iostream>
 
-AllocatedImage createImageArray(VulkanDevice* device, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped, uint32_t arrayLayers) {
+AllocatedImage createImageArray(VulkanDevice* device, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped, uint32_t arrayLayers, VkSampleCountFlagBits samples) {
     AllocatedImage newImage{};
     newImage.device = device;
     newImage.imageFormat = format;
@@ -27,7 +27,7 @@ AllocatedImage createImageArray(VulkanDevice* device, VkExtent3D size, VkFormat 
     imageInfo.extent = size;
     imageInfo.mipLevels = newImage.mipLevels;
     imageInfo.arrayLayers = arrayLayers;
-    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.samples = samples;
     imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
     imageInfo.usage = usage;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -87,7 +87,7 @@ AllocatedImage createImageArray(VulkanDevice* device, VkExtent3D size, VkFormat 
     return newImage;
 }
 
-AllocatedImage createImage(VulkanDevice* device, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped) {
+AllocatedImage createImage(VulkanDevice* device, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped, VkSampleCountFlagBits samples) {
     AllocatedImage newImage{};
     newImage.device = device;
     newImage.imageFormat = format;
@@ -109,7 +109,7 @@ AllocatedImage createImage(VulkanDevice* device, VkExtent3D size, VkFormat forma
     imageInfo.extent = size;
     imageInfo.mipLevels = newImage.mipLevels;
     imageInfo.arrayLayers = 1;
-    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.samples = samples;
     imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
     imageInfo.usage = usage;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -170,14 +170,14 @@ AllocatedImage createImage(VulkanDevice* device, VkExtent3D size, VkFormat forma
 }
 
 
-AllocatedImage createImage(VulkanDevice* device, void* data, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped) {
+AllocatedImage createImage(VulkanDevice* device, void* data, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped, VkSampleCountFlagBits samples) {
 	// upload data to staging upload buffer
 	size_t dataSize = size.depth * size.height * size.width * 4; // each pixel is 4 bytes (8bit channels RGBA)
 	AllocatedBuffer uploadBuffer = createBuffer(device, dataSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 	vmaCopyMemoryToAllocation(device->getAllocator(), data, uploadBuffer.allocation, 0, dataSize);
 
 	// create image
-	AllocatedImage newImage = createImage(device, size, format, usage | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, mipmapped); // not exactly sure why we need transfer src but tutorial says so
+	AllocatedImage newImage = createImage(device, size, format, usage | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, mipmapped, samples); // not exactly sure why we need transfer src but tutorial says so
 
 	// submit copy from staging to real
 	device->immediateSubmit([&](VkCommandBuffer cmd) {

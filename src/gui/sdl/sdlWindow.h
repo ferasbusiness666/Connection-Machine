@@ -6,6 +6,7 @@
 #include <SDL3/SDL_vulkan.h>
 
 class SdlWindow {
+	friend bool resizingEventWatcher(void* data, SDL_Event* event);
 public:
 	SdlWindow(const std::string& name, unsigned int width = 800, unsigned int height = 600);
 	~SdlWindow();

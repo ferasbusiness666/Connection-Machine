@@ -10,16 +10,21 @@
 
 class Environment {
 public:
-#ifdef CLI
-	Environment() : backend(&circuitFileManager), circuitFileManager(&backend.getCircuitManager()),
-					fileListener(std::chrono::milliseconds(200)) {
-#else
-	Environment() : backend(&circuitFileManager), circuitFileManager(&backend.getCircuitManager()),
-					fileListener(std::chrono::milliseconds(200)), blockRenderDataFeeder(&backend) {
-#endif
-		backend.getBlockDataManager()->initializeDefaults();
+	Environment(bool loadBlockRenderDataFeeder) :
+		backend(circuitFileManager),
+		circuitFileManager(backend.getCircuitManager()),
+		fileListener(std::chrono::milliseconds(200)) {
+#ifndef CLI
+		if (loadBlockRenderDataFeeder) {
+			blockRenderDataFeeder.emplace(backend);
+		}
+#endif // CLI
+		backend.getBlockDataManager().initializeDefaults();
 		logInfo("Environment initialized", "Environment");
 	}
+	Environment(const Environment&) = delete;
+	Environment& operator=(const Environment&) = delete;
+
 
 	const Backend& getBackend() const { return backend; }
 	Backend& getBackend() { return backend; }
@@ -30,15 +35,15 @@ public:
 	const FileListener& getFileListener() const { return fileListener; }
 	FileListener& getFileListener() { return fileListener; }
 #ifndef CLI
-	const BlockRenderDataFeeder& getBlockRenderDataFeeder() const { return blockRenderDataFeeder; }
-	BlockRenderDataFeeder& getBlockRenderDataFeeder() { return blockRenderDataFeeder; }
+	const BlockRenderDataFeeder& getBlockRenderDataFeeder() const { return blockRenderDataFeeder.value(); }
+	BlockRenderDataFeeder& getBlockRenderDataFeeder() { return blockRenderDataFeeder.value(); }
 #endif
 private:
 	Backend backend;
 	CircuitFileManager circuitFileManager;
 	FileListener fileListener;
 #ifndef CLI
-	BlockRenderDataFeeder blockRenderDataFeeder;
+	std::optional<BlockRenderDataFeeder> blockRenderDataFeeder;
 #endif
 };
 

@@ -4,6 +4,10 @@
 #include "../events/customEvents.h"
 #include "gpu/mainRendererDefs.h"
 
+void CircuitTool::sendEventToCircuitView(const Event& event) {
+	eventRegister->doEvent(event);
+}
+
 bool CircuitTool::sendEvent(const Event* event) {
 	auto events = registeredEvents;
 	for (const auto& pair : events) {
@@ -43,7 +47,6 @@ void CircuitTool::setStatusBar(const std::string& text) {
 }
 
 void CircuitTool::activate() {
-	assert(environment); // it should have been set
 	setStatusBar("");
 	registerFunction("pointer enter view", std::bind(&CircuitTool::enterBlockView, this, std::placeholders::_1));
 	registerFunction("pointer exit view", std::bind(&CircuitTool::exitBlockView, this, std::placeholders::_1));

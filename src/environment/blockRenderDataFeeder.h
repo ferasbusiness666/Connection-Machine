@@ -2,6 +2,7 @@
 #define blockRenderDataFeeder_h
 
 #include "gpu/blockRenderDataManager.h"
+#include "gpu/cpuImageEditor/cpuImage.h"
 #include "backend/container/block/blockDefs.h"
 #include "backend/container/block/connectionEnd.h"
 #include "backend/dataUpdateEventManager.h"
@@ -12,7 +13,7 @@ class BlockData;
 
 class BlockRenderDataFeeder {
 public:
-	BlockRenderDataFeeder(Backend* backend);
+	BlockRenderDataFeeder(Backend& backend);
 
 	BlockRenderDataId getBlockRenderDataId(BlockType blockType) const;
 
@@ -47,9 +48,15 @@ private:
 
 	std::unordered_map<BlockTextureId, unsigned int> blockTextureIdUsage;
 
-	Backend* backend;
+	Backend& backend;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 	std::map<BlockType, RenderData> blockTypeToRenderData;
+
+	void putConnectionNipplesOntoImage(const BlockData* blockData, CpuImage& img, int scale);
+	void createTextureForCustomBlock(const BlockData* blockData, CpuImage& img, int scale);
+	void createTextureForBusBlock(const BlockData* blockData, CpuImage& img, int scale);
+	std::pair<int, int> calculatePadding(int width, int height);
+	CpuImage padTexture(const CpuImage& img);
 };
 
 #endif /* blockRenderDataFeeder_h */

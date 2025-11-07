@@ -7,10 +7,8 @@
 #include "gpu/mainRenderer.h"
 
 #include "gui/mainWindow/circuitView/circuitViewWidget.h"
-#include "gui/mainWindow/menuBar/menuBar.h"
 #include "gui/rml/rmlRenderInterface.h"
 #include "gui/rml/rmlSystemInterface.h"
-#include "settingsWindow/settingsWindow.h"
 
 #include "app.h"
 
@@ -18,8 +16,8 @@
 #include "computerAPI/directoryManager.h"
 #include "environment/environment.h"
 
-MainWindow::MainWindow(Environment* environment) :
-	sdlWindow(App::get().registerWindow("Connection Machine")), environment(environment), toolManagerManager(environment->getBackend().getDataUpdateEventManager()), popUpManager(this) {
+MainWindow::MainWindow(Environment& environment) :
+	sdlWindow(App::get().registerWindow("Connection Machine")), environment(environment), toolManagerManager(environment), popUpManager(*this) {
 	sdlWindow->setRecieveEventFunction(std::bind(&MainWindow::recieveEvent, this, std::placeholders::_1));
 	sdlWindow->setRenderFunction(std::bind(&MainWindow::updateRml, this));
 
@@ -81,31 +79,33 @@ MainWindow::MainWindow(Environment* environment) :
 	// eval menutree
 	Rml::Element* evalTreeParent = rmlDocument->GetElementById("eval-tree");
 	evalWindow.emplace(
-		&(environment->getBackend().getEvaluatorManager()),
-		&(environment->getBackend().getCircuitManager()),
-		this,
-		environment->getBackend().getDataUpdateEventManager(),
+		environment.getBackend().getEvaluatorManager(),
+		environment.getBackend().getCircuitManager(),
+		*this,
+		environment.getBackend().getDataUpdateEventManager(),
 		rmlDocument,
 		evalTreeParent
 	);
 
 	//  blocks/tools menutree
 	selectorWindow.emplace(
-		environment->getBackend().getBlockDataManager(),
-		environment->getBackend().getDataUpdateEventManager(),
-		environment->getBackend().getCircuitManager().getProceduralCircuitManager(),
-		&toolManagerManager,
+		environment.getBackend().getBlockDataManager(),
+		environment.getBackend().getDataUpdateEventManager(),
+		environment.getBackend().getCircuitManager().getProceduralCircuitManager(),
+		toolManagerManager,
 		rmlDocument
 	);
 
 	Rml::Element* blockCreationMenu = rmlDocument->GetElementById("block-creation-form");
-	blockCreationWindow.emplace(&(environment->getBackend().getCircuitManager()), environment, this, environment->getBackend().getDataUpdateEventManager(), &toolManagerManager, rmlDocument, blockCreationMenu);
+	blockCreationWindow.emplace(environment.getBackend().getCircuitManager(), environment, *this, environment.getBackend().getDataUpdateEventManager(), toolManagerManager, rmlDocument, blockCreationMenu);
 
-	simControlsManager.emplace(rmlDocument, getCircuitViewWidget(0), environment->getBackend().getDataUpdateEventManager());
+	simControlsManager.emplace(rmlDocument, getCircuitViewWidget(0), environment.getBackend().getDataUpdateEventManager());
 
-	SettingsWindow* settingsWindow = new SettingsWindow(rmlDocument);
+	settingsWindow.emplace(rmlDocument);
 
-	MenuBar* menuBar = new MenuBar(rmlDocument, settingsWindow, this);
+	menuBar.emplace(rmlDocument, &settingsWindow.value(), this);
+
+	cornerLog.emplace(rmlDocument);
 
 	// keybind handling
 	rmlDocument->AddEventListener(Rml::EventId::Keydown, &keybindHandler);
@@ -133,7 +133,6 @@ MainWindow::MainWindow(Environment* environment) :
 		logInfo("loaded, {}", "", fontFilePath);
 	});
 
-	// popUpManager.addFeedbackPopup();
 }
 
 MainWindow::~MainWindow() {
@@ -144,8 +143,14 @@ MainWindow::~MainWindow() {
 }
 
 bool MainWindow::recieveEvent(SDL_Event& event) {
+	if (event.type == SDL_EVENT_KEYMAP_CHANGED) {
+		if (settingsWindow) {
+			settingsWindow->reloadContent();
+		}
+	}
+
 	// check if we want this event
-	if (!sdlWindow->isThisMyEvent(event)) return false;
+	if (!sdlWindow->isThisMyEvent(event)) return event.type == SDL_EVENT_KEYMAP_CHANGED;
 
 	if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
 		if (App::get().closeMainWindow(this)) {
@@ -186,11 +191,11 @@ void MainWindow::updateRml() {
 	for (auto& circuitViewWidget : circuitViewWidgets) {
 		circuitViewWidget->updateTps();
 	}
+	cornerLog->updateMessages();
 }
 
 void MainWindow::createCircuitViewWidget(Rml::Element* element) {
-	circuitViewWidgets.push_back(std::make_shared<CircuitViewWidget>(environment, rmlDocument, this, windowId, element));
-	circuitViewWidgets.back()->getCircuitView()->setBackend(&environment->getBackend());
+	circuitViewWidgets.push_back(std::make_shared<CircuitViewWidget>(environment, rmlDocument, *this, windowId, element));
 	toolManagerManager.addCircuitView(circuitViewWidgets.back()->getCircuitView());
 	activeCircuitViewWidget = circuitViewWidgets.back(); // if it is created, it should be used
 }
@@ -228,6 +233,10 @@ void MainWindow::applyUiScale(float scale) {
 		}
 	}
 	rmlContext->SetDensityIndependentPixelRatio(displayScale * uiScale);
+
+	if (settingsWindow) {
+		settingsWindow->reloadContent();
+	}
 
 	rmlContext->Update();
 	for (auto circuitViewWidget : circuitViewWidgets) {

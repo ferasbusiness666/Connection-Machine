@@ -6,7 +6,7 @@
 
 class BlockPlacementTool : public CircuitTool {
 public:
-	BlockPlacementTool();
+	BlockPlacementTool(const Environment& environment);
 
 	void activate() override final;
 

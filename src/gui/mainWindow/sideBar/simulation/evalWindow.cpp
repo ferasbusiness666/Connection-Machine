@@ -10,10 +10,10 @@
 #include "util/algorithm.h"
 
 EvalWindow::EvalWindow(
-	const EvaluatorManager* evaluatorManager,
-	const CircuitManager* circuitManager,
-	MainWindow* mainWindow,
-	DataUpdateEventManager* dataUpdateEventManager,
+	const EvaluatorManager& evaluatorManager,
+	const CircuitManager& circuitManager,
+	MainWindow& mainWindow,
+	DataUpdateEventManager& dataUpdateEventManager,
 	Rml::ElementDocument* document,
 	Rml::Element* parent
 ) : menuTree(document, parent, true, false), dataUpdateEventReceiver(dataUpdateEventManager), evaluatorManager(evaluatorManager), circuitManager(circuitManager), mainWindow(mainWindow) {
@@ -29,7 +29,7 @@ EvalWindow::EvalWindow(
 
 void EvalWindow::updateList() {
 	std::vector<std::vector<std::string>> paths;
-	for (auto pair : this->evaluatorManager->getEvaluators()) {
+	for (auto pair : this->evaluatorManager.getEvaluators()) {
 		std::vector<std::string> path({ pair.second->getEvaluatorName() });
 		makePaths(paths, path, pair.second->buildAddressTree());
 	}
@@ -38,7 +38,7 @@ void EvalWindow::updateList() {
 
 void EvalWindow::refreshSidebar(bool rebuildItems) {
 	if (rebuildItems) updateList();
-	CircuitView* view = mainWindow->getActiveCircuitViewWidget() ? mainWindow->getActiveCircuitViewWidget()->getCircuitView() : nullptr;
+	CircuitView* view = mainWindow.getActiveCircuitViewWidget() ? mainWindow.getActiveCircuitViewWidget()->getCircuitView() : nullptr;
 	if (!view) return;
 	Evaluator* activeEval = view->getEvaluator();
 	if (!activeEval) return;
@@ -66,10 +66,10 @@ void EvalWindow::refreshSidebar(bool rebuildItems) {
 		std::string label = labelDiv->GetInnerRML();
 		std::stringstream ss(label);
 		std::string word;
-		evaluator_id_t idParsed = 0;
+		unsigned int idParsed = 0;
 		ss >> word >> idParsed;
 		if (ss.fail() || word != "Eval") continue;
-		if (idParsed == activeId) {
+		if (evaluator_id_t(idParsed) == activeId) {
 			evaluatorRow = r;
 			break;
 		}
@@ -134,7 +134,7 @@ void EvalWindow::makePaths(std::vector<std::vector<std::string>>& paths, std::ve
 		paths.push_back(path);
 	} else {
 		for (auto& pair : branches) {
-			path.push_back(circuitManager->getCircuit(pair.second.getContainerId())->getCircuitName() + pair.first.toString());
+			path.push_back(circuitManager.getCircuit(pair.second.getContainerId())->getCircuitName() + pair.first.toString());
 			makePaths(paths, path, pair.second);
 			path.pop_back();
 		}
@@ -145,7 +145,7 @@ void EvalWindow::updateSelected(std::string string) {
 	std::vector<std::string> parts = stringSplit(string, '/');
 	std::stringstream evalName(parts.front());
 	std::string str;
-	evaluator_id_t evalId;
+	unsigned int evalId;
 	evalName >> str >> evalId;
 	Address address;
 	for (unsigned int i = 1; i < parts.size(); i++) {
@@ -162,14 +162,13 @@ void EvalWindow::updateSelected(std::string string) {
 		address.addBlockId(position);
 	}
 
-	CircuitView* circuitView = mainWindow->getActiveCircuitViewWidget()->getCircuitView();
-	circuitView->setEvaluator(circuitView->getBackend(), evalId, address);
+	CircuitView* circuitView = mainWindow.getActiveCircuitViewWidget()->getCircuitView();
+	circuitView->setEvaluator(evaluator_id_t(evalId), address);
 	refreshSidebar(false);
 }
 
 void EvalWindow::selectEvaluatorForCircuit(circuit_id_t circuitId) {
-	if (!this->evaluatorManager) return;
-	for (auto& pair : this->evaluatorManager->getEvaluators()) {
+	for (auto& pair : evaluatorManager.getEvaluators()) {
 		if (pair.second->getCircuitId() == circuitId) {
 			evaluator_id_t wantedId = pair.first;
 			Rml::Element* root = menuTree.getRootElement();
@@ -190,10 +189,10 @@ void EvalWindow::selectEvaluatorForCircuit(circuit_id_t circuitId) {
 				std::string label = labelDiv->GetInnerRML();
 				std::stringstream ss(label);
 				std::string word;
-				evaluator_id_t idParsed = 0;
+				unsigned int idParsed = 0;
 				ss >> word >> idParsed;
 				if (ss.fail() || word != "Eval") continue;
-				if (idParsed != wantedId) continue;
+				if (evaluator_id_t(idParsed) != wantedId) continue;
 				Rml::ElementList all;
 				root->GetElementsByTagName(all, "li");
 				for (auto* a : all) a->SetClass("selected", false);

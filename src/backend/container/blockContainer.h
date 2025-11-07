@@ -10,9 +10,9 @@ class CircuitManager;
 
 class BlockContainer {
 public:
-	inline BlockContainer(CircuitManager* circuitManager, BlockDataManager* blockDataManager) : circuitManager(circuitManager), blockDataManager(blockDataManager) { }
+	inline BlockContainer(CircuitManager& circuitManager, BlockDataManager& blockDataManager) : circuitManager(circuitManager), blockDataManager(blockDataManager) { }
 
-	inline BlockDataManager* getBlockDataManager() const { return blockDataManager; }
+	inline BlockDataManager& getBlockDataManager() const { return blockDataManager; }
 
 	void clear(Difference* difference);
 
@@ -61,6 +61,7 @@ public:
 	/* ----------- connections ----------- */
 	// -- getters --
 	bool connectionExists(Position outputPosition, Position inputPosition) const;
+	bool connectionExists(ConnectionEnd connectionEndA, ConnectionEnd connectionEndB) const;
 	const std::unordered_set<ConnectionEnd>* getInputConnections(Position position) const;
 	const std::unordered_set<ConnectionEnd>* getOutputConnections(Position position) const;
 	const std::unordered_set<ConnectionEnd>* getBidirectionalConnections(Position position) const;
@@ -116,9 +117,10 @@ private:
 	void removeBlockCells(const Block* block);
 	block_id_t getNewId() { return ++lastId; }
 
+
 	BlockType selfBlockType = BlockType::NONE;
-	CircuitManager* circuitManager;
-	BlockDataManager* blockDataManager;
+	CircuitManager& circuitManager;
+	BlockDataManager& blockDataManager;
 	block_id_t lastId = 0;
 	Sparse2d<Cell> grid;
 	std::unordered_map<block_id_t, Block> blocks;

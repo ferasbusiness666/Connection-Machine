@@ -5,6 +5,7 @@
 #include "viewManager/viewManager.h"
 #include "events/eventRegister.h"
 #include "tools/toolManager.h"
+#include "tutorialManager.h"
 
 #include "gpu/mainRendererDefs.h"
 
@@ -15,7 +16,7 @@ class Backend;
 class CircuitView {
 	friend class Backend;
 public:
-	CircuitView(Environment* environment, ViewportId viewportId);
+	CircuitView(Environment& environment, ViewportId viewportId);
 
 	// --------------- Gettters ---------------
 
@@ -31,36 +32,42 @@ public:
 	inline ToolManager& getToolManager() { return toolManager; }
 	inline const ToolManager& getToolManager() const { return toolManager; }
 
+	inline TutorialManager& getTutorialManager() { return tutorialManager; }
+	inline const TutorialManager& getTutorialManager() const { return tutorialManager; }
+
 	inline ViewManager& getViewManager() { return viewManager; }
 	inline const ViewManager& getViewManager() const { return viewManager; }
 
-	inline Backend* getBackend() { return backend; }
-	inline const Backend* getBackend() const { return backend; }
+	inline ViewportId getViewportId() const { return viewportId; }
+
+	inline Backend& getBackend() { return backend; }
+	inline const Backend& getBackend() const { return backend; }
 
 	inline const Address& getAddress() const { return address; }
 
-	void setBackend(Backend* backend);
-	void setEvaluator(Backend* backend, evaluator_id_t evaluatorId, const Address& address = Address());
-	void setEvaluator(Backend* backend, std::shared_ptr<Evaluator> evaluator, const Address& address = Address());
-	void setCircuit(Backend* backend, std::shared_ptr<Circuit> circuit);
-	void setCircuit(Backend* backend, circuit_id_t circuitId);
+	// void setBackend(Backend* backend);
+	void setEvaluator(evaluator_id_t evaluatorId, const Address& address = Address());
+	void setEvaluator(std::shared_ptr<Evaluator> evaluator, const Address& address = Address());
+	void setCircuit(std::shared_ptr<Circuit> circuit);
+	void setCircuit(circuit_id_t circuitId);
 
 	void viewChanged();
 
 private:
-	Backend* backend;
+	Backend& backend;
 
 	Address address;
 	std::shared_ptr<Circuit> circuit;
 	ViewportId viewportId;
 	std::shared_ptr<Evaluator> evaluator;
 
-	DataUpdateEventManager* dataUpdateEventManager = nullptr;
+	DataUpdateEventManager& dataUpdateEventManager;
 
 	std::optional<CircuitRenderManager> circuitRenderManager;
 	EventRegister eventRegister;
 	ViewManager viewManager;
 	ToolManager toolManager;
+	TutorialManager tutorialManager;
 };
 
 #endif /* circuitView_h */

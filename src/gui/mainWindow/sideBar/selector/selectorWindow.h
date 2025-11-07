@@ -9,10 +9,10 @@
 class SelectorWindow {
 public:
 	SelectorWindow(
-		const BlockDataManager* blockDataManager,
-		DataUpdateEventManager* dataUpdateEventManager,
-		ProceduralCircuitManager* proceduralCircuitManager,
-		ToolManagerManager* toolManagerManager,
+		BlockDataManager& blockDataManager,
+		DataUpdateEventManager& dataUpdateEventManager,
+		ProceduralCircuitManager& proceduralCircuitManager,
+		ToolManagerManager& toolManagerManager,
 		Rml::ElementDocument* document
 	);
 
@@ -23,21 +23,26 @@ public:
 private:
 	void updateSelected(const std::string& string);
 	void updateSelectedMode(const std::string& string);
+	void setupParameterMenu();
 	void setupProceduralCircuitParameterMenu();
-	void hideProceduralCircuitParameterMenu();
+	void setupBusParameterMenu();
+	void addParametersToParameterMenu(const ProceduralCircuitParameters& parameters, const std::string& title);
+	Rml::ElementPtr makeParameterElement(const std::string& name, int defaultValue);
+	void hideParameterMenu();
 
 	void highlightActiveToolInSidebar();
 	void highlightActiveMode();
 
+	bool selectedBus = false;
 	SharedProceduralCircuit selectedProceduralCircuit = nullptr;
 
 	Rml::ElementDocument* document;
 	Rml::Element* parameterMenu;
 	std::optional<MenuTree> menuTree;
 	std::optional<ElementList> modeList;
-	const BlockDataManager* blockDataManager;
-	ProceduralCircuitManager* proceduralCircuitManager;
-	ToolManagerManager* toolManagerManager;
+	BlockDataManager& blockDataManager;
+	ProceduralCircuitManager& proceduralCircuitManager;
+	ToolManagerManager& toolManagerManager;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 };
 

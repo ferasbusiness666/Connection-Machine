@@ -80,6 +80,7 @@ struct BlockInstance {
 struct WireInstance {
 	glm::vec2 pointA;
 	glm::vec2 pointB;
+	float wireWidth;
 	uint32_t stateIndex;
 
 	inline static std::vector<VkVertexInputBindingDescription> getBindingDescriptions() {
@@ -92,7 +93,7 @@ struct WireInstance {
     }
 
 	inline static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
-		std::vector<VkVertexInputAttributeDescription> attributeDescriptions(3);
+		std::vector<VkVertexInputAttributeDescription> attributeDescriptions(4);
 
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
@@ -106,8 +107,13 @@ struct WireInstance {
 
 		attributeDescriptions[2].binding = 0;
 		attributeDescriptions[2].location = 2;
-		attributeDescriptions[2].format = VK_FORMAT_R32_UINT;
-		attributeDescriptions[2].offset = offsetof(WireInstance, stateIndex);
+		attributeDescriptions[2].format = VK_FORMAT_R32_SFLOAT;
+		attributeDescriptions[2].offset = offsetof(WireInstance, wireWidth);
+
+		attributeDescriptions[3].binding = 0;
+		attributeDescriptions[3].location = 3;
+		attributeDescriptions[3].format = VK_FORMAT_R32_UINT;
+		attributeDescriptions[3].offset = offsetof(WireInstance, stateIndex);
 
 		return attributeDescriptions;
 	}
@@ -132,6 +138,15 @@ struct RenderedWire {
 typedef phmap::flat_hash_map<Position, RenderedBlock> RenderedBlocks;
 typedef phmap::flat_hash_map<std::pair<Position, Position>, RenderedWire> RenderedWires;
 
+struct PortStateRange {
+	size_t baseIndex = 0;
+	uint32_t laneCount = 0;
+
+	PortStateRange() = default;
+	PortStateRange(size_t baseIndex, uint32_t laneCount) : baseIndex(baseIndex), laneCount(laneCount) { }
+	inline bool isValid() const { return laneCount != 0; }
+};
+
 // TODO - maybe these should just be split into two different types
 class VulkanChunkAllocation {
 public:
@@ -148,7 +163,7 @@ public:
 
 	inline std::vector<simulator_id_t>& getStateSimulatorIds() { return simulatorIds; }
 	inline const phmap::flat_hash_map<Position, size_t>& getBlockStateIndex() const { return blockStateIndex; }
-	inline const phmap::flat_hash_map<Position, size_t>& getPortStateIndex() const { return portStateIndex; }
+	inline const phmap::flat_hash_map<Position, PortStateRange>& getPortStateIndex() const { return portStateIndex; }
 
 	inline bool isAllocationComplete() const { return true; }
 
@@ -164,7 +179,7 @@ private:
 
 	std::vector<simulator_id_t> simulatorIds;
 	phmap::flat_hash_map<Position, size_t> blockStateIndex;
-	phmap::flat_hash_map<Position, size_t> portStateIndex;
+	phmap::flat_hash_map<Position, PortStateRange> portStateIndex;
 };
 
 // ====================================================================================================================
@@ -224,6 +239,8 @@ private:
 private:
 	std::unordered_map<BlockRenderDataId, unsigned int> blockTypesCount; // Used to regenerateAllChunksWithBlock
 
+	Chunk chunkToAlwaysRender;
+	bool chunkToAlwaysRenderNeedUpdate = false;
 	phmap::flat_hash_map<Position, Chunk> chunks;
 	std::unordered_map<std::pair<Position, Position>, std::vector<Position>> chunksUnderWire;
 	std::mutex mux; // sync can be relaxed in the future

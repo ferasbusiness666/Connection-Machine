@@ -90,7 +90,7 @@ bool GeneratedCircuitValidator::setOverlapsUnpositioned() {
 
 		Position intPos(static_cast<int>(block.position.x), static_cast<int>(block.position.y));
 
-		BlockData* blockData = blockDataManager->getBlockData(block.type);
+		BlockData* blockData = blockDataManager.getBlockData(block.type);
 		if (!blockData) {
 			logError("Could not find block type data for block type: {}", "GeneratedCircuitValidator", (unsigned int)block.type);
 		}
@@ -194,7 +194,7 @@ bool GeneratedCircuitValidator::handleUnpositionedBlocks() {
 		auto iter = generatedCircuit.blocks.find(conn.outputBlockId);
 		if (iter == generatedCircuit.blocks.end()) continue;
 
-		if (blockDataManager->isConnectionInput(iter->second.type, conn.outputId)) {
+		if (blockDataManager.isConnectionInput(iter->second.type, conn.outputId)) {
 			int cc = blockToComponent[conn.inputBlockId];
 			componentAdjs[cc][conn.inputBlockId].push_back(conn.outputBlockId);
 		}
@@ -318,7 +318,7 @@ bool GeneratedCircuitValidator::handleUnpositionedBlocks() {
 				}
 
 				// check block dimensions in case of custom block
-				BlockData* blockData = blockDataManager->getBlockData(block.type);
+				BlockData* blockData = blockDataManager.getBlockData(block.type);
 				if (!blockData) {
 					logError("Could not find block type data for block type: {}", "GeneratedCircuitValidator", (unsigned int)block.type);
 				}

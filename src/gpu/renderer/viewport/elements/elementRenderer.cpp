@@ -22,6 +22,7 @@ void ElementRenderer::init(VulkanDevice* device, VkRenderPass& renderPass) {
 	blockPreviewPipelineInfo.renderPass = renderPass;
 	blockPreviewPipelineInfo.pushConstants.push_back({ VK_SHADER_STAGE_VERTEX_BIT, sizeof(BlockPreviewPushConstant) });
 	blockPreviewPipelineInfo.descriptorSets.push_back(device->getBlockTextureManager().getDescriptorLayout());
+	blockPreviewPipelineInfo.sampleCount = device->getMaxUsableSampleCount();
 	blockPreviewPipeline.init(device, blockPreviewPipelineInfo);
 
 	destroyShaderModule(device->getDevice(), blockPreviewVertShader);
@@ -37,6 +38,7 @@ void ElementRenderer::init(VulkanDevice* device, VkRenderPass& renderPass) {
 	boxSelectionPipelineInfo.renderPass = renderPass;
 	boxSelectionPipelineInfo.pushConstants.push_back({ VK_SHADER_STAGE_VERTEX_BIT, offsetof(BoxSelectionPushConstant, state) });
 	boxSelectionPipelineInfo.pushConstants.push_back({ VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(uint32_t) });
+	boxSelectionPipelineInfo.sampleCount = device->getMaxUsableSampleCount();
 	boxSelectionPipeline.init(device, boxSelectionPipelineInfo);
 
 	destroyShaderModule(device->getDevice(), boxSelectionVertShader);
@@ -51,6 +53,7 @@ void ElementRenderer::init(VulkanDevice* device, VkRenderPass& renderPass) {
 	connectionPreviewPipelineInfo.fragShader = connectionPreviewFragShader;
 	connectionPreviewPipelineInfo.renderPass = renderPass;
 	connectionPreviewPipelineInfo.pushConstants.push_back({ VK_SHADER_STAGE_VERTEX_BIT, sizeof(ConnectionPreviewPushConstant) });
+	connectionPreviewPipelineInfo.sampleCount = device->getMaxUsableSampleCount();
 	connectionPreviewPipeline.init(device, connectionPreviewPipelineInfo);
 
 	destroyShaderModule(device->getDevice(), connectionPreviewVertShader);
@@ -66,6 +69,7 @@ void ElementRenderer::init(VulkanDevice* device, VkRenderPass& renderPass) {
 	arrowCirclePipelineInfo.renderPass = renderPass;
 	arrowCirclePipelineInfo.pushConstants.push_back({ VK_SHADER_STAGE_VERTEX_BIT, offsetof(ArrowCirclePushConstant, depth) });
 	arrowCirclePipelineInfo.pushConstants.push_back({ VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(uint32_t) });
+	arrowCirclePipelineInfo.sampleCount = device->getMaxUsableSampleCount();
 	arrowCirclePipeline.init(device, arrowCirclePipelineInfo);
 
 	destroyShaderModule(device->getDevice(), arrowCircleVertShader);
@@ -81,6 +85,7 @@ void ElementRenderer::init(VulkanDevice* device, VkRenderPass& renderPass) {
 	arrowPipelineInfo.renderPass = renderPass;
 	arrowPipelineInfo.pushConstants.push_back({ VK_SHADER_STAGE_VERTEX_BIT, offsetof(ArrowPushConstant, depth) });
 	arrowPipelineInfo.pushConstants.push_back({ VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(uint32_t) });
+	arrowPipelineInfo.sampleCount = device->getMaxUsableSampleCount();
 	arrowPipeline.init(device, arrowPipelineInfo);
 
 	destroyShaderModule(device->getDevice(), arrowVertShader);

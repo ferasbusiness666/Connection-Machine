@@ -2,7 +2,8 @@
 file(GLOB_RECURSE PROJECT_SOURCES
 	"${SOURCE_DIR}/*.cpp"
 )
-list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR}/cli/.*")
+string(REGEX REPLACE "([][+.*^$(){}|\\\\])" "\\\\\\1" SOURCE_DIR_REGEX "${SOURCE_DIR}")
+list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR_REGEX}/cli/main.cpp$")
 
 # ===================================== CREATE APP EXECUTABLE ========================================
 
@@ -38,7 +39,8 @@ endif()
 if (CONNECTION_MACHINE_TRY_CATCH)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE "MAIN_TRY_CATCH")
 endif()
-
+target_compile_definitions(${PROJECT_NAME} PRIVATE "BUILDING_APP")
+target_compile_definitions(${PROJECT_NAME} PRIVATE "PROJECT_VERSION=\"${PROJECT_VERSION}\"")
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${APP_NAME}")
 
 # Platform specific business after add_executable
@@ -97,6 +99,7 @@ foreach(resource_path_relative IN LISTS RESOURCE_FILES)
 		COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${original_resource}" "${copied_resource}"
 		DEPENDS "${original_resource}"
 		COMMENT "Copying resource: ${resource_path_relative}"
+		VERBATIM
 	)
 
 	list(APPEND RESOURCE_FILES_COPIED "${copied_resource}")
@@ -128,6 +131,7 @@ foreach(shader_source IN LISTS SHADER_SOURCE_FILES)
 		COMMAND Vulkan::glslc "${shader_source}" "-o" "${compiled_shader}"
 		DEPENDS "${shader_source}"
 		COMMENT "Compiling shader: ${shader_source}"
+		VERBATIM
 	)
 
 	list(APPEND SHADER_PRODUCTS "${compiled_shader}")

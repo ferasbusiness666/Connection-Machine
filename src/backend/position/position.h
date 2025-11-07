@@ -109,11 +109,11 @@ private:
 		notDone = true;
 		cur -= cur != 0;
 	}
-	char xNeg;
-	char yNeg;
+	std::uint8_t xNeg;
+	std::uint8_t yNeg;
 	unsigned int end;
 	unsigned int cur = 0;
-	unsigned width;
+	unsigned int width;
 	bool notDone = true;
 };
 
@@ -196,6 +196,12 @@ struct Position {
 
 	inline bool operator==(Position position) const noexcept { return x == position.x && y == position.y; }
 	inline bool operator!=(Position position) const noexcept { return !operator==(position); }
+	inline auto operator<=>(Position position) const noexcept {
+		if (auto cmp = x <=> position.x; cmp != 0) {
+			return cmp;
+		}
+		return y <=> position.y;
+	}
 	inline bool withinArea(Position small, Position large) const noexcept { return small.x <= x && small.y <= y && large.x >= x && large.y >= y; }
 
 	inline coordinate_t manhattenDistanceTo(Position position) const noexcept { return Abs(x - position.x) + Abs(y - position.y); }
@@ -531,7 +537,7 @@ inline FPosition Position::free() const noexcept { return FPosition(x, y); }
 inline Position FPosition::snap() const noexcept { return Position(std::floor(x), std::floor(y)); }
 
 // ---- we also define block rotation here so ----
-enum Rotation : char {
+enum Rotation : std::uint8_t {
 	ZERO = 0,
 	NINETY = 1,
 	ONE_EIGHTY = 2,
@@ -583,11 +589,11 @@ inline constexpr Rotation rotate(Rotation rotation, bool clockWise) {
 	return (Rotation)((int)rotation - 1);
 }
 inline constexpr Rotation addRotations(Rotation rotationA, Rotation rotationB) {
-	char output = rotationA + rotationB;
-	if ((char)output > (char)Rotation::TWO_SEVENTY) output -= 4;
+	std::uint8_t output = rotationA + rotationB;
+	if ((std::uint8_t)output > (std::uint8_t)Rotation::TWO_SEVENTY) output -= 4;
 	return (Rotation)output;
 }
-inline constexpr Rotation rotationNeg(Rotation rotation) { return (Rotation)((4 - (char)rotation) & 0b11); }
+inline constexpr Rotation rotationNeg(Rotation rotation) { return (Rotation)((4 - (std::uint8_t)rotation) & 0b11); }
 inline constexpr Rotation subRotations(Rotation rotationA, Rotation rotationB) { return addRotations(rotationA, rotationNeg(rotationB)); }
 inline constexpr int getDegrees(Rotation rotation) { return rotation * 90; }
 inline Vector rotateVectorWithArea(Vector vector, Size size, Rotation rotationAmount) {

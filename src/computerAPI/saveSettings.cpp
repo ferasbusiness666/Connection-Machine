@@ -44,7 +44,7 @@ void SaveSettings::save() {
 			break;
 		}
 		case SettingType::KEYBIND: {
-			out << std::quoted(settings.get<SettingType::KEYBIND>(key)->toString());
+			out << std::quoted(settings.get<SettingType::KEYBIND>(key)->toString(true));
 			break;
 		}
 		case SettingType::FILE_PATH: {

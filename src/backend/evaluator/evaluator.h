@@ -1,13 +1,12 @@
 #ifndef evaluator_h
 #define evaluator_h
 
-#include "diffCache.h"
-#include "evalCircuitContainer.h"
-#include "evalAddressTree.h"
-#include "evalConnection.h"
-#include "evalConfig.h"
-#include "directionEnum.h"
-#include "logicState.h"
+#include "util/diffCache.h"
+#include "util/evalCircuitContainer.h"
+#include "util/evalAddressTree.h"
+#include "util/evalConnection.h"
+#include "util/evalConfig.h"
+#include "simulator/logicState.h"
 
 class DataUpdateEventManager;
 class CircuitManager;
@@ -45,8 +44,10 @@ public:
 		BlockDataManager& blockDataManager,
 		CircuitBlockDataManager& circuitBlockDataManager,
 		circuit_id_t circuitId,
-		DataUpdateEventManager* dataUpdateEventManager
+		DataUpdateEventManager& dataUpdateEventManager
 	);
+	Evaluator(const Evaluator&) = delete;
+    Evaluator& operator=(const Evaluator&) = delete;
 	~Evaluator();
 
 	inline evaluator_id_t getEvaluatorId() const { return evaluatorId; }
@@ -55,6 +56,7 @@ public:
 	void reset();
 	void setPause(bool pause) { evalConfig.setRunning(!pause); }
 	bool isPause() const { return !evalConfig.isRunning(); }
+	void togglePause() { setPause(isPause() ? false : true); }
 	void addSprint(unsigned int nTicks) { evalConfig.addSprint(nTicks); }
 	bool isSprinting() const { return evalConfig.getSprintCount() > 0; }
 	void waitForSprintComplete();
@@ -63,11 +65,18 @@ public:
 		evalConfig.addSprint(nTicks);
 		waitForSprintComplete();
 	}
-	void tickStep() { tickStep (1); }
+	void tickStep() { tickStep(1); }
+	bool stepBack();
+	void stepForward();
+	bool skipBack();
+	bool skipForward();
+	bool isViewingReplay() const;
 	void setRealistic(bool realistic) { evalConfig.setRealistic(realistic); }
 	bool isRealistic() const { return evalConfig.isRealistic(); }
 	void setTickrate(double tickrate) { evalConfig.setTargetTickrate(tickrate); }
 	double getTickrate() const { return evalConfig.getTargetTickrate(); }
+	void increaseTickrateSeq();
+	void decreaseTickrateSeq();
 	void setUseTickrate(bool useTickrate) { evalConfig.setTickrateLimiter(useTickrate); }
 	bool getUseTickrate() const { return evalConfig.isTickrateLimiterEnabled(); }
 	double getRealTickrate() const;
@@ -76,10 +85,10 @@ public:
 	bool getBoolState(const Address& address) { return toBool(getState(address)); };
 	void setState(const Address& address, logic_state_t state);
 	void setState(const Address& address, bool state) { setState(address, fromBool(state)); }
-	circuit_id_t getCircuitId() const { return evalCircuitContainer.getCircuitId(0).value_or(0); }
+	circuit_id_t getCircuitId() const { return evalCircuitContainer.getCircuitId(eval_circuit_id_t(0)).value_or(0); }
 	circuit_id_t getCircuitId(const Address& address) const {
 		std::shared_lock lk(simMutex);
-		eval_circuit_id_t evalCircuitId = 0;
+		eval_circuit_id_t evalCircuitId = eval_circuit_id_t(0);
 		for (int i = 0; i < address.size(); i++) {
 			std::optional<CircuitNode> node = evalCircuitContainer.getNode(address.getPosition(i), evalCircuitId);
 			if (!node.has_value()) {
@@ -87,7 +96,7 @@ public:
 				return getCircuitId(); // Invalid circuit ID
 			}
 			if (node->isIC()) {
-				evalCircuitId = node->getId();
+				evalCircuitId = node->getEvalCircuitId();
 			} else {
 				logError("Address {} does not point to an IC", "Evaluator::getCircuitId", address.toString());
 				return getCircuitId();
@@ -119,7 +128,7 @@ private:
 	CircuitManager& circuitManager;
 	BlockDataManager& blockDataManager;
 	CircuitBlockDataManager& circuitBlockDataManager;
-	DataUpdateEventManager* dataUpdateEventManager;
+	DataUpdateEventManager& dataUpdateEventManager;
 	DataUpdateEventManager::DataUpdateEventReceiver receiver;
 	EvalCircuitContainer evalCircuitContainer;
 	EvalConfig evalConfig;
@@ -134,8 +143,8 @@ private:
 	void edit_deleteICContents(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId);
 	void edit_placeBlock(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, DiffCache& diffCache, Position position, Orientation orientation, BlockType type);
 	void edit_placeIC(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, DiffCache& diffCache, Position position, Orientation orientation, circuit_id_t circuitId);
-	void edit_removeConnection(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, DiffCache& diffCache, const BlockContainer* blockContainer, Position outputBlockPosition, Position outputPosition, Position inputBlockPosition, Position inputPosition);
-	void edit_createConnection(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, DiffCache& diffCache, const BlockContainer* blockContainer, Position outputBlockPosition, Position outputPosition, Position inputBlockPosition, Position inputPosition);
+	void edit_removeConnection(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, DiffCache& diffCache, const BlockContainer& blockContainer, Position outputBlockPosition, Position outputPosition, Position inputBlockPosition, Position inputPosition);
+	void edit_createConnection(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, DiffCache& diffCache, const BlockContainer& blockContainer, Position outputBlockPosition, Position outputPosition, Position inputBlockPosition, Position inputPosition);
 	void edit_moveBlock(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, DiffCache& diffCache, Position curPosition, Orientation curOrientation, Position newPosition, Orientation newOrientation, MoveType finalMove);
 
 	void removeDependentInterCircuitConnections(SimPauseGuard& pauseGuard, CircuitPortDependency circuitPortDependency);
@@ -144,19 +153,23 @@ private:
 	void setCircuitIO(const DataUpdateEventManager::EventData* data);
 
 	std::optional<middle_id_t> getMiddleId(const eval_circuit_id_t startingPoint, const Address& address) const;
-	std::optional<middle_id_t> getMiddleId(const eval_circuit_id_t startingPoint, const Address& address, const BlockContainer* blockContainer) const;
+	std::optional<middle_id_t> getMiddleId(const eval_circuit_id_t startingPoint, const Address& address, const BlockContainer& blockContainer) const;
 	std::optional<middle_id_t> getMiddleId(const Address& address) const;
 
-	std::optional<connection_port_id_t> getPortId(const circuit_id_t circuitId, const Position blockPosition, const Position portPosition, Direction direction) const;
-	std::optional<connection_port_id_t> getPortId(const BlockContainer* blockContainer, const Position blockPosition, const Position portPosition, Direction direction) const;
-	std::optional<EvalConnectionPoint> getConnectionPoint(const eval_circuit_id_t evalCircuitId, const Position portPosition, Direction direction) const;
-	std::optional<EvalConnectionPoint> getConnectionPoint(const eval_circuit_id_t evalCircuitId, const BlockContainer* blockContainer, const Position portPosition, Direction direction) const;
+	std::optional<connection_end_id_t> getPortId(const circuit_id_t circuitId, const Position blockPosition, const Position portPosition, Direction direction) const;
+	std::optional<connection_end_id_t> getPortId(const BlockContainer& blockContainer, const Position blockPosition, const Position portPosition, Direction direction) const;
+	std::optional<EvalConnectionPoint> getConnectionPoint(
+		const eval_circuit_id_t evalCircuitId,
+		const Position portPosition,
+		Direction direction
+	) const;
 	std::optional<EvalConnectionPoint> getConnectionPoint(
 		const eval_circuit_id_t evalCircuitId,
 		const Position portPosition,
 		Direction direction,
 		std::set<CircuitPortDependency>& circuitPortDependencies,
 		std::set<CircuitNode>& circuitNodeDependencies,
+		std::set<EvalPosition>& visitedEvalPositions,
 		bool isInterCircuit
 	) const;
 
@@ -169,13 +182,15 @@ private:
 		Direction direction,
 		const EvalConnectionPoint& targetConnectionPoint,
 		std::set<CircuitPortDependency>& circuitPortDependencies,
-		std::set<CircuitNode>& circuitNodeDependencies
+		std::set<CircuitNode>& circuitNodeDependencies,
+		std::set<EvalPosition>& visitedEvalPositions
 	);
 	std::vector<simulator_id_t> dirtySimulatorIds;
 	std::vector<middle_id_t> dirtyMiddleIds;
 	std::unordered_set<EvalPosition> dirtyNodes;
 	std::unordered_multimap<simulator_id_t, EvalPosition> pinSimulatorIdToEvalPositionMap;
 	std::unordered_map<middle_id_t, EvalPosition> middleIdToEvalPositionMap;
+	std::unordered_map<CircuitNode, BlockType> circuitNodeToBlockTypeMap;
 
 	std::map<void*, SimulatorMappingUpdateListener> listeners;
 	void sendSimulatorMappingUpdate(eval_circuit_id_t targetEvalCircuitId, const std::vector<SimulatorMappingUpdate>& updates) {
@@ -188,6 +203,9 @@ private:
 
 	void processDirtyNodes();
 	void dirtyBlockAt(Position position, eval_circuit_id_t evalCircuitId);
+	bool checkIfBitWidthsMatch(
+		const EvalConnection& connection
+	) const;
 
 	mutable std::shared_mutex simMutex;
 };

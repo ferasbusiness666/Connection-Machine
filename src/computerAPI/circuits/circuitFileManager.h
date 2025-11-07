@@ -16,7 +16,7 @@ public:
 		std::unordered_set<std::string> UUIDs;
 	};
 
-	CircuitFileManager(CircuitManager* circuitManager);
+	CircuitFileManager(CircuitManager& circuitManager);
 
     std::vector<circuit_id_t> loadFromFile(const std::string& path);
     bool saveToFile(const std::string& path, const std::string& UUID);
@@ -38,7 +38,7 @@ private:
 	FileData* setSaveFilePathAndGetFileData(const std::string& UUID, std::string fileLocation, bool addDotCir = true);
 	circuit_id_t loadParsedCircuit(ParsedCircuit& parsedCircuit);
 
-	CircuitManager* circuitManager;
+	CircuitManager& circuitManager;
 	std::map<std::string, FileData> filePathToFile;
 	std::map<std::string, std::string> UUIDToFilePath;
 };

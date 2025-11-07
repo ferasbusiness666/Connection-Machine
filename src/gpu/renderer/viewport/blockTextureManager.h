@@ -7,9 +7,9 @@
 #include "util/rectPacker.h"
 #include "util/vec2.h"
 
-class VulkanDevice;
+#define BLOCK_TEXTURE_SIZE 8192
 
-#include <stb_image.h>
+class VulkanDevice;
 
 struct BlockTextureArray {
 	DescriptorAllocator descriptorAllocator;
@@ -56,8 +56,8 @@ public:
 	void init(VulkanDevice* device);
 	BlockTextureId addTexture(const std::string& path);
 	void refreshBlockTexture(const std::string& path);
-	BlockTextureId addTexture(const stbi_uc* pixels, int textureWidth, int textureHeight);
-	void updateBlockTexture(const stbi_uc* pixels, BlockTextureId blockTextureId);
+	BlockTextureId addTexture(const unsigned char* pixels, int textureWidth, int textureHeight);
+	void updateBlockTexture(const unsigned char* pixels, BlockTextureId blockTextureId);
 	void removeBlockTexture(const std::string& path);
 	void removeBlockTexture(BlockTextureId blockTextureId);
 	BlockTextureCords getBlockTextureCords(BlockTextureId blockTextureId) const;
@@ -74,7 +74,7 @@ public:
 
 private:
 	void makeTextureArray(uint32_t newLayerCount, VkExtent3D textureSize);
-	void addTextureToArray(const stbi_uc* pixels, Vec2Int textureSize, Vec2Int texturePos, unsigned int textureLayer);
+	void addTextureToArray(const unsigned char* pixels, Vec2Int textureSize, Vec2Int texturePos, unsigned int textureLayer);
 	void resizeTextureArray(uint32_t newLayerCount);
 
 	VulkanDevice* device;
