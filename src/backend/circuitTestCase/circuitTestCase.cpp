@@ -4,9 +4,77 @@
 #include "backend/blockData/blockData.h"
 #include "backend/evaluator/evalDefs.h"
 #include "backend/evaluator/evaluator.h"
+#include "backend/evaluator/simulator/logicState.h"
 #include "backend/position/position.h"
-
+#include <utility>
+// p = data/Input | q = control/Enable | out = Output | Z = floating/2 | X = undefined/3
 bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environment& environment) {
+    testCommands = {// 0 0 Z
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)0), std::make_pair("Enable", (logic_state_t)0)}},
+                    TestCommand(TICK_STEP, 10),
+                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)2)}),
+                    // 0 1 0
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)0), std::make_pair("Enable", (logic_state_t)1)}},
+                    TestCommand(TICK_STEP, 10),
+                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)0)}),
+                    // 0 Z X
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)0), std::make_pair("Enable", (logic_state_t)2)}},
+                    TestCommand(TICK_STEP, 10),
+                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
+                    // 0 X X
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)0), std::make_pair("Enable", (logic_state_t)3)}},
+                    TestCommand(TICK_STEP, 10),
+                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
+                    // 1 0 Z
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)1), std::make_pair("Enable", (logic_state_t)0)}},
+                    TestCommand(TICK_STEP, 10),
+                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)2)}),
+                    // 1 1 1
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)1), std::make_pair("Enable", (logic_state_t)1)}},
+                    TestCommand(TICK_STEP, 10),
+                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)1)}),
+                    // 1 Z X
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)1), std::make_pair("Enable", (logic_state_t)2)}},
+                    TestCommand(TICK_STEP, 10),
+                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
+                    // 1 X X
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)1), std::make_pair("Enable", (logic_state_t)3)}},
+                    TestCommand(TICK_STEP, 10),
+                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
+                    // Z 0 Z
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)2), std::make_pair("Enable", (logic_state_t)0)}},
+                    TestCommand(TICK_STEP, 10),
+                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)2)}),
+                    // Z 1 X
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)2), std::make_pair("Enable", (logic_state_t)1)}},
+                    TestCommand(TICK_STEP, 10),
+                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
+                    // Z Z X
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)2), std::make_pair("Enable", (logic_state_t)2)}},
+                    TestCommand(TICK_STEP, 10),
+                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
+                    // Z X X
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)2), std::make_pair("Enable", (logic_state_t)3)}},
+                    TestCommand(TICK_STEP, 10),
+                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
+                    // X 0 Z
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)3), std::make_pair("Enable", (logic_state_t)0)}},
+                    TestCommand(TICK_STEP, 10),
+                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)2)}),
+                    // X 1 X
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)3), std::make_pair("Enable", (logic_state_t)1)}},
+                    TestCommand(TICK_STEP, 10),
+                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
+                    // X Z X
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)3), std::make_pair("Enable", (logic_state_t)3)}},
+                    TestCommand(TICK_STEP, 10),
+                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
+                    // X X X
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)3), std::make_pair("Enable", (logic_state_t)3)}},
+                    TestCommand(TICK_STEP, 10),
+                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)})
+                };
+    bool fullTestSucceedStatus = true;
     Backend& backend = environment.getBackend();
     CircuitManager& cirManager = backend.getCircuitManager();
     const EvaluatorManager& evalManager = backend.getEvaluatorManager();
@@ -65,35 +133,55 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
             nameToConnectedBlockPosition.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
         }
     }
+
     for (auto iter = nameToConnectedBlockPosition.begin(); iter != nameToConnectedBlockPosition.end(); iter++) {
         logInfo("Block {} is in pos {}", "CircuitTestCase", iter->first, iter->second);
     }
 
     for (auto commandIter = testCommands.begin(); commandIter != testCommands.end(); commandIter++) {
+        logInfo("Performing a test command", "CircuitTestCase");
+        bool isSingleTestSuccessful = true;
         if (commandIter->type == NOP_COMMAND) {
             continue;
         } else if (commandIter->type == SET_STATES) {
             runSetStatesCommand(*commandIter, eval, nameToConnectedBlockPosition);
         } else if (commandIter->type == CHECK_STATES) {
-            continue;
+            isSingleTestSuccessful = runCheckStatesCommand(*commandIter, eval, nameToConnectedBlockPosition);
         } else if (commandIter->type == TICK_STEP) {
-            continue;
+            eval->tickStep(commandIter->ticks);
         } else {
             logError("Unrecognized test command", "CircuitTestCase");
+            isSingleTestSuccessful = false;
+        }
+
+        if (!isSingleTestSuccessful) {
+            fullTestSucceedStatus = false;
+            if (haltOnFailure) {
+                return false;
+            }
         }
     }
-    return true;
+    return fullTestSucceedStatus;
 }
 
-bool CircuitTestCase::runSetStatesCommand(TestCommand testCommand, const SharedEvaluator eval, NamePositionMap& nameToConnectedBlockPosition) {
+void CircuitTestCase::runSetStatesCommand(TestCommand testCommand, const SharedEvaluator eval, NamePositionMap& nameToConnectedBlockPosition) {
     for (auto statesIter = testCommand.states.begin(); statesIter != testCommand.states.end(); statesIter++) {
         auto blockPosIter = nameToConnectedBlockPosition.find(statesIter->first);
         eval->setState((Address(blockPosIter->second)), statesIter->second);
-    } 
+    }
 }
 
-bool CircuitTestCase::runCheckStatesCommand(TestCommand testCommand, const SharedEvaluator eval, NamePositionMap&) {
-
+bool CircuitTestCase::runCheckStatesCommand(TestCommand testCommand, const SharedEvaluator eval, NamePositionMap& nameToConnectedBlockPosition) {
+// probably needs to return the state of every single block tested instead of whether just one of them fails
+    bool testSucceeded = true;
+    for (auto statesIter = testCommand.states.begin(); statesIter != testCommand.states.end(); statesIter++) {
+        auto blockPosIter = nameToConnectedBlockPosition.find(statesIter->first);
+        logic_state_t actualState = eval->getState((Address(blockPosIter->second)));
+        if (actualState != statesIter->second) {
+            testSucceeded = false;
+        }
+    }
+    return testSucceeded;
 }
 
 

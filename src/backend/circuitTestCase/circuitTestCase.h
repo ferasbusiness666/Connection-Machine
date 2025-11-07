@@ -25,7 +25,7 @@ private:
         std::vector<std::pair<std::string, logic_state_t>> states = {};
     };
 
-    bool runSetStatesCommand(TestCommand testCommand, const SharedEvaluator eval, NamePositionMap& nameToConnectedBlockPosition);
+    void runSetStatesCommand(TestCommand testCommand, const SharedEvaluator eval, NamePositionMap& nameToConnectedBlockPosition);
     bool runCheckStatesCommand(TestCommand testCommand, const SharedEvaluator eval, NamePositionMap& nameToConnectedBlockPosition);
 
     std::vector<TestCommand> testCommands;
