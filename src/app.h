@@ -16,6 +16,7 @@ public:
 	// do not call
 	App();
 	~App();
+	void preShutdownStep();
 
 	std::shared_ptr<SdlWindow> registerWindow(const std::string& windowName);
 	std::shared_ptr<SdlWindow> registerWindow(const std::string& windowName, unsigned int width, unsigned int height);

@@ -23,6 +23,7 @@ App& App::get() {
 
 void App::kill() {
 	logInfo("Killing App", "App");
+	appSingleton->preShutdownStep();
 	appSingleton.reset();
 }
 
@@ -32,13 +33,17 @@ App::App() {
 	logInfo("App initialized", "App");
 }
 
-App::~App() {
+void App::preShutdownStep() {
 	logInfo("Shutting down App", "App");
 	windows.clear();
 	sdlWindows.clear();
 	rml.reset();
 	MainRenderer::kill();
 	Network::kill();
+}
+
+App::~App() {
+	logInfo("App shut down", "App");
 }
 
 std::shared_ptr<SdlWindow> App::registerWindow(const std::string& windowName) { return sdlWindows.emplace_back(std::make_shared<SdlWindow>(windowName)); }

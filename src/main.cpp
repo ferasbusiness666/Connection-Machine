@@ -39,6 +39,7 @@ void registerSettings() {
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Rotate CW", Keybind(Keybind::KeyId::KI_E));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Confirm", Keybind(Keybind::KeyId::KI_E));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tool Invert Mode", Keybind(Keybind::KeyId::KI_Q));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/(DEBUG) Test Circuit", Keybind(Keybind::KeyId::KI_K));
 #ifdef __APPLE__
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Toggle Fullscreen", Keybind(Keybind::KeyId::KI_F, Keybind::KeyMod::KM_META | Keybind::KeyMod::KM_SHIFT));
 #else
