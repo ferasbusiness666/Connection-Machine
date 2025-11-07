@@ -2,6 +2,7 @@
 
 #include "circuitView.h"
 #include "environment/environment.h"
+#include "events/customEvents.h"
 
 TutorialManager::TutorialManager(Environment& environment, CircuitView& circuitView) :
 	circuitView(&circuitView), elementCreator(circuitView.getViewportId()), environment(environment), tutorialRunning(false) { }
@@ -16,9 +17,16 @@ void TutorialManager::StartTutorial() {
 	circuitView->setEvaluator(evaluatorId.value());
 
 	evaluator = circuitView->getBackend().getEvaluator(evaluatorId.value());
+	evaluator->setPause(false);
 	SharedCircuit circuit = circuitView->getBackend().getCircuitManager().getCircuit(circuitId);
 	curentCircuit = circuitView->getBackend().getCircuitManager().getCircuit(circuitId);
 	curentCircuit->connectListener(this, std::bind(&TutorialManager::checkTutorial, this, std::placeholders::_1, std::placeholders::_2));
+	circuitView->getEventRegister().registerFunction("CircuitStateSet", [this](const Event* event) -> bool {
+		const StateSetEvent* stateSetEvent = event->cast<StateSetEvent>();
+		if (!stateSetEvent) return false;
+		this->checkTutorialState(stateSetEvent->getPosition(), stateSetEvent->getState());
+		return false;
+	});
 	basicTutorial();
 }
 
@@ -31,8 +39,14 @@ void TutorialManager::Stop() {
 	tutorialRunning = false;
 }
 void TutorialManager::checkTutorial(DifferenceSharedPtr, circuit_id_t) { basicTutorial(); }
+void TutorialManager::checkTutorialState(Position pos, bool state) {
+	logInfo(pos);
+	basicTutorial();
+}
 
 void TutorialManager::basicTutorial() {
+	// circuitView->getEventRegister().doEvent(DeltaXYEvent("view pan", 1, 1));
+	// viewManager.setViewCenter(FPosition(2, 1));
 	const BlockContainer& blockContainer = curentCircuit->getBlockContainer();
 
 	if (tutorialState == 0) {
