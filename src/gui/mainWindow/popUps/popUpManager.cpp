@@ -186,6 +186,7 @@ void PopUpManager::aboutConnectionMachine() {
 	Rml::Element* title = leftdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("p"));
 	title->SetInnerRML("About Connection Machine");
 	title->SetClass("popup-title", true);
+	title->SetAttribute("style", "font-size: 25px;");
 
 	Rml::Element* body = leftdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("p"));
 	body->SetInnerRML("Connection Machine is an open source project aiming to create an application for designing and simulating logic graph systems.");
