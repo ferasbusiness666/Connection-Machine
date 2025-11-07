@@ -120,8 +120,6 @@ CircuitViewWidget::CircuitViewWidget(
 		[this, environment]() {
 			logInfo("Running Test!");
 			CircuitTestCase testCase;
-			std::cout << environment;
-			logInfo("Definitely Running Test!");
 			testCase.runTest(BlockType::TRISTATE_BUFFER, false, *environment);
 		}
 	);

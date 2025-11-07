@@ -10,6 +10,7 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
 
     circuit_id_t cirId = cirManager.createNewCircuit();
     SharedCircuit cir = cirManager.getCircuit(cirId);
+    const BlockContainer* blockContainer = cir->getBlockContainer();
 
     if (!cir->tryInsertBlock(Position(0,0), Orientation(), blockType)) {
         logError("Couldn't insert test circuit block {}", "circuitTestCase", "blockType");
@@ -22,31 +23,40 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
     std::unordered_multimap<std::string, Position> nameToConnectedBlockPosition;
 
     for (auto iter = connections.begin(); iter != connections.end(); iter++) {
+        logInfo("Attempting to connect to port {}, ID {}", "CircuitTestCase", (unsigned int)iter->second.portType, (unsigned int)iter->first);
         if (iter->second.portType == BlockData::ConnectionData::PortType::INPUT || iter->second.portType == BlockData::ConnectionData::PortType::BIDIRECTIONAL) {
-            Position internalConnectionPosition = Position(iter->second.positionOnBlock.dx, iter->second.positionOnBlock.dy);
-            Position externalConnectionPosition = Position(-1-nameToConnectedBlockPosition.size(), 0);
-            if (!cir->tryInsertBlock(externalConnectionPosition, Orientation(), SWITCH)) {
+            Position internalConnPos = Position(iter->second.positionOnBlock.dx, iter->second.positionOnBlock.dy);
+            Position externalConnPos = Position(-1-nameToConnectedBlockPosition.size(), 0);
+            if (!cir->tryInsertBlock(externalConnPos, Orientation(), SWITCH)) {
                 logError("Couldn't insert test circuit block", "circuitTestCase");
                 return false;
             }
-            if (!cir->tryCreateConnection(internalConnectionPosition, externalConnectionPosition)) {
+            if (!cir->tryCreateConnection(externalConnPos, internalConnPos)) {
                 logError("Couldn't create test circuit connection", "circuitTestCase");
                 return false;
             }
-            nameToConnectedBlockPosition.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnectionPosition});
+            std::optional<std::string> test = blockData->getConnectionIdToName(iter->first);
+            if (test == std::nullopt) {
+                logError("Uh oh i'm gonna explode!!! {} not in gcitn", "CircuitTestCase", iter->first);
+            }
+            nameToConnectedBlockPosition.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
         }
         if (iter->second.portType == BlockData::ConnectionData::PortType::OUTPUT || iter->second.portType == BlockData::ConnectionData::PortType::BIDIRECTIONAL) {
-            Position internalConnectionPosition = Position(iter->second.positionOnBlock.dx, iter->second.positionOnBlock.dy);
-            Position externalConnectionPosition = Position(-1-nameToConnectedBlockPosition.size(), 0);
-            if (!cir->tryInsertBlock(externalConnectionPosition, Orientation(), LIGHT)) {
+            Position internalConnPos = Position(iter->second.positionOnBlock.dx, iter->second.positionOnBlock.dy);
+            Position externalConnPos = Position(-1-nameToConnectedBlockPosition.size(), 0);
+            if (!cir->tryInsertBlock(externalConnPos, Orientation(), LIGHT)) {
                 logError("Couldn't insert test circuit block", "circuitTestCase");
                 return false;
             }
-            if (!cir->tryCreateConnection(externalConnectionPosition, internalConnectionPosition)) {
+            if (!cir->tryCreateConnection(internalConnPos, externalConnPos)) {
                 logError("Couldn't create test circuit connection", "circuitTestCase");
                 return false;
             }
-            nameToConnectedBlockPosition.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnectionPosition});
+            std::optional<std::string> test = blockData->getConnectionIdToName(iter->first);
+            if (test == std::nullopt) {
+                logError("Uh oh i'm gonna explode!!! {} not in gcitn", "CircuitTestCase", iter->first);
+            }
+            nameToConnectedBlockPosition.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
         }
     }
 /*
