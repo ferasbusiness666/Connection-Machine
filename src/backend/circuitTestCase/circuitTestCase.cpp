@@ -1,6 +1,10 @@
 #include "circuitTestCase.h"
 
+#include "backend/address.h"
 #include "backend/blockData/blockData.h"
+#include "backend/evaluator/evalDefs.h"
+#include "backend/evaluator/evaluator.h"
+#include "backend/position/position.h"
 
 bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environment& environment) {
     Backend& backend = environment.getBackend();
@@ -8,9 +12,12 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
     const EvaluatorManager& evalManager = backend.getEvaluatorManager();
     BlockDataManager& blockDataManager = backend.getBlockDataManager();
 
-    circuit_id_t cirId = cirManager.createNewCircuit();
+    circuit_id_t cirId = cirManager.createNewCircuit(false);
     SharedCircuit cir = cirManager.getCircuit(cirId);
-    const BlockContainer* blockContainer = cir->getBlockContainer();
+    evaluator_id_t evalId = backend.createEvaluator(cirId).value();
+    const SharedEvaluator eval = evalManager.getEvaluator(evalId);
+    eval->setPause(true);
+    const BlockContainer blockContainer = cir->getBlockContainer();
 
     if (!cir->tryInsertBlock(Position(0,0), Orientation(), blockType)) {
         logError("Couldn't insert test circuit block {}", "circuitTestCase", "blockType");
@@ -20,10 +27,9 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
     const BlockData* blockData = blockDataManager.getBlockData(blockType);
     std::unordered_map<connection_end_id_t, BlockData::ConnectionData> connections = blockData->getConnections();
     // change implementation of this when BlockData::getConnectionNameToId is implemented
-    std::unordered_multimap<std::string, Position> nameToConnectedBlockPosition;
+    NamePositionMap nameToConnectedBlockPosition;
 
     for (auto iter = connections.begin(); iter != connections.end(); iter++) {
-        logInfo("Attempting to connect to port {}, ID {}", "CircuitTestCase", (unsigned int)iter->second.portType, (unsigned int)iter->first);
         if (iter->second.portType == BlockData::ConnectionData::PortType::INPUT || iter->second.portType == BlockData::ConnectionData::PortType::BIDIRECTIONAL) {
             Position internalConnPos = Position(iter->second.positionOnBlock.dx, iter->second.positionOnBlock.dy);
             Position externalConnPos = Position(-1-nameToConnectedBlockPosition.size(), 0);
@@ -59,30 +65,37 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
             nameToConnectedBlockPosition.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
         }
     }
-/*
+    for (auto iter = nameToConnectedBlockPosition.begin(); iter != nameToConnectedBlockPosition.end(); iter++) {
+        logInfo("Block {} is in pos {}", "CircuitTestCase", iter->first, iter->second);
+    }
+
     for (auto commandIter = testCommands.begin(); commandIter != testCommands.end(); commandIter++) {
-        if (commandIter->TestCommandType == SET_STATES) {
-            for (auto statesIter = commandIter->states.begin(); statesIter != commandIter->states.end(); statesIter++) {
-                auto blocksIterPair = nameToConnectedBlock.equal_range(statesIter->first);
-                for (auto blocksIter = iterPair.first; blocksIter != iterPair.second; blockIter++) {
-                    if (blocksIter)
-                }
-
-            }
-        }
-        else if (commandIter->TestCommandType == GET_STATES) {
-
-        }
-        else if (commandIter->TestCommandType == TICK_STEP) {
-
-        }
-        else {
-            logError("Unrecognized test command {}", "CircuitTestCase", i);
+        if (commandIter->type == NOP_COMMAND) {
+            continue;
+        } else if (commandIter->type == SET_STATES) {
+            runSetStatesCommand(*commandIter, eval, nameToConnectedBlockPosition);
+        } else if (commandIter->type == CHECK_STATES) {
+            continue;
+        } else if (commandIter->type == TICK_STEP) {
+            continue;
+        } else {
+            logError("Unrecognized test command", "CircuitTestCase");
         }
     }
-        */
     return true;
 }
+
+bool CircuitTestCase::runSetStatesCommand(TestCommand testCommand, const SharedEvaluator eval, NamePositionMap& nameToConnectedBlockPosition) {
+    for (auto statesIter = testCommand.states.begin(); statesIter != testCommand.states.end(); statesIter++) {
+        auto blockPosIter = nameToConnectedBlockPosition.find(statesIter->first);
+        eval->setState((Address(blockPosIter->second)), statesIter->second);
+    } 
+}
+
+bool CircuitTestCase::runCheckStatesCommand(TestCommand testCommand, const SharedEvaluator eval, NamePositionMap&) {
+
+}
+
 
 /*
 1. Test if a block type behaves in the way the test expects
