@@ -2,12 +2,14 @@
 file(GLOB_RECURSE PROJECT_SOURCES
 	"${SOURCE_DIR}/*.cpp"
 )
-list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR}\/gui\/.*")
-list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR}\/gpu\/.*")
-list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR}\/environment\/blockRenderDataFeeder.cpp")
-list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR}\/main.cpp")
-list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR}\/app.cpp")
-list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR}\/util\/rectPacker.cpp")
+string(REGEX REPLACE "([][+.*^$(){}|\\\\])" "\\\\\\1" SOURCE_DIR_REGEX "${SOURCE_DIR}")
+list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR_REGEX}\/gui\/.*")
+list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR_REGEX}\/gpu\/.*")
+list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR_REGEX}\/network\/.*")
+list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR_REGEX}\/environment\/blockRenderDataFeeder.cpp")
+list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR_REGEX}\/main.cpp")
+list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR_REGEX}\/app.cpp")
+list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCSOURCE_DIR_REGEXE_DIR}\/util\/rectPacker.cpp")
 
 # ===================================== CREATE APP EXECUTABLE ========================================
 
@@ -92,3 +94,64 @@ endif()
 # 		include(CPack)
 # 	endif()
 # endif()
+
+
+# CMakeFiles/Connection_Machine.dir/src/backend/backend.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/blockData/blockData.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/blockData/blockDataManager.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/circuit/circuit.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/circuit/circuitManager.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/circuit/parsedCircuit.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/circuit/undoTree/undoTree.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/circuit/validateCircuit.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/circuitTestCase/circuitTestCase.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/container/block/connectionContainer.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/container/blockContainer.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/container/copiedBlocks.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/dataUpdateEventManager.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/evaluator/evaluator.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/evaluator/evaluatorManager.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/evaluator/layers/layer4_replacement.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/evaluator/layers/layer4_replacer.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/evaluator/layers/layer6_simulatorOptimizer.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/evaluator/simulator/logicSimulator.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/evaluator/util/evalCircuit.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/evaluator/util/evalCircuitContainer.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/proceduralCircuits/generatedCircuit.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/proceduralCircuits/generatedCircuitValidator.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/proceduralCircuits/proceduralCircuit.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/proceduralCircuits/proceduralCircuitManager.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/proceduralCircuits/wasmProceduralCircuit.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/settings/keybind.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/settings/settings.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/backend/wasm/wasm.cpp.o
+
+# CMakeFiles/Connection_Machine.dir/src/cli/commandManager.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/cli/commands/createEvaluatorCommand.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/cli/commands/evaluatorTickStepCommand.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/cli/commands/getBlockDataCommand.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/cli/commands/getBlockStateCommand.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/cli/commands/helpCommand.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/cli/commands/listCircuitsCommand.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/cli/commands/listEvaluatorsCommand.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/cli/commands/openCommand.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/cli/commands/resetEvaluatorCommand.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/cli/commands/setBlockStateCommand.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/cli/commands/setEvalPauseStateCommand.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/cli/commands/testCircuitCommand.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/cli/main.cpp.o
+
+# CMakeFiles/Connection_Machine.dir/src/computerAPI/circuits/BLIFParser.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/computerAPI/circuits/circuitFileManager.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/computerAPI/circuits/connectionMachineParser.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/computerAPI/directoryManager.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/computerAPI/fileListener/fileListener.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/computerAPI/fileLoader.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/computerAPI/kvStore.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/computerAPI/saveSettings.cpp.o
+
+# CMakeFiles/Connection_Machine.dir/src/logging/logger.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/logging/logging.cpp.o
+# CMakeFiles/Connection_Machine.dir/src/network/network.cpp.o
+
+# CMakeFiles/Connection_Machine.dir/src/util/fatal.cpp.o

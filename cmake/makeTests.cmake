@@ -23,14 +23,12 @@ CPMAddPackage(
 set(TEST_DIR "${CMAKE_SOURCE_DIR}/tests")
 set(PROJECT_SOURCES)
 file(GLOB_RECURSE PROJECT_SOURCES
-	"${SOURCE_DIR}/backend/*.cpp"
-	"${SOURCE_DIR}/computerAPI/*.cpp"
-	"${SOURCE_DIR}/logging/*.cpp"
-	"${SOURCE_DIR}/util/*.cpp"
+	"${SOURCE_DIR}/*.cpp"
 	"${TEST_DIR}/*.cpp"
 )
-
-list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR}\/util\/rectPacker.cpp")
+string(REGEX REPLACE "([][+.*^$(){}|\\\\])" "\\\\\\1" SOURCE_DIR_REGEX "${SOURCE_DIR}")
+list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR_REGEX}/cli/main.cpp$")
+list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${SOURCE_DIR_REGEX}\/main.cpp")
 
 add_main_dependencies()
 
@@ -46,6 +44,9 @@ endif()
 add_executable(${PROJECT_NAME}_tests ${PROJECT_SOURCES})
 
 target_include_directories(${PROJECT_NAME}_tests PRIVATE ${SOURCE_DIR} ${TEST_DIR} "${EXTERNAL_DIR}/wasmtime")
+target_compile_definitions(${PROJECT_NAME}_tests PRIVATE VK_NO_PROTOTYPES)
+target_compile_definitions(${PROJECT_NAME}_tests PRIVATE "PROJECT_VERSION=\"${PROJECT_VERSION}\"")
+
 target_link_libraries(${PROJECT_NAME}_tests PRIVATE ${EXTERNAL_LINKS})
 
 target_precompile_headers(${PROJECT_NAME}_tests PRIVATE "${SOURCE_DIR}/precompiled.h")

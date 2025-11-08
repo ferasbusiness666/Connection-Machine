@@ -1,8 +1,8 @@
 #include "circuitTest.h"
 
 void CircuitTest::SetUp() {
-	circuit_id_t circuitId = circuitManager.createNewCircuit("Circuit", generate_uuid_v4());
-	circuit = circuitManager.getCircuit(circuitId);
+	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit("Circuit", generate_uuid_v4());
+	circuit = environment.getBackend().getCircuitManager().getCircuit(circuitId);
 	i = 0;
 }
 
@@ -295,7 +295,6 @@ TEST_F(CircuitTest, BlockTypePlacement) {
 			ASSERT_EQ(block, nullptr);
 		}
 		bool blockRemoved = circuit->tryRemoveBlock(pos);
-		// ASSERT_TRUE(blockRemoved);
 	}
 }
 
@@ -338,13 +337,13 @@ TEST_F(CircuitTest, ConnectionRemovalConnectionEnd) {
 }
 
 TEST_F(CircuitTest, CircuitPlacement) {
-	circuit_id_t circuitId = circuitManager.createNewCircuit(generate_uuid_v4(), "Circuit");
-	SharedCircuit circuit2 = circuitManager.getCircuit(circuitId);
-	const BlockType blockType = circuitManager.setupBlockData(circuitId);
+	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(generate_uuid_v4(), "Circuit");
+	SharedCircuit circuit2 = environment.getBackend().getCircuitManager().getCircuit(circuitId);
+	const BlockType blockType = environment.getBackend().getCircuitManager().setupBlockData(circuitId);
 
 	ASSERT_NE(blockType, NONE);
-	ASSERT_TRUE(circuitManager.getBlockDataManager()->blockExists(blockType));
-	circuitManager.getBlockDataManager()->getBlockData(blockType)->setSize(Size(2, 2));
+	ASSERT_TRUE(environment.getBackend().getBlockDataManager().blockExists(blockType));
+	environment.getBackend().getBlockDataManager().getBlockData(blockType)->setSize(Size(2, 2));
 	ASSERT_TRUE(circuit->tryInsertBlock(Position(), Rotation::ZERO, blockType));
 
 	const Block* block1 = circuit->getBlockContainer().getBlock(Position());

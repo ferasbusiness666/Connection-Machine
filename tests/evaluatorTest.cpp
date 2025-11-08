@@ -4,10 +4,10 @@
 
 // Note that logic simulator is tested separately
 void EvaluatorTest::SetUp() {
-	circuit_id_t circuitId = backend.createCircuit();
-	circuit = backend.getCircuit(circuitId);
-	auto id = backend.createEvaluator(circuitId);
-	evaluator = backend.getEvaluator(id.value());
+	circuit_id_t circuitId = environment.getBackend().createCircuit();
+	circuit = environment.getBackend().getCircuit(circuitId);
+	auto id = environment.getBackend().createEvaluator(circuitId);
+	evaluator = environment.getBackend().getEvaluator(id.value());
 	i = 0;
 }
 

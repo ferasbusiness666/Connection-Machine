@@ -587,6 +587,7 @@ void Circuit::blockSizeChange(const DataUpdateEventManager::EventData* eventData
 		undoSystem.addBlocker(); // cant undo after changing block size!
 		return;
 	}
+	if (blockContainer.getBlockTypeCount(data->get().first) == 0) return;
 	DifferenceSharedPtr difference = std::make_shared<Difference>();
 	blockContainer.resizeBlockType(data->get().first, data->get().second, difference.get());
 	sendDifference(std::move(difference));

@@ -3,11 +3,11 @@
 #include "backend/evaluator/evaluator.h"
 
 void EvaluatorICTest::SetUp() {
-    circuit_id_t circuitId = backend.createCircuit();
-    parentCircuit = backend.getCircuit(circuitId);
-    auto evalId = backend.createEvaluator(circuitId);
+    circuit_id_t circuitId = environment.getBackend().createCircuit();
+    parentCircuit = environment.getBackend().getCircuit(circuitId);
+    auto evalId = environment.getBackend().createEvaluator(circuitId);
     ASSERT_TRUE(evalId.has_value());
-    evaluator = backend.getEvaluator(evalId.value());
+    evaluator = environment.getBackend().getEvaluator(evalId.value());
     idx = 0;
 }
 
@@ -17,15 +17,15 @@ void EvaluatorICTest::TearDown() {
 }
 
 circuit_id_t EvaluatorICTest::createPassThroughIC(const std::string& name) {
-    circuit_id_t childId = backend.createCircuit(name);
-    SharedCircuit child = backend.getCircuit(childId);
+    circuit_id_t childId = environment.getBackend().createCircuit(name);
+    SharedCircuit child = environment.getBackend().getCircuit(childId);
 
     child->tryInsertBlock(Position(0, 0), Rotation::ZERO, BlockType::JUNCTION);
 
-    CircuitManager& cm = backend.getCircuitManager();
+    CircuitManager& cm = environment.getBackend().getCircuitManager();
     BlockType icType = cm.setupBlockData(childId);
 
-    BlockData* bd = cm.getBlockDataManager()->getBlockData(icType);
+    BlockData* bd = cm.getBlockDataManager().getBlockData(icType);
     bd->setDefaultData(false);
     bd->setPrimitive(false);
     bd->setPath("Custom");
@@ -34,8 +34,7 @@ circuit_id_t EvaluatorICTest::createPassThroughIC(const std::string& name) {
     bd->setConnectionInput(Vector(0, 0), connection_end_id_t(0));
     bd->setConnectionOutput(Vector(0, 0), connection_end_id_t(1));
 
-    CircuitBlockDataManager* cbdm = cm.getCircuitBlockDataManager();
-    CircuitBlockData* cbd = cbdm->getCircuitBlockData(childId);
+    CircuitBlockData* cbd = cm.getCircuitBlockDataManager().getCircuitBlockData(childId);
 
     cbd->setConnectionIdPosition(connection_end_id_t(0), Position(0, 0));
     cbd->setConnectionIdPosition(connection_end_id_t(1), Position(0, 0));
@@ -71,16 +70,16 @@ TEST_F(EvaluatorICTest, NestedICs_PropagateThroughLevels) {
     const circuit_id_t innerICId = createPassThroughIC("InnerPassThrough");
     const BlockType innerICType = getICBlockType(innerICId);
 
-    const circuit_id_t outerICId = backend.createCircuit("OuterPassThrough");
-    SharedCircuit outerCircuit = backend.getCircuit(outerICId);
+    const circuit_id_t outerICId = environment.getBackend().createCircuit("OuterPassThrough");
+    SharedCircuit outerCircuit = environment.getBackend().getCircuit(outerICId);
     ASSERT_TRUE(outerCircuit);
 
     ASSERT_TRUE(outerCircuit->tryInsertBlock(Position(0, 0), Rotation::ZERO, innerICType));
 
-    CircuitManager& cm = backend.getCircuitManager();
+    CircuitManager& cm = environment.getBackend().getCircuitManager();
     BlockType outerICType = cm.setupBlockData(outerICId);
     ASSERT_NE(outerICType, BlockType::NONE);
-    BlockData* bd = cm.getBlockDataManager()->getBlockData(outerICType);
+    BlockData* bd = cm.getBlockDataManager().getBlockData(outerICType);
     ASSERT_TRUE(bd);
     bd->setDefaultData(false);
     bd->setPrimitive(false);
@@ -89,7 +88,7 @@ TEST_F(EvaluatorICTest, NestedICs_PropagateThroughLevels) {
     bd->setConnectionInput(Vector(0, 0), connection_end_id_t(0));
     bd->setConnectionOutput(Vector(0, 0), connection_end_id_t(1));
 
-    CircuitBlockData* cbd = cm.getCircuitBlockDataManager()->getCircuitBlockData(outerICId);
+    CircuitBlockData* cbd = cm.getCircuitBlockDataManager().getCircuitBlockData(outerICId);
     ASSERT_TRUE(cbd);
     cbd->setConnectionIdPosition(connection_end_id_t(0), Position(0, 0));
     cbd->setConnectionIdPosition(connection_end_id_t(1), Position(0, 0));
@@ -113,8 +112,8 @@ TEST_F(EvaluatorICTest, NestedICs_PropagateThroughLevels) {
 
 TEST_F(EvaluatorICTest, SingleIC_MoveIOAndPropagatesSignal) {
     const circuit_id_t icId = createPassThroughIC("PassThrough");
-    CircuitManager& cm = backend.getCircuitManager();
-    CircuitBlockData* cbd = cm.getCircuitBlockDataManager()->getCircuitBlockData(icId);
+    CircuitManager& cm = environment.getBackend().getCircuitManager();
+    CircuitBlockData* cbd = cm.getCircuitBlockDataManager().getCircuitBlockData(icId);
     cbd->setConnectionIdPosition(connection_end_id_t(0), Position(1, 1));
     cbd->setConnectionIdPosition(connection_end_id_t(1), Position(1, 1));
 
@@ -198,14 +197,14 @@ TEST_F(EvaluatorICTest, SingleIC_RemapInputToConstantSource) {
 	evaluator->setState(Address(pSwitch), logic_state_t::LOW);
 	EXPECT_EQ(evaluator->getState(Address(pLight)), logic_state_t::LOW);
 
-	SharedCircuit child = backend.getCircuit(icId);
+	SharedCircuit child = environment.getBackend().getCircuit(icId);
 	ASSERT_TRUE(child);
 	ASSERT_TRUE(child->tryInsertBlock(Position(1, 0), Rotation::ZERO, BlockType::JUNCTION));
 	ASSERT_TRUE(child->tryInsertBlock(Position(2, 0), Rotation::ZERO, BlockType::CONSTANT_ON));
 	ASSERT_TRUE(child->tryCreateConnection(Position(2, 0), Position(1, 0)));
 
-	CircuitManager& cm = backend.getCircuitManager();
-	CircuitBlockData* cbd = cm.getCircuitBlockDataManager()->getCircuitBlockData(icId);
+	CircuitManager& cm = environment.getBackend().getCircuitManager();
+	CircuitBlockData* cbd = cm.getCircuitBlockDataManager().getCircuitBlockData(icId);
 	ASSERT_TRUE(cbd);
 
 	cbd->setConnectionIdPosition(connection_end_id_t(0), Position(1, 0));
@@ -257,14 +256,14 @@ TEST_F(EvaluatorICTest, MultipleICInstances_RemappingPropagatesToAll) {
 	EXPECT_EQ(evaluator->getState(Address(pLightA)), logic_state_t::HIGH);
 	EXPECT_EQ(evaluator->getState(Address(pLightB)), logic_state_t::LOW);
 
-	SharedCircuit child = backend.getCircuit(icId);
+	SharedCircuit child = environment.getBackend().getCircuit(icId);
 	ASSERT_TRUE(child);
 	ASSERT_TRUE(child->tryInsertBlock(Position(1, 0), Rotation::ZERO, BlockType::JUNCTION));
 	ASSERT_TRUE(child->tryInsertBlock(Position(2, 0), Rotation::ZERO, BlockType::CONSTANT_ON));
 	ASSERT_TRUE(child->tryCreateConnection(Position(2, 0), Position(1, 0)));
 
-	CircuitManager& cm = backend.getCircuitManager();
-	CircuitBlockData* cbd = cm.getCircuitBlockDataManager()->getCircuitBlockData(icId);
+	CircuitManager& cm = environment.getBackend().getCircuitManager();
+	CircuitBlockData* cbd = cm.getCircuitBlockDataManager().getCircuitBlockData(icId);
 	ASSERT_TRUE(cbd);
 
 	cbd->setConnectionIdPosition(connection_end_id_t(0), Position(1, 0));
