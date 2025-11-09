@@ -101,6 +101,17 @@ void BlockTextureGenerator::drawBlockName(const BlockData* blockData, CpuImage& 
 	);
 	Rect textArea{ textPosition, textSize };
 	if (!textArea.empty()) {
+		textArea = Rect{
+			textArea.pos - Vec2Int(6, 6),
+			textArea.size + Vec2Int(12, 12)
+		};
+		// img.addOutlinedRect(
+		// 	textArea.pos,
+		// 	textArea.size,
+		// 	4,
+		// 	{ 255, 255, 255, 80 },
+		// 	true
+		// );
 		reservedAreas.push_back(textArea);
 	}
 }

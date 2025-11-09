@@ -32,6 +32,16 @@ void CpuImage::addRect(Vec2Int pos, Vec2Int size, Pixel color, bool mix) {
 	}
 }
 
+void CpuImage::addOutlinedRect(Vec2Int pos, Vec2Int size, unsigned int outlineThickness, Pixel color, bool mix) {
+	if (outlineThickness == 0) {
+		return;
+	}
+	addRect(pos, Vec2Int(size.x, outlineThickness), color, mix);
+	addRect(pos + Vec2Int(0, size.y - outlineThickness), Vec2Int(size.x, outlineThickness), color, mix);
+	addRect(pos + Vec2Int(0, outlineThickness), Vec2Int(outlineThickness, size.y - 2 * outlineThickness), color, mix);
+	addRect(pos + Vec2Int(size.x - outlineThickness, outlineThickness), Vec2Int(outlineThickness, size.y - 2 * outlineThickness), color, mix);
+}
+
 float CpuImage::pointLineDistanceSquared(const Vec2Int& point, const Vec2Int& lineStart, const Vec2Int& lineEnd) {
 	int l2 = lineStart.distanceToSquared(lineEnd);
 	if (l2 == 0) return point.distanceToSquared(lineStart);

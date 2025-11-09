@@ -23,6 +23,7 @@ public:
 	Pixel getPixel(Vec2Int pos) const { return img[getBufferPos(pos)]; }
 	void setPixel(Vec2Int pos, Pixel color) { img[getBufferPos(pos)] = color; }
 	void addRect(Vec2Int pos, Vec2Int size, Pixel color, bool mix = true);
+	void addOutlinedRect(Vec2Int pos, Vec2Int size, unsigned int outlineThickness, Pixel color, bool mix = true);
 	void addLine(Vec2Int startPos, Vec2Int endPos, unsigned int radius, Pixel color, bool mix = true);
 	void addCircle(Vec2Int pos, double radius, Pixel color, bool antiAlias = true, bool mix = true);
 	void blitAlphaTexture(const std::uint8_t* texture, Vec2Int bufferSize, Vec2Int bufferTexturePos, Vec2Int size, Vec2Int pos, Pixel color, Rotation rotation = Rotation::ZERO);
