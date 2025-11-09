@@ -122,16 +122,7 @@ void BlockTextureGenerator::drawConnectionLabels(
 
 		const PortLabelSide side = detectPreferredSide(connection.second.portOffset);
 		const int paddingFromPort = config.basePadding + circleRadius;
-		logInfo(
-			"Port {} side {} pos {} pad {} circleRadius {}",
-			"BlockTextureGenerator",
-			connection.first,
-			sideToString(side),
-			portTexturePos,
-			paddingFromPort,
-			circleRadius
-		);
-		labelsBySide[sideIndex(side)].push_back(PortLabelRequest{
+		labelsBySide[static_cast<uint8_t>(side)].push_back(PortLabelRequest{
 			*connectionName,
 			portTexturePos,
 			side,
@@ -142,46 +133,18 @@ void BlockTextureGenerator::drawConnectionLabels(
 	if (!font) return;
 
 	const CpuImage::Pixel textColor{ 255, 255, 255, 255 };
-	const std::array<PortLabelSide, 4> sideOrder{
-		PortLabelSide::LEFT,
-		PortLabelSide::RIGHT,
-		PortLabelSide::TOP,
-		PortLabelSide::BOTTOM
-	};
 
-	for (PortLabelSide side : sideOrder) {
-		std::vector<PortLabelRequest>& requests = labelsBySide[sideIndex(side)];
+	for (uint8_t sideIndex : {0, 1, 2, 3}) {
+		PortLabelSide side = static_cast<PortLabelSide>(sideIndex);
+		std::vector<PortLabelRequest>& requests = labelsBySide[sideIndex];
 		if (requests.empty()) continue;
-
-		logInfo(
-			"Processing side {} with {} requests",
-			"BlockTextureGenerator",
-			sideToString(side),
-			requests.size()
-		);
 
 		std::vector<LabelPlacement> placements;
 		placements.reserve(requests.size());
 		for (const PortLabelRequest& request : requests) {
 			std::optional<LabelPlacement> placement = buildPlacementForRequest(request, imageSize, config, staticObstacles);
 			if (placement) {
-				logInfo(
-					"Built placement for '{}' side {} size {} base {} anchor {}",
-					"BlockTextureGenerator",
-					request.text,
-					sideToString(request.side),
-					placement->size,
-					placement->basePos,
-					placement->axisAnchor
-				);
 				placements.push_back(std::move(*placement));
-			} else {
-				logInfo(
-					"Dropping placement for '{}' side {} – buildPlacementForRequest failed",
-					"BlockTextureGenerator",
-					request.text,
-					sideToString(request.side)
-				);
 			}
 		}
 		if (placements.empty()) continue;
@@ -242,16 +205,6 @@ std::optional<BlockTextureGenerator::LabelPlacement> BlockTextureGenerator::buil
 	const LabelLayoutConfig& config,
 	const std::vector<Rect>& staticObstacles
 ) const {
-	logInfo(
-		"buildPlacementForRequest '{}' side {} port {} pad {} img {}",
-		"BlockTextureGenerator",
-		request.text,
-		sideToString(request.side),
-		request.portTexturePos,
-		request.paddingFromPort,
-		imageSize
-	);
-
 	LabelPlacement placement;
 	placement.request = request;
 
@@ -270,23 +223,13 @@ std::optional<BlockTextureGenerator::LabelPlacement> BlockTextureGenerator::buil
 			: request.portTexturePos.x - request.paddingFromPort;
 		start = std::clamp(start, 0, imageSize.x);
 		const int span = computeHorizontalSpan(growRight, start, request.portTexturePos.y, imageSize.x, config, staticObstacles);
-		logInfo(
-			"H span {} (need >= {}) start {} growRight {}",
-			"BlockTextureGenerator",
-			span,
-			acrossMin,
-			start,
-			growRight
-		);
 		if (span < acrossMin) {
-			logInfo("H span insufficient – rejecting", "BlockTextureGenerator");
 			return std::nullopt;
 		}
 		int width = std::clamp(acrossPreferred, acrossMin, span);
 		if (!growRight) {
 			if (width > start) width = start;
 			if (width < acrossMin) {
-				logInfo("H width {} after clamp still < {} – rejecting", "BlockTextureGenerator", width, acrossMin);
 				return std::nullopt;
 			}
 			placement.basePos = { start - width, 0 };
@@ -301,23 +244,13 @@ std::optional<BlockTextureGenerator::LabelPlacement> BlockTextureGenerator::buil
 			: request.portTexturePos.y - request.paddingFromPort;
 		start = std::clamp(start, 0, imageSize.y);
 		const int span = computeVerticalSpan(growDown, start, request.portTexturePos.x, imageSize.y, config, staticObstacles);
-		logInfo(
-			"V span {} (need >= {}) start {} growDown {}",
-			"BlockTextureGenerator",
-			span,
-			acrossMin,
-			start,
-			growDown
-		);
 		if (span < acrossMin) {
-			logInfo("V span insufficient – rejecting", "BlockTextureGenerator");
 			return std::nullopt;
 		}
 		int height = std::clamp(acrossPreferred, acrossMin, span);
 		if (!growDown) {
 			if (height > start) height = start;
 			if (height < acrossMin) {
-				logInfo("V height {} after clamp still < {} – rejecting", "BlockTextureGenerator", height, acrossMin);
 				return std::nullopt;
 			}
 			placement.basePos = { 0, start - height };
@@ -328,18 +261,10 @@ std::optional<BlockTextureGenerator::LabelPlacement> BlockTextureGenerator::buil
 	}
 
 	if (placement.size.x <= 0 || placement.size.y <= 0) {
-		logInfo("Placement size invalid {}", "BlockTextureGenerator", placement.size);
 		return std::nullopt;
 	}
 	placement.axisAnchor = horizontalSide ? request.portTexturePos.y : request.portTexturePos.x;
 	placement.axisPos = placement.axisAnchor;
-	logInfo(
-		"Placement ready size {} base {} axisAnchor {}",
-		"BlockTextureGenerator",
-		placement.size,
-		placement.basePos,
-		placement.axisAnchor
-	);
 	return placement;
 }
 
@@ -352,14 +277,6 @@ int BlockTextureGenerator::computeHorizontalSpan(
 	const std::vector<Rect>& staticObstacles
 ) const {
 	int limit = growRight ? imageWidth : 0;
-	logInfo(
-		"computeHSpan start {} axis {} growRight {} limit {}",
-		"BlockTextureGenerator",
-		start,
-		axisCoord,
-		growRight,
-		limit
-	);
 	for (const Rect& rect : staticObstacles) {
 		if (!overlapsAxis(axisCoord, rect.pos.y, rect.size.y, config.obstaclePadding)) continue;
 		if (growRight) {
@@ -367,20 +284,12 @@ int BlockTextureGenerator::computeHorizontalSpan(
 		} else {
 			limit = std::max(limit, rect.pos.x + rect.size.x + config.obstaclePadding);
 		}
-		logInfo(
-			"  obstacle {} updated limit {}",
-			"BlockTextureGenerator",
-			rect.pos,
-			limit
-		);
 	}
 	if (growRight) {
 		int span = std::max(0, limit - start);
-		logInfo("computeHSpan result {}", "BlockTextureGenerator", span);
 		return span;
 	}
 	int span = std::max(0, start - limit);
-	logInfo("computeHSpan result {}", "BlockTextureGenerator", span);
 	return span;
 }
 
@@ -393,14 +302,6 @@ int BlockTextureGenerator::computeVerticalSpan(
 	const std::vector<Rect>& staticObstacles
 ) const {
 	int limit = growDown ? imageHeight : 0;
-	logInfo(
-		"computeVSpan start {} axis {} growDown {} limit {}",
-		"BlockTextureGenerator",
-		start,
-		axisCoord,
-		growDown,
-		limit
-	);
 	for (const Rect& rect : staticObstacles) {
 		if (!overlapsAxis(axisCoord, rect.pos.x, rect.size.x, config.obstaclePadding)) continue;
 		if (growDown) {
@@ -408,20 +309,12 @@ int BlockTextureGenerator::computeVerticalSpan(
 		} else {
 			limit = std::max(limit, rect.pos.y + rect.size.y + config.obstaclePadding);
 		}
-		logInfo(
-			"  obstacle {} updated limit {}",
-			"BlockTextureGenerator",
-			rect.pos,
-			limit
-		);
 	}
 	if (growDown) {
 		int span = std::max(0, limit - start);
-		logInfo("computeVSpan result {}", "BlockTextureGenerator", span);
 		return span;
 	}
 	int span = std::max(0, start - limit);
-	logInfo("computeVSpan result {}", "BlockTextureGenerator", span);
 	return span;
 }
 
@@ -435,25 +328,12 @@ void BlockTextureGenerator::distributeAlongAxis(std::vector<LabelPlacement*>& pl
 	);
 
 	int prevBottom = -spacing;
-	logInfo(
-		"distributeAlongAxis forward axisLimit {} spacing {}",
-		"BlockTextureGenerator",
-		axisLimit,
-		spacing
-	);
 	for (LabelPlacement* placement : placements) {
 		const int axisSize = placementAxisSize(placement);
 		int desiredTop = placement->axisAnchor - axisSize / 2;
 		desiredTop = std::clamp(desiredTop, 0, std::max(0, axisLimit - axisSize));
 		if (desiredTop < prevBottom + spacing) desiredTop = prevBottom + spacing;
 		placement->axisPos = std::clamp(desiredTop, 0, std::max(0, axisLimit - axisSize));
-		logInfo(
-			"  forward placement '{}' axisPos {} size {}",
-			"BlockTextureGenerator",
-			placement->request.text,
-			placement->axisPos,
-			axisSize
-		);
 		prevBottom = placement->axisPos + axisSize;
 	}
 
@@ -465,13 +345,6 @@ void BlockTextureGenerator::distributeAlongAxis(std::vector<LabelPlacement*>& pl
 		if (i != static_cast<int>(placements.size()) - 1) maxTop -= spacing;
 		maxTop = std::max(0, maxTop);
 		if (placement->axisPos > maxTop) placement->axisPos = maxTop;
-		logInfo(
-			"  backward placement '{}' axisPos {} size {}",
-			"BlockTextureGenerator",
-			placement->request.text,
-			placement->axisPos,
-			axisSize
-		);
 		nextTop = placement->axisPos;
 	}
 }
@@ -486,12 +359,6 @@ bool BlockTextureGenerator::resolveCollisions(
 	if (!intersectsAny(rect, occupiedAreas)) return true;
 
 	const bool horizontalSide = side == PortLabelSide::LEFT || side == PortLabelSide::RIGHT;
-	logInfo(
-		"resolveCollisions initial collision side {} rect {}",
-		"BlockTextureGenerator",
-		sideToString(side),
-		rect.pos
-	);
 	const int axisSize = horizontalSide ? rect.size.y : rect.size.x;
 	const int maxAxisValue = std::max(0, axisLimit - axisSize);
 	const int step = std::max(1, slideStep);
@@ -504,24 +371,11 @@ bool BlockTextureGenerator::resolveCollisions(
 			Rect candidate = rect;
 			if (horizontalSide) candidate.pos.y = candidateAxis;
 			else candidate.pos.x = candidateAxis;
-			logInfo(
-				"  trying axis {} delta {} dir {}",
-				"BlockTextureGenerator",
-				candidateAxis,
-				delta,
-				dir
-			);
 			if (intersectsAny(candidate, occupiedAreas)) continue;
-			logInfo(
-				"  resolved collision at axis {}",
-				"BlockTextureGenerator",
-				candidateAxis
-			);
 			rect = candidate;
 			return true;
 		}
 	}
-	logInfo("resolveCollisions failed to place label", "BlockTextureGenerator");
 	return false;
 }
 
@@ -546,26 +400,6 @@ bool BlockTextureGenerator::overlapsAxis(int coord, int rectStart, int rectSize,
 	const int minRange = rectStart - padding;
 	const int maxRange = rectStart + rectSize + padding;
 	return coord >= minRange && coord <= maxRange;
-}
-
-size_t BlockTextureGenerator::sideIndex(PortLabelSide side) {
-	switch (side) {
-	case PortLabelSide::LEFT: return 0;
-	case PortLabelSide::RIGHT: return 1;
-	case PortLabelSide::TOP: return 2;
-	case PortLabelSide::BOTTOM:
-	default: return 3;
-	}
-}
-
-const std::string BlockTextureGenerator::sideToString(PortLabelSide side) {
-	switch (side) {
-	case PortLabelSide::LEFT: return "LEFT";
-	case PortLabelSide::RIGHT: return "RIGHT";
-	case PortLabelSide::TOP: return "TOP";
-	case PortLabelSide::BOTTOM: return "BOTTOM";
-	default: return "UNKNOWN";
-	}
 }
 
 BlockTextureGenerator::PortLabelSide BlockTextureGenerator::detectPreferredSide(const FVector& offset) {

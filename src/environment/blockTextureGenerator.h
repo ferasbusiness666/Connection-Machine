@@ -34,7 +34,12 @@ private:
 		}
 	};
 
-	enum class PortLabelSide { LEFT, RIGHT, TOP, BOTTOM };
+	enum class PortLabelSide : uint8_t {
+		LEFT = 0,
+		RIGHT = 1,
+		TOP = 2,
+		BOTTOM = 3
+	};
 
 	void drawBlockName(const BlockData* blockData, CpuImage& img, int scale, const Rect& labelArea) const;
 	void drawConnectionLabels(
@@ -105,8 +110,6 @@ private:
 	static bool compareByAxisAnchor(const LabelPlacement* lhs, const LabelPlacement* rhs);
 	static bool intersectsAny(const Rect& candidate, const std::vector<Rect>& occupiedAreas);
 	static bool overlapsAxis(int coord, int rectStart, int rectSize, int padding);
-	static size_t sideIndex(PortLabelSide side);
-	static const std::string sideToString(PortLabelSide side);
 
 	static PortLabelSide detectPreferredSide(const FVector& offset);
 	static Vec2Int getPortTexturePosition(const BlockData::ConnectionData& connection, int scale);
