@@ -137,7 +137,7 @@ void BlockTextureGenerator::drawConnectionLabels(
 		}
 		std::string labelText = *connectionName;
 
-		const PortLabelSide side = detectPreferredSide(connection.second.portOffset);
+		const PortLabelSide side = detectPreferredSide(connection.second, blockData->getSize());
 		const int paddingFromPort = config.basePadding + circleRadius;
 		labelsBySide[static_cast<uint8_t>(side)].push_back(PortLabelRequest{
 			std::move(labelText),
@@ -460,9 +460,44 @@ bool BlockTextureGenerator::overlapsAxis(int coord, int rectStart, int rectSize,
 	return coord >= minRange && coord <= maxRange;
 }
 
-BlockTextureGenerator::PortLabelSide BlockTextureGenerator::detectPreferredSide(const FVector& offset) {
-	const float dx = offset.dx - 0.5f;
-	const float dy = offset.dy - 0.5f;
+BlockTextureGenerator::PortLabelSide BlockTextureGenerator::detectPreferredSide(const BlockData::ConnectionData& connection, Size blockSize) {
+	const float epsilon = 1e-3f;
+	if (std::abs(connection.portOffset.dx - 0.5f) <= epsilon && std::abs(connection.portOffset.dy - 0.5f) <= epsilon) {
+		const float blockWidth = static_cast<float>(blockSize.w);
+		const float blockHeight = static_cast<float>(blockSize.h);
+		const float centerX = std::clamp(static_cast<float>(connection.positionOnBlock.dx) + 0.5f, 0.0f, blockWidth);
+		const float centerY = std::clamp(static_cast<float>(connection.positionOnBlock.dy) + 0.5f, 0.0f, blockHeight);
+
+		const float distLeft = centerX;
+		const float distRight = blockWidth - centerX;
+		const float distTop = centerY;
+		const float distBottom = blockHeight - centerY;
+
+		const float minHorizontal = std::min(distLeft, distRight);
+		const float minVertical = std::min(distTop, distBottom);
+
+		if (minHorizontal <= minVertical + epsilon) {
+			if (std::abs(distLeft - distRight) <= epsilon) {
+				switch (connection.portType) {
+				case BlockData::ConnectionData::PortType::OUTPUT:
+					return PortLabelSide::RIGHT;
+				case BlockData::ConnectionData::PortType::INPUT:
+					return PortLabelSide::LEFT;
+				default:
+					return PortLabelSide::LEFT;
+				}
+			}
+			return distLeft <= distRight ? PortLabelSide::LEFT : PortLabelSide::RIGHT;
+		}
+
+		// vertical preference only wins when it is clearly closer than horizontal.
+		if (std::abs(distTop - distBottom) <= epsilon) {
+			return PortLabelSide::TOP;
+		}
+		return distTop <= distBottom ? PortLabelSide::TOP : PortLabelSide::BOTTOM;
+	}
+	const float dx = connection.portOffset.dx - 0.5f;
+	const float dy = connection.portOffset.dy - 0.5f;
 	if (std::abs(dx) >= std::abs(dy)) {
 		return dx < 0 ? PortLabelSide::LEFT : PortLabelSide::RIGHT;
 	}
