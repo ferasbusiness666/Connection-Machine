@@ -48,6 +48,7 @@ private:
 		int scale,
 		std::vector<Rect>& reservedAreas
 	) const;
+	int drawConnectionNodeCircle(CpuImage& img, const Vec2Int& position, int bitWidth, int scale) const;
 
 	struct LabelLayoutConfig {
 		int targetWidth;
@@ -113,6 +114,7 @@ private:
 
 	static PortLabelSide detectPreferredSide(const FVector& offset);
 	static Vec2Int getPortTexturePosition(const BlockData::ConnectionData& connection, int scale);
+	static int computePortCircleRadius(int bitWidth, int scale);
 
 	std::shared_ptr<Font> font;
 };

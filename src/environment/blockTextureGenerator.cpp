@@ -51,7 +51,6 @@ void BlockTextureGenerator::createBusBlockTexture(const BlockData* blockData, Cp
 	for (const std::pair<const connection_end_id_t, BlockData::ConnectionData>& connection : blockData->getConnections()) {
 		Vec2Int portTexturePos = getPortTexturePosition(connection.second, scale);
 		int laneCount = connection.second.getBitWidth();
-		int nippleSize = (std::max(9, std::min(9 * laneCount, 9 * 8)) + 4) * scale / 256;
 		int lineSize = std::max(9, std::min(5 * laneCount, 9 * 8)) * scale / 256;
 		int thisMinY = portTexturePos.y - lineSize;
 		int thisMaxY = portTexturePos.y + lineSize;
@@ -70,7 +69,7 @@ void BlockTextureGenerator::createBusBlockTexture(const BlockData* blockData, Cp
 			{ std::abs(x1 - x2), lineSize * 2 },
 			{ 76, 76, 76, 255 }
 		);
-		img.addCircle(portTexturePos, nippleSize, { 0, 0, 0, 255 });
+		drawConnectionNodeCircle(img, portTexturePos, laneCount, scale);
 	}
 
 	int usingRadius = 9 * 4;
@@ -126,22 +125,22 @@ void BlockTextureGenerator::drawConnectionLabels(
 	for (const std::pair<const connection_end_id_t, BlockData::ConnectionData>& connection : blockData->getConnections()) {
 		Vec2Int portTexturePos = getPortTexturePosition(connection.second, scale);
 		int laneCount = connection.second.getBitWidth();
-		int nippleSize = std::max(9, std::min(9 * laneCount, 9 * 8)) + 4;
-		int circleRadius = std::max(1, (nippleSize * scale) / 256);
-		img.addCircle(portTexturePos, circleRadius, { 0, 0, 0, 255 });
+		int circleRadius = drawConnectionNodeCircle(img, portTexturePos, laneCount, scale);
 
 		if (!font) {
 			continue;
 		}
+
 		std::optional<std::string> connectionName = blockData->getConnectionIdToName(connection.first);
 		if (!connectionName || connectionName->empty()) {
 			continue;
 		}
+		std::string labelText = *connectionName;
 
 		const PortLabelSide side = detectPreferredSide(connection.second.portOffset);
 		const int paddingFromPort = config.basePadding + circleRadius;
 		labelsBySide[static_cast<uint8_t>(side)].push_back(PortLabelRequest{
-			*connectionName,
+			std::move(labelText),
 			portTexturePos,
 			side,
 			paddingFromPort
@@ -478,4 +477,39 @@ Vec2Int BlockTextureGenerator::getPortTexturePosition(const BlockData::Connectio
 		connection.portOffset.dx * static_cast<float>(scale),
 		connection.portOffset.dy * static_cast<float>(scale)
 	);
+}
+
+// draws a circle representing a connection port, adding bit width text if applicable
+int BlockTextureGenerator::drawConnectionNodeCircle(CpuImage& img, const Vec2Int& position, int bitWidth, int scale) const {
+	const int circleRadius = computePortCircleRadius(bitWidth, scale);
+	img.addCircle(position, circleRadius, { 0, 0, 0, 255 });
+	if (bitWidth > 1 && font) {
+		const CpuImage::Pixel textColor{ 255, 255, 255, 255 };
+		// calculate fit square given circle radius
+		int squareHalfSize = static_cast<int>(std::floor(circleRadius / std::sqrt(2)));
+		Vec2Int textAreaSize { squareHalfSize * 2, squareHalfSize * 2 };
+		textAreaSize.x = std::max(textAreaSize.x, 1);
+		textAreaSize.y = std::max(textAreaSize.y, 1);
+		Vec2Int textAreaPos { position.x - squareHalfSize, position.y - squareHalfSize };
+		const Vec2Int imageSize = img.getSize();
+		textAreaPos.x = std::clamp(textAreaPos.x, 0, std::max(0, imageSize.x - textAreaSize.x));
+		textAreaPos.y = std::clamp(textAreaPos.y, 0, std::max(0, imageSize.y - textAreaSize.y));
+		img.writeStringInArea(
+			font,
+			std::to_string(bitWidth),
+			textAreaPos,
+			textAreaSize,
+			textColor,
+			Rotation::ZERO,
+			true,
+			true
+		);
+	}
+	return circleRadius;
+}
+
+int BlockTextureGenerator::computePortCircleRadius(int bitWidth, int scale) {
+	const int baseSize = std::max(9, std::min(9 * bitWidth, 9 * 8)) + 4;
+	const int scaledRadius = (baseSize * scale) / 256;
+	return std::max(1, scaledRadius);
 }
