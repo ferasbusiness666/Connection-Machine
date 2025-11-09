@@ -3,7 +3,9 @@
 BlockTextureGenerator::BlockTextureGenerator(std::shared_ptr<Font> font) : font(std::move(font)) {}
 
 void BlockTextureGenerator::createCustomBlockTexture(const BlockData* blockData, CpuImage& img, int scale) const {
-	if (!blockData) return;
+	if (!blockData) {
+		return;
+	}
 
 	img.addRect(
 		{ 5 * scale / 256, 5 * scale / 256 },
@@ -38,7 +40,9 @@ void BlockTextureGenerator::createCustomBlockTexture(const BlockData* blockData,
 }
 
 void BlockTextureGenerator::createBusBlockTexture(const BlockData* blockData, CpuImage& img, int scale) const {
-	if (!blockData) return;
+	if (!blockData) {
+		return;
+	}
 
 	img.fill({ 0, 0, 0, 0 });
 	int minY = 0;
@@ -51,8 +55,12 @@ void BlockTextureGenerator::createBusBlockTexture(const BlockData* blockData, Cp
 		int lineSize = std::max(9, std::min(5 * laneCount, 9 * 8)) * scale / 256;
 		int thisMinY = portTexturePos.y - lineSize;
 		int thisMaxY = portTexturePos.y + lineSize;
-		if (first || thisMinY < minY) minY = thisMinY;
-		if (first || thisMaxY > maxY) maxY = thisMaxY;
+		if (first || thisMinY < minY) {
+			minY = thisMinY;
+		}
+		if (first || thisMaxY > maxY) {
+			maxY = thisMaxY;
+		}
 		first = false;
 
 		int x1 = img.getSize().x / 2;
@@ -76,7 +84,9 @@ void BlockTextureGenerator::createBusBlockTexture(const BlockData* blockData, Cp
 }
 
 void BlockTextureGenerator::drawBlockName(const BlockData* blockData, CpuImage& img, int scale, const Rect& labelArea) const {
-	if (!blockData || !font || labelArea.empty()) return;
+	if (!blockData || !font || labelArea.empty()) {
+		return;
+	}
 
 	const CpuImage::Pixel textColor{ 255, 255, 255, 255 };
 	const bool rotate = blockData->getSize().w < blockData->getSize().h;
@@ -100,7 +110,9 @@ void BlockTextureGenerator::drawConnectionLabels(
 	int scale,
 	std::vector<Rect>& reservedAreas
 ) const {
-	if (!blockData) return;
+	if (!blockData) {
+		return;
+	}
 
 	const Vec2Int imageSize = img.getSize();
 	const LabelLayoutConfig config = buildLabelLayoutConfig(scale);
@@ -116,9 +128,13 @@ void BlockTextureGenerator::drawConnectionLabels(
 		int circleRadius = std::max(1, (nippleSize * scale) / 256);
 		img.addCircle(portTexturePos, circleRadius, { 0, 0, 0, 255 });
 
-		if (!font) continue;
+		if (!font) {
+			continue;
+		}
 		std::optional<std::string> connectionName = blockData->getConnectionIdToName(connection.first);
-		if (!connectionName || connectionName->empty()) continue;
+		if (!connectionName || connectionName->empty()) {
+			continue;
+		}
 
 		const PortLabelSide side = detectPreferredSide(connection.second.portOffset);
 		const int paddingFromPort = config.basePadding + circleRadius;
@@ -130,14 +146,18 @@ void BlockTextureGenerator::drawConnectionLabels(
 		});
 	}
 
-	if (!font) return;
+	if (!font) {
+		return;
+	}
 
 	const CpuImage::Pixel textColor{ 255, 255, 255, 255 };
 
 	for (uint8_t sideIndex : {0, 1, 2, 3}) {
 		PortLabelSide side = static_cast<PortLabelSide>(sideIndex);
 		std::vector<PortLabelRequest>& requests = labelsBySide[sideIndex];
-		if (requests.empty()) continue;
+		if (requests.empty()) {
+			continue;
+		}
 
 		std::vector<LabelPlacement> placements;
 		placements.reserve(requests.size());
@@ -147,11 +167,15 @@ void BlockTextureGenerator::drawConnectionLabels(
 				placements.push_back(std::move(*placement));
 			}
 		}
-		if (placements.empty()) continue;
+		if (placements.empty()) {
+			continue;
+		}
 
 		std::vector<LabelPlacement*> placementRefs;
 		placementRefs.reserve(placements.size());
-		for (LabelPlacement& placement : placements) placementRefs.push_back(&placement);
+		for (LabelPlacement& placement : placements) {
+			placementRefs.push_back(&placement);
+		}
 
 		const int axisLimit = (side == PortLabelSide::LEFT || side == PortLabelSide::RIGHT) ? imageSize.y : imageSize.x;
 		distributeAlongAxis(placementRefs, axisLimit, config.labelSpacing);
@@ -167,7 +191,9 @@ void BlockTextureGenerator::drawConnectionLabels(
 			}
 			rect.pos = pos;
 
-			if (!resolveCollisions(rect, side, axisLimit, config.slideStep, occupiedAreas)) continue;
+			if (!resolveCollisions(rect, side, axisLimit, config.slideStep, occupiedAreas)) {
+				continue;
+			}
 
 			occupiedAreas.push_back(rect);
 			reservedAreas.push_back(rect);
@@ -228,7 +254,9 @@ std::optional<BlockTextureGenerator::LabelPlacement> BlockTextureGenerator::buil
 		}
 		int width = std::clamp(acrossPreferred, acrossMin, span);
 		if (!growRight) {
-			if (width > start) width = start;
+			if (width > start) {
+				width = start;
+			}
 			if (width < acrossMin) {
 				return std::nullopt;
 			}
@@ -249,7 +277,9 @@ std::optional<BlockTextureGenerator::LabelPlacement> BlockTextureGenerator::buil
 		}
 		int height = std::clamp(acrossPreferred, acrossMin, span);
 		if (!growDown) {
-			if (height > start) height = start;
+			if (height > start) {
+				height = start;
+			}
 			if (height < acrossMin) {
 				return std::nullopt;
 			}
@@ -278,7 +308,9 @@ int BlockTextureGenerator::computeHorizontalSpan(
 ) const {
 	int limit = growRight ? imageWidth : 0;
 	for (const Rect& rect : staticObstacles) {
-		if (!overlapsAxis(axisCoord, rect.pos.y, rect.size.y, config.obstaclePadding)) continue;
+		if (!overlapsAxis(axisCoord, rect.pos.y, rect.size.y, config.obstaclePadding)) {
+			continue;
+		}
 		if (growRight) {
 			limit = std::min(limit, rect.pos.x - config.obstaclePadding);
 		} else {
@@ -303,7 +335,9 @@ int BlockTextureGenerator::computeVerticalSpan(
 ) const {
 	int limit = growDown ? imageHeight : 0;
 	for (const Rect& rect : staticObstacles) {
-		if (!overlapsAxis(axisCoord, rect.pos.x, rect.size.x, config.obstaclePadding)) continue;
+		if (!overlapsAxis(axisCoord, rect.pos.x, rect.size.x, config.obstaclePadding)) {
+			continue;
+		}
 		if (growDown) {
 			limit = std::min(limit, rect.pos.y - config.obstaclePadding);
 		} else {
@@ -319,7 +353,9 @@ int BlockTextureGenerator::computeVerticalSpan(
 }
 
 void BlockTextureGenerator::distributeAlongAxis(std::vector<LabelPlacement*>& placements, int axisLimit, int spacing) const {
-	if (placements.empty()) return;
+	if (placements.empty()) {
+		return;
+	}
 
 	std::sort(
 		placements.begin(),
@@ -332,7 +368,9 @@ void BlockTextureGenerator::distributeAlongAxis(std::vector<LabelPlacement*>& pl
 		const int axisSize = placementAxisSize(placement);
 		int desiredTop = placement->axisAnchor - axisSize / 2;
 		desiredTop = std::clamp(desiredTop, 0, std::max(0, axisLimit - axisSize));
-		if (desiredTop < prevBottom + spacing) desiredTop = prevBottom + spacing;
+		if (desiredTop < prevBottom + spacing) {
+			desiredTop = prevBottom + spacing;
+		}
 		placement->axisPos = std::clamp(desiredTop, 0, std::max(0, axisLimit - axisSize));
 		prevBottom = placement->axisPos + axisSize;
 	}
@@ -342,9 +380,13 @@ void BlockTextureGenerator::distributeAlongAxis(std::vector<LabelPlacement*>& pl
 		LabelPlacement* placement = placements[i];
 		const int axisSize = placementAxisSize(placement);
 		int maxTop = nextTop - axisSize;
-		if (i != static_cast<int>(placements.size()) - 1) maxTop -= spacing;
+		if (i != static_cast<int>(placements.size()) - 1) {
+			maxTop -= spacing;
+		}
 		maxTop = std::max(0, maxTop);
-		if (placement->axisPos > maxTop) placement->axisPos = maxTop;
+		if (placement->axisPos > maxTop) {
+			placement->axisPos = maxTop;
+		}
 		nextTop = placement->axisPos;
 	}
 }
@@ -356,7 +398,9 @@ bool BlockTextureGenerator::resolveCollisions(
 	int slideStep,
 	const std::vector<Rect>& occupiedAreas
 ) const {
-	if (!intersectsAny(rect, occupiedAreas)) return true;
+	if (!intersectsAny(rect, occupiedAreas)) {
+		return true;
+	}
 
 	const bool horizontalSide = side == PortLabelSide::LEFT || side == PortLabelSide::RIGHT;
 	const int axisSize = horizontalSide ? rect.size.y : rect.size.x;
@@ -369,9 +413,14 @@ bool BlockTextureGenerator::resolveCollisions(
 			int candidateAxis = originalAxis + dir * delta;
 			candidateAxis = std::clamp(candidateAxis, 0, maxAxisValue);
 			Rect candidate = rect;
-			if (horizontalSide) candidate.pos.y = candidateAxis;
-			else candidate.pos.x = candidateAxis;
-			if (intersectsAny(candidate, occupiedAreas)) continue;
+			if (horizontalSide) {
+				candidate.pos.y = candidateAxis;
+			} else {
+				candidate.pos.x = candidateAxis;
+			}
+			if (intersectsAny(candidate, occupiedAreas)) {
+				continue;
+			}
 			rect = candidate;
 			return true;
 		}
@@ -391,7 +440,9 @@ bool BlockTextureGenerator::compareByAxisAnchor(const LabelPlacement* lhs, const
 
 bool BlockTextureGenerator::intersectsAny(const Rect& candidate, const std::vector<Rect>& occupiedAreas) {
 	for (const Rect& reserved : occupiedAreas) {
-		if (candidate.intersects(reserved)) return true;
+		if (candidate.intersects(reserved)) {
+			return true;
+		}
 	}
 	return false;
 }
@@ -412,6 +463,11 @@ BlockTextureGenerator::PortLabelSide BlockTextureGenerator::detectPreferredSide(
 }
 
 Vec2Int BlockTextureGenerator::getPortTexturePosition(const BlockData::ConnectionData& connection, int scale) {
-	return Vec2Int(connection.positionOnBlock.dx * scale, connection.positionOnBlock.dy * scale) +
-		Vec2Int(connection.portOffset.dx * static_cast<float>(scale), connection.portOffset.dy * static_cast<float>(scale));
+	return Vec2Int(
+		connection.positionOnBlock.dx * scale,
+		connection.positionOnBlock.dy * scale
+	) + Vec2Int(
+		connection.portOffset.dx * static_cast<float>(scale),
+		connection.portOffset.dy * static_cast<float>(scale)
+	);
 }
