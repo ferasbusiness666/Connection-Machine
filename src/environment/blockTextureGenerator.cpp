@@ -51,7 +51,7 @@ void BlockTextureGenerator::createBusBlockTexture(const BlockData* blockData, Cp
 	for (const std::pair<const connection_end_id_t, BlockData::ConnectionData>& connection : blockData->getConnections()) {
 		Vec2Int portTexturePos = getPortTexturePosition(connection.second, scale);
 		int laneCount = connection.second.getBitWidth();
-		int lineSize = std::max(9, std::min(5 * laneCount, 9 * 8)) * scale / 256;
+		int lineSize = std::max(5, std::min(5 * laneCount, 5 * 8)) * scale / 256;
 		int thisMinY = portTexturePos.y - lineSize;
 		int thisMaxY = portTexturePos.y + lineSize;
 		if (first || thisMinY < minY) {
@@ -72,11 +72,11 @@ void BlockTextureGenerator::createBusBlockTexture(const BlockData* blockData, Cp
 		drawConnectionNodeCircle(img, portTexturePos, laneCount, scale);
 	}
 
-	int usingRadius = 9 * 4;
+	int usingRadius = (9 * 4) * scale / 256 + 1;
 	img.addLine(
 		{ img.getSize().x / 2, minY + usingRadius },
 		{ img.getSize().x / 2, maxY - usingRadius },
-		usingRadius * scale / 256 + 1,
+		usingRadius,
 		{ 76, 76, 76, 255 },
 		true
 	);
