@@ -83,6 +83,7 @@ void BlockTextureGenerator::createBusBlockTexture(const BlockData* blockData, Cp
 	);
 }
 
+// Renders the block's display name inside the provided rectangle, rotating if the block is tall
 void BlockTextureGenerator::drawBlockName(const BlockData* blockData, CpuImage& img, int scale, const Rect& labelArea) const {
 	if (!blockData || !font || labelArea.empty()) {
 		return;
@@ -104,6 +105,7 @@ void BlockTextureGenerator::drawBlockName(const BlockData* blockData, CpuImage& 
 	);
 }
 
+// for each connection port, draws a circle to represent the port and attempts to place a label nearby
 void BlockTextureGenerator::drawConnectionLabels(
 	const BlockData* blockData,
 	CpuImage& img,
@@ -212,6 +214,7 @@ void BlockTextureGenerator::drawConnectionLabels(
 	}
 }
 
+// derives width, height, padding, and spacing targets for labels based on current texture scale
 BlockTextureGenerator::LabelLayoutConfig BlockTextureGenerator::buildLabelLayoutConfig(int scale) const {
 	LabelLayoutConfig config{};
 	config.targetWidth = std::max((scale * 90) / 256, 32);
@@ -225,6 +228,7 @@ BlockTextureGenerator::LabelLayoutConfig BlockTextureGenerator::buildLabelLayout
 	return config;
 }
 
+// creates a candidate rectangle for a label on a specific side while respecting available spans
 std::optional<BlockTextureGenerator::LabelPlacement> BlockTextureGenerator::buildPlacementForRequest(
 	const PortLabelRequest& request,
 	const Vec2Int& imageSize,
@@ -298,6 +302,7 @@ std::optional<BlockTextureGenerator::LabelPlacement> BlockTextureGenerator::buil
 	return placement;
 }
 
+// determines how many pixels a horizontal label can extend before hitting the texture edge or obstacles
 int BlockTextureGenerator::computeHorizontalSpan(
 	bool growRight,
 	int start,
@@ -325,6 +330,7 @@ int BlockTextureGenerator::computeHorizontalSpan(
 	return span;
 }
 
+// determines how many pixels a vertical label can extend before hitting the texture edge or obstacles
 int BlockTextureGenerator::computeVerticalSpan(
 	bool growDown,
 	int start,
@@ -352,6 +358,7 @@ int BlockTextureGenerator::computeVerticalSpan(
 	return span;
 }
 
+// repositions labels along their axis so that they keep spacing while staying within bounds
 void BlockTextureGenerator::distributeAlongAxis(std::vector<LabelPlacement*>& placements, int axisLimit, int spacing) const {
 	if (placements.empty()) {
 		return;
@@ -391,6 +398,7 @@ void BlockTextureGenerator::distributeAlongAxis(std::vector<LabelPlacement*>& pl
 	}
 }
 
+// slides a label rectangle up or down the axis until it stops intersecting earlier placements
 bool BlockTextureGenerator::resolveCollisions(
 	Rect& rect,
 	PortLabelSide side,
