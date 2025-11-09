@@ -30,7 +30,7 @@ public:
 
 private:
 	int activeToolStack = 0;
-	Circuit* circuit;
+	Circuit* circuit = nullptr;
 	std::array<ToolStack, 3> toolStacks;
 	std::map<std::string, SharedCircuitTool> toolInstances;
 };
