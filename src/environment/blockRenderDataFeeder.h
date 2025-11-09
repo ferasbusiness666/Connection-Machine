@@ -6,6 +6,7 @@
 #include "backend/container/block/blockDefs.h"
 #include "backend/container/block/connectionEnd.h"
 #include "backend/dataUpdateEventManager.h"
+#include "blockTextureGenerator.h"
 
 class Font;
 class Backend;
@@ -43,6 +44,7 @@ private:
 
 	std::set<BlockType> blockTexturesToUpdate;
 	std::shared_ptr<Font> font;
+	std::unique_ptr<BlockTextureGenerator> blockTextureGenerator;
 
 	BlockTextureId getBlockTextureId(const BlockData* blockData, RenderData* renderData);
 
@@ -52,9 +54,6 @@ private:
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 	std::map<BlockType, RenderData> blockTypeToRenderData;
 
-	void putConnectionNipplesOntoImage(const BlockData* blockData, CpuImage& img, int scale);
-	void createTextureForCustomBlock(const BlockData* blockData, CpuImage& img, int scale);
-	void createTextureForBusBlock(const BlockData* blockData, CpuImage& img, int scale);
 	std::pair<int, int> calculatePadding(int width, int height);
 	CpuImage padTexture(const CpuImage& img);
 };
