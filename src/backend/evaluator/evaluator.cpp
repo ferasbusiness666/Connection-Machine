@@ -703,6 +703,9 @@ std::optional<middle_id_t> Evaluator::getMiddleId(const eval_circuit_id_t starti
 		logError("Node not found for address {}", "Evaluator::getMiddleId", address.toString());
 		return std::nullopt;
 	}
+	if (node->isIC()) {
+		return std::nullopt;
+	}
 	return node->getMiddleId();
 }
 
@@ -717,6 +720,9 @@ std::optional<middle_id_t> Evaluator::getMiddleId(const eval_circuit_id_t starti
 	std::optional<CircuitNode> node = evalCircuitContainer.getNode(block->getPosition(), evalCircuitId);
 	if (!node.has_value()) {
 		logError("Node not found for address {}", "Evaluator::getMiddleId", address.toString());
+		return std::nullopt;
+	}
+	if (node->isIC()) {
 		return std::nullopt;
 	}
 	return node->getMiddleId();
