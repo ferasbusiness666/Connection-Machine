@@ -1,3 +1,4 @@
+#define STBI_NO_SIMD // fuck gcc
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
