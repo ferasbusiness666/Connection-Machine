@@ -41,7 +41,7 @@ private:
 		BOTTOM = 3
 	};
 
-	void drawBlockName(const BlockData* blockData, CpuImage& img, int scale, const Rect& labelArea) const;
+	void drawBlockName(const BlockData* blockData, CpuImage& img, int scale, const Rect& labelArea, std::vector<Rect>& reservedAreas) const;
 	void drawConnectionLabels(
 		const BlockData* blockData,
 		CpuImage& img,

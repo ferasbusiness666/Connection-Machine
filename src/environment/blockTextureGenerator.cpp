@@ -31,12 +31,9 @@ void BlockTextureGenerator::createCustomBlockTexture(const BlockData* blockData,
 	blockNameArea.pos.y = std::clamp(blockNameArea.pos.y, 0, std::max(0, img.getSize().y - blockNameArea.size.y));
 
 	std::vector<Rect> reservedAreas;
-	if (!blockNameArea.empty()) {
-		reservedAreas.push_back(blockNameArea);
-	}
 
+	drawBlockName(blockData, img, scale, blockNameArea, reservedAreas);
 	drawConnectionLabels(blockData, img, scale, reservedAreas);
-	drawBlockName(blockData, img, scale, blockNameArea);
 }
 
 void BlockTextureGenerator::createBusBlockTexture(const BlockData* blockData, CpuImage& img, int scale) const {
@@ -83,7 +80,7 @@ void BlockTextureGenerator::createBusBlockTexture(const BlockData* blockData, Cp
 }
 
 // Renders the block's display name inside the provided rectangle, rotating if the block is tall
-void BlockTextureGenerator::drawBlockName(const BlockData* blockData, CpuImage& img, int scale, const Rect& labelArea) const {
+void BlockTextureGenerator::drawBlockName(const BlockData* blockData, CpuImage& img, int scale, const Rect& labelArea, std::vector<Rect>& reservedAreas) const {
 	if (!blockData || !font || labelArea.empty()) {
 		return;
 	}
@@ -92,7 +89,7 @@ void BlockTextureGenerator::drawBlockName(const BlockData* blockData, CpuImage& 
 	const bool rotate = blockData->getSize().w < blockData->getSize().h;
 	const Rotation rotation = rotate ? Rotation::NINETY : Rotation::ZERO;
 
-	img.writeStringInArea(
+	auto [textPosition, textSize] = img.writeStringInArea(
 		font,
 		blockData->getName(),
 		labelArea.pos,
@@ -102,6 +99,10 @@ void BlockTextureGenerator::drawBlockName(const BlockData* blockData, CpuImage& 
 		true,
 		true
 	);
+	Rect textArea{ textPosition, textSize };
+	if (!textArea.empty()) {
+		reservedAreas.push_back(textArea);
+	}
 }
 
 // for each connection port, draws a circle to represent the port and attempts to place a label nearby
