@@ -250,7 +250,7 @@ void BlockDataManager::initializeDefaults() {
 	colorLightBlockData->setTextureTileSize({ 256, 256 });
 	colorLightBlockData->setTextureBlockTileSize({ 1, 1 });
 	colorLightBlockData->setTextureSmallestCordTile({ 0, 0 });
-	colorLightBlockData->setTextureBlockStateOffset({ 16, 256 });
+	colorLightBlockData->setTextureBlockStateOffset({ 8, 256 });
 	logInfo("Default BlockData initialized", "BlockDataManager");
 }
 

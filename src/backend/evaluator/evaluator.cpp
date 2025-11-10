@@ -668,7 +668,6 @@ void Evaluator::edit_moveBlock(
 const EvalAddressTree Evaluator::buildAddressTree() const { return buildAddressTree(eval_circuit_id_t(0)); }
 
 const EvalAddressTree Evaluator::buildAddressTree(eval_circuit_id_t evalCircuitId) const {
-	std::shared_lock lk(simMutex);
 	EvalCircuit* evalCircuit = evalCircuitContainer.getCircuit(evalCircuitId);
 	if (!evalCircuit) {
 		logError("EvalCircuit with id {} not found", "Evaluator::buildAddressTree", evalCircuitId);
