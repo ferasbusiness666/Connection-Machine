@@ -2,81 +2,133 @@ import pathlib
 import json
 import hashlib
 import os
+
 import colorama
 colorama.init()
 
-script_dir = pathlib.Path(__file__).parent.resolve()
-build_cache_path = script_dir/"build_cache.json"
-if not build_cache_path.exists():
-    with open(build_cache_path, "w") as f:
-        json.dump({}, f)
-with open(build_cache_path, "r") as f:
-    build_cache = json.load(f)
+def build(source: pathlib.Path, target: pathlib.Path):
+    assert (source.suffix in [".zig", ".rs", ".c", ".cpp", ".cc"])
+    assert (target.suffix == ".wasm")
+    os.chdir(source.parent)
+    res = 0
+    if source.suffix == ".zig":
+        res = os.system(f"zig build-exe {source} -target wasm32-freestanding -fno-entry -rdynamic -O ReleaseSmall -femit-bin={target}")
+    elif source.suffix == ".rs":
+        return False # Rust builds are currently disabled
+        res = os.system(f"rustc {source} -target wasm32-unknown-unknown -O -o {target}")
+    elif source.suffix in [".cc", ".c", ".cpp"]:
+        res = os.system(f"emcc {source} -Os -flto -s STANDALONE_WASM -s EXPORTED_FUNCTIONS=\"['_generateCircuit', '_getUUID', '_getName', '_getDefaultParameters']\" --no-entry -o {target}")
+    return res == 0
 
+BuildCache = dict[str, str]
 
-def cache_key(file_path: pathlib.Path) -> str:
-    """Store cache paths relative to script so build_cache is portable."""
+def load_build_cache(path: pathlib.Path) -> BuildCache:
+    if not path.exists():
+        return {}
+    with open(path, "r") as f:
+        return json.load(f)
+
+def get_relative_path(file_path: pathlib.Path, parent: pathlib.Path) -> str:
     try:
-        return file_path.resolve().relative_to(script_dir).as_posix()
+        return file_path.resolve().relative_to(parent).as_posix()
     except ValueError:
         return file_path.resolve().as_posix()
 
+def normalize_cache(build_cache: BuildCache, script_dir: pathlib.Path) -> tuple[BuildCache, bool]:
+    normalized_cache: BuildCache = {}
+    cache_normalized = False
+    for path_str, hash_val in build_cache.items():
+        normalized_key = get_relative_path(pathlib.Path(path_str), script_dir)
+        if normalized_key != path_str:
+            cache_normalized = True
+        normalized_cache[normalized_key] = hash_val
+    return normalized_cache, cache_normalized
 
-# Ensure existing cache entries get normalized to relative paths when possible.
-normalized_cache = {}
-cache_normalized = False
-for path_str, hash_val in build_cache.items():
-    normalized_key = cache_key(pathlib.Path(path_str))
-    if normalized_key != path_str:
-        cache_normalized = True
-    normalized_cache[normalized_key] = hash_val
-build_cache = normalized_cache
-
-folders = [
-    "cpp",
-    "zig",
-    # "rust",
-]
-
-target_directory = (script_dir/"wasm").resolve()
-
-# walk through each folder and build the wasm files
-folder_paths = [(script_dir/folder).resolve() for folder in folders]
-file_paths = []
-for folder_path in folder_paths:
+def get_all_source_files_from_folder(folder_path: pathlib.Path) -> list[pathlib.Path]:
     for file_group in folder_path.walk():
         for filename in file_group[2]:
             file = file_group[0] / pathlib.Path(filename)
-            if file.suffix not in [".zig", ".rs", ".c", ".cpp", ".cc"]:
-                continue
-            if file.stem == "cm":
-                continue
+            yield file
+
+def get_all_filtered_source_files_from_folder(folder_path: pathlib.Path) -> list[pathlib.Path]:
+    for file in get_all_source_files_from_folder(folder_path):
+        if file.suffix not in [".zig", ".rs", ".c", ".cpp", ".cc"]:
+            continue
+        if file.stem == "cm":
+            continue
+        yield file
+
+def get_all_source_files(folder_paths: list[pathlib.Path], script_dir: pathlib.Path) -> list[pathlib.Path]:
+    file_paths: list[pathlib.Path] = []
+    for folder_path in folder_paths:
+        for file in get_all_filtered_source_files_from_folder(folder_path):
             file_paths.append(file)
+    return file_paths
 
-build_cache_updated = False
-for file in file_paths:
-    file_hash = hashlib.md5(file.read_bytes()).hexdigest()
-    file_cache_key = cache_key(file)
-    if file_cache_key in build_cache and build_cache[file_cache_key] == file_hash:
-        print(colorama.Fore.YELLOW + "Skipping" + colorama.Style.RESET_ALL, file)
-        continue
+def calculate_file_hash(file_path: pathlib.Path) -> str:
+    hasher = hashlib.new("md5")
+    with file_path.open("r", encoding="utf-8", newline=None) as f:
+        while True:
+            data = f.read(8192)
+            if not data:
+                break
+            hasher.update(data.encode("utf-8"))
+    return hasher.hexdigest()
+
+def build_file_considering_cache(file: pathlib.Path, build_cache: BuildCache, target_directory: pathlib.Path, script_dir: pathlib.Path):
+    file_hash = calculate_file_hash(file)
+    file_relative = get_relative_path(file, script_dir)
+    target_file = target_directory / pathlib.Path(file.stem + '.wasm')
+    target_file_relative = get_relative_path(target_file, script_dir)
+    if file_relative in build_cache:
+        entry = build_cache[file_relative]
+        if entry == file_hash and pathlib.Path(script_dir / target_file_relative).exists():
+            return False, False
     print(colorama.Fore.GREEN + "Building" + colorama.Style.RESET_ALL, file)
-    os.chdir(file.parent)
-    res = 0
-    if file.suffix == ".zig":
-        res = os.system(f"zig build-exe {file} -target wasm32-freestanding -fno-entry -rdynamic -O ReleaseSmall -femit-bin={target_directory / pathlib.Path(file.stem + '.wasm')}")
-    elif file.suffix == ".rs":
-        continue  # Rust builds are currently disabled
-        res = os.system(f"rustc {file} -target wasm32-unknown-unknown -O -o {target_directory / pathlib.Path(file.stem + '.wasm')}")
-    elif file.suffix in [".cc", ".c", ".cpp"]:
-        res = os.system(f"emcc {file} -Os -flto -s STANDALONE_WASM -s EXPORTED_FUNCTIONS=\"['_generateCircuit', '_getUUID', '_getName', '_getDefaultParameters']\" --no-entry -o {target_directory / pathlib.Path(file.stem + '.wasm')}")
-    else:
-        raise Exception("File must be .zig, .rx, .c, .cpp, or .cc")
-    if res != 0:
-        continue
-    build_cache[file_cache_key] = file_hash
-    build_cache_updated = True
+    success = build(file, target_file)
+    if not success:
+        print(colorama.Fore.RED + "Build failed for" + colorama.Style.RESET_ALL, file)
+        return False, True
+    build_cache[file_relative] = file_hash
+    return True, False
 
-if build_cache_updated or cache_normalized:
-    with open(build_cache_path, "w") as f:
-        json.dump(build_cache, f, indent=4)
+def build_files(file_paths: list[pathlib.Path], build_cache: BuildCache, target_directory: pathlib.Path, script_dir: pathlib.Path) -> bool:
+    build_cache_updated = False
+    error_occured = False
+    for file in file_paths:
+        built, error = build_file_considering_cache(file, build_cache, target_directory, script_dir)
+        if error:
+            error_occured = True
+        if built:
+            build_cache_updated = True
+    return build_cache_updated, error_occured
+
+def main():
+    script_dir = pathlib.Path(__file__).parent.resolve()
+
+    build_cache_path = script_dir/"build_cache.json"
+    build_cache: BuildCache = load_build_cache(build_cache_path)
+
+    normalized_cache, cache_normalized = normalize_cache(build_cache, script_dir)
+    build_cache = normalized_cache
+
+    folders = [
+        "cpp",
+        "zig",
+        # "rust",
+    ]
+
+    folder_paths = [(script_dir/folder).resolve() for folder in folders]
+    target_directory = (script_dir/"wasm").resolve()
+
+    file_paths = get_all_source_files(folder_paths, script_dir)
+    build_cache_updated, error_occured = build_files(file_paths, build_cache, target_directory, script_dir)
+    if build_cache_updated or cache_normalized:
+        with open(build_cache_path, "w") as f:
+            json.dump(build_cache, f, indent=4)
+
+    if not build_cache_updated and not error_occured:
+        print(colorama.Fore.GREEN + "All files are up to date :)" + colorama.Style.RESET_ALL)
+
+if __name__ == "__main__":
+    main()
