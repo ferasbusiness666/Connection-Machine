@@ -21,7 +21,7 @@ extern "C"
 	typedef unsigned int connection_end_id_t;
 	typedef unsigned char block_size_t;
 	typedef int block_id_t;
-	typedef int cord_t;
+	typedef int coord_t;
 
 	typedef char Rotation;
 
@@ -33,11 +33,11 @@ extern "C"
 	externalFunction(getNonPrimitiveType) BlockType getNonPrimitiveType(const char* UUID);
 	externalFunction(getProceduralCircuitType) BlockType getProceduralCircuitType(const char* UUID, const char* parameters);
 	externalFunction(createBlock) block_id_t createBlock(BlockType blockType);
-	externalFunction(createBlockAtPosition) block_id_t createBlockAtPosition(cord_t x, cord_t y, Rotation rotation, BlockType blockType);
+	externalFunction(createBlockAtPosition) block_id_t createBlockAtPosition(coord_t x, coord_t y, Rotation rotation, BlockType blockType);
 	externalFunction(createConnection) void createConnection(block_id_t outputBlockId, int outputPortId, block_id_t inputBlockId, int inputPortId);
-	externalFunction(addConnectionInput) void addConnectionInput(cord_t portX, cord_t portY, block_id_t internalBlockId, connection_end_id_t internalBlockPortId);
-	externalFunction(addConnectionOutput) void addConnectionOutput(cord_t portX, cord_t portY, block_id_t internalBlockId, connection_end_id_t internalBlockPortId);
-	externalFunction(setSize) void setSize(cord_t width, cord_t height);
+	externalFunction(addConnectionInput) void addConnectionInput(coord_t portX, coord_t portY, block_id_t internalBlockId, connection_end_id_t internalBlockPortId);
+	externalFunction(addConnectionOutput) void addConnectionOutput(coord_t portX, coord_t portY, block_id_t internalBlockId, connection_end_id_t internalBlockPortId);
+	externalFunction(setSize) void setSize(coord_t width, coord_t height);
 	externalFunction(logInfo) void logInfo(const char* msg);
 	externalFunction(logError) void logError(const char* msg);
 #ifdef __cplusplus
