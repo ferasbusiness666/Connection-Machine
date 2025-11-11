@@ -60,7 +60,7 @@ void ToolStack::reset() {
 	if (!toolStack.size()) return;
 	SharedCircuitTool tool = getCurrentNonHelperTool_();
 	clearTools();
-	pushTool(tool);
+	pushTool(std::move(tool));
 }
 
 void ToolStack::pushTool(SharedCircuitTool newTool, bool resetTool) {
