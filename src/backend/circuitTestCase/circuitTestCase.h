@@ -19,6 +19,21 @@ private:
         TICK_STEP
     };
 
+    std::string getTestCommandTypeString(TestCommandType type) {
+        switch (type) {
+            case 0:
+                return "NOP_COMMAND";
+            case 1:
+                return "SET_STATES";
+            case 2:
+                return "CHECK_STATES";
+            case 3:
+                return "TICK_STEP";
+            default:
+                return "UNKNOWN";
+       } 
+    }
+
     struct TestCommand {
         TestCommandType type = NOP_COMMAND;
         int ticks = 0;

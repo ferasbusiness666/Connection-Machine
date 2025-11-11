@@ -14,19 +14,19 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
                     TestCommand(TICK_STEP, 10),
                     TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)2)}),
                     // 0 1 0
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)0), std::make_pair("Enable", (logic_state_t)1)}},
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)1), std::make_pair("Enable", (logic_state_t)0)}},
                     TestCommand(TICK_STEP, 10),
                     TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)0)}),
                     // 0 Z X
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)0), std::make_pair("Enable", (logic_state_t)2)}},
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)2), std::make_pair("Enable", (logic_state_t)0)}},
                     TestCommand(TICK_STEP, 10),
                     TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
                     // 0 X X
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)0), std::make_pair("Enable", (logic_state_t)3)}},
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)3), std::make_pair("Enable", (logic_state_t)0)}},
                     TestCommand(TICK_STEP, 10),
                     TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
                     // 1 0 Z
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)1), std::make_pair("Enable", (logic_state_t)0)}},
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)0), std::make_pair("Enable", (logic_state_t)1)}},
                     TestCommand(TICK_STEP, 10),
                     TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)2)}),
                     // 1 1 1
@@ -34,19 +34,19 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
                     TestCommand(TICK_STEP, 10),
                     TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)1)}),
                     // 1 Z X
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)1), std::make_pair("Enable", (logic_state_t)2)}},
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)2), std::make_pair("Enable", (logic_state_t)1)}},
                     TestCommand(TICK_STEP, 10),
                     TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
                     // 1 X X
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)1), std::make_pair("Enable", (logic_state_t)3)}},
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)3), std::make_pair("Enable", (logic_state_t)1)}},
                     TestCommand(TICK_STEP, 10),
                     TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
                     // Z 0 Z
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)2), std::make_pair("Enable", (logic_state_t)0)}},
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)0), std::make_pair("Enable", (logic_state_t)2)}},
                     TestCommand(TICK_STEP, 10),
                     TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)2)}),
                     // Z 1 X
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)2), std::make_pair("Enable", (logic_state_t)1)}},
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)1), std::make_pair("Enable", (logic_state_t)2)}},
                     TestCommand(TICK_STEP, 10),
                     TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
                     // Z Z X
@@ -54,19 +54,19 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
                     TestCommand(TICK_STEP, 10),
                     TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
                     // Z X X
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)2), std::make_pair("Enable", (logic_state_t)3)}},
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)3), std::make_pair("Enable", (logic_state_t)2)}},
                     TestCommand(TICK_STEP, 10),
                     TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
                     // X 0 Z
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)3), std::make_pair("Enable", (logic_state_t)0)}},
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)0), std::make_pair("Enable", (logic_state_t)3)}},
                     TestCommand(TICK_STEP, 10),
                     TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)2)}),
                     // X 1 X
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)3), std::make_pair("Enable", (logic_state_t)1)}},
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)1), std::make_pair("Enable", (logic_state_t)3)}},
                     TestCommand(TICK_STEP, 10),
                     TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
                     // X Z X
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)3), std::make_pair("Enable", (logic_state_t)3)}},
+                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)2), std::make_pair("Enable", (logic_state_t)3)}},
                     TestCommand(TICK_STEP, 10),
                     TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
                     // X X X
@@ -74,6 +74,8 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
                     TestCommand(TICK_STEP, 10),
                     TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)})
                 };
+
+    // retrieve necessary objects to run test
     bool fullTestSucceedStatus = true;
     Backend& backend = environment.getBackend();
     CircuitManager& cirManager = backend.getCircuitManager();
@@ -87,15 +89,16 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
     eval->setPause(true);
     const BlockContainer blockContainer = cir->getBlockContainer();
 
-    if (!cir->tryInsertBlock(Position(0,0), Orientation(), blockType)) {
-        logError("Couldn't insert test circuit block {}", "circuitTestCase", "blockType");
-        return false;
-    }
-
     const BlockData* blockData = blockDataManager.getBlockData(blockType);
     std::unordered_map<connection_end_id_t, BlockData::ConnectionData> connections = blockData->getConnections();
     // change implementation of this when BlockData::getConnectionNameToId is implemented
     NamePositionMap nameToConnectedBlockPosition;
+
+    // generate the test circuit
+    if (!cir->tryInsertBlock(Position(0,0), Orientation(), blockType)) {
+        logError("Couldn't insert test circuit block {}", "circuitTestCase", "blockType");
+        return false;
+    }
 
     for (auto iter = connections.begin(); iter != connections.end(); iter++) {
         if (iter->second.portType == BlockData::ConnectionData::PortType::INPUT || iter->second.portType == BlockData::ConnectionData::PortType::BIDIRECTIONAL) {
@@ -108,10 +111,6 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
             if (!cir->tryCreateConnection(externalConnPos, internalConnPos)) {
                 logError("Couldn't create test circuit connection", "circuitTestCase");
                 return false;
-            }
-            std::optional<std::string> test = blockData->getConnectionIdToName(iter->first);
-            if (test == std::nullopt) {
-                logError("Uh oh i'm gonna explode!!! {} not in gcitn", "CircuitTestCase", iter->first);
             }
             nameToConnectedBlockPosition.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
         }
@@ -126,35 +125,30 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
                 logError("Couldn't create test circuit connection", "circuitTestCase");
                 return false;
             }
-            std::optional<std::string> test = blockData->getConnectionIdToName(iter->first);
-            if (test == std::nullopt) {
-                logError("Uh oh i'm gonna explode!!! {} not in gcitn", "CircuitTestCase", iter->first);
-            }
             nameToConnectedBlockPosition.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
         }
     }
 
-    for (auto iter = nameToConnectedBlockPosition.begin(); iter != nameToConnectedBlockPosition.end(); iter++) {
-        logInfo("Block {} is in pos {}", "CircuitTestCase", iter->first, iter->second);
-    }
-
+    // run tests on the generated test circuit
     for (auto commandIter = testCommands.begin(); commandIter != testCommands.end(); commandIter++) {
-        logInfo("Performing a test command", "CircuitTestCase");
-        bool isSingleTestSuccessful = true;
+        logInfo("Performing a test command of type {}", "CircuitTestCase", getTestCommandTypeString(commandIter->type));
+        bool isTestGroupSuccessful = true;
         if (commandIter->type == NOP_COMMAND) {
             continue;
         } else if (commandIter->type == SET_STATES) {
             runSetStatesCommand(*commandIter, eval, nameToConnectedBlockPosition);
         } else if (commandIter->type == CHECK_STATES) {
-            isSingleTestSuccessful = runCheckStatesCommand(*commandIter, eval, nameToConnectedBlockPosition);
+            isTestGroupSuccessful = runCheckStatesCommand(*commandIter, eval, nameToConnectedBlockPosition);
         } else if (commandIter->type == TICK_STEP) {
+            logInfo("Stepping forward by {} ticks", "CircuitTestCase - TICK_STEP", commandIter->ticks);
             eval->tickStep(commandIter->ticks);
         } else {
             logError("Unrecognized test command", "CircuitTestCase");
-            isSingleTestSuccessful = false;
+            isTestGroupSuccessful = false;
         }
 
-        if (!isSingleTestSuccessful) {
+        if (!isTestGroupSuccessful) {
+            logError("Test group failed.", "CircuitTestCase");
             fullTestSucceedStatus = false;
             if (haltOnFailure) {
                 return false;
@@ -168,6 +162,7 @@ void CircuitTestCase::runSetStatesCommand(TestCommand testCommand, const SharedE
     for (auto statesIter = testCommand.states.begin(); statesIter != testCommand.states.end(); statesIter++) {
         auto blockPosIter = nameToConnectedBlockPosition.find(statesIter->first);
         eval->setState((Address(blockPosIter->second)), statesIter->second);
+        logInfo("Set port '{}' to state '{}'", "CircuitTestCase - SET_STATES", statesIter->first, statesIter->second);
     }
 }
 
@@ -179,6 +174,9 @@ bool CircuitTestCase::runCheckStatesCommand(TestCommand testCommand, const Share
         logic_state_t actualState = eval->getState((Address(blockPosIter->second)));
         if (actualState != statesIter->second) {
             testSucceeded = false;
+            logError("Inner test case failed: Expected port '{}' to have output '{}', got '{}'", "CircuitTestCase - CHECK_STATES", statesIter->first, statesIter->second, actualState);
+        } else {
+            logInfo("Inner test case succeeded: Expected port '{}' to have output '{}', got '{}'", "CircuitTestCase - CHECK_STATES", statesIter->first, statesIter->second, actualState);
         }
     }
     return testSucceeded;
