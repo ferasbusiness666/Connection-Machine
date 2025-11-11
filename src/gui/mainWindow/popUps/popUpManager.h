@@ -16,6 +16,7 @@ public:
 	std::pair<Rml::Element*, std::function<void()>> createPopUp(bool blocking = true, const std::string& windowName = "", unsigned int width = 400, unsigned int height = 300);
 	void addFeedbackPopup();
 	void aboutConnectionMachine();
+	void controlsConnectionMachine();
 
 	void savePopUp(const std::string& circuitUUID);
 	void saveAsPopUp(const std::string& circuitUUID);

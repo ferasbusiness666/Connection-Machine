@@ -255,6 +255,50 @@ void PopUpManager::aboutConnectionMachine() {
 
 }
 
+void PopUpManager::controlsConnectionMachine() {
+	auto [overlay, closePopup] = createPopUp(true);
+	Rml::ElementList windowList;
+    overlay->GetElementsByClassName(windowList, "pop-up-window");
+    if (windowList.empty()) return;
+    Rml::Element* window = windowList.front();
+	window->SetAttribute("style", "display: flex; flex-direction: column; width: 650px; height: 500px; background-color:#303030;");
+
+	Rml::Element* leftandright = window->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
+	leftandright->SetAttribute("style", "display: flex; flex-direction: row; width: 650px; height: 500px; background-color:#303030;");
+
+	Rml::Element* leftdiv = leftandright->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
+	leftdiv->SetAttribute("style", "display: flex; flex-direction: column; width: 450px; height: 300px; background-color:#303030;");
+
+
+    Rml::Element* rightdiv = leftandright->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
+    rightdiv->SetAttribute("style", "display: flex; flex-direction: column; width: 150px; height: 450px; background-color:#303030;");
+
+	
+/* Settings to include
+Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/Save", Keybind(Keybind::KeyId::KI_S, Keybind::KeyMod::KM_CTRL));
+Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/New", Keybind(Keybind::KeyId::KI_N, Keybind::KeyMod::KM_CTRL));
+Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Undo", Keybind(Keybind::KeyId::KI_Z, Keybind::KeyMod::KM_CTRL));
+Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Redo", Keybind(Keybind::KeyId::KI_Z, Keybind::KeyMod::KM_CTRL | Keybind::KeyMod::KM_SHIFT));
+Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Copy", Keybind(Keybind::KeyId::KI_C, Keybind::KeyMod::KM_CTRL));
+Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Paste", Keybind(Keybind::KeyId::KI_V, Keybind::KeyMod::KM_CTRL));
+Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Rotate CCW", Keybind(Keybind::KeyId::KI_Q));
+Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Rotate CW", Keybind(Keybind::KeyId::KI_E));
+Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Confirm", Keybind(Keybind::KeyId::KI_E));
+Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Zoom", Keybind(Keybind::KeyId::KI_UNKNOWN, Keybind::KeyMod::KM_SHIFT));
+Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Home", Keybind(Keybind::KeyId::KI_F));
+*/
+
+	Rml::Element* close = window->AppendChild(mainWindow.getRmlDocument()->CreateElement("button"));
+    close->SetInnerRML("Close");
+    close->SetClass("popup-button", true);
+	close->AddEventListener(Rml::EventId::Click, new EventPasser(
+	    [deleteFunc = closePopup](Rml::Event& event) {
+	        deleteFunc();
+	    }
+	));
+
+}
+
 void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature complaint, feedback
 	auto [overlay, closePopup] = createPopUp(true);
 
