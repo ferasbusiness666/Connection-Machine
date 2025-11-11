@@ -143,7 +143,7 @@ inline void LogicSimulator::updateEmaTickrate(
 inline void LogicSimulator::tickOnce() {
 	std::unique_lock lkNext(statesBMutex);
 
-	threadPool.reset();
+	threadPool.resetAndLoad(jobs);
 	threadPool.waitForCompletion(true);
 	advanceReplayHead();
 
@@ -873,7 +873,6 @@ void LogicSimulator::regenerateJobs() {
 		if (++threadIndex >= threadCount) threadIndex = 0;
 	}
 	updateThreadCount(threadCount);
-	threadPool.resetAndLoad(jobs);
 	// logInfo("{} jobs created for the current round", "LogicSimulator::regenerateJobs", jobs.size());
 }
 
