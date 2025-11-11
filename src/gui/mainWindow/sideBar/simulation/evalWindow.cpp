@@ -29,7 +29,7 @@ EvalWindow::EvalWindow(
 
 void EvalWindow::updateList() {
 	std::vector<std::vector<std::string>> paths;
-	for (auto pair : this->evaluatorManager.getEvaluators()) {
+	for (const auto& pair : this->evaluatorManager.getEvaluators()) {
 		std::vector<std::string> path({ pair.second->getEvaluatorName() });
 		makePaths(paths, path, pair.second->buildAddressTree());
 	}

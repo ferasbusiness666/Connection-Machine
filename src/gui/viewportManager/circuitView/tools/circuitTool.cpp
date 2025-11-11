@@ -36,7 +36,7 @@ void CircuitTool::unregisterFunction(std::string eventName) {
 }
 
 void CircuitTool::unregisterFunctions() {
-	for (auto eventFuncPair : registeredEvents) {
+	for (const auto& eventFuncPair : registeredEvents) {
 		eventRegister->unregisterFunction(eventFuncPair.first, eventFuncPair.second);
 	}
 	registeredEvents.clear();
