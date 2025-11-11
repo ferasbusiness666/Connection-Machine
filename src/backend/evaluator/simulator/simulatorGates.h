@@ -3,6 +3,7 @@
 
 #include "logicState.h"
 #include "backend/evaluator/evalDefs.h"
+#include "backend/container/block/connectionEnd.h"
 
 class SimulatorGate {
 public:
