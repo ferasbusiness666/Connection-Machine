@@ -11,6 +11,7 @@ struct TutorialCondition {
 	struct BlockRequirement {
 		Position pos;
 		BlockType type;
+		Orientation orientation;
 	};
 	struct ConnectionRequirement {
 		Position pos1;
@@ -73,4 +74,4 @@ private:
 	std::vector<TutorialStep> tutorialSteps;
 };
 
-#endif
+#endif /*tutorialManager_h*/
