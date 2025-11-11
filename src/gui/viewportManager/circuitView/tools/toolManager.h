@@ -21,7 +21,7 @@ public:
 	void selectBlock(BlockType blockType);
 	SharedCircuitTool selectTool(SharedCircuitTool tool);
 
-	void setMode(std::string mode);
+	void setMode(const std::string& mode);
 
 	inline void setCircuit(Circuit* circuit) {
 		this->circuit = circuit;

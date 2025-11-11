@@ -14,7 +14,7 @@ public:
 	inline std::vector<std::string> getModes() const override final { return getModes_(); }
 	static inline std::string getPath_() { return "move"; }
 	inline std::string getPath() const override final { return getPath_(); }
-	void setMode(std::string toolMode) override final;
+	void setMode(const std::string& mode) override final;
 
 	void updateElements() override final;
 

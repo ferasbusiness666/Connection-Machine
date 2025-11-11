@@ -52,7 +52,7 @@ SharedCircuitTool ToolStack::getCurrentTool() const {
 	return nullptr;
 }
 
-void ToolStack::setMode(std::string mode) {
+void ToolStack::setMode(const std::string& mode) {
 	if (!toolStack.empty()) getCurrentNonHelperTool()->setMode(mode);
 }
 

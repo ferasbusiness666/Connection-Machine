@@ -21,11 +21,11 @@ bool CircuitTool::sendEvent(const Event* event) {
 	return false;
 }
 
-void CircuitTool::registerFunction(std::string eventName, EventFunction function) {
-	registeredEvents.emplace_back(eventName, eventRegister->registerFunction(eventName, function));
+void CircuitTool::registerFunction(const std::string& eventName, const EventFunction& function) {
+registeredEvents.emplace_back(eventName, eventRegister->registerFunction(eventName, function));
 }
 
-void CircuitTool::unregisterFunction(std::string eventName) {
+void CircuitTool::unregisterFunction(const std::string& eventName) {
 	for (auto iter = registeredEvents.begin(); iter != registeredEvents.end(); iter++) {
 		if (iter->first == eventName) {
 			eventRegister->unregisterFunction(iter->first, iter->second);

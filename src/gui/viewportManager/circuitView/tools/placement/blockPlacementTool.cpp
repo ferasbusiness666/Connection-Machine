@@ -16,15 +16,17 @@ void BlockPlacementTool::activate() {
 	}
 }
 
-void BlockPlacementTool::setMode(std::string toolMode) {
-	if (mode != toolMode) {
+void BlockPlacementTool::setMode(const std::string& mode) {
+	if (this->mode != mode) {
 		SharedBaseBlockPlacementTool newActivePlacementTool;
-		if (toolMode == "Single") {
+		if (mode == "Single") {
 			newActivePlacementTool = std::make_shared<SinglePlaceTool>(environment);
-		} else if (toolMode == "Area") {
+			this->mode = mode;
+		} else if (mode == "Area") {
 			newActivePlacementTool = std::make_shared<AreaPlaceTool>(environment);
+			this->mode = mode;
 		} else {
-			logError("Tool mode \"{}\" could not be found", "", toolMode);
+			logError("Tool mode \"{}\" could not be found", "", mode);
 			return;
 		}
 		activePlacementTool = newActivePlacementTool;
