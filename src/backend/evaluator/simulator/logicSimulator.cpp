@@ -184,10 +184,7 @@ void LogicSimulator::setState(simulator_id_t id, logic_state_t st) {
 	std::unique_lock lkA(statesAMutex, std::try_to_lock);
 
 	if (lkB.owns_lock() && lkA.owns_lock()) {
-		if (statesA.size() <= id) {
-			statesA.resizeWithOffset(id, 1, logic_state_t::UNDEFINED);
-			statesB.resizeWithOffset(id, 1, logic_state_t::UNDEFINED);
-		}
+		extendDataVectors(id);
 		statesA[id] = st;
 		statesB[id] = st;
 		setStateUsed[replayHead] = true;
