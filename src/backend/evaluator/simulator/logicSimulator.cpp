@@ -53,23 +53,11 @@ double LogicSimulator::getAverageTickrate() const {
 
 void LogicSimulator::simulationLoop() {
 	using clock = std::chrono::steady_clock;
-	auto nextTick = clock::now();
-	auto lastTickTime = clock::now();
+	nextTick = clock::now();
+	lastTickTime = clock::now();
 	bool isFirstTick = true;
 
 	while (running) {
-		if (pauseRequest.load(std::memory_order_acquire)) {
-			std::unique_lock<std::mutex> lk(cvMutex);
-			isPaused.store(true, std::memory_order_release);
-			cv.notify_all();
-			cv.wait(lk, [&] { return !pauseRequest || !running; });
-			isPaused.store(false, std::memory_order_release);
-			if (!running) break;
-			nextTick = clock::now();
-			lastTickTime = clock::now();
-			isFirstTick = true;
-		}
-
 		processPendingStateChanges();
 
 		bool didSprint = false;
@@ -141,7 +129,7 @@ inline void LogicSimulator::updateEmaTickrate(
 }
 
 inline void LogicSimulator::tickOnce() {
-	std::unique_lock lkNext(statesBMutex);
+	std::unique_lock lkNext(mainDataMutex);
 
 	threadPool.resetAndLoad(jobs);
 	threadPool.waitForCompletion(true);
@@ -160,7 +148,7 @@ void LogicSimulator::processPendingStateChanges() {
 	}
 
 	if (!localQueue.empty()) {
-		std::scoped_lock lk(statesBMutex, statesAMutex);
+		std::scoped_lock lk(mainDataMutex, statesAMutex);
 		while (!localQueue.empty()) {
 			const StateChange& change = localQueue.front();
 
@@ -180,10 +168,10 @@ void LogicSimulator::setState(simulator_id_t id, logic_state_t st) {
 		return;
 	}
 	// we don't want to freeze up if the mutexes are locked, so we'll only set the state if we can successfully lock. otherwise, we'll wait until the next tick to set the states.
-	std::unique_lock lkB(statesBMutex, std::try_to_lock);
+	std::unique_lock lkMain(mainDataMutex, std::try_to_lock);
 	std::unique_lock lkA(statesAMutex, std::try_to_lock);
 
-	if (lkB.owns_lock() && lkA.owns_lock()) {
+	if (lkMain.owns_lock() && lkA.owns_lock()) {
 		extendDataVectors(id);
 		statesA[id] = st;
 		statesB[id] = st;

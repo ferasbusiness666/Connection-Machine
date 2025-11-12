@@ -60,7 +60,6 @@ private:
 	std::atomic<bool> running { true };
 
 	std::atomic<bool> pauseRequest { false };
-	std::atomic<bool> isPaused { false };
 	std::mutex cvMutex;
 	std::condition_variable cv;
 
@@ -87,7 +86,7 @@ private:
 	logic_state_t getStateUnlocked(simulator_id_t id) const;
 
 	mutable std::shared_mutex statesAMutex;
-	std::mutex statesBMutex;
+	std::mutex mainDataMutex;
 
 	struct StateChange {
 		simulator_id_t id;
@@ -250,30 +249,25 @@ private:
 		threadCount = std::max(threadCount, size_t(1));
 		threadPool.resizeThreads(threadCount - 1);
 	}
+
+	std::chrono::steady_clock::time_point nextTick;
+	std::chrono::steady_clock::time_point lastTickTime;
 };
 
 class SimPauseGuard {
 public:
-	explicit SimPauseGuard(LogicSimulator& s) : sim(s) {
-		{
-			std::lock_guard<std::mutex> lk(sim.cvMutex);
-			sim.pauseRequest.store(true, std::memory_order_release);
-			sim.cv.notify_all();
-		}
-		// wait until the sim thread *confirms* it is paused
-		std::unique_lock<std::mutex> lk(sim.cvMutex);
-		sim.cv.wait(lk, [&]{ return sim.isPaused.load(std::memory_order_acquire); });
+	explicit SimPauseGuard(LogicSimulator& s) : sim(s), mainLock(sim.mainDataMutex) {
+		sim.pauseRequest.store(true, std::memory_order_release);
 	}
 	~SimPauseGuard() {
-		{
-			std::lock_guard<std::mutex> lk(sim.cvMutex);
-			sim.pauseRequest.store(false, std::memory_order_release);
-			sim.cv.notify_all();
-		}
+		sim.pauseRequest.store(false, std::memory_order_release);
+		// sim.nextTick = std::chrono::steady_clock::now();
+		// sim.lastTickTime = std::chrono::steady_clock::now();
 	}
 
 private:
 	LogicSimulator& sim;
+	std::unique_lock<std::mutex> mainLock;
 };
 
 #endif /* logicSimulator_h */
