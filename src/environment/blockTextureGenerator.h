@@ -112,7 +112,7 @@ private:
 	static bool intersectsAny(const Rect& candidate, const std::vector<Rect>& occupiedAreas);
 	static bool overlapsAxis(int coord, int rectStart, int rectSize, int padding);
 
-	static PortLabelSide detectPreferredSide(const BlockData::ConnectionData& connection, Size blockSize);
+	static PortLabelSide detectPreferredSide(const BlockData* blockData, const BlockData::ConnectionData& connection);
 	static Vec2Int getPortTexturePosition(const BlockData::ConnectionData& connection, int scale);
 	static int computePortCircleRadius(int bitWidth, int scale);
 

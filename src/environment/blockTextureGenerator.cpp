@@ -149,7 +149,7 @@ void BlockTextureGenerator::drawConnectionLabels(
 		}
 		std::string labelText = *connectionName;
 
-		const PortLabelSide side = detectPreferredSide(connection.second, blockData->getSize());
+		const PortLabelSide side = detectPreferredSide(blockData, connection.second);
 		const int paddingFromPort = config.basePadding + circleRadius;
 		labelsBySide[static_cast<uint8_t>(side)].push_back(PortLabelRequest{
 			std::move(labelText),
@@ -472,9 +472,10 @@ bool BlockTextureGenerator::overlapsAxis(int coord, int rectStart, int rectSize,
 	return coord >= minRange && coord <= maxRange;
 }
 
-BlockTextureGenerator::PortLabelSide BlockTextureGenerator::detectPreferredSide(const BlockData::ConnectionData& connection, Size blockSize) {
+BlockTextureGenerator::PortLabelSide BlockTextureGenerator::detectPreferredSide(const BlockData* blockData, const BlockData::ConnectionData& connection) {
 	const float epsilon = 1e-3f;
 	if (std::abs(connection.portOffset.dx - 0.5f) <= epsilon && std::abs(connection.portOffset.dy - 0.5f) <= epsilon) {
+		const Size blockSize = blockData->getSize();
 		const float blockWidth = static_cast<float>(blockSize.w);
 		const float blockHeight = static_cast<float>(blockSize.h);
 		const float centerX = std::clamp(static_cast<float>(connection.positionOnBlock.dx) + 0.5f, 0.0f, blockWidth);
@@ -487,6 +488,19 @@ BlockTextureGenerator::PortLabelSide BlockTextureGenerator::detectPreferredSide(
 
 		const float minHorizontal = std::min(distLeft, distRight);
 		const float minVertical = std::min(distTop, distBottom);
+
+		Vector positionOnBlock = connection.positionOnBlock;
+
+		if (blockData->getInputConnectionId(positionOnBlock) && blockData->getOutputConnectionId(positionOnBlock)) {
+			switch (connection.portType) {
+			case BlockData::ConnectionData::PortType::OUTPUT:
+				return PortLabelSide::RIGHT;
+			case BlockData::ConnectionData::PortType::INPUT:
+				return PortLabelSide::LEFT;
+			default:
+				return PortLabelSide::LEFT;
+			}
+		}
 
 		if (minHorizontal <= minVertical + epsilon) {
 			if (std::abs(distLeft - distRight) <= epsilon) {
