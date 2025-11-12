@@ -7,7 +7,7 @@
 #include "gui/mainWindow/circuitView/circuitViewWidget.h"
 #include "gui/helper/saveCallback.h"
 #include "network/network.h"
-#include "computerAPI/directoryManager.h" // TEMPORARY
+// #include "computerAPI/directoryManager.h" // TEMPORARY
 
 #include <SDL3/SDL.h>
 
@@ -176,7 +176,7 @@ void App::runLoop() {
 
 void App::startTryingToQuit() {
 	if (tryingToQuit) return;
-	{ // TEMPORARY
+	/* { // TEMPORARY
 		// do dumpstate and into file
 		std::string dumpStateStr = dumpState().dump(4);
 		std::string path = (DirectoryManager::getConfigDirectory() / ("dumpstate.json")).string();
@@ -188,7 +188,7 @@ void App::startTryingToQuit() {
 		} else {
 			logError("Could not open {} to dump state!", "App", path);
 		}
-	}
+	} */
 	tasksToFinishToQuit = 0;
 	tryingToQuit = true;
 	auto windowIter = windows.begin();
