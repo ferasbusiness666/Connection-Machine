@@ -171,19 +171,26 @@ void Evaluator::edit_deleteICContents(SimPauseGuard& pauseGuard, eval_circuit_id
 		logError("EvalCircuit with id {} not found", "Evaluator::edit_deleteIC", evalCircuitId);
 		return;
 	}
+	std::vector<std::pair<Position, CircuitNode>> nodesToRemove;
 	evalCircuit->forEachNode([&](Position pos, const CircuitNode& node) {
+		nodesToRemove.emplace_back(pos, node);
+	});
+	for (const auto& [pos, node] : nodesToRemove) {
+		removeDependentInterCircuitConnections(pauseGuard, node);
 		if (node.isIC()) {
 			eval_circuit_id_t icId = node.getEvalCircuitId();
 			edit_deleteICContents(pauseGuard, icId);
 			evalCircuitContainer.removeCircuit(icId);
 			changedICs = true;
-			return;
+		} else {
+			middle_id_t gateId = node.getMiddleId();
+			circuitNodeToBlockTypeMap.erase(node);
+			middleIdToEvalPositionMap.erase(gateId);
+			evalSimulator->removeGate(pauseGuard, gateId);
+			middleIdProvider.releaseId(gateId);
 		}
-		middle_id_t gateId = node.getMiddleId();
-		middleIdToEvalPositionMap.erase(gateId);
-		evalSimulator->removeGate(pauseGuard, gateId);
-		middleIdProvider.releaseId(gateId);
-	});
+		evalCircuit->removeNode(pos);
+	}
 }
 
 void Evaluator::edit_placeBlock(
