@@ -388,7 +388,7 @@ TEST_F(CircuitTest, CircuitPlacement) {
 	ASSERT_EQ(block1, nullptr);
 
 	// Test redo stuff
-	circuit->undo();
+	circuit->redo();
 	block1 = circuit->getBlockContainer().getBlock(Position());
 	ASSERT_NE(block1, nullptr);
 
