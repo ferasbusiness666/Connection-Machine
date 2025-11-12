@@ -55,6 +55,47 @@ public:
 	inline bool empty() const { return modifications.empty(); }
 	inline const std::vector<Modification>& getModifications() const { return modifications; }
 
+	static nlohmann::json dumpModification(const Modification& modification) {
+		nlohmann::json stateJson;
+		stateJson["type"] = modification.first;
+		switch (modification.first) {
+		case ModificationType::REMOVED_BLOCK:
+		case ModificationType::PLACE_BLOCK: {
+			auto blockModification = std::get<block_modification_t>(modification.second);
+			stateJson["position"] = std::get<0>(blockModification).toString();
+			stateJson["orientation"] = { {"rotation", std::get<1>(blockModification).rotation}, {"flipped", std::get<1>(blockModification).flipped} };
+			stateJson["blockType"] = blocktype_to_string(std::get<2>(blockModification));
+			break;
+		}
+		case ModificationType::MOVE_BLOCK: {
+			auto moveModification = std::get<move_modification_t>(modification.second);
+			stateJson["currentPosition"] = std::get<0>(moveModification).toString();
+			stateJson["currentOrientation"] = { {"rotation", std::get<1>(moveModification).rotation}, {"flipped", std::get<1>(moveModification).flipped} };
+			stateJson["newPosition"] = std::get<2>(moveModification).toString();
+			stateJson["newOrientation"] = { {"rotation", std::get<3>(moveModification).rotation}, {"flipped", std::get<3>(moveModification).flipped} };
+			stateJson["moveType"] = static_cast<int>(std::get<4>(moveModification));
+			break;
+		}
+		case ModificationType::REMOVED_CONNECTION:
+		case ModificationType::CREATED_CONNECTION: {
+			auto connectionModification = std::get<connection_modification_t>(modification.second);
+			stateJson["outputPosition"] = connectionModification.first.toString();
+			stateJson["inputPosition"] = connectionModification.second.toString();
+			break;
+		}
+		}
+		return stateJson;
+	}
+
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson;
+		stateJson["modifications"] = nlohmann::json::array();
+		for (const Modification& modification : modifications) {
+			stateJson["modifications"].push_back(MinimalDifference::dumpModification(modification));
+		}
+		return stateJson;
+	}
+
 private:
 	void addRemovedBlock(Position position, Orientation orientation, BlockType type) { modifications.push_back({ ModificationType::REMOVED_BLOCK, std::make_tuple(position, orientation, type) }); }
 	void addPlacedBlock(Position position, Orientation orientation, BlockType type) { modifications.push_back({ ModificationType::PLACE_BLOCK, std::make_tuple(position, orientation, type) }); }

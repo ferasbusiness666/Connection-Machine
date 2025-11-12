@@ -85,6 +85,18 @@ public:
 		if (iter == blockTypeToCircuitId.end()) return 0; // there is never a circuit with id 0
 		return iter->second;
 	}
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson;
+		stateJson["blockTypeToCircuitId"] = nlohmann::json::object();
+		for (const auto& [blockType, circuitId] : blockTypeToCircuitId) {
+			stateJson["blockTypeToCircuitId"][blocktype_to_string(blockType)] = circuitId;
+		}
+		stateJson["circuitBlockData"] = nlohmann::json::object();
+		for (const auto& [circuitId, circuitBlockData] : circuitBlockData) {
+			stateJson["circuitBlockData"][std::to_string(circuitId)] = circuitBlockData.dumpState();
+		}
+		return stateJson;
+	}
 
 private:
 	DataUpdateEventManager& dataUpdateEventManager;

@@ -59,3 +59,13 @@ const SharedProceduralCircuit ProceduralCircuitManager::getProceduralCircuit(con
 	if (iter == proceduralCircuits.end()) return nullptr;
 	return iter->second;
 }
+
+nlohmann::json ProceduralCircuitManager::dumpState() const {
+	nlohmann::json stateJson;
+	stateJson["pathToUUID"] = pathToUUID;
+	stateJson["proceduralCircuits"] = nlohmann::json::object();
+	for (const auto& pair : proceduralCircuits) {
+		stateJson["proceduralCircuits"][pair.first] = pair.second->dumpState();
+	}
+	return stateJson;
+}

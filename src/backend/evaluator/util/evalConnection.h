@@ -34,6 +34,12 @@ struct EvalConnectionPoint {
 	std::string toString() const {
 		return "ECP(" + std::to_string(gateId) + ", " + std::to_string(portId) + ")";
 	}
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson;
+		stateJson["gateId"] = gateId.get();
+		stateJson["portId"] = portId.get();
+		return stateJson;
+	}
 };
 
 struct EvalConnection {
@@ -68,6 +74,13 @@ struct EvalConnection {
 
 	EvalConnection reverse() const {
 		return EvalConnection(destination, source);
+	}
+
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson;
+		stateJson["source"] = source.dumpState();
+		stateJson["destination"] = destination.dumpState();
+		return stateJson;
 	}
 };
 

@@ -31,6 +31,8 @@ public:
 	void startTryingToQuit();
 	void stopTryingToQuit();
 
+	nlohmann::json dumpState() const;
+
 private:
 	Environment environment {true};
 

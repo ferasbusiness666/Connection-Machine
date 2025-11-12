@@ -1390,3 +1390,50 @@ void Evaluator::decreaseTickrateSeq() {
 	double newTickrate = std::max(0.1, prev_in_sequence(currentTickrate));
 	setTickrate(newTickrate);
 }
+
+nlohmann::json Evaluator::dumpState() const {
+	nlohmann::json stateJson;
+	stateJson["evaluatorId"] = evaluatorId.get();
+	stateJson["evalCircuitContainer"] = evalCircuitContainer.dumpState();
+	stateJson["evalConfig"] = evalConfig.dumpState();
+	stateJson["middleIdProvider"] = middleIdProvider.dumpState();
+	stateJson["evalSimulator"] = evalSimulator->dumpState();
+
+	stateJson["interCircuitConnections"] = nlohmann::json::array();
+	for (const InterCircuitConnection& connection : interCircuitConnections) {
+		stateJson["interCircuitConnections"].push_back(connection.dumpState());
+	}
+
+	stateJson["dirtySimulatorIds"] = nlohmann::json::array();
+	for (const simulator_id_t simId : dirtySimulatorIds) {
+		stateJson["dirtySimulatorIds"].push_back(simId.get());
+	}
+
+	stateJson["dirtyMiddleIds"] = nlohmann::json::array();
+	for (const middle_id_t mid : dirtyMiddleIds) {
+		stateJson["dirtyMiddleIds"].push_back(mid.get());
+	}
+
+	stateJson["dirtyNodes"] = nlohmann::json::array();
+	for (const EvalPosition& evalPosition : dirtyNodes) {
+		stateJson["dirtyNodes"].push_back(evalPosition.dumpState());
+	}
+
+	stateJson["pinSimulatorIdToEvalPositionMap"] = nlohmann::json::object();
+	for (const auto& [simulatorId, evalPosition] : pinSimulatorIdToEvalPositionMap) {
+		std::string simIdStr = std::to_string(simulatorId.get());
+		if (!stateJson["pinSimulatorIdToEvalPositionMap"].contains(simIdStr)) {
+			stateJson["pinSimulatorIdToEvalPositionMap"][simIdStr] = nlohmann::json::array();
+		}
+		stateJson["pinSimulatorIdToEvalPositionMap"][simIdStr].push_back(evalPosition.dumpState());
+	}
+
+	stateJson["circuitNodeToBlockTypeMap"] = nlohmann::json::object();
+	for (const auto& [circuitNode, blockType] : circuitNodeToBlockTypeMap) {
+		stateJson["circuitNodeToBlockTypeMap"][circuitNode.toString()] = blocktype_to_string(blockType);
+	}
+
+
+
+	return stateJson;
+}

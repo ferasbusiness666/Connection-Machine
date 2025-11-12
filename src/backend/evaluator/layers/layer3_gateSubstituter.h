@@ -223,6 +223,12 @@ public:
 		return replacer.isViewingReplay();
 	}
 
+	nlohmann::json dumpState() const {
+		// TODO: Implement state dumping
+		nlohmann::json stateJson;
+		return stateJson;
+	}
+
 private:
 	Replacer replacer;
 	IdProvider<middle_id_t>& middleIdProvider;

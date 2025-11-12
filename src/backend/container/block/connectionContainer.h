@@ -17,6 +17,8 @@ public:
 
 	bool hasConnection(connection_end_id_t thisEndId, ConnectionEnd otherConnectionEnd) const;
 
+	nlohmann::json dumpState() const;
+
 private:
 	bool tryMakeConnection(connection_end_id_t thisEndId, ConnectionEnd otherConnectionEnd);
 	bool tryRemoveConnection(connection_end_id_t thisEndId, ConnectionEnd otherConnectionEnd);

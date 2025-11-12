@@ -59,3 +59,21 @@ CopiedBlocks::CopiedBlocks(const BlockContainer& blockContainer, SharedSelection
 	}
 	logInfo("Copied {} blocks", "CopiedBlocks", blocks.size());
 }
+
+nlohmann::json CopiedBlocks::dumpState() const {
+	nlohmann::json stateJson;
+	stateJson["minPosition"] = minPosition.toString();
+	stateJson["maxPosition"] = maxPosition.toString();
+	stateJson["blocks"] = nlohmann::json::array();
+	for (const CopiedBlockData& blockData : blocks) {
+		stateJson["blocks"].push_back(blockData.dumpState());
+	}
+	stateJson["connections"] = nlohmann::json::array();
+	for (const auto& [fromPosition, toPosition] : connections) {
+		nlohmann::json connectionJson;
+		connectionJson["from"] = fromPosition.toString();
+		connectionJson["to"] = toPosition.toString();
+		stateJson["connections"].push_back(connectionJson);
+	}
+	return stateJson;
+}

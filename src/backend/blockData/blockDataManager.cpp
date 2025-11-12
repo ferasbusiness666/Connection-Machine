@@ -341,3 +341,39 @@ BlockType BlockDataManager::getBusBlock(std::vector<BusConnectionData> busConnec
 	busInterfaceBlockData->setPath("Other");
 	return blockType;
 }
+
+nlohmann::json BlockDataManager::dumpState() const {
+	nlohmann::json stateJson;
+	stateJson["blockData"] = nlohmann::json::array();
+	for (const BlockData& bd : blockData) {
+		stateJson["blockData"].push_back(bd.dumpState());
+	}
+	stateJson["createdBuses"] = nlohmann::json::array();
+	for (const auto& [busConnections, blockType] : createdBuses) {
+		nlohmann::json busJson;
+		busJson["busConnections"] = dumpBusConnectionDataVector(busConnections);
+		busJson["blockType"] = blocktype_to_string(blockType);
+		stateJson["createdBuses"].push_back(busJson);
+	}
+	return stateJson;
+}
+
+nlohmann::json BlockDataManager::dumpBusConnectionDataVector(const std::vector<BlockDataManager::BusConnectionData>& busConnections) {
+	nlohmann::json busConnectionsJson = nlohmann::json::array();
+	for (const BusConnectionData& busConnection : busConnections) {
+		busConnectionsJson.push_back(busConnection.dumpState());
+	}
+	return busConnectionsJson;
+}
+
+nlohmann::json BlockDataManager::BusConnectionData::dumpState() const {
+	nlohmann::json busConnectionJson;
+	busConnectionJson["positionOnBlock"] = positionOnBlock.toString();
+	if (std::holds_alternative<unsigned int>(bitConfiguration)) {
+		busConnectionJson["bitConfiguration"] = std::get<unsigned int>(bitConfiguration);
+	} else {
+		busConnectionJson["bitConfiguration"] = nlohmann::json::array();
+		busConnectionJson["bitConfiguration"] = std::get<std::vector<unsigned int>>(bitConfiguration);
+	}
+	return busConnectionJson;
+}

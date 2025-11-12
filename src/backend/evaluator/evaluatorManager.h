@@ -45,6 +45,8 @@ public:
 
 	void applyDiff(DifferenceSharedPtr difference, circuit_id_t circuitId);
 
+	nlohmann::json dumpState() const;
+
 private:
 	IdProvider<evaluator_id_t> evaluatorIdProvider;
 

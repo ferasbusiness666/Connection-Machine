@@ -2,7 +2,6 @@
 #include "gui/mainWindow/popUps/popUpManager.h"
 
 #include <httplib.h>
-#include <nlohmann/json.hpp>
 
 std::optional<Network> Network::singletonInstance;
 

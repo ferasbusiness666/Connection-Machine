@@ -666,3 +666,18 @@ void Circuit::setCircuitName(const std::string& name) {
 	BlockData* blockData = blockContainer.getBlockDataManager().getBlockData(blockContainer.getBlockType());
 	if (blockData) blockData->setName(getCircuitNameNumber());
 }
+
+nlohmann::json Circuit::dumpState() const {
+	nlohmann::json stateJson;
+	stateJson["circuitId"] = circuitId;
+	stateJson["circuitUUID"] = circuitUUID;
+	stateJson["circuitName"] = circuitName;
+	stateJson["stackBottom"] = stackBottom.toString();
+	stateJson["stackTop"] = stackTop.toString();
+	stateJson["blockContainer"] = blockContainer.dumpState();
+	stateJson["undoSystem"] = undoSystem.dumpState();
+	stateJson["midUndo"] = midUndo;
+	stateJson["editable"] = editable;
+	stateJson["editCount"] = editCount;
+	return stateJson;
+}

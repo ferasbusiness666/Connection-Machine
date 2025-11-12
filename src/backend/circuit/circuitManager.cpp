@@ -310,3 +310,20 @@ void CircuitManager::updateExistingCircuit(circuit_id_t id, const GeneratedCircu
 
 	dataUpdateEventManager.sendEvent("blockDataUpdate");
 }
+
+nlohmann::json CircuitManager::dumpState() const {
+	nlohmann::json stateJson;
+	stateJson["lastId"] = lastId;
+	stateJson["circuits"] = nlohmann::json::object();
+	for (const auto& [circuitId, circuit] : circuits) {
+		stateJson["circuits"][std::to_string(circuitId)] = circuit->dumpState();
+	}
+	stateJson["UUIDToCircuits"] = nlohmann::json::object();
+	for (const auto& [uuid, circuit] : UUIDToCircuits) {
+		stateJson["UUIDToCircuits"][uuid] = circuit->getCircuitId();
+	}
+	stateJson["blockDataManager"] = blockDataManager.dumpState();
+	stateJson["circuitBlockDataManager"] = circuitBlockDataManager.dumpState();
+	stateJson["proceduralCircuitManager"] = proceduralCircuitManager.dumpState();
+	return stateJson;
+}

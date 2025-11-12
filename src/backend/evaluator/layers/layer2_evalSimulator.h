@@ -70,6 +70,11 @@ public:
 	inline bool isViewingReplay() const {
 		return gateSubstituter.isViewingReplay();
 	}
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson;
+		stateJson["gateSubstituter"] = gateSubstituter.dumpState();
+		return stateJson;
+	}
 private:
 	GateSubstituter gateSubstituter;
 };

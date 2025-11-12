@@ -325,3 +325,18 @@ void WasmProceduralCircuit::setWasm(WasmInstance&& wasmInstance) {
 void WasmProceduralCircuit::makeCircuit(const ProceduralCircuitParameters& parameters, GeneratedCircuit& generatedCircuit) {
 	wasmInstance.makeCircuit(parameters, generatedCircuit);
 }
+
+nlohmann::json WasmProceduralCircuit::dumpStateInherited() const {
+	nlohmann::json stateJson;
+	stateJson["wasmInstance"] = wasmInstance.dumpState();
+	return stateJson;
+}
+
+nlohmann::json WasmProceduralCircuit::WasmInstance::dumpState() const {
+	nlohmann::json stateJson;
+	stateJson["valid"] = valid;
+	stateJson["name"] = name;
+	stateJson["UUID"] = UUID;
+	stateJson["defaultParameters"] = defaultParameters.dumpState();
+	return stateJson;
+}

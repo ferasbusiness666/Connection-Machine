@@ -182,6 +182,16 @@ public:
 		}
 		return usedIds;
 	}
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson;
+		stateJson["nextId"] = nextId;
+		stateJson["initialValue"] = initialValue;
+		stateJson["unusedIds"] = nlohmann::json::array();
+		for (const rep id : unusedIds) {
+			stateJson["unusedIds"].push_back(id);
+		}
+		return stateJson;
+	}
 private:
 	rep nextId;
 	rep initialValue;

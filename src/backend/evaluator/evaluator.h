@@ -19,18 +19,32 @@ struct CircuitPortDependency {
 	auto operator<=>(const CircuitPortDependency& other) const {
 		return std::tie(circuitId, connectionEndId) <=> std::tie(other.circuitId, other.connectionEndId);
 	}
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson;
+		stateJson["circuitId"] = circuitId;
+		stateJson["connectionEndId"] = connectionEndId.get();
+		return stateJson;
+	}
 };
 
 struct InterCircuitConnection {
 	EvalConnection connection;
 	std::set<CircuitPortDependency> circuitPortDependencies;
 	std::set<CircuitNode> circuitNodeDependencies;
-};
 
-struct DependentConnectionPoint {
-	EvalConnectionPoint connectionPoint;
-	std::set<CircuitPortDependency> circuitPortDependencies;
-	std::set<CircuitNode> circuitNodeDependencies;
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson;
+		stateJson["connection"] = connection.dumpState();
+		stateJson["circuitPortDependencies"] = nlohmann::json::array();
+		for (const CircuitPortDependency& dep : circuitPortDependencies) {
+			stateJson["circuitPortDependencies"].push_back(dep.dumpState());
+		}
+		stateJson["circuitNodeDependencies"] = nlohmann::json::array();
+		for (const CircuitNode& node : circuitNodeDependencies) {
+			stateJson["circuitNodeDependencies"].push_back(node.dumpState());
+		}
+		return stateJson;
+	}
 };
 
 class Evaluator {
@@ -122,6 +136,8 @@ public:
 			listeners.erase(iter);
 		}
 	}
+
+	nlohmann::json dumpState() const;
 
 private:
 	evaluator_id_t evaluatorId;

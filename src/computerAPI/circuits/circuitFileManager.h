@@ -14,6 +14,17 @@ public:
 		std::string fileLocation;
         std::unordered_map<std::string, unsigned long long> lastSavedEdit; // only for circuits
 		std::unordered_set<std::string> UUIDs;
+
+		nlohmann::json dumpState() const {
+			nlohmann::json fileDataJson;
+			fileDataJson["fileLocation"] = fileLocation;
+			fileDataJson["UUIDs"] = nlohmann::json::array();
+			for (const auto& UUID : UUIDs) {
+				fileDataJson["UUIDs"].push_back(UUID);
+			}
+			fileDataJson["lastSavedEdit"] = lastSavedEdit;
+			return fileDataJson;
+		}
 	};
 
 	CircuitFileManager(CircuitManager& circuitManager);
@@ -34,6 +45,9 @@ public:
 	const std::map<std::string, FileData>& getAllFiles() const { return filePathToFile; }
 	const FileData* getFileDataFromPath(std::string path) const;
 	const FileData* getFileDataFromUUID(std::string UUID) const;
+
+	nlohmann::json dumpState() const;
+
 private:
 	FileData* setSaveFilePathAndGetFileData(const std::string& UUID, std::string fileLocation, bool addDotCir = true);
 	circuit_id_t loadParsedCircuit(ParsedCircuit& parsedCircuit);

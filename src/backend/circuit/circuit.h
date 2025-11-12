@@ -94,6 +94,8 @@ public:
 		return blockPosition.x == stackBottom.x;
 	}
 
+	nlohmann::json dumpState() const;
+
 private:
 	void pushOntoStack(Position blockPosition, Difference * difference, MoveType moveType = MoveType::MULTI_BEGIN);
 	void popOffStack(Position position, Orientation transformAmount, bool resetRotation, Difference * difference, MoveType moveType = MoveType::MULTI_FINAL);

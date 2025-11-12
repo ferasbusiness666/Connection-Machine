@@ -7,3 +7,12 @@ std::optional<CircuitNode> EvalCircuit::getNode(Position pos) const noexcept {
 	}
 	return std::nullopt;
 }
+
+nlohmann::json EvalCircuit::dumpState() const {
+	nlohmann::json stateJson;
+	stateJson["id"] = id.get();
+	stateJson["parentEvalId"] = parentEvalId.get();
+	stateJson["circuitId"] = circuitId;
+	stateJson["circuitNodes"] = circuitNodes.dumpStateAndInner();
+	return stateJson;
+}

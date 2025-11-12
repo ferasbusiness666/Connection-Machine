@@ -151,3 +151,25 @@ void ProceduralCircuit::regenerateAll() {
 		circuit->setCircuitName(getProceduralCircuitName() + " (" + realParameters.toString() + ")");
 	}
 }
+
+nlohmann::json ProceduralCircuitParameters::dumpState() const {
+	nlohmann::json stateJson = parameters;
+	return stateJson;
+}
+
+nlohmann::json ProceduralCircuit::dumpState() const {
+	nlohmann::json stateJson;
+	stateJson["proceduralCircuitName"] = proceduralCircuitName;
+	stateJson["proceduralCircuitUUID"] = proceduralCircuitUUID;
+	stateJson["parameterDefaults"] = parameterDefaults.dumpState();
+	stateJson["generatedCircuits"] = nlohmann::json::object();
+	for (const auto& pair : generatedCircuits) {
+		stateJson["generatedCircuits"][pair.first.toString()] = pair.second;
+	}
+	stateJson["circuitIdToProceduralCircuitParameters"] = nlohmann::json::object();
+	for (const auto& pair : circuitIdToProceduralCircuitParameters) {
+		stateJson["circuitIdToProceduralCircuitParameters"][std::to_string(pair.first)] = pair.second.dumpState();
+	}
+	stateJson["inherited"] = dumpStateInherited();
+	return stateJson;
+}

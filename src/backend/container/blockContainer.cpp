@@ -660,3 +660,16 @@ unsigned int BlockContainer::getBitwidthOfJunction(block_id_t blockId, std::unor
 	}
 	return 0;
 }
+
+nlohmann::json BlockContainer::dumpState() const {
+	nlohmann::json stateJson;
+	stateJson["selfBlockType"] = static_cast<unsigned int>(selfBlockType);
+	stateJson["lastId"] = lastId;
+	stateJson["blocks"] = nlohmann::json::object();
+	for (const auto& [blockId, block] : blocks) {
+		stateJson["blocks"][std::to_string(blockId)] = block.dumpState();
+	}
+	stateJson["grid"] = grid.dumpStateAndInner();
+	stateJson["blockTypeCounts"] = blockTypeCounts;
+	return stateJson;
+}
