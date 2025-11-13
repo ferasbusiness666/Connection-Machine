@@ -33,7 +33,6 @@ void ViewportRenderData::updateViewFrame(glm::vec2 origin, glm::vec2 size) {
 	viewData.viewport.height = size.y;
 	viewData.viewport.minDepth = 0.0f;
 	viewData.viewport.maxDepth = 1.0f;
-
 }
 
 void ViewportRenderData::updateView(FPosition topLeft, FPosition bottomRight) {

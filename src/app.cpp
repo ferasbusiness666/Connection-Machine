@@ -176,19 +176,19 @@ void App::runLoop() {
 
 void App::startTryingToQuit() {
 	if (tryingToQuit) return;
-	/* { // TEMPORARY
-		// do dumpstate and into file
-		std::string dumpStateStr = dumpState().dump(4);
-		std::string path = (DirectoryManager::getConfigDirectory() / ("dumpstate.json")).string();
-		std::ofstream file(path);
-		if (file.is_open()) {
-			file << dumpStateStr;
-			file.close();
-			logInfo("Dumped state to {}", "App", path);
-		} else {
-			logError("Could not open {} to dump state!", "App", path);
-		}
-	} */
+	// { // TEMPORARY
+	// 	// do dumpstate and into file
+	// 	std::string dumpStateStr = dumpState().dump(1, '\t');
+	// 	std::string path = (DirectoryManager::getConfigDirectory() / ("dumpstate.json")).string();
+	// 	std::ofstream file(path);
+	// 	if (file.is_open()) {
+	// 		file << dumpStateStr;
+	// 		file.close();
+	// 		logInfo("Dumped state to {}", "App", path);
+	// 	} else {
+	// 		logError("Could not open {} to dump state!", "App", path);
+	// 	}
+	// }
 	tasksToFinishToQuit = 0;
 	tryingToQuit = true;
 	auto windowIter = windows.begin();

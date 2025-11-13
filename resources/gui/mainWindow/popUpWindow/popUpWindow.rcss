@@ -29,13 +29,13 @@
 }
 
 .pop-up-window-blocked {
-	width: 400dp;
-	height: 250dp;
+	width: 50%;
+	min-width: 500dp;
 }
 
 .pop-up-window-blocked-bug-report {
-	width: 400dp;
-	height: 350dp;
+	width: 50%;
+	min-width: 500dp;
 }
 
 .pop-up-window-not-blocked {
