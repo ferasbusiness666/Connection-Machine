@@ -29,4 +29,13 @@ Step:
 		Connection: (2, 1) (4, 1)
 	Action:
 		Message: "Place a LIGHT and connect the AND output to the LIGHT."
-		Block Preview: LIGHT
+		Block Preview: LIGHT (4, 1) ZERO
+		Connection Preview: (2, 1) (4, 1)
+Step:
+	Condition:
+		State: h (2, 1) 2
+	Action:
+Step:
+	Condition:
+	Action:
+		Message: "Tutorial Complete!"
