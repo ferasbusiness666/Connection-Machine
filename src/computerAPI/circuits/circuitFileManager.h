@@ -17,7 +17,7 @@ public:
 
 		nlohmann::json dumpState() const {
 			nlohmann::json fileDataJson;
-			fileDataJson["fileLocation"] = fileLocation;
+			fileDataJson["fileLocation"] = "fileLocation";
 			fileDataJson["UUIDs"] = nlohmann::json::array();
 			for (const auto& UUID : UUIDs) {
 				fileDataJson["UUIDs"].push_back(UUID);

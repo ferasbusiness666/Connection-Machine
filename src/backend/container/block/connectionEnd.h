@@ -24,7 +24,7 @@ public:
 	nlohmann::json dumpState() const {
 		nlohmann::json stateJson;
 		stateJson["blockId"] = blockId;
-		stateJson["connectionId"] = connectionId.get();
+		stateJson["connectId"] = connectionId.get();
 		return stateJson;
 	}
 private:

@@ -296,18 +296,9 @@ CircuitFileManager::FileData* CircuitFileManager::setSaveFilePathAndGetFileData(
 nlohmann::json CircuitFileManager::dumpState() const {
 	nlohmann::json stateJson;
 	try {
-		try {
-			stateJson["UUIDToFilePath"] = UUIDToFilePath;
-		} catch (const std::exception& e) {
-			stateJson["UUIDToFilePath_error"] = e.what();
-		}
-		try {
-			nlohmann::json fileDataJson;
-			for (const auto& [filePath, fileData] : filePathToFile) {
-				fileDataJson[filePath] = fileData.dumpState();
-			}
-		} catch (const std::exception& e) {
-			stateJson["filePathToFile_error"] = e.what();
+		nlohmann::json fileDataJson;
+		for (const auto& [filePath, fileData] : filePathToFile) {
+			fileDataJson[filePath] = fileData.dumpState();
 		}
 	} catch (const std::exception& e) {
 		stateJson["error"] = e.what();
