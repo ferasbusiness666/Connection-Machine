@@ -1,8 +1,8 @@
 #ifndef minimalDifference_h
 #define minimalDifference_h
 
-#include "block/blockDefs.h"
 #include "../position/position.h"
+#include "block/blockDefs.h"
 #include "difference.h"
 
 class MinimalDifference {
@@ -32,12 +32,17 @@ public:
 				break;
 			case Difference::MOVE_BLOCK:
 				moveModification = std::get<Difference::move_modification_t>(modification.second);
-				addMovedBlock(std::get<0>(moveModification), std::get<1>(moveModification), std::get<2>(moveModification), std::get<3>(moveModification), std::get<4>(moveModification));
+				addMovedBlock(
+					std::get<0>(moveModification),
+					std::get<1>(moveModification),
+					std::get<2>(moveModification),
+					std::get<3>(moveModification),
+					std::get<4>(moveModification)
+				);
 				break;
 			}
 		}
 	}
-
 
 	enum ModificationType {
 		REMOVED_BLOCK,
@@ -63,16 +68,16 @@ public:
 		case ModificationType::PLACE_BLOCK: {
 			auto blockModification = std::get<block_modification_t>(modification.second);
 			stateJson["position"] = std::get<0>(blockModification).toString();
-			stateJson["orientation"] = { {"rotation", std::get<1>(blockModification).rotation}, {"flipped", std::get<1>(blockModification).flipped} };
+			stateJson["orientation"] = { { "rotation", std::get<1>(blockModification).rotation }, { "flipped", std::get<1>(blockModification).flipped } };
 			stateJson["blockType"] = blocktype_to_string(std::get<2>(blockModification));
 			break;
 		}
 		case ModificationType::MOVE_BLOCK: {
 			auto moveModification = std::get<move_modification_t>(modification.second);
 			stateJson["currentPosition"] = std::get<0>(moveModification).toString();
-			stateJson["currentOrientation"] = { {"rotation", std::get<1>(moveModification).rotation}, {"flipped", std::get<1>(moveModification).flipped} };
+			stateJson["currentOrientation"] = { { "rotation", std::get<1>(moveModification).rotation }, { "flipped", std::get<1>(moveModification).flipped } };
 			stateJson["newPosition"] = std::get<2>(moveModification).toString();
-			stateJson["newOrientation"] = { {"rotation", std::get<3>(moveModification).rotation}, {"flipped", std::get<3>(moveModification).flipped} };
+			stateJson["newOrientation"] = { { "rotation", std::get<3>(moveModification).rotation }, { "flipped", std::get<3>(moveModification).flipped } };
 			stateJson["moveType"] = static_cast<int>(std::get<4>(moveModification));
 			break;
 		}
@@ -97,11 +102,21 @@ public:
 	}
 
 private:
-	void addRemovedBlock(Position position, Orientation orientation, BlockType type) { modifications.push_back({ ModificationType::REMOVED_BLOCK, std::make_tuple(position, orientation, type) }); }
-	void addPlacedBlock(Position position, Orientation orientation, BlockType type) { modifications.push_back({ ModificationType::PLACE_BLOCK, std::make_tuple(position, orientation, type) }); }
-	void addMovedBlock(Position curPosition, Orientation curOrientation, Position newPosition, Orientation newOrientation, MoveType moveType = MoveType::SINGLE) { modifications.push_back({ ModificationType::MOVE_BLOCK, std::make_tuple(curPosition, curOrientation, newPosition, newOrientation, moveType) }); }
-	void addRemovedConnection(Position outputPosition, Position inputPosition) { modifications.push_back({ ModificationType::REMOVED_CONNECTION, std::make_pair(outputPosition, inputPosition) }); }
-	void addCreatedConnection(Position outputPosition, Position inputPosition) { modifications.push_back({ ModificationType::CREATED_CONNECTION, std::make_pair(outputPosition, inputPosition) }); }
+	void addRemovedBlock(Position position, Orientation orientation, BlockType type) {
+		modifications.push_back({ ModificationType::REMOVED_BLOCK, std::make_tuple(position, orientation, type) });
+	}
+	void addPlacedBlock(Position position, Orientation orientation, BlockType type) {
+		modifications.push_back({ ModificationType::PLACE_BLOCK, std::make_tuple(position, orientation, type) });
+	}
+	void addMovedBlock(Position curPosition, Orientation curOrientation, Position newPosition, Orientation newOrientation, MoveType moveType = MoveType::SINGLE) {
+		modifications.push_back({ ModificationType::MOVE_BLOCK, std::make_tuple(curPosition, curOrientation, newPosition, newOrientation, moveType) });
+	}
+	void addRemovedConnection(Position outputPosition, Position inputPosition) {
+		modifications.push_back({ ModificationType::REMOVED_CONNECTION, std::make_pair(outputPosition, inputPosition) });
+	}
+	void addCreatedConnection(Position outputPosition, Position inputPosition) {
+		modifications.push_back({ ModificationType::CREATED_CONNECTION, std::make_pair(outputPosition, inputPosition) });
+	}
 
 	std::vector<Modification> modifications;
 };
