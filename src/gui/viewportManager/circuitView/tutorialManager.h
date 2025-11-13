@@ -15,7 +15,7 @@ public:
 
 
 private:
-	void checkTutorial(DifferenceSharedPtr, circuit_id_t);
+	void checkTutorial(DifferenceSharedPtr diff, circuit_id_t circuitId);
 	void checkTutorialState(Position pos, bool state);
 
 	void basicTutorial();
@@ -27,7 +27,7 @@ private:
 	void basicTutorialPart6();
 
 	SharedEvaluator evaluator;
-	SharedCircuit curentCircuit;
+	circuit_id_t curentCircuitId;
 
 	CircuitView* circuitView;
 	ViewManager viewManager;

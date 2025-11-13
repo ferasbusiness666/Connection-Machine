@@ -16,7 +16,9 @@ EvalWindow::EvalWindow(
 	DataUpdateEventManager& dataUpdateEventManager,
 	Rml::ElementDocument* document,
 	Rml::Element* parent
-) : menuTree(document, parent, true, false), dataUpdateEventReceiver(dataUpdateEventManager), evaluatorManager(evaluatorManager), circuitManager(circuitManager), mainWindow(mainWindow) {
+) :
+	menuTree(document, parent, true, false), dataUpdateEventReceiver(dataUpdateEventManager), evaluatorManager(evaluatorManager), circuitManager(circuitManager),
+	mainWindow(mainWindow) {
 	dataUpdateEventReceiver.linkFunction("addressTreeMakeBranch", [this](const DataUpdateEventManager::EventData*) { refreshSidebar(true); });
 	dataUpdateEventReceiver.linkFunction("blockDataUpdate", [this](const DataUpdateEventManager::EventData*) { refreshSidebar(true); });
 	dataUpdateEventReceiver.linkFunction("circuitViewChangeEvaluator", [this](const DataUpdateEventManager::EventData*) { refreshSidebar(false); });

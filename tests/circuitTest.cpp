@@ -4,7 +4,7 @@ Position randPos() {
 	return Position(rand() % 100000, rand() % 100000);
 }
 
-const int loopsPerTest = 100;
+const int loopsPerTest = 100; // upped
 
 void CircuitTest::SetUp() {
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit("Circuit", generate_uuid_v4());

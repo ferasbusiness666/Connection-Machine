@@ -8,12 +8,11 @@
 #include "backend/selection.h"
 #include "undoSystem.h"
 
+#include "circuitDefs.h"
+
 class CircuitManager;
 class GeneratedCircuit;
 class ParsedCircuit;
-
-typedef unsigned int circuit_id_t;
-typedef unsigned int circuit_update_count;
 
 typedef std::function<void(DifferenceSharedPtr, circuit_id_t)> CircuitDiffListenerFunction;
 
@@ -144,7 +143,5 @@ private:
 
 	unsigned long long editCount = 0;
 };
-
-typedef std::shared_ptr<Circuit> SharedCircuit;
 
 #endif /* circuit_h */

@@ -260,6 +260,16 @@ void MainRenderer::setViewportEvaluator(ViewportId viewportId, Evaluator* evalua
 	iter->second.setEvaluator(evaluator, address);
 }
 
+void MainRenderer::resetViewport(ViewportId viewportId) {
+	auto iter = viewportRenderers.find(viewportId);
+	if (iter == viewportRenderers.end()) {
+		logError("Failed to call setViewportEvaluator on non existent viewport {}", "MainRenderer", viewportId);
+		return;
+	}
+	iter->second.getChunker().reset();
+	iter->second.setEvaluator(nullptr, Address());
+}
+
 void MainRenderer::deregisterViewport(ViewportId viewport) { }
 
 void MainRenderer::startMakingEdits(ViewportId viewportId) {

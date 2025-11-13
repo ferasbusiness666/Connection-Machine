@@ -12,15 +12,16 @@ void TutorialManager::StartTutorial() {
 	tutorialRunning = true;
 	tutorialState = 0;
 	circuit_id_t circuitId = circuitView->getBackend().getCircuitManager().createNewCircuit(false);
+	SharedCircuit circuit = circuitView->getBackend().getCircuitManager().getCircuit(circuitId);
+
 	std::optional<evaluator_id_t> evaluatorId = circuitView->getBackend().createEvaluator(circuitId);
 	if (!evaluatorId) return;
 	circuitView->setEvaluator(evaluatorId.value());
-
 	evaluator = circuitView->getBackend().getEvaluator(evaluatorId.value());
 	evaluator->setPause(false);
-	SharedCircuit circuit = circuitView->getBackend().getCircuitManager().getCircuit(circuitId);
-	curentCircuit = circuitView->getBackend().getCircuitManager().getCircuit(circuitId);
-	curentCircuit->connectListener(this, std::bind(&TutorialManager::checkTutorial, this, std::placeholders::_1, std::placeholders::_2));
+
+	// curentCircuit = circuitView->getBackend().getCircuitManager().getCircuit(circuitId);
+	circuit->connectListener(this, std::bind(&TutorialManager::checkTutorial, this, std::placeholders::_1, std::placeholders::_2));
 	circuitView->getEventRegister().registerFunction("CircuitStateSet", [this](const Event* event) -> bool {
 		const StateSetEvent* stateSetEvent = event->cast<StateSetEvent>();
 		if (!stateSetEvent) return false;
@@ -32,8 +33,9 @@ void TutorialManager::StartTutorial() {
 
 void TutorialManager::Stop() {
 	if (!tutorialRunning) return;
-	if (curentCircuit) {
-		curentCircuit->disconnectListener(this);
+	SharedCircuit circuit = circuitView->getBackend().getCircuitManager().getCircuit(curentCircuitId);
+	if (circuit) {
+		circuit->disconnectListener(this);
 	}
 	elementCreator.clear();
 	tutorialRunning = false;
@@ -47,7 +49,11 @@ void TutorialManager::checkTutorialState(Position pos, bool state) {
 void TutorialManager::basicTutorial() {
 	// circuitView->getEventRegister().doEvent(DeltaXYEvent("view pan", 1, 1));
 	// viewManager.setViewCenter(FPosition(2, 1));
-	const BlockContainer& blockContainer = curentCircuit->getBlockContainer();
+	SharedCircuit circuit = circuitView->getBackend().getCircuitManager().getCircuit(curentCircuitId);
+	if (!circuit) {
+		return;
+	}
+	const BlockContainer& blockContainer = circuit->getBlockContainer();
 
 	if (tutorialState == 0) {
 		basicTutorialPart1();

@@ -4,16 +4,23 @@
 #include <tracy/Tracy.hpp>
 #endif
 
-#include "gpu/mainRenderer.h"
 #include "backend/circuit/circuit.h"
-// #include "logicRenderingUtils.h"
+#include "gpu/mainRenderer.h"
+#include "backend/backend.h"
 
-CircuitRenderManager::CircuitRenderManager(Circuit* circuit, ViewportId viewportId) : circuit(circuit), viewportId(viewportId) {
-	circuit->connectListener(this, [this](DifferenceSharedPtr diff, circuit_id_t circuitId) {if (circuitId == this->circuit->getCircuitId()) addDifference(diff); });
+CircuitRenderManager::CircuitRenderManager(Backend& backend, circuit_id_t circuitId, ViewportId viewportId) : backend(backend), circuitId(circuitId), viewportId(viewportId) {
+	SharedCircuit circuit = backend.getCircuit(circuitId);
+	if (!circuit) {
+		logError("Failed to find circuit with Id {}", "CircuitRenderManager", circuitId);
+		return;
+	}
+	circuit->connectListener(this, [this](DifferenceSharedPtr diff, circuit_id_t circuitId) {if (circuitId == this->circuitId) addDifference(diff); });
 	addDifference(circuit->getBlockContainer().getCreationDifferenceShared());
 }
 
 CircuitRenderManager::~CircuitRenderManager() {
+	SharedCircuit circuit = backend.getCircuit(circuitId);
+	if (!circuit) return; // not an error because the circuit may have already been destroyed
 	MainRenderer::get().resetCircuit(viewportId);
 	circuit->disconnectListener(this);
 }
@@ -30,6 +37,12 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 
 	MainRenderer::get().startMakingEdits(viewportId);
 
+	SharedCircuit circuit = backend.getCircuit(circuitId);
+	if (!circuit) { // not an error because the circuit may have already been destroyed
+		MainRenderer::get().resetViewport(viewportId);
+		circuitId = 0; // dont let this attach to something else
+		return;
+	}
 	const BlockDataManager& blockDataManager = circuit->getBlockContainer().getBlockDataManager();
 	for (const auto& modification : diff->getModifications()) {
 		const auto& [modificationType, modificationData] = modification;
