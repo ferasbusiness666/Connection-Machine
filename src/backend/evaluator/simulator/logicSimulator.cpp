@@ -976,3 +976,84 @@ bool LogicSimulator::skipForward() {
 	}
 	return true;
 }
+
+nlohmann::json LogicSimulator::dumpState() const {
+	std::unique_lock<std::mutex> lock(mainDataMutex);
+	nlohmann::json stateJson;
+	stateJson["running"] = running.load();
+	stateJson["pauseRequest"] = pauseRequest.load();
+	stateJson["statesA"] = nlohmann::json::array();
+	for (const simulator_id_t id : statesA.ids()) {
+		stateJson["statesA"].push_back(logicstate_to_string(statesA[id]));
+	}
+	stateJson["statesB"] = nlohmann::json::array();
+	for (const simulator_id_t id : statesB.ids()) {
+		stateJson["statesB"].push_back(logicstate_to_string(statesB[id]));
+	}
+	stateJson["setStateUsed"] = setStateUsed;
+	stateJson["replayHead"] = replayHead;
+	stateJson["replayTail"] = replayTail;
+	stateJson["viewingReplay"] = viewingReplay;
+	stateJson["stateView"] = stateView;
+	stateJson["pendingStateChanges"] = nlohmann::json::array();
+	std::queue<StateChange> stateChangesCopy = pendingStateChanges;
+	while (!stateChangesCopy.empty()) {
+		const StateChange& sc = stateChangesCopy.front();
+		stateJson["pendingStateChanges"].push_back(sc.dumpState());
+		stateChangesCopy.pop();
+	}
+	stateJson["gates"] = nlohmann::json::object();
+	nlohmann::json& gatesJson = stateJson["gates"];
+	gatesJson["andGates"] = nlohmann::json::array();
+	for (const auto& gate : andGates) gatesJson["andGates"].push_back(gate.dumpState());
+	gatesJson["xorGates"] = nlohmann::json::array();
+	for (const auto& gate : xorGates) gatesJson["xorGates"].push_back(gate.dumpState());
+	gatesJson["junctions"] = nlohmann::json::array();
+	for (const auto& gate : junctions) gatesJson["junctions"].push_back(gate.dumpState());
+	gatesJson["buffers"] = nlohmann::json::array();
+	for (const auto& gate : buffers) gatesJson["buffers"].push_back(gate.dumpState());
+	gatesJson["tristateBuffers"] = nlohmann::json::array();
+	for (const auto& gate : tristateBuffers) gatesJson["tristateBuffers"].push_back(gate.dumpState());
+	gatesJson["constantGates"] = nlohmann::json::array();
+	for (const auto& gate : constantGates) gatesJson["constantGates"].push_back(gate.dumpState());
+	gatesJson["constantResetGates"] = nlohmann::json::array();
+	for (const auto& gate : constantResetGates) gatesJson["constantResetGates"].push_back(gate.dumpState());
+	gatesJson["copySelfOutputGates"] = nlohmann::json::array();
+	for (const auto& gate : copySelfOutputGates) gatesJson["copySelfOutputGates"].push_back(gate.dumpState());
+	gatesJson["portsToIntGates"] = nlohmann::json::array();
+	for (const auto& gate : portsToIntGates) gatesJson["portsToIntGates"].push_back(gate.dumpState());
+	stateJson["simulatorIdProvider"] = simulatorIdProvider.dumpState();
+	stateJson["outputDependencies"] = nlohmann::json::object();
+	for (const auto& [outputId, deps] : outputDependencies) {
+		nlohmann::json depsJson = nlohmann::json::array();
+		for (const auto& dep : deps) {
+			depsJson.push_back(dep.dumpState());
+		}
+		stateJson["outputDependencies"][std::to_string(outputId.get())] = depsJson;
+	}
+	stateJson["gateLocations"] = nlohmann::json::object();
+	for (const auto& [gateId, location] : gateLocations) {
+		stateJson["gateLocations"][std::to_string(gateId.get())] = location.dumpState();
+	}
+	stateJson["averageTickrate"] = averageTickrate.load();
+	stateJson["tickrateHalfLife"] = tickrateHalflife;
+	return stateJson;
+}
+
+nlohmann::json LogicSimulator::StateChange::dumpState() const {
+	nlohmann::json stateJson;
+	stateJson["simulatorId"] = id.get();
+	stateJson["newState"] = logicstate_to_string(state);
+	return stateJson;
+}
+
+nlohmann::json LogicSimulator::GateDependency::dumpState() const {
+	return gateId.get();
+}
+
+nlohmann::json LogicSimulator::GateLocation::dumpState() const {
+	nlohmann::json stateJson;
+	stateJson["gateType"] = simgatetype_to_string(gateType);
+	stateJson["gateIndex"] = gateIndex;
+	return stateJson;
+}

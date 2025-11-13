@@ -197,3 +197,67 @@ void Replacement::trackId(middle_id_t middleId) {
 	replacer->dependentReplacements[middleId].insert(id);
 	idsToTrack.insert(middleId);
 }
+
+nlohmann::json Replacement::dumpState() const {
+	nlohmann::json stateJson;
+	stateJson["id"] = id.get();
+	stateJson["layer"] = layer;
+	stateJson["isEmpty"] = isEmpty;
+	stateJson["isReverting"] = isReverting;
+	stateJson["addedGates"] = nlohmann::json::array();
+	for (const auto& gate : addedGates) {
+		stateJson["addedGates"].push_back(gate.dumpState());
+	}
+	stateJson["deletedGates"] = nlohmann::json::array();
+	for (const auto& gate : deletedGates) {
+		stateJson["deletedGates"].push_back(gate.dumpState());
+	}
+	stateJson["addedConnections"] = nlohmann::json::array();
+	for (const auto& conn : addedConnections) {
+		stateJson["addedConnections"].push_back(conn.dumpState());
+	}
+	stateJson["deletedConnections"] = nlohmann::json::array();
+	for (const auto& conn : deletedConnections) {
+		stateJson["deletedConnections"].push_back(conn.dumpState());
+	}
+	stateJson["reservedIds"] = nlohmann::json::array();
+	for (const auto& id : reservedIds) {
+		stateJson["reservedIds"].push_back(id.get());
+	}
+	stateJson["replacementLayerEntries"] = nlohmann::json::array();
+	for (const auto& entry : replacementLayerEntries) {
+		stateJson["replacementLayerEntries"].push_back(entry.dumpState());
+	}
+	stateJson["overriddenConnectionPoints"] = nlohmann::json::array();
+	for (const auto& overrideEntry : overriddenConnectionPoints) {
+		stateJson["overriddenConnectionPoints"].push_back(overrideEntry.dumpState());
+	}
+	stateJson["idsToTrack"] = nlohmann::json::array();
+	for (const auto& id : idsToTrack) {
+		stateJson["idsToTrack"].push_back(id.get());
+	}
+	return stateJson;
+}
+
+nlohmann::json Replacement::ReplacementLayerEntry::dumpState() const {
+	return id.get();
+}
+
+nlohmann::json Replacement::ReplacementConnectionPointOverride::dumpState() const {
+	nlohmann::json stateJson;
+	stateJson["gateId"] = gateId.get();
+	stateJson["portId"] = portId.get();
+	if (previousPoint.has_value()) {
+		stateJson["previousPoint"] = previousPoint->dumpState();
+	} else {
+		stateJson["previousPoint"] = nullptr;
+	}
+	return stateJson;
+}
+
+nlohmann::json ReplacementGate::dumpState() const {
+	nlohmann::json stateJson;
+	stateJson["id"] = id.get();
+	stateJson["type"] = blocktype_to_string(type);
+	return stateJson;
+}

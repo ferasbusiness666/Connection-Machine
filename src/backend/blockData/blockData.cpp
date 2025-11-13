@@ -207,7 +207,7 @@ nlohmann::json BlockData::dumpState() const {
 	blockJson["bus"] = bus;
 	blockJson["name"] = name;
 	blockJson["path"] = path;
-	blockJson["texturePath"] = texturePath;
+	// blockJson["texturePath"] = texturePath; // disabled for privacy
 	blockJson["usesTileMapTexture"] = usesTileMapTexture;
 	blockJson["textureTileSize"] = textureTileSize.toString();
 	blockJson["textureSmallestCordTile"] = textureSmallestCordTile.toString();

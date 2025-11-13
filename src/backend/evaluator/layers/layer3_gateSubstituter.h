@@ -55,12 +55,43 @@ struct TrackedGate {
 			[&](const EvalConnection& conn) { return conn.source.gateId == id || conn.destination.gateId == id; }), outputs.end());
 		return (initialSize != inputs.size() + outputs.size());
 	}
+
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson;
+		stateJson["id"] = id.get();
+		stateJson["currentState"] = blocktype_to_string(currentState);
+		stateJson["falseState"] = blocktype_to_string(falseState);
+		stateJson["trueState"] = blocktype_to_string(trueState);
+		stateJson["numInputsForTrue"] = numInputsForTrue;
+		stateJson["inputs"] = nlohmann::json::array();
+		for (const auto& input : inputs) {
+			stateJson["inputs"].push_back(input.dumpState());
+		}
+		stateJson["outputs"] = nlohmann::json::array();
+		for (const auto& output : outputs) {
+			stateJson["outputs"].push_back(output.dumpState());
+		}
+		return stateJson;
+	}
 };
 
 struct GateWithLinkedIO {
 	middle_id_t id;
 	std::vector<middle_id_t> idsCreated;
 	std::unordered_map<connection_end_id_t, EvalConnectionPoint> linkedIO;
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson;
+		stateJson["id"] = id.get();
+		stateJson["idsCreated"] = nlohmann::json::array();
+		for (const auto& createdId : idsCreated) {
+			stateJson["idsCreated"].push_back(createdId.get());
+		}
+		stateJson["linkedIO"] = nlohmann::json::object();
+		for (const auto& [portId, point] : linkedIO) {
+			stateJson["linkedIO"][std::to_string(portId.get())] = point.dumpState();
+		}
+		return stateJson;
+	}
 };
 
 class GateSubstituter {
@@ -224,8 +255,16 @@ public:
 	}
 
 	nlohmann::json dumpState() const {
-		// TODO: Implement state dumping
 		nlohmann::json stateJson;
+		stateJson["replacer"] = replacer.dumpState();
+		stateJson["trackedGates"] = nlohmann::json::object();
+		for (const auto& [gateId, trackedGate] : trackedGates) {
+			stateJson["trackedGates"][std::to_string(gateId.get())] = trackedGate.dumpState();
+		}
+		stateJson["gatesWithLinkedIO"] = nlohmann::json::object();
+		for (const auto& [gateId, gateWithLinkedIO] : gatesWithLinkedIO) {
+			stateJson["gatesWithLinkedIO"][std::to_string(gateId.get())] = gateWithLinkedIO.dumpState();
+		}
 		return stateJson;
 	}
 

@@ -22,6 +22,33 @@ enum class SimGateType : int {
 	PORTS_TO_INT = 9
 };
 
+inline std::string simgatetype_to_string(SimGateType type) {
+	switch (type) {
+		case SimGateType::AND:
+			return "AND";
+		case SimGateType::XOR:
+			return "XOR";
+		case SimGateType::JUNCTION:
+			return "JUNCTION";
+		case SimGateType::BUFFER:
+			return "BUFFER";
+		case SimGateType::SINGLE_BUFFER:
+			return "SINGLE_BUFFER";
+		case SimGateType::TRISTATE_BUFFER:
+			return "TRISTATE_BUFFER";
+		case SimGateType::CONSTANT:
+			return "CONSTANT";
+		case SimGateType::CONSTANT_RESET:
+			return "CONSTANT_RESET";
+		case SimGateType::COPY_SELF_OUTPUT:
+			return "COPY_SELF_OUTPUT";
+		case SimGateType::PORTS_TO_INT:
+			return "PORTS_TO_INT";
+		default:
+			return "UNKNOWN_GATE_TYPE";
+	}
+}
+
 class LogicSimulator {
 friend class SimulatorOptimizer;
 friend class SimPauseGuard;
@@ -53,6 +80,8 @@ public:
 	inline bool isViewingReplay() const {
 		return viewingReplay;
 	}
+
+	nlohmann::json dumpState() const;
 
 private:
 	EvalConfig& evalConfig;
@@ -86,11 +115,12 @@ private:
 	logic_state_t getStateUnlocked(simulator_id_t id) const;
 
 	mutable std::shared_mutex statesAMutex;
-	std::mutex mainDataMutex;
+	mutable std::mutex mainDataMutex;
 
 	struct StateChange {
 		simulator_id_t id;
 		logic_state_t state;
+		nlohmann::json dumpState() const;
 	};
 	std::queue<StateChange> pendingStateChanges;
 	std::mutex stateChangeQueueMutex;
@@ -193,6 +223,7 @@ private:
 		bool operator==(const GateDependency& other) const {
 			return gateId == other.gateId;
 		}
+		nlohmann::json dumpState() const;
 	};
 
 	struct GateLocation {
@@ -201,6 +232,7 @@ private:
 
 		GateLocation() : gateType(SimGateType::AND), gateIndex(0) {}
 		GateLocation(SimGateType type, size_t index) : gateType(type), gateIndex(index) {}
+		nlohmann::json dumpState() const;
 	};
 
 	std::unordered_map<simulator_id_t, std::vector<GateDependency>> outputDependencies;
