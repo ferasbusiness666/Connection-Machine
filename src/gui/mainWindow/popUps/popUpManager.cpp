@@ -12,60 +12,7 @@
 
 #include <SDL3/SDL.h>
 
-void PopUpManager::addOptionsPopUp(
-	const std::string& message,
-	const std::optional<std::string>& smallMessage,
-	const std::vector<std::pair<std::string, std::function<void()>>>& options,
-	bool blocking
-) {
-	std::pair<Rml::Element*, std::function<void()>> popUpData = createPopUp(blocking);
-	Rml::Element* popUpRoot = popUpData.first;
-	Rml::ElementList windowList;
-	popUpRoot->GetElementsByClassName(windowList, "pop-up-window");
-	Rml::Element* window = windowList.front();
-	// Rml::Element* text = window->AppendChild(mainWindow.getRmlDocument()->CreateElement("span"));
-	// text->SetInnerRML(message);
-	// text->SetClass("pop-up-text", true);
-	// split message into multiple lines at \n
-	Rml::Element* textContainer = window->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
-	textContainer->SetClass("pop-up-text-container", true);
-	size_t start = 0;
-	while (start < message.size()) {
-		size_t end = message.find('\n', start);
-		if (end == std::string::npos) end = message.size();
-		std::string line = message.substr(start, end - start);
-		Rml::Element* lineElement = textContainer->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
-		lineElement->SetInnerRML(line);
-		lineElement->SetClass("pop-up-text-line", true);
-		start = end + 1;
-	}
-	if (smallMessage.has_value()) {
-		start = 0;
-		while (start < smallMessage->size()) {
-			size_t end = smallMessage->find('\n', start);
-			if (end == std::string::npos) end = smallMessage->size();
-			std::string line = smallMessage->substr(start, end - start);
-			Rml::Element* lineElement = textContainer->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
-			lineElement->SetInnerRML(line);
-			lineElement->SetClass("pop-up-text-small-line", true);
-			start = end + 1;
-		}
-	}
-	Rml::Element* actionsElement = window->AppendChild(mainWindow.getRmlDocument()->CreateElement("span"));
-	actionsElement->SetClass("pop-up-actions", true);
-	for (const auto& option : options) {
-		Rml::ElementPtr setPositionButton = mainWindow.getRmlDocument()->CreateElement("button");
-		setPositionButton->AppendChild(std::move(mainWindow.getRmlDocument()->CreateTextNode(option.first)));
-		setPositionButton->AddEventListener(Rml::EventId::Click, new EventPasser([deleteFunc = popUpData.second, func = option.second](Rml::Event& event) {
-			deleteFunc();
-			func();
-		}));
-		setPositionButton->SetClass("pop-up-action", true);
-		actionsElement->AppendChild(std::move(setPositionButton));
-	}
-}
-
-std::pair<Rml::Element*, std::function<void()>> PopUpManager::createPopUp(bool blocking, const std::string& windowName, unsigned int width, unsigned int height) {
+std::optional<PopUpManager::PopUpWindow> PopUpManager::createPopUp(bool blocking, const std::string& windowName, unsigned int width, unsigned int height) {
 	if (blocking) {
 		Rml::Element* allPopUps = mainWindow.getRmlDocument()->GetElementById("all-pop-ups");
 		allPopUps->SetClass("invisible", false);
@@ -79,19 +26,18 @@ std::pair<Rml::Element*, std::function<void()>> PopUpManager::createPopUp(bool b
 		popUpWindow->SetClass("pop-up-window-blocked", true);
 		popUpWindow->SetClass("bordered", true);
 		popUpWindow->SetClass("bg-3", true);
-		return { popUpOverlay, [popUpOverlay, allPopUps]() {
+		return PopUpWindow(popUpOverlay->GetContext(), popUpOverlay, [popUpOverlay, allPopUps]() {
 			App::get().queForEndOfUpdate([popUpOverlay, allPopUps]() {
 				allPopUps->RemoveChild(popUpOverlay);
 				if (!allPopUps->HasChildNodes()) allPopUps->SetClass("invisible", true);
 			});
-		} };
+		});
 	} else {
 		SdlWindow* sdlWindow = App::get().registerWindow(windowName, width, height).get();
 		WindowId windowId = MainRenderer::get().registerWindow(sdlWindow);
 		Rml::Context* rmlContext = Rml::CreateContext("popup_" + std::to_string(windowId), Rml::Vector2i(sdlWindow->getSize().first, sdlWindow->getSize().second));
 		if (rmlContext) {
-			Rml::ElementDocument* rmlDocument =
-				rmlContext->LoadDocument(DirectoryManager::getResourceDirectory().generic_string() + "/gui/mainWindow/popUpWindow/popUpWindow.rml");
+			Rml::ElementDocument* rmlDocument = rmlContext->LoadDocument(DirectoryManager::getResourceDirectory().generic_string() + "/gui/mainWindow/popUpWindow/popUpWindow.rml");
 			sdlWindow->setRenderFunction([windowId, rmlContext]() {
 				RmlRenderInterface* rmlRenderInterface = dynamic_cast<RmlRenderInterface*>(Rml::GetRenderInterface());
 				if (rmlRenderInterface) {
@@ -123,18 +69,67 @@ std::pair<Rml::Element*, std::function<void()>> PopUpManager::createPopUp(bool b
 				return false;
 			});
 			rmlDocument->Show();
-			return { rmlDocument, [windowId, rmlContext, sdlWindow]() {
+			return PopUpWindow(rmlContext, rmlDocument, [windowId, rmlContext, sdlWindow]() {
 				App::get().queForEndOfUpdate([windowId, rmlContext, sdlWindow]() {
 					Rml::RemoveContext(rmlContext->GetName());
 					MainRenderer::get().deregisterWindow(windowId);
 					App::get().deregisterWindow(sdlWindow);
 				});
-			} };
+			});
 		}
 		logError("Failed to create new window for popup :(");
-		return { nullptr, nullptr };
+		return std::nullopt;
 	}
 }
+
+void PopUpManager::addOptionsPopUp(
+	const std::string& message,
+	const std::optional<std::string>& smallMessage,
+	const std::vector<std::pair<std::string, std::function<void()>>>& options,
+	bool blocking
+) {
+	std::optional<PopUpWindow> optionalPopUpWindow = createPopUp(blocking);
+	if (!optionalPopUpWindow) return;
+	PopUpWindow popUpWindow = std::move(optionalPopUpWindow.value());
+	// split message into multiple lines at \n
+	Rml::Element* textContainer = popUpWindow.getPopUpWindow()->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
+	textContainer->SetClass("pop-up-text-container", true);
+	size_t start = 0;
+	while (start < message.size()) {
+		size_t end = message.find('\n', start);
+		if (end == std::string::npos) end = message.size();
+		std::string line = message.substr(start, end - start);
+		Rml::Element* lineElement = textContainer->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
+		lineElement->SetInnerRML(line);
+		lineElement->SetClass("pop-up-text-line", true);
+		start = end + 1;
+	}
+	if (smallMessage.has_value()) {
+		start = 0;
+		while (start < smallMessage->size()) {
+			size_t end = smallMessage->find('\n', start);
+			if (end == std::string::npos) end = smallMessage->size();
+			std::string line = smallMessage->substr(start, end - start);
+			Rml::Element* lineElement = textContainer->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
+			lineElement->SetInnerRML(line);
+			lineElement->SetClass("pop-up-text-small-line", true);
+			start = end + 1;
+		}
+	}
+	Rml::Element* actionsElement = popUpWindow.getPopUpWindow()->AppendChild(mainWindow.getRmlDocument()->CreateElement("span"));
+	actionsElement->SetClass("pop-up-actions", true);
+	for (const auto& option : options) {
+		Rml::ElementPtr setPositionButton = mainWindow.getRmlDocument()->CreateElement("button");
+		setPositionButton->AppendChild(std::move(mainWindow.getRmlDocument()->CreateTextNode(option.first)));
+		setPositionButton->AddEventListener(Rml::EventId::Click, new EventPasser([popUpWindow, func = option.second](Rml::Event& event) {
+			popUpWindow.destroy();
+			func();
+		}));
+		setPositionButton->SetClass("pop-up-action", true);
+		actionsElement->AppendChild(std::move(setPositionButton));
+	}
+}
+
 
 void PopUpManager::savePopUp(const std::string& circuitUUID) {
 	if (mainWindow.getEnvironment().getCircuitFileManager().save(circuitUUID)) {
@@ -166,14 +161,12 @@ void set_invisible(Rml::Element* element, bool invisible) {
 }
 
 void PopUpManager::aboutConnectionMachine() {
-	auto [overlay, closePopup] = createPopUp(true);
-	Rml::ElementList windowList;
-    overlay->GetElementsByClassName(windowList, "pop-up-window");
-    if (windowList.empty()) return;
-    Rml::Element* window = windowList.front();
-	window->SetAttribute("style", "display: flex; flex-direction: column; width: 650px; height: 500px; background-color:#303030;");
+	std::optional<PopUpWindow> optionalPopUpWindow = createPopUp(true);
+	if (!optionalPopUpWindow) return;
+	PopUpWindow popUpWindow = std::move(optionalPopUpWindow.value());
 
-	Rml::Element* leftandright = window->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
+	popUpWindow.getPopUpWindow()->SetAttribute("style", "display: flex; flex-direction: column; width: 650px; height: 500px; background-color:#303030;");
+	Rml::Element* leftandright = popUpWindow.getPopUpWindow()->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
 	leftandright->SetAttribute("style", "display: flex; flex-direction: row; width: 650px; height: 500px; background-color:#303030;");
 
 	Rml::Element* leftbuffer = leftandright->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
@@ -181,7 +174,6 @@ void PopUpManager::aboutConnectionMachine() {
 
 	Rml::Element* leftdiv = leftandright->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
 	leftdiv->SetAttribute("style", "display: flex; flex-direction: column; width: 450px; height: 300px; background-color:#303030;");
-	//Rml::Element* rightdiv = window->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
 
 	Rml::Element* title = leftdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("p"));
 	title->SetInnerRML("About Connection Machine");
@@ -194,7 +186,8 @@ void PopUpManager::aboutConnectionMachine() {
 	Rml::Element* body2 = leftdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("p"));
     body2->SetInnerRML(
 		"<br /> github: https://github.com/Martian-Technologies/<br />Connection-Machine <br />  \
-		website: https://connection-machine.com ");
+		website: https://connection-machine.com "
+	);
 	body2->SetClass("popup-title", true);
 
 
@@ -231,7 +224,7 @@ void PopUpManager::aboutConnectionMachine() {
 		"Tiffany C",
 		"Patrick C",
 		"Nathan C",
-		"Alek K ",
+		"Alek K "
     };
 
 	// Rml::Element* contributorsList = rightdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("li"));
@@ -243,42 +236,39 @@ void PopUpManager::aboutConnectionMachine() {
 	contributorsList->SetAttribute("style", "margin: 4px 0;");
 
 
-	Rml::Element* close = window->AppendChild(mainWindow.getRmlDocument()->CreateElement("button"));
+	Rml::Element* close = popUpWindow.getPopUpWindow()->AppendChild(mainWindow.getRmlDocument()->CreateElement("button"));
     close->SetInnerRML("Close");
     close->SetClass("popup-button", true);
 	close->AddEventListener(Rml::EventId::Click, new EventPasser(
-	    [deleteFunc = closePopup](Rml::Event& event) {
-	        deleteFunc();
+	    [popUpWindow](Rml::Event& event) {
+	        popUpWindow.destroy();
 	    }
 	));
-
 }
 
 void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature complaint, feedback
-	auto [overlay, closePopup] = createPopUp(true);
+	std::optional<PopUpWindow> optionalPopUpWindow = createPopUp(false);
+	if (!optionalPopUpWindow) return;
+	PopUpWindow popUpWindow = std::move(optionalPopUpWindow.value());
 
-	Rml::ElementList windowList;
-	overlay->GetElementsByClassName(windowList, "pop-up-window");
-	if (windowList.empty()) return;
-	Rml::Element* window = windowList.front();
-
-	Rml::Element* title = window->AppendChild(mainWindow.getRmlDocument()->CreateElement("p"));
+	Rml::Element* title = popUpWindow.getPopUpWindow()->AppendChild(mainWindow.getRmlDocument()->CreateElement("p"));
 	title->SetInnerRML("We'd love your feedback");
 	title->SetClass("popup-title", true);
 
-	Rml::Element* content = window->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
+	Rml::Element* content = popUpWindow.getPopUpWindow()->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
 	content->SetAttribute("style", "display: flex; flex-direction: column; gap: 0.75em; width: 100%;");
 
 	Rml::Element* textareaField = content->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
 	textareaField->SetAttribute("style", "display: flex; flex-direction: column; gap: 0.35em;");
 	Rml::Element* textareaHint = textareaField->AppendChild(mainWindow.getRmlDocument()->CreateElement("p"));
-	textareaHint->SetInnerRML("Tell us what's working well, what's broken, or what would make the experience smoother.");
+	textareaHint->SetInnerRML("<div \"style\"=\"width: 1in; height: 1in; background-color: #cccccc;\"></div>Tell us what's working well, what's broken, or what would make the experience smoother.");
 	textareaHint->SetAttribute("style", "font-size: 0.9em; color: #c0c0c0;");
 
 	Rml::Element* textarea = textareaField->AppendChild(mainWindow.getRmlDocument()->CreateElement("textarea"));
-	textarea->SetAttribute("rows", "5");
+	textarea->SetAttribute("style", "overflow: auto; height: 250px;");
+	textarea->SetAttribute("rows", "40");
 	textarea->SetAttribute("cols", "40");
-	textarea->SetClass("popup-textarea", true);
+	textarea->SetClass("pop-up-textarea", true);
 	textarea->SetClass("surface-pop", true);
 
 	Rml::Element* includeStateField = content->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
@@ -297,15 +287,15 @@ void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature 
 	includeStateDescription->SetInnerRML("Shares a snapshot of your current logic graph and settings so we can reproduce the issue faster. No personal files are sent.");
 	includeStateDescription->SetAttribute("style", "font-size: 0.85em; color: #c0c0c0;");
 
-	Rml::Element* buttonContainer = window->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
+	Rml::Element* buttonContainer = popUpWindow.getPopUpWindow()->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
 	buttonContainer->SetClass("popup-button-container", true);
 	buttonContainer->SetAttribute("style", "display: flex; justify-content: flex-end; gap: 0.5em; width: 100%; margin-top: 0.75em;");
 
 	Rml::Element* cancelButton = buttonContainer->AppendChild(mainWindow.getRmlDocument()->CreateElement("button"));
 	cancelButton->SetInnerRML("Cancel");
 	cancelButton->SetClass("popup-button", true);
-	cancelButton->AddEventListener(Rml::EventId::Click, new EventPasser([deleteFunc = closePopup](Rml::Event& event) {
-		deleteFunc();
+	cancelButton->AddEventListener(Rml::EventId::Click, new EventPasser([popUpWindow](Rml::Event& event) {
+		popUpWindow.destroy();
 	}));
 
 	Rml::Element* submitButton = buttonContainer->AppendChild(mainWindow.getRmlDocument()->CreateElement("button"));
@@ -313,14 +303,16 @@ void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature 
 	submitButton->SetClass("popup-button", true);
 	submitButton->AddEventListener(
 		Rml::EventId::Click,
-		new EventPasser([deleteFunc = closePopup, textarea, includeStateCheckbox](Rml::Event& event) {
+		new EventPasser([popUpWindow, textarea, includeStateCheckbox](Rml::Event& event) {
 			auto* textareaControl = dynamic_cast<Rml::ElementFormControlTextArea*>(textarea);
 			std::string textareaValue = textareaControl ? textareaControl->GetValue().c_str() : "";
 
 			logInfo("Feedback body: {}", "", textareaValue);
 			logInfo("Include app state: {}", "", includeStateCheckbox->HasAttribute("checked") ? "true" : "false");
 
-			deleteFunc();
+			popUpWindow.destroy();
 		})
 	);
+
+	// App::get().launchRmlDebugger(popUpWindow.getContext());
 }
