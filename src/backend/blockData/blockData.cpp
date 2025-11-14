@@ -197,3 +197,61 @@ void BlockData::setConnectionBitConfiguration(connection_end_id_t connectionId, 
 		DataUpdateEventManager::EventDataWithValue<std::pair<BlockType, connection_end_id_t>>({ blockType, connectionId })
 	);
 }
+
+nlohmann::json BlockData::dumpState() const {
+	nlohmann::json blockJson;
+	blockJson["blockType"] = blocktype_to_string(blockType);
+	blockJson["defaultData"] = defaultData;
+	blockJson["primitive"] = primitive;
+	blockJson["placeable"] = placeable;
+	blockJson["bus"] = bus;
+	blockJson["name"] = name;
+	blockJson["path"] = path;
+	// blockJson["texturePath"] = texturePath; // disabled for privacy
+	blockJson["usesTileMapTexture"] = usesTileMapTexture;
+	blockJson["textureTileSize"] = textureTileSize.toString();
+	blockJson["textureSmallestCordTile"] = textureSmallestCordTile.toString();
+	blockJson["textureBlockTileSize"] = textureBlockTileSize.toString();
+	blockJson["textureBlockStateOffset"] = textureBlockStateOffset.toString();
+	blockJson["blockSize"] = blockSize.toString();
+	blockJson["inputConnectionCount"] = inputConnectionCount;
+	blockJson["outputConnectionCount"] = outputConnectionCount;
+	blockJson["connections"] = nlohmann::json::object();
+	for (auto& pair : connections) {
+		blockJson["connections"][std::to_string(pair.first.get())] = pair.second.dumpState();
+	}
+	blockJson["connectionIdNames"] = nlohmann::json::object();
+	for (auto& pair : connectionIdNames.getT2Map()) {
+		blockJson["connectionIdNames"][std::to_string(pair.first.get())] = pair.second;
+	}
+	return blockJson;
+}
+
+nlohmann::json BlockData::ConnectionData::dumpState() const {
+	nlohmann::json connectionJson;
+	connectionJson["positionOnBlock"] = positionOnBlock.toString();
+	switch (portType) {
+		case PortType::INPUT:
+			connectionJson["portType"] = "INPUT";
+			break;
+		case PortType::OUTPUT:
+			connectionJson["portType"] = "OUTPUT";
+			break;
+		case PortType::BIDIRECTIONAL:
+			connectionJson["portType"] = "BIDIRECTIONAL";
+			break;
+		case PortType::NONE:
+			connectionJson["portType"] = "NONE";
+			break;
+		default:
+			connectionJson["portType"] = "UNKNOWN";
+			break;
+	}
+	connectionJson["portOffset"] = portOffset.toString();
+	if (std::holds_alternative<unsigned int>(bitConfiguration)) {
+		connectionJson["bitConfiguration"] = std::get<unsigned int>(bitConfiguration);
+	} else {
+		connectionJson["bitConfiguration"] = std::get<std::vector<unsigned int>>(bitConfiguration);
+	}
+	return connectionJson;
+}

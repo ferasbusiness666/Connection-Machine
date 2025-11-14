@@ -35,7 +35,7 @@ public:
 	SharedCircuitTool getCurrentNonHelperTool() const;
 	SharedCircuitTool getCurrentTool() const;
 
-	void setMode(std::string mode);
+	void setMode(const std::string& mode);
 
 	void setCircuit(Circuit* circuit);
 

@@ -31,3 +31,12 @@ SharedCircuit Backend::getCircuit(circuit_id_t circuitId) {
 SharedEvaluator Backend::getEvaluator(evaluator_id_t evaluatorId) {
 	return evaluatorManager.getEvaluator(evaluatorId);
 }
+
+nlohmann::json Backend::dumpState() const {
+	nlohmann::json stateJson;
+	stateJson["clipboardEditCounter"] = clipboardEditCounter;
+	stateJson["clipboard"] = clipboard ? clipboard->dumpState() : nullptr;
+	stateJson["circuitManager"] = circuitManager.dumpState();
+	stateJson["evaluatorManager"] = evaluatorManager.dumpState();
+	return stateJson;
+}

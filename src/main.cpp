@@ -8,6 +8,7 @@
 #include "backend/settings/settingsMap.h"
 #include "computerAPI/directoryManager.h"
 #include "computerAPI/saveSettings.h"
+#include "util/version.h"
 
 void registerSettings() {
 	logInfo("Registering settings", "Main");
@@ -82,6 +83,9 @@ int main(int argc, char* argv[]) {
 				logInfo("Starting Connection Machine in CLI mode...");
 				CliApp cliApp;
 				logInfo("Exiting Connection Machine CLI...");
+				return EXIT_SUCCESS;
+			} else if (firstArg == "--version") {
+				logInfo("Connection Machine Version: {}", "", getCurrentVersion().toString());
 				return EXIT_SUCCESS;
 			}
 		}

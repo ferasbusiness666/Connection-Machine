@@ -587,6 +587,7 @@ void Circuit::blockSizeChange(const DataUpdateEventManager::EventData* eventData
 		undoSystem.addBlocker(); // cant undo after changing block size!
 		return;
 	}
+	if (blockContainer.getBlockTypeCount(data->get().first) == 0) return;
 	DifferenceSharedPtr difference = std::make_shared<Difference>();
 	blockContainer.resizeBlockType(data->get().first, data->get().second, difference.get());
 	sendDifference(std::move(difference));
@@ -664,4 +665,19 @@ void Circuit::setCircuitName(const std::string& name) {
 	if (blockContainer.getBlockType() == BlockType::NONE) return;
 	BlockData* blockData = blockContainer.getBlockDataManager().getBlockData(blockContainer.getBlockType());
 	if (blockData) blockData->setName(getCircuitNameNumber());
+}
+
+nlohmann::json Circuit::dumpState() const {
+	nlohmann::json stateJson;
+	stateJson["circuitId"] = circuitId;
+	stateJson["circuitUUID"] = circuitUUID;
+	stateJson["circuitName"] = circuitName;
+	stateJson["stackBottom"] = stackBottom.toString();
+	stateJson["stackTop"] = stackTop.toString();
+	stateJson["blockContainer"] = blockContainer.dumpState();
+	stateJson["undoSystem"] = undoSystem.dumpState();
+	stateJson["midUndo"] = midUndo;
+	stateJson["editable"] = editable;
+	stateJson["editCount"] = editCount;
+	return stateJson;
 }

@@ -53,23 +53,11 @@ double LogicSimulator::getAverageTickrate() const {
 
 void LogicSimulator::simulationLoop() {
 	using clock = std::chrono::steady_clock;
-	auto nextTick = clock::now();
-	auto lastTickTime = clock::now();
+	nextTick = clock::now();
+	lastTickTime = clock::now();
 	bool isFirstTick = true;
 
 	while (running) {
-		if (pauseRequest.load(std::memory_order_acquire)) {
-			std::unique_lock<std::mutex> lk(cvMutex);
-			isPaused.store(true, std::memory_order_release);
-			cv.notify_all();
-			cv.wait(lk, [&] { return !pauseRequest || !running; });
-			isPaused.store(false, std::memory_order_release);
-			if (!running) break;
-			nextTick = clock::now();
-			lastTickTime = clock::now();
-			isFirstTick = true;
-		}
-
 		processPendingStateChanges();
 
 		bool didSprint = false;
@@ -141,7 +129,7 @@ inline void LogicSimulator::updateEmaTickrate(
 }
 
 inline void LogicSimulator::tickOnce() {
-	std::unique_lock lkNext(statesBMutex);
+	std::unique_lock lkNext(mainDataMutex);
 
 	threadPool.resetAndLoad(jobs);
 	threadPool.waitForCompletion(true);
@@ -160,7 +148,7 @@ void LogicSimulator::processPendingStateChanges() {
 	}
 
 	if (!localQueue.empty()) {
-		std::scoped_lock lk(statesBMutex, statesAMutex);
+		std::scoped_lock lk(mainDataMutex, statesAMutex);
 		while (!localQueue.empty()) {
 			const StateChange& change = localQueue.front();
 
@@ -180,14 +168,11 @@ void LogicSimulator::setState(simulator_id_t id, logic_state_t st) {
 		return;
 	}
 	// we don't want to freeze up if the mutexes are locked, so we'll only set the state if we can successfully lock. otherwise, we'll wait until the next tick to set the states.
-	std::unique_lock lkB(statesBMutex, std::try_to_lock);
+	std::unique_lock lkMain(mainDataMutex, std::try_to_lock);
 	std::unique_lock lkA(statesAMutex, std::try_to_lock);
 
-	if (lkB.owns_lock() && lkA.owns_lock()) {
-		if (statesA.size() <= id) {
-			statesA.resizeWithOffset(id, 1, logic_state_t::UNDEFINED);
-			statesB.resizeWithOffset(id, 1, logic_state_t::UNDEFINED);
-		}
+	if (lkMain.owns_lock() && lkA.owns_lock()) {
+		extendDataVectors(id);
 		statesA[id] = st;
 		statesB[id] = st;
 		setStateUsed[replayHead] = true;
@@ -990,4 +975,85 @@ bool LogicSimulator::skipForward() {
 		}
 	}
 	return true;
+}
+
+nlohmann::json LogicSimulator::dumpState() const {
+	std::unique_lock<std::mutex> lock(mainDataMutex);
+	nlohmann::json stateJson;
+	stateJson["running"] = running.load();
+	stateJson["pauseRequest"] = pauseRequest.load();
+	stateJson["statesA"] = nlohmann::json::array();
+	for (const simulator_id_t id : statesA.ids()) {
+		stateJson["statesA"].push_back(logicstate_to_string(statesA[id]));
+	}
+	stateJson["statesB"] = nlohmann::json::array();
+	for (const simulator_id_t id : statesB.ids()) {
+		stateJson["statesB"].push_back(logicstate_to_string(statesB[id]));
+	}
+	stateJson["setStateUsed"] = setStateUsed;
+	stateJson["replayHead"] = replayHead;
+	stateJson["replayTail"] = replayTail;
+	stateJson["viewingReplay"] = viewingReplay;
+	stateJson["stateView"] = stateView;
+	stateJson["pendingStateChanges"] = nlohmann::json::array();
+	std::queue<StateChange> stateChangesCopy = pendingStateChanges;
+	while (!stateChangesCopy.empty()) {
+		const StateChange& sc = stateChangesCopy.front();
+		stateJson["pendingStateChanges"].push_back(sc.dumpState());
+		stateChangesCopy.pop();
+	}
+	stateJson["gates"] = nlohmann::json::object();
+	nlohmann::json& gatesJson = stateJson["gates"];
+	gatesJson["andGates"] = nlohmann::json::array();
+	for (const auto& gate : andGates) gatesJson["andGates"].push_back(gate.dumpState());
+	gatesJson["xorGates"] = nlohmann::json::array();
+	for (const auto& gate : xorGates) gatesJson["xorGates"].push_back(gate.dumpState());
+	gatesJson["junctions"] = nlohmann::json::array();
+	for (const auto& gate : junctions) gatesJson["junctions"].push_back(gate.dumpState());
+	gatesJson["buffers"] = nlohmann::json::array();
+	for (const auto& gate : buffers) gatesJson["buffers"].push_back(gate.dumpState());
+	gatesJson["tristateBuffers"] = nlohmann::json::array();
+	for (const auto& gate : tristateBuffers) gatesJson["tristateBuffers"].push_back(gate.dumpState());
+	gatesJson["constantGates"] = nlohmann::json::array();
+	for (const auto& gate : constantGates) gatesJson["constantGates"].push_back(gate.dumpState());
+	gatesJson["constantResetGates"] = nlohmann::json::array();
+	for (const auto& gate : constantResetGates) gatesJson["constantResetGates"].push_back(gate.dumpState());
+	gatesJson["copySelfOutputGates"] = nlohmann::json::array();
+	for (const auto& gate : copySelfOutputGates) gatesJson["copySelfOutputGates"].push_back(gate.dumpState());
+	gatesJson["portsToIntGates"] = nlohmann::json::array();
+	for (const auto& gate : portsToIntGates) gatesJson["portsToIntGates"].push_back(gate.dumpState());
+	stateJson["simulatorIdProvider"] = simulatorIdProvider.dumpState();
+	stateJson["outputDependencies"] = nlohmann::json::object();
+	for (const auto& [outputId, deps] : outputDependencies) {
+		nlohmann::json depsJson = nlohmann::json::array();
+		for (const auto& dep : deps) {
+			depsJson.push_back(dep.dumpState());
+		}
+		stateJson["outputDependencies"][std::to_string(outputId.get())] = depsJson;
+	}
+	stateJson["gateLocations"] = nlohmann::json::object();
+	for (const auto& [gateId, location] : gateLocations) {
+		stateJson["gateLocations"][std::to_string(gateId.get())] = location.dumpState();
+	}
+	stateJson["averageTickrate"] = averageTickrate.load();
+	stateJson["tickrateHalfLife"] = tickrateHalflife;
+	return stateJson;
+}
+
+nlohmann::json LogicSimulator::StateChange::dumpState() const {
+	nlohmann::json stateJson;
+	stateJson["simulatorId"] = id.get();
+	stateJson["newState"] = logicstate_to_string(state);
+	return stateJson;
+}
+
+nlohmann::json LogicSimulator::GateDependency::dumpState() const {
+	return gateId.get();
+}
+
+nlohmann::json LogicSimulator::GateLocation::dumpState() const {
+	nlohmann::json stateJson;
+	stateJson["gateType"] = simgatetype_to_string(gateType);
+	stateJson["gateIndex"] = gateIndex;
+	return stateJson;
 }

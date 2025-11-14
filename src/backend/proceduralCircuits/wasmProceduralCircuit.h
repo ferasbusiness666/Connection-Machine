@@ -27,6 +27,7 @@ public:
 		inline const std::string& getName() const { return name; }
 		inline const std::string& getUUID() const { return UUID; }
 		inline const ProceduralCircuitParameters& getDefaultParameters() const { return defaultParameters; }
+		nlohmann::json dumpState() const;
 
 	private:
 		std::string wasmToString(int32_t wasmPtr);
@@ -63,6 +64,8 @@ public:
 
 private:
 	void makeCircuit(const ProceduralCircuitParameters& parameters, GeneratedCircuit& generatedCircuit) override final;
+
+	nlohmann::json dumpStateInherited() const override final;
 
 	WasmInstance wasmInstance;
 

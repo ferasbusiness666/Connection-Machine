@@ -35,6 +35,8 @@ public:
 	unsigned long long getClipboardEditCounter() const { return clipboardEditCounter; }
 	void setClipboard(SharedCopiedBlocks copiedBlocks) { clipboard = copiedBlocks; ++clipboardEditCounter; }
 
+	nlohmann::json dumpState() const;
+
 private:
 	SharedCopiedBlocks clipboard = nullptr;
 	unsigned long long clipboardEditCounter = 1;

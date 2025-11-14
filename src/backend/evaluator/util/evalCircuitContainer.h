@@ -28,6 +28,13 @@ struct EvalPosition {
 		}
 		return position <=> other.position;
 	}
+
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson;
+		stateJson["position"] = position.toString();
+		stateJson["evalCircuitId"] = evalCircuitId.get();
+		return stateJson;
+	}
 };
 
 template<>
@@ -67,6 +74,7 @@ public:
 	auto ids() const {
 		return circuits.ids();
 	}
+	nlohmann::json dumpState() const;
 
 private:
 	IdVector<eval_circuit_id_t, EvalCircuit*> circuits;

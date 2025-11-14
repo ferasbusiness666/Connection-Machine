@@ -438,3 +438,60 @@ std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> Replacer:
 	}
 	return result;
 }
+
+nlohmann::json Replacer::dumpState() const {
+	nlohmann::json stateJson;
+	stateJson["busInterfacePassthrough"] = busInterfacePassthrough.dumpState();
+	stateJson["replacements"] = nlohmann::json::object();
+	for (replacement_id_t id : replacementIdProvider.getUsedIds()) {
+		stateJson["replacements"][std::to_string(id.get())] = replacements[id]->dumpState();
+	}
+	stateJson["replacementIdProvider"] = replacementIdProvider.dumpState();
+	stateJson["replacedConnectionPoints"] = nlohmann::json::object();
+	for (const auto& [originalId, pointMap] : replacedConnectionPoints) {
+		stateJson["replacedConnectionPoints"][std::to_string(originalId.get())] = dumpConnectionPointMap(pointMap);
+	}
+	stateJson["replacedIds"] = nlohmann::json::object();
+	for (const auto& [originalId, replacementId] : replacedIds) {
+		stateJson["replacedIds"][std::to_string(originalId.get())] = replacementId.get();
+	}
+	stateJson["replacementIdLayers"] = nlohmann::json::object();
+	for (const auto& [id, layer] : replacementIdLayers) {
+		stateJson["replacementIdLayers"][std::to_string(id.get())] = layer;
+	}
+	stateJson["busInternalJunctions"] = nlohmann::json::object();
+	for (const auto& [busId, junctionArray] : busInternalJunctions) {
+		stateJson["busInternalJunctions"][std::to_string(busId.get())] = junctionArray.dumpState();
+	}
+	stateJson["dependentReplacements"] = nlohmann::json::object();
+	for (const auto& [id, replacementsSet] : dependentReplacements) {
+		stateJson["dependentReplacements"][std::to_string(id.get())] = dumpReplacementIdSet(replacementsSet);
+	}
+	return stateJson;
+}
+
+nlohmann::json Replacer::dumpConnectionPointMap(const std::unordered_map<connection_end_id_t, EvalConnectionPoint>& pointMap) const {
+	nlohmann::json pointMapJson;
+	for (const auto& [portId, connPoint] : pointMap) {
+		pointMapJson[std::to_string(portId.get())] = connPoint.dumpState();
+	}
+	return pointMapJson;
+}
+
+nlohmann::json Replacer::dumpReplacementIdSet(const std::set<replacement_id_t>& idSet) const {
+	nlohmann::json idSetJson = nlohmann::json::array();
+	for (const replacement_id_t id : idSet) {
+		idSetJson.push_back(id.get());
+	}
+	return idSetJson;
+}
+
+nlohmann::json Replacer::BusInternalJunctionArray::dumpState() const {
+	nlohmann::json stateJson;
+	stateJson["junctionIds"] = nlohmann::json::array();
+	for (const middle_id_t junctionId : junctionIds) {
+		stateJson["junctionIds"].push_back(junctionId.get());
+	}
+	stateJson["numDefined"] = numDefined;
+	return stateJson;
+}

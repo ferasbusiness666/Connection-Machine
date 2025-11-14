@@ -14,6 +14,7 @@ DECLARE_ID_TYPE(replacement_id_t, unsigned int);
 struct ReplacementGate {
 	middle_id_t id;
 	BlockType type;
+	nlohmann::json dumpState() const;
 };
 
 class Replacement {
@@ -80,14 +81,18 @@ public:
 		return layer;
 	}
 
+	nlohmann::json dumpState() const;
+
 private:
 	struct ReplacementLayerEntry {
 		middle_id_t id;
+		nlohmann::json dumpState() const;
 	};
 	struct ReplacementConnectionPointOverride {
 		middle_id_t gateId;
 		connection_end_id_t portId;
 		std::optional<EvalConnectionPoint> previousPoint;
+		nlohmann::json dumpState() const;
 	};
 
 	void trackReplacementLayer(middle_id_t id, int layer);

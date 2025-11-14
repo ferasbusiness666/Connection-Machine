@@ -101,6 +101,8 @@ public:
 	Difference getCreationDifference() const;
 	DifferenceSharedPtr getCreationDifferenceShared() const;
 
+	nlohmann::json dumpState() const;
+
 private:
 	unsigned int getBitwidthOfJunction(block_id_t blockId, std::unordered_set<block_id_t>& visited) const;
 	unsigned int getBitwidthOfJunction(const Block* block) const;

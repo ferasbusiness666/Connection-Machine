@@ -1,8 +1,8 @@
 #include "circuitSelectionTest.h"
 
 void CircuitSelectionTest::SetUp() {
-	circuit_id_t circuitId = circuitManager.createNewCircuit("Circuit", generate_uuid_v4());
-	circuit = circuitManager.getCircuit(circuitId);
+	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit("Circuit", generate_uuid_v4());
+	circuit = environment.getBackend().getCircuitManager().getCircuit(circuitId);
 	i = 0;
 }
 

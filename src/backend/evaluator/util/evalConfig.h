@@ -99,6 +99,17 @@ public:
 		subscribers.clear();
 	}
 
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson;
+		stateJson["targetTickrate"] = getTargetTickrate();
+		stateJson["tickrateLimiter"] = isTickrateLimiterEnabled();
+		stateJson["running"] = isRunning();
+		stateJson["realistic"] = isRealistic();
+		stateJson["sprintCounter"] = getSprintCount();
+		stateJson["maxThreadCount"] = getMaxThreadCount();
+		return stateJson;
+	}
+
 private:
 	DataUpdateEventManager& dataUpdateEventManager;
 	evaluator_id_t evaluatorId;

@@ -239,12 +239,35 @@ public:
     inline bool isViewingReplay() const {
         return simulatorOptimizer.isViewingReplay();
     }
+
+    nlohmann::json dumpState() const {
+        nlohmann::json stateJson;
+        stateJson["simulatorOptimizer"] = simulatorOptimizer.dumpState();
+        stateJson["omittedConnections"] = nlohmann::json::object();
+        for (const auto& [gateId, connections] : omittedConnections) {
+            stateJson["omittedConnections"][std::to_string(gateId.get())] = dumpEvalConnectionVector(connections);
+        }
+        stateJson["busInterfaces"] = nlohmann::json::object();
+        for (const auto& [gateId, blockType] : busInterfaces) {
+            stateJson["busInterfaces"][std::to_string(gateId.get())] = blocktype_to_string(blockType);
+        }
+        return stateJson;
+    }
+
 private:
     SimulatorOptimizer simulatorOptimizer;
     std::unordered_map<middle_id_t, std::vector<EvalConnection>> omittedConnections;
     std::unordered_map<middle_id_t, BlockType> busInterfaces;
     std::vector<simulator_id_t>& dirtySimulatorIds;
     BlockDataManager& blockDataManager;
+
+    nlohmann::json dumpEvalConnectionVector(const std::vector<EvalConnection>& connections) const {
+        nlohmann::json connArray = nlohmann::json::array();
+        for (const EvalConnection& conn : connections) {
+            connArray.push_back(conn.dumpState());
+        }
+        return connArray;
+    }
 };
 
 #endif /* busInterfacePassthrough_h */

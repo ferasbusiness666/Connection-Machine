@@ -27,3 +27,15 @@ bool ConnectionContainer::hasConnection(connection_end_id_t thisEndId, Connectio
 	auto iter = connections.find(thisEndId);
 	return iter != connections.end() && iter->second.contains(otherConnectionEnd);
 }
+
+nlohmann::json ConnectionContainer::dumpState() const {
+	nlohmann::json stateJson;
+	for (const auto& [endId, connectionSet] : connections) {
+		nlohmann::json connectionArray = nlohmann::json::array();
+		for (const ConnectionEnd& connectionEnd : connectionSet) {
+			connectionArray.push_back(connectionEnd.dumpState());
+		}
+		stateJson[std::to_string(endId)] = connectionArray;
+	}
+	return stateJson;
+}

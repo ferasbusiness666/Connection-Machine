@@ -208,6 +208,7 @@ public:
 	inline bool isViewingReplay() const {
 		return simulator.isViewingReplay();
 	}
+	nlohmann::json dumpState() const;
 
 private:
 	LogicSimulator simulator;
@@ -222,6 +223,14 @@ private:
 	bool isJunctionType(BlockType blockType) const {
 		return blockType == BlockType::JUNCTION || blockType == BlockType::JUNCTION_L || blockType == BlockType::JUNCTION_H || blockType == BlockType::JUNCTION_X;
 	}
+
+    nlohmann::json dumpEvalConnectionVector(const std::vector<EvalConnection>& connections) const {
+        nlohmann::json connArray = nlohmann::json::array();
+        for (const EvalConnection& conn : connections) {
+            connArray.push_back(conn.dumpState());
+        }
+        return connArray;
+    }
 };
 
 #endif /* simulatorOptimizer_h */

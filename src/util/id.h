@@ -2,8 +2,8 @@
 #define id_h
 
 #define DECLARE_ID_TYPE(TypeName, RepType)                                                                                                                               \
-	struct TagName##__TAG__;                                                                                                                                             \
-	using TypeName = Id<TagName##__TAG__, RepType>
+	struct TypeName##__TAG__;                                                                                                                                            \
+	using TypeName = Id<TypeName##__TAG__, RepType>
 
 template <class Tag, class Rep>
 class Id {
@@ -12,7 +12,7 @@ public:
 	using rep = Rep;
 
 	constexpr Id() = default;
-	explicit constexpr Id(Rep v) : value(v) { }
+	constexpr Id(Rep v) : value(v) { }
 
 	constexpr Rep get() const noexcept { return value; }
 
@@ -58,8 +58,8 @@ public:
 			x -= n;
 			return *this;
 		}
-		iterator operator+(difference_type n) const { return *this + n; }
-		iterator operator-(difference_type n) const { return *this - n; }
+		iterator operator+(difference_type n) const { return iterator(this->x + n); }
+		iterator operator-(difference_type n) const { return iterator(this->x - n); }
 
 		difference_type operator-(const iterator& o) const { return static_cast<difference_type>(x - o.x); }
 
@@ -149,17 +149,12 @@ public:
 		}
 	}
 	constexpr id_type getNewId(id_type preferredId) {
-		if (unusedIds.size() * 2 < nextId && unusedIds.contains(preferredId.get())) {
+		if (unusedIds.contains(preferredId.get())) {
 			unusedIds.erase(preferredId.get());
 			return preferredId;
 		}
-		if (preferredId.get() == nextId || unusedIds.empty()) {
-			return id_type(nextId++);
-		} else {
-			rep id = *unusedIds.begin();
-			unusedIds.erase(unusedIds.begin());
-			return id_type(id);
-		}
+		if (preferredId.get() == nextId) return id_type(nextId++);
+		return getNewId();
 	}
 	constexpr void releaseId(id_type id) {
 		if (!isIdUsed(id)) {
@@ -170,7 +165,7 @@ public:
 	constexpr bool isIdUsed(id_type id) const { return id.get() < nextId && !unusedIds.contains(id.get()); }
 	constexpr id_type peekNext() const { return id_type(nextId); }
 	void reset() {
-		nextId = 0;
+		nextId = initialValue;
 		unusedIds.clear();
 	}
 	std::vector<id_type> getUsedIds() const {
@@ -181,6 +176,16 @@ public:
 			}
 		}
 		return usedIds;
+	}
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson;
+		stateJson["nextId"] = nextId;
+		stateJson["initialValue"] = initialValue;
+		stateJson["unusedIds"] = nlohmann::json::array();
+		for (const rep id : unusedIds) {
+			stateJson["unusedIds"].push_back(id);
+		}
+		return stateJson;
 	}
 private:
 	rep nextId;
@@ -198,7 +203,7 @@ public:
 
 	constexpr id_type getNewId() { return id_type(nextId++); }
 	constexpr id_type peekNext() const { return id_type(nextId); }
-	constexpr id_type lastIdProvided() const { return idType(nextId - 1); }
+	constexpr id_type lastIdProvided() const { return id_type(nextId - 1); }
 	void reset() { nextId = 0; }
 
 private:

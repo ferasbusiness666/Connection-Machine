@@ -20,6 +20,7 @@ BlockRenderDataFeeder::BlockRenderDataFeeder(Backend& backend) : backend(backend
 	dataUpdateEventReceiver.linkFunction("blockDataTextureBlockStateOffsetChange", std::bind(&BlockRenderDataFeeder::blockDataTextureTileChangeUpdate, this, std::placeholders::_1));
 
 	font = Freetype::get().loadFont(*Settings::get<SettingType::FILE_PATH>("Appearance/Font"), 64);
+	blockTextureGenerator = std::make_unique<BlockTextureGenerator>(font);
 }
 
 BlockRenderDataId BlockRenderDataFeeder::getBlockRenderDataId(BlockType blockType) const {
@@ -170,10 +171,11 @@ BlockTextureId BlockRenderDataFeeder::getBlockTextureId(const BlockData* blockDa
 			}
 		}
 		CpuImage img({ blockData->getSize().w * scale, blockData->getSize().h * scale }, { 0, 0, 0, 255 });
+		assert(blockTextureGenerator && "BlockTextureGenerator is not initialized");
 		if (blockData->isBus()) {
-			createTextureForBusBlock(blockData, img, scale);
+			blockTextureGenerator->createBusBlockTexture(blockData, img, scale);
 		} else {
-			createTextureForCustomBlock(blockData, img, scale);
+			blockTextureGenerator->createCustomBlockTexture(blockData, img, scale);
 		}
 		CpuImage paddedImg = padTexture(img);
 		blockTextureId = MainRenderer::get().addBlockTexture(paddedImg.getData(), paddedImg.getSize().x, paddedImg.getSize().y);
@@ -225,69 +227,6 @@ CpuImage BlockRenderDataFeeder::padTexture(const CpuImage& img) {
 		}
 	}
 	return paddedImg;
-}
-
-void BlockRenderDataFeeder::putConnectionNipplesOntoImage(const BlockData* blockData, CpuImage& img, int scale) {
-	for (const std::pair<connection_end_id_t, BlockData::ConnectionData>& connection : blockData->getConnections()) {
-		Vec2Int portTexturePos = (
-			Vec2Int(connection.second.positionOnBlock.dx * scale, connection.second.positionOnBlock.dy * scale) +
-			Vec2Int(connection.second.portOffset.dx * (float)scale, connection.second.portOffset.dy * (float)scale)
-		);
-		int laneCount = connection.second.getBitWidth();
-		int nippleSize = std::max(11, std::min(11 * laneCount, 11 * 8));
-		img.addCircle(portTexturePos, nippleSize * scale / 256, { 0, 0, 0, 255 });
-	}
-}
-
-void BlockRenderDataFeeder::createTextureForCustomBlock(const BlockData* blockData, CpuImage& img, int scale) {
-	img.addRect({ 5 * scale / 256, 5 * scale / 256 }, img.getSize() - Vec2Int(10 * scale / 256, 10 * scale / 256), { 76, 76, 76, 255 });
-	putConnectionNipplesOntoImage(blockData, img, scale);
-	if (blockData->getSize().w >= blockData->getSize().h) {
-		img.writeStringInArea(font, blockData->getName(), { 75*scale/256, 75*scale/256 }, img.getSize() - Vec2Int(150*scale/256, 150*scale/256), { 255, 255, 255, 255 }, Rotation::ZERO, true, true);
-	} else {
-		img.writeStringInArea(font, blockData->getName(), { 75*scale/256, 75*scale/256 }, img.getSize() - Vec2Int(150*scale/256, 150*scale/256), { 255, 255, 255, 255 }, Rotation::NINETY, true, true);
-	}
-}
-
-void BlockRenderDataFeeder::createTextureForBusBlock(const BlockData* blockData, CpuImage& img, int scale) {
-	img.fill({ 0, 0, 0, 0 });
-	int minY;
-	int maxY;
-	bool first = true;
-	for (const std::pair<connection_end_id_t, BlockData::ConnectionData>& connection : blockData->getConnections()) {
-		Vec2Int portTexturePos = (
-			Vec2Int(connection.second.positionOnBlock.dx * scale, connection.second.positionOnBlock.dy * scale) +
-			Vec2Int(connection.second.portOffset.dx * (float)scale, connection.second.portOffset.dy * (float)scale)
-		);
-		int laneCount = connection.second.getBitWidth();
-		int nippleSize = (std::max(9, std::min(9 * laneCount, 9 * 8)) + 4) * scale / 256;
-		int lineSize = std::max(9, std::min(5 * laneCount, 9 * 8))* scale / 256;
-		int thisMinY = portTexturePos.y - lineSize;
-		int thisMaxY = portTexturePos.y + lineSize;
-		if (first || thisMinY < minY) minY = thisMinY;
-		if (first || thisMaxY > maxY) maxY = thisMaxY;
-		first = false;
-		// {img.getSize().x / 2, portTexturePos.y}
-		int x1 = img.getSize().x / 2;
-		int x2 = portTexturePos.x;
-		img.addRect(
-			{ std::min(x1, x2), portTexturePos.y - lineSize },
-			{ std::abs(x1 - x2), lineSize * 2 },
-			{ 76, 76, 76, 255 }
-		);
-		img.addCircle(portTexturePos, nippleSize, { 0, 0, 0, 255 });
-	}
-
-	// int usingRadius = maxRadius;
-	int usingRadius = 9 * 4;
-
-	img.addLine(
-		{ img.getSize().x / 2, minY + usingRadius },
-		{ img.getSize().x / 2, maxY - usingRadius },
-		usingRadius * scale / 256 + 1,
-		{ 76, 76, 76, 255 },
-		true
-	);
 }
 
 void BlockRenderDataFeeder::doBlockTextureUpdates() {

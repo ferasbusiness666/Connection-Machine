@@ -75,5 +75,4 @@ private:
 template <class V>
 inline const DataUpdateEventManager::EventDataWithValue<V>* DataUpdateEventManager::EventData::cast() const { return dynamic_cast<const EventDataWithValue<V>*>(this); }
 
-
 #endif /* dataUpdateEventManager_h */

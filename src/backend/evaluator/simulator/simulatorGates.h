@@ -3,6 +3,7 @@
 
 #include "logicState.h"
 #include "backend/evaluator/evalDefs.h"
+#include "backend/container/block/connectionEnd.h"
 
 class SimulatorGate {
 public:
@@ -167,6 +168,19 @@ struct ANDLikeGate : public MultiInputGate {
 		lastInputToEarlyExit = 0;
 		MultiInputGate::removeIdRefs(otherId);
 	}
+
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson = nlohmann::json::object();
+		stateJson["id"] = id.get();
+		stateJson["inputsInverted"] = inputsInverted;
+		stateJson["outputInverted"] = outputInverted;
+		stateJson["lastInputToEarlyExit"] = lastInputToEarlyExit;
+		stateJson["inputs"] = nlohmann::json::array();
+		for (const simulator_id_t inputId : inputs) {
+			stateJson["inputs"].push_back(inputId.get());
+		}
+		return stateJson;
+	}
 };
 
 struct XORLikeGate : public MultiInputGate {
@@ -200,6 +214,17 @@ struct XORLikeGate : public MultiInputGate {
 	inline void realisticTick(const IdVector<simulator_id_t, logic_state_t>& statesA, IdVector<simulator_id_t, logic_state_t>& statesB) noexcept {
 		logic_state_t targetState = calculate(statesA);
 		applyRealisticTick(targetState, statesA, statesB);
+	}
+
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson = nlohmann::json::object();
+		stateJson["id"] = id.get();
+		stateJson["outputInverted"] = outputInverted;
+		stateJson["inputs"] = nlohmann::json::array();
+		for (const simulator_id_t inputId : inputs) {
+			stateJson["inputs"].push_back(inputId.get());
+		}
+		return stateJson;
 	}
 };
 
@@ -267,6 +292,17 @@ struct JunctionGate : public SimulatorGate {
 	std::vector<simulator_id_t> getOutputSimIds() const override {
 		return {id};
 	}
+
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson = nlohmann::json::object();
+		stateJson["id"] = id.get();
+		stateJson["defaultState"] = logicstate_to_string(defaultState);
+		stateJson["inputs"] = nlohmann::json::array();
+		for (const simulator_id_t inputId : inputs) {
+			stateJson["inputs"].push_back(inputId.get());
+		}
+		return stateJson;
+	}
 };
 
 
@@ -285,6 +321,19 @@ struct BufferGate : public BufferGateBase {
 		: BufferGateBase(id, outputInverted), extraDelayTicks(extraDelayTicks) {}
 
 	inline void tick(const IdVector<simulator_id_t, logic_state_t>& statesA, IdVector<simulator_id_t, logic_state_t>& statesB) noexcept {}
+
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson = nlohmann::json::object();
+		stateJson["id"] = id.get();
+		stateJson["outputInverted"] = outputInverted;
+		stateJson["extraDelayTicks"] = extraDelayTicks;
+		if (input.has_value()) {
+			stateJson["input"] = input.value().get();
+		} else {
+			stateJson["input"] = nullptr;
+		}
+		return stateJson;
+	}
 };
 
 struct SingleBufferGate : public BufferGateBase {
@@ -309,6 +358,18 @@ struct SingleBufferGate : public BufferGateBase {
 	inline void realisticTick(const IdVector<simulator_id_t, logic_state_t>& statesA, IdVector<simulator_id_t, logic_state_t>& statesB) noexcept {
 		logic_state_t targetState = calculate(statesA);
 		applyRealisticTick(targetState, statesA, statesB);
+	}
+
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson = nlohmann::json::object();
+		stateJson["id"] = id.get();
+		stateJson["outputInverted"] = outputInverted;
+		if (input.has_value()) {
+			stateJson["input"] = input.value().get();
+		} else {
+			stateJson["input"] = nullptr;
+		}
+		return stateJson;
 	}
 };
 
@@ -385,6 +446,15 @@ struct TristateBufferGate : public SimulatorGate {
 	std::vector<simulator_id_t> getOutputSimIds() const override {
 		return {id};
 	}
+
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson = nlohmann::json::object();
+		stateJson["id"] = id.get();
+		stateJson["enableInverted"] = enableInverted;
+		stateJson["dataInput"] = dataInput.get();
+		stateJson["enableInput"] = enableInput.get();
+		return stateJson;
+	}
 };
 
 class ConstantGateBase : public SimulatorGate {
@@ -416,6 +486,13 @@ public:
 struct ConstantGate : public ConstantGateBase {
 	ConstantGate(simulator_id_t id, logic_state_t outputState = logic_state_t::LOW)
 		: ConstantGateBase(id, outputState) {}
+
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson = nlohmann::json::object();
+		stateJson["id"] = id.get();
+		stateJson["outputState"] = logicstate_to_string(outputState);
+		return stateJson;
+	}
 };
 
 struct ConstantResetGate : public ConstantGateBase {
@@ -428,6 +505,13 @@ struct ConstantResetGate : public ConstantGateBase {
 
 	inline void tick(IdVector<simulator_id_t, logic_state_t>& statesB) noexcept {
 		statesB[id] = calculate();
+	}
+
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson = nlohmann::json::object();
+		stateJson["id"] = id.get();
+		stateJson["outputState"] = logicstate_to_string(outputState);
+		return stateJson;
 	}
 };
 
@@ -454,6 +538,12 @@ struct CopySelfOutputGate : public LogicGate {
 
 	void resetState(bool realistic, IdVector<simulator_id_t, logic_state_t>& states) override {
 		states[id] = logic_state_t::LOW;
+	}
+
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson = nlohmann::json::object();
+		stateJson["id"] = id.get();
+		return stateJson;
 	}
 };
 
@@ -518,6 +608,16 @@ struct PortsToIntGate : public SimulatorGate {
 	}
 	std::vector<simulator_id_t> getOutputSimIds() const override {
 		return {id};
+	}
+
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson = nlohmann::json::object();
+		stateJson["id"] = id.get();
+		stateJson["inputPorts"] = nlohmann::json::array();
+		for (connection_end_id_t i : inputPorts.ids()) {
+			stateJson["inputPorts"].push_back(inputPorts[i].get());
+		}
+		return stateJson;
 	}
 };
 

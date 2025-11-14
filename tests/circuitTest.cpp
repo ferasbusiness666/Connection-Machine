@@ -1,16 +1,22 @@
 #include "circuitTest.h"
 
+Position randPos() {
+	return Position(rand() % 100000, rand() % 100000);
+}
+
+const int loopsPerTest = 100; // upped
+
 void CircuitTest::SetUp() {
-	circuit_id_t circuitId = circuitManager.createNewCircuit("Circuit", generate_uuid_v4());
-	circuit = circuitManager.getCircuit(circuitId);
+	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit("Circuit", generate_uuid_v4());
+	circuit = environment.getBackend().getCircuitManager().getCircuit(circuitId);
 	i = 0;
 }
 
 void CircuitTest::TearDown() { circuit.reset(); }
 
 TEST_F(CircuitTest, BlockContainerBasicOperations) {
-	for (i = 0; i < 100; i++) {
-		Position pos(rand() % 100000, rand() % 100000);
+	for (int i = 0; i < loopsPerTest; i++) {
+		Position pos = randPos();
 		Rotation rot = Rotation::ZERO;
 
 		bool success = circuit->tryInsertBlock(pos, rot, BlockType::AND);
@@ -36,13 +42,17 @@ TEST_F(CircuitTest, BlockContainerBasicOperations) {
 		circuit->redo();
 		block = container.getBlock(pos);
 		ASSERT_FALSE(block == nullptr);
+
+		circuit->clear(true);
+		block = container.getBlock(pos);
+		ASSERT_TRUE(block == nullptr);
 	}
 }
 
 TEST_F(CircuitTest, BlockPlacementCollision) {
-	for (i = 0; i < 100; i++) {
+	for (i = 0; i < loopsPerTest; i++) {
 		// circuit->clear(true);
-		Position pos(rand() % 100000, rand() % 100000);
+		Position pos = randPos();
 		Rotation rot = Rotation::ZERO;
 
 		bool success = circuit->tryInsertBlock(pos, rot, BlockType::AND);
@@ -66,7 +76,7 @@ TEST_F(CircuitTest, BlockPlacementCollision) {
 		block = circuit->getBlockContainer().getBlock(pos);
 		ASSERT_TRUE(block == nullptr);
 
-		// // Test redo after undo nothing
+		// Test redo after undo nothing
 		circuit->redo();
 		block = circuit->getBlockContainer().getBlock(pos);
 		ASSERT_TRUE(block != nullptr);
@@ -78,9 +88,9 @@ TEST_F(CircuitTest, BlockPlacementCollision) {
 }
 
 TEST_F(CircuitTest, ConnectionCreation) {
-	for (i = 0; i < 100; i++) {
-		Position pos1(rand() % 100000, rand() % 100000);
-		Position pos2(rand() % 100000, rand() % 100000);
+	for (i = 0; i < loopsPerTest; i++) {
+		Position pos1 = randPos();
+		Position pos2 = randPos();
 		if (pos1 == pos2) {
 			--i;
 			continue;
@@ -136,9 +146,9 @@ TEST_F(CircuitTest, ConnectionCreation) {
 }
 
 TEST_F(CircuitTest, ConnectionCreationConnectionEnd) {
-	for (i = 0; i < 100; i++) {
-		Position pos1(rand() % 100000, rand() % 100000);
-		Position pos2(rand() % 100000, rand() % 100000);
+	for (i = 0; i < loopsPerTest; i++) {
+		Position pos1 = randPos();
+		Position pos2 = randPos();
 		if (pos1 == pos2) {
 			--i;
 			continue;
@@ -176,10 +186,10 @@ TEST_F(CircuitTest, ConnectionCreationConnectionEnd) {
 }
 
 TEST_F(CircuitTest, InvalidConnections) {
-	for (i = 0; i < 100; i++) {
-		Position pos1(rand() % 100000, rand() % 100000);
-		Position pos2(rand() % 100000, rand() % 100000);
-		Position nonExistent(rand() % 100000, rand() % 100000);
+	for (i = 0; i < loopsPerTest; i++) {
+		Position pos1 = randPos();
+		Position pos2 = randPos();
+		Position nonExistent = randPos();
 		if (pos1 == pos2 || pos1 == nonExistent || pos2 == nonExistent) {
 			--i;
 			continue;
@@ -215,8 +225,8 @@ TEST_F(CircuitTest, InvalidConnections) {
 }
 
 TEST_F(CircuitTest, BlockRemoval) {
-	for (i = 0; i < 100; i++) {
-		Position pos(rand() % 100000, rand() % 100000);
+	for (i = 0; i < loopsPerTest; i++) {
+		Position pos = randPos();
 		Rotation rot = Rotation::ZERO;
 
 		circuit->tryInsertBlock(pos, rot, BlockType::AND);
@@ -239,9 +249,9 @@ TEST_F(CircuitTest, BlockRemoval) {
 }
 
 TEST_F(CircuitTest, ConnectionRemoval) {
-	for (i = 0; i < 100; i++) {
-		Position pos1(rand() % 100000, rand() % 100000);
-		Position pos2(rand() % 100000, rand() % 100000);
+	for (i = 0; i < loopsPerTest; i++) {
+		Position pos1 = randPos();
+		Position pos2 = randPos();
 		if (pos1 == pos2) {
 			--i;
 			continue;
@@ -275,7 +285,7 @@ TEST_F(CircuitTest, ConnectionRemoval) {
 }
 
 TEST_F(CircuitTest, BlockTypePlacement) {
-	for (i = 0; i < 100; i++) {
+	for (i = 0; i < loopsPerTest; i++) {
 		Position pos(0, 100 * i);
 		Rotation rot = Rotation::ZERO;
 		BlockType type = (BlockType)(i);
@@ -295,14 +305,13 @@ TEST_F(CircuitTest, BlockTypePlacement) {
 			ASSERT_EQ(block, nullptr);
 		}
 		bool blockRemoved = circuit->tryRemoveBlock(pos);
-		// ASSERT_TRUE(blockRemoved);
 	}
 }
 
 TEST_F(CircuitTest, ConnectionRemovalConnectionEnd) {
-	for (int i = 0; i < 100; i++) {
-		Position pos1(rand() % 100000, rand() % 100000);
-		Position pos2(rand() % 100000, rand() % 100000);
+	for (int i = 0; i < loopsPerTest; i++) {
+		Position pos1 = randPos();
+		Position pos2 = randPos();
 		if (pos1 == pos2) {
 			--i;
 			continue;
@@ -334,17 +343,35 @@ TEST_F(CircuitTest, ConnectionRemovalConnectionEnd) {
 		const Block* block2 = container.getBlock(pos2);
 		ASSERT_TRUE(block1 == nullptr);
 		ASSERT_TRUE(block2 == nullptr);
+
+		// Test redo everything
+		circuit->redo(); // redo block 2
+		circuit->redo(); // redo block 1
+		block1 = container.getBlock(pos1);
+		block2 = container.getBlock(pos2);
+		ASSERT_FALSE(block1 == nullptr);
+		ASSERT_FALSE(block2 == nullptr);
+		circuit->redo(); // undo connection creation
+		ASSERT_TRUE(container.connectionExists(pos1, pos2));
+		circuit->redo(); // redo connection removal
+		ASSERT_FALSE(container.connectionExists(pos1, pos2));
+
+		circuit->clear(true); // clear circuit and undoTree
+		block1 = container.getBlock(pos1);
+		block2 = container.getBlock(pos2);
+		ASSERT_TRUE(block1 == nullptr);
+		ASSERT_TRUE(block2 == nullptr);
 	}
 }
 
 TEST_F(CircuitTest, CircuitPlacement) {
-	circuit_id_t circuitId = circuitManager.createNewCircuit(generate_uuid_v4(), "Circuit");
-	SharedCircuit circuit2 = circuitManager.getCircuit(circuitId);
-	const BlockType blockType = circuitManager.setupBlockData(circuitId);
+	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(generate_uuid_v4(), "Circuit");
+	SharedCircuit circuit2 = environment.getBackend().getCircuitManager().getCircuit(circuitId);
+	const BlockType blockType = environment.getBackend().getCircuitManager().setupBlockData(circuitId);
 
 	ASSERT_NE(blockType, NONE);
-	ASSERT_TRUE(circuitManager.getBlockDataManager()->blockExists(blockType));
-	circuitManager.getBlockDataManager()->getBlockData(blockType)->setSize(Size(2, 2));
+	ASSERT_TRUE(environment.getBackend().getBlockDataManager().blockExists(blockType));
+	environment.getBackend().getBlockDataManager().getBlockData(blockType)->setSize(Size(2, 2));
 	ASSERT_TRUE(circuit->tryInsertBlock(Position(), Rotation::ZERO, blockType));
 
 	const Block* block1 = circuit->getBlockContainer().getBlock(Position());
@@ -359,12 +386,21 @@ TEST_F(CircuitTest, CircuitPlacement) {
 	circuit->undo();
 	block1 = circuit->getBlockContainer().getBlock(Position());
 	ASSERT_EQ(block1, nullptr);
+
+	// Test redo stuff
+	circuit->redo();
+	block1 = circuit->getBlockContainer().getBlock(Position());
+	ASSERT_NE(block1, nullptr);
+
+	circuit->clear(true); // clear circuit and undoTree
+	block1 = circuit->getBlockContainer().getBlock(Position());
+	ASSERT_EQ(block1, nullptr);
 }
 
 TEST_F(CircuitTest, BlockConnectionRemoval) {
-	for (int i = 0; i < 100; i++) {
-		Position pos1(rand() % 100000, rand() % 100000);
-		Position pos2(rand() % 100000, rand() % 100000);
+	for (int i = 0; i < loopsPerTest; i++) {
+		Position pos1 = randPos();
+		Position pos2 = randPos();
 		if (pos1 == pos2) {
 			--i;
 			continue;
@@ -388,7 +424,7 @@ TEST_F(CircuitTest, BlockConnectionRemoval) {
 
 		// Test undoing everything
 		circuit->undo(); // undo insert2
-		circuit->undo(); // undo removeblock cxion should exist
+		circuit->undo(); // undo removeblock connection should exist
 		connection12 = container.connectionExists(pos1, pos2);
 		connection21 = container.connectionExists(pos2, pos1);
 		ASSERT_TRUE(connection12);
@@ -405,30 +441,74 @@ TEST_F(CircuitTest, BlockConnectionRemoval) {
 		const Block* block2 = container.getBlock(pos1);
 		ASSERT_TRUE(block1 == nullptr);
 		ASSERT_TRUE(block2 == nullptr);
+
+		// Test redoing everything
+		circuit->redo(); // redo block at pos2
+		circuit->redo(); // redo block at pos1
+		block1 = container.getBlock(pos1);
+		block2 = container.getBlock(pos1);
+		ASSERT_FALSE(block1 == nullptr);
+		ASSERT_FALSE(block2 == nullptr);
+		circuit->redo(); //rendo connection 21
+		circuit->redo(); //rendo conneciton 12
+		connection12 = container.connectionExists(pos1, pos2);
+		connection21 = container.connectionExists(pos2, pos1);
+		ASSERT_TRUE(connection12);
+		ASSERT_TRUE(connection21);
+		circuit->redo(); // redo insert2
+		circuit->redo(); // redo removeblock connection should not exist
+		connection12 = container.connectionExists(pos1, pos2);
+		connection21 = container.connectionExists(pos2, pos1);
+		ASSERT_FALSE(connection12);
+		ASSERT_FALSE(connection21);
+
+		circuit->clear(true); // clear circuit and undoTree
+		connection12 = container.connectionExists(pos1, pos2);
+		connection21 = container.connectionExists(pos2, pos1);
+		ASSERT_FALSE(connection12);
+		ASSERT_FALSE(connection21);
+		block1 = container.getBlock(pos1);
+		block2 = container.getBlock(pos1);
+		ASSERT_TRUE(block1 == nullptr);
+		ASSERT_TRUE(block2 == nullptr);
 	}
 }
 
 TEST_F(CircuitTest, MoveBlockSimple) {
 	// test move block simple
-	Position pos1(0, 0);
-	Position pos2(10, 10);
-	const BlockContainer& container = circuit->getBlockContainer();
+	for (int i = 0; i < loopsPerTest; i++) {
+		Position pos1 = randPos();
+		Position pos2 = randPos();
+		const BlockContainer& container = circuit->getBlockContainer();
 
-	bool inserted = circuit->tryInsertBlock(pos1, Rotation::ZERO, BlockType::AND);
-	const Block* block1 = container.getBlock(pos1);
-	bool moved = circuit->tryMoveBlock(pos1, pos2, Orientation());
-	const Block* block2 = container.getBlock(pos1);
-	const Block* block3 = container.getBlock(pos2);
-	ASSERT_TRUE(inserted);
-	ASSERT_TRUE(moved);
-	ASSERT_EQ(block2, nullptr);
-	ASSERT_EQ(block1, block3);
-	// test undo move
-	circuit->undo();
-	const Block* block4 = container.getBlock(pos1);
-	const Block* block5 = container.getBlock(pos2);
-	ASSERT_EQ(block5, nullptr);
-	ASSERT_EQ(block1, block4);
+		bool inserted = circuit->tryInsertBlock(pos1, Rotation::ZERO, BlockType::AND);
+		const Block* block1 = container.getBlock(pos1);
+		bool moved = circuit->tryMoveBlock(pos1, pos2, Orientation());
+		const Block* block2 = container.getBlock(pos1);
+		const Block* block3 = container.getBlock(pos2);
+		ASSERT_TRUE(inserted);
+		ASSERT_TRUE(moved);
+		ASSERT_EQ(block2, nullptr);
+		ASSERT_EQ(block1, block3);
+		// test undo move
+		circuit->undo();
+		const Block* block4 = container.getBlock(pos1);
+		const Block* block5 = container.getBlock(pos2);
+		ASSERT_EQ(block5, nullptr);
+		ASSERT_EQ(block1, block4);
+		// // test redo move
+		// circuit->redo();
+		// const Block* block6 = container.getBlock(pos1);
+		// const Block* block7 = container.getBlock(pos2);
+		// ASSERT_EQ(block6, nullptr);
+		// ASSERT_EQ(block1, block7);
+
+		// circuit->clear(true); // clear circuit and undoTree
+		// const Block* block8 = container.getBlock(pos1);
+		// const Block* block9 = container.getBlock(pos2);
+		// ASSERT_EQ(block6, nullptr);
+		// ASSERT_EQ(block9, nullptr);
+	}
 }
 
 TEST_F(CircuitTest, MoveBlock) {

@@ -46,7 +46,11 @@ public:
 	std::pair<constIteratorT2, constIteratorT2> get(const T2& key) const {
 		return T1Vals.equal_range(key);
 	}
-	
+
+	const std::unordered_map<T1, T2>& getT2Map() const {
+		return T2Vals;
+	}
+
 private:
 	std::unordered_map<T1, T2> T2Vals;
 	std::unordered_multimap<T2, T1> T1Vals;

@@ -8,6 +8,21 @@ enum class logic_state_t : std::uint8_t {
 	UNDEFINED = 3
 };
 
+inline std::string logicstate_to_string(logic_state_t state) {
+	switch (state) {
+		case logic_state_t::LOW:
+			return "L";
+		case logic_state_t::HIGH:
+			return "H";
+		case logic_state_t::FLOATING:
+			return "Z";
+		case logic_state_t::UNDEFINED:
+			return "X";
+		default:
+			return std::to_string(static_cast<int>(state));
+	}
+}
+
 inline bool isHigh(const logic_state_t& state) {
 	return state == logic_state_t::HIGH;
 }

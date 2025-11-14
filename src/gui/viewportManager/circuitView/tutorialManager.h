@@ -55,7 +55,7 @@ public:
 	void setTutorial(const std::vector<TutorialStep>& steps);
 
 private:
-	void checkTutorial(DifferenceSharedPtr, circuit_id_t);
+	void checkTutorial(DifferenceSharedPtr diff, circuit_id_t circuitId);
 	void checkTutorialState(Position pos, bool state);
 
 	void runCurrentStep();

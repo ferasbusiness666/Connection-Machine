@@ -155,7 +155,7 @@ input[type="checkbox"], checkbox {
 }
 
 input[type="checkbox"]:hover, checkbox:hover {
-	background-color: #3aa53a61;
+	background-color: #3aa53a60;
 }
 
 input[type="checkbox"]:checked, checkbox:checked {
@@ -164,7 +164,7 @@ input[type="checkbox"]:checked, checkbox:checked {
 }
 
 input[type="checkbox"]:checked:hover, checkbox:checked:hover {
-	background-color: #3d8d3da0;
+	background-color: rgb(74, 154, 74);
 }
 
 tab {

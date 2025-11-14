@@ -71,8 +71,12 @@ public:
 		if (new_count < cur) {
 			size_t kill = cur - new_count;
 			waitForCompletion();
-			for (size_t i = 0; i < kill; ++i)
-				workers[workers.size() - 1 - i]->retire.store(true, std::memory_order_relaxed);
+			{
+				std::lock_guard<std::mutex> lock(mtx);
+				for (size_t i = 0; i < kill; ++i) {
+					workers[workers.size() - 1 - i]->retire.store(true, std::memory_order_relaxed);
+				}
+			}
 			cv.notify_all(); // wake sleepers so they can retire
 			for (size_t i = 0; i < kill; ++i) {
 				auto idx = workers.size() - 1;

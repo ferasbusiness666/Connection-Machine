@@ -55,6 +55,7 @@ public:
 		});
 		return result;
 	}
+	nlohmann::json dumpState() const;
 private:
 	eval_circuit_id_t id;
 	eval_circuit_id_t parentEvalId;

@@ -130,6 +130,8 @@ public:
 		return busInterfacePassthrough.isViewingReplay();
 	}
 
+	nlohmann::json dumpState() const;
+
 private:
 	BusInterfacePassthrough busInterfacePassthrough;
 	EvalConfig& evalConfig;
@@ -170,7 +172,8 @@ private:
 	std::vector<std::optional<EvalConnectionPoint>> getReplacementConnectionPoints(const std::vector<std::optional<EvalConnectionPoint>>& points) const;
 	struct BusInternalJunctionArray {
 		std::vector<middle_id_t> junctionIds {};
-		int numDefined {0};
+		int numDefined { 0 };
+		nlohmann::json dumpState() const;
 	};
 	std::unordered_map<middle_id_t, BusInternalJunctionArray> busInternalJunctions;
 	std::optional<middle_id_t> getJunctionInsideBus(middle_id_t busId, unsigned int laneId) {
@@ -247,6 +250,9 @@ private:
 		return blockType == BlockType::JUNCTION || blockType == BlockType::JUNCTION_L || blockType == BlockType::JUNCTION_H || blockType == BlockType::JUNCTION_X;
 	}
 	std::unordered_map<middle_id_t, std::set<replacement_id_t>> dependentReplacements;
+
+	nlohmann::json dumpConnectionPointMap(const std::unordered_map<connection_end_id_t, EvalConnectionPoint>& pointMap) const;
+	nlohmann::json dumpReplacementIdSet(const std::set<replacement_id_t>& idSet) const;
 };
 
 #endif /* replacer_h */
