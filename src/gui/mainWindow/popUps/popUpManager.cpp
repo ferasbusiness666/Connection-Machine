@@ -256,7 +256,7 @@ void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature 
 	title->SetClass("popup-title", true);
 
 	Rml::Element* content = popUpWindow.getPopUpWindow()->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
-	content->SetAttribute("style", "display: flex; flex-direction: column; gap: 0.75em; width: 100%;");
+	content->SetAttribute("style", "display: flex; flex-direction: column; align-content: stretch; gap: 0.75em; width: 100%; height: 100%;");
 
 	Rml::Element* textareaField = content->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
 	textareaField->SetAttribute("style", "display: flex; flex-direction: column; gap: 0.35em;");
@@ -265,8 +265,8 @@ void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature 
 	textareaHint->SetAttribute("style", "font-size: 0.9em; color: #c0c0c0;");
 
 	Rml::Element* textarea = textareaField->AppendChild(mainWindow.getRmlDocument()->CreateElement("textarea"));
-	textarea->SetAttribute("style", "overflow: auto; height: 250px;");
-	textarea->SetAttribute("rows", "40");
+	textarea->SetAttribute("style", "overflow-y: auto;");
+	textarea->SetAttribute("rows", "5");
 	textarea->SetAttribute("cols", "40");
 	textarea->SetClass("pop-up-textarea", true);
 	textarea->SetClass("surface-pop", true);
@@ -277,6 +277,20 @@ void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature 
 	includeStateCheckbox->SetAttribute("type", "checkbox");
 	includeStateCheckbox->SetAttribute("id", "feedback_include_state");
 	includeStateCheckbox->SetAttribute("style", "margin-top: 0.2em;");
+
+	includeStateField->AddEventListener(
+		Rml::EventId::Click,
+		new EventPasser(
+			[includeStateCheckbox](Rml::Event& event){
+				if (event.GetTargetElement() == includeStateCheckbox) return;
+				if (includeStateCheckbox->HasAttribute("checked")) {
+					includeStateCheckbox->RemoveAttribute("checked");
+				} else {
+					includeStateCheckbox->SetAttribute("checked", true);
+				}
+			}
+		)
+	);
 
 	Rml::Element* includeStateCopy = includeStateField->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
 	includeStateCopy->SetAttribute("style", "display: flex; flex-direction: column; gap: 0.2em;");

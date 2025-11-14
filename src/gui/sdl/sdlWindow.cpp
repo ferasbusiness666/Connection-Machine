@@ -44,8 +44,6 @@ SdlWindow::SdlWindow(const std::string& name, unsigned int width, unsigned int h
 SdlWindow::~SdlWindow() {
 	logInfo("Destroying SDL window...");
 
-	instantKillEvent(); // make sure window knows its going
-
 	if (vkSurface.has_value()) SDL_Vulkan_DestroySurface(vkInstance, vkSurface.value(), nullptr);
 	SDL_DestroyWindow(handle);
 }

@@ -37,6 +37,9 @@ App::App() {
 
 void App::preShutdownStep() {
 	logInfo("Shutting down App", "App");
+	for (std::shared_ptr<SdlWindow>& sdlWindow : sdlWindows) {
+		if (sdlWindow) sdlWindow->instantKillEvent(); // make sure window knows its going
+	}
 	sdlWindows.clear();
 	if (!windows.empty()) {
 		logError("Not all main windows were cleaned up. Clearing up {} extra.", "App", windows.size());
