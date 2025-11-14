@@ -14,11 +14,10 @@ void TutorialManager::StartTutorial() {
 	tutorialRunning = true;
 	tutorialState = 0;
 	circuit_id_t circuitId = circuitView->getBackend().getCircuitManager().createNewCircuit(false);
-	SharedCircuit circuit = circuitView->getBackend().getCircuitManager().getCircuit(circuitId);
-
 	std::optional<evaluator_id_t> evaluatorId = circuitView->getBackend().createEvaluator(circuitId);
 	if (!evaluatorId) return;
 	circuitView->setEvaluator(evaluatorId.value());
+
 	evaluator = circuitView->getBackend().getEvaluator(evaluatorId.value());
 	SharedCircuit circuit = circuitView->getBackend().getCircuitManager().getCircuit(circuitId);
 	curentCircuit = circuitView->getBackend().getCircuitManager().getCircuit(circuitId);
@@ -35,9 +34,8 @@ void TutorialManager::StartTutorial() {
 
 void TutorialManager::Stop() {
 	if (!tutorialRunning) return;
-	SharedCircuit circuit = circuitView->getBackend().getCircuitManager().getCircuit(curentCircuitId);
-	if (circuit) {
-		circuit->disconnectListener(this);
+	if (curentCircuit) {
+		curentCircuit->disconnectListener(this);
 	}
 	elementCreator.clear();
 	tutorialRunning = false;
