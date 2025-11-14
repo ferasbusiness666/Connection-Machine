@@ -43,8 +43,8 @@ void App::preShutdownStep() {
 	sdlWindows.clear();
 	if (windows.size() != windowsToDestroy.size()) {
 		logError("Not all main windows were cleaned up. Clearing up {} extra.", "App", windows.size() - windowsToDestroy.size());
-		windows.clear();
 	}
+	windows.clear();
 	rml.reset();
 	MainRenderer::kill();
 	Network::kill();
