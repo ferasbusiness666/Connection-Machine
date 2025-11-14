@@ -45,7 +45,7 @@ void MenuBar::triggerEvent(const std::string& name) {
 	} else if (name == "about"){
 		this->window->getPopUpManager().aboutConnectionMachine();
 	} else if (name == "controls"){
-		this->window->getPopUpManager().aboutConnectionMachine();
+		this->window->getPopUpManager().controlsConnectionMachine();
 	} else {
 		logWarning("Event \"{}\" not reconized", "MenuBar", name);
 	}
