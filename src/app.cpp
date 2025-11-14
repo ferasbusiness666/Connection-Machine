@@ -41,8 +41,8 @@ void App::preShutdownStep() {
 		if (sdlWindow) sdlWindow->instantKillEvent(); // make sure window knows its going
 	}
 	sdlWindows.clear();
-	if (!windows.empty()) {
-		logError("Not all main windows were cleaned up. Clearing up {} extra.", "App", windows.size());
+	if (windows.size() != windowsToDestroy.size()) {
+		logError("Not all main windows were cleaned up. Clearing up {} extra.", "App", windows.size() - windowsToDestroy.size());
 		windows.clear();
 	}
 	rml.reset();
@@ -77,6 +77,10 @@ bool App::closeMainWindow(const MainWindow* mainWindow) {
 	logInfo("Closing MainWindow", "App");
 	if (windows.size() == windowsToDestroy.size() + 1) {
 		startTryingToQuit();
+		if (tasksToFinishToQuit == 0) {
+			windowsToDestroy.push_back(mainWindow);
+			return true;
+		}
 		return false;
 	} else {
 		windowsToDestroy.push_back(mainWindow);
