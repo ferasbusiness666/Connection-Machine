@@ -1,6 +1,6 @@
 #include "network.h"
 #include "gui/mainWindow/popUps/popUpManager.h"
-
+#include "util/version.h"
 #include <httplib.h>
 
 std::optional<Network> Network::singletonInstance;
@@ -116,7 +116,7 @@ void Network::sendAttachments(PopUpManager& popUpManager, const std::vector<Netw
 
 void Network::checkForUpdates(PopUpManager& popUpManager) {
 	std::thread t([this, &popUpManager]() {
-		Version currentVersion = parseVersionString(PROJECT_VERSION);
+		Version currentVersion = getCurrentVersion();
 		logInfo("Checking for updates, current version: {}", "Network", currentVersion.toString());
 		std::string ignoredVersionStr = kvStore->get<KVType::STRING>("ignored_version").value_or("0.0.0");
 		Version ignoredVersion = parseVersionString(ignoredVersionStr);
@@ -169,40 +169,4 @@ void Network::checkForUpdates(PopUpManager& popUpManager) {
 	});
 	t.detach();
 	logInfo("Update check thread dispatched", "Network");
-}
-
-int Network::parseIntWithJunk(const std::string& str) {
-	std::string str2 = str;
-	size_t i = 0;
-	while (i < str2.size()) {
-		try {
-			int value = std::stoi(str2);
-			return value;
-		} catch (const std::invalid_argument&) {
-			str2 = str2.substr(0, str2.size() - 1);
-		} catch (const std::out_of_range&) {
-			return 0;
-		}
-	}
-	return 0;
-}
-
-Network::Version Network::parseVersionString(const std::string& versionStr) {
-	Network::Version version{0, 0, 0};
-	size_t firstDot = versionStr.find('.');
-	size_t secondDot = versionStr.find('.', firstDot + 1);
-
-	if (firstDot != std::string::npos) {
-		version.major = parseIntWithJunk(versionStr.substr(0, firstDot));
-		if (secondDot != std::string::npos) {
-			version.minor = parseIntWithJunk(versionStr.substr(firstDot + 1, secondDot - firstDot - 1));
-			version.patch = parseIntWithJunk(versionStr.substr(secondDot + 1));
-		} else {
-			version.minor = parseIntWithJunk(versionStr.substr(firstDot + 1));
-		}
-	} else {
-		version.major = parseIntWithJunk(versionStr);
-	}
-
-	return version;
 }
