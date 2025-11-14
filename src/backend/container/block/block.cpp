@@ -1,4 +1,4 @@
-#include "Block.h"
+#include "block.h"
 
 nlohmann::json Block::dumpState() const {
 	nlohmann::json stateJson;
