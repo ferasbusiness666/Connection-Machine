@@ -17,6 +17,13 @@ extern "C" {
     pub fn getPrimitiveType(name: *const u8) -> BlockType;
     pub fn getNonPrimitiveType(uuid: *const u8) -> BlockType;
     pub fn getProceduralCircuitType(uuid: *const u8, params: *const u8) -> BlockType;
+    pub fn getBusBlock(bit_width: i32) -> BlockType;
+    pub fn getBusBlockAdvanced(
+        num_inputs: i32,
+        num_outputs: i32,
+        input_lane_width: i32,
+        output_lane_width: i32
+    ) -> BlockType;
 
     // Block creation
     pub fn createBlock(block_type: BlockType) -> block_id_t;

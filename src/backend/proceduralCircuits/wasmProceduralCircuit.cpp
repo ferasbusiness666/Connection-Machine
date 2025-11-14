@@ -80,6 +80,40 @@ WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, Circu
 			return BlockType::NONE;
 		});
 
+	wasmtime::Func getBusBlockFunc = wasmtime::Func::wrap(*Wasm::getStore(),
+		[thisPtrPtr](int32_t bitWidth) -> int32_t {
+			if (bitWidth <= 0) {
+				logError("getBusBlock expects a positive bit width but received {}", "WasmProceduralCircuit::WasmInstance", bitWidth);
+				return static_cast<int32_t>(BlockType::NONE);
+			}
+			BlockType blockType = (*thisPtrPtr)->circuitManager->getBlockDataManager().getBusBlock(static_cast<unsigned int>(bitWidth));
+			return static_cast<int32_t>(blockType);
+		});
+
+	wasmtime::Func getBusBlockAdvancedFunc = wasmtime::Func::wrap(*Wasm::getStore(),
+		[thisPtrPtr](
+			int32_t numInputs,
+			int32_t numOutputs,
+			int32_t inputLaneWidth,
+			int32_t outputLaneWidth
+		) -> int32_t {
+			if (numInputs <= 0 || numOutputs <= 0 || inputLaneWidth <= 0 || outputLaneWidth <= 0) {
+				logError(
+					"getBusBlockAdvanced expects positive values for all parameters but received: numInputs={}, numOutputs={}, inputLaneWidth={}, outputLaneWidth={}",
+					"WasmProceduralCircuit::WasmInstance",
+					numInputs, numOutputs, inputLaneWidth, outputLaneWidth
+				);
+				return static_cast<int32_t>(BlockType::NONE);
+			}
+			BlockType blockType = (*thisPtrPtr)->circuitManager->getBlockDataManager().getBusBlock(
+				static_cast<unsigned int>(numInputs),
+				static_cast<unsigned int>(numOutputs),
+				static_cast<unsigned int>(inputLaneWidth),
+				static_cast<unsigned int>(outputLaneWidth)
+			);
+			return static_cast<int32_t>(blockType);
+		});
+
 	wasmtime::Func createBlockFunc = wasmtime::Func::wrap(*Wasm::getStore(),
 		[thisPtrPtr](int32_t blockType) -> int32_t {
 			return (*thisPtrPtr)->generatedCircuit->addBlock((BlockType)blockType);
@@ -148,6 +182,16 @@ WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, Circu
 	linkerResult = linker.define(*Wasm::getStore(), "env", "getProceduralCircuitType", getProceduralCircuitTypeFunc);
 	if (!linkerResult) {
 		logError("could not create link to env.getProceduralCircuitType", "WasmProceduralCircuit::WasmInstance");
+		return;
+	}
+	linkerResult = linker.define(*Wasm::getStore(), "env", "getBusBlock", getBusBlockFunc);
+	if (!linkerResult) {
+		logError("could not create link to env.getBusBlock", "WasmProceduralCircuit::WasmInstance");
+		return;
+	}
+	linkerResult = linker.define(*Wasm::getStore(), "env", "getBusBlockAdvanced", getBusBlockAdvancedFunc);
+	if (!linkerResult) {
+		logError("could not create link to env.getBusBlockAdvanced", "WasmProceduralCircuit::WasmInstance");
 		return;
 	}
 	linkerResult = linker.define(*Wasm::getStore(), "env", "createBlock", createBlockFunc);
