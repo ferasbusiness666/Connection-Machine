@@ -4,7 +4,9 @@
 #include "backend/evaluator/evalDefs.h"
 #include "environment/environment.h"
 #include "backend/evaluator/simulator/logicState.h"
+#include <unordered_map>
 
+// add upper level logic later
 class CircuitTestCase {
     typedef std::unordered_multimap<std::string, Position> NamePositionMap;
 public:
@@ -40,10 +42,11 @@ private:
         std::vector<std::pair<std::string, logic_state_t>> states = {};
     };
 
+    void generateTestCircuit();
     void runSetStatesCommand(TestCommand testCommand, const SharedEvaluator eval, NamePositionMap& nameToConnectedBlockPosition);
     bool runCheckStatesCommand(TestCommand testCommand, const SharedEvaluator eval, NamePositionMap& nameToConnectedBlockPosition);
 
-    std::vector<TestCommand> testCommands;
+    std::unordered_map<std::string, std::vector<TestCommand>> testCommandGroups;
 };
 
 #endif

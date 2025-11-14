@@ -6,10 +6,10 @@
 #include "backend/evaluator/evaluator.h"
 #include "backend/evaluator/simulator/logicState.h"
 #include "backend/position/position.h"
-#include <utility>
-// p = data/Input | q = control/Enable | out = Output | Z = floating/2 | X = undefined/3
+
+
 bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environment& environment) {
-    testCommands = {// 0 0 Z
+    /*testCommands = {// 0 0 Z
                     TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)0), std::make_pair("Enable", (logic_state_t)0)}},
                     TestCommand(TICK_STEP, 10),
                     TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)2)}),
@@ -73,7 +73,7 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
                     TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)3), std::make_pair("Enable", (logic_state_t)3)}},
                     TestCommand(TICK_STEP, 10),
                     TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)})
-                };
+                };*/
 
     // retrieve necessary objects to run test
     bool fullTestSucceedStatus = true;
