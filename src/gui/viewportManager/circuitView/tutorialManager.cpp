@@ -4,8 +4,10 @@
 #include "environment/environment.h"
 #include "events/customEvents.h"
 
+std::vector<TutorialStep> basicTutorialInitialize();
+
 TutorialManager::TutorialManager(Environment& environment, CircuitView& circuitView) :
-	circuitView(&circuitView), elementCreator(circuitView.getViewportId()), environment(environment), tutorialRunning(false) { }
+	circuitView(&circuitView), elementCreator(circuitView.getViewportId()), environment(environment), tutorialRunning(false), tutorialState(0) { }
 
 void TutorialManager::StartTutorial() {
 	if (tutorialRunning) return;
@@ -18,17 +20,17 @@ void TutorialManager::StartTutorial() {
 	if (!evaluatorId) return;
 	circuitView->setEvaluator(evaluatorId.value());
 	evaluator = circuitView->getBackend().getEvaluator(evaluatorId.value());
-	evaluator->setPause(false);
-
-	// curentCircuit = circuitView->getBackend().getCircuitManager().getCircuit(circuitId);
-	circuit->connectListener(this, std::bind(&TutorialManager::checkTutorial, this, std::placeholders::_1, std::placeholders::_2));
+	SharedCircuit circuit = circuitView->getBackend().getCircuitManager().getCircuit(circuitId);
+	curentCircuit = circuitView->getBackend().getCircuitManager().getCircuit(circuitId);
+	curentCircuit->connectListener(this, std::bind(&TutorialManager::checkTutorial, this, std::placeholders::_1, std::placeholders::_2));
 	circuitView->getEventRegister().registerFunction("CircuitStateSet", [this](const Event* event) -> bool {
 		const StateSetEvent* stateSetEvent = event->cast<StateSetEvent>();
 		if (!stateSetEvent) return false;
 		this->checkTutorialState(stateSetEvent->getPosition(), stateSetEvent->getState());
 		return false;
 	});
-	basicTutorial();
+	tutorialSteps = basicTutorialInitialize();
+	runCurrentStep();
 }
 
 void TutorialManager::Stop() {
@@ -40,95 +42,180 @@ void TutorialManager::Stop() {
 	elementCreator.clear();
 	tutorialRunning = false;
 }
-void TutorialManager::checkTutorial(DifferenceSharedPtr, circuit_id_t) { basicTutorial(); }
-void TutorialManager::checkTutorialState(Position pos, bool state) {
-	logInfo(pos);
-	basicTutorial();
-}
+void TutorialManager::checkTutorial(DifferenceSharedPtr, circuit_id_t) { advanceTutorial(); }
+void TutorialManager::checkTutorialState(Position pos, bool state) { advanceTutorial(); }
 
-void TutorialManager::basicTutorial() {
-	// circuitView->getEventRegister().doEvent(DeltaXYEvent("view pan", 1, 1));
-	// viewManager.setViewCenter(FPosition(2, 1));
-	SharedCircuit circuit = circuitView->getBackend().getCircuitManager().getCircuit(curentCircuitId);
-	if (!circuit) {
-		return;
-	}
-	const BlockContainer& blockContainer = circuit->getBlockContainer();
+void TutorialManager::setTutorial(const std::vector<TutorialStep>& steps) { tutorialSteps = steps; }
 
-	if (tutorialState == 0) {
-		basicTutorialPart1();
-	}
-	if (tutorialState == 1 && blockContainer.getBlock(Position(0, 0)) != nullptr && blockContainer.getBlock(Position(0, 0))->type() == BlockType::SWITCH &&
-		blockContainer.getBlock(Position(0, 2)) != nullptr && blockContainer.getBlock(Position(0, 2))->type() == BlockType::SWITCH) {
+void TutorialManager::advanceTutorial() {
+	if (!tutorialRunning) return;
+	if (tutorialState >= tutorialSteps.size()) return;
+	if (isCurrentStepComplete()) {
 		tutorialState++;
-	}
-	if (tutorialState == 2) {
-		basicTutorialPart2();
-	}
-	if (tutorialState == 3 && blockContainer.getBlock(Position(2, 1)) != nullptr && blockContainer.getBlock(Position(2, 1))->type() == BlockType::AND) {
-		tutorialState++;
-	}
-	if (tutorialState == 4) {
-		basicTutorialPart3();
-	}
-	if (tutorialState == 5 && blockContainer.connectionExists(Position(0, 0), Position(2, 1)) && blockContainer.connectionExists(Position(0, 2), Position(2, 1))) {
-		tutorialState++;
-	}
-	if (tutorialState == 6) {
-		basicTutorialPart4();
-	}
-	if (tutorialState == 7 && blockContainer.getBlock(Position(4, 1)) != nullptr && blockContainer.getBlock(Position(4, 1))->type() == BlockType::LIGHT && blockContainer.connectionExists(Position(2, 1), Position(4, 1))) {
-		tutorialState++;
-	}
-	if (tutorialState == 8) {
-		basicTutorialPart5();
-	}
-	if (tutorialState == 9 && evaluator->getState(Address(Position(2, 1))) == logic_state_t::HIGH) {
-		tutorialState++;
-	}
-	if (tutorialState == 10) {
-		basicTutorialPart6();
-	}
-	if (tutorialState == 11 && blockContainer.getBlock(Position(2, 0)) != nullptr && blockContainer.getBlock(Position(2, 0))->type() == BlockType::LIGHT) {
-		Stop();
+		elementCreator.clear();
+		if (tutorialState == tutorialSteps.size()) {
+			Stop();
+			return;
+		}
+		runCurrentStep();
 	}
 }
 
-void TutorialManager::basicTutorialPart1() {
-	logInfo("Welcome to the Connetion Machine tutorial.");
-	logInfo("Click the 'Switch' button on the left side menu, and click to place 2 switches where prompted.");
-	elementCreator.addBlockPreview(BlockPreview(environment.getBlockRenderDataFeeder().getBlockRenderDataId(BlockType::SWITCH), Position(0, 0), Orientation()));
-	elementCreator.addBlockPreview(BlockPreview(environment.getBlockRenderDataFeeder().getBlockRenderDataId(BlockType::SWITCH), Position(0, 2), Orientation()));
-	tutorialState++;
+bool TutorialManager::isCurrentStepComplete() const {
+	if (tutorialState >= tutorialSteps.size()) return false;
+	TutorialStep currentStep = tutorialSteps[tutorialState];
+	BlockContainer blockContainer = curentCircuit->getBlockContainer();
+
+	for (std::vector<TutorialCondition::BlockRequirement>::iterator it = currentStep.condition.blocks.begin(); it != currentStep.condition.blocks.end(); it++) {
+		const Block* currentBlock = blockContainer.getBlock(it->pos);
+		if (currentBlock == nullptr) {
+			return false;
+		}
+		if (currentBlock->type() != it->type) {
+			return false;
+		}
+		if (currentBlock->getOrientation() != it->orientation) {
+			return false;
+		}
+	}
+	for (std::vector<TutorialCondition::ConnectionRequirement>::iterator it = currentStep.condition.connections.begin(); it != currentStep.condition.connections.end();
+		 it++) {
+		if (!blockContainer.connectionExists(it->pos1, it->pos2)) {
+			return false;
+		}
+	}
+	for (std::vector<TutorialCondition::LogicStateRequirement>::iterator it = currentStep.condition.logicStates.begin(); it != currentStep.condition.logicStates.end();
+		 it++) {
+		evaluator->tickStep(it->numSteps);
+		if (evaluator->getState(Address(it->pos)) != it->state) {
+			return false;
+		}
+	}
+	return true;
 }
-void TutorialManager::basicTutorialPart2() {
-	logInfo("Click the 'AND' button on the left side menu, and click to place an AND block where prompted.");
-	logInfo("The AND block takes in any amount of inputs, and outputs 'ON' only when ALL inputs are 'ON' and outputs 'OFF' otherwise.");
-	elementCreator.addBlockPreview(BlockPreview(environment.getBlockRenderDataFeeder().getBlockRenderDataId(BlockType::AND), Position(2, 1), Orientation()));
-	tutorialState++;
+
+void TutorialManager::runCurrentStep() {
+	if (tutorialState >= tutorialSteps.size()) return;
+	TutorialStep currentStep = tutorialSteps[tutorialState];
+	BlockContainer blockContainer = curentCircuit->getBlockContainer();
+	// change this later to real popups or something
+	for (std::vector<std::string>::iterator it = currentStep.action.messages.begin(); it != currentStep.action.messages.end(); it++) {
+		logInfo(*it);
+	}
+	for (std::vector<TutorialAction::BlockPreviewInfo>::iterator it = currentStep.action.blockPreviews.begin(); it != currentStep.action.blockPreviews.end(); it++) {
+		elementCreator.addBlockPreview(BlockPreview(environment.getBlockRenderDataFeeder().getBlockRenderDataId(it->type), it->pos, it->orientation));
+	}
+	for (std::vector<TutorialAction::ConnectionPreviewInfo>::iterator it = currentStep.action.connectionPreviews.begin();
+		 it != currentStep.action.connectionPreviews.end();
+		 it++) {
+		std::optional<FVector> optionalPos1Offset;
+		if (blockContainer.getBlock(it->pos1) != nullptr) {
+			optionalPos1Offset = blockContainer.getBlockDataManager()
+									 .getBlockData(blockContainer.getBlock(it->pos1)->type())
+									 ->getConnectionPortOffset(blockContainer.getOutputConnectionEnd(it->pos1).value().getConnectionId());
+		} else {
+			for (std::vector<TutorialAction::BlockPreviewInfo>::iterator it2 = currentStep.action.blockPreviews.begin(); it2 != currentStep.action.blockPreviews.end();
+				 it2++) {
+				if (it2->pos == it->pos1) {
+					optionalPos1Offset = blockContainer.getBlockDataManager().getBlockData(it2->type)->getConnectionPortOffset((connection_end_id_t)0);
+				}
+			}
+		}
+		std::optional<FVector> optionalPos2Offset;
+		if (blockContainer.getBlock(it->pos2) != nullptr) {
+			optionalPos2Offset = blockContainer.getBlockDataManager()
+									 .getBlockData(blockContainer.getBlock(it->pos2)->type())
+									 ->getConnectionPortOffset(blockContainer.getInputConnectionEnd(it->pos2).value().getConnectionId());
+		} else {
+			for (std::vector<TutorialAction::BlockPreviewInfo>::iterator it2 = currentStep.action.blockPreviews.begin(); it2 != currentStep.action.blockPreviews.end();
+				 it2++) {
+				if (it2->pos == it->pos2) {
+					optionalPos2Offset = blockContainer.getBlockDataManager().getBlockData(it2->type)->getConnectionPortOffset((connection_end_id_t)0);
+				}
+			}
+		}
+		if (!optionalPos1Offset.has_value()) {
+			optionalPos1Offset = FVector(0.5, 0.5);
+		}
+		if (!optionalPos2Offset.has_value()) {
+			optionalPos1Offset = FVector(0.5, 0.5);
+		}
+		elementCreator.addConnectionPreview(
+			ConnectionPreview(FPosition(it->pos1.x, it->pos1.y) + optionalPos1Offset.value(), FPosition(it->pos2.x, it->pos2.y) + optionalPos2Offset.value())
+		);
+	}
 }
-void TutorialManager::basicTutorialPart3() {
-	logInfo(
-		"Click the 'Connection' button on the left side menu, and click the first switch followed by the AND block to connect the switch's output to the AND block's "
-		"input."
-	);
-	logInfo("Repeat for the second switch.");
-	elementCreator.addConnectionPreview(ConnectionPreview(FPosition(0, 0), FPosition(2, 1)));
-	elementCreator.addConnectionPreview(ConnectionPreview(FPosition(0, 2), FPosition(2, 1)));
-	tutorialState++;
+
+std::vector<TutorialStep> basicTutorialInitialize() {
+	std::vector<TutorialStep> steps;
+	// step 0
+	{
+		TutorialStep s;
+		s.action.messages = { "Welcome to the Connection Machine tutorial.",
+							  "Click the 'Switch' button on the left side menu, and click to place 2 switches where prompted." };
+		s.action.blockPreviews = { { Position(0, 0), BlockType::SWITCH, Orientation() }, { Position(0, 2), BlockType::SWITCH, Orientation() } };
+		s.condition.blocks = { { Position(0, 0), BlockType::SWITCH, Orientation() }, { Position(0, 2), BlockType::SWITCH, Orientation() } };
+
+		steps.push_back(s);
+	}
+
+	// step 1
+	{
+		TutorialStep s;
+		s.action.messages = { "Click the 'AND' button on the left side menu, and place an AND block where prompted.",
+							  "The AND block outputs ON only when all inputs are ON." };
+		s.action.blockPreviews = { { Position(2, 1), BlockType::AND, Orientation() } };
+		s.condition.blocks = { { Position(2, 1), BlockType::AND } };
+
+		steps.push_back(s);
+	}
+
+	// step 2
+	{
+		TutorialStep s;
+		s.action.messages = { "Click the 'Connection' tool and connect both switches to the AND block." };
+		s.action.connectionPreviews = { { Position(0, 0), Position(2, 1) }, { Position(0, 2), Position(2, 1) } };
+		s.condition.connections = { { Position(0, 0), Position(2, 1) }, { Position(0, 2), Position(2, 1) } };
+
+		steps.push_back(s);
+	}
+
+	// step 3
+	{
+		TutorialStep s;
+		s.condition.blocks = { { Position(4, 1), BlockType::LIGHT } };
+		s.condition.connections = { { Position(2, 1), Position(4, 1) } };
+		s.action.messages = { "Place a LIGHT and connect the AND output to the LIGHT." };
+		s.action.blockPreviews = { { Position(4, 1), BlockType::LIGHT, Orientation() } };
+		s.action.connectionPreviews = { { Position(2, 1), Position(4, 1) } };
+		steps.push_back(s);
+	}
+
+	// step 4
+	{
+		TutorialStep s;
+		s.condition.logicStates = { { Position(2, 1), logic_state_t::HIGH, 2 } };
+
+		s.action.messages = { "Switch to the state changer and flip the switches so the AND output turns ON." };
+		steps.push_back(s);
+	}
+
+	// // step 5
+	// {
+	// 	TutorialStep s;
+	// 	s.condition.blocks = { { Position(2, 0), BlockType::LIGHT } };
+
+	// 	s.action.messages = { "Place an extra LIGHT at (2, 0) to finish." };
+	// 	s.action.blockPreviews = { { Position(2, 0), BlockType::LIGHT, Orientation() } };
+	// 	steps.push_back(s);
+	// }
+
+	// step 6
+	{
+		TutorialStep s;
+		s.action.messages = { "Tutorial complete." };
+		steps.push_back(s);
+	}
+	return steps;
 }
-void TutorialManager::basicTutorialPart4() {
-	logInfo("Finally, click the 'LIGHT' button and place a light, then connect the AND block's output to the LIGHT.");
-	elementCreator.addBlockPreview(BlockPreview(environment.getBlockRenderDataFeeder().getBlockRenderDataId(BlockType::LIGHT), Position(4, 1), Orientation()));
-	elementCreator.addConnectionPreview(ConnectionPreview(FPosition(2, 1), FPosition(4, 1)));
-	tutorialState++;
-}
-void TutorialManager::basicTutorialPart5() {
-	logInfo("Switch to the 'state changer' tool in order to flip the switches. Play around with them so you understand what the AND block does.");
-	tutorialState++;
-}
-void TutorialManager::basicTutorialPart6() {
-	logInfo("Place a light where prompted to move on to the next tutorial.");
-	elementCreator.addBlockPreview(BlockPreview(environment.getBlockRenderDataFeeder().getBlockRenderDataId(BlockType::LIGHT), Position(2, 0), Orientation()));
-	tutorialState++;
-}
+
