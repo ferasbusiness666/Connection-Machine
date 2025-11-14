@@ -143,6 +143,7 @@ public:
 
 	BlockType getBusBlock(unsigned int bitwith);
 	BlockType getBusBlock(unsigned int numInputs, unsigned int inputBitwidth);
+	BlockType getBusBlock(unsigned int numInputs, unsigned int numOutputs, unsigned int inputLaneWidth, unsigned int outputLaneWidth);
 	struct BusConnectionData {
 		Vector positionOnBlock;
 		std::variant<unsigned int, std::vector<unsigned int>> bitConfiguration = static_cast<unsigned int>(1);

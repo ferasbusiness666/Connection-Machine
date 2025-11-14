@@ -32,6 +32,8 @@ extern "C"
 	externalFunction(getPrimitiveType) BlockType getPrimitiveType(const char* primitiveName);
 	externalFunction(getNonPrimitiveType) BlockType getNonPrimitiveType(const char* UUID);
 	externalFunction(getProceduralCircuitType) BlockType getProceduralCircuitType(const char* UUID, const char* parameters);
+	externalFunction(getBusBlock) BlockType getBusBlock(unsigned int bitWidth);
+	externalFunction(getBusBlockAdvanced) BlockType getBusBlockAdvanced(unsigned int numInputs, unsigned int numOutputs, unsigned int inputLaneWidth, unsigned int outputLaneWidth);
 	externalFunction(createBlock) block_id_t createBlock(BlockType blockType);
 	externalFunction(createBlockAtPosition) block_id_t createBlockAtPosition(coord_t x, coord_t y, Rotation rotation, BlockType blockType);
 	externalFunction(createConnection) void createConnection(block_id_t outputBlockId, int outputPortId, block_id_t inputBlockId, int inputPortId);

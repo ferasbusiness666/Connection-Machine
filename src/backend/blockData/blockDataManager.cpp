@@ -271,6 +271,25 @@ BlockType BlockDataManager::getBusBlock(unsigned int numInputs, unsigned int inp
 	return getBusBlock(busConnections);
 }
 
+BlockType BlockDataManager::getBusBlock(unsigned int numInputs, unsigned int numOutputs, unsigned int inputLaneWidth, unsigned int outputLaneWidth) {
+	std::vector<BusConnectionData> busConnections;
+	for (unsigned int i = 0; i < numInputs; i++) {
+		std::vector<unsigned int> bitConfig;
+		for (unsigned int j = i * inputLaneWidth; j < (i + 1) * inputLaneWidth; j++) {
+			bitConfig.push_back(j);
+		}
+		busConnections.emplace_back(Vector(0, i), bitConfig);
+	}
+	for (unsigned int i = 0; i < numOutputs; i++) {
+		std::vector<unsigned int> bitConfig;
+		for (unsigned int j = i * outputLaneWidth; j < (i + 1) * outputLaneWidth; j++) {
+			bitConfig.push_back(j);
+		}
+		busConnections.emplace_back(Vector(1, i), bitConfig);
+	}
+	return getBusBlock(busConnections);
+}
+
 BlockType BlockDataManager::getBusBlock(std::vector<BusConnectionData> busConnections) {
 	std::sort(busConnections.begin(), busConnections.end(), [](const BusConnectionData& a, const BusConnectionData& b) -> bool {
 		return (a.positionOnBlock.dx < b.positionOnBlock.dx) || (a.positionOnBlock.dx == b.positionOnBlock.dx && a.positionOnBlock.dy < b.positionOnBlock.dy);
