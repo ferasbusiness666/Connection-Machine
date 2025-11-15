@@ -14,6 +14,11 @@ if(APPLE) # MacOS
 	set(MACOSX_BUNDLE_ICON_FILE "gateIcon.icns")
 	set_source_files_properties(${ICON_PATH} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
 	list(APPEND PROJECT_SOURCES ${ICON_PATH})
+	if(CONNECTION_MACHINE_DISTRIBUTE_APP)
+		set(OPENSSL_ROOT_DIR "/Users/ben/Documents/GitHub/Logic-Graph-Creator/lib-binary/libopenssl/")
+		set(CMAKE_SYSTEM_IGNORE_PREFIX_PATH "/opt/homebrew/lib;/opt/homebrew/opt")
+		set(CMAKE_IGNORE_PREFIX_PATH "/opt/homebrew/lib;/opt/homebrew/opt")
+	endif()
 
 elseif (WIN32) # Windows
 	# Icon
