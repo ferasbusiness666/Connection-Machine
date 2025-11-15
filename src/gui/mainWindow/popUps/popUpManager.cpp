@@ -10,7 +10,6 @@
 #include "util/compression.h"
 #include "util/version.h"
 
-#include <zlib.h>
 #include <RmlUi/Debugger.h>
 
 #include <SDL3/SDL.h>
@@ -330,10 +329,9 @@ void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature 
 			if (includeStateCheckbox->HasAttribute("checked")) {
 				Network::Attachment appStateAttachment;
 				std::string appState = App::get().dumpState().dump(1, '\t');
-				Deflater deflater(Z_DEFAULT_COMPRESSION);
-				appStateAttachment.data = deflater.deflateString(appState);
-				appStateAttachment.context = "app_state.json.json.zlib";
-				appStateAttachment.contentType = "application/zlib";
+				appStateAttachment.data = compressString(appState);
+				appStateAttachment.context = "app_state.json.json.br";
+				appStateAttachment.contentType = "application/x-brotli";
 				attachments.push_back(appStateAttachment);
 			}
 

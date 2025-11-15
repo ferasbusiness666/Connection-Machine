@@ -1,48 +1,34 @@
 #include "compression.h"
 
-#include <zlib.h>
+#include <brotli/encode.h>
 
-Deflater::Deflater(int level) {
-    stream = z_stream{};
-    int ret = deflateInit(&stream, level);
-    if (ret != Z_OK) {
-        throw std::runtime_error("deflateInit failed");
-    }
-}
+std::string compressString(const std::string& input) {
+	if (input.empty()) {
+		return {};
+	}
 
-std::string Deflater::deflateString(const std::string& input) {
-    if (input.empty()) {
-        return {};
-    }
+	const size_t maxSize = BrotliEncoderMaxCompressedSize(input.size());
+	if (maxSize == 0) {
+		throw std::runtime_error("BrotliEncoderMaxCompressedSize failed");
+	}
 
-    stream.next_in  = reinterpret_cast<Bytef*>(
-        const_cast<char*>(input.data())
-    );
-    stream.avail_in = static_cast<uInt>(input.size());
+	std::string output(maxSize, '\0');
+	size_t encodedSize = maxSize;
 
-    std::string output;
-    constexpr std::size_t chunkSize = 16 * 1024;
+	const auto result = BrotliEncoderCompress(
+		BROTLI_DEFAULT_QUALITY,
+		BROTLI_DEFAULT_WINDOW,
+		BROTLI_DEFAULT_MODE,
+		input.size(),
+		reinterpret_cast<const uint8_t*>(input.data()),
+		&encodedSize,
+		reinterpret_cast<uint8_t*>(output.data())
+	);
 
-    int flush = Z_NO_FLUSH;
-    int ret = Z_OK;
+	if (result == BROTLI_FALSE) {
+		throw std::runtime_error("Brotli compression failed");
+	}
 
-    do {
-        std::size_t oldSize = output.size();
-        output.resize(oldSize + chunkSize);
-
-        stream.next_out = reinterpret_cast<Bytef*>(&output[oldSize]);
-        stream.avail_out = static_cast<uInt>(chunkSize);
-
-        flush = (stream.avail_in == 0) ? Z_FINISH : Z_NO_FLUSH;
-
-        ret = deflate(&stream, flush);
-        if (ret == Z_STREAM_ERROR) {
-            throw std::runtime_error("deflate failed");
-        }
-
-        std::size_t have = chunkSize - stream.avail_out;
-        output.resize(oldSize + have);
-    } while (ret != Z_STREAM_END);
-
-    return output;
+	output.resize(encodedSize);
+	return output;
 }

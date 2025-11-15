@@ -37,15 +37,20 @@ function(add_main_dependencies)
 	)
 	list(APPEND EXTERNAL_LINKS nlohmann_json)
 
-	# zlib
+	# brotli
 	CPMAddPackage(
-		NAME zlib
-		GITHUB_REPOSITORY madler/zlib
-		GIT_TAG v1.3.1
+		NAME brotli
+		GITHUB_REPOSITORY google/brotli
+		GIT_TAG v1.2.0
 		EXCLUDE_FROM_ALL YES
-		SOURCE_DIR "${EXTERNAL_DIR}/zlib"
+		SOURCE_DIR "${EXTERNAL_DIR}/brotli"
 	)
-	list(APPEND EXTERNAL_LINKS zlib)
+	if (brotli_ADDED)
+		add_library(Brotli::common ALIAS brotlicommon)
+		add_library(Brotli::encoder ALIAS brotlienc)
+		add_library(Brotli::decoder ALIAS brotlidec)
+	endif()
+	list(APPEND EXTERNAL_LINKS brotlienc)
 
 	# fmt
 	CPMAddPackage(
