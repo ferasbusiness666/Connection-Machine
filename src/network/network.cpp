@@ -2,6 +2,7 @@
 #include "gui/mainWindow/popUps/popUpManager.h"
 #include "util/version.h"
 #include <httplib.h>
+#include <SDL3/SDL.h>
 
 std::optional<Network> Network::singletonInstance;
 
@@ -152,14 +153,21 @@ void Network::checkForUpdates(PopUpManager& popUpManager) {
 						logInfo("No update available", "Network");
 						return;
 					}
+					std::string html_url = latestRelease["html_url"].get<std::string>();
 					std::string body = latestRelease["body"].get<std::string>();
 					std::string message = "A new version of Connection Machine is available!";
 					std::string smallMessage = "Current version: " + currentVersion.toString() + "\n";
 					smallMessage += "Latest version: " + latestVersion.toString() + "\n";
 					smallMessage += "Changes:\n" + body;
-					popUpManager.addOptionsPopUp(message, smallMessage, { {"OK", []() {}}, {"Ignore Version", [this, latestVersion]() {
-						kvStore->set<KVType::STRING>("ignored_version", latestVersion.toString());
-					}} }, true);
+					popUpManager.addOptionsPopUp(message, smallMessage, {
+						{"Close", []() {}},
+						{"Open Github", [html_url]() {
+							SDL_OpenURL(html_url.c_str());
+						}},
+						{"Ignore Version", [this, latestVersion]() {
+							kvStore->set<KVType::STRING>("ignored_version", latestVersion.toString());
+						}}
+					}, true);
 				} catch (const nlohmann::json::parse_error& e) {
 					logError("Failed to parse update check response JSON: {}", "Network", e.what());
 					return;
