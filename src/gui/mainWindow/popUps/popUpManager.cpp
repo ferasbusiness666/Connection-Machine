@@ -165,76 +165,75 @@ void PopUpManager::aboutConnectionMachine() {
 	if (!optionalPopUpWindow) return;
 	PopUpWindow popUpWindow = std::move(optionalPopUpWindow.value());
 
-	popUpWindow.getPopUpWindow()->SetAttribute("style", "display: flex; flex-direction: column; width: 650px; height: 500px; background-color:#303030;");
+	popUpWindow.getPopUpWindow()->SetAttribute("style", "display: flex; flex-direction: column; width: 480dp; height: 320dp; background-color:#303030;");
 	Rml::Element* leftandright = popUpWindow.getPopUpWindow()->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
-	leftandright->SetAttribute("style", "display: flex; flex-direction: row; width: 650px; height: 500px; background-color:#303030;");
-
-	Rml::Element* leftbuffer = leftandright->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
-	leftbuffer->SetAttribute("style", "display: flex; flex-direction: column; width: 20px; height: 300px; background-color:#303030;");
+	leftandright->SetAttribute("style", "display: flex; flex-direction: row; width: 100%; height: 100%;");
 
 	Rml::Element* leftdiv = leftandright->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
-	leftdiv->SetAttribute("style", "display: flex; flex-direction: column; width: 450px; height: 300px; background-color:#303030;");
+	leftdiv->SetAttribute("style", "display: flex; flex-direction: column; flex: 1; height: 100%; padding-right: 20dp;");
 
 	Rml::Element* title = leftdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("p"));
 	title->SetInnerRML("About Connection Machine");
+	title->SetAttribute("style", "font-size: 18dp;");
 	title->SetClass("popup-title", true);
+
+	leftdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"))->SetAttribute("style", "height: 10dp;");
 
 	Rml::Element* body = leftdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("p"));
 	body->SetInnerRML("Connection Machine is an open source project aiming to create an application for designing and simulating logic graph systems.");
-	body->SetClass("popup-title", true);
+	body->SetAttribute("style", "padding: 5dp; border-radius: 5dp;");
+	body->SetClass("surface-raised", true);
 
-	Rml::Element* body2 = leftdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("p"));
-    body2->SetInnerRML(
-		"<br /> github: https://github.com/Martian-Technologies/<br />Connection-Machine <br />  \
-		website: https://connection-machine.com "
-	);
-	body2->SetClass("popup-title", true);
+	leftdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"))->SetAttribute("style", "height: 10dp;");
 
+	Rml::Element* links = leftdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
+	links->SetAttribute("style", "padding: 5dp; border-radius: 4dp; display: flex; flex-direction: column;");
+	links->SetClass("surface-raised", true);
 
-	Rml::Element* rightbuffer = leftandright->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
-	rightbuffer->SetAttribute("style", "display: flex; flex-direction: column; width: 30px; height: 300px; background-color:#303030;");
+	Rml::Element* gitHubLink = links->AppendChild(mainWindow.getRmlDocument()->CreateElement("p"));
+	gitHubLink->SetInnerRML("GitHub: <p style=\"color: #6969ffff\">github.com/Connection-Machine</p>");
+	gitHubLink->AddEventListener(Rml::EventId::Click, new EventPasser([](Rml::Event& event){
+		SDL_OpenURL("https://github.com/Martian-Technologies/Connection-Machine");
+	}));
+
+	links->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"))->SetAttribute("style", "height: 8dp;");
+
+	Rml::Element* website = links->AppendChild(mainWindow.getRmlDocument()->CreateElement("p"));
+	website->SetInnerRML("Website: <p style=\"color: #6969ffff\">connection-machine.com</p>");
+	website->AddEventListener(Rml::EventId::Click, new EventPasser([](Rml::Event& event){
+		SDL_OpenURL("https://connection-machine.com");
+	}));
+
+	leftdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"))->SetAttribute("style", "flex: 1");
 
     Rml::Element* rightdiv = leftandright->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
-    rightdiv->SetAttribute("style", "display: flex; flex-direction: column; width: 150px; height: 450px; background-color:#303030;");
+    rightdiv->SetAttribute("style", "display: flex; flex-direction: column; width: 144dp; height: 100%; background-color:#303030;");
 
     // Add a logo (adjust the src path to your actual asset)
     Rml::Element* logo = rightdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("img"));
     logo->SetAttribute("src", "../../gateIcon.png");
-    logo->SetAttribute("style", "width: 100px; height: 100px; margin-bottom: 20px;");
+	logo->SetAttribute("style", "margin-left: 15%; margin-right: 15%; margin-bottom: 5%; width: 108dp; height: 108dp;");
 
     // Add contributor names
     Rml::Element* contributorsTitle = rightdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("p"));
     contributorsTitle->SetInnerRML("Contributors:");
     contributorsTitle->SetClass("popup-subtitle", true);
 
-    Rml::Element* contributorsList = rightdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("ul"));
+	Rml::Element* rightdivScrollArea = rightdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
+	rightdivScrollArea->SetAttribute("style", "position: relative; flex-grow: 1; border-radius: 8dp; background-color:#3b3b3b;");
+	Rml::Element* rightdivScroll = rightdivScrollArea->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
 
 	std::vector<std::string> contributors = {
-        "Ben Herman",
-		"Nikita Lurye",
-		"Jack J",
-		"Connor K",
-		"James P",
-		"Gregory L",
-		"Sam C",
-		"August B",
-		"Nick C",
-		"Matthew D",
-		"Dante L",
-		"Tiffany C",
-		"Patrick C",
-		"Nathan C",
-		"Alek K "
+        "Ben Herman", "Nikita Lurye", "Jack Jamison", "Connor Kostiew", "James P", "Gregory Lemonnier", "Sam C", "Alek Krupka",
+		"August Bernberg", "Nicholas Ciuica", "Matthew Durcan", "Tiffany C", "Patrick Chen", "Nathan Chen", "Dante L"
     };
 
-	// Rml::Element* contributorsList = rightdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("li"));
 	std::string all_contributors = "";
     for (const auto& name : contributors){
-		all_contributors = all_contributors + name.c_str() + "<br />";
+		all_contributors = all_contributors + "<p>" + name.c_str() + "</p>";
 	}
-	contributorsList->SetInnerRML(all_contributors);
-	contributorsList->SetAttribute("style", "margin: 4px 0;");
-
+	rightdivScroll->SetInnerRML(all_contributors);
+	rightdivScroll->SetAttribute("style", "position: absolute; top: 0; bottom: 0; width: 100%; overflow-y: scroll; display: flex; flex-direction: column; color: #d1963a; padding: 8dp;");
 
 	Rml::Element* close = popUpWindow.getPopUpWindow()->AppendChild(mainWindow.getRmlDocument()->CreateElement("button"));
     close->SetInnerRML("Close");
@@ -272,7 +271,7 @@ void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature 
 	textarea->SetClass("surface-pop", true);
 
 	Rml::Element* includeStateField = content->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
-	includeStateField->SetAttribute("style", "display: flex; align-items: flex-start; gap: 0.5em; padding: 0.6em; border-radius: 8px; background-color: #262626;");
+	includeStateField->SetAttribute("style", "display: flex; align-items: flex-start; gap: 0.5em; padding: 0.6em; border-radius: 8dp; background-color: #262626;");
 	Rml::Element* includeStateCheckbox = includeStateField->AppendChild(mainWindow.getRmlDocument()->CreateElement("input"));
 	includeStateCheckbox->SetAttribute("type", "checkbox");
 	includeStateCheckbox->SetAttribute("id", "feedback_include_state");
@@ -327,6 +326,4 @@ void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature 
 			popUpWindow.destroy();
 		})
 	);
-
-	// App::get().launchRmlDebugger(popUpWindow.getContext());
 }
