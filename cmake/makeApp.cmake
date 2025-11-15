@@ -174,7 +174,7 @@ if (APPLE AND CONNECTION_MACHINE_DISTRIBUTE_APP)
 
 		install(TARGETS ${PROJECT_NAME} BUNDLE DESTINATION ".")
 
-		set(CPACK_PACKAGE_FILE_NAME "Connection-Machine-${PROJECT_VERSION}-Mac-universal")
+		set(CPACK_PACKAGE_FILE_NAME "Connection-Machine-${PROJECT_VERSION}-Mac")
 
 		install(FILES ${Vulkan_LIBRARY} DESTINATION "${APP_NAME}.app/Contents/Frameworks")
 		include(InstallRequiredSystemLibraries)
