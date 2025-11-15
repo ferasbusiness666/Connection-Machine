@@ -73,7 +73,7 @@ private:
 	std::mutex elementsMux;
 
 	// View data
-	ViewportViewData viewData;
+	ViewportViewData viewData{};
 	std::mutex viewMux;
 };
 

@@ -39,6 +39,9 @@ void ViewportRenderData::updateView(FPosition topLeft, FPosition bottomRight) {
 	std::lock_guard<std::mutex> lock(viewMux);
 	viewData.viewportViewMat = glm::ortho(topLeft.x, bottomRight.x, topLeft.y, bottomRight.y);
 	viewData.viewBounds = { topLeft, bottomRight };
+	float viewWidth = bottomRight.x - topLeft.x;
+	float viewHeight = bottomRight.y - topLeft.y;
+	viewData.viewScale = std::min(viewWidth, viewHeight);
 }
 
 ElementId ViewportRenderData::addSelectionObjectElement(const SelectionObjectElement& selection) {
