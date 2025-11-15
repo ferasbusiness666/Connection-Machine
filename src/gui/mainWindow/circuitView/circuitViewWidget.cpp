@@ -11,7 +11,7 @@
 #include "gui/viewportManager/circuitView/circuitView.h"
 #include "gui/viewportManager/circuitView/events/customEvents.h"
 
-#include "backend/circuitTestCase/circuitTestCase.h"
+// #include "backend/circuitTestCase/circuitTestCase.h"
 
 #include "environment/environment.h"
 
@@ -148,15 +148,8 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 	keybindHandler.addListener("Keybinds/Editing/Tools/Cycle Mode", [this]() { this->mainWindow.getToolManagerManager().cycleActiveToolMode(); });
 	keybindHandler.addListener("Keybinds/Editing/Tools/Cycle Mode Back", [this]() { this->mainWindow.getToolManagerManager().cycleActiveToolMode(-1); });
 	keybindHandler.addListener("Keybinds/File/New", [this]() { newCircuit(); });
-	keybindHandler.addListener("Keybinds/Tutorial/Start", [this]() { circuitView->getTutorialManager().StartTutorial(); });
-	keybindHandler.addListener("Keybinds/Tutorial/Stop", [this]() { circuitView->getTutorialManager().Stop(); });
-	keybindHandler.addListener("Keybinds/File/(DEBUG) Test Circuit", [this, environment = &environment]() {
-		logInfo("Running Test!");
-		CircuitTestCase testCase;
-		std::cout << environment;
-		logInfo("Definitely Running Test!");
-		testCase.runTest(BlockType::TRISTATE_BUFFER, false, *environment);
-	});
+	// keybindHandler.addListener("Keybinds/Tutorial/Start", [this]() { circuitView->getTutorialManager().StartTutorial(); });
+	// keybindHandler.addListener("Keybinds/Tutorial/Stop", [this]() { circuitView->getTutorialManager().Stop(); });
 
 	Rml::Element* root = document->GetElementById("main-container");
 	root->AddEventListener(Rml::EventId::Mouseup, new EventPasser([this](Rml::Event& event) {
