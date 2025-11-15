@@ -47,10 +47,12 @@ public:
 		const std::vector<std::pair<std::string, std::function<void()>>>& options,
 		bool blocking = true
 	);
+
 	void savePopUp(const std::string& circuitUUID);
 	void saveAsPopUp(const std::string& circuitUUID);
 	void addFeedbackPopup();
 	void aboutConnectionMachine();
+	void controlsConnectionMachine();
 
 private:
 	MainWindow& mainWindow;
