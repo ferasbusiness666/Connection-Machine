@@ -248,160 +248,6 @@ void PopUpManager::aboutConnectionMachine() {
 	));
 }
 
-void PopUpManager::controlsConnectionMachine() {
-	auto [overlay, closePopup] = createPopUp(true);
-	Rml::ElementList windowList;
-    overlay->GetElementsByClassName(windowList, "pop-up-window");
-    if (windowList.empty()) return;
-    Rml::Element* window = windowList.front();
-	window->SetAttribute("style", "display: flex; flex-direction: column; width: 520dp; height: 400dp; background-color:#303030;");
-
-	Rml::Element* title = window->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
-	title->SetInnerRML("Controls");
-
-	Rml::Element* leftandright = window->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
-	leftandright->SetAttribute("style", "display: flex; flex-direction: row; width: 100%; height: 100%; background-color:#303030;");
-
-	
-
-	std::vector<std::string> keybindSettingKeys = {
-    	"Keybinds/File/Save",
-    	"Keybinds/File/New",
-    	"Keybinds/Editing/Undo",
-    	"Keybinds/Editing/Redo",
-    	"Keybinds/Editing/Copy",
-    	"Keybinds/Editing/Paste",
-    	"Keybinds/Editing/Rotate CCW",
-    	"Keybinds/Editing/Rotate CW",
-    	"Keybinds/Editing/Confirm",
-    	"Keybinds/Camera/Zoom",
-    	"Keybinds/Camera/Home"
-	};
-	std::vector<std::string> keybindSettingKeysNames = {
-    	"Save",
-    	"New",
-    	"Undo",
-    	"Redo",
-    	"Copy",
-    	"Paste",
-    	"Rotate CCW",
-    	"Rotate CW",
-    	"Confirm",
-    	"Zoom",
-    	"Home"
-	};
-	std::vector<std::string> keybindSettingKeysNamesFiltered = {};
-
-	SettingsMap& settings = Settings::getSettingsMap();
-    std::vector<std::pair<std::string, std::string>> result;
-
-	for (const auto& pair : settings.getAllKeys()) {
-
-	    const std::string& key = pair.first;
-
-		for (int i = 0; i < keybindSettingKeys.size(); ++i) {
-
-			std::string keykeep = keybindSettingKeys[i];
-			
-	        if (keykeep == key) {
-	            std::string value;
-
-	            switch (pair.second->getType()) {
-
-	            case SettingType::STRING:
-	                value = *settings.get<SettingType::STRING>(key);
-	                break;
-
-	            case SettingType::INT:
-	                value = std::to_string(*settings.get<SettingType::INT>(key));
-	                break;
-
-	            case SettingType::UINT:
-	                value = std::to_string(*settings.get<SettingType::UINT>(key));
-	                break;
-
-	            case SettingType::DECIMAL:
-	                value = std::to_string(*settings.get<SettingType::DECIMAL>(key));
-	                break;
-
-	            case SettingType::BOOL:
-	                value = *settings.get<SettingType::BOOL>(key) ? "true" : "false";
-	                break;
-
-	            case SettingType::KEYBIND:
-	                value = settings.get<SettingType::KEYBIND>(key)->toString(true);
-	                break;
-
-	            case SettingType::FILE_PATH:
-	                value = *settings.get<SettingType::FILE_PATH>(key);
-	                break;
-
-	            case SettingType::VOID:
-	            default:
-	                value = "<void>";
-	                break;
-	            }
-
-	            // Only call quoted on STRING, not on raw values
-				std::ostringstream oss;
-				oss << std::quoted(value);
-				std::string quotedValue = oss.str();
-				logInfo("key {}, value {}", "",key,quotedValue);
-	            result.emplace_back(key, quotedValue);
-				keybindSettingKeysNamesFiltered.push_back(keybindSettingKeysNames[i]);
-
-	        }
-	    }
-	}
-
-	Rml::Element* leftdiv = leftandright->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
-	leftdiv->SetAttribute("style", "display: flex; flex-direction: column; width: 50%; height: 85%; background-color:#303030;");
-
-	Rml::Element* rightdiv = leftandright->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
-    rightdiv->SetAttribute("style", "display: flex; flex-direction: column; width: 50%; height: 85%; background-color:#303030;");
-	int i = 0;
-	for (const auto& pair : result) {
-    	const std::string& key = pair.first;
-    	const std::string& value = pair.second;
-
-		Rml::Element* temp = leftdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
-		temp->SetInnerRML(keybindSettingKeysNames[i]);
-
-		Rml::Element* temp2 = rightdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
-		temp2->SetInnerRML(value.substr(1, value.length() - 2));
-    	logInfo("key: {}, value: {}", "", key, value);
-		i += 1;
-	}
-	
-
-
-    
-
-/* Settings to include
-Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/Save", Keybind(Keybind::KeyId::KI_S, Keybind::KeyMod::KM_CTRL));
-Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/New", Keybind(Keybind::KeyId::KI_N, Keybind::KeyMod::KM_CTRL));
-Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Undo", Keybind(Keybind::KeyId::KI_Z, Keybind::KeyMod::KM_CTRL));
-Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Redo", Keybind(Keybind::KeyId::KI_Z, Keybind::KeyMod::KM_CTRL | Keybind::KeyMod::KM_SHIFT));
-Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Copy", Keybind(Keybind::KeyId::KI_C, Keybind::KeyMod::KM_CTRL));
-Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Paste", Keybind(Keybind::KeyId::KI_V, Keybind::KeyMod::KM_CTRL));
-Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Rotate CCW", Keybind(Keybind::KeyId::KI_Q));
-Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Rotate CW", Keybind(Keybind::KeyId::KI_E));
-Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Confirm", Keybind(Keybind::KeyId::KI_E));
-Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Zoom", Keybind(Keybind::KeyId::KI_UNKNOWN, Keybind::KeyMod::KM_SHIFT));
-Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Home", Keybind(Keybind::KeyId::KI_F));
-*/
-
-	Rml::Element* close = window->AppendChild(mainWindow.getRmlDocument()->CreateElement("button"));
-    close->SetInnerRML("Close");
-    close->SetClass("popup-button", true);
-	close->AddEventListener(Rml::EventId::Click, new EventPasser(
-	    [deleteFunc = closePopup](Rml::Event& event) {
-	        deleteFunc();
-	    }
-	));
-
-}
-
 void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature complaint, feedback
 	std::optional<PopUpWindow> optionalPopUpWindow = createPopUp(false);
 	if (!optionalPopUpWindow) return;
@@ -506,4 +352,159 @@ void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature 
 			popUpWindow.destroy();
 		})
 	);
+}
+
+
+void PopUpManager::controlsConnectionMachine() {
+	std::optional<PopUpWindow> optionalPopUpWindow = createPopUp(true);
+
+	if (!optionalPopUpWindow) return;
+	PopUpWindow popUpWindow = std::move(optionalPopUpWindow.value());
+
+	// Rml::ElementList windowList;
+    // overlay->GetElementsByClassName(windowList, "pop-up-window");
+    // if (windowList.empty()) return;
+    // Rml::Element* window = windowList.front();
+	popUpWindow.getPopUpWindow()->SetAttribute("style", "display: flex; flex-direction: column; width: 520dp; height: 400dp; background-color:#303030;");
+
+	Rml::Element* title = popUpWindow.getPopUpWindow()->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
+	title->SetInnerRML("Controls");
+
+	Rml::Element* leftandright = popUpWindow.getPopUpWindow()->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
+	leftandright->SetAttribute("style", "display: flex; flex-direction: row; width: 100%; height: 100%; background-color:#303030;");
+
+
+
+	std::vector<std::string> keybindSettingKeys = {
+    	"Keybinds/File/Save",
+    	"Keybinds/File/New",
+    	"Keybinds/Editing/Undo",
+    	"Keybinds/Editing/Redo",
+    	"Keybinds/Editing/Copy",
+    	"Keybinds/Editing/Paste",
+    	"Keybinds/Editing/Rotate CCW",
+    	"Keybinds/Editing/Rotate CW",
+    	"Keybinds/Editing/Confirm",
+    	"Keybinds/Camera/Zoom",
+    	"Keybinds/Camera/Home"
+	};
+	std::vector<std::string> keybindSettingKeysNames = {
+    	"Save",
+    	"New",
+    	"Undo",
+    	"Redo",
+    	"Copy",
+    	"Paste",
+    	"Rotate CCW",
+    	"Rotate CW",
+    	"Confirm",
+    	"Zoom",
+    	"Home"
+	};
+	std::vector<std::string> keybindSettingKeysNamesFiltered = {};
+
+	SettingsMap& settings = Settings::getSettingsMap();
+    std::vector<std::pair<std::string, std::string>> result;
+
+	for (const auto& pair : settings.getAllKeys()) {
+
+	    const std::string& key = pair.first;
+
+		for (int i = 0; i < keybindSettingKeys.size(); ++i) {
+
+			std::string keykeep = keybindSettingKeys[i];
+
+	        if (keykeep == key) {
+	            std::string value;
+
+	            switch (pair.second->getType()) {
+
+	            case SettingType::STRING:
+	                value = *settings.get<SettingType::STRING>(key);
+	                break;
+
+	            case SettingType::INT:
+	                value = std::to_string(*settings.get<SettingType::INT>(key));
+	                break;
+
+	            case SettingType::UINT:
+	                value = std::to_string(*settings.get<SettingType::UINT>(key));
+	                break;
+
+	            case SettingType::DECIMAL:
+	                value = std::to_string(*settings.get<SettingType::DECIMAL>(key));
+	                break;
+
+	            case SettingType::BOOL:
+	                value = *settings.get<SettingType::BOOL>(key) ? "true" : "false";
+	                break;
+
+	            case SettingType::KEYBIND:
+	                value = settings.get<SettingType::KEYBIND>(key)->toString(true);
+	                break;
+
+	            case SettingType::FILE_PATH:
+	                value = *settings.get<SettingType::FILE_PATH>(key);
+	                break;
+
+	            case SettingType::VOID:
+	            default:
+	                value = "<void>";
+	                break;
+	            }
+
+	            // Only call quoted on STRING, not on raw values
+				std::ostringstream oss;
+				oss << std::quoted(value);
+				std::string quotedValue = oss.str();
+				logInfo("key {}, value {}", "",key,quotedValue);
+	            result.emplace_back(key, quotedValue);
+				keybindSettingKeysNamesFiltered.push_back(keybindSettingKeysNames[i]);
+
+	        }
+	    }
+	}
+
+	Rml::Element* leftdiv = leftandright->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
+	leftdiv->SetAttribute("style", "display: flex; flex-direction: column; width: 50%; height: 85%; background-color:#303030;");
+
+	Rml::Element* rightdiv = leftandright->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
+    rightdiv->SetAttribute("style", "display: flex; flex-direction: column; width: 50%; height: 85%; background-color:#303030;");
+	int i = 0;
+	for (const auto& pair : result) {
+    	const std::string& key = pair.first;
+    	const std::string& value = pair.second;
+
+		Rml::Element* temp = leftdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
+		temp->SetInnerRML(keybindSettingKeysNames[i]);
+
+		Rml::Element* temp2 = rightdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
+		temp2->SetInnerRML(value.substr(1, value.length() - 2));
+    	logInfo("key: {}, value: {}", "", key, value);
+		i += 1;
+	}
+
+/* Settings to include
+Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/Save", Keybind(Keybind::KeyId::KI_S, Keybind::KeyMod::KM_CTRL));
+Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/New", Keybind(Keybind::KeyId::KI_N, Keybind::KeyMod::KM_CTRL));
+Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Undo", Keybind(Keybind::KeyId::KI_Z, Keybind::KeyMod::KM_CTRL));
+Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Redo", Keybind(Keybind::KeyId::KI_Z, Keybind::KeyMod::KM_CTRL | Keybind::KeyMod::KM_SHIFT));
+Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Copy", Keybind(Keybind::KeyId::KI_C, Keybind::KeyMod::KM_CTRL));
+Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Paste", Keybind(Keybind::KeyId::KI_V, Keybind::KeyMod::KM_CTRL));
+Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Rotate CCW", Keybind(Keybind::KeyId::KI_Q));
+Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Rotate CW", Keybind(Keybind::KeyId::KI_E));
+Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Confirm", Keybind(Keybind::KeyId::KI_E));
+Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Zoom", Keybind(Keybind::KeyId::KI_UNKNOWN, Keybind::KeyMod::KM_SHIFT));
+Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Home", Keybind(Keybind::KeyId::KI_F));
+*/
+
+	Rml::Element* close = popUpWindow.getPopUpWindow()->AppendChild(mainWindow.getRmlDocument()->CreateElement("button"));
+    close->SetInnerRML("Close");
+    close->SetClass("popup-button", true);
+	close->AddEventListener(Rml::EventId::Click, new EventPasser(
+	    [popUpWindow](Rml::Event& event) {
+	        popUpWindow.destroy();
+	    }
+	));
+
 }
