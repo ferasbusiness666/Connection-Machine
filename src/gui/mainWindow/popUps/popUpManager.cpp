@@ -329,9 +329,16 @@ void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature 
 			if (includeStateCheckbox->HasAttribute("checked")) {
 				Network::Attachment appStateAttachment;
 				std::string appState = App::get().dumpState().dump(1, '\t');
-				appStateAttachment.data = compressString(appState);
-				appStateAttachment.context = "app_state.json.json.br";
-				appStateAttachment.contentType = "application/x-brotli";
+				std::optional<std::string> compressedAppState = compressString(appState);
+				if (compressedAppState){
+					appStateAttachment.data = compressedAppState.value();
+					appStateAttachment.context = "app_state.json.json.br";
+					appStateAttachment.contentType = "application/x-brotli";
+				} else {
+					appStateAttachment.data = appState;
+					appStateAttachment.context = "app_state.json";
+					appStateAttachment.contentType = "application/json";
+				}
 				attachments.push_back(appStateAttachment);
 			}
 

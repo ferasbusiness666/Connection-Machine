@@ -2,14 +2,15 @@
 
 #include <brotli/encode.h>
 
-std::string compressString(const std::string& input) {
+std::optional<std::string> compressString(const std::string& input) {
 	if (input.empty()) {
 		return {};
 	}
 
 	const size_t maxSize = BrotliEncoderMaxCompressedSize(input.size());
 	if (maxSize == 0) {
-		throw std::runtime_error("BrotliEncoderMaxCompressedSize failed");
+		logError("BrotliEncoderMaxCompressedSize returned 0");
+		return std::nullopt;
 	}
 
 	std::string output(maxSize, '\0');
@@ -26,7 +27,8 @@ std::string compressString(const std::string& input) {
 	);
 
 	if (result == BROTLI_FALSE) {
-		throw std::runtime_error("Brotli compression failed");
+		logError("BrotliEncoderCompress failed");
+		return std::nullopt;
 	}
 
 	output.resize(encodedSize);
