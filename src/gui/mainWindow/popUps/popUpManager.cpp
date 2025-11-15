@@ -7,7 +7,10 @@
 #include "gui/helper/saveCallback.h"
 #include "gui/mainWindow/mainWindow.h"
 #include "network/network.h"
+#include "util/compression.h"
+#include "util/version.h"
 
+#include <zlib.h>
 #include <RmlUi/Debugger.h>
 
 #include <SDL3/SDL.h>
@@ -317,12 +320,29 @@ void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature 
 	submitButton->SetClass("popup-button", true);
 	submitButton->AddEventListener(
 		Rml::EventId::Click,
-		new EventPasser([popUpWindow, textarea, includeStateCheckbox](Rml::Event& event) {
+		new EventPasser([this, popUpWindow, textarea, includeStateCheckbox](Rml::Event& event) {
 			auto* textareaControl = dynamic_cast<Rml::ElementFormControlTextArea*>(textarea);
 			std::string textareaValue = textareaControl ? textareaControl->GetValue().c_str() : "";
 
-			logInfo("Feedback body: {}", "", textareaValue);
-			logInfo("Include app state: {}", "", includeStateCheckbox->HasAttribute("checked") ? "true" : "false");
+			// logInfo("Feedback body: {}", "", textareaValue);
+			// logInfo("Include app state: {}", "", includeStateCheckbox->HasAttribute("checked") ? "true" : "false");
+			std::vector<Network::Attachment> attachments;
+			if (includeStateCheckbox->HasAttribute("checked")) {
+				Network::Attachment appStateAttachment;
+				std::string appState = App::get().dumpState().dump(1, '\t');
+				Deflater deflater(Z_DEFAULT_COMPRESSION);
+				appStateAttachment.data = deflater.deflateString(appState);
+				appStateAttachment.context = "app_state.json.json.zlib";
+				appStateAttachment.contentType = "application/zlib";
+				attachments.push_back(appStateAttachment);
+			}
+
+			Network::get().sendFeedback(
+				*this,
+				"User Feedback from Connection Machine UI v" + getCurrentVersion().toString(),
+				textareaValue,
+				attachments
+			);
 
 			popUpWindow.destroy();
 		})

@@ -37,6 +37,16 @@ function(add_main_dependencies)
 	)
 	list(APPEND EXTERNAL_LINKS nlohmann_json)
 
+	# zlib
+	CPMAddPackage(
+		NAME zlib
+		GITHUB_REPOSITORY madler/zlib
+		GIT_TAG v1.3.1
+		EXCLUDE_FROM_ALL YES
+		SOURCE_DIR "${EXTERNAL_DIR}/zlib"
+	)
+	list(APPEND EXTERNAL_LINKS zlib)
+
 	# fmt
 	CPMAddPackage(
 		NAME fmt
