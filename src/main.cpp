@@ -79,6 +79,9 @@ int main(int argc, char* argv[]) {
 #ifdef MAIN_TRY_CATCH
 	try {
 #endif
+		// Set up directory manager
+		DirectoryManager::findDirectories(); // if this fails we wont get logs :(
+
 		// if command line args are "--cli" run cli app
 		// TODO: proper arg parsing
 		if (argc > 1) {
@@ -91,10 +94,13 @@ int main(int argc, char* argv[]) {
 			} else if (firstArg == "--version") {
 				logInfo("Connection Machine Version: {}", "", getCurrentVersion().toString());
 				return EXIT_SUCCESS;
+			} else {
+				logInfo("Unknown command argument \"{}\". Use '--cli' or '--version'", "", firstArg);
+				return EXIT_FAILURE;
 			}
 		}
-		// Set up directory manager
-		DirectoryManager::findDirectories();
+
+		// regular app
 		registerSettings();
 
 		App::get().runLoop();
