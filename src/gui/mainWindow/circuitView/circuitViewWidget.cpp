@@ -173,6 +173,24 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 	element->AddEventListener(Rml::EventId::Mousedown, new EventPasser([this](Rml::Event& event) {
 		int button = event.GetParameter<int>("button", 0);
 		if (button == 0) { // left
+			if (makeKeybind(event) == *Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Pick Block")) {
+				CircuitView* circuitView = this->getCircuitView();
+				if (circuitView) {
+					Circuit* circuit = circuitView->getCircuit();
+					if (circuit) {
+						Position gridPos = circuitView->getViewManager().getPointerPosition().snap();
+						const Block* block = circuit->getBlockContainer().getBlock(gridPos);
+						if (block) {
+							BlockType type = block->type();
+							Orientation orientation = block->getOrientation();
+							ToolManagerManager& toolManagerManager = this->mainWindow.getToolManagerManager();
+							toolManagerManager.setBlock(type); // TODO: also set orientation maybe?
+							event.StopPropagation();
+							return;
+						}
+					}
+				}
+			}
 			if (makeKeybind(event) == *Settings::get<SettingType::KEYBIND>("Keybinds/Camera/Pan")) {
 				if (circuitView->getEventRegister().doEvent(PositionEvent("View Attach Anchor", circuitView->getViewManager().getPointerPosition()))) {
 					event.StopPropagation();
