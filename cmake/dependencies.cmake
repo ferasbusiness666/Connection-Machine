@@ -37,6 +37,21 @@ function(add_main_dependencies)
 	)
 	list(APPEND EXTERNAL_LINKS nlohmann_json)
 
+	# brotli
+	CPMAddPackage(
+		NAME brotli
+		GITHUB_REPOSITORY google/brotli
+		GIT_TAG v1.2.0
+		EXCLUDE_FROM_ALL YES
+		SOURCE_DIR "${EXTERNAL_DIR}/brotli"
+	)
+	if (brotli_ADDED)
+		add_library(Brotli::common ALIAS brotlicommon)
+		add_library(Brotli::encoder ALIAS brotlienc)
+		add_library(Brotli::decoder ALIAS brotlidec)
+	endif()
+	list(APPEND EXTERNAL_LINKS brotlienc)
+
 	# fmt
 	CPMAddPackage(
 		NAME fmt

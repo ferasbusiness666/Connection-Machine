@@ -8,6 +8,7 @@
 #include "gui/helper/saveCallback.h"
 #include "gui/mainWindow/circuitView/circuitViewWidget.h"
 #include "network/network.h"
+#include "util/version.h"
 // #include "computerAPI/directoryManager.h" // TEMPORARY
 
 #include <SDL3/SDL.h>
@@ -292,6 +293,7 @@ void App::stopTryingToQuit() { tryingToQuit = false; }
 nlohmann::json App::dumpState() const {
 	nlohmann::json stateJson;
 	stateJson["environment"] = environment.dumpState();
+	stateJson["version"] = getCurrentVersion().toString();
 	return stateJson;
 }
 
