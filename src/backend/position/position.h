@@ -640,20 +640,20 @@ struct Orientation {
 	inline std::string toString() const { return "(r:" + std::to_string(rotation) + ", f:" + std::to_string(flipped) + ")"; }
 
 	inline void nextOrientation() {
-		// logInfo("n pre: {}", "", toString());
 		if (rotation == Rotation::ONE_EIGHTY && !flipped) flipped = true;
 		else if (rotation == Rotation::TWO_SEVENTY && flipped) flipped = false;
 		else rotate(!flipped);
-		// logInfo("n pre: {}", "", toString());
 	}
 
 	inline void lastOrientation() {
-		// logInfo("l post: {}", "", toString());
 		if (rotation == Rotation::ONE_EIGHTY && flipped) flipped = false;
 		else if (rotation == Rotation::TWO_SEVENTY && !flipped) flipped = true;
 		else rotate(flipped);
-		// logInfo("l post: {}", "", toString());
 	}
+
+	inline void nextRotation() { rotate(true); }
+
+	inline void lastRotation() { rotate(false); }
 
 	inline Vector operator*(Vector vector) const noexcept {
 		Vector vec(vector.dx, flipped ? -vector.dy : vector.dy);

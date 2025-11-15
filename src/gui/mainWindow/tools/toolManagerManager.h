@@ -20,6 +20,13 @@ public:
 		sendChangedSignal();
 	}
 
+	inline void setOrientation(Orientation orientation) {
+		for (auto view : circuitViews) {
+			view->getToolManager().setOrientation(orientation);
+		}
+		sendChangedSignal();
+	}
+
 	inline void setTool(std::string toolName) {
 		std::transform(toolName.begin(), toolName.end(), toolName.begin(), ::tolower);
 		auto iter = tools.find(toolName);
