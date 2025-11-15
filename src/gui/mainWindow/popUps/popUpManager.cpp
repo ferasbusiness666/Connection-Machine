@@ -9,6 +9,7 @@
 #include "network/network.h"
 #include "util/compression.h"
 #include "util/version.h"
+#include "util/logsSanitizer.h"
 
 #include <RmlUi/Debugger.h>
 
@@ -331,6 +332,21 @@ void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature 
 				appStateAttachment.contentType = "application/json";
 			}
 			attachments.push_back(appStateAttachment);
+
+			Network::Attachment logsAttachment;
+			std::string logs = getLogContents();
+			std::string pathSanitizedLogs = sanitizeLogsForPaths(logs);
+			std::optional<std::string> compressedLogs = compressString(pathSanitizedLogs);
+			if (compressedLogs) {
+				logsAttachment.data = compressedLogs.value();
+				logsAttachment.context = "logs.txt.br";
+				logsAttachment.contentType = "application/x-brotli";
+			} else {
+				logsAttachment.data = pathSanitizedLogs;
+				logsAttachment.context = "logs.txt";
+				logsAttachment.contentType = "text/plain";
+			}
+			attachments.push_back(logsAttachment);
 		}
 
 		Network::get().sendFeedback(*this, "User Feedback from Connection Machine UI v" + getCurrentVersion().toString(), textareaValue, attachments);

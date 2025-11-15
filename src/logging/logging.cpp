@@ -37,3 +37,7 @@ void setLogErrorCallback(LogErrorCallback callback) {
 void setLogWarningCallback(LogWarningCallback callback) {
 	g_logWarningCallback = callback;
 }
+
+std::string getLogContents() {
+	return mainLogger.getLogContents();
+}

@@ -51,3 +51,16 @@ void Logger::log(LogType type, const std::string& message, const std::string& su
 	outputFileStream << "[" << categoryText << "] " << message << "\n";
 	outputFileStream.flush();
 }
+
+std::string Logger::getLogContents() const {
+	std::lock_guard<std::mutex> guard(loggingMutex);
+
+	std::ifstream input(outputFile, std::ios::binary);
+	if (!input.is_open()) {
+		return "";
+	}
+
+	std::ostringstream buffer;
+	buffer << input.rdbuf();
+	return buffer.str();
+}
