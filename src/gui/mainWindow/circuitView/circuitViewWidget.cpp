@@ -179,13 +179,12 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 				if (circuitView) {
 					Circuit* circuit = circuitView->getCircuit();
 					if (circuit) {
-						Position gridPos = circuitView->getViewManager().getPointerPosition().snap();
-						const Block* block = circuit->getBlockContainer().getBlock(gridPos);
+						const Block* block = circuit->getBlockContainer().getBlock(circuitView->getViewManager().getPointerPosition().snap());
 						if (block) {
 							BlockType type = block->type();
 							Orientation orientation = block->getOrientation();
-							ToolManagerManager& toolManagerManager = this->mainWindow.getToolManagerManager();
-							toolManagerManager.setBlock(type); // TODO: also set orientation maybe?
+							this->mainWindow.getToolManagerManager().setBlock(type);
+							this->mainWindow.getToolManagerManager().setOrientation(orientation);
 							event.StopPropagation();
 							return;
 						}
