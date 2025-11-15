@@ -224,8 +224,8 @@ void PopUpManager::aboutConnectionMachine() {
 	Rml::Element* rightdivScroll = rightdivScrollArea->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
 
 	std::vector<std::string> contributors = {
-        "Ben Herman", "Nikita Lurye", "Jack Jamison", "Connor Kostiew", "James P", "Gregory Lemonnier", "Sam C", "Alek Krupka",
-		"August Bernberg", "Nicholas Ciuica", "Matthew Durcan", "Tiffany C", "Patrick Chen", "Nathan Chen", "Dante L"
+        "Ben Herman", "Nikita Lurye", "Jack Jamison", "Connor Kostiew", "Gregory Lemonnier", "James P", "Sam C", "Alek Krupka",
+		"August Bernberg", "Nicholas Ciuica", "Matthew Durcan", "Tiffany Cheng", "Patrick Chen", "Nathan Chen", "Dante L"
     };
 
 	std::string all_contributors = "";
