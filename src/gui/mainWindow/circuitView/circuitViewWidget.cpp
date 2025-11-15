@@ -185,7 +185,7 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 							Orientation orientation = block->getOrientation();
 							ToolManagerManager& toolManagerManager = this->mainWindow.getToolManagerManager();
 							toolManagerManager.setBlock(type);
-							if (*Settings::get<SettingType::BOOL>("Keybinds/Editing/Pick Block Copy Orientation")) {
+							if (*Settings::get<SettingType::BOOL>("Preferences/Editing/Pick Block Copy Orientation")) {
 								toolManagerManager.setOrientation(orientation);
 							}
 							event.StopPropagation();
