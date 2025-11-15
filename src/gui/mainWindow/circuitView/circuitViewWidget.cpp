@@ -143,6 +143,7 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 	keybindHandler.addListener("Keybinds/Editing/Copy", [this]() { circuitView->getEventRegister().doEvent(Event("Copy")); });
 	keybindHandler.addListener("Keybinds/Editing/Rotate CCW", [this]() { circuitView->getEventRegister().doEvent(Event("Tool Rotate Block CCW")); });
 	keybindHandler.addListener("Keybinds/Editing/Rotate CW", [this]() { circuitView->getEventRegister().doEvent(Event("Tool Rotate Block CW")); });
+	keybindHandler.addListener("Keybinds/Editing/Flip", [this]() { circuitView->getEventRegister().doEvent(Event("Tool Flip Block")); });
 	keybindHandler.addListener("Keybinds/Editing/Confirm", [this]() { circuitView->getEventRegister().doEvent(Event("Confirm")); });
 	keybindHandler.addListener("Keybinds/Editing/Tool Invert Mode", [this]() { circuitView->getEventRegister().doEvent(Event("Tool Invert Mode")); });
 	keybindHandler.addListener("Keybinds/Editing/Tools/Cycle Mode", [this]() { this->mainWindow.getToolManagerManager().cycleActiveToolMode(); });

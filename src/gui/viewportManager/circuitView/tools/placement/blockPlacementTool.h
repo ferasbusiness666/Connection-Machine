@@ -16,17 +16,17 @@ public:
 	inline std::string getPath() const override final { return getPath_(); }
 	void setMode(const std::string& mode) override final;
 
-	inline void selectBlock(BlockType selectedBlock) {
+	void selectBlock(BlockType selectedBlock) {
 		this->selectedBlock = selectedBlock;
 		if (activePlacementTool) activePlacementTool->selectBlock(selectedBlock);
 	}
 
-	inline void setRotation(Rotation rotation) {
-		this->rotation = rotation;
-		if (activePlacementTool) activePlacementTool->setRotation(rotation);
+	void setOrientation(Orientation orientation) {
+		this->orientation = orientation;
+		if (activePlacementTool) activePlacementTool->setOrientation(orientation);
 	}
 
-	inline BlockType getSelectedBlock() const {
+	BlockType getSelectedBlock() const {
 		return selectedBlock;
 	}
 
@@ -34,7 +34,7 @@ private:
 	std::string mode = "None";
 	SharedBaseBlockPlacementTool activePlacementTool = nullptr;
 	BlockType selectedBlock = BlockType::NONE;
-	Rotation rotation = Rotation::ZERO;
+	Orientation orientation = Orientation();
 };
 
 typedef std::shared_ptr<BlockPlacementTool> SharedBlockPlacementTool;

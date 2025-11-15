@@ -38,6 +38,7 @@ void registerSettings() {
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Cycle Mode Back", Keybind(Keybind::KeyId::KI_TAB, Keybind::KeyMod::KM_SHIFT));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Rotate CCW", Keybind(Keybind::KeyId::KI_Q));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Rotate CW", Keybind(Keybind::KeyId::KI_E));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Flip", Keybind(Keybind::KeyId::KI_W));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Confirm", Keybind(Keybind::KeyId::KI_E));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tool Invert Mode", Keybind(Keybind::KeyId::KI_Q));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/(DEBUG) Test Circuit", Keybind(Keybind::KeyId::KI_L));

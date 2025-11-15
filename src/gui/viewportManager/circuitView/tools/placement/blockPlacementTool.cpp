@@ -12,7 +12,6 @@ void BlockPlacementTool::activate() {
 	if (activePlacementTool) {
 		toolStackInterface->pushTool(activePlacementTool);
 		activePlacementTool->selectBlock(selectedBlock);
-		// activePlacementTool->setRotation(rotation);
 	}
 }
 
@@ -29,7 +28,9 @@ void BlockPlacementTool::setMode(const std::string& mode) {
 			logError("Tool mode \"{}\" could not be found", "", mode);
 			return;
 		}
+		if (activePlacementTool) orientation = activePlacementTool->getOrientation();
 		activePlacementTool = newActivePlacementTool;
 		toolStackInterface->popAbove(this);
+		activePlacementTool->setOrientation(orientation);
 	}
 }

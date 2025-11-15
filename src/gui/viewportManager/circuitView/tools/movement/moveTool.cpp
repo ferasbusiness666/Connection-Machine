@@ -19,6 +19,7 @@ void MoveTool::activate() {
 	CircuitTool::activate();
 	registerFunction("Tool Rotate Block CW", std::bind(&MoveTool::rotateCW, this, std::placeholders::_1));
 	registerFunction("Tool Rotate Block CCW", std::bind(&MoveTool::rotateCCW, this, std::placeholders::_1));
+	registerFunction("Tool Flip Block", std::bind(&MoveTool::flip, this, std::placeholders::_1));
 	registerFunction("Tool Primary Activate", std::bind(&MoveTool::click, this, std::placeholders::_1));
 	registerFunction("Tool Secondary Activate", std::bind(&MoveTool::unclick, this, std::placeholders::_1));
 	if (!activeSelectionHelper->isFinished()) {
@@ -44,14 +45,21 @@ void MoveTool::setMode(const std::string& mode) {
 }
 
 bool MoveTool::rotateCW(const Event* event) {
-	transformAmount.nextOrientation();
+	transformAmount.nextRotation();
 	elementId = 0; // remake elements
 	updateElements();
 	return true;
 }
 
 bool MoveTool::rotateCCW(const Event* event) {
-	transformAmount.lastOrientation();
+	transformAmount.lastRotation();
+	elementId = 0; // remake elements
+	updateElements();
+	return true;
+}
+
+bool MoveTool::flip(const Event* event) {
+	transformAmount.flip();
 	elementId = 0; // remake elements
 	updateElements();
 	return true;
