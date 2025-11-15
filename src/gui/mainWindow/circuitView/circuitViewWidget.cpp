@@ -173,7 +173,7 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 	element->AddEventListener(Rml::EventId::Mousedown, new EventPasser([this](Rml::Event& event) {
 		int button = event.GetParameter<int>("button", 0);
 		if (button == 0) { // left
-			if (event.GetParameter<int>("alt_key", 0)) {
+			if (makeKeybind(event) == *Settings::get<SettingType::KEYBIND>("Keybinds/Camera/Pan")) {
 				if (circuitView->getEventRegister().doEvent(PositionEvent("View Attach Anchor", circuitView->getViewManager().getPointerPosition()))) {
 					event.StopPropagation();
 					return;

@@ -53,6 +53,7 @@ void registerSettings() {
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Tutorial/Stop", Keybind(Keybind::KeyId::KI_K));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Zoom", Keybind(Keybind::KeyId::KI_UNKNOWN, Keybind::KeyMod::KM_SHIFT));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Home", Keybind(Keybind::KeyId::KI_F));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Pan", Keybind(Keybind::KeyId::KI_UNKNOWN, Keybind::KeyMod::KM_ALT));
 	Settings::registerSetting<SettingType::BOOL>("Keybinds/Camera/Scroll Panning", true);
 	Settings::registerSetting<SettingType::BOOL>("Keybinds/Settings/Match Keyboard Layout", true);
 	Settings::registerSetting<SettingType::DECIMAL>("Appearance/UI Scale", 1.0);

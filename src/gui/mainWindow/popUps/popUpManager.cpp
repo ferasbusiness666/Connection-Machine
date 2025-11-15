@@ -368,24 +368,12 @@ void PopUpManager::controlsConnectionMachine() {
 		"Keybinds/Editing/Rotate CW",
 		"Keybinds/Editing/Confirm",
 		"Keybinds/Camera/Zoom",
+		"Keybinds/Camera/Pan",
 		"Keybinds/Camera/Home"
-	};
-	std::vector<std::string> keybindSettingKeysNames = {
-		"Save",
-		"New",
-		"Undo",
-		"Redo",
-		"Copy",
-		"Paste",
-		"Rotate CCW",
-		"Rotate CW",
-		"Confirm",
-		"Zoom",
-		"Home"
 	};
 	std::vector<std::pair<std::string, std::string>> keybindSettingDescriptions = {
 		{"Press ", " to save the curent circuit."},
-		{"Press", " to create a new circuit."},
+		{"Press ", " to create a new circuit."},
 		{"Press ", " to undo a change."},
 		{"Press ", " to redo a change."},
 		{"Press ", " to copy a selection."},
@@ -394,6 +382,7 @@ void PopUpManager::controlsConnectionMachine() {
 		{"Press ", " to rotate stuff CW"},
 		{"Press ", " to confirm action."},
 		{"Press ", " and scroll to zoom."},
+		{"Press ", " and click to pan."},
 		{"Press ", " to go home."}
 	};
 
