@@ -29,6 +29,7 @@ std::optional<PopUpManager::PopUpWindow> PopUpManager::createPopUp(bool blocking
 		popUpWindow->SetClass("pop-up-window-blocked", true);
 		popUpWindow->SetClass("bordered", true);
 		popUpWindow->SetClass("bg-3", true);
+		popUpWindow->SetAttribute("style", "width: 350dp;");
 		return PopUpWindow(popUpOverlay->GetContext(), popUpOverlay, [popUpOverlay, allPopUps]() {
 			App::get().queForEndOfUpdate([popUpOverlay, allPopUps]() {
 				allPopUps->RemoveChild(popUpOverlay);
