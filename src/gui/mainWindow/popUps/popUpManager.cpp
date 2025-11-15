@@ -385,7 +385,7 @@ void PopUpManager::controlsConnectionMachine() {
 	};
 	std::vector<std::pair<std::string, std::string>> keybindSettingDescriptions = {
 		{"Press ", " to save the curent circuit."},
-		{"Press", " to create a new circuit."},
+		{"Press ", " to create a new circuit."},
 		{"Press ", " to undo a change."},
 		{"Press ", " to redo a change."},
 		{"Press ", " to copy a selection."},
