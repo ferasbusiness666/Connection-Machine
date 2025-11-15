@@ -325,7 +325,7 @@ void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature 
 			std::optional<std::string> compressedAppState = compressString(appState);
 			if (compressedAppState) {
 				appStateAttachment.data = compressedAppState.value();
-				appStateAttachment.context = "app_state.json.json.br";
+				appStateAttachment.context = "app_state.json.br";
 				appStateAttachment.contentType = "application/x-brotli";
 			} else {
 				appStateAttachment.data = appState;
