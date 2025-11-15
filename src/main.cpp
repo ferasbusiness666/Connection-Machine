@@ -57,9 +57,10 @@ void registerSettings() {
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Pan", Keybind(Keybind::KeyId::KI_UNKNOWN, Keybind::KeyMod::KM_ALT));
 	Settings::registerSetting<SettingType::BOOL>("Keybinds/Camera/Scroll Panning", true);
 	Settings::registerSetting<SettingType::BOOL>("Keybinds/Settings/Match Keyboard Layout", true);
+	Settings::registerSetting<SettingType::BOOL>("Preferences/Editing/Pick Block Copy Orientation", true);
 	Settings::registerSetting<SettingType::DECIMAL>("Appearance/UI Scale", 1.0);
 	Settings::registerSetting<SettingType::UINT>("Simulation/Max Thread Count", std::thread::hardware_concurrency() / 2);
-	Settings::registerSetting<SettingType::DECIMAL>("Corner Log/Message Timeout", 3.f);
+	Settings::registerSetting<SettingType::DECIMAL>("Appearance/Corner Log/Message Timeout", 3.f);
 	SaveSettings save;
 	save.load();
 	// set font again incase another font was loaded because other fonts wont work for now
