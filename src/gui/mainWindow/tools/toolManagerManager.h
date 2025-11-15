@@ -17,6 +17,7 @@ public:
 		for (auto view : circuitViews) {
 			view->getToolManager().selectBlock(blockType);
 		}
+		sendChangedSignal();
 	}
 
 	inline void setTool(std::string toolName) {
