@@ -52,3 +52,5 @@ void logFatalError(const std::string& message, const std::string& subcategory) {
 void setLogErrorCallback(LogErrorCallback callback) { g_logErrorCallback = callback; }
 
 void setLogWarningCallback(LogWarningCallback callback) { g_logWarningCallback = callback; }
+
+std::string getLogContents() { return getMainLogger().getLogContents(); }

@@ -13,6 +13,8 @@ void logFatalError(const std::string& message, const std::string& subcategory = 
 void setLogErrorCallback(LogErrorCallback callback);
 void setLogWarningCallback(LogWarningCallback callback);
 
+std::string getLogContents();
+
 // fancy formatted logging overloads
 template<typename ...Args>
 void logInfo(const fmt::format_string<Args...>& formatString, const std::string& subcategory, Args&&...args) {

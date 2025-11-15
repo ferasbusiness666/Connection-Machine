@@ -17,10 +17,11 @@ public:
 	Logger(const std::filesystem::path& outputFile);
 
 	void log(LogType type, const std::string& message, const std::string& subcategory = "");
+	std::string getLogContents() const;
 
 private:
 	std::filesystem::path outputFile;
-	std::mutex loggingMutex;
+	mutable std::mutex loggingMutex;
 
 	std::ofstream outputFileStream;
 };
