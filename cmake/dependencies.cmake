@@ -57,6 +57,7 @@ function(add_main_dependencies)
 		NAME fmt
 		GITHUB_REPOSITORY fmtlib/fmt
 		GIT_TAG 11.2.0
+		EXCLUDE_FROM_ALL YES
 		OPTIONS
 			"FMT_INSTALL OFF"
 		SOURCE_DIR "${EXTERNAL_DIR}/fmt"
@@ -92,7 +93,7 @@ function(add_main_dependencies)
 			SOURCE_DIR "${EXTERNAL_DIR}/wasmtime"
 		)
 		set_target_properties(wasmtime PROPERTIES
-			IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib-binary/libwasmtime.a"
+			IMPORTED_LOCATION "${EXTERNAL_DIR}/wasmtime/target/aarch64-apple-darwin/release/libwasmtime.a"
 			INTERFACE_INCLUDE_DIRECTORIES "${EXTERNAL_DIR}/wasmtime/crates/c-api"  # where .h file is
 		)
 	else()
