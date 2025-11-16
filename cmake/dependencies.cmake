@@ -265,7 +265,7 @@ function(add_main_dependencies)
 	list(APPEND EXTERNAL_LINKS RmlUi::Debugger)
 
 	# httplib
-	if (APPLE AND CONNECTION_MACHINE_DISTRIBUTE_APP)
+	if (CONNECTION_MACHINE_DISTRIBUTE_APP)
 		CPMAddPackage(
 			NAME httplib
 			GITHUB_REPOSITORY yhirose/cpp-httplib
@@ -274,7 +274,7 @@ function(add_main_dependencies)
 			SOURCE_DIR "${EXTERNAL_DIR}/cpp-httplib"
 			OPTIONS
 				"HTTPLIB_REQUIRE_OPENSSL ON"
-				"OPENSSL_USE_STATIC_LIBS=TRUE"
+				"OPENSSL_USE_STATIC_LIBS TRUE"
 				"HTTPLIB_USE_ZSTD_IF_AVAILABLE OFF"
 		)
 	else()
