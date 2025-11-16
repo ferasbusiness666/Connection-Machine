@@ -20,6 +20,7 @@ App& App::get() {
 		logInfo("Creating App", "App");
 		appSingleton.emplace();
 		appSingleton->newMainWindow();
+		appSingleton->windows.back()->getActiveCircuitViewWidget()->newCircuit();
 	}
 	return *appSingleton;
 }
