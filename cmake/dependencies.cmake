@@ -150,8 +150,8 @@ function(add_main_dependencies)
 	# Volk vulkan meta loader
 	CPMAddPackage(
 		NAME volk
-		GITHUB_REPOSITORY zeux/volk
-		GIT_TAG 3f1e9f3549c6a0fe0c4901e0f6a2f66b6bb8de3f
+		GITHUB_REPOSITORY itchytrack/volk
+		GIT_TAG b131b168d833f4d6bbe2e5bc8d41fb9792f818f8
 		EXCLUDE_FROM_ALL YES
 		SOURCE_DIR "${EXTERNAL_DIR}/volk"
 	)
@@ -209,16 +209,30 @@ function(add_main_dependencies)
 	list(APPEND EXTERNAL_LINKS stb_image)
 
 	# Freetype
-	CPMAddPackage(
-        NAME freetype
-        GITHUB_REPOSITORY libsdl-org/freetype
-        GIT_TAG VER-2-13-3
-        OPTIONS
+	if(APPLE)
+		CPMAddPackage(
+			NAME freetype
+			GITHUB_REPOSITORY libsdl-org/freetype
+			GIT_TAG VER-2-13-3
+			OPTIONS
+				"FT_DISABLE_HARFBUZZ ON"
+				"FT_WITH_HARFBUZZ OFF"
+				"FT_DISABLE_BROTLI ON"
+			EXCLUDE_FROM_ALL YES
+			SOURCE_DIR "${EXTERNAL_DIR}/freetype"
+		)
+	else()
+		CPMAddPackage(
+			NAME freetype
+			GITHUB_REPOSITORY libsdl-org/freetype
+			GIT_TAG VER-2-13-3
+			OPTIONS
 			"FT_DISABLE_HARFBUZZ ON"
 			"FT_WITH_HARFBUZZ OFF"
-		EXCLUDE_FROM_ALL YES
-		SOURCE_DIR "${EXTERNAL_DIR}/freetype"
-    )
+			EXCLUDE_FROM_ALL YES
+			SOURCE_DIR "${EXTERNAL_DIR}/freetype"
+			)
+	endif()
 	add_library(Freetype::Freetype ALIAS freetype)
 	list(APPEND EXTERNAL_LINKS freetype)
 

@@ -204,12 +204,15 @@ if (APPLE AND CONNECTION_MACHINE_DISTRIBUTE_APP)
 		install(CODE "
 			include(BundleUtilities)
 			fixup_bundle(\"${CMAKE_CURRENT_BINARY_DIR}/${APP_NAME}.app\" \"\" \"${CMAKE_BINARY_DIR}\")
+			fixup_bundle(\"${CMAKE_CURRENT_BINARY_DIR}/${APP_NAME}.app\" \"\" \"${CMAKE_BINARY_DIR}\")
+
+			file(REMOVE \"${CMAKE_CURRENT_BINARY_DIR}/${CPACK_PACKAGE_FILE_NAME}.dmg\")
 
 			file(WRITE ${PACKAGE_SCRIPT} \"#!/bin/bash\n\")
 
 			file(APPEND ${PACKAGE_SCRIPT} \"cd \\\"${CMAKE_CURRENT_BINARY_DIR}\\\"\\n\")
 
-			file(APPEND ${PACKAGE_SCRIPT} \"rm -r \\\"./out\\\"\\n\")
+			file(APPEND ${PACKAGE_SCRIPT} \"rm -rf \\\"./out\\\"\\n\")
 			file(APPEND ${PACKAGE_SCRIPT} \"mkdir \\\"./out\\\"\\n\")
 
 			file(APPEND ${PACKAGE_SCRIPT} \"hdiutil attach \\\"./${CPACK_PACKAGE_FILE_NAME}.dmg\\\"\\n\")

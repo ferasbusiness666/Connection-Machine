@@ -1,6 +1,10 @@
 #include "vulkanInstance.h"
 #include "gui/sdl/sdlWindow.h"
 
+#if defined(__APPLE__)
+	#include <dlfcn.h>
+#endif
+
 static VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -11,6 +15,15 @@ VulkanInstance::VulkanInstance() {
 	logInfo("Initializing Vulkan...", "Vulkan");
 
 	// Initialize volk loader
+
+
+#if defined(__APPLE__) // apple backup
+	void* module = dlopen("@executable_path/../Frameworks/libMoltenVK.dylib", RTLD_NOW | RTLD_LOCAL);
+	if (module) {
+		PFN_vkGetInstanceProcAddr vulkanInstanceProcAddr = (PFN_vkGetInstanceProcAddr)dlsym(module, "vkGetInstanceProcAddr");
+		volkInitializeCustom(vulkanInstanceProcAddr);
+	} else
+#endif
 	if (volkInitialize() != VK_SUCCESS) {
 		throwFatalError("Failed to find Vulkan loader, Connection Machine requires Vulkan. Please make sure that your graphics drivers are installed and up to date.");
 	}

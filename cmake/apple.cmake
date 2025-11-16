@@ -2,7 +2,6 @@ function(PreProjectAppleSetup)
 	if (APPLE AND CONNECTION_MACHINE_DISTRIBUTE_APP)
 		set(CMAKE_OSX_DEPLOYMENT_TARGET 10.15 PARENT_SCOPE)
 		set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/lib-binary" ${CMAKE_PREFIX_PATH})
-
 		set(Vulkan_LIBRARY "${CMAKE_SOURCE_DIR}/lib-binary/libMoltenVK.dylib" PARENT_SCOPE)
 	else()
 		set(CMAKE_OSX_SYSROOT "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" PARENT_SCOPE)
