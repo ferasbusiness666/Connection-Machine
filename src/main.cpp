@@ -31,9 +31,11 @@ void registerSettings() {
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Pick Block", Keybind(Keybind::KeyId::KI_UNKNOWN, Keybind::KeyMod::KM_CTRL));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/State Changer", Keybind(Keybind::KeyId::KI_I));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Connection", Keybind(Keybind::KeyId::KI_C));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Tensor Connect", Keybind(Keybind::KeyId::KI_R));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Move", Keybind(Keybind::KeyId::KI_M));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Mode Changer", Keybind(Keybind::KeyId::KI_T));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Placement", Keybind(Keybind::KeyId::KI_P));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Area Placement", Keybind(Keybind::KeyId::KI_A));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Selection Maker", Keybind(Keybind::KeyId::KI_S));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Cycle Mode", Keybind(Keybind::KeyId::KI_TAB));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Cycle Mode Back", Keybind(Keybind::KeyId::KI_TAB, Keybind::KeyMod::KM_SHIFT));
