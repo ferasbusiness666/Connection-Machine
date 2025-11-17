@@ -116,7 +116,7 @@ void Tooltip::create(Rml::Event& event) {
 		Rml::ElementDocument* rmlDocument = rmlContext->LoadDocument(DirectoryManager::getResourceDirectory().generic_string() + "/gui/tooltip/tooltip.rml");
 		Rml::Element* text = rmlDocument->GetElementById("text");
 		Rml::Vector2f size = measureWrappedText(message, text);
-		size.x *= 1.075f;
+		size.x *= 1.08f;
 		size += Rml::Vector2f(
 			text->GetBox().GetCumulativeEdge(Rml::BoxArea::Padding, Rml::BoxEdge::Left) + text->GetBox().GetCumulativeEdge(Rml::BoxArea::Padding, Rml::BoxEdge::Right),
 			text->GetBox().GetCumulativeEdge(Rml::BoxArea::Padding, Rml::BoxEdge::Top) + text->GetBox().GetCumulativeEdge(Rml::BoxArea::Padding, Rml::BoxEdge::Bottom)

@@ -2,6 +2,7 @@
 
 #include "SDL3/SDL_dialog.h"
 #include "gui/helper/eventPasser.h"
+#include "gui/helper/tooltip.h"
 #include "gui/mainWindow/circuitView/circuitViewWidget.h"
 #include "gui/mainWindow/mainWindow.h"
 #include "gui/viewportManager/circuitView/tools/other/portSelector.h"
@@ -533,6 +534,7 @@ void BlockCreationWindow::addListItem(
 	positionOnBlockXFormControl->SetValue(std::to_string(posOnBlockValue.dx));
 	positionOnBlockYFormControl->SetValue(std::to_string(posOnBlockValue.dy));
 	Rml::ElementPtr switchPortOffset = document->CreateElement("button");
+	/* trust me bro */ new Tooltip(mainWindow.getSdlWindoHandle(), switchPortOffset.get(), "Visual Port Offset");
 	switchPortOffset->AppendChild(std::move(document->CreateTextNode(std::string(1, portOffsetValue))));
 	switchPortOffset->AddEventListener(Rml::EventId::Click, new EventPasser([this, endId](Rml::Event& event) {
 		Rml::Element* row = document->GetElementById("ConnectionListItem Id: " + std::to_string(endId));
@@ -577,6 +579,7 @@ void BlockCreationWindow::addListItem(
 	bitWidthFormControl->SetValue(std::to_string(bitWidthValue));
 
 	Rml::ElementPtr setPositionButton = document->CreateElement("button");
+	/* trust me bro */ new Tooltip(mainWindow.getSdlWindoHandle(), setPositionButton.get(), "Set Position To Connect To");
 	setPositionButton->AppendChild(std::move(document->CreateTextNode("S")));
 	setPositionButton->AddEventListener(Rml::EventId::Click, new EventPasser([this, endId](Rml::Event& event) {
 		auto tool = std::dynamic_pointer_cast<PortSelector>(
@@ -617,6 +620,7 @@ void BlockCreationWindow::addListItem(
 	rowInRow->AppendChild(std::move(bitWidth))->SetClass("connection-list-item-bit-width", true);
 	// remove row button
 	Rml::ElementPtr remove = document->CreateElement("button");
+	/* trust me bro */ new Tooltip(mainWindow.getSdlWindoHandle(), remove.get(), "Remove Port");
 	remove->AppendChild(std::move(document->CreateTextNode("-")));
 	remove->SetClass("remove-connection-button", true);
 	if (isInput) {
