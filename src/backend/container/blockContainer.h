@@ -15,6 +15,7 @@ public:
 	inline BlockDataManager& getBlockDataManager() const { return blockDataManager; }
 
 	void clear(Difference* difference);
+	bool isEmpty() const { return blocks.empty(); }
 
 	inline BlockType getBlockType() const { return selfBlockType; }
 	inline void setBlockType(BlockType type) { if (getBlockTypeCount(type) == 0) selfBlockType = type; }
@@ -107,7 +108,6 @@ private:
 	unsigned int getBitwidthOfJunction(block_id_t blockId, std::unordered_set<block_id_t>& visited) const;
 	unsigned int getBitwidthOfJunction(const Block* block) const;
 
-
 	inline Block* getBlock_(Position position);
 	inline Block* getBlock_(block_id_t blockId);
 	inline Cell* getCell(Position position) { return grid.get(position); }
@@ -118,7 +118,6 @@ private:
 	void placeBlockCells(const Block* block);
 	void removeBlockCells(const Block* block);
 	block_id_t getNewId() { return ++lastId; }
-
 
 	BlockType selfBlockType = BlockType::NONE;
 	CircuitManager& circuitManager;

@@ -15,6 +15,7 @@ circuit_id_t CircuitManager::createNewCircuit(const std::string& name, const std
 	}
 
 	setupBlockData(id);
+	circuit->editCount = 0;
 
 	if (createEval) {
 		auto evaluatorId = evaluatorManager.createNewEvaluator(*this, id);
