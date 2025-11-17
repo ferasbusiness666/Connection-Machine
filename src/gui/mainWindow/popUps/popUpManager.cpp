@@ -343,6 +343,7 @@ void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature 
 			attachments.push_back(appStateAttachment);
 
 			Network::Attachment logsAttachment;
+			logInfo("Logs will now be attached to feedback. no logs past this point", "PopUpManager::addFeedbackPopup");
 			std::string logs = getLogContents();
 			std::string pathSanitizedLogs = sanitizeLogsForPaths(logs);
 			std::optional<std::string> compressedLogs = compressString(pathSanitizedLogs);
