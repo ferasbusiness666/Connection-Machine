@@ -18,8 +18,8 @@
 std::optional<PopUpManager::PopUpWindow> PopUpManager::createPopUp(bool blocking, const std::string& windowName, unsigned int width, unsigned int height) {
 	if (blocking) {
 		Rml::Element* allPopUps = mainWindow.getRmlDocument()->GetElementById("all-pop-ups");
-		allPopUps->SetClass("invisible", false);
 		assert(allPopUps);
+		allPopUps->SetClass("invisible", false);
 		Rml::Element* popUpOverlay = allPopUps->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
 		popUpOverlay->SetClass("pop-up-overlay", true);
 		Rml::Element* popUpOverlayInternal = popUpOverlay->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
