@@ -330,7 +330,8 @@ void BlockCreationWindow::updateFromMenu() {
 
 	} catch (const std::exception& e) {
 		// Top level fatal error catcher, logs issue
-		logError("{}", "", e.what());
+		logError("Failed to save IC settings. {}", "BlockCreationWindow", e.what());
+		mainWindow.logError("Failed to save IC settings. {}", e.what());
 		return;
 	}
 
