@@ -55,18 +55,15 @@ void App::preShutdownStep() {
 App::~App() { logInfo("App shut down", "App"); }
 
 std::shared_ptr<SdlWindow> App::registerWindow(const std::string& windowName) { return sdlWindows.emplace_back(std::make_shared<SdlWindow>(windowName)); }
+std::shared_ptr<SdlWindow> App::registerWindow(SDL_Window* handle) { return sdlWindows.emplace_back(std::make_shared<SdlWindow>(handle)); }
 std::shared_ptr<SdlWindow> App::registerWindow(const std::string& windowName, unsigned int width, unsigned int height) {
 	return sdlWindows.emplace_back(std::make_shared<SdlWindow>(windowName, width, height));
 }
 
-void App::deregisterWindow(std::shared_ptr<SdlWindow>& sdlWindow) {
-	auto iter = std::find(sdlWindows.begin(), sdlWindows.end(), sdlWindow);
+void App::deregisterWindow(SdlWindow& sdlWindow) {
+	auto iter = std::find_if(sdlWindows.begin(), sdlWindows.end(), [sdlWindow = &sdlWindow](const std::shared_ptr<SdlWindow>& a) { return a.get() == sdlWindow; });
 	if (iter != sdlWindows.end()) sdlWindows.erase(iter);
-}
-
-void App::deregisterWindow(const SdlWindow* sdlWindow) {
-	auto iter = std::find_if(sdlWindows.begin(), sdlWindows.end(), [sdlWindow](const std::shared_ptr<SdlWindow>& a) { return a.get() == sdlWindow; });
-	if (iter != sdlWindows.end()) sdlWindows.erase(iter);
+	sdlWindow.clear();
 }
 
 void App::newMainWindow() {
@@ -141,15 +138,17 @@ void App::runLoop() {
 				}
 				default: {
 					// Send event to all windows
-					std::vector<SdlWindow*> windowsToSendEvents;
+					std::vector<std::weak_ptr<SdlWindow>> windowsToSendEvents;
 					for (unsigned int i = 0; i < sdlWindows.size(); ++i) {
-						windowsToSendEvents.push_back(sdlWindows[i].get());
+						windowsToSendEvents.push_back(sdlWindows[i]);
 					}
 					for (unsigned int i = 0; i < windowsToSendEvents.size(); ++i) {
-						if (std::any_of(sdlWindows.begin(), sdlWindows.end(), [windowPtr = windowsToSendEvents[i]](const std::shared_ptr<SdlWindow>& a) {
+						std::shared_ptr<SdlWindow> thisWindow = windowsToSendEvents[i].lock();
+						if (!thisWindow) continue;
+						if (std::any_of(sdlWindows.begin(), sdlWindows.end(), [windowPtr = thisWindow.get()](const std::shared_ptr<SdlWindow>& a) {
 							return a.get() == windowPtr;
 						})) {
-							windowsToSendEvents[i]->recieveEvent(event);
+							thisWindow->recieveEvent(event);
 						}
 					}
 				}
@@ -328,7 +327,7 @@ void App::launchRmlDebugger(Rml::Context* rmlContext) {
 				if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
 					Rml::RemoveContext(debuggerRmlContext->GetName());
 					MainRenderer::get().deregisterWindow(windowId);
-					App::get().deregisterWindow(sdlWindow);
+					App::get().deregisterWindow(*sdlWindow);
 					this->debuggingWindow = nullptr;
 					Rml::Debugger::Shutdown();
 					return true;

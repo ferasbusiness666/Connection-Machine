@@ -17,7 +17,7 @@ public:
 	CircuitViewWidget(Environment& environment, Rml::ElementDocument* document, MainWindow& mainWindow, WindowId windowId, Rml::Element* element);
 	~CircuitViewWidget() { element->RemoveEventListener("keydown", &keybindHandler); }
 
-	// setup
+	inline MainWindow& getMainWindow() { return mainWindow; }
 	inline CircuitView* getCircuitView() { return circuitView.get(); }
 	inline CircuitFileManager* getFileManager() { return fileManager; }
 	void setSimState(bool state);

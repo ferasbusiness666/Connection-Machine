@@ -82,6 +82,9 @@ VulkanDevice* VulkanInstance::getDevice() {
 		logInfo("Creating tmp SDL window to create devise");
 		SdlWindow sdlWindow("tmp", 1, 1);
 		VkSurfaceKHR surface = sdlWindow.createVkSurface(getVkbInstance());
+		if (!surface) {
+			throwFatalError("SdlWindow surface was not created and was stopped VulkanDevice creation.");
+		}
 		device.emplace(surface);
 	}
 	return &device.value();

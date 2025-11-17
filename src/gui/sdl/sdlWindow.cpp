@@ -17,7 +17,7 @@ bool resizingEventWatcher(void* data, SDL_Event* event) {
 }
 
 SdlWindow::SdlWindow(const std::string& name, unsigned int width, unsigned int height) {
-	logInfo("Creating SDL window...");
+	logInfo("Creating SDL window...", "SdlWindow");
 
 	handle = SDL_CreateWindow(name.c_str(), width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN | SDL_WINDOW_HIGH_PIXEL_DENSITY);
 	if (!handle)
@@ -41,11 +41,45 @@ SdlWindow::SdlWindow(const std::string& name, unsigned int width, unsigned int h
 	windowScalingSize = scaleX;
 }
 
-SdlWindow::~SdlWindow() {
-	logInfo("Destroying SDL window...");
+SdlWindow::SdlWindow(SDL_Window* handle) : handle(handle) {
+	logInfo("Using pre created SDL window...", "SdlWindow");
 
-	if (vkSurface.has_value()) SDL_Vulkan_DestroySurface(vkInstance, vkSurface.value(), nullptr);
-	SDL_DestroyWindow(handle);
+	if (!handle) {
+		throwFatalError("SdlWindow can't use NULL window!");
+	}
+
+	SDL_AddEventWatch(resizingEventWatcher, this);
+
+	int winW, winH, drawW, drawH;
+	SDL_GetWindowSize(handle, &winW, &winH);
+	SDL_GetWindowSizeInPixels(handle, &drawW, &drawH);
+
+	float scaleX = (float)drawW / winW;
+	float scaleY = (float)drawH / winH;
+
+	if (!approx_equals(scaleX, scaleY)) {
+		logError("width scale not the same x={} y={}", "SdlWindow", scaleX, scaleY);
+	}
+
+	windowScalingSize = scaleX;
+}
+
+SdlWindow::~SdlWindow() {
+	clear();
+}
+
+void SdlWindow::clear() {
+	if (handle) logInfo("Destroying SDL window...");
+	if (vkSurface.has_value()) {
+		SDL_Vulkan_DestroySurface(vkInstance, vkSurface.value(), nullptr);
+		vkSurface.reset();
+	}
+	if (handle) {
+		SDL_DestroyWindow(handle);
+		handle = nullptr;
+	}
+	doRender = nullptr;
+	doRecieveEvent = nullptr;
 }
 
 bool SdlWindow::recieveEvent(SDL_Event& event) {
@@ -54,7 +88,7 @@ bool SdlWindow::recieveEvent(SDL_Event& event) {
 	}
 	if (isThisMyEvent(event)) {
 		if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
-			App::get().deregisterWindow(this);
+			App::get().deregisterWindow(*this);
 		}
 		return true;
 	}
@@ -63,6 +97,7 @@ bool SdlWindow::recieveEvent(SDL_Event& event) {
 }
 
 void SdlWindow::sendKillEvent() {
+	if (!handle) return;
 	SDL_Event e;
 	SDL_zero(e);
 
@@ -73,6 +108,7 @@ void SdlWindow::sendKillEvent() {
 }
 
 void SdlWindow::instantKillEvent() {
+	if (!handle) return;
 	SDL_Event e;
 	SDL_zero(e);
 
@@ -83,24 +119,29 @@ void SdlWindow::instantKillEvent() {
 }
 
 bool SdlWindow::isThisMyEvent(const SDL_Event& event) {
+	if (!handle) return false;
 	if (event.type == 2050) return true; // the fuck is this? - jack quay jamison
 	return SDL_GetWindowFromEvent(&event) == handle;
 }
 
 std::pair<uint32_t, uint32_t> SdlWindow::getSize() {
+	if (!handle) return {1, 1};
 	int w, h;
 	SDL_GetWindowSize(handle, &w, &h);
 	return { w, h };
 }
 
 VkSurfaceKHR SdlWindow::createVkSurface(VkInstance instance) {
+	if (!handle) return nullptr;
+
 	if (vkSurface.has_value()) return vkSurface.value();
 
 	vkInstance = instance;
 
 	VkSurfaceKHR surface;
 	if (!SDL_Vulkan_CreateSurface(handle, instance, nullptr, &surface)) {
-		throwFatalError("SDL could not create vulkan surface! SDL_Error: " + std::string(SDL_GetError()));
+		logError("SDL could not create vulkan surface! SDL_Error: {}", "SdlWindow", std::string(SDL_GetError()));
+		return nullptr;
 	}
 
 	vkSurface = surface;

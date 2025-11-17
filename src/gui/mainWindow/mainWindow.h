@@ -58,7 +58,8 @@ public:
 	bool recieveEvent(SDL_Event& event);
 	void updateRml();
 
-	inline SDL_Window* getSdlWindow() { return sdlWindow->getHandle(); };
+	inline SDL_Window* getSdlWindoHandle() { return sdlWindow->getHandle(); };
+	inline SdlWindow* getSdlWindo() { return sdlWindow.get(); };
 	inline float getSdlWindowScalingSize() const { return sdlWindow->getWindowScalingSize(); }
 	inline std::vector<std::shared_ptr<CircuitViewWidget>> getCircuitViewWidgets() { return circuitViewWidgets; };
 	inline std::shared_ptr<CircuitViewWidget> getCircuitViewWidget(unsigned int i) { return circuitViewWidgets[i]; };

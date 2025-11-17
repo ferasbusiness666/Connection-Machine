@@ -41,8 +41,7 @@ std::optional<PopUpManager::PopUpWindow> PopUpManager::createPopUp(bool blocking
 		WindowId windowId = MainRenderer::get().registerWindow(sdlWindow);
 		Rml::Context* rmlContext = Rml::CreateContext("popup_" + std::to_string(windowId), Rml::Vector2i(sdlWindow->getSize().first, sdlWindow->getSize().second));
 		if (rmlContext) {
-			Rml::ElementDocument* rmlDocument =
-				rmlContext->LoadDocument(DirectoryManager::getResourceDirectory().generic_string() + "/gui/mainWindow/popUpWindow/popUpWindow.rml");
+			Rml::ElementDocument* rmlDocument = rmlContext->LoadDocument(DirectoryManager::getResourceDirectory().generic_string() + "/gui/mainWindow/popUpWindow/popUpWindow.rml");
 			sdlWindow->setRenderFunction([windowId, rmlContext]() {
 				RmlRenderInterface* rmlRenderInterface = dynamic_cast<RmlRenderInterface*>(Rml::GetRenderInterface());
 				if (rmlRenderInterface) {
@@ -58,7 +57,7 @@ std::optional<PopUpManager::PopUpWindow> PopUpManager::createPopUp(bool blocking
 					if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
 						Rml::RemoveContext(rmlContext->GetName());
 						MainRenderer::get().deregisterWindow(windowId);
-						App::get().deregisterWindow(sdlWindow);
+						App::get().deregisterWindow(*sdlWindow);
 						return true;
 					}
 
@@ -78,7 +77,7 @@ std::optional<PopUpManager::PopUpWindow> PopUpManager::createPopUp(bool blocking
 				App::get().queForEndOfUpdate([windowId, rmlContext, sdlWindow]() {
 					Rml::RemoveContext(rmlContext->GetName());
 					MainRenderer::get().deregisterWindow(windowId);
-					App::get().deregisterWindow(sdlWindow);
+					App::get().deregisterWindow(*sdlWindow);
 				});
 			});
 		}

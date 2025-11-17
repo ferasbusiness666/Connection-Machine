@@ -3,9 +3,12 @@
 #include <RmlUi/Core/Input.h>
 
 #include "gui/helper/eventPasser.h"
+#include "gui/helper/tooltip.h"
 #include "gui/mainWindow/circuitView/circuitViewWidget.h"
 
 #include "gui/helper/uiControllers/numberControllers.h"
+#include "gui/mainWindow/mainWindow.h"
+
 
 SimControlsManager::SimControlsManager(
 	Rml::ElementDocument* document,
@@ -17,6 +20,7 @@ SimControlsManager::SimControlsManager(
 	limitSpeedElement = document->GetElementById("limit-speed-checkbox");
 	tpsInputElement = document->GetElementById("tps-input");
 
+	/* trust me bro */ new Tooltip(circuitViewWidget->getMainWindow().getSdlWindoHandle(), limitSpeedElement, "Limit Speed");
 	toggleSimElement->AddEventListener("click", new EventPasser(std::bind(&SimControlsManager::toggleSimulation, this)));
 	realisticElement->AddEventListener("click", new EventPasser(std::bind(&SimControlsManager::setRealistic, this)));
 	limitSpeedElement->AddEventListener("click", new EventPasser([this](Rml::Event& event) {
@@ -25,37 +29,32 @@ SimControlsManager::SimControlsManager(
 	}));
 
 	Evaluator* evaluator = this->circuitViewWidget->getCircuitView()->getEvaluator();
-	new UiDataController<float>(
-		tpsInputElement,
-		evaluator ? evaluator->getTickrate() : 0,
-		[this](float value) {
-			Evaluator* evaluator = this->circuitViewWidget->getCircuitView()->getEvaluator();
-			if (evaluator) evaluator->setTickrate(value);
-		},
-		[dataUpdateEventManager = &dataUpdateEventManager, circuitViewWidget](std::function<void(double)> func) {
-			std::shared_ptr<DataUpdateEventManager::DataUpdateEventReceiver> DUER = std::make_shared<DataUpdateEventManager::DataUpdateEventReceiver>(*dataUpdateEventManager);
-			DUER->linkFunction("evaluatorTargetTickrateSet", [circuitViewWidget, func](const DataUpdateEventManager::EventData* dataEvent) {
-				auto data = dataEvent->cast<std::pair<evaluator_id_t, double>>();
-				Evaluator* evaluator = circuitViewWidget->getCircuitView()->getEvaluator();
-				if (!evaluator) return;
-				if (data->get().first == evaluator->getEvaluatorId()) func(data->get().second);
-			});
-			return DUER;
-		},
-		[](float value, const std::string* string) -> std::string {
-			if (string) {
-				if (string->empty()) return "tps";
-				std::string tpsStr = fmt::format("{:.1f}", value);
-				if (tpsStr.back() == '0') tpsStr.pop_back();
-				if (string->back() != '.' && tpsStr.back() == '.') tpsStr.pop_back();
-				return tpsStr + "tps";
-			}
+	new UiDataController<float>(tpsInputElement, evaluator ? evaluator->getTickrate() : 0, [this](float value) {
+		Evaluator* evaluator = this->circuitViewWidget->getCircuitView()->getEvaluator();
+		if (evaluator) evaluator->setTickrate(value);
+	}, [dataUpdateEventManager = &dataUpdateEventManager, circuitViewWidget](std::function<void(double)> func) {
+		std::shared_ptr<DataUpdateEventManager::DataUpdateEventReceiver> DUER =
+			std::make_shared<DataUpdateEventManager::DataUpdateEventReceiver>(*dataUpdateEventManager);
+		DUER->linkFunction("evaluatorTargetTickrateSet", [circuitViewWidget, func](const DataUpdateEventManager::EventData* dataEvent) {
+			auto data = dataEvent->cast<std::pair<evaluator_id_t, double>>();
+			Evaluator* evaluator = circuitViewWidget->getCircuitView()->getEvaluator();
+			if (!evaluator) return;
+			if (data->get().first == evaluator->getEvaluatorId()) func(data->get().second);
+		});
+		return DUER;
+	}, [](float value, const std::string* string) -> std::string {
+		if (string) {
+			if (string->empty()) return "tps";
 			std::string tpsStr = fmt::format("{:.1f}", value);
 			if (tpsStr.back() == '0') tpsStr.pop_back();
-			if (tpsStr.back() == '.') tpsStr.pop_back();
+			if (string->back() != '.' && tpsStr.back() == '.') tpsStr.pop_back();
 			return tpsStr + "tps";
 		}
-	);
+		std::string tpsStr = fmt::format("{:.1f}", value);
+		if (tpsStr.back() == '0') tpsStr.pop_back();
+		if (tpsStr.back() == '.') tpsStr.pop_back();
+		return tpsStr + "tps";
+	});
 
 	// std::stringstream ss(correctValue);
 	// if (!approx_equals(evaluator->getTickrate(), tps)) {
