@@ -2,6 +2,10 @@
 
 #include "layer4_replacement.h"
 
+#ifdef TRACY_PROFILER
+#include <tracy/Tracy.hpp>
+#endif
+
 Replacement& Replacer::makeReplacement(int layer) {
 	// replacements.emplace_back(
 	// 	this,
@@ -231,11 +235,15 @@ void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, int layer, int junctionOv
 	}
 }
 
-
-
 void Replacer::mergeJunctions(SimPauseGuard& pauseGuard, int layer) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	std::vector<middle_id_t> allMiddleIds = middleIdProvider.getUsedIds();
 	for (const middle_id_t id : allMiddleIds) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 		if (replacementIdLayers.contains(id)) {
 			if (replacementIdLayers.at(id) >= layer) {
 				continue;
@@ -295,8 +303,8 @@ void Replacer::mergeJunctions(SimPauseGuard& pauseGuard, int layer) {
 
 Replacer::JunctionFloodFillResult Replacer::junctionFloodFill(middle_id_t junctionId) {
 	JunctionFloodFillResult result;
-	std::set<middle_id_t> visited;
-	std::set<EvalConnectionPoint> visitedOutputs;
+	std::unordered_set<middle_id_t> visited;
+	std::unordered_set<EvalConnectionPoint> visitedOutputs;
 	std::queue<middle_id_t> queue;
 	queue.push(junctionId);
 	visited.insert(junctionId);
