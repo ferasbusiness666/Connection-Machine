@@ -3,6 +3,7 @@
 #include "SDL3/SDL_video.h"
 #include "app.h"
 #include "computerAPI/directoryManager.h"
+#include "gui/helper/eventPasser.h"
 
 Rml::Vector2f measureWrappedText(const Rml::String& text, Rml::Element* element, float max_width = 0) {
 	if (max_width == 0) {
@@ -55,14 +56,8 @@ Rml::Vector2f measureWrappedText(const Rml::String& text, Rml::Element* element,
 
 Tooltip::Tooltip(SDL_Window* parent, Rml::Element* element, const std::string& message) : parent(parent), element(element), message(message) {
 	element->AddEventListener(Rml::EventId::Mouseover, this);
-	element->AddEventListener(Rml::EventId::Mousemove, this);
-	element->AddEventListener(Rml::EventId::Mouseout, this);
-}
-
-Tooltip::~Tooltip() {
-	element->RemoveEventListener(Rml::EventId::Mouseover, this);
-	element->RemoveEventListener(Rml::EventId::Mousemove, this);
-	element->RemoveEventListener(Rml::EventId::Mouseout, this);
+	otherEventPasser = new EventPasser([this](Rml::Event& event){ this->ProcessEvent(event); });
+	element->AddEventListener(Rml::EventId::Mouseout, otherEventPasser);
 }
 
 void Tooltip::create(Rml::Event& event) {
@@ -154,4 +149,6 @@ void Tooltip::ProcessEvent(Rml::Event& event) {
 	}
 }
 
-void Tooltip::OnDetach(Rml::Element* element) { delete this; }
+void Tooltip::OnDetach(Rml::Element* element) {
+	delete this;
+}

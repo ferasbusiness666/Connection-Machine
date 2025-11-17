@@ -93,10 +93,9 @@ MainWindow::MainWindow(Environment& environment) :
 }
 
 MainWindow::~MainWindow() {
-	App::get().deregisterWindow(*sdlWindow);
-	Rml::RemoveContext(rmlContext->GetName());
-	MainRenderer::get().deregisterWindow(windowId);
-	rmlContext = nullptr;
+	if (sdlWindow) App::get().deregisterWindow(*sdlWindow);
+	if (rmlContext) Rml::RemoveContext(rmlContext->GetName());
+	if (windowId != 0) MainRenderer::get().deregisterWindow(windowId);
 }
 
 bool MainWindow::recieveEvent(SDL_Event& event) {
@@ -111,7 +110,12 @@ bool MainWindow::recieveEvent(SDL_Event& event) {
 
 	if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
 		if (App::get().closeMainWindow(this)) {
+			Rml::RemoveContext(rmlContext->GetName());
+			rmlContext = nullptr;
+			MainRenderer::get().deregisterWindow(windowId);
+			windowId = 0;
 			App::get().deregisterWindow(*sdlWindow);
+			sdlWindow = nullptr;
 		}
 		return true;
 	}

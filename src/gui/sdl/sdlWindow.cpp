@@ -70,6 +70,8 @@ SdlWindow::~SdlWindow() {
 
 void SdlWindow::clear() {
 	if (handle) logInfo("Destroying SDL window...");
+	doRender = nullptr;
+	doRecieveEvent = nullptr;
 	if (vkSurface.has_value()) {
 		SDL_Vulkan_DestroySurface(vkInstance, vkSurface.value(), nullptr);
 		vkSurface.reset();
@@ -78,8 +80,6 @@ void SdlWindow::clear() {
 		SDL_DestroyWindow(handle);
 		handle = nullptr;
 	}
-	doRender = nullptr;
-	doRecieveEvent = nullptr;
 }
 
 bool SdlWindow::recieveEvent(SDL_Event& event) {
