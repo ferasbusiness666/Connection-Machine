@@ -70,6 +70,7 @@ SdlWindow::~SdlWindow() {
 
 void SdlWindow::clear() {
 	if (handle) logInfo("Destroying SDL window...");
+	SDL_RemoveEventWatch(resizingEventWatcher, this);
 	doRender = nullptr;
 	doRecieveEvent = nullptr;
 	if (vkSurface.has_value()) {
