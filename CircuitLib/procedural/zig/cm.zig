@@ -18,7 +18,9 @@ pub extern "env" fn createBlockAtPosition(x: coord_t, y: coord_t, rotation: Rota
 
 pub extern "env" fn createConnection(source_block_id: block_id_t, source_port_id: connection_end_id_t, destination_source_id: block_id_t, destination_port_id: connection_end_id_t) void;
 pub extern "env" fn addConnectionInput(external_port_x: coord_t, external_port_y: coord_t, internal_block_id: block_id_t, internal_port_id: connection_end_id_t) void;
+pub extern "env" fn addConnectionInputNamed(external_port_x: coord_t, external_port_y: coord_t, internal_block_id: block_id_t, internal_port_id: connection_end_id_t, port_name: [*:0]const u8) void;
 pub extern "env" fn addConnectionOutput(external_port_x: coord_t, external_port_y: coord_t, internal_block_id: block_id_t, internal_port_id: connection_end_id_t) void;
+pub extern "env" fn addConnectionOutputNamed(external_port_x: coord_t, external_port_y: coord_t, internal_block_id: block_id_t, internal_port_id: connection_end_id_t, port_name: [*:0]const u8) void;
 
 pub extern "env" fn setSize(width: coord_t, height: coord_t) void;
 pub extern "env" fn logInfo(msg: [*:0]const u8) void;

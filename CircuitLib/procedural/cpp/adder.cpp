@@ -1,4 +1,5 @@
 #include "cm.h"
+#include <string>
 
 extern "C" {
 
@@ -15,19 +16,19 @@ bool generateCircuit() {
 	BlockType BlockType_SWITCH = getPrimitiveType("SWITCH");
 	BlockType BlockType_LIGHT = getPrimitiveType("LIGHT");
 
-	setSize(2, size*2);
+	setSize(3, size*2);
 
 	block_id_t C;
 	for (int i = 0; i < size; i++) {
 		block_id_t A = createBlockAtPosition(-1, i*2, 0, BlockType_SWITCH); // A
 		block_id_t B = createBlockAtPosition(-2, i*2, 0, BlockType_SWITCH); // B
-		addConnectionInput(0, i, A, 0);
-		addConnectionInput(0, i+size, B, 0);
+		addConnectionInputNamed(0, i, A, 0, ("a" + std::to_string(i)).c_str());
+		addConnectionInputNamed(0, i+size, B, 0, ("b" + std::to_string(i)).c_str());
 		block_id_t AxorB = createBlockAtPosition(0, i*2, 0, BlockType_XOR); // A ^ B
 		createConnection(A, 0, AxorB, 0);
 		createConnection(B, 0, AxorB, 0);
 		block_id_t out = createBlockAtPosition(2, i*2, 0, BlockType_LIGHT); // out
-		addConnectionOutput(1, i, out, 0);
+		addConnectionOutputNamed(2, i, out, 0, ("o" + std::to_string(i)).c_str());
 		if (i == 0) {
 			createConnection(AxorB, 1, out, 0); // out = A ^ B
 		} else {

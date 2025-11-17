@@ -38,7 +38,9 @@ extern "C"
 	externalFunction(createBlockAtPosition) block_id_t createBlockAtPosition(coord_t x, coord_t y, Rotation rotation, BlockType blockType);
 	externalFunction(createConnection) void createConnection(block_id_t outputBlockId, int outputPortId, block_id_t inputBlockId, int inputPortId);
 	externalFunction(addConnectionInput) void addConnectionInput(coord_t portX, coord_t portY, block_id_t internalBlockId, connection_end_id_t internalBlockPortId);
+	externalFunction(addConnectionInputNamed) void addConnectionInputNamed(coord_t portX, coord_t portY, block_id_t internalBlockId, connection_end_id_t internalBlockPortId, const char* portName);
 	externalFunction(addConnectionOutput) void addConnectionOutput(coord_t portX, coord_t portY, block_id_t internalBlockId, connection_end_id_t internalBlockPortId);
+	externalFunction(addConnectionOutputNamed) void addConnectionOutputNamed(coord_t portX, coord_t portY, block_id_t internalBlockId, connection_end_id_t internalBlockPortId, const char* portName);
 	externalFunction(setSize) void setSize(coord_t width, coord_t height);
 	externalFunction(logInfo) void logInfo(const char* msg);
 	externalFunction(logError) void logError(const char* msg);

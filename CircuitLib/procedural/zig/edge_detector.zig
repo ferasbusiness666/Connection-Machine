@@ -42,7 +42,7 @@ export fn generateCircuit() bool {
     };
 
     const input = cm.createBlockAtPosition(0, 0, 0, SWITCH);
-    cm.addConnectionInput(0, 0, input, 0);
+    cm.addConnectionInputNamed(0, 0, input, 0, "i");
     cm.createConnection(input, 0, endGate, 0);
 
     var wait = cm.createBlockAtPosition(1, 1, 0, NOR);
@@ -59,7 +59,7 @@ export fn generateCircuit() bool {
 
     const output = cm.createBlockAtPosition(pulse + 3, 0, 0, LIGHT);
     cm.createConnection(endGate, 1, output, 0);
-    cm.addConnectionOutput(0, 0, output, 0);
+    cm.addConnectionOutputNamed(0, 0, output, 0, "o");
 
     return true;
 }
