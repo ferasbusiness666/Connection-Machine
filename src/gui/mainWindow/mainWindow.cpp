@@ -68,10 +68,24 @@ MainWindow::MainWindow(Environment& environment) :
 	rmlDocument->AddEventListener(Rml::EventId::Keydown, &keybindHandler);
 	keybindHandler.addListener("Keybinds/Editing/Paste", [this]() { toolManagerManager.setTool("paste tool"); });
 	keybindHandler.addListener("Keybinds/Editing/Tools/State Changer", [this]() { toolManagerManager.setTool("state changer"); });
-	keybindHandler.addListener("Keybinds/Editing/Tools/Connection", [this]() { toolManagerManager.setTool("connection"); });
+	keybindHandler.addListener("Keybinds/Editing/Tools/Connection", [this]() {
+		toolManagerManager.setTool("connection");
+		toolManagerManager.setMode("Single");
+	});
+	keybindHandler.addListener("Keybinds/Editing/Tools/Tensor Connect", [this]() {
+		toolManagerManager.setTool("connection");
+		toolManagerManager.setMode("Tensor");
+	});
 	keybindHandler.addListener("Keybinds/Editing/Tools/Move", [this]() { toolManagerManager.setTool("move"); });
 	keybindHandler.addListener("Keybinds/Editing/Tools/Mode Changer", [this]() { toolManagerManager.setTool("mode changer"); });
-	keybindHandler.addListener("Keybinds/Editing/Tools/Placement", [this]() { toolManagerManager.setTool("placement"); });
+	keybindHandler.addListener("Keybinds/Editing/Tools/Placement", [this]() {
+		toolManagerManager.setTool("placement");
+		toolManagerManager.setMode("Single");
+	});
+	keybindHandler.addListener("Keybinds/Editing/Tools/Area Placement", [this]() {
+		toolManagerManager.setTool("placement");
+		toolManagerManager.setMode("Area");
+	});
 	keybindHandler.addListener("Keybinds/Editing/Tools/Selection Maker", [this]() { toolManagerManager.setTool("selection maker"); });
 	keybindHandler.addListener("Keybinds/Window/Toggle Fullscreen", [this]() { sdlWindow->toggleBorderlessFullscreen(); });
 	keybindHandler.addListener("Keybinds/Window/Increase UI Scale", [this]() { offsetUiScale(kUiScaleStep); });
