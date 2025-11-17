@@ -221,6 +221,8 @@ if (APPLE AND CONNECTION_MACHINE_DISTRIBUTE_APP)
 
 			file(APPEND ${PACKAGE_SCRIPT} \"hdiutil detach \\\"/Volumes/${CPACK_PACKAGE_FILE_NAME}\\\"\\n\")
 
+			file(APPEND ${PACKAGE_SCRIPT} \"rm -r \\\"./${CPACK_PACKAGE_FILE_NAME}.dmg\\\"\\n\")
+
 			file(APPEND ${PACKAGE_SCRIPT} \"codesign --force -vvv --deep --strict --options runtime --sign \\\"${TEAM_ID}\\\" \\\"./out/${APP_NAME}.app\\\"\\n\")
 
 			file(APPEND ${PACKAGE_SCRIPT} \"codesign --verify --deep --strict --verbose=2 \\\"./out/${APP_NAME}.app\\\"\\n\")
