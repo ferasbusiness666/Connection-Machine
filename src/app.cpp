@@ -62,7 +62,11 @@ std::shared_ptr<SdlWindow> App::registerWindow(const std::string& windowName, un
 
 void App::deregisterWindow(SdlWindow& sdlWindow) {
 	auto iter = std::find_if(sdlWindows.begin(), sdlWindows.end(), [sdlWindow = &sdlWindow](const std::shared_ptr<SdlWindow>& a) { return a.get() == sdlWindow; });
-	if (iter != sdlWindows.end()) sdlWindows.erase(iter);
+	std::shared_ptr<SdlWindow> sdlWindowPtr = nullptr;
+	if (iter != sdlWindows.end()) {
+		sdlWindowPtr = *iter; // keep shared ptr alive until end of function
+		sdlWindows.erase(iter);
+	}
 	sdlWindow.clear();
 }
 
