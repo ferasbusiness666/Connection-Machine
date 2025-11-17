@@ -26,36 +26,27 @@ void MenuBar::initialize(Rml::Element* element) {
 }
 
 void MenuBar::triggerEvent(const std::string& name) {
-	auto logMenuAction = [name]() { logInfo("Menu action triggered: {}", "MenuBar", name); };
-
 	if (name == "setting") {
-		logMenuAction();
 		settingsWindow->toggleVisibility();
 	} else if (name == "menu-feedback") {
-		logMenuAction();
 		window->getPopUpManager().addFeedbackPopup();
 	} else if (name == "file-new") {
-		logMenuAction();
 		window->getActiveCircuitViewWidget()->newCircuit();
 	} else if (name == "file-open") {
-		logMenuAction();
 		window->getActiveCircuitViewWidget()->load();
 	} else if (name == "file-save") {
-		logMenuAction();
 		window->getActiveCircuitViewWidget()->save();
 	} else if (name == "new-window") {
-		logMenuAction();
 		App::get().newMainWindow();
 	} else if (name == "close-window") {
-		logMenuAction();
 		App::get().closeMainWindow(window);
 	} else if (name == "about") {
-		logMenuAction();
 		this->window->getPopUpManager().aboutConnectionMachine();
 	} else if (name == "controls") {
-		logMenuAction();
 		this->window->getPopUpManager().controlsConnectionMachine();
 	} else {
 		logWarning("Event \"{}\" not reconized", "MenuBar", name);
+		return;
 	}
+	logInfo("Menu action triggered: {}", "MenuBar", name);
 }
