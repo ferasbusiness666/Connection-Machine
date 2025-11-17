@@ -3,6 +3,7 @@
     "cpp/andGate.cpp": "d831b85d307693b3ebb807d1e2a5a412",
     "cpp/box.cpp": "c4a9b81b2f3d2c04ff36a08ec170a407",
     "cpp/edgeDetector.cpp": "46a4d77471cf57665e9768be6d5d9d6c",
-    "zig/edge_detector.zig": "9f499c0dba526fc1c019ab7d7c595447",
-    "zig/bus_test.zig": "be7d3fb06977926039ace644ed7d41ed"
+    "zig/edge_detector.zig": "b6106b1633dd1b0f67c471e7b5c58bad",
+    "zig/bus_test.zig": "be7d3fb06977926039ace644ed7d41ed",
+    "zig/bus_adder.zig": "a2e2bfb6b76ecb8e0fb0bee786374185"
 }

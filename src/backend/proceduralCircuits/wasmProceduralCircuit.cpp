@@ -120,8 +120,8 @@ WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, Circu
 		});
 
 	wasmtime::Func createBlockAtPositionFunc = wasmtime::Func::wrap(*Wasm::getStore(),
-		[thisPtrPtr](int32_t x, int32_t y, int32_t rotation, int32_t blockType) -> int32_t {
-			return (*thisPtrPtr)->generatedCircuit->addBlock(Position(x, y), (Rotation)rotation, (BlockType)blockType);
+		[thisPtrPtr](int32_t x, int32_t y, int32_t orientation, int32_t blockType) -> int32_t {
+			return (*thisPtrPtr)->generatedCircuit->addBlock(Position(x, y), Orientation(orientation), (BlockType)blockType);
 		});
 
 	wasmtime::Func createConnectionFunc = wasmtime::Func::wrap(*Wasm::getStore(),
@@ -130,29 +130,34 @@ WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, Circu
 		});
 
 	wasmtime::Func addConnectionInputFunc = wasmtime::Func::wrap(*Wasm::getStore(),
-		[thisPtrPtr](int32_t portX, int32_t portY, int32_t internalBlockId, int32_t internalBlockPortId) {
+		[thisPtrPtr](int32_t portX, int32_t portY, int32_t internalBlockId, int32_t internalBlockPortId) -> int32_t {
 			(*thisPtrPtr)->generatedCircuit->addConnectionPort(true, connection_end_id_t((*thisPtrPtr)->portId), Vector(portX, portY), internalBlockId, connection_end_id_t(internalBlockPortId), "Port" + std::to_string((*thisPtrPtr)->portId));
-			++((*thisPtrPtr)->portId);
+			return ((*thisPtrPtr)->portId)++;
 		});
 
 	wasmtime::Func addConnectionInputNamedFunc = wasmtime::Func::wrap(*Wasm::getStore(),
-		[thisPtrPtr](int32_t portX, int32_t portY, int32_t internalBlockId, int32_t internalBlockPortId, int32_t portNameStrOffset) {
+		[thisPtrPtr](int32_t portX, int32_t portY, int32_t internalBlockId, int32_t internalBlockPortId, int32_t portNameStrOffset) -> int32_t {
 			std::string portName = (*thisPtrPtr)->wasmToString(portNameStrOffset);
 			(*thisPtrPtr)->generatedCircuit->addConnectionPort(true, connection_end_id_t((*thisPtrPtr)->portId), Vector(portX, portY), internalBlockId, connection_end_id_t(internalBlockPortId), portName);
-			++((*thisPtrPtr)->portId);
+			return ((*thisPtrPtr)->portId)++;
 		});
 
 	wasmtime::Func addConnectionOutputFunc = wasmtime::Func::wrap(*Wasm::getStore(),
-		[thisPtrPtr](int32_t portX, int32_t portY, int32_t internalBlockId, int32_t internalBlockPortId) {
+		[thisPtrPtr](int32_t portX, int32_t portY, int32_t internalBlockId, int32_t internalBlockPortId) -> int32_t {
 			(*thisPtrPtr)->generatedCircuit->addConnectionPort(false, connection_end_id_t((*thisPtrPtr)->portId), Vector(portX, portY), internalBlockId, connection_end_id_t(internalBlockPortId), "Port" + std::to_string((*thisPtrPtr)->portId));
-			++((*thisPtrPtr)->portId);
+			return ((*thisPtrPtr)->portId)++;
 		});
 
 	wasmtime::Func addConnectionOutputNamedFunc = wasmtime::Func::wrap(*Wasm::getStore(),
-		[thisPtrPtr](int32_t portX, int32_t portY, int32_t internalBlockId, int32_t internalBlockPortId, int32_t portNameStrOffset) {
+		[thisPtrPtr](int32_t portX, int32_t portY, int32_t internalBlockId, int32_t internalBlockPortId, int32_t portNameStrOffset) -> int32_t {
 			std::string portName = (*thisPtrPtr)->wasmToString(portNameStrOffset);
 			(*thisPtrPtr)->generatedCircuit->addConnectionPort(false, connection_end_id_t((*thisPtrPtr)->portId), Vector(portX, portY), internalBlockId, connection_end_id_t(internalBlockPortId), portName);
-			++((*thisPtrPtr)->portId);
+			return ((*thisPtrPtr)->portId)++;
+		});
+
+	wasmtime::Func setConnectionPortBitWidthFunc = wasmtime::Func::wrap(*Wasm::getStore(),
+		[thisPtrPtr](int32_t portId, int32_t bitWidth) {
+			(*thisPtrPtr)->generatedCircuit->setConnectionPortBitWidth(connection_end_id_t(portId), static_cast<unsigned int>(bitWidth));
 		});
 
 	wasmtime::Func setSizeFunc = wasmtime::Func::wrap(*Wasm::getStore(),
@@ -241,6 +246,11 @@ WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, Circu
 	linkerResult = linker.define(*Wasm::getStore(), "env", "addConnectionOutputNamed", addConnectionOutputNamedFunc);
 	if (!linkerResult) {
 		logError("could not create link to env.addConnectionOutputNamed", "WasmProceduralCircuit::WasmInstance");
+		return;
+	}
+	linkerResult = linker.define(*Wasm::getStore(), "env", "setConnectionPortBitWidth", setConnectionPortBitWidthFunc);
+	if (!linkerResult) {
+		logError("could not create link to env.setConnectionPortBitWidth", "WasmProceduralCircuit::WasmInstance");
 		return;
 	}
 	linkerResult = linker.define(*Wasm::getStore(), "env", "setSize", setSizeFunc);

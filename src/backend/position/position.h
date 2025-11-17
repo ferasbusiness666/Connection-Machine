@@ -635,7 +635,8 @@ struct Orientation {
 	Rotation rotation = Rotation::ZERO;
 	bool flipped = false;
 
-	Orientation(Rotation rotation = Rotation::ZERO, bool flipped = false) noexcept : rotation(rotation), flipped(flipped) { }
+	Orientation(int value) noexcept : rotation((Rotation)(value & 0b11)), flipped((value & 0b100) != 0) {}
+	Orientation(Rotation rotation = Rotation::ZERO, bool flipped = false) noexcept : rotation(rotation), flipped(flipped) {}
 
 	inline std::string toString() const { return "(r:" + std::to_string(rotation) + ", f:" + std::to_string(flipped) + ")"; }
 
