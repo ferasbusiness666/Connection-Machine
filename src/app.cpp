@@ -167,8 +167,14 @@ void App::runLoop() {
 			windowsToDestroy.clear();
 		}
 		// tell all windows to update rml
-		for (auto& sdlWindow : sdlWindows) {
-			sdlWindow->render();
+		std::vector<std::weak_ptr<SdlWindow>> windowsToRender;
+		for (unsigned int i = 0; i < sdlWindows.size(); ++i) {
+			windowsToRender.push_back(sdlWindows[i]);
+		}
+		for (unsigned int i = 0; i < windowsToRender.size(); ++i) {
+			std::shared_ptr<SdlWindow> thisWindow = windowsToRender[i].lock();
+			if (!thisWindow) continue;
+			thisWindow->render();
 		}
 		for (auto* window : newlyCreatedWindows) {
 			for (auto circuitViewWidget : window->getCircuitViewWidgets()) {

@@ -4,9 +4,9 @@
 #include "app.h"
 #include "computerAPI/directoryManager.h"
 
-Rml::Vector2f measureWrappedText(const Rml::String& text, const Rml::Element* element, float max_width = 0) {
+Rml::Vector2f measureWrappedText(const Rml::String& text, Rml::Element* element, float max_width = 0) {
 	if (max_width == 0) {
-		max_width = element->GetComputedValues().width().value;
+		max_width = element->GetParentNode()->GetBox().GetSize().x;
 	}
 	Rml::FontFaceHandle fontFaceHandle = Rml::GetFontEngineInterface()->GetFontFaceHandle(
 		element->GetComputedValues().font_family(),
@@ -70,7 +70,7 @@ void Tooltip::create(Rml::Event& event) {
 	Rml::Vector2f point(event.GetParameter<int>("mouse_x", 0), element->GetAbsoluteOffset().y + element->GetOffsetHeight()); //event.GetParameter<int>("mouse_y", 0)
 
 	float pixelDensity = SDL_GetWindowPixelDensity(parent);
-	SDL_Window* handle = SDL_CreatePopupWindow(parent, point.x / pixelDensity, point.y / pixelDensity, 100, 20, SDL_WINDOW_TOOLTIP | SDL_WINDOW_VULKAN | SDL_WINDOW_HIGH_PIXEL_DENSITY);
+	SDL_Window* handle = SDL_CreatePopupWindow(parent, point.x / pixelDensity, point.y / pixelDensity, 200, 20, SDL_WINDOW_TOOLTIP | SDL_WINDOW_VULKAN | SDL_WINDOW_HIGH_PIXEL_DENSITY);
 	if (!handle) {
 		logError("Failed to create tooltip {} window", "createTooltip", message);
 		return;
@@ -116,7 +116,15 @@ void Tooltip::create(Rml::Event& event) {
 		Rml::ElementDocument* rmlDocument = rmlContext->LoadDocument(DirectoryManager::getResourceDirectory().generic_string() + "/gui/tooltip/tooltip.rml");
 		Rml::Element* text = rmlDocument->GetElementById("text");
 		Rml::Vector2f size = measureWrappedText(message, text);
-		text->GetFirstChild()->SetInnerRML(message);
+		size.x *= 1.075f;
+		size += Rml::Vector2f(
+			text->GetBox().GetCumulativeEdge(Rml::BoxArea::Padding, Rml::BoxEdge::Left) + text->GetBox().GetCumulativeEdge(Rml::BoxArea::Padding, Rml::BoxEdge::Right),
+			text->GetBox().GetCumulativeEdge(Rml::BoxArea::Padding, Rml::BoxEdge::Top) + text->GetBox().GetCumulativeEdge(Rml::BoxArea::Padding, Rml::BoxEdge::Bottom)
+		) + Rml::Vector2f(
+			text->GetParentNode()->GetBox().GetCumulativeEdge(Rml::BoxArea::Padding, Rml::BoxEdge::Left) + text->GetParentNode()->GetBox().GetCumulativeEdge(Rml::BoxArea::Padding, Rml::BoxEdge::Right),
+			text->GetParentNode()->GetBox().GetCumulativeEdge(Rml::BoxArea::Padding, Rml::BoxEdge::Top) + text->GetParentNode()->GetBox().GetCumulativeEdge(Rml::BoxArea::Padding, Rml::BoxEdge::Bottom)
+		);
+		text->AppendChild(rmlDocument->CreateTextNode(message));
 		SDL_SetWindowSize(sdlWindow->getHandle(), size.x, size.y);
 		rmlDocument->Show();
 	}

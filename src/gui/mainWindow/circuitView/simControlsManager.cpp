@@ -20,7 +20,8 @@ SimControlsManager::SimControlsManager(
 	limitSpeedElement = document->GetElementById("limit-speed-checkbox");
 	tpsInputElement = document->GetElementById("tps-input");
 
-	/* trust me bro */ new Tooltip(circuitViewWidget->getMainWindow().getSdlWindoHandle(), limitSpeedElement, "Limit Speed");
+	/* trust me bro */ new Tooltip(circuitViewWidget->getMainWindow().getSdlWindoHandle(), realisticElement, "Toggle Realistic Simulation");
+	/* trust me bro */ new Tooltip(circuitViewWidget->getMainWindow().getSdlWindoHandle(), limitSpeedElement, "Toggle Limit Speed");
 	toggleSimElement->AddEventListener("click", new EventPasser(std::bind(&SimControlsManager::toggleSimulation, this)));
 	realisticElement->AddEventListener("click", new EventPasser(std::bind(&SimControlsManager::setRealistic, this)));
 	limitSpeedElement->AddEventListener("click", new EventPasser([this](Rml::Event& event) {
