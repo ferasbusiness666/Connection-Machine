@@ -35,8 +35,10 @@ public:
 	inline unsigned long long getEditCount() const { return editCount; }
 	void addEdit() { editCount++; }
 
-	bool isEditable() { return editable; }
+	bool isEditable() const { return editable; }
 	void setEditable(bool isEditable) { editable = isEditable; }
+
+	bool isEmpty() const { return blockContainer.isEmpty() && blockContainer.getBlockType() == BlockType::NONE; }
 
 	/* ----------- listener ----------- */
 	// subject to change

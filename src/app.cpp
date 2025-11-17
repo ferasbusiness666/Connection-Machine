@@ -260,7 +260,7 @@ void App::startTryingToQuit() {
 	}
 	for (auto& circuit : environment.getBackend().getCircuitManager().getCircuits()) {
 		if (environment.getCircuitFileManager().getSavePath(circuit.second->getUUID())) continue;
-		if (!circuit.second->isEditable()) continue;
+		if (circuit.second->isEmpty() || circuit.second->getEditCount() == 0 || !circuit.second->isEditable()) continue;
 		++tasksToFinishToQuit;
 		windowIter->get()->getPopUpManager().addOptionsPopUp(
 			"Do you want to save: " + circuit.second->getCircuitName(),
