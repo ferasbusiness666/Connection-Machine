@@ -135,15 +135,19 @@ void PopUpManager::addOptionsPopUp(
 }
 
 void PopUpManager::savePopUp(const std::string& circuitUUID) {
+	logInfo("Attempting to save circuit {}", "PopUpManager::savePopUp", circuitUUID);
 	if (mainWindow.getEnvironment().getCircuitFileManager().save(circuitUUID)) {
+		logInfo("Circuit {} saved successfully via quick save", "PopUpManager::savePopUp", circuitUUID);
 		mainWindow.log("Circuit was successfully saved.");
 	} else {
 		// if failed to save the circuit with out a path
+		logInfo("Circuit {} missing save path, opening Save As dialog", "PopUpManager::savePopUp", circuitUUID);
 		saveAsPopUp(circuitUUID);
 	}
 }
 
 void PopUpManager::saveAsPopUp(const std::string& circuitUUID) {
+	logInfo("Prompting Save As dialog for circuit {}", "PopUpManager::saveAsPopUp", circuitUUID);
 	static const SDL_DialogFileFilter filters[] = { { "Circuit Files", "cir" } };
 	std::pair<CircuitFileManager*, std::string>* data =
 		new std::pair<CircuitFileManager*, std::string>(&mainWindow.getEnvironment().getCircuitFileManager(), circuitUUID);
@@ -250,6 +254,7 @@ void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature 
 	std::optional<PopUpWindow> optionalPopUpWindow = createPopUp(false);
 	if (!optionalPopUpWindow) return;
 	PopUpWindow popUpWindow = std::move(optionalPopUpWindow.value());
+	logInfo("Opened feedback popup", "PopUpManager::addFeedbackPopup");
 
 	Rml::Element* title = popUpWindow.getPopUpWindow()->AppendChild(mainWindow.getRmlDocument()->CreateElement("p"));
 	title->SetInnerRML("We'd love your feedback");
@@ -317,8 +322,10 @@ void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature 
 
 		// logInfo("Feedback body: {}", "", textareaValue);
 		// logInfo("Include app state: {}", "", includeStateCheckbox->HasAttribute("checked") ? "true" : "false");
+		bool includeState = includeStateCheckbox->HasAttribute("checked");
+		logInfo("Feedback submission initiated (chars={}, include_state={})", "PopUpManager::addFeedbackPopup", textareaValue.size(), includeState);
 		std::vector<Network::Attachment> attachments;
-		if (includeStateCheckbox->HasAttribute("checked")) {
+		if (includeState) {
 			Network::Attachment appStateAttachment;
 			std::string appState = App::get().dumpState().dump(1, '\t');
 			std::optional<std::string> compressedAppState = compressString(appState);
@@ -326,10 +333,12 @@ void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature 
 				appStateAttachment.data = compressedAppState.value();
 				appStateAttachment.context = "app_state.json.br";
 				appStateAttachment.contentType = "application/x-brotli";
+				logInfo("Attached compressed app state snapshot ({} bytes)", "PopUpManager::addFeedbackPopup", appStateAttachment.data.size());
 			} else {
 				appStateAttachment.data = appState;
 				appStateAttachment.context = "app_state.json";
 				appStateAttachment.contentType = "application/json";
+				logInfo("Attached uncompressed app state snapshot ({} bytes)", "PopUpManager::addFeedbackPopup", appStateAttachment.data.size());
 			}
 			attachments.push_back(appStateAttachment);
 
@@ -341,15 +350,19 @@ void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature 
 				logsAttachment.data = compressedLogs.value();
 				logsAttachment.context = "logs.txt.br";
 				logsAttachment.contentType = "application/x-brotli";
+				logInfo("Attached compressed sanitized logs ({} bytes)", "PopUpManager::addFeedbackPopup", logsAttachment.data.size());
 			} else {
 				logsAttachment.data = pathSanitizedLogs;
 				logsAttachment.context = "logs.txt";
 				logsAttachment.contentType = "text/plain";
+				logInfo("Attached uncompressed sanitized logs ({} bytes)", "PopUpManager::addFeedbackPopup", logsAttachment.data.size());
 			}
 			attachments.push_back(logsAttachment);
 		}
+		logInfo("Feedback includes {} attachment(s)", "PopUpManager::addFeedbackPopup", attachments.size());
 
 		Network::get().sendFeedback(*this, "User Feedback from Connection Machine UI v" + getCurrentVersion().toString(), textareaValue, attachments);
+		logInfo("Feedback submission dispatched to network API", "PopUpManager::addFeedbackPopup");
 
 		popUpWindow.destroy();
 	}));

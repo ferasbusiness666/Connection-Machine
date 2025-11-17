@@ -23,14 +23,21 @@ Network::~Network() {
 }
 
 bool Network::checkConnectedToInternet() {
+	logInfo("Checking internet connection", "Network");
 	httplib::SSLClient cli("www.gstatic.com");
 	cli.set_connection_timeout(5, 0);
 	cli.set_read_timeout(10, 0);
 	cli.enable_server_certificate_verification(true);
 	auto res = cli.Get("/generate_204");
+	if (!res) {
+		logInfo("Internet connection check failed: {}", "Network", httplib::to_string(res.error()));
+		return false;
+	}
 	if (res && res->status == 204) {
+		logInfo("Internet connection check succeeded", "Network");
 		return true;
 	}
+	logInfo("Internet connection check failed: status {}", "Network", res->status);
 	return false;
 }
 
@@ -53,8 +60,10 @@ void Network::sendFeedback(PopUpManager& popUpManager, const std::string& title,
 		httplib::Result res = cli.Post("/api/reports", body, "application/json");
 		if (res) {
 			logInfo("Feedback response content: {}", "Network", res->body);
+		} else {
+			logError("Feedback request failed", "Network");
 		}
-		if (res && res->status / 100 != 2) {
+		if ((res && res->status / 100 != 2) || !res) {
 			if (Network::get().checkConnectedToInternet()) {
 				popUpManager.addOptionsPopUp("Feedback sending failed.", { {"OK", []() {}} }, true);
 			} else {
@@ -66,7 +75,15 @@ void Network::sendFeedback(PopUpManager& popUpManager, const std::string& title,
 			popUpManager.addOptionsPopUp("Feedback submitted successfully!", { {"OK", []() {}} }, true);
 			return;
 		}
-		sendAttachments(popUpManager, attachments, nlohmann::json::parse(res->body)["uuid"].get<std::string>());
+		nlohmann::json jsonResponse;
+		try {
+			jsonResponse = nlohmann::json::parse(res->body);
+		} catch (const std::exception& e) {
+			logError("Failed to parse feedback response JSON: {}", "Network", e.what());
+			popUpManager.addOptionsPopUp("Feedback submission failed (invalid server response).", { {"OK", []() {}} }, true);
+			return;
+		}
+		sendAttachments(popUpManager, attachments, jsonResponse["uuid"].get<std::string>());
 	});
 	t.detach();
 	logInfo("Feedback thread dispatched", "Network");

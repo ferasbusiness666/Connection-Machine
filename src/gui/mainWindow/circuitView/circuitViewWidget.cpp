@@ -20,12 +20,15 @@ void LoadCallback(void* userData, const char* const* filePaths, int filter) {
 	if (filePaths && filePaths[0]) {
 		std::string filePath = filePaths[0];
 		std::vector<circuit_id_t> ids = circuitViewWidget->getFileManager()->loadFromFile(filePath);
+		logInfo("Requested load from '{}' produced {} circuit(s)", "CircuitViewWidget:LoadCallback", filePath, ids.size());
 		if (ids.empty()) {
+			logInfo("No circuits found in '{}'", "CircuitViewWidget:LoadCallback", filePath);
 			// logError("Failed to load circuit file."); // Not a error! It is valid to load 0 circuits.
 			return;
 		}
 		circuit_id_t id = ids.back();
 		circuitViewWidget->getCircuitView()->setCircuit(id);
+		logInfo("Circuit view switched to loaded circuit {}", "CircuitViewWidget:LoadCallback", id);
 		// circuitViewWidget->getCircuitView()->getBackend()->linkCircuitViewWithCircuit(circuitViewWidget->getCircuitView(), id);
 		for (auto& iter : circuitViewWidget->getCircuitView()->getBackend().getEvaluatorManager().getEvaluators()) {
 			if (iter.second->getCircuitId(Address()) == id) {
@@ -326,6 +329,7 @@ void CircuitViewWidget::setSimSpeed(double speed) {
 void CircuitViewWidget::newCircuit() {
 	circuit_id_t id = circuitView->getBackend().createCircuit();
 	if (id == 0) return; // other logs shoud happen before this
+	logInfo("Created new circuit {}", "CircuitViewWidget::newCircuit", id);
 	circuitView->setCircuit(id);
 	// tmp get eval with this circuit id because circuit manager makes a eval for loaded circuits
 	for (auto& iter : circuitView->getBackend().getEvaluatorManager().getEvaluators()) {
@@ -369,6 +373,7 @@ void CircuitViewWidget::load() {
 		{ "WASM Files", "wasm" },
 	};
 
+	logInfo("Opening load dialog for circuit import", "CircuitViewWidget::load");
 	SDL_ShowOpenFileDialog(LoadCallback, this, nullptr, filters, 3, nullptr, true);
 }
 
