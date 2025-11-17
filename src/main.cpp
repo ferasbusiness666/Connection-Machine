@@ -44,7 +44,7 @@ void registerSettings() {
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Flip", Keybind(Keybind::KeyId::KI_W));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Confirm", Keybind(Keybind::KeyId::KI_E));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tool Invert Mode", Keybind(Keybind::KeyId::KI_Q));
-	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/(DEBUG) Test Circuit", Keybind(Keybind::KeyId::KI_L));
+	// Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/(DEBUG) Test Circuit", Keybind(Keybind::KeyId::KI_L));
 #ifdef __APPLE__
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Toggle Fullscreen", Keybind(Keybind::KeyId::KI_F, Keybind::KeyMod::KM_META | Keybind::KeyMod::KM_SHIFT));
 #else
@@ -53,8 +53,8 @@ void registerSettings() {
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Increase UI Scale", Keybind(Keybind::KeyId::KI_OEM_PLUS, Keybind::KeyMod::KM_CTRL));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Decrease UI Scale", Keybind(Keybind::KeyId::KI_OEM_MINUS, Keybind::KeyMod::KM_CTRL));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Reset UI Scale", Keybind(Keybind::KeyId::KI_0, Keybind::KeyMod::KM_CTRL));
-	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Tutorial/Start", Keybind(Keybind::KeyId::KI_J));
-	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Tutorial/Stop", Keybind(Keybind::KeyId::KI_K));
+	// Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Tutorial/Start", Keybind(Keybind::KeyId::KI_J));
+	// Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Tutorial/Stop", Keybind(Keybind::KeyId::KI_K));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Zoom", Keybind(Keybind::KeyId::KI_UNKNOWN, Keybind::KeyMod::KM_SHIFT));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Home", Keybind(Keybind::KeyId::KI_F));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Pan", Keybind(Keybind::KeyId::KI_UNKNOWN, Keybind::KeyMod::KM_ALT));
