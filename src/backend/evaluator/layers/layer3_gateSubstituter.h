@@ -372,9 +372,6 @@ private:
 		return referencingGates;
 	}
 	bool tryAddGateWithLinkedIO(SimPauseGuard& pauseGuard, BlockType blockType, middle_id_t gateId) {
-#ifdef TRACY_PROFILER
-		ZoneScoped;
-#endif
 		if (blockType == BlockType::COLOR_LIGHT) { // this will be expanded later to be dynamic/automatic for all blocks that have non 1-bit inputs
 			replacer.addGate(pauseGuard, blockType, gateId);
 			middle_id_t busId = middleIdProvider.getNewId();
@@ -414,9 +411,6 @@ private:
 		gatesWithLinkedIO.erase(gateId);
 	}
 	void redirectConnectionToLinked(EvalConnection& connection) {
-#ifdef TRACY_PROFILER
-		ZoneScoped;
-#endif
 		middle_id_t sourceGateId = connection.source.gateId;
 		middle_id_t destinationGateId = connection.destination.gateId;
 		if (gatesWithLinkedIO.contains(destinationGateId)) {
