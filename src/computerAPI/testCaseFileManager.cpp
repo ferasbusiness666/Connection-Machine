@@ -31,6 +31,8 @@ std::optional<CircuitTestCase> TestCaseFileManager::getCircuitTestCaseFromFilePa
         return std::nullopt;
     }
 
+    inputFile >>token;
+
     while (inputFile >> token) {
         
     }
