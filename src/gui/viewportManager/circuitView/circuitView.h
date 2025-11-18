@@ -4,7 +4,7 @@
 #include "events/eventRegister.h"
 #include "renderer/circuitRenderManager.h"
 #include "tools/toolManager.h"
-#include "tutorial.h"
+#include "tutorialManager.h"
 #include "viewManager/viewManager.h"
 
 #include "gpu/mainRendererDefs.h"
@@ -32,8 +32,8 @@ public:
 	ToolManager& getToolManager() { return toolManager; }
 	const ToolManager& getToolManager() const { return toolManager; }
 
-	Tutorial& getTutorialManager() { return tutorialManager; }
-	const Tutorial& getTutorialManager() const { return tutorialManager; }
+	TutorialManager& getTutorialManager() { return tutorialManager; }
+	const TutorialManager& getTutorialManager() const { return tutorialManager; }
 
 	ViewManager& getViewManager() { return viewManager; }
 	const ViewManager& getViewManager() const { return viewManager; }
@@ -67,7 +67,7 @@ private:
 	EventRegister eventRegister;
 	ViewManager viewManager;
 	ToolManager toolManager;
-	Tutorial tutorialManager;
+	TutorialManager tutorialManager;
 };
 
 #endif /* circuitView_h */

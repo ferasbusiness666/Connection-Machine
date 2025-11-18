@@ -234,22 +234,22 @@ void BlockRenderDataFeeder::doBlockTextureUpdates() {
 		const BlockData* blockData = backend.getBlockDataManager().getBlockData(blockType);
 		if (!blockData) {
 			logError("Failed to find BlockData for BlockType {}", "BlockRenderDataFeeder", blockType);
-			return;
+			continue;
 		}
 
 		auto iter = blockTypeToRenderData.find(blockType);
 		if (iter == blockTypeToRenderData.end()) {
 			logError("Failed to find RenderData for BlockType {} \"{}\"", "BlockRenderDataFeeder", blockType, blockData->getName());
-			return;
+			continue;
 		}
 
 		if (!blockData->getUsesTileMapTexture()) {
 			BlockTextureId blockTextureId = getBlockTextureId(blockData, &iter->second);
-			if (blockTextureId == 0) return;
+			if (blockTextureId == 0) continue;
 			MainRenderer::get().setBlockTexture(iter->second.blockRenderDataId, blockTextureId);
 		} else {
 			BlockTextureId blockTextureId = getBlockTextureId(blockData, &iter->second);
-			if (blockTextureId == 0) return;
+			if (blockTextureId == 0) continue;
 			MainRenderer::get().setBlockTexture(
 				iter->second.blockRenderDataId,
 				blockTextureId,
