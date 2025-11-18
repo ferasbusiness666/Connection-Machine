@@ -31,20 +31,24 @@ struct TrackedGate {
 		outputs.push_back(connection);
 	}
 
-	void removeInput(EvalConnection connection) {
+	bool removeInput(EvalConnection connection) {
 		auto it = std::find_if(inputs.begin(), inputs.end(),
 			[&](const EvalConnection& conn) { return conn.source == connection.source && conn.destination == connection.destination; });
 		if (it != inputs.end()) {
 			inputs.erase(it);
+			return true;
 		}
+		return false;
 	}
 
-	void removeOutput(EvalConnection connection) {
+	bool removeOutput(EvalConnection connection) {
 		auto it = std::find_if(outputs.begin(), outputs.end(),
 			[&](const EvalConnection& conn) { return conn.source == connection.source && conn.destination == connection.destination; });
 		if (it != outputs.end()) {
 			outputs.erase(it);
+			return true;
 		}
+		return false;
 	}
 
 	bool removeReferencesToId(const middle_id_t id) {
@@ -131,14 +135,19 @@ public:
 			deleteGateWithLinkedIO(pauseGuard, gateId);
 		}
 		replacer.removeGate(pauseGuard, gateId);
+		std::vector<middle_id_t> referencingGates = collectReferencingTrackedGates(gateId);
 		deleteTrackedGate(gateId);
-		for (auto& trackedGate : trackedGates) {
+		for (const auto& referencingGateId : referencingGates) {
 #ifdef TRACY_PROFILER
 			ZoneScopedN("GateSubstituter::removeGate - per tracked gate");
 #endif
-			bool success = trackedGate.second.removeReferencesToId(gateId);
+			auto trackedGateIter = trackedGates.find(referencingGateId);
+			if (trackedGateIter == trackedGates.end()) {
+				continue;
+			}
+			TrackedGate& trackedGateRef = trackedGateIter->second;
+			bool success = trackedGateRef.removeReferencesToId(gateId);
 			if (success) {
-				TrackedGate& trackedGateRef = trackedGate.second;
 				BlockType newState = trackedGateRef.evaluate();
 				if (newState != trackedGateRef.currentState) {
 					trackedGateRef.currentState = newState;
@@ -195,10 +204,12 @@ public:
 		if (trackedGates.contains(sourceGateId)) {
 			TrackedGate& trackedGate = trackedGates.at(sourceGateId);
 			trackedGate.addOutput(connection);
+			registerTrackedGateReference(connection.destination.gateId, sourceGateId);
 		}
 		if (trackedGates.contains(destinationGateId)) {
 			TrackedGate& trackedGate = trackedGates.at(destinationGateId);
 			trackedGate.addInput(connection);
+			registerTrackedGateReference(connection.source.gateId, destinationGateId);
 			BlockType newState = trackedGate.evaluate();
 			if (newState == trackedGate.currentState) {
 				replacer.makeConnection(pauseGuard, connection);
@@ -230,11 +241,17 @@ public:
 		replacer.removeConnection(pauseGuard, connection);
 		if (trackedGates.contains(sourceGateId)) {
 			TrackedGate& trackedGate = trackedGates.at(sourceGateId);
-			trackedGate.removeOutput(connection);
+			bool removed = trackedGate.removeOutput(connection);
+			if (removed) {
+				unregisterTrackedGateReference(connection.destination.gateId, sourceGateId);
+			}
 		}
 		if (trackedGates.contains(destinationGateId)) {
 			TrackedGate& trackedGate = trackedGates.at(destinationGateId);
-			trackedGate.removeInput(connection);
+			bool removed = trackedGate.removeInput(connection);
+			if (removed) {
+				unregisterTrackedGateReference(connection.source.gateId, destinationGateId);
+			}
 			BlockType newState = trackedGate.evaluate();
 			if (newState != trackedGate.currentState) {
 				trackedGate.currentState = newState;
@@ -291,15 +308,68 @@ private:
 	IdProvider<middle_id_t>& middleIdProvider;
 	BlockDataManager& blockDataManager;
 	std::unordered_map<middle_id_t, TrackedGate> trackedGates;
+	std::unordered_map<middle_id_t, std::unordered_map<middle_id_t, size_t>> gateReferenceIndex;
 	std::unordered_map<middle_id_t, GateWithLinkedIO> gatesWithLinkedIO;
 	void addTrackedGate(const TrackedGate& gate) {
 		trackedGates[gate.id] = gate;
+		for (const auto& input : gate.inputs) {
+			registerTrackedGateReference(input.source.gateId, gate.id);
+		}
+		for (const auto& output : gate.outputs) {
+			registerTrackedGateReference(output.destination.gateId, gate.id);
+		}
 	}
 	void deleteTrackedGate(middle_id_t gateId) {
-		trackedGates.erase(gateId);
+		auto trackedGateIter = trackedGates.find(gateId);
+		if (trackedGateIter == trackedGates.end()) {
+			return;
+		}
+		removeAllReferencesForTrackedGate(trackedGateIter->second);
+		trackedGates.erase(trackedGateIter);
 	}
 	bool isTrackedGate(middle_id_t gateId) const {
 		return trackedGates.contains(gateId);
+	}
+	void registerTrackedGateReference(middle_id_t referencedGateId, middle_id_t trackingGateId) {
+		++gateReferenceIndex[referencedGateId][trackingGateId];
+	}
+	void unregisterTrackedGateReference(middle_id_t referencedGateId, middle_id_t trackingGateId) {
+		auto referencedIter = gateReferenceIndex.find(referencedGateId);
+		if (referencedIter == gateReferenceIndex.end()) {
+			return;
+		}
+		auto& counts = referencedIter->second;
+		auto trackingIter = counts.find(trackingGateId);
+		if (trackingIter == counts.end()) {
+			return;
+		}
+		if (--trackingIter->second == 0) {
+			counts.erase(trackingIter);
+			if (counts.empty()) {
+				gateReferenceIndex.erase(referencedIter);
+			}
+		}
+	}
+	void removeAllReferencesForTrackedGate(const TrackedGate& gate) {
+		for (const auto& input : gate.inputs) {
+			unregisterTrackedGateReference(input.source.gateId, gate.id);
+		}
+		for (const auto& output : gate.outputs) {
+			unregisterTrackedGateReference(output.destination.gateId, gate.id);
+		}
+	}
+	std::vector<middle_id_t> collectReferencingTrackedGates(middle_id_t gateId) {
+		std::vector<middle_id_t> referencingGates;
+		auto referenceIter = gateReferenceIndex.find(gateId);
+		if (referenceIter == gateReferenceIndex.end()) {
+			return referencingGates;
+		}
+		referencingGates.reserve(referenceIter->second.size());
+		for (const auto& [trackingGateId, _] : referenceIter->second) {
+			referencingGates.push_back(trackingGateId);
+		}
+		gateReferenceIndex.erase(referenceIter);
+		return referencingGates;
 	}
 	bool tryAddGateWithLinkedIO(SimPauseGuard& pauseGuard, BlockType blockType, middle_id_t gateId) {
 #ifdef TRACY_PROFILER
