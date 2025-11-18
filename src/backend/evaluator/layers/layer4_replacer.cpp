@@ -248,7 +248,7 @@ void Replacer::mergeJunctions(SimPauseGuard& pauseGuard, int layer) {
 	std::vector<middle_id_t> junctionIdsToErase;
 	for (const middle_id_t id : existingJunctionIds) {
 #ifdef TRACY_PROFILER
-		ZoneScoped;
+		ZoneScopedN("mergeJunctions: per junction");
 #endif
 		if (replacementIdLayers.contains(id)) {
 			if (replacementIdLayers.at(id) >= layer) {
@@ -259,10 +259,16 @@ void Replacer::mergeJunctions(SimPauseGuard& pauseGuard, int layer) {
 
 		Replacement& replacement = makeReplacement(layer);
 		if (floodFillResult.outputsGoingIntoJunctions.size() == 0 && floodFillResult.defaultState == logic_state_t::FLOATING) {
+#ifdef TRACY_PROFILER
+			ZoneScopedN("mergeJunctions: track gate only");
+#endif
 			for (const middle_id_t junctionId : floodFillResult.junctionIds) {
 				replacement.trackGate(junctionId);
 			}
 		} else if (floodFillResult.outputsGoingIntoJunctions.size() == 1 && floodFillResult.defaultState == logic_state_t::FLOATING) {
+#ifdef TRACY_PROFILER
+			ZoneScopedN("mergeJunctions: complete removal (single input)");
+#endif
 			EvalConnectionPoint output = floodFillResult.outputsGoingIntoJunctions.at(0);
 			for (const middle_id_t junctionId : floodFillResult.junctionIds) {
 				replacement.removeGate(pauseGuard, junctionId, { {connection_end_id_t(0), output }, {connection_end_id_t(1), output } });
@@ -272,6 +278,9 @@ void Replacer::mergeJunctions(SimPauseGuard& pauseGuard, int layer) {
 			}
 			replacement.trackId(output.gateId);
 		} else {
+#ifdef TRACY_PROFILER
+			ZoneScopedN("mergeJunctions: standard merge");
+#endif
 			middle_id_t newJunctionId = replacement.getNewId();
 			BlockType typeOfJunction;
 			if (floodFillResult.defaultState == logic_state_t::LOW) {
@@ -302,9 +311,8 @@ void Replacer::mergeJunctions(SimPauseGuard& pauseGuard, int layer) {
 		for (const middle_id_t junctionId : floodFillResult.junctionIds) {
 			junctionIdsToErase.push_back(junctionId);
 		}
-		std::vector<middle_id_t> junctionIdsCopy = floodFillResult.junctionIds;
-		replacement.addRevertAction([this, junctionIdsCopy]() {
-			for (const middle_id_t junctionId : junctionIdsCopy) {
+		replacement.addRevertAction([this, junctionIds = std::move(floodFillResult.junctionIds)]() {
+			for (const middle_id_t junctionId : junctionIds) {
 				existingJunctionIds.insert(junctionId);
 			}
 		});
@@ -315,6 +323,9 @@ void Replacer::mergeJunctions(SimPauseGuard& pauseGuard, int layer) {
 }
 
 Replacer::JunctionFloodFillResult Replacer::junctionFloodFill(middle_id_t junctionId) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	JunctionFloodFillResult result;
 	std::unordered_set<middle_id_t> visited;
 	std::unordered_set<EvalConnectionPoint> visitedOutputs;
@@ -323,6 +334,9 @@ Replacer::JunctionFloodFillResult Replacer::junctionFloodFill(middle_id_t juncti
 	visited.insert(junctionId);
 	logic_state_t defaultState = logic_state_t::FLOATING;
 	while (!queue.empty()) {
+#ifdef TRACY_PROFILER
+		ZoneScopedN("junctionFloodFill: per junction");
+#endif
 		middle_id_t currentId = queue.front();
 		queue.pop();
 		result.junctionIds.push_back(currentId);
@@ -345,6 +359,9 @@ Replacer::JunctionFloodFillResult Replacer::junctionFloodFill(middle_id_t juncti
 			defaultState = logic_state_t::UNDEFINED;
 		}
 		for (const EvalConnection& output : outputs) {
+#ifdef TRACY_PROFILER
+			ZoneScopedN("junctionFloodFill: per junction output");
+#endif
 			if (visited.contains(output.destination.gateId)) {
 				continue;
 			}
@@ -357,6 +374,9 @@ Replacer::JunctionFloodFillResult Replacer::junctionFloodFill(middle_id_t juncti
 			result.inputsPullingFromJunctions.push_back(output);
 		}
 		for (const EvalConnection& input : inputs) {
+#ifdef TRACY_PROFILER
+			ZoneScopedN("junctionFloodFill: per junction input");
+#endif
 			if (visited.contains(input.source.gateId)) {
 				continue;
 			}
@@ -374,6 +394,9 @@ Replacer::JunctionFloodFillResult Replacer::junctionFloodFill(middle_id_t juncti
 			result.outputsGoingIntoJunctions.push_back(input.source);
 			std::vector<EvalConnection> nodeOutputs = busInterfacePassthrough.getOutputs(input.source.gateId);
 			for (const EvalConnection& nodeOutput : nodeOutputs) {
+#ifdef TRACY_PROFILER
+				ZoneScopedN("junctionFloodFill: per junction input per output");
+#endif
 				if (nodeOutput.source.portId != input.source.portId) {
 					continue; // only consider outputs from the same port
 				}

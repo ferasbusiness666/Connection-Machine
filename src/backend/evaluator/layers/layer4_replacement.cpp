@@ -29,6 +29,9 @@ void Replacement::removeGate(
 	SimPauseGuard& pauseGuard,
 	middle_id_t gateId,
 	middle_id_t replacementId) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	isEmpty = false;
 	// track connection removals
 	std::vector<EvalConnection> outputs = replacer->busInterfacePassthrough.getOutputs(gateId);
@@ -52,6 +55,9 @@ void Replacement::addGate(
 	SimPauseGuard& pauseGuard,
 	BlockType blockType,
 	middle_id_t gateId) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	isEmpty = false;
 	replacer->busInterfacePassthrough.addGate(pauseGuard, blockType, gateId);
 	// we don't need to track, because nothing can happen to this gate at a lower level
@@ -61,6 +67,9 @@ void Replacement::addGate(
 void Replacement::removeConnection(
 	SimPauseGuard& pauseGuard,
 	EvalConnection connection) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	isEmpty = false;
 	replacer->busInterfacePassthrough.removeConnection(pauseGuard, connection);
 	trackId(connection.destination.gateId);
@@ -71,6 +80,9 @@ void Replacement::removeConnection(
 void Replacement::makeConnection(
 	SimPauseGuard& pauseGuard,
 	EvalConnection connection) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	isEmpty = false;
 	replacer->busInterfacePassthrough.makeConnection(pauseGuard, connection);
 	trackId(connection.destination.gateId);
@@ -194,6 +206,9 @@ void Replacement::revert(SimPauseGuard& pauseGuard) {
 }
 
 void Replacement::trackId(middle_id_t middleId) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	replacer->dependentReplacements[middleId].insert(id);
 	idsToTrack.insert(middleId);
 }

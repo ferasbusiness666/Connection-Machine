@@ -59,6 +59,9 @@ void Evaluator::makeEdit(DifferenceSharedPtr difference, circuit_id_t circuitId)
 	// logInfo("_________________________________________________________________________________________");
 	// logInfo("Applying edit to Evaluator with ID {} for Circuit ID {}", "Evaluator::makeEdit", evaluatorId, circuitId);
 	{
+#ifdef TRACY_PROFILER
+		ZoneScopedN("Evaluator::makeEdit - actually making edit");
+#endif
 		SimPauseGuard pauseGuard = evalSimulator->beginEdit();
 		std::unique_lock lk(simMutex);
 		DiffCache diffCache(circuitManager);
@@ -72,6 +75,9 @@ void Evaluator::makeEdit(DifferenceSharedPtr difference, circuit_id_t circuitId)
 		}
 	}
 	if (changedICs) {
+#ifdef TRACY_PROFILER
+		ZoneScopedN("Evaluator::makeEdit - notify that ICs changed");
+#endif
 		dataUpdateEventManager.sendEvent("addressTreeMakeBranch");
 	}
 	if (changedSim || changedPositioning){
@@ -103,6 +109,9 @@ void Evaluator::makeEditInPlace(SimPauseGuard& pauseGuard, eval_circuit_id_t eva
 
 	const std::vector<Difference::Modification>& modifications = difference->getModifications();
 	for (const Difference::Modification& modification : modifications) {
+#ifdef TRACY_PROFILER
+		ZoneScopedN("Evaluator::makeEditInPlace - process modification");
+#endif
 		const auto& [modificationType, modificationData] = modification;
 		switch (modificationType) {
 		case Difference::ModificationType::REMOVED_BLOCK: {
@@ -142,6 +151,9 @@ void Evaluator::edit_removeBlock(
 	Orientation orientation,
 	BlockType type
 ) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	// Find the circuit and remove the block
 	EvalCircuit* evalCircuit = evalCircuitContainer.getCircuit(evalCircuitId);
 	if (!evalCircuit) {
@@ -173,6 +185,9 @@ void Evaluator::edit_removeBlock(
 }
 
 void Evaluator::edit_deleteICContents(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	EvalCircuit* evalCircuit = evalCircuitContainer.getCircuit(evalCircuitId);
 	if (!evalCircuit) {
 		logError("EvalCircuit with id {} not found", "Evaluator::edit_deleteIC", evalCircuitId);
@@ -209,6 +224,9 @@ void Evaluator::edit_placeBlock(
 	Orientation orientation,
 	BlockType blockType
 ) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	const circuit_id_t ICId = circuitBlockDataManager.getCircuitId(blockType);
 	if (ICId != 0) {
 		edit_placeIC(pauseGuard, evalCircuitId, diffCache, position, orientation, ICId);
@@ -239,6 +257,9 @@ void Evaluator::edit_placeIC(
 	Orientation orientation,
 	circuit_id_t circuitId
 ) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	changedICs = true;
 	EvalCircuit* evalCircuit = evalCircuitContainer.getCircuit(evalCircuitId);
 	if (!evalCircuit) {
@@ -262,6 +283,9 @@ void Evaluator::edit_removeConnection(
 	Position inputBlockPosition,
 	Position inputPosition
 ) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	std::optional<EvalConnectionPoint> outputPoint = getConnectionPoint(evalCircuitId, outputPosition, Direction::OUT);
 	if (!outputPoint.has_value()) {
 		// logError("Output connection point not found for position {}", "Evaluator::edit_removeConnection", outputPosition.toString());
@@ -291,6 +315,9 @@ void Evaluator::edit_createConnection(
 	Position inputBlockPosition,
 	Position inputPosition
 ) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	std::set<CircuitPortDependency> circuitPortDependencies;
 	std::set<CircuitNode> circuitNodeDependencies;
 	std::set<EvalPosition> visitedEvalPositions;
@@ -506,6 +533,9 @@ std::optional<EvalConnectionPoint> Evaluator::getConnectionPoint(
 	const Position portPosition,
 	Direction direction
 ) const {
+#ifdef TRACY_PROFILER
+	ZoneScopedN("Evaluator::getConnectionPoint without dependencies");
+#endif
 	EvalCircuit* evalCircuit = evalCircuitContainer.getCircuit(evalCircuitId);
 	if (!evalCircuit) [[unlikely]] {
 		return std::nullopt;
@@ -593,6 +623,9 @@ std::optional<EvalConnectionPoint> Evaluator::getConnectionPoint(
 	std::set<EvalPosition>& visitedEvalPositions,
 	bool isInterCircuit
 ) const {
+#ifdef TRACY_PROFILER
+	ZoneScopedN("Evaluator::getConnectionPoint with dependencies");
+#endif
 	EvalCircuit* evalCircuit = evalCircuitContainer.getCircuit(evalCircuitId);
 	if (!evalCircuit) [[unlikely]] {
 		return std::nullopt;
@@ -850,6 +883,9 @@ void Evaluator::setState(const Address& address, logic_state_t state) {
 }
 
 void Evaluator::checkToCreateExternalConnections(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, Position position) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	// logInfo("Checking to create external connections for evalCircuitId {} at position {}", "Evaluator::checkToCreateExternalConnections", evalCircuitId,
 	// position.toString());
 	EvalCircuit* evalCircuit = evalCircuitContainer.getCircuit(evalCircuitId);
@@ -1119,6 +1155,9 @@ void Evaluator::traceOutwardsIC(
 }
 
 void Evaluator::processDirtyNodes() {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	for (const simulator_id_t id : dirtySimulatorIds) {
 		auto it = pinSimulatorIdToEvalPositionMap.equal_range(id);
 		for (auto iter = it.first; iter != it.second; ++iter) {
@@ -1216,12 +1255,20 @@ void Evaluator::processDirtyNodes() {
 		// );
 	}
 
-	for (const auto& [evalCircuitId, updates] : simulatorMappingUpdates) {
-		sendSimulatorMappingUpdate(evalCircuitId, updates);
+	{
+#ifdef TRACY_PROFILER
+		ZoneScoped;
+#endif
+		for (const auto& [evalCircuitId, updates] : simulatorMappingUpdates) {
+			sendSimulatorMappingUpdate(evalCircuitId, updates);
+		}
 	}
 }
 
 void Evaluator::dirtyBlockAt(Position position, eval_circuit_id_t evalCircuitId) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	EvalCircuit* evalCircuit = evalCircuitContainer.getCircuit(evalCircuitId);
 	if (!evalCircuit) {
 		logError("EvalCircuit with id {} not found", "Evaluator::dirtyBlockAt", evalCircuitId);

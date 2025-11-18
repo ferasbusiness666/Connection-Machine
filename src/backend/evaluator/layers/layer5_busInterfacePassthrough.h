@@ -16,6 +16,9 @@ public:
     blockDataManager(blockDataManager) {}
 
     void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
+#ifdef TRACY_PROFILER
+		ZoneScoped;
+#endif
         BlockData* blockData = blockDataManager.getBlockData(blockType);
         if (blockData->isBus()) {
             busInterfaces[gateId] = blockType;
@@ -25,6 +28,9 @@ public:
     }
 
     void removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
+#ifdef TRACY_PROFILER
+		ZoneScoped;
+#endif
         if (omittedConnections.contains(gateId)) {
             std::vector<EvalConnection> omittedConns = omittedConnections[gateId];
             for (const EvalConnection& conn : omittedConns) {
@@ -117,6 +123,9 @@ public:
     }
 
     void makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
+#ifdef TRACY_PROFILER
+		ZoneScoped;
+#endif
         if (busInterfaces.contains(connection.source.gateId) ||
             busInterfaces.contains(connection.destination.gateId)) {
             omittedConnections[connection.source.gateId].push_back(connection);
@@ -127,6 +136,9 @@ public:
     }
 
     void removeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
+#ifdef TRACY_PROFILER
+		ZoneScoped;
+#endif
         if (busInterfaces.contains(connection.source.gateId) ||
             busInterfaces.contains(connection.destination.gateId)) {
             omittedConnections[connection.source.gateId].erase(
@@ -162,6 +174,9 @@ public:
     }
 
     std::vector<EvalConnection> getInputs(middle_id_t middleId) const {
+#ifdef TRACY_PROFILER
+        ZoneScoped;
+#endif
         std::vector<EvalConnection> conns = {};
         if (omittedConnections.contains(middleId)) {
             for (const EvalConnection& conn : omittedConnections.at(middleId)) {
@@ -180,6 +195,9 @@ public:
     }
 
     std::vector<EvalConnection> getOutputs(middle_id_t middleId) const {
+#ifdef TRACY_PROFILER
+        ZoneScoped;
+#endif
         std::vector<EvalConnection> conns = {};
         if (omittedConnections.contains(middleId)) {
             for (const EvalConnection& conn : omittedConnections.at(middleId)) {

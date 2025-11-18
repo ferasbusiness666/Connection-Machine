@@ -107,6 +107,9 @@ public:
 		blockDataManager(blockDataManager) {}
 
 	void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
+#ifdef TRACY_PROFILER
+		ZoneScoped;
+#endif
 		if (tryAddGateWithLinkedIO(pauseGuard, blockType, gateId)) return;
 		if (blockType == BlockType::BUTTON || blockType == BlockType::SWITCH || blockType == BlockType::TICK_BUTTON) {
 			addTrackedGate({ gateId, blockType, blockType, BlockType::JUNCTION, {}, {}, 1 });
@@ -118,6 +121,9 @@ public:
 		}
 	}
 	void removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
+#ifdef TRACY_PROFILER
+		ZoneScoped;
+#endif
 		if (gatesWithLinkedIO.contains(gateId)) {
 			deleteGateWithLinkedIO(pauseGuard, gateId);
 		}
@@ -174,6 +180,9 @@ public:
 		replacer.setState(point, state);
 	}
 	void makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
+#ifdef TRACY_PROFILER
+		ZoneScoped;
+#endif
 		middle_id_t sourceGateId = connection.source.gateId;
 		middle_id_t destinationGateId = connection.destination.gateId;
 		redirectConnectionToLinked(connection);
@@ -206,6 +215,9 @@ public:
 		replacer.makeConnection(pauseGuard, connection);
 	}
 	void removeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
+#ifdef TRACY_PROFILER
+		ZoneScoped;
+#endif
 		middle_id_t sourceGateId = connection.source.gateId;
 		middle_id_t destinationGateId = connection.destination.gateId;
 		redirectConnectionToLinked(connection);
@@ -284,6 +296,9 @@ private:
 		return trackedGates.contains(gateId);
 	}
 	bool tryAddGateWithLinkedIO(SimPauseGuard& pauseGuard, BlockType blockType, middle_id_t gateId) {
+#ifdef TRACY_PROFILER
+		ZoneScoped;
+#endif
 		if (blockType == BlockType::COLOR_LIGHT) { // this will be expanded later to be dynamic/automatic for all blocks that have non 1-bit inputs
 			replacer.addGate(pauseGuard, blockType, gateId);
 			middle_id_t busId = middleIdProvider.getNewId();
@@ -323,6 +338,9 @@ private:
 		gatesWithLinkedIO.erase(gateId);
 	}
 	void redirectConnectionToLinked(EvalConnection& connection) {
+#ifdef TRACY_PROFILER
+		ZoneScoped;
+#endif
 		middle_id_t sourceGateId = connection.source.gateId;
 		middle_id_t destinationGateId = connection.destination.gateId;
 		if (gatesWithLinkedIO.contains(destinationGateId)) {

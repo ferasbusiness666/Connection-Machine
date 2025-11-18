@@ -1,6 +1,9 @@
 #include "layer6_simulatorOptimizer.h"
 
 void SimulatorOptimizer::addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
+#ifdef TRACY_PROFILER
+		ZoneScoped;
+#endif
 	simulator_id_t simulatorId = simulator.addGate(blockType);
 
 	// if simulatorToMiddleIds is too short, extend it
@@ -27,6 +30,9 @@ void SimulatorOptimizer::addGate(SimPauseGuard& pauseGuard, const BlockType bloc
 }
 
 void SimulatorOptimizer::removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
+#ifdef TRACY_PROFILER
+		ZoneScoped;
+#endif
 	// Find the gate in the simulator and remove it
 
 	if (gateId < middleToSimulatorIds.size()) {
@@ -68,6 +74,9 @@ void SimulatorOptimizer::removeGate(SimPauseGuard& pauseGuard, const middle_id_t
 }
 
 void SimulatorOptimizer::makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
+#ifdef TRACY_PROFILER
+		ZoneScoped;
+#endif
 	middle_id_t sourceGateId = connection.source.gateId;
 	middle_id_t destinationGateId = connection.destination.gateId;
 	connection_end_id_t sourcePort = connection.source.portId;
@@ -99,6 +108,9 @@ void SimulatorOptimizer::makeConnection(SimPauseGuard& pauseGuard, EvalConnectio
 }
 
 void SimulatorOptimizer::removeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
+#ifdef TRACY_PROFILER
+		ZoneScoped;
+#endif
 	middle_id_t sourceGateId = connection.source.gateId;
 	middle_id_t destinationGateId = connection.destination.gateId;
 	connection_end_id_t sourcePort = connection.source.portId;
@@ -149,6 +161,9 @@ void SimulatorOptimizer::removeConnection(SimPauseGuard& pauseGuard, EvalConnect
 }
 
 std::vector<EvalConnection> SimulatorOptimizer::getInputs(middle_id_t middleId) const {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	if (middleId >= inputConnections.size()) {
 		return {};
 	}
@@ -156,6 +171,9 @@ std::vector<EvalConnection> SimulatorOptimizer::getInputs(middle_id_t middleId) 
 }
 
 std::vector<EvalConnection> SimulatorOptimizer::getOutputs(middle_id_t middleId) const {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	if (middleId >= outputConnections.size()) {
 		return {};
 	}
