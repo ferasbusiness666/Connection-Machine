@@ -161,15 +161,17 @@ void SimulatorOptimizer::removeConnection(SimPauseGuard& pauseGuard, EvalConnect
 }
 
 const std::vector<EvalConnection>& SimulatorOptimizer::getInputs(middle_id_t middleId) const {
+	static const std::vector<EvalConnection> emptyConnections;
 	if (middleId >= inputConnections.size()) {
-		return {};
+		return emptyConnections;
 	}
 	return inputConnections.at(middleId);
 }
 
 const std::vector<EvalConnection>& SimulatorOptimizer::getOutputs(middle_id_t middleId) const {
+	static const std::vector<EvalConnection> emptyConnections;
 	if (middleId >= outputConnections.size()) {
-		return {};
+		return emptyConnections;
 	}
 	return outputConnections.at(middleId);
 }
