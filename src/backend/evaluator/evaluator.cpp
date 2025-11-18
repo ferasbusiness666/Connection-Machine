@@ -193,8 +193,8 @@ void Evaluator::edit_deleteICContents(SimPauseGuard& pauseGuard, eval_circuit_id
 		logError("EvalCircuit with id {} not found", "Evaluator::edit_deleteIC", evalCircuitId);
 		return;
 	}
-	static std::vector<std::pair<Position, CircuitNode>> nodesToRemove;
-	nodesToRemove.clear();
+	std::vector<std::pair<Position, CircuitNode>> nodesToRemove;
+	nodesToRemove.reserve(evalCircuit->getNumNodes());
 	evalCircuit->forEachNode([&](Position pos, const CircuitNode& node) {
 		nodesToRemove.emplace_back(pos, node);
 	});
@@ -955,6 +955,9 @@ void Evaluator::setState(const Address& address, logic_state_t state) {
 }
 
 void Evaluator::checkToCreateExternalConnections(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, Position position) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	// logInfo("Checking to create external connections for evalCircuitId {} at position {}", "Evaluator::checkToCreateExternalConnections", evalCircuitId,
 	// position.toString());
 	EvalCircuit* evalCircuit = evalCircuitContainer.getCircuit(evalCircuitId);
@@ -1335,6 +1338,9 @@ void Evaluator::processDirtyNodes() {
 }
 
 void Evaluator::dirtyBlockAt(Position position, eval_circuit_id_t evalCircuitId) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	EvalCircuit* evalCircuit = evalCircuitContainer.getCircuit(evalCircuitId);
 	if (!evalCircuit) {
 		logError("EvalCircuit with id {} not found", "Evaluator::dirtyBlockAt", evalCircuitId);
