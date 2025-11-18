@@ -7,7 +7,7 @@ void TutorialLoader::parseTutorialFile(std::string& fileName) {
 	std::vector<std::string> words;
 	std::vector<TutorialStep> steps;
 	for (int i = 0; i < fileData.size(); i++) {
-		if (fileData[i] == '\n' || fileData[i] == '\t' || fileData [i] == ' ') {
+		if (fileData[i] == '\n' || fileData[i] == '\t' || fileData[i] == ' ') {
 			if (word.empty()) {
 				continue;
 			} else {
@@ -47,27 +47,28 @@ void TutorialLoader::parseTutorialFile(std::string& fileName) {
 				} else {
 					throw std::string("incorrectly formatted condition\n");
 				}
-			if (words[index] == "Action:") {
-				index++;
-				if (index == words.size()) {
-					break;
-				}
-				if (words[index] == "Message:") {
+				if (words[index] == "Action:") {
+					index++;
+					if (index == words.size()) {
+						break;
+					}
+					if (words[index] == "Message:") {
 
-				} else if (words[index] == "Block") {
+					} else if (words[index] == "Block") {
 
-				} else if (words[index] == "Connection") {
-					
-				} else if (words[index] == "Step:") {
-					// do nothing and let it go back to Step:
+					} else if (words[index] == "Connection") {
+
+					} else if (words[index] == "Step:") {
+						// do nothing and let it go back to Step:
+					} else {
+						throw std::string("incorrectly formatted action\n");
+					}
 				} else {
-					throw std::string("incorrectly formatted action\n");
+					throw std::string("incorrect format (missing 'Action:' or 'Condition:')\n");
 				}
 			} else {
-				throw std::string("incorrect format (missing 'Action:' or 'Condition:')\n");
+				throw std::string("incorrect format (missing 'Step:')\n");
 			}
-		} else {
-			throw std::string("incorrect format (missing 'Step:')\n");
 		}
 	}
 
