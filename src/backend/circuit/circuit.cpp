@@ -12,6 +12,7 @@ Circuit::Circuit(circuit_id_t circuitId, CircuitManager& circuitManager, BlockDa
 	circuitId(circuitId), blockContainer(circuitManager, blockDataManager), circuitUUID(uuid), circuitName(name), dataUpdateEventManager(dataUpdateEventManager), dataUpdateEventReceiver(dataUpdateEventManager) {
 	dataUpdateEventReceiver.linkFunction("preBlockSizeChange", std::bind(&Circuit::blockSizeChange, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("preBlockDataSetConnection", std::bind(&Circuit::addConnectionPort, this, std::placeholders::_1));
+	dataUpdateEventReceiver.linkFunction("preBlockDataPortBitConfigurationSet", std::bind(&Circuit::setConnectionPortBitwidth, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("preBlockDataRemoveConnection", std::bind(&Circuit::removeConnectionPort, this, std::placeholders::_1));
 }
 
@@ -583,7 +584,7 @@ void Circuit::blockSizeChange(const DataUpdateEventManager::EventData* eventData
 	}
 	auto data = eventData->cast<std::pair<BlockType, Size>>();
 	if (!data) {
-		logError("Could not get std::pair<BlockType, Size>> from eventData", "Circuit");
+		logError("Could not get std::pair<BlockType, Size> from eventData", "Circuit");
 		undoSystem.addBlocker(); // cant undo after changing block size!
 		return;
 	}
@@ -637,11 +638,26 @@ void Circuit::addConnectionPort(const DataUpdateEventManager::EventData* eventDa
 	}
 	auto data = eventData->cast<std::pair<BlockType, connection_end_id_t>>();
 	if (!data) {
-		logError("Could not get std::pair<BlockType, Vector>> from eventData", "Circuit");
+		logError("Could not get std::pair<BlockType, connection_end_id_t> from eventData", "Circuit");
 		return;
 	}
 	DifferenceSharedPtr difference = std::make_shared<Difference>();
 	blockContainer.addConnectionPort(data->get().first, data->get().second, difference.get());
+	sendDifference(std::move(difference));
+}
+
+void Circuit::setConnectionPortBitwidth(const DataUpdateEventManager::EventData* eventData) {
+	if (!eventData) {
+		logError("eventData passed was null", "Circuit");
+		return;
+	}
+	auto data = eventData->cast<std::tuple<BlockType, connection_end_id_t, unsigned int>>();
+	if (!data) {
+		logError("Could not get std::tuple<BlockType, connection_end_id_t, unsigned int> from eventData", "Circuit");
+		return;
+	}
+	DifferenceSharedPtr difference = std::make_shared<Difference>();
+	blockContainer.setConnectionPortBitwidth(std::get<0>(data->get()), std::get<1>(data->get()), std::get<2>(data->get()), difference.get());
 	sendDifference(std::move(difference));
 }
 
@@ -652,7 +668,7 @@ void Circuit::removeConnectionPort(const DataUpdateEventManager::EventData* even
 	}
 	auto data = eventData->cast<std::pair<BlockType, connection_end_id_t>>();
 	if (!data) {
-		logError("Could not get std::pair<BlockType, Vector>> from eventData", "Circuit");
+		logError("Could not get std::pair<BlockType, connection_end_id_t> from eventData", "Circuit");
 		return;
 	}
 	DifferenceSharedPtr difference = std::make_shared<Difference>();

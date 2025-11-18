@@ -390,7 +390,7 @@ void Evaluator::removeCircuitIO(const DataUpdateEventManager::EventData* data) {
 	BlockType blockType = std::get<0>(dataValue);
 	connection_end_id_t connectionEndId = std::get<1>(dataValue);
 	Position position = std::get<2>(dataValue);
-	
+
 	circuit_id_t circuitId = circuitBlockDataManager.getCircuitId(blockType);
 	SimPauseGuard pauseGuard = evalSimulator->beginEdit();
 	changedSim = false;
@@ -414,7 +414,7 @@ void Evaluator::setCircuitIO(const DataUpdateEventManager::EventData* data) {
 	std::pair<BlockType, connection_end_id_t> dataValue = eventData->get();
 	BlockType blockType = dataValue.first;
 	connection_end_id_t connectionEndId = dataValue.second;
-	
+
 	circuit_id_t circuitId = circuitBlockDataManager.getCircuitId(blockType);
 	if (circuitId == 0) {
 		logError("Circuit ID for BlockType {} is 0, cannot set IO", "Evaluator::setCircuitIO", blockType);
@@ -436,7 +436,7 @@ void Evaluator::setCircuitIO(const DataUpdateEventManager::EventData* data) {
 		return;
 	}
 	// find block position
-	
+
 	SharedCircuit circuit = circuitManager.getCircuit(circuitId);
 	if (!circuit) {
 		logError("Circuit with ID {} not found", "Evaluator::setCircuitIO", circuitId);

@@ -338,6 +338,7 @@ void BlockCreationWindow::updateFromMenu() {
 	// check that data is good
 	if (!size.isValid()) {
 		logWarning("Can't update block data. Size of block cant be less than 1 currently is {}.", "BlockCreationWindow", size.toString());
+		mainWindow.logError("Failed to save IC settings. Size of block cant be less than 1 currently is {}.", size.toString());
 		return;
 	}
 
@@ -350,21 +351,25 @@ void BlockCreationWindow::updateFromMenu() {
 		unsigned int bitWidth = std::get<6>(row);
 		if (bitWidth == 0) {
 			logWarning("Can't update block data. Port bit width {} has to be more than 0.", "BlockCreationWindow", bitWidth);
+			mainWindow.logError("Failed to save IC settings. Port bit width {} has to be more than 0.", bitWidth);
 			return;
 		}
 		if (!portPositionOnBlock.widthInSize(size)) {
 			logWarning("Can't update block data. Port position {} is not on the block {}.", "BlockCreationWindow", portPositionOnBlock.toString(), size.toString());
+			mainWindow.logError("Failed to save IC settings. Port position {} is not on the block {}.", portPositionOnBlock.toString(), size.toString());
 			return;
 		}
 		if (portIsInput) {
 			if (inPortPositionsOnBlock.contains(portPositionOnBlock)) {
 				logWarning("Can't update block data. Port position {} is already used.", "BlockCreationWindow", portPositionOnBlock.toString());
+				mainWindow.logError("Failed to save IC settings. Port position {} is already used.", portPositionOnBlock.toString());
 				return;
 			}
 			inPortPositionsOnBlock.emplace(portPositionOnBlock);
 		} else {
 			if (outPortPositionsOnBlock.contains(portPositionOnBlock)) {
 				logWarning("Can't update block data. Port position {} is already used.", "BlockCreationWindow", portPositionOnBlock.toString());
+				mainWindow.logError("Failed to save IC settings. Port position {} is already used.", portPositionOnBlock.toString());
 				return;
 			}
 			outPortPositionsOnBlock.emplace(portPositionOnBlock);

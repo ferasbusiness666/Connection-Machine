@@ -152,9 +152,9 @@ void BlockData::setConnectionBidirectional(Vector positionOnBlock, connection_en
 
 void BlockData::setConnectionIdName(connection_end_id_t connectionId, const std::string& name) {
 	connectionIdNames.set(connectionId, name);
-	dataUpdateEventManager.sendEvent(
+	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>(
 		"blockDataConnectionNameSet",
-		DataUpdateEventManager::EventDataWithValue<std::pair<BlockType, connection_end_id_t>>({ blockType, connectionId })
+		std::pair<BlockType, connection_end_id_t>({ blockType, connectionId })
 	);
 }
 
@@ -177,9 +177,9 @@ void BlockData::setConnnectionPortOffset(connection_end_id_t connectionId, FVect
 	auto iter = connections.find(connectionId);
 	if (iter == connections.end()) return;
 	iter->second.portOffset = offset;
-	dataUpdateEventManager.sendEvent(
+	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>(
 		"blockDataSetConnection",
-		DataUpdateEventManager::EventDataWithValue<std::pair<BlockType, connection_end_id_t>>({ blockType, connectionId })
+		{ blockType, connectionId }
 	);
 }
 
@@ -191,10 +191,18 @@ void BlockData::setConnectionBitConfiguration(connection_end_id_t connectionId, 
 	}
 	auto iter = connections.find(connectionId);
 	if (iter == connections.end()) return;
+	dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, unsigned int>>(
+		"preBlockDataPortBitConfigurationSet",
+		{
+			blockType,
+			connectionId,
+			std::holds_alternative<unsigned int>(bitConfiguration) ? std::get<unsigned int>(bitConfiguration) : std::get<std::vector<unsigned int>>(bitConfiguration).size() // get bitwidth
+		}
+	);
 	iter->second.bitConfiguration = bitConfiguration;
-	dataUpdateEventManager.sendEvent(
+	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>(
 		"blockDataPortBitConfigurationSet",
-		DataUpdateEventManager::EventDataWithValue<std::pair<BlockType, connection_end_id_t>>({ blockType, connectionId })
+		{ blockType, connectionId }
 	);
 }
 

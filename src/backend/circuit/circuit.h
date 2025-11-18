@@ -104,6 +104,7 @@ private:
 	void setBlockType(BlockType blockType);
 	void blockSizeChange(const DataUpdateEventManager::EventData* eventData);
 	void addConnectionPort(const DataUpdateEventManager::EventData* eventData);
+	void setConnectionPortBitwidth(const DataUpdateEventManager::EventData* eventData);
 	void removeConnectionPort(const DataUpdateEventManager::EventData* eventData);
 
 	// helpers

@@ -74,6 +74,7 @@ public:
 
 	unsigned int getBitwidthOfJunction(Position position) const { return getBitwidthOfJunction(getBlock(position)); }
 	unsigned int getBitwidthOfJunction(block_id_t blockId) const { return getBitwidthOfJunction(getBlock(blockId)); }
+	unsigned int getBitwidthOfJunctionIgnorePort(block_id_t blockId, BlockType blockType, connection_end_id_t endId) const { return getBitwidthOfJunctionIgnorePort(getBlock(blockId), blockType, endId); }
 
 	// -- setters --
 	// Trys to creates a connection. Returns if successful. Pass a Difference* to read the what changes were made.
@@ -86,7 +87,9 @@ public:
 	bool tryRemoveConnection(Position outputPosition, Position inputPosition, Difference* difference);
 	// Sets up connection containers to have the new end id
 	void addConnectionPort(BlockType blockType, connection_end_id_t endId, Difference* difference);
-	// Remove all connects and set connection containers to not have the end id
+	// Removes all connects made to port that are a invalide bitwidth
+	void setConnectionPortBitwidth(BlockType blockType, connection_end_id_t endId, unsigned int bitwidth, Difference* difference);
+	// Removes all connects and set connection containers to not have the end id
 	void removeConnectionPort(BlockType blockType, connection_end_id_t endId, Difference* difference);
 
 	/* ----------- iterators ----------- */
@@ -105,8 +108,10 @@ public:
 	nlohmann::json dumpState() const;
 
 private:
-	unsigned int getBitwidthOfJunction(block_id_t blockId, std::unordered_set<block_id_t>& visited) const;
 	unsigned int getBitwidthOfJunction(const Block* block) const;
+	unsigned int getBitwidthOfJunction(block_id_t blockId, std::unordered_set<block_id_t>& visited) const;
+	unsigned int getBitwidthOfJunctionIgnorePort(const Block* block, BlockType blockType, connection_end_id_t endId) const;
+	unsigned int getBitwidthOfJunctionIgnorePort(const Block* block, BlockType blockType, connection_end_id_t endId, std::unordered_set<block_id_t>& visited) const;
 
 	inline Block* getBlock_(Position position);
 	inline Block* getBlock_(block_id_t blockId);
