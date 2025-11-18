@@ -435,6 +435,20 @@ void Evaluator::setCircuitIO(const DataUpdateEventManager::EventData* data) {
 		logError("Position for connection end ID {} not found in CircuitBlockData for Circuit ID {}", "Evaluator::setCircuitIO", connectionEndId, circuitId);
 		return;
 	}
+	// find block position
+	
+	SharedCircuit circuit = circuitManager.getCircuit(circuitId);
+	if (!circuit) {
+		logError("Circuit with ID {} not found", "Evaluator::setCircuitIO", circuitId);
+		return;
+	}
+	const BlockContainer& blockContainer = circuit->getBlockContainer();
+	const Block* block = blockContainer.getBlock(*position);
+	if (!block) {
+		logError("Block at position {} not found in Circuit ID {}", "Evaluator::setCircuitIO", position->toString(), circuitId);
+		return;
+	}
+	Position blockPosition = block->getPosition();
 	// use checkToCreateExternalConnections
 	// iterate over eval_circuit_id_t
 	for (eval_circuit_id_t evalCircuitId : evalCircuitContainer.ids()) {
@@ -445,7 +459,7 @@ void Evaluator::setCircuitIO(const DataUpdateEventManager::EventData* data) {
 		if (evalCircuit->getCircuitId() != circuitId) {
 			continue;
 		}
-		checkToCreateExternalConnections(pauseGuard, evalCircuitId, *position);
+		checkToCreateExternalConnections(pauseGuard, evalCircuitId, blockPosition);
 	}
 	if (changedSim){
 		evalSimulator->endEdit(pauseGuard);
@@ -938,6 +952,7 @@ void Evaluator::checkToCreateExternalConnections(SimPauseGuard& pauseGuard, eval
 		}
 		for (const EvalPosition& evalPosition : visitedEvalPositions) {
 			dirtyNodes.insert(evalPosition);
+			changedPositioning = true;
 		}
 	}
 }
