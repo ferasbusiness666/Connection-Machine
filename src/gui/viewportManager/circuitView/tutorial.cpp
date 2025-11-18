@@ -28,9 +28,8 @@ void Tutorial::StartTutorial() {
 		this->checkTutorialState(stateSetEvent->getPosition(), stateSetEvent->getState());
 		return false;
 	});
-	TutorialLoader t;
 	std::string a("BasicTutorial.tir");
-	t.parseTutorialFile(a);
+	parseTutorialFile(a);
 	tutorialSteps = basicTutorialInitialize();
 	runCurrentStep();
 }

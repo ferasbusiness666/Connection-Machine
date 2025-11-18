@@ -1,7 +1,12 @@
 #include "tutorialLoader.h"
 #include "fileLoader.h"
+#include "computerAPI/circuits/textParser.h"
 
-void TutorialLoader::parseTutorialFile(std::string& fileName) {
+Position getPositionFromString(const std::string str1, const std::string str2) {
+	return Position(std::stoi(str1.substr(str1.find('(') + 1)), std::stoi(str2.substr(0, str2.size() - 1)));
+}
+
+void parseTutorialFile(std::string& fileName) {
 	std::vector<char> fileData = readFileAsBytes("TutorialLib/" + fileName);
 	std::string word;
 	std::vector<std::string> words;
@@ -28,16 +33,20 @@ void TutorialLoader::parseTutorialFile(std::string& fileName) {
 	while (words[index++].back() != '"') {
 		// get past name, prolly should do something but idk
 	}
+	TutorialCondition c;
+	TutorialAction a;
 
 	for (; index < words.size(); index++) {
 		if (words[index] == "Step:") {
 			index++;
 			if (words[index] == "Condition:") {
 				if (words[index] == "Block:") {
-					std::string blockName(words[++index]);
+					BlockType blockName(stringToBlockType(words[++index]));
 					words[++index].pop_back();
-					Position pos(std::stoi(words[index].substr(words[index].find('(') + 1)), std::stoi(words[++index].substr(0, words[index].size() - 1)));
-					std::string orietnation(words[++index]);
+					Position p = getPositionFromString(words[index], words[index + 1]);
+					index++;
+					Orientation orietnation(stringToOrientation((words[++index])));
+					c.blocks.emplace_back(p, blockName, orietnation);
 				} else if (words[index] == "Connection:") {
 
 				} else if (words[index] == "State") {
@@ -74,3 +83,4 @@ void TutorialLoader::parseTutorialFile(std::string& fileName) {
 
 	return;
 }
+
