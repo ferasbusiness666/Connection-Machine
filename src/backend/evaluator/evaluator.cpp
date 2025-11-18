@@ -445,7 +445,6 @@ void Evaluator::setCircuitIO(const DataUpdateEventManager::EventData* data) {
 	const BlockContainer& blockContainer = circuit->getBlockContainer();
 	const Block* block = blockContainer.getBlock(*position);
 	if (!block) {
-		logError("Block at position {} not found in Circuit ID {}", "Evaluator::setCircuitIO", position->toString(), circuitId);
 		return;
 	}
 	Position blockPosition = block->getPosition();
