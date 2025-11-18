@@ -269,10 +269,10 @@ private:
 
 	void extendDataVectors(simulator_id_t id) {
 		if (statesA.size() <= id) {
-			statesA.resizeWithOffset(id, 1, logic_state_t::UNDEFINED);
-			statesB.resizeWithOffset(id, 1, logic_state_t::UNDEFINED);
+			statesA.smartResizeWithOffset(id, 1, logic_state_t::UNDEFINED);
+			statesB.smartResizeWithOffset(id, 1, logic_state_t::UNDEFINED);
 			for (IdVector<simulator_id_t, logic_state_t>& replayStates : statesReplay) {
-				replayStates.resizeWithOffset(id, 1, logic_state_t::UNDEFINED);
+				replayStates.smartResizeWithOffset(id, 1, logic_state_t::UNDEFINED);
 			}
 		}
 	}

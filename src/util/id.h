@@ -235,6 +235,45 @@ public:
 	inline void resizeWithOffset(id_type n, int offset) { storage.resize(n.get() + offset); }
 	inline void resizeWithOffset(id_type n, int offset, const T& value) { storage.resize(n.get() + offset, value); }
 
+	inline void smartResize(id_type n) { // exponential growth strategy
+		if (n.get() > storage.size()) {
+			size_t newSize = storage.size() == 0 ? 1 : storage.size();
+			while (newSize < n.get()) {
+				newSize *= 2;
+			}
+			storage.resize(newSize);
+		}
+	}
+	inline void smartResize(id_type n, T& value) {
+		if (n.get() > storage.size()) {
+			size_t oldSize = storage.size();
+			size_t newSize = oldSize == 0 ? 1 : oldSize;
+			while (newSize < n.get()) {
+				newSize *= 2;
+			}
+			storage.resize(newSize, value);
+		}
+	}
+	inline void smartResizeWithOffset(id_type n, int offset) {
+		if (n.get() + offset > storage.size()) {
+			size_t newSize = storage.size() == 0 ? 1 : storage.size();
+			while (newSize < n.get() + offset) {
+				newSize *= 2;
+			}
+			storage.resize(newSize);
+		}
+	}
+	inline void smartResizeWithOffset(id_type n, int offset, const T& value) {
+		if (n.get() + offset > storage.size()) {
+			size_t oldSize = storage.size();
+			size_t newSize = oldSize == 0 ? 1 : oldSize;
+			while (newSize < n.get() + offset) {
+				newSize *= 2;
+			}
+			storage.resize(newSize, value);
+		}
+	}
+
 	inline void clear() noexcept { storage.clear(); }
 
 	inline T& operator[](id_type id) { return storage[id.get()]; }

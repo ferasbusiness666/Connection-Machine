@@ -8,14 +8,16 @@ void Replacement::removeGate(
 	std::unordered_map<connection_end_id_t, EvalConnectionPoint> replacementConnectionPoints) {
 	isEmpty = false;
 	// track connection removals
-	std::vector<EvalConnection> outputs = replacer->busInterfacePassthrough.getOutputs(gateId);
-	std::vector<EvalConnection> inputs = replacer->busInterfacePassthrough.getInputs(gateId);
-	for (const auto& conn : outputs) {
+	std::pair<const std::vector<EvalConnection>&, std::vector<EvalConnection>> outputs = replacer->busInterfacePassthrough.getOutputs(gateId);
+	std::pair<const std::vector<EvalConnection>&, std::vector<EvalConnection>> inputs = replacer->busInterfacePassthrough.getInputs(gateId);
+	for (int i = 0; i < outputs.first.size() + outputs.second.size(); i++) {
+		const EvalConnection& conn = (i < outputs.first.size()) ? outputs.first.at(i) : outputs.second[i - outputs.first.size()];
 		if (conn.destination.gateId != conn.source.gateId) {
 			deletedConnections.push_back(conn);
 		}
 	}
-	for (const auto& conn : inputs) {
+	for (int i = 0; i < inputs.first.size() + inputs.second.size(); i++) {
+		const EvalConnection& conn = (i < inputs.first.size()) ? inputs.first.at(i) : inputs.second[i - inputs.first.size()];
 		deletedConnections.push_back(conn);
 	}
 	deletedGates.push_back({ gateId, replacer->busInterfacePassthrough.getBlockType(gateId) });
@@ -29,16 +31,21 @@ void Replacement::removeGate(
 	SimPauseGuard& pauseGuard,
 	middle_id_t gateId,
 	middle_id_t replacementId) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	isEmpty = false;
 	// track connection removals
-	std::vector<EvalConnection> outputs = replacer->busInterfacePassthrough.getOutputs(gateId);
-	std::vector<EvalConnection> inputs = replacer->busInterfacePassthrough.getInputs(gateId);
-	for (const auto& conn : outputs) {
+	std::pair<const std::vector<EvalConnection>&, std::vector<EvalConnection>> outputs = replacer->busInterfacePassthrough.getOutputs(gateId);
+	std::pair<const std::vector<EvalConnection>&, std::vector<EvalConnection>> inputs = replacer->busInterfacePassthrough.getInputs(gateId);
+	for (int i = 0; i < outputs.first.size() + outputs.second.size(); i++) {
+		const EvalConnection& conn = (i < outputs.first.size()) ? outputs.first.at(i) : outputs.second[i - outputs.first.size()];
 		if (conn.destination.gateId != conn.source.gateId) {
 			deletedConnections.push_back(conn);
 		}
 	}
-	for (const auto& conn : inputs) {
+	for (int i = 0; i < inputs.first.size() + inputs.second.size(); i++) {
+		const EvalConnection& conn = (i < inputs.first.size()) ? inputs.first.at(i) : inputs.second[i - inputs.first.size()];
 		deletedConnections.push_back(conn);
 	}
 	deletedGates.push_back({ gateId, replacer->busInterfacePassthrough.getBlockType(gateId) });
@@ -52,6 +59,9 @@ void Replacement::addGate(
 	SimPauseGuard& pauseGuard,
 	BlockType blockType,
 	middle_id_t gateId) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	isEmpty = false;
 	replacer->busInterfacePassthrough.addGate(pauseGuard, blockType, gateId);
 	// we don't need to track, because nothing can happen to this gate at a lower level
@@ -61,6 +71,9 @@ void Replacement::addGate(
 void Replacement::removeConnection(
 	SimPauseGuard& pauseGuard,
 	EvalConnection connection) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	isEmpty = false;
 	replacer->busInterfacePassthrough.removeConnection(pauseGuard, connection);
 	trackId(connection.destination.gateId);
@@ -71,6 +84,9 @@ void Replacement::removeConnection(
 void Replacement::makeConnection(
 	SimPauseGuard& pauseGuard,
 	EvalConnection connection) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	isEmpty = false;
 	replacer->busInterfacePassthrough.makeConnection(pauseGuard, connection);
 	trackId(connection.destination.gateId);
@@ -194,6 +210,9 @@ void Replacement::revert(SimPauseGuard& pauseGuard) {
 }
 
 void Replacement::trackId(middle_id_t middleId) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	replacer->dependentReplacements[middleId].insert(id);
 	idsToTrack.insert(middleId);
 }

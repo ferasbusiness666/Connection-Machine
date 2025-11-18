@@ -106,7 +106,7 @@ private:
 	std::vector<middle_id_t> reservedIds;
 	std::vector<ReplacementLayerEntry> replacementLayerEntries;
 	std::vector<ReplacementConnectionPointOverride> overriddenConnectionPoints;
-	std::set<middle_id_t> idsToTrack;
+	std::unordered_set<middle_id_t> idsToTrack;
 	std::vector<std::function<void(SimPauseGuard&)>> revertCallbacksWithPauseGuard;
 	std::vector<std::function<void()>> revertCallbacks;
 	bool isEmpty { true };
