@@ -1,4 +1,5 @@
 #include "./testCaseFileManager.h"
+#include "backend/circuitTestCase/circuitTestCase.h"
 #include "backend/evaluator/simulator/logicState.h"
 #include "logging/logging.h"
 
@@ -33,7 +34,6 @@ std::optional<CircuitTestCase> TestCaseFileManager::getCircuitTestCaseFromFilePa
 
     std::string testName;
     inputFile >> token;
-
     if (token == "Test:") {
         inputFile >> std::quoted(testName);
     } else {
@@ -41,23 +41,40 @@ std::optional<CircuitTestCase> TestCaseFileManager::getCircuitTestCaseFromFilePa
         return std::nullopt;
     }
 
-    std::vector<std::string> portNames = {};
+    std::unordered_set<std::string> portNames = {};
     inputFile >> token;
     if (token == "Ports:") {
+        inputFile >> std::ws;
         while(inputFile.peek() == '"') {
             std::string portName;
             inputFile >> std::quoted(portName);
-            portNames.push_back(portName);
+            portNames.insert(portName);
+            inputFile >> std::ws;
         }
     } else {
         logError("Invalid file format, expected 'Ports:' on line 3", "TestCaseFileManager");
         return std::nullopt;
     }
 
-
+    CircuitTestCase testCase;
 
     while (inputFile >> token) {
-        
+        if (token[0] == '>') {
+            if (token.substr(1) == "Set:" || token.substr(1) == "Check:") {
+                logInfo("Set/Check", "TestCaseFileManager");
+                std::vector<std::pair<std::string, logic_state_t>> states = {};
+                inputFile >> std::ws;
+                while (inputFile.peek() != '>') {
+                    std::string portName;
+                    inputFile >> std::quoted(portName);
+                } //read number by >> into int
+
+            } else if (token.substr(1) == "Step") {
+                logInfo("Step", "TestCaseFileManager");
+            } else {
+                logError("Unknown command in test file", "TestCaseFileManager");
+            }
+        }
     }
 
     logInfo("Loaded test", "TestCaseFileManager");
