@@ -1,4 +1,4 @@
-#include "tutorialManager.h"
+#include "tutorial.h"
 
 #include "circuitView.h"
 #include "environment/environment.h"
@@ -6,10 +6,10 @@
 
 std::vector<TutorialStep> basicTutorialInitialize();
 
-TutorialManager::TutorialManager(Environment& environment, CircuitView& circuitView) :
+Tutorial::Tutorial(Environment& environment, CircuitView& circuitView) :
 	circuitView(&circuitView), elementCreator(circuitView.getViewportId()), environment(environment), tutorialRunning(false), tutorialState(0) { }
 
-void TutorialManager::StartTutorial() {
+void Tutorial::StartTutorial() {
 	if (tutorialRunning) return;
 	tutorialRunning = true;
 	tutorialState = 0;
@@ -21,18 +21,20 @@ void TutorialManager::StartTutorial() {
 	evaluator = circuitView->getBackend().getEvaluator(evaluatorId.value());
 	SharedCircuit circuit = circuitView->getBackend().getCircuitManager().getCircuit(circuitId);
 	curentCircuit = circuitView->getBackend().getCircuitManager().getCircuit(circuitId);
-	curentCircuit->connectListener(this, std::bind(&TutorialManager::checkTutorial, this, std::placeholders::_1, std::placeholders::_2));
+	curentCircuit->connectListener(this, std::bind(&Tutorial::checkTutorial, this, std::placeholders::_1, std::placeholders::_2));
 	circuitView->getEventRegister().registerFunction("CircuitStateSet", [this](const Event* event) -> bool {
 		const StateSetEvent* stateSetEvent = event->cast<StateSetEvent>();
 		if (!stateSetEvent) return false;
 		this->checkTutorialState(stateSetEvent->getPosition(), stateSetEvent->getState());
 		return false;
 	});
+	std::string a("BasicTutorial.tir");
+	parseTutorialFile(a);
 	tutorialSteps = basicTutorialInitialize();
 	runCurrentStep();
 }
 
-void TutorialManager::Stop() {
+void Tutorial::Stop() {
 	if (!tutorialRunning) return;
 	if (curentCircuit) {
 		curentCircuit->disconnectListener(this);
@@ -40,12 +42,12 @@ void TutorialManager::Stop() {
 	elementCreator.clear();
 	tutorialRunning = false;
 }
-void TutorialManager::checkTutorial(DifferenceSharedPtr, circuit_id_t) { advanceTutorial(); }
-void TutorialManager::checkTutorialState(Position pos, bool state) { advanceTutorial(); }
+void Tutorial::checkTutorial(DifferenceSharedPtr, circuit_id_t) { advanceTutorial(); }
+void Tutorial::checkTutorialState(Position pos, bool state) { advanceTutorial(); }
 
-void TutorialManager::setTutorial(const std::vector<TutorialStep>& steps) { tutorialSteps = steps; }
+void Tutorial::setTutorial(const std::vector<TutorialStep>& steps) { tutorialSteps = steps; }
 
-void TutorialManager::advanceTutorial() {
+void Tutorial::advanceTutorial() {
 	if (!tutorialRunning) return;
 	if (tutorialState >= tutorialSteps.size()) return;
 	if (isCurrentStepComplete()) {
@@ -59,7 +61,7 @@ void TutorialManager::advanceTutorial() {
 	}
 }
 
-bool TutorialManager::isCurrentStepComplete() const {
+bool Tutorial::isCurrentStepComplete() const {
 	if (tutorialState >= tutorialSteps.size()) return false;
 	TutorialStep currentStep = tutorialSteps[tutorialState];
 	BlockContainer blockContainer = curentCircuit->getBlockContainer();
@@ -92,7 +94,7 @@ bool TutorialManager::isCurrentStepComplete() const {
 	return true;
 }
 
-void TutorialManager::runCurrentStep() {
+void Tutorial::runCurrentStep() {
 	if (tutorialState >= tutorialSteps.size()) return;
 	TutorialStep currentStep = tutorialSteps[tutorialState];
 	BlockContainer blockContainer = curentCircuit->getBlockContainer();

@@ -6,6 +6,7 @@ gcovr \
     --exclude '/usr/include/.*' \
     --html \
     --html-details \
+    --html-nested \
     -o coverage/coverage.html \
     --gcov-ignore-parse-errors=negative_hits.warn_once_per_file \
     --gcov-ignore-errors=no_working_dir_found
