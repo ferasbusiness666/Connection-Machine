@@ -24,7 +24,6 @@ endif()
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
 
 add_main_dependencies()
-add_app_dependencies()
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${SOURCE_DIR} PUBLIC ${Vulkan_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${EXTERNAL_LINKS})

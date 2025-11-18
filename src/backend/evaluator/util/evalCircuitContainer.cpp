@@ -84,3 +84,14 @@ eval_circuit_id_t EvalCircuitContainer::traverseToTopLevelIC(eval_circuit_id_t s
 eval_circuit_id_t EvalCircuitContainer::traverseToTopLevelIC(const Address& address) const {
 	return traverseToTopLevelIC(eval_circuit_id_t(0), address);
 }
+
+nlohmann::json EvalCircuitContainer::dumpState() const {
+	nlohmann::json stateJson;
+	for (const eval_circuit_id_t id : circuits.ids()) {
+		EvalCircuit* circuit = circuits.at(id);
+		if (circuit != nullptr) {
+			stateJson[std::to_string(id.get())] = circuit->dumpState();
+		}
+	}
+	return stateJson;
+}

@@ -34,6 +34,14 @@ public:
 
 	const FileListener& getFileListener() const { return fileListener; }
 	FileListener& getFileListener() { return fileListener; }
+
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson;
+		stateJson["backend"] = backend.dumpState();
+		stateJson["circuitFileManager"] = circuitFileManager.dumpState();
+		stateJson["fileListener"] = fileListener.dumpState();
+		return stateJson;
+	}
 #ifndef CLI
 	const BlockRenderDataFeeder& getBlockRenderDataFeeder() const { return blockRenderDataFeeder.value(); }
 	BlockRenderDataFeeder& getBlockRenderDataFeeder() { return blockRenderDataFeeder.value(); }

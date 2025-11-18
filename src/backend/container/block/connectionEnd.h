@@ -20,6 +20,13 @@ public:
 	std::string toString() const { return "ConnectionEnd(blockId=" + std::to_string(blockId) + ", connectionId=" + std::to_string(connectionId) + ")"; }
 
 	auto operator<=>(const ConnectionEnd&) const = default;
+
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson;
+		stateJson["blockId"] = blockId;
+		stateJson["connectId"] = connectionId.get();
+		return stateJson;
+	}
 private:
 	void setBlockId(block_id_t id) { blockId = id; }
 	void setConnectionId(connection_end_id_t id) { connectionId = id; }

@@ -25,6 +25,8 @@ struct ProceduralCircuitParameters {
 	}
 
 	std::map<std::string, int> parameters;
+
+	nlohmann::json dumpState() const;
 };
 
 template<>
@@ -66,10 +68,12 @@ public:
 	const ProceduralCircuitParameters* getProceduralCircuitParameters(circuit_id_t circuitId) const;
 	circuit_id_t getCircuitId(const ProceduralCircuitParameters& parameters);
 	BlockType getBlockType(const ProceduralCircuitParameters& parameters);
+	nlohmann::json dumpState() const;
 
 protected:
 	virtual void makeCircuit(const ProceduralCircuitParameters& parameters, GeneratedCircuit& generatedCircuit) = 0;
 	void regenerateAll();
+	virtual nlohmann::json dumpStateInherited() const = 0;
 
 private:
 	std::string proceduralCircuitName;

@@ -23,7 +23,6 @@
 					<template src="sideBar"></template>
 				</div>
 
-
 				<!-- <div id="center-container"> -->
 				<div id="circuit-view-container">
 					<template src="circuitView"></template>

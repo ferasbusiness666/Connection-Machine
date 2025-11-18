@@ -171,19 +171,26 @@ void Evaluator::edit_deleteICContents(SimPauseGuard& pauseGuard, eval_circuit_id
 		logError("EvalCircuit with id {} not found", "Evaluator::edit_deleteIC", evalCircuitId);
 		return;
 	}
+	std::vector<std::pair<Position, CircuitNode>> nodesToRemove;
 	evalCircuit->forEachNode([&](Position pos, const CircuitNode& node) {
+		nodesToRemove.emplace_back(pos, node);
+	});
+	for (const auto& [pos, node] : nodesToRemove) {
+		removeDependentInterCircuitConnections(pauseGuard, node);
 		if (node.isIC()) {
 			eval_circuit_id_t icId = node.getEvalCircuitId();
 			edit_deleteICContents(pauseGuard, icId);
 			evalCircuitContainer.removeCircuit(icId);
 			changedICs = true;
-			return;
+		} else {
+			middle_id_t gateId = node.getMiddleId();
+			circuitNodeToBlockTypeMap.erase(node);
+			middleIdToEvalPositionMap.erase(gateId);
+			evalSimulator->removeGate(pauseGuard, gateId);
+			middleIdProvider.releaseId(gateId);
 		}
-		middle_id_t gateId = node.getMiddleId();
-		middleIdToEvalPositionMap.erase(gateId);
-		evalSimulator->removeGate(pauseGuard, gateId);
-		middleIdProvider.releaseId(gateId);
-	});
+		evalCircuit->removeNode(pos);
+	}
 }
 
 void Evaluator::edit_placeBlock(
@@ -668,7 +675,6 @@ void Evaluator::edit_moveBlock(
 const EvalAddressTree Evaluator::buildAddressTree() const { return buildAddressTree(eval_circuit_id_t(0)); }
 
 const EvalAddressTree Evaluator::buildAddressTree(eval_circuit_id_t evalCircuitId) const {
-	std::shared_lock lk(simMutex);
 	EvalCircuit* evalCircuit = evalCircuitContainer.getCircuit(evalCircuitId);
 	if (!evalCircuit) {
 		logError("EvalCircuit with id {} not found", "Evaluator::buildAddressTree", evalCircuitId);
@@ -703,6 +709,9 @@ std::optional<middle_id_t> Evaluator::getMiddleId(const eval_circuit_id_t starti
 		logError("Node not found for address {}", "Evaluator::getMiddleId", address.toString());
 		return std::nullopt;
 	}
+	if (node->isIC()) {
+		return std::nullopt;
+	}
 	return node->getMiddleId();
 }
 
@@ -717,6 +726,9 @@ std::optional<middle_id_t> Evaluator::getMiddleId(const eval_circuit_id_t starti
 	std::optional<CircuitNode> node = evalCircuitContainer.getNode(block->getPosition(), evalCircuitId);
 	if (!node.has_value()) {
 		logError("Node not found for address {}", "Evaluator::getMiddleId", address.toString());
+		return std::nullopt;
+	}
+	if (node->isIC()) {
 		return std::nullopt;
 	}
 	return node->getMiddleId();
@@ -1384,4 +1396,51 @@ void Evaluator::decreaseTickrateSeq() {
 	double currentTickrate = getTickrate();
 	double newTickrate = std::max(0.1, prev_in_sequence(currentTickrate));
 	setTickrate(newTickrate);
+}
+
+nlohmann::json Evaluator::dumpState() const {
+	nlohmann::json stateJson;
+	stateJson["evaluatorId"] = evaluatorId.get();
+	stateJson["evalCircuitContainer"] = evalCircuitContainer.dumpState();
+	stateJson["evalConfig"] = evalConfig.dumpState();
+	stateJson["middleIdProvider"] = middleIdProvider.dumpState();
+	stateJson["evalSimulator"] = evalSimulator->dumpState();
+
+	stateJson["interCircuitConnections"] = nlohmann::json::array();
+	for (const InterCircuitConnection& connection : interCircuitConnections) {
+		stateJson["interCircuitConnections"].push_back(connection.dumpState());
+	}
+
+	stateJson["dirtySimulatorIds"] = nlohmann::json::array();
+	for (const simulator_id_t simId : dirtySimulatorIds) {
+		stateJson["dirtySimulatorIds"].push_back(simId.get());
+	}
+
+	stateJson["dirtyMiddleIds"] = nlohmann::json::array();
+	for (const middle_id_t mid : dirtyMiddleIds) {
+		stateJson["dirtyMiddleIds"].push_back(mid.get());
+	}
+
+	stateJson["dirtyNodes"] = nlohmann::json::array();
+	for (const EvalPosition& evalPosition : dirtyNodes) {
+		stateJson["dirtyNodes"].push_back(evalPosition.dumpState());
+	}
+
+	stateJson["pinSimulatorIdToEvalPositionMap"] = nlohmann::json::object();
+	for (const auto& [simulatorId, evalPosition] : pinSimulatorIdToEvalPositionMap) {
+		std::string simIdStr = std::to_string(simulatorId.get());
+		if (!stateJson["pinSimulatorIdToEvalPositionMap"].contains(simIdStr)) {
+			stateJson["pinSimulatorIdToEvalPositionMap"][simIdStr] = nlohmann::json::array();
+		}
+		stateJson["pinSimulatorIdToEvalPositionMap"][simIdStr].push_back(evalPosition.dumpState());
+	}
+
+	stateJson["circuitNodeToBlockTypeMap"] = nlohmann::json::object();
+	for (const auto& [circuitNode, blockType] : circuitNodeToBlockTypeMap) {
+		stateJson["circuitNodeToBlockTypeMap"][circuitNode.toString()] = blocktype_to_string(blockType);
+	}
+
+
+
+	return stateJson;
 }

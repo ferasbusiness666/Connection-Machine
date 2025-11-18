@@ -154,6 +154,8 @@ public:
 		circuit->addEdit();
 	}
 
+	nlohmann::json dumpState() const;
+
 private:
 	circuit_id_t getNewCircuitId() { return ++lastId; }
 

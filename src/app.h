@@ -31,7 +31,13 @@ public:
 	void startTryingToQuit();
 	void stopTryingToQuit();
 
+	nlohmann::json dumpState() const;
+
+	void launchRmlDebugger(Rml::Context* rmlContext);
+	void killRmlDebugger();
+
 private:
+	SdlWindow* debuggingWindow = nullptr;
 	Environment environment {true};
 
 	RmlRenderInterface rmlRenderInterface;

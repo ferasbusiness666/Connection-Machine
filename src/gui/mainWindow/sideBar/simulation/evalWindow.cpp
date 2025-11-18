@@ -16,7 +16,9 @@ EvalWindow::EvalWindow(
 	DataUpdateEventManager& dataUpdateEventManager,
 	Rml::ElementDocument* document,
 	Rml::Element* parent
-) : menuTree(document, parent, true, false), dataUpdateEventReceiver(dataUpdateEventManager), evaluatorManager(evaluatorManager), circuitManager(circuitManager), mainWindow(mainWindow) {
+) :
+	menuTree(document, parent, true, false), dataUpdateEventReceiver(dataUpdateEventManager), evaluatorManager(evaluatorManager), circuitManager(circuitManager),
+	mainWindow(mainWindow) {
 	dataUpdateEventReceiver.linkFunction("addressTreeMakeBranch", [this](const DataUpdateEventManager::EventData*) { refreshSidebar(true); });
 	dataUpdateEventReceiver.linkFunction("blockDataUpdate", [this](const DataUpdateEventManager::EventData*) { refreshSidebar(true); });
 	dataUpdateEventReceiver.linkFunction("circuitViewChangeEvaluator", [this](const DataUpdateEventManager::EventData*) { refreshSidebar(false); });
@@ -29,7 +31,7 @@ EvalWindow::EvalWindow(
 
 void EvalWindow::updateList() {
 	std::vector<std::vector<std::string>> paths;
-	for (auto pair : this->evaluatorManager.getEvaluators()) {
+	for (const auto& pair : this->evaluatorManager.getEvaluators()) {
 		std::vector<std::string> path({ pair.second->getEvaluatorName() });
 		makePaths(paths, path, pair.second->buildAddressTree());
 	}

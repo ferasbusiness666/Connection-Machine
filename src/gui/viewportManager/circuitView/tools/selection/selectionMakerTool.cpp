@@ -28,16 +28,16 @@ void SelectionMakerTool::activate() {
 	}
 }
 
-void SelectionMakerTool::setMode(std::string toolMode) {
-	if (mode != toolMode) {
-		if (toolMode == "Area") {
+void SelectionMakerTool::setMode(const std::string& mode) {
+	if (this->mode != mode) {
+		if (mode == "Area") {
 			activeSelectionHelper = std::make_shared<AreaCreationTool>(environment);
-			mode = toolMode;
-		} else if (toolMode == "Tensor") {
+			this->mode = mode;
+		} else if (mode == "Tensor") {
 			activeSelectionHelper = std::make_shared<TensorCreationTool>(environment);
-			mode = toolMode;
+			this->mode = mode;
 		} else {
-			logError("Tool mode \"{}\" could not be found", "", toolMode);
+			logError("Tool mode \"{}\" could not be found", "", mode);
 		}
 		toolStackInterface->popAbove(this);
 	}

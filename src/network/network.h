@@ -26,17 +26,6 @@ public:
 	~Network();
 
 private:
-	struct Version {
-		int major;
-		int minor;
-		int patch;
-		std::string toString() const {
-			return std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(patch);
-		}
-		auto operator<=>(const Version&) const = default;
-	};
-	static int parseIntWithJunk(const std::string& str);
-	static Version parseVersionString(const std::string& versionStr);
 	static std::optional<Network> singletonInstance;
 
 	static inline std::string urlEncode(const std::string& s) {

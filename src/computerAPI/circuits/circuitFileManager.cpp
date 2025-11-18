@@ -292,3 +292,16 @@ CircuitFileManager::FileData* CircuitFileManager::setSaveFilePathAndGetFileData(
 	}
 	return &(iter->second);
 }
+
+nlohmann::json CircuitFileManager::dumpState() const {
+	nlohmann::json stateJson;
+	try {
+		nlohmann::json fileDataJson;
+		for (const auto& [filePath, fileData] : filePathToFile) {
+			fileDataJson[filePath] = fileData.dumpState();
+		}
+	} catch (const std::exception& e) {
+		stateJson["error"] = e.what();
+	}
+	return stateJson;
+}

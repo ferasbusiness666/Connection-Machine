@@ -29,49 +29,6 @@ MainWindow::MainWindow(Environment& environment) :
 	// create rmlUI document
 	rmlDocument = rmlContext->LoadDocument(DirectoryManager::getResourceDirectory().generic_string() + "/gui/mainWindow/mainWindow.rml");
 
-	// SdlWindow* sdlWindow2 = App::get().registerWindow("Debugger", 350, 800).get();
-	// WindowId windowId2 = MainRenderer::get().registerWindow(sdlWindow2);
-	// Rml::Context* rmlContext2 = Rml::CreateContext("Debugger", Rml::Vector2i(sdlWindow2->getSize().first, sdlWindow2->getSize().second));
-	// if (rmlContext2) {
-	// 	Rml::ElementDocument* rmlDocument2 = rmlContext2->CreateDocument();
-	// 	rmlDocument2->AppendChild(rmlDocument2->CreateElement("div"));
-	// 	Rml::Debugger::Initialise(rmlContext2);
-	// 	Rml::Debugger::SetContext(rmlContext);
-	// 	Rml::Debugger::SetVisible(true);
-	// 	sdlWindow2->setRenderFunction([windowId2, rmlContext2](){
-	// 		RmlRenderInterface* rmlRenderInterface = dynamic_cast<RmlRenderInterface*>(Rml::GetRenderInterface());
-	// 		if (rmlRenderInterface) {
-	// 			rmlContext2->Update();
-	// 			rmlRenderInterface->setWindowToRenderOn(windowId2);
-	// 			MainRenderer::get().prepareForRmlRender(windowId2);
-	// 			rmlContext2->Render();
-	// 			MainRenderer::get().endRmlRender(windowId2);
-	// 		}
-	// 	});
-	// 	sdlWindow2->setRecieveEventFunction(
-	// 		[windowId2, rmlContext2, sdlWindow2](SDL_Event& event){
-	// 			if (sdlWindow2->isThisMyEvent(event)) {
-	// 				if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
-	// 					Rml::RemoveContext(rmlContext2->GetName());
-	// 					MainRenderer::get().deregisterWindow(windowId2);
-	// 					App::get().deregisterWindow(sdlWindow2);
-	// 					return true;
-	// 				}
-
-	// 				RmlSDL::InputEventHandler(rmlContext2, sdlWindow2->getHandle(), event, sdlWindow2->getWindowScalingSize());
-
-	// 				// let renderer know we if resized the window
-	// 				if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
-	// 					MainRenderer::get().resizeWindow(windowId2, { event.window.data1, event.window.data2 });
-	// 					rmlContext2->Update();
-	// 				}
-	// 				return true;
-	// 			}
-	// 			return false;
-	// 		}
-	// 	);
-	// }
-
 	// get widget for circuit view
 	Rml::Element* circuitViewWidgetElement = rmlDocument->GetElementById("circuit-view-rendering-area");
 	createCircuitViewWidget(circuitViewWidgetElement);

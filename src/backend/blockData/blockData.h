@@ -33,6 +33,7 @@ public:
 		unsigned int getMaxLaneIndex() const noexcept { return getBitWidth() - 1; }
 		inline bool containsLaneId(unsigned int laneId) const noexcept;
 		inline unsigned int getIndexOfLaneId(unsigned int laneId) const noexcept;
+		nlohmann::json dumpState() const;
 	};
 
 	BlockData(BlockType blockType, DataUpdateEventManager& dataUpdateEventManager);
@@ -116,6 +117,7 @@ public:
 	inline const std::vector<connection_end_id_t> getPortsWithLaneId(unsigned int laneId) const noexcept;
 	inline unsigned int getLaneCount() const noexcept;
 	inline bool hasBlockState() const noexcept;
+	nlohmann::json dumpState() const;
 
 private:
 	BlockType blockType;

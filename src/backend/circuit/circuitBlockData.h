@@ -44,6 +44,22 @@ public:
 	inline const BidirectionalMultiSecondKeyMap<connection_end_id_t, Position>::constIteratorPairT2 getConnectionPositionToId(Position position) const {
 		return connectionIdPosition.get(position);
 	}
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson;
+		stateJson["circuitId"] = id;
+		stateJson["blockType"] = blocktype_to_string(blockType);
+		if (proceduralCircuitUUID.has_value()) {
+			stateJson["proceduralCircuitUUID"] = proceduralCircuitUUID.value();
+		} else {
+			stateJson["proceduralCircuitUUID"] = nullptr;
+		}
+		nlohmann::json connectionPositionsJson = nlohmann::json::object();
+		for (const auto& pair : connectionIdPosition.getT2Map()) {
+			connectionPositionsJson[std::to_string(pair.first.get())] = pair.second.toString();
+		}
+		stateJson["connectionPositions"] = connectionPositionsJson;
+		return stateJson;
+	}
 
 private:
 	BidirectionalMultiSecondKeyMap<connection_end_id_t, Position> connectionIdPosition;

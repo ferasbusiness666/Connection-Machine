@@ -27,8 +27,8 @@ public:
 	inline virtual bool canMakeEdits() const { return true; };
 
 protected:
-	void registerFunction(std::string eventName, EventFunction function);
-	void unregisterFunction(std::string eventName);
+	void registerFunction(const std::string& eventName, const EventFunction& function);
+	void unregisterFunction(const std::string& eventName);
 	void unregisterFunctions();
 
 	void sendEventToCircuitView(const Event& event);
@@ -39,7 +39,7 @@ protected:
 	virtual void activate();
 	virtual void deactivate() { isActivate = false; unregisterFunctions(); }
 
-	virtual void setMode(std::string toolMode) { }
+	virtual void setMode(const std::string& toolMode) { }
 
 	virtual void updateElements() { }
 

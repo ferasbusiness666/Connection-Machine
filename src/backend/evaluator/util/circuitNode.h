@@ -30,6 +30,17 @@ public:
 	inline std::string toString() const {
 		return isIC() ? "IC(" + std::to_string(getEvalCircuitId()) + ")" : "mid(" + std::to_string(getMiddleId()) + ")";
 	}
+	nlohmann::json dumpState() const {
+		nlohmann::json stateJson;
+		if (isIC()) {
+			stateJson["type"] = "IC";
+			stateJson["evalCircuitId"] = getEvalCircuitId().get();
+		} else {
+			stateJson["type"] = "middle";
+			stateJson["middleId"] = getMiddleId().get();
+		}
+		return stateJson;
+	}
 private:
 	explicit CircuitNode(unsigned int value) : id_and_type(value) {}
 	unsigned int id_and_type;

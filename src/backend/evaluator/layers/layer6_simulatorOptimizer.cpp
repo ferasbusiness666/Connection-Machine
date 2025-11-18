@@ -161,3 +161,29 @@ std::vector<EvalConnection> SimulatorOptimizer::getOutputs(middle_id_t middleId)
 	}
 	return outputConnections.at(middleId);
 }
+
+nlohmann::json SimulatorOptimizer::dumpState() const {
+	nlohmann::json stateJson;
+	stateJson["logicSimulator"] = simulator.dumpState();
+	stateJson["simulatorToMiddleIds"] = nlohmann::json::array();
+	for (simulator_id_t simId : simulatorToMiddleIds.ids()) {
+		stateJson["simulatorToMiddleIds"].push_back(simulatorToMiddleIds[simId].get());
+	}
+	stateJson["middleToSimulatorIds"] = nlohmann::json::array();
+	for (middle_id_t midId : middleToSimulatorIds.ids()) {
+		stateJson["middleToSimulatorIds"].push_back(middleToSimulatorIds[midId].get());
+	}
+	stateJson["inputConnections"] = nlohmann::json::array();
+	for (middle_id_t midId : inputConnections.ids()) {
+		stateJson["inputConnections"].push_back(dumpEvalConnectionVector(inputConnections[midId]));
+	}
+	stateJson["outputConnections"] = nlohmann::json::array();
+	for (middle_id_t midId : outputConnections.ids()) {
+		stateJson["outputConnections"].push_back(dumpEvalConnectionVector(outputConnections[midId]));
+	}
+	stateJson["blockTypes"] = nlohmann::json::array();
+	for (middle_id_t midId : blockTypes.ids()) {
+		stateJson["blockTypes"].push_back(blocktype_to_string(blockTypes[midId]));
+	}
+	return stateJson;
+}

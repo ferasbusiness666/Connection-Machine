@@ -29,13 +29,7 @@
 }
 
 .pop-up-window-blocked {
-	width: 400dp;
-	height: 250dp;
-}
-
-.pop-up-window-blocked-bug-report {
-	width: 400dp;
-	height: 350dp;
+	min-width: 300dp;
 }
 
 .pop-up-window-not-blocked {
@@ -92,7 +86,7 @@
 
 .pop-up-textarea {
 	width: 100%;
-	height: 150dp;
+	/* height: 100%; */
 	font-size: 14dp;
 	padding: 8dp;
 	border-radius: 4dp;
@@ -102,20 +96,5 @@
 }
 
 .pop-up-textarea:focus {
-	border: 1dp #d1963a;
-}
-
-.pop-up-input {
-	width: 100%;
-	height: 30dp;
-	font-size: 14dp;
-	padding: 6dp 8dp;
-	border-radius: 4dp;
-	background-color: #2a2a2a;
-	color: #c9c9c9;
-	border: 1dp #6a4d28;
-}
-
-.pop-up-input:focus {
 	border: 1dp #d1963a;
 }

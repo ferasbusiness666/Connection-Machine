@@ -250,7 +250,7 @@ void BlockDataManager::initializeDefaults() {
 	colorLightBlockData->setTextureTileSize({ 256, 256 });
 	colorLightBlockData->setTextureBlockTileSize({ 1, 1 });
 	colorLightBlockData->setTextureSmallestCordTile({ 0, 0 });
-	colorLightBlockData->setTextureBlockStateOffset({ 16, 256 });
+	colorLightBlockData->setTextureBlockStateOffset({ 8, 256 });
 	logInfo("Default BlockData initialized", "BlockDataManager");
 }
 
@@ -268,6 +268,25 @@ BlockType BlockDataManager::getBusBlock(unsigned int numInputs, unsigned int inp
 		busConnections.emplace_back(Vector(0, i), bitConfig);
 	}
 	busConnections.emplace_back(Vector(1, 0), numInputs * inputBitwidth);
+	return getBusBlock(busConnections);
+}
+
+BlockType BlockDataManager::getBusBlock(unsigned int numInputs, unsigned int numOutputs, unsigned int inputLaneWidth, unsigned int outputLaneWidth) {
+	std::vector<BusConnectionData> busConnections;
+	for (unsigned int i = 0; i < numInputs; i++) {
+		std::vector<unsigned int> bitConfig;
+		for (unsigned int j = i * inputLaneWidth; j < (i + 1) * inputLaneWidth; j++) {
+			bitConfig.push_back(j);
+		}
+		busConnections.emplace_back(Vector(0, i), bitConfig);
+	}
+	for (unsigned int i = 0; i < numOutputs; i++) {
+		std::vector<unsigned int> bitConfig;
+		for (unsigned int j = i * outputLaneWidth; j < (i + 1) * outputLaneWidth; j++) {
+			bitConfig.push_back(j);
+		}
+		busConnections.emplace_back(Vector(1, i), bitConfig);
+	}
 	return getBusBlock(busConnections);
 }
 
@@ -340,4 +359,40 @@ BlockType BlockDataManager::getBusBlock(std::vector<BusConnectionData> busConnec
 	busInterfaceBlockData->setName(name);
 	busInterfaceBlockData->setPath("Other");
 	return blockType;
+}
+
+nlohmann::json BlockDataManager::dumpState() const {
+	nlohmann::json stateJson;
+	stateJson["blockData"] = nlohmann::json::array();
+	for (const BlockData& bd : blockData) {
+		stateJson["blockData"].push_back(bd.dumpState());
+	}
+	stateJson["createdBuses"] = nlohmann::json::array();
+	for (const auto& [busConnections, blockType] : createdBuses) {
+		nlohmann::json busJson;
+		busJson["busConnections"] = dumpBusConnectionDataVector(busConnections);
+		busJson["blockType"] = blocktype_to_string(blockType);
+		stateJson["createdBuses"].push_back(busJson);
+	}
+	return stateJson;
+}
+
+nlohmann::json BlockDataManager::dumpBusConnectionDataVector(const std::vector<BlockDataManager::BusConnectionData>& busConnections) {
+	nlohmann::json busConnectionsJson = nlohmann::json::array();
+	for (const BusConnectionData& busConnection : busConnections) {
+		busConnectionsJson.push_back(busConnection.dumpState());
+	}
+	return busConnectionsJson;
+}
+
+nlohmann::json BlockDataManager::BusConnectionData::dumpState() const {
+	nlohmann::json busConnectionJson;
+	busConnectionJson["positionOnBlock"] = positionOnBlock.toString();
+	if (std::holds_alternative<unsigned int>(bitConfiguration)) {
+		busConnectionJson["bitConfiguration"] = std::get<unsigned int>(bitConfiguration);
+	} else {
+		busConnectionJson["bitConfiguration"] = nlohmann::json::array();
+		busConnectionJson["bitConfiguration"] = std::get<std::vector<unsigned int>>(bitConfiguration);
+	}
+	return busConnectionJson;
 }

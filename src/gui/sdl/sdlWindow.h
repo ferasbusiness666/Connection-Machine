@@ -16,6 +16,8 @@ public:
 
 	inline void render() { if (doRender) doRender(); }
 	bool recieveEvent(SDL_Event& event);
+	void sendKillEvent();
+	void instantKillEvent();
 
 	bool isThisMyEvent(const SDL_Event& event);
 

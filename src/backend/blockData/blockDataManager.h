@@ -143,6 +143,7 @@ public:
 
 	BlockType getBusBlock(unsigned int bitwith);
 	BlockType getBusBlock(unsigned int numInputs, unsigned int inputBitwidth);
+	BlockType getBusBlock(unsigned int numInputs, unsigned int numOutputs, unsigned int inputLaneWidth, unsigned int outputLaneWidth);
 	struct BusConnectionData {
 		Vector positionOnBlock;
 		std::variant<unsigned int, std::vector<unsigned int>> bitConfiguration = static_cast<unsigned int>(1);
@@ -157,13 +158,19 @@ public:
 			if (positionOnBlock.dy == other.positionOnBlock.dy) return positionOnBlock.dx <=> other.positionOnBlock.dx;
 			return positionOnBlock.dy <=> other.positionOnBlock.dy;
 		}
+
+		nlohmann::json dumpState() const;
 	};
 	BlockType getBusBlock(std::vector<BusConnectionData> busConnections);
+
+	nlohmann::json dumpState() const;
 
 private:
 	std::vector<BlockData> blockData;
 	DataUpdateEventManager& dataUpdateEventManager;
 	std::map<std::vector<BusConnectionData>, BlockType> createdBuses;
+
+	static nlohmann::json dumpBusConnectionDataVector(const std::vector<BusConnectionData>& busConnections);
 };
 
 #endif /* blockDataManager_h */

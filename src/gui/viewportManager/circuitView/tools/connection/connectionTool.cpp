@@ -13,15 +13,17 @@ void ConnectionTool::activate() {
 	}
 }
 
-void ConnectionTool::setMode(std::string toolMode) {
-	if (mode != toolMode) {
+void ConnectionTool::setMode(const std::string& mode) {
+	if (this->mode != mode) {
 		SharedCircuitTool newActiveConnectionTool;
-		if (toolMode == "Single") {
+		if (mode == "Single") {
 			newActiveConnectionTool = std::make_shared<SingleConnectTool>(environment);
-		} else if (toolMode == "Tensor") {
+			this->mode = mode;
+		} else if (mode == "Tensor") {
 			newActiveConnectionTool = std::make_shared<TensorConnectTool>(environment);
+			this->mode = mode;
 		} else {
-			logError("Tool mode \"{}\" could not be found", "", toolMode);
+			logError("Tool mode \"{}\" could not be found", "", mode);
 			return;
 		}
 		activeConnectionTool = newActiveConnectionTool;

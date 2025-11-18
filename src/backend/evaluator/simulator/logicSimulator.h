@@ -22,6 +22,33 @@ enum class SimGateType : int {
 	PORTS_TO_INT = 9
 };
 
+inline std::string simgatetype_to_string(SimGateType type) {
+	switch (type) {
+		case SimGateType::AND:
+			return "AND";
+		case SimGateType::XOR:
+			return "XOR";
+		case SimGateType::JUNCTION:
+			return "JUNCTION";
+		case SimGateType::BUFFER:
+			return "BUFFER";
+		case SimGateType::SINGLE_BUFFER:
+			return "SINGLE_BUFFER";
+		case SimGateType::TRISTATE_BUFFER:
+			return "TRISTATE_BUFFER";
+		case SimGateType::CONSTANT:
+			return "CONSTANT";
+		case SimGateType::CONSTANT_RESET:
+			return "CONSTANT_RESET";
+		case SimGateType::COPY_SELF_OUTPUT:
+			return "COPY_SELF_OUTPUT";
+		case SimGateType::PORTS_TO_INT:
+			return "PORTS_TO_INT";
+		default:
+			return "UNKNOWN_GATE_TYPE";
+	}
+}
+
 class LogicSimulator {
 friend class SimulatorOptimizer;
 friend class SimPauseGuard;
@@ -54,13 +81,14 @@ public:
 		return viewingReplay;
 	}
 
+	nlohmann::json dumpState() const;
+
 private:
 	EvalConfig& evalConfig;
 	std::thread simulationThread;
 	std::atomic<bool> running { true };
 
 	std::atomic<bool> pauseRequest { false };
-	std::atomic<bool> isPaused { false };
 	std::mutex cvMutex;
 	std::condition_variable cv;
 
@@ -87,11 +115,12 @@ private:
 	logic_state_t getStateUnlocked(simulator_id_t id) const;
 
 	mutable std::shared_mutex statesAMutex;
-	std::mutex statesBMutex;
+	mutable std::mutex mainDataMutex;
 
 	struct StateChange {
 		simulator_id_t id;
 		logic_state_t state;
+		nlohmann::json dumpState() const;
 	};
 	std::queue<StateChange> pendingStateChanges;
 	std::mutex stateChangeQueueMutex;
@@ -194,6 +223,7 @@ private:
 		bool operator==(const GateDependency& other) const {
 			return gateId == other.gateId;
 		}
+		nlohmann::json dumpState() const;
 	};
 
 	struct GateLocation {
@@ -202,6 +232,7 @@ private:
 
 		GateLocation() : gateType(SimGateType::AND), gateIndex(0) {}
 		GateLocation(SimGateType type, size_t index) : gateType(type), gateIndex(index) {}
+		nlohmann::json dumpState() const;
 	};
 
 	std::unordered_map<simulator_id_t, std::vector<GateDependency>> outputDependencies;
@@ -250,30 +281,25 @@ private:
 		threadCount = std::max(threadCount, size_t(1));
 		threadPool.resizeThreads(threadCount - 1);
 	}
+
+	std::chrono::steady_clock::time_point nextTick;
+	std::chrono::steady_clock::time_point lastTickTime;
 };
 
 class SimPauseGuard {
 public:
-	explicit SimPauseGuard(LogicSimulator& s) : sim(s) {
-		{
-			std::lock_guard<std::mutex> lk(sim.cvMutex);
-			sim.pauseRequest.store(true, std::memory_order_release);
-			sim.cv.notify_all();
-		}
-		// wait until the sim thread *confirms* it is paused
-		std::unique_lock<std::mutex> lk(sim.cvMutex);
-		sim.cv.wait(lk, [&]{ return sim.isPaused.load(std::memory_order_acquire); });
+	explicit SimPauseGuard(LogicSimulator& s) : sim(s), mainLock(sim.mainDataMutex) {
+		sim.pauseRequest.store(true, std::memory_order_release);
 	}
 	~SimPauseGuard() {
-		{
-			std::lock_guard<std::mutex> lk(sim.cvMutex);
-			sim.pauseRequest.store(false, std::memory_order_release);
-			sim.cv.notify_all();
-		}
+		sim.pauseRequest.store(false, std::memory_order_release);
+		// sim.nextTick = std::chrono::steady_clock::now();
+		// sim.lastTickTime = std::chrono::steady_clock::now();
 	}
 
 private:
 	LogicSimulator& sim;
+	std::unique_lock<std::mutex> mainLock;
 };
 
 #endif /* logicSimulator_h */

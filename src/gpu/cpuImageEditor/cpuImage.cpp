@@ -32,6 +32,16 @@ void CpuImage::addRect(Vec2Int pos, Vec2Int size, Pixel color, bool mix) {
 	}
 }
 
+void CpuImage::addOutlinedRect(Vec2Int pos, Vec2Int size, unsigned int outlineThickness, Pixel color, bool mix) {
+	if (outlineThickness == 0) {
+		return;
+	}
+	addRect(pos, Vec2Int(size.x, outlineThickness), color, mix);
+	addRect(pos + Vec2Int(0, size.y - outlineThickness), Vec2Int(size.x, outlineThickness), color, mix);
+	addRect(pos + Vec2Int(0, outlineThickness), Vec2Int(outlineThickness, size.y - 2 * outlineThickness), color, mix);
+	addRect(pos + Vec2Int(size.x - outlineThickness, outlineThickness), Vec2Int(outlineThickness, size.y - 2 * outlineThickness), color, mix);
+}
+
 float CpuImage::pointLineDistanceSquared(const Vec2Int& point, const Vec2Int& lineStart, const Vec2Int& lineEnd) {
 	int l2 = lineStart.distanceToSquared(lineEnd);
 	if (l2 == 0) return point.distanceToSquared(lineStart);
@@ -172,10 +182,10 @@ void CpuImage::writeString(std::shared_ptr<Font> font, const std::string& text, 
 	}
 }
 
-void CpuImage::writeStringInArea(std::shared_ptr<Font> font, const std::string& text, Vec2Int pos, Vec2Int areaSize, Pixel color, Rotation rotation, bool centerV, bool centerH, unsigned int startingFontSize) {
+std::pair<Vec2Int, Vec2Int> CpuImage::writeStringInArea(std::shared_ptr<Font> font, const std::string& text, Vec2Int pos, Vec2Int areaSize, Pixel color, Rotation rotation, bool centerV, bool centerH, unsigned int startingFontSize) {
 	if (!areaSize.withinArea({0, 0}, imgSize)) {
 		logError("Cant have writeStringInArea areaSize {}, be larger than img size {}", "CpuImage", areaSize, imgSize);
-		return;
+		return { {0, 0}, {0, 0} };
 	}
 
 	if (startingFontSize == 0) startingFontSize = font->getSize();
@@ -189,7 +199,7 @@ void CpuImage::writeStringInArea(std::shared_ptr<Font> font, const std::string& 
 		std::optional<Font::AtlasInfo> atlasInfo = font->getAtlasInfoDifferentSizeText(startingFontSize);
 		if (!atlasInfo) {
 			logError("Failed to get AtlasInfo", "CpuImage");
-			return;
+			return { {0, 0}, {0, 0} };
 		}
 
 		Vec2Int nextOriginPos;
@@ -239,7 +249,7 @@ void CpuImage::writeStringInArea(std::shared_ptr<Font> font, const std::string& 
 		}
 		if (startingFontSize <= 1) {
 			logError("Could not fix text {} in area {}", "CpuImage", text, areaSize);
-			return;
+			return { {0, 0}, {0, 0} };
 		}
 		startingFontSize--;
 	}
@@ -248,9 +258,18 @@ void CpuImage::writeStringInArea(std::shared_ptr<Font> font, const std::string& 
 	font->setSize(startingFontSize);
 	const Font::AtlasInfo& atlasInfo = font->getAtlasInfo();
 
+	const bool centerLine = (rotation & 1 && centerV) || (!(rotation & 1) && centerH);
+
 	Vec2Int nextOriginPos;
 	std::string line;
 	int lineLength = 0;
+	Vec2Int lineMin = rotatedAreaSize;
+	Vec2Int lineMax = Vec2Int(0, 0);
+	bool lineHasGlyph = false;
+	Vec2Int usedMin = rotatedAreaSize;
+	Vec2Int usedMax = Vec2Int(0, 0);
+	bool usedInitialized = false;
+
 	for (char c : text) {
 		if (atlasInfo.metrics.size() <= c - 32) {
 			logInfo("Char {} out of font metrics range.", "CpuImage", c - 32);
@@ -262,11 +281,32 @@ void CpuImage::writeStringInArea(std::shared_ptr<Font> font, const std::string& 
 		Vec2Int textOtherCorner = textOrigin + atlasMetric.size;
 
 		if (textOtherCorner.x > rotatedAreaSize.x) {
-			if ((rotation & 1 && centerV) || (!(rotation & 1) && centerH))
-				writeString(font, line, pos + rotateVectorWithArea(Vec2Int((rotatedAreaSize.x - lineLength)/2, nextOriginPos.y + startingYOffsetToCenterText), rotatedAreaSize, rotation), color, rotation);
-			else
-				writeString(font, line, pos + rotateVectorWithArea(Vec2Int(0, nextOriginPos.y + startingYOffsetToCenterText), rotatedAreaSize, rotation), color, rotation);
-			line = "";
+			if (!line.empty()) {
+				int lineStartX = centerLine ? (rotatedAreaSize.x - lineLength)/2 : 0;
+				Vec2Int linePos = Vec2Int(lineStartX, nextOriginPos.y + startingYOffsetToCenterText);
+				writeString(font, line, pos + rotateVectorWithArea(linePos, rotatedAreaSize, rotation), color, rotation);
+
+				if (lineHasGlyph) {
+					Vec2Int minShifted = Vec2Int(lineMin.x + lineStartX, lineMin.y + startingYOffsetToCenterText);
+					Vec2Int maxShifted = Vec2Int(lineMax.x + lineStartX, lineMax.y + startingYOffsetToCenterText);
+					if (!usedInitialized) {
+						usedMin = minShifted;
+						usedMax = maxShifted;
+						usedInitialized = true;
+					} else {
+						usedMin.x = std::min(usedMin.x, minShifted.x);
+						usedMin.y = std::min(usedMin.y, minShifted.y);
+						usedMax.x = std::max(usedMax.x, maxShifted.x);
+						usedMax.y = std::max(usedMax.y, maxShifted.y);
+					}
+				}
+			}
+
+			line.clear();
+			lineLength = 0;
+			lineMin = rotatedAreaSize;
+			lineMax = Vec2Int(0, 0);
+			lineHasGlyph = false;
 
 			nextOriginPos.x = 0;
 			nextOriginPos.y += atlasInfo.newlineHeight;
@@ -280,16 +320,73 @@ void CpuImage::writeStringInArea(std::shared_ptr<Font> font, const std::string& 
 			textOtherCorner.y -= textOrigin.y;
 			textOrigin.y = 0;
 		}
+		if (atlasMetric.size.x > 0 && atlasMetric.size.y > 0) {
+			if (!lineHasGlyph) {
+				lineMin = textOrigin;
+				lineMax = textOtherCorner;
+				lineHasGlyph = true;
+			} else {
+				lineMin.x = std::min(lineMin.x, textOrigin.x);
+				lineMin.y = std::min(lineMin.y, textOrigin.y);
+				lineMax.x = std::max(lineMax.x, textOtherCorner.x);
+				lineMax.y = std::max(lineMax.y, textOtherCorner.y);
+			}
+		}
 		nextOriginPos.x += atlasMetric.advance.x;
 		line += c;
 		lineLength = textOtherCorner.x;
 	}
 	if (!line.empty()) {
-		if ((rotation & 1 && centerV) || (!(rotation & 1) && centerH))
-			writeString(font, line, pos + rotateVectorWithArea(Vec2Int((rotatedAreaSize.x - lineLength)/2, nextOriginPos.y + startingYOffsetToCenterText), rotatedAreaSize, rotation), color, rotation);
-		else
-			writeString(font, line, pos + rotateVectorWithArea(Vec2Int(0, nextOriginPos.y + startingYOffsetToCenterText), rotatedAreaSize, rotation), color, rotation);
+		int lineStartX = centerLine ? (rotatedAreaSize.x - lineLength)/2 : 0;
+		Vec2Int linePos = Vec2Int(lineStartX, nextOriginPos.y + startingYOffsetToCenterText);
+		writeString(font, line, pos + rotateVectorWithArea(linePos, rotatedAreaSize, rotation), color, rotation);
+
+		if (lineHasGlyph) {
+			Vec2Int minShifted = Vec2Int(lineMin.x + lineStartX, lineMin.y + startingYOffsetToCenterText);
+			Vec2Int maxShifted = Vec2Int(lineMax.x + lineStartX, lineMax.y + startingYOffsetToCenterText);
+			if (!usedInitialized) {
+				usedMin = minShifted;
+				usedMax = maxShifted;
+				usedInitialized = true;
+			} else {
+				usedMin.x = std::min(usedMin.x, minShifted.x);
+				usedMin.y = std::min(usedMin.y, minShifted.y);
+				usedMax.x = std::max(usedMax.x, maxShifted.x);
+				usedMax.y = std::max(usedMax.y, maxShifted.y);
+			}
+		}
 	}
 
 	font->setSize(oldFontSize); // make sure to not break the font size
+
+	if (!usedInitialized) {
+		return { {0, 0}, {0, 0} };
+	}
+
+	Vec2Int localMin = usedMin;
+	Vec2Int localMax = usedMax;
+	Vec2Int localSize = localMax - localMin;
+	if (localSize.x <= 0 || localSize.y <= 0) {
+		return { {0, 0}, {0, 0} };
+	}
+
+	Vec2Int corners[4] = {
+		localMin,
+		{ localMax.x - 1, localMin.y },
+		{ localMin.x, localMax.y - 1 },
+		{ localMax.x - 1, localMax.y - 1 }
+	};
+
+	Vec2Int worldMin = pos + rotateVectorWithArea(corners[0], rotatedAreaSize, rotation);
+	Vec2Int worldMax = worldMin;
+	for (int i = 1; i < 4; ++i) {
+		Vec2Int worldPoint = pos + rotateVectorWithArea(corners[i], rotatedAreaSize, rotation);
+		worldMin.x = std::min(worldMin.x, worldPoint.x);
+		worldMin.y = std::min(worldMin.y, worldPoint.y);
+		worldMax.x = std::max(worldMax.x, worldPoint.x);
+		worldMax.y = std::max(worldMax.y, worldPoint.y);
+	}
+
+	Vec2Int worldSize = worldMax - worldMin + Vec2Int(1, 1);
+	return { worldMin, worldSize };
 }

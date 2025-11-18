@@ -36,6 +36,8 @@ public:
 
 	inline const std::map<std::string, SharedProceduralCircuit>& getProceduralCircuits() const { return proceduralCircuits; }
 
+	nlohmann::json dumpState() const;
+
 private:
 	CircuitManager& circuitManager;
 	CircuitFileManager& fileManager;
