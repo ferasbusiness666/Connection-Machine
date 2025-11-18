@@ -168,14 +168,9 @@ void Circuit::tryInsertOverArea(Position cellA, Position cellB, Orientation orie
 #ifdef TRACY_PROFILER
 	ZoneScoped;
 #endif
-	if (cellA.x > cellB.x) std::swap(cellA.x, cellB.x);
-	if (cellA.y > cellB.y) std::swap(cellA.y, cellB.y);
-
 	DifferenceSharedPtr difference = std::make_shared<Difference>();
-	for (coordinate_t x = cellA.x; x <= cellB.x; x++) {
-		for (coordinate_t y = cellA.y; y <= cellB.y; y++) {
-			blockContainer.tryInsertBlock(Position(x, y), orientation, blockType, difference.get());
-		}
+	for (auto iter = cellA.iterTo(cellB); iter; ++iter) {
+		blockContainer.tryInsertBlock(*iter, orientation, blockType, difference.get());
 	}
 	sendDifference(std::move(difference));
 }
@@ -184,14 +179,9 @@ void Circuit::tryRemoveOverArea(Position cellA, Position cellB) {
 #ifdef TRACY_PROFILER
 	ZoneScoped;
 #endif
-	if (cellA.x > cellB.x) std::swap(cellA.x, cellB.x);
-	if (cellA.y > cellB.y) std::swap(cellA.y, cellB.y);
-
 	DifferenceSharedPtr difference = std::make_shared<Difference>();
-	for (coordinate_t x = cellA.x; x <= cellB.x; x++) {
-		for (coordinate_t y = cellA.y; y <= cellB.y; y++) {
-			blockContainer.tryRemoveBlock(Position(x, y), difference.get());
-		}
+	for (auto iter = cellA.iterTo(cellB); iter; ++iter) {
+			blockContainer.tryRemoveBlock(*iter, difference.get());
 	}
 	sendDifference(std::move(difference));
 }
@@ -322,7 +312,7 @@ bool Circuit::tryInsertCopiedBlocks(const SharedCopiedBlocks& copiedBlocks, Posi
 #ifdef TRACY_PROFILER
 	ZoneScoped;
 #endif
-	Vector totalOffset = Vector(position.x, position.y) + (Position() - copiedBlocks->getMinPosition());
+	Vector totalOffset = position - copiedBlocks->getMinPosition();
 	for (const CopiedBlocks::CopiedBlockData& block : copiedBlocks->getCopiedBlocks()) {
 		if (blockContainer.checkCollision(
 			position + transformAmount * (block.position - copiedBlocks->getMinPosition()) - transformAmount.transformVectorWithArea(Vector(0), blockContainer.getBlockDataManager().getBlockSize(block.blockType, block.orientation)),

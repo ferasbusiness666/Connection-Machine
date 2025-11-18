@@ -35,6 +35,7 @@ Step:
 	Condition:
 		State: h (2, 1) 2
 	Action:
+		Message: "Switch to the state changer and flip the switches so the AND output turns ON."
 Step:
 	Condition:
 	Action:

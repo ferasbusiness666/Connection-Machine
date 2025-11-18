@@ -83,6 +83,8 @@ public:
     Evaluator& operator=(const Evaluator&) = delete;
 	~Evaluator();
 
+	static constexpr double MIN_TICKRATE_DECREASABLE = 0.1;
+
 	inline evaluator_id_t getEvaluatorId() const { return evaluatorId; }
 	std::string getEvaluatorName() const;
 
