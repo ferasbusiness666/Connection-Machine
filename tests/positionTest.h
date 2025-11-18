@@ -2,12 +2,7 @@
 #define positionTests_h
 
 #include <gtest/gtest.h>
-#include "backend/position/position.h"
 
-class PositionTest : public ::testing::Test {
-protected:
-	void SetUp() override;
-	void TearDown() override;
-};
+class PositionTest : public ::testing::Test {};
 
 #endif /* PositionTests_h */

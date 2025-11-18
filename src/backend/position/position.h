@@ -78,6 +78,20 @@ public:
 		yNeg = 1 - 2 * (vector.dy < 0);
 		end = (yNeg * vector.dy + 1) * width - 1;
 	}
+	inline bool operator==(const Iterator& other) const {
+		return (
+			xNeg == other.xNeg && yNeg == other.yNeg &&
+			end == other.end && cur == other.cur &&
+			width == other.width && notDone == other.notDone
+		);
+	}
+	inline bool operator!=(const Iterator& other) const {
+		return (
+			xNeg != other.xNeg || yNeg != other.yNeg ||
+			end != other.end || cur != other.cur ||
+			width != other.width || notDone != other.notDone
+		);
+	}
 	inline Iterator& operator++() {
 		next();
 		return *this;
@@ -106,8 +120,8 @@ private:
 		cur += notDone;
 	}
 	inline void prev() {
+		cur -= notDone && (cur != 0);
 		notDone = true;
-		cur -= cur != 0;
 	}
 	std::uint8_t xNeg;
 	std::uint8_t yNeg;
@@ -254,6 +268,18 @@ public:
 			this->start.y = start.y;
 		}
 	}
+	inline bool operator==(const Iterator& other) const {
+		return (
+			end == other.end && cur == other.cur &&
+			width == other.width && notDone == other.notDone
+		);
+	}
+	inline bool operator!=(const Iterator& other) const {
+		return (
+			end != other.end || cur != other.cur ||
+			width != other.width || notDone != other.notDone
+		);
+	}
 	inline Iterator& operator++() noexcept {
 		next();
 		return *this;
@@ -282,7 +308,7 @@ private:
 		cur += notDone;
 	}
 	inline void prev() {
-		cur -= notDone && cur != 0;
+		cur -= notDone && (cur != 0);
 		notDone = true;
 	}
 	Position start;
@@ -436,6 +462,18 @@ public:
 		width = size.w;
 		end = size.area() - 1;
 	}
+	inline bool operator==(const Iterator& other) const {
+		return (
+			end == other.end && cur == other.cur &&
+			width == other.width && notDone == other.notDone
+		);
+	}
+	inline bool operator!=(const Iterator& other) const {
+		return (
+			end != other.end || cur != other.cur ||
+			width != other.width || notDone != other.notDone
+		);
+	}
 	inline Iterator& operator++() {
 		next();
 		return *this;
@@ -466,13 +504,12 @@ public:
 	// inline Vector operator->() const { return *(*this); }
 
 private:
-
 	inline void next() {
 		notDone = cur != end;
 		cur += notDone;
 	}
 	inline void prev() {
-		cur -= cur != 0;
+		cur -= notDone && (cur != 0);
 		notDone = (bool)end;
 	}
 	unsigned int end;

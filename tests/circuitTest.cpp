@@ -1,9 +1,6 @@
 #include "circuitTest.h"
 
-Position randPos() {
-	return Position(rand() % 100000, rand() % 100000);
-}
-
+#include "randomGens.h"
 const int loopsPerTest = 100; // upped
 
 void CircuitTest::SetUp() {
