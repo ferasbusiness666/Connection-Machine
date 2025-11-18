@@ -44,11 +44,27 @@ extern "C" {
         internal_port_id: connection_end_id_t,
     );
 
+    pub fn addConnectionInputNamed(
+        external_port_x: coord_t,
+        external_port_y: coord_t,
+        internal_block_id: block_id_t,
+        internal_port_id: connection_end_id_t,
+        port_name: *const u8,
+    );
+
     pub fn addConnectionOutput(
         external_port_x: coord_t,
         external_port_y: coord_t,
         internal_block_id: block_id_t,
         internal_port_id: connection_end_id_t,
+    );
+
+    pub fn addConnectionOutputNamed(
+        external_port_x: coord_t,
+        external_port_y: coord_t,
+        internal_block_id: block_id_t,
+        internal_port_id: connection_end_id_t,
+        port_name: *const u8,
     );
 
     // Misc

@@ -56,6 +56,9 @@ public:
 		return result;
 	}
 	nlohmann::json dumpState() const;
+	unsigned int getNumNodes() const {
+		return circuitNodes.size();
+	}
 private:
 	eval_circuit_id_t id;
 	eval_circuit_id_t parentEvalId;

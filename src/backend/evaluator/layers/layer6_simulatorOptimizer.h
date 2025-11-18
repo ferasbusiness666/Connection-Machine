@@ -165,8 +165,8 @@ public:
 	void makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection);
 	void removeConnection(SimPauseGuard& pauseGuard, EvalConnection connection);
 
-	std::vector<EvalConnection> getInputs(middle_id_t middleId) const;
-	std::vector<EvalConnection> getOutputs(middle_id_t middleId) const;
+	const std::vector<EvalConnection>& getInputs(middle_id_t middleId) const;
+	const std::vector<EvalConnection>& getOutputs(middle_id_t middleId) const;
 	int getNumInputs(middle_id_t middleId) const {
 		if (middleId < inputConnections.size()) {
 			return static_cast<int>(inputConnections[middleId].size());

@@ -10,6 +10,13 @@ void ToolManager::selectBlock(BlockType blockType) {
 	}
 }
 
+void ToolManager::setOrientation(Orientation orientation) {
+	SharedBlockPlacementTool blockPlacementTool = std::dynamic_pointer_cast<BlockPlacementTool>(toolStacks[activeToolStack].getCurrentNonHelperTool());
+	if (blockPlacementTool) {
+		blockPlacementTool->setOrientation(orientation);
+	}
+}
+
 void ToolManager::selectStack(int stack) {
 	if (activeToolStack == stack) return;
 	if (activeToolStack != -1) toolStacks[activeToolStack].deactivate();

@@ -173,7 +173,7 @@
 			"name": "distribute",
 			"displayName": "Build Distribute",
 			"configurePreset": "distribute",
-			"configuration": "Distribute",
+			"configuration": "Release",
 			"jobs": 8
 		},
 		{

@@ -78,6 +78,20 @@ public:
 		yNeg = 1 - 2 * (vector.dy < 0);
 		end = (yNeg * vector.dy + 1) * width - 1;
 	}
+	inline bool operator==(const Iterator& other) const {
+		return (
+			xNeg == other.xNeg && yNeg == other.yNeg &&
+			end == other.end && cur == other.cur &&
+			width == other.width && notDone == other.notDone
+		);
+	}
+	inline bool operator!=(const Iterator& other) const {
+		return (
+			xNeg != other.xNeg || yNeg != other.yNeg ||
+			end != other.end || cur != other.cur ||
+			width != other.width || notDone != other.notDone
+		);
+	}
 	inline Iterator& operator++() {
 		next();
 		return *this;
@@ -106,8 +120,8 @@ private:
 		cur += notDone;
 	}
 	inline void prev() {
+		cur -= notDone && (cur != 0);
 		notDone = true;
-		cur -= cur != 0;
 	}
 	std::uint8_t xNeg;
 	std::uint8_t yNeg;
@@ -254,6 +268,18 @@ public:
 			this->start.y = start.y;
 		}
 	}
+	inline bool operator==(const Iterator& other) const {
+		return (
+			end == other.end && cur == other.cur &&
+			width == other.width && notDone == other.notDone
+		);
+	}
+	inline bool operator!=(const Iterator& other) const {
+		return (
+			end != other.end || cur != other.cur ||
+			width != other.width || notDone != other.notDone
+		);
+	}
 	inline Iterator& operator++() noexcept {
 		next();
 		return *this;
@@ -282,7 +308,7 @@ private:
 		cur += notDone;
 	}
 	inline void prev() {
-		cur -= notDone && cur != 0;
+		cur -= notDone && (cur != 0);
 		notDone = true;
 	}
 	Position start;
@@ -436,6 +462,18 @@ public:
 		width = size.w;
 		end = size.area() - 1;
 	}
+	inline bool operator==(const Iterator& other) const {
+		return (
+			end == other.end && cur == other.cur &&
+			width == other.width && notDone == other.notDone
+		);
+	}
+	inline bool operator!=(const Iterator& other) const {
+		return (
+			end != other.end || cur != other.cur ||
+			width != other.width || notDone != other.notDone
+		);
+	}
 	inline Iterator& operator++() {
 		next();
 		return *this;
@@ -466,13 +504,12 @@ public:
 	// inline Vector operator->() const { return *(*this); }
 
 private:
-
 	inline void next() {
 		notDone = cur != end;
 		cur += notDone;
 	}
 	inline void prev() {
-		cur -= cur != 0;
+		cur -= notDone && (cur != 0);
 		notDone = (bool)end;
 	}
 	unsigned int end;
@@ -635,25 +672,26 @@ struct Orientation {
 	Rotation rotation = Rotation::ZERO;
 	bool flipped = false;
 
-	Orientation(Rotation rotation = Rotation::ZERO, bool flipped = false) noexcept : rotation(rotation), flipped(flipped) { }
+	Orientation(int value) noexcept : rotation((Rotation)(value & 0b11)), flipped((value & 0b100) != 0) {}
+	Orientation(Rotation rotation = Rotation::ZERO, bool flipped = false) noexcept : rotation(rotation), flipped(flipped) {}
 
 	inline std::string toString() const { return "(r:" + std::to_string(rotation) + ", f:" + std::to_string(flipped) + ")"; }
 
 	inline void nextOrientation() {
-		// logInfo("n pre: {}", "", toString());
 		if (rotation == Rotation::ONE_EIGHTY && !flipped) flipped = true;
 		else if (rotation == Rotation::TWO_SEVENTY && flipped) flipped = false;
 		else rotate(!flipped);
-		// logInfo("n pre: {}", "", toString());
 	}
 
 	inline void lastOrientation() {
-		// logInfo("l post: {}", "", toString());
 		if (rotation == Rotation::ONE_EIGHTY && flipped) flipped = false;
 		else if (rotation == Rotation::TWO_SEVENTY && !flipped) flipped = true;
 		else rotate(flipped);
-		// logInfo("l post: {}", "", toString());
 	}
+
+	inline void nextRotation() { rotate(true); }
+
+	inline void lastRotation() { rotate(false); }
 
 	inline Vector operator*(Vector vector) const noexcept {
 		Vector vec(vector.dx, flipped ? -vector.dy : vector.dy);

@@ -100,7 +100,7 @@ template <class T>
 nlohmann::json Sparse2dArray<T>::dumpState() const {
 	nlohmann::json stateJson;
 	for (const auto& [pos, value] : data) {
-		stateJson[to_string(pos.x) + "," + to_string(pos.y)] = value;
+		stateJson[pos.toString()] = value;
 	}
 	return stateJson;
 }
@@ -109,7 +109,7 @@ template <class T>
 nlohmann::json Sparse2dArray<T>::dumpStateAndInner() const {
 	nlohmann::json stateJson;
 	for (const auto& [pos, value] : data) {
-		stateJson[std::to_string(pos.x) + "," + std::to_string(pos.y)] = value.dumpState();
+		stateJson[pos.toString()] = value.dumpState();
 	}
 	return stateJson;
 }

@@ -17,6 +17,9 @@ public:
 		return gateSubstituter.beginEdit();
 	}
 	inline void endEdit(SimPauseGuard& pauseGuard) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 		gateSubstituter.endEdit(pauseGuard);
 	}
 	inline void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {

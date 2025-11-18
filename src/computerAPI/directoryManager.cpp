@@ -8,6 +8,14 @@ std::filesystem::path DirectoryManager::projectDirectory("");
 std::filesystem::path DirectoryManager::configDirectory("");
 
 void DirectoryManager::findDirectories() {
+	char cfgdir[MAX_PATH];
+	cfgpath::get_user_config_folder(cfgdir, sizeof(cfgdir), "ConnectionMachine");
+	if (cfgdir[0] == 0) {
+		logError("Could not find a config directory.", "DirectoryManager");
+	}
+	configDirectory = std::string(cfgdir);
+	std::filesystem::create_directories(configDirectory);
+
 	// check for resources directory relative to executable
 	std::filesystem::path relativeToExecutable = getExecutablePath().parent_path() / "resources";
 	if (std::filesystem::exists(relativeToExecutable)) {
@@ -41,14 +49,7 @@ void DirectoryManager::findDirectories() {
 		}
 #endif
 	}
-	char cfgdir[MAX_PATH];
-	cfgpath::get_user_config_folder(cfgdir, sizeof(cfgdir), "ConnectionMachine");
-	if (cfgdir[0] == 0) {
-		logError("Could not find a config directory.", "DirectoryManager");
-	}
-	configDirectory = std::string(cfgdir);
 	logInfo("Found config directory at ({})", "DirectoryManager", configDirectory.string());
-	std::filesystem::create_directories(configDirectory);
 }
 
 std::filesystem::path DirectoryManager::getExecutablePath() {

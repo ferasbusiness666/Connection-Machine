@@ -464,6 +464,7 @@ void VulkanChunker::reset() {
 
 	chunks.clear();
 	chunksUnderWire.clear();
+	chunkToAlwaysRender = Chunk();
 	blockTypesCount.clear();
 }
 

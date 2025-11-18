@@ -16,9 +16,11 @@ std::optional<std::string> compressString(const std::string& input) {
 	std::string output(maxSize, '\0');
 	size_t encodedSize = maxSize;
 
+	constexpr int compressionQuality = 5;
+	constexpr int compressionWindow = 18;
 	const auto result = BrotliEncoderCompress(
-		BROTLI_DEFAULT_QUALITY,
-		BROTLI_DEFAULT_WINDOW,
+		compressionQuality,
+		compressionWindow,
 		BROTLI_DEFAULT_MODE,
 		input.size(),
 		reinterpret_cast<const uint8_t*>(input.data()),

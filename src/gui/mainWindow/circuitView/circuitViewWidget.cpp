@@ -20,12 +20,15 @@ void LoadCallback(void* userData, const char* const* filePaths, int filter) {
 	if (filePaths && filePaths[0]) {
 		std::string filePath = filePaths[0];
 		std::vector<circuit_id_t> ids = circuitViewWidget->getFileManager()->loadFromFile(filePath);
+		logInfo("Requested load from '{}' produced {} circuit(s)", "CircuitViewWidget:LoadCallback", filePath, ids.size());
 		if (ids.empty()) {
+			logInfo("No circuits found in '{}'", "CircuitViewWidget:LoadCallback", filePath);
 			// logError("Failed to load circuit file."); // Not a error! It is valid to load 0 circuits.
 			return;
 		}
 		circuit_id_t id = ids.back();
 		circuitViewWidget->getCircuitView()->setCircuit(id);
+		logInfo("Circuit view switched to loaded circuit {}", "CircuitViewWidget:LoadCallback", id);
 		// circuitViewWidget->getCircuitView()->getBackend()->linkCircuitViewWithCircuit(circuitViewWidget->getCircuitView(), id);
 		for (auto& iter : circuitViewWidget->getCircuitView()->getBackend().getEvaluatorManager().getEvaluators()) {
 			if (iter.second->getCircuitId(Address()) == id) {
@@ -143,6 +146,7 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 	keybindHandler.addListener("Keybinds/Editing/Copy", [this]() { circuitView->getEventRegister().doEvent(Event("Copy")); });
 	keybindHandler.addListener("Keybinds/Editing/Rotate CCW", [this]() { circuitView->getEventRegister().doEvent(Event("Tool Rotate Block CCW")); });
 	keybindHandler.addListener("Keybinds/Editing/Rotate CW", [this]() { circuitView->getEventRegister().doEvent(Event("Tool Rotate Block CW")); });
+	keybindHandler.addListener("Keybinds/Editing/Flip", [this]() { circuitView->getEventRegister().doEvent(Event("Tool Flip Block")); });
 	keybindHandler.addListener("Keybinds/Editing/Confirm", [this]() { circuitView->getEventRegister().doEvent(Event("Confirm")); });
 	keybindHandler.addListener("Keybinds/Editing/Tool Invert Mode", [this]() { circuitView->getEventRegister().doEvent(Event("Tool Invert Mode")); });
 	keybindHandler.addListener("Keybinds/Editing/Tools/Cycle Mode", [this]() { this->mainWindow.getToolManagerManager().cycleActiveToolMode(); });
@@ -173,7 +177,29 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 	element->AddEventListener(Rml::EventId::Mousedown, new EventPasser([this](Rml::Event& event) {
 		int button = event.GetParameter<int>("button", 0);
 		if (button == 0) { // left
-			if (event.GetParameter<int>("alt_key", 0)) {
+			if (makeKeybind(event) == *Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Pick Block")) {
+				CircuitView* circuitView = this->getCircuitView();
+				if (circuitView) {
+					Circuit* circuit = circuitView->getCircuit();
+					if (circuit) {
+						const Block* block = circuit->getBlockContainer().getBlock(circuitView->getViewManager().getPointerPosition().snap());
+						if (block) {
+							BlockType type = block->type();
+							Orientation orientation = block->getOrientation();
+							ToolManagerManager& toolManagerManager = this->mainWindow.getToolManagerManager();
+							toolManagerManager.setBlock(type);
+							if (*Settings::get<SettingType::BOOL>("Preferences/Editing/Pick Block Copy Orientation")) {
+								toolManagerManager.setOrientation(orientation);
+							} else {
+								toolManagerManager.setOrientation(Orientation());
+							}
+							event.StopPropagation();
+							return;
+						}
+					}
+				}
+			}
+			if (makeKeybind(event) == *Settings::get<SettingType::KEYBIND>("Keybinds/Camera/Pan")) {
 				if (circuitView->getEventRegister().doEvent(PositionEvent("View Attach Anchor", circuitView->getViewManager().getPointerPosition()))) {
 					event.StopPropagation();
 					return;
@@ -303,6 +329,7 @@ void CircuitViewWidget::setSimSpeed(double speed) {
 void CircuitViewWidget::newCircuit() {
 	circuit_id_t id = circuitView->getBackend().createCircuit();
 	if (id == 0) return; // other logs shoud happen before this
+	logInfo("Created new circuit {}", "CircuitViewWidget::newCircuit", id);
 	circuitView->setCircuit(id);
 	// tmp get eval with this circuit id because circuit manager makes a eval for loaded circuits
 	for (auto& iter : circuitView->getBackend().getEvaluatorManager().getEvaluators()) {
@@ -346,6 +373,7 @@ void CircuitViewWidget::load() {
 		{ "WASM Files", "wasm" },
 	};
 
+	logInfo("Opening load dialog for circuit import", "CircuitViewWidget::load");
 	SDL_ShowOpenFileDialog(LoadCallback, this, nullptr, filters, 3, nullptr, true);
 }
 

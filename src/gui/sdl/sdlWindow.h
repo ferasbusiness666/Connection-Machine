@@ -9,12 +9,14 @@ class SdlWindow {
 	friend bool resizingEventWatcher(void* data, SDL_Event* event);
 public:
 	SdlWindow(const std::string& name, unsigned int width = 800, unsigned int height = 600);
+	SdlWindow(SDL_Window* handle);
 	~SdlWindow();
+	void clear();
 
-	inline void setRenderFunction(std::function<void()> func) { doRender = func; }
-	inline void setRecieveEventFunction(std::function<bool(SDL_Event&)> func) { doRecieveEvent = func; }
+	void setRenderFunction(std::function<void()> func) { doRender = func; }
+	void setRecieveEventFunction(std::function<bool(SDL_Event&)> func) { doRecieveEvent = func; }
 
-	inline void render() { if (doRender) doRender(); }
+	void render() { if (doRender) doRender(); }
 	bool recieveEvent(SDL_Event& event);
 	void sendKillEvent();
 	void instantKillEvent();
@@ -24,20 +26,20 @@ public:
 	VkSurfaceKHR createVkSurface(VkInstance instance);
 	std::pair<uint32_t, uint32_t> getSize();
 
-	inline float getWindowScalingSize() const { return windowScalingSize; }
+	float getWindowScalingSize() const { return windowScalingSize; }
 
-	inline SDL_Window* getHandle() { return handle; }
+	SDL_Window* getHandle() { return handle; }
 
 	void toggleBorderlessFullscreen();
 
 private:
 	// TODO - smart pointer with custom deleter?
-	SDL_Window* handle;
+	SDL_Window* handle = nullptr;
 
 	float windowScalingSize;
 
 	// Vulkan stuff
-	VkInstance vkInstance;
+	VkInstance vkInstance = nullptr;
 	std::optional<VkSurfaceKHR> vkSurface;
 	std::function<void()> doRender;
 	std::function<bool(SDL_Event&)> doRecieveEvent;

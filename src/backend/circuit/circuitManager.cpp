@@ -15,6 +15,7 @@ circuit_id_t CircuitManager::createNewCircuit(const std::string& name, const std
 	}
 
 	setupBlockData(id);
+	circuit->editCount = 0;
 
 	if (createEval) {
 		auto evaluatorId = evaluatorManager.createNewEvaluator(*this, id);
@@ -186,6 +187,7 @@ circuit_id_t CircuitManager::createNewCircuit(const GeneratedCircuit& generatedC
 		if (!port.portName.empty()) {
 			blockData->setConnectionIdName(port.connectionEndId, port.portName);
 		}
+		blockData->setConnectionBitConfiguration(port.connectionEndId, port.bitWidth);
 		if (port.internalBlockId == 0) {
 			logError("Can't find port.internalBlockId should not be 0.", "CircuitManager");
 		} else {
@@ -258,6 +260,7 @@ void CircuitManager::updateExistingCircuit(circuit_id_t id, const GeneratedCircu
 		else blockData->setConnectionOutput(port.positionOnBlock, port.connectionEndId);
 		if (!port.portName.empty()) blockData->setConnectionIdName(port.connectionEndId, port.portName);
 
+		blockData->setConnectionBitConfiguration(port.connectionEndId, port.bitWidth);
 		if (port.internalBlockId == 0) {
 			logError("Can't find port.internalBlockId should not be 0.", "CircuitManager");
 		} else {
@@ -295,6 +298,7 @@ void CircuitManager::updateExistingCircuit(circuit_id_t id, const GeneratedCircu
 		if (port.isInput) blockData->setConnectionInput(port.positionOnBlock, port.connectionEndId);
 		else blockData->setConnectionOutput(port.positionOnBlock, port.connectionEndId);
 		blockData->setConnectionIdName(port.connectionEndId, port.portName);
+		blockData->setConnectionBitConfiguration(port.connectionEndId, port.bitWidth);
 
 		if (port.internalBlockId == 0) {
 			logError("Can't find port.internalBlockId should not be 0.", "CircuitManager");

@@ -2,6 +2,7 @@
 
 #include "SDL3/SDL_dialog.h"
 #include "gui/helper/eventPasser.h"
+#include "gui/helper/tooltip.h"
 #include "gui/mainWindow/circuitView/circuitViewWidget.h"
 #include "gui/mainWindow/mainWindow.h"
 #include "gui/viewportManager/circuitView/tools/other/portSelector.h"
@@ -329,13 +330,15 @@ void BlockCreationWindow::updateFromMenu() {
 
 	} catch (const std::exception& e) {
 		// Top level fatal error catcher, logs issue
-		logError("{}", "", e.what());
+		logError("Failed to save IC settings. {}", "BlockCreationWindow", e.what());
+		mainWindow.logError("Failed to save IC settings. {}", e.what());
 		return;
 	}
 
 	// check that data is good
 	if (!size.isValid()) {
 		logWarning("Can't update block data. Size of block cant be less than 1 currently is {}.", "BlockCreationWindow", size.toString());
+		mainWindow.logError("Failed to save IC settings. Size of block cant be less than 1 currently is {}.", size.toString());
 		return;
 	}
 
@@ -348,21 +351,25 @@ void BlockCreationWindow::updateFromMenu() {
 		unsigned int bitWidth = std::get<6>(row);
 		if (bitWidth == 0) {
 			logWarning("Can't update block data. Port bit width {} has to be more than 0.", "BlockCreationWindow", bitWidth);
+			mainWindow.logError("Failed to save IC settings. Port bit width {} has to be more than 0.", bitWidth);
 			return;
 		}
 		if (!portPositionOnBlock.widthInSize(size)) {
 			logWarning("Can't update block data. Port position {} is not on the block {}.", "BlockCreationWindow", portPositionOnBlock.toString(), size.toString());
+			mainWindow.logError("Failed to save IC settings. Port position {} is not on the block {}.", portPositionOnBlock.toString(), size.toString());
 			return;
 		}
 		if (portIsInput) {
 			if (inPortPositionsOnBlock.contains(portPositionOnBlock)) {
 				logWarning("Can't update block data. Port position {} is already used.", "BlockCreationWindow", portPositionOnBlock.toString());
+				mainWindow.logError("Failed to save IC settings. Port position {} is already used.", portPositionOnBlock.toString());
 				return;
 			}
 			inPortPositionsOnBlock.emplace(portPositionOnBlock);
 		} else {
 			if (outPortPositionsOnBlock.contains(portPositionOnBlock)) {
 				logWarning("Can't update block data. Port position {} is already used.", "BlockCreationWindow", portPositionOnBlock.toString());
+				mainWindow.logError("Failed to save IC settings. Port position {} is already used.", portPositionOnBlock.toString());
 				return;
 			}
 			outPortPositionsOnBlock.emplace(portPositionOnBlock);
@@ -533,6 +540,7 @@ void BlockCreationWindow::addListItem(
 	positionOnBlockXFormControl->SetValue(std::to_string(posOnBlockValue.dx));
 	positionOnBlockYFormControl->SetValue(std::to_string(posOnBlockValue.dy));
 	Rml::ElementPtr switchPortOffset = document->CreateElement("button");
+	/* trust me bro */ new Tooltip(mainWindow.getSdlWindoHandle(), switchPortOffset.get(), "Visual Port Offset");
 	switchPortOffset->AppendChild(std::move(document->CreateTextNode(std::string(1, portOffsetValue))));
 	switchPortOffset->AddEventListener(Rml::EventId::Click, new EventPasser([this, endId](Rml::Event& event) {
 		Rml::Element* row = document->GetElementById("ConnectionListItem Id: " + std::to_string(endId));
@@ -577,6 +585,7 @@ void BlockCreationWindow::addListItem(
 	bitWidthFormControl->SetValue(std::to_string(bitWidthValue));
 
 	Rml::ElementPtr setPositionButton = document->CreateElement("button");
+	/* trust me bro */ new Tooltip(mainWindow.getSdlWindoHandle(), setPositionButton.get(), "Set Position To Connect To");
 	setPositionButton->AppendChild(std::move(document->CreateTextNode("S")));
 	setPositionButton->AddEventListener(Rml::EventId::Click, new EventPasser([this, endId](Rml::Event& event) {
 		auto tool = std::dynamic_pointer_cast<PortSelector>(
@@ -617,6 +626,7 @@ void BlockCreationWindow::addListItem(
 	rowInRow->AppendChild(std::move(bitWidth))->SetClass("connection-list-item-bit-width", true);
 	// remove row button
 	Rml::ElementPtr remove = document->CreateElement("button");
+	/* trust me bro */ new Tooltip(mainWindow.getSdlWindoHandle(), remove.get(), "Remove Port");
 	remove->AppendChild(std::move(document->CreateTextNode("-")));
 	remove->SetClass("remove-connection-button", true);
 	if (isInput) {

@@ -6,9 +6,19 @@ void GeneratedCircuit::addConnectionPort(
 	Vector positionOnBlock,
 	block_id_t internalBlockId,
 	connection_end_id_t internalBlockConnectionEndId,
-	const std::string& portName
+	const std::string& portName,
+	unsigned int bitWidth
 ) {
-	ports.emplace_back(isInput, connectionEndId, positionOnBlock, internalBlockId, internalBlockConnectionEndId, portName);
+	ports.emplace_back(isInput, connectionEndId, positionOnBlock, internalBlockId, internalBlockConnectionEndId, portName, bitWidth);
+}
+
+void GeneratedCircuit::setConnectionPortBitWidth(connection_end_id_t connectionEndId, unsigned int bitWidth) {
+	for (ConnectionPort& port : ports) {
+		if (port.connectionEndId == connectionEndId) {
+			port.bitWidth = bitWidth;
+			return;
+		}
+	}
 }
 
 block_id_t GeneratedCircuit::addBlock(Position position, Orientation orientation, BlockType type) {

@@ -47,18 +47,23 @@ public:
 	void log(const std::string& message) { cornerLog->log(message); }
 	template <typename... Args>
 	void log(const fmt::format_string<Args...>& formatString, Args&&... args) {
-		cornerLog->log(formatString, std::forward<Args>(args)...);
+		std::ostringstream message;
+		message << fmt::format(formatString, std::forward<Args>(args)...);
+		cornerLog->log(message.str());
 	}
 	void logError(const std::string& message) { cornerLog->logError(message); }
 	template <typename... Args>
 	void logError(const fmt::format_string<Args...>& formatString, Args&&... args) {
-		cornerLog->logError(formatString, std::forward<Args>(args)...);
+		std::ostringstream message;
+		message << fmt::format(formatString, std::forward<Args>(args)...);
+		cornerLog->logError(message.str());
 	}
 
 	bool recieveEvent(SDL_Event& event);
 	void updateRml();
 
-	inline SDL_Window* getSdlWindow() { return sdlWindow->getHandle(); };
+	inline SDL_Window* getSdlWindoHandle() { return sdlWindow->getHandle(); };
+	inline SdlWindow* getSdlWindo() { return sdlWindow.get(); };
 	inline float getSdlWindowScalingSize() const { return sdlWindow->getWindowScalingSize(); }
 	inline std::vector<std::shared_ptr<CircuitViewWidget>> getCircuitViewWidgets() { return circuitViewWidgets; };
 	inline std::shared_ptr<CircuitViewWidget> getCircuitViewWidget(unsigned int i) { return circuitViewWidgets[i]; };

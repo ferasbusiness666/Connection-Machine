@@ -8,33 +8,36 @@
 			<div class="menu" id="menu-app">
 				<div class="menu-title">CM</div>
 				<div class="dropdown">
-					<button class="menu-item" id="setting">Setting</button>
-					<button class="menu-item" id="about">About</button>
+					<button class="menu-item menu-clickable" id="setting">Setting</button>
+					<button class="menu-item menu-clickable" id="about">About</button>
 				</div>
 			</div>
 
 			<div class="menu" id="menu-file">
 				<div class="menu-title">File</div>
 				<div class="dropdown">
-					<button class="menu-item" id="file-new">New</button>
-					<button class="menu-item" id="file-open">Open</button>
-					<button class="menu-item" id="file-save">Save</button>
+					<button class="menu-item menu-clickable" id="file-new">New</button>
+					<button class="menu-item menu-clickable" id="file-open">Open</button>
+					<button class="menu-item menu-clickable" id="file-save">Save</button>
 				</div>
 			</div>
 
 			<div class="menu" id="menu-window">
 				<div class="menu-title">Window</div>
 				<div class="dropdown">
-					<button class="menu-item" id="new-window">New</button>
-					<button class="menu-item" id="close-window">Close</button>
+					<button class="menu-item menu-clickable" id="new-window">New</button>
+					<button class="menu-item menu-clickable" id="close-window">Close</button>
 				</div>
 			</div>
 			<div class="menu" id="menu-help">
 				<div class="menu-title">Help</div>
 				<div class="dropdown">
-					<button class="menu-item" id="feedback">Feedback</button>
-					<button class="menu-item" id="controls">Controls</button>
+					<button class="menu-item menu-clickable" id="controls">Controls</button>
 				</div>
+			</div>
+			<div class="spacer"></div>
+			<div class="menu menu-feedback-button menu-clickable" id="menu-feedback">
+				<div class="menu-title">Feedback</div>
 			</div>
 		</div>
 	</body>

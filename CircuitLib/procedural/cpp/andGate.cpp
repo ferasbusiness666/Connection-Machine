@@ -1,4 +1,5 @@
 #include "cm.h"
+#include <string>
 
 extern "C" {
 
@@ -16,7 +17,7 @@ bool generateCircuit() {
 	setSize(2, size);
 
 	block_id_t light = createBlock(BlockType_LIGHT);
-	addConnectionOutput(1, 0, light, 0);
+	addConnectionOutputNamed(1, 0, light, 0, "o");
 
 	block_id_t andGate = createBlock(BlockType_AND);
 
@@ -24,7 +25,7 @@ bool generateCircuit() {
 
 	for (int i = 0; i < size; i++) {
 		block_id_t input = createBlock(BlockType_SWITCH);
-		addConnectionInput(0, i, input, 0);
+		addConnectionInputNamed(0, i, input, 0, ("i" + std::to_string(i + 1)).c_str());
 		createConnection(input, 0, andGate, 0);
 	}
 

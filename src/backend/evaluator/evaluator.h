@@ -16,6 +16,7 @@ class SimPauseGuard;
 struct CircuitPortDependency {
 	circuit_id_t circuitId;
 	connection_end_id_t connectionEndId;
+	bool operator==(const CircuitPortDependency& other) const = default;
 	auto operator<=>(const CircuitPortDependency& other) const {
 		return std::tie(circuitId, connectionEndId) <=> std::tie(other.circuitId, other.connectionEndId);
 	}
@@ -26,6 +27,24 @@ struct CircuitPortDependency {
 		return stateJson;
 	}
 };
+
+struct CircuitPortDependencyHash {
+	size_t operator()(const CircuitPortDependency& dependency) const noexcept {
+		size_t hash = std::hash<circuit_id_t>{}(dependency.circuitId);
+		const size_t connectionHash = std::hash<connection_end_id_t>{}(dependency.connectionEndId);
+		hash ^= connectionHash + 0x9e3779b97f4a7c15ULL + (hash << 6) + (hash >> 2);
+		return hash;
+	}
+};
+
+namespace std {
+	template <>
+	struct hash<CircuitPortDependency> {
+		size_t operator()(const CircuitPortDependency& dependency) const noexcept {
+			return CircuitPortDependencyHash{}(dependency);
+		}
+	};
+}
 
 struct InterCircuitConnection {
 	EvalConnection connection;
@@ -63,6 +82,8 @@ public:
 	Evaluator(const Evaluator&) = delete;
     Evaluator& operator=(const Evaluator&) = delete;
 	~Evaluator();
+
+	static constexpr double MIN_TICKRATE_DECREASABLE = 0.1;
 
 	inline evaluator_id_t getEvaluatorId() const { return evaluatorId; }
 	std::string getEvaluatorName() const;
@@ -152,6 +173,8 @@ private:
 	std::unique_ptr<EvalSimulator> evalSimulator;
 
 	bool changedICs = false;
+	bool changedSim = false;
+	bool changedPositioning = false;
 
 	void makeEditInPlace(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, DifferenceSharedPtr difference, DiffCache& diffCache);
 
@@ -189,7 +212,23 @@ private:
 		bool isInterCircuit
 	) const;
 
-	std::vector<InterCircuitConnection> interCircuitConnections;
+	void addInterCircuitConnection(
+		const EvalConnection& connection,
+		std::set<CircuitPortDependency>&& circuitPortDependencies,
+		std::set<CircuitNode>&& circuitNodeDependencies
+	);
+	void indexInterCircuitConnection(size_t id, const InterCircuitConnection& connection);
+	void unindexInterCircuitConnection(size_t id, const InterCircuitConnection& connection);
+	bool removeTrackedInterCircuitConnection(SimPauseGuard& pauseGuard, const EvalConnection& connection);
+	void removeTrackedInterCircuitConnection(SimPauseGuard& pauseGuard, size_t id);
+	std::unordered_map<size_t, InterCircuitConnection> interCircuitConnections;
+	std::unordered_map<EvalConnection, size_t> interCircuitConnectionLookup;
+	std::unordered_map<
+		CircuitPortDependency,
+		std::unordered_set<size_t>
+	> circuitPortDependencyIndex;
+	std::unordered_map<CircuitNode, std::unordered_set<size_t>> circuitNodeDependencyIndex;
+	size_t nextsize_t = 0;
 	void checkToCreateExternalConnections(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, Position position);
 	void traceOutwardsIC(
 		SimPauseGuard& pauseGuard,

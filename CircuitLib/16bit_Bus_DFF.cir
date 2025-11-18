@@ -1,0 +1,141 @@
+version_8
+import "DFF.cir"
+Circuit: "16bit_Bus_DFF"
+UUID: 2fd3b9f0-ed34-4de8-a5a3-72485e4a57d9
+size: 1x2
+ports:
+	(OUT, 2, (1, -18), <0, 0>, <0.900000, 0.500000>, "D Out", 16)
+	(IN, 1, (-8, -2), <0, 1>, <0.100000, 0.500000>, "CLK", 1)
+	(IN, 0, (-8, -18), <0, 0>, <0.100000, 0.500000>, "D In", 16)
+blockId 67 Bus ( 1 0 16, 0 15 [ 15 ], 0 14 [ 14 ], 0 13 [ 13 ], 0 12 [ 12 ], 0 11 [ 11 ], 0 10 [ 10 ], 0 9 [ 9 ], 0 8 [ 8 ], 0 7 [ 7 ], 0 6 [ 6 ], 0 5 [ 5 ], 0 4 [ 4 ], 0 3 [ 3 ], 0 2 [ 2 ], 0 1 [ 1 ], 0 0 [ 0 ]) 0 -18 ZERO
+	(connId:0) (1 2)
+	(connId:1) (4 2)
+	(connId:2) (6 2)
+	(connId:3) (8 2)
+	(connId:4) (10 2)
+	(connId:5) (12 2)
+	(connId:6) (14 2)
+	(connId:7) (16 2)
+	(connId:8) (18 2)
+	(connId:9) (24 2)
+	(connId:10) (31 2)
+	(connId:11) (38 2)
+	(connId:12) (43 2)
+	(connId:13) (20 2)
+	(connId:14) (27 2)
+	(connId:15) (34 2)
+blockId 66 Bus ( 1 0 16, 0 15 [ 15 ], 0 14 [ 14 ], 0 13 [ 13 ], 0 12 [ 12 ], 0 11 [ 11 ], 0 10 [ 10 ], 0 9 [ 9 ], 0 8 [ 8 ], 0 7 [ 7 ], 0 6 [ 6 ], 0 5 [ 5 ], 0 4 [ 4 ], 0 3 [ 3 ], 0 2 [ 2 ], 0 1 [ 1 ], 0 0 [ 0 ]) -8 -18 ONE_EIGHTY_FLIPPED
+	(connId:0) (1 0)
+	(connId:1) (4 0)
+	(connId:2) (6 0)
+	(connId:3) (8 0)
+	(connId:4) (10 0)
+	(connId:5) (12 0)
+	(connId:6) (14 0)
+	(connId:7) (16 0)
+	(connId:8) (18 0)
+	(connId:9) (24 0)
+	(connId:10) (31 0)
+	(connId:11) (38 0)
+	(connId:12) (43 0)
+	(connId:13) (20 0)
+	(connId:14) (27 0)
+	(connId:15) (34 0)
+blockId 63 JUNCTION -5 13 ZERO
+	(connId:0) (34 1) (58 0)
+blockId 60 JUNCTION -5 3 ZERO
+	(connId:0) (31 1) (48 0) (54 0)
+blockId 59 JUNCTION -5 9 ZERO
+	(connId:0) (20 1) (56 0) (58 0)
+blockId 58 JUNCTION -5 11 ZERO
+	(connId:0) (27 1) (59 0) (63 0)
+blockId 57 JUNCTION -5 -11 ZERO
+	(connId:0) (8 1) (21 0) (51 0)
+blockId 56 JUNCTION -5 7 ZERO
+	(connId:0) (43 1) (54 0) (59 0)
+blockId 54 JUNCTION -5 5 ZERO
+	(connId:0) (38 1) (56 0) (60 0)
+blockId 51 JUNCTION -5 -13 ZERO
+	(connId:0) (6 1) (47 0) (57 0)
+blockId 48 JUNCTION -5 1 ZERO
+	(connId:0) (24 1) (44 0) (60 0)
+blockId 47 JUNCTION -5 -15 ZERO
+	(connId:0) (4 1) (42 0) (51 0)
+blockId 44 JUNCTION -5 -1 ZERO
+	(connId:0) (18 1) (39 0) (48 0)
+blockId 43 "d76f150e-28ee-48a3-8703-92b89613a0ed" -4 6 ZERO
+	(connId:0) (66 12)
+	(connId:1) (56 0)
+	(connId:2) (67 12)
+blockId 42 JUNCTION -5 -17 ZERO
+	(connId:0) (1 1) (47 0)
+blockId 39 JUNCTION -5 -3 ZERO
+	(connId:0) (3 0) (16 1) (35 0) (44 0)
+blockId 38 "d76f150e-28ee-48a3-8703-92b89613a0ed" -4 4 ZERO
+	(connId:0) (66 11)
+	(connId:1) (54 0)
+	(connId:2) (67 11)
+blockId 35 JUNCTION -5 -5 ZERO
+	(connId:0) (14 1) (28 0) (39 0)
+blockId 34 "d76f150e-28ee-48a3-8703-92b89613a0ed" -4 12 ZERO
+	(connId:0) (66 15)
+	(connId:1) (63 0)
+	(connId:2) (67 15)
+blockId 31 "d76f150e-28ee-48a3-8703-92b89613a0ed" -4 2 ZERO
+	(connId:0) (66 10)
+	(connId:1) (60 0)
+	(connId:2) (67 10)
+blockId 28 JUNCTION -5 -7 ZERO
+	(connId:0) (12 1) (21 0) (35 0)
+blockId 27 "d76f150e-28ee-48a3-8703-92b89613a0ed" -4 10 ZERO
+	(connId:0) (66 14)
+	(connId:1) (58 0)
+	(connId:2) (67 14)
+blockId 24 "d76f150e-28ee-48a3-8703-92b89613a0ed" -4 0 ZERO
+	(connId:0) (66 9)
+	(connId:1) (48 0)
+	(connId:2) (67 9)
+blockId 21 JUNCTION -5 -9 ZERO
+	(connId:0) (10 1) (28 0) (57 0)
+blockId 20 "d76f150e-28ee-48a3-8703-92b89613a0ed" -4 8 ZERO
+	(connId:0) (66 13)
+	(connId:1) (59 0)
+	(connId:2) (67 13)
+blockId 18 "d76f150e-28ee-48a3-8703-92b89613a0ed" -4 -2 ZERO
+	(connId:0) (66 8)
+	(connId:1) (44 0)
+	(connId:2) (67 8)
+blockId 16 "d76f150e-28ee-48a3-8703-92b89613a0ed" -4 -4 ZERO
+	(connId:0) (66 7)
+	(connId:1) (39 0)
+	(connId:2) (67 7)
+blockId 14 "d76f150e-28ee-48a3-8703-92b89613a0ed" -4 -6 ZERO
+	(connId:0) (66 6)
+	(connId:1) (35 0)
+	(connId:2) (67 6)
+blockId 12 "d76f150e-28ee-48a3-8703-92b89613a0ed" -4 -8 ZERO
+	(connId:0) (66 5)
+	(connId:1) (28 0)
+	(connId:2) (67 5)
+blockId 10 "d76f150e-28ee-48a3-8703-92b89613a0ed" -4 -10 ZERO
+	(connId:0) (66 4)
+	(connId:1) (21 0)
+	(connId:2) (67 4)
+blockId 8 "d76f150e-28ee-48a3-8703-92b89613a0ed" -4 -12 ZERO
+	(connId:0) (66 3)
+	(connId:1) (57 0)
+	(connId:2) (67 3)
+blockId 6 "d76f150e-28ee-48a3-8703-92b89613a0ed" -4 -14 ZERO
+	(connId:0) (66 2)
+	(connId:1) (51 0)
+	(connId:2) (67 2)
+blockId 4 "d76f150e-28ee-48a3-8703-92b89613a0ed" -4 -16 ZERO
+	(connId:0) (66 1)
+	(connId:1) (47 0)
+	(connId:2) (67 1)
+blockId 3 SWITCH -8 -2 ZERO
+	(connId:0) (39 0)
+blockId 1 "d76f150e-28ee-48a3-8703-92b89613a0ed" -4 -18 ZERO
+	(connId:0) (66 0)
+	(connId:1) (42 0)
+	(connId:2) (67 0)

@@ -14,7 +14,11 @@ if(APPLE) # MacOS
 	set(MACOSX_BUNDLE_ICON_FILE "gateIcon.icns")
 	set_source_files_properties(${ICON_PATH} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
 	list(APPEND PROJECT_SOURCES ${ICON_PATH})
-
+	# if(CONNECTION_MACHINE_DISTRIBUTE_APP)
+	# 	set(OPENSSL_ROOT_DIR "/Users/ben/Documents/GitHub/Logic-Graph-Creator/lib-binary/libopenssl/")
+	# 	set(CMAKE_SYSTEM_IGNORE_PREFIX_PATH "/opt/homebrew/lib;/opt/homebrew/opt")
+	# 	set(CMAKE_IGNORE_PREFIX_PATH "/opt/homebrew/lib;/opt/homebrew/opt")
+	# endif()
 elseif (WIN32) # Windows
 	# Icon
 	set(ICON_PATH "${RESOURCES_DIR}/icon.rc")
@@ -44,9 +48,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${APP_NAME}")
 
 # Platform specific business after add_executable
 if(APPLE) # MacOS
-	# set(CMAKE_MACOSX_BUNDLE YES)
-
-	set_target_properties(${PROJECT_NAME} PROPERTIES MACOSX_BUNDLE TRUE)
 	# Bundle Properties
 	set_target_properties(${PROJECT_NAME} PROPERTIES
 		MACOSX_BUNDLE TRUE
@@ -139,10 +140,30 @@ endforeach()
 add_custom_target(compile-shaders DEPENDS ${SHADER_PRODUCTS})
 add_dependencies(${PROJECT_NAME} compile-shaders)
 
+if (WIN32 AND CONNECTION_MACHINE_DISTRIBUTE_APP)
+	set(WINDOWS_DISTRIBUTION_ZIP "Connection-Machine-${PROJECT_VERSION}-Windows.zip")
+	set(WINDOWS_DISTRIBUTION_STAGE_DIR "$<TARGET_FILE_DIR:${PROJECT_NAME}>/dist-stage")
+	set(WINDOWS_DISTRIBUTION_RESOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/resources")
+
+	add_custom_command(
+		TARGET ${PROJECT_NAME}
+		POST_BUILD
+		COMMAND "${CMAKE_COMMAND}" -E rm -rf "${WINDOWS_DISTRIBUTION_STAGE_DIR}"
+		COMMAND "${CMAKE_COMMAND}" -E rm -f "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${WINDOWS_DISTRIBUTION_ZIP}"
+		COMMAND "${CMAKE_COMMAND}" -E make_directory "${WINDOWS_DISTRIBUTION_STAGE_DIR}"
+		COMMAND "${CMAKE_COMMAND}" -E make_directory "${WINDOWS_DISTRIBUTION_RESOURCE_DIR}"
+		COMMAND "${CMAKE_COMMAND}" -E copy "$<TARGET_FILE:${PROJECT_NAME}>" "${WINDOWS_DISTRIBUTION_STAGE_DIR}/Connection_Machine.exe"
+		COMMAND "${CMAKE_COMMAND}" -E copy_directory "${WINDOWS_DISTRIBUTION_RESOURCE_DIR}" "${WINDOWS_DISTRIBUTION_STAGE_DIR}/resources"
+		COMMAND "${CMAKE_COMMAND}" -E chdir "${WINDOWS_DISTRIBUTION_STAGE_DIR}" "${CMAKE_COMMAND}" -E tar "cf" "../${WINDOWS_DISTRIBUTION_ZIP}" --format=zip "Connection_Machine.exe" "resources"
+		COMMAND "${CMAKE_COMMAND}" -E rm -rf "${WINDOWS_DISTRIBUTION_STAGE_DIR}"
+		VERBATIM
+	)
+endif()
+
 if (APPLE AND CONNECTION_MACHINE_DISTRIBUTE_APP)
 	set(TEAM_ID "" CACHE STRING "The development team ID for code signing")
 	execute_process(
-		COMMAND bash -c "security find-identity -v -p codesigning | grep 'Developer ID Application' | sed -n 's/.*(\\(.*\\)).*/\\1/p'"
+		COMMAND bash -c "security find-identity -v -p codesigning | grep 'Developer ID Application' | sed -n 's/.*\"\\\(.*\\\)\".*/\\1/p'"
 		OUTPUT_VARIABLE TEAM_ID
 		OUTPUT_STRIP_TRAILING_WHITESPACE
 	)
@@ -170,21 +191,98 @@ if (APPLE AND CONNECTION_MACHINE_DISTRIBUTE_APP)
 
 		install(TARGETS ${PROJECT_NAME} BUNDLE DESTINATION ".")
 
-		set(CPACK_PACKAGE_FILE_NAME "Connection-Machine-${PROJECT_VERSION}-Mac-universal")
+		set(CPACK_PACKAGE_FILE_NAME "Connection-Machine-${PROJECT_VERSION}-Mac")
 
 		install(FILES ${Vulkan_LIBRARY} DESTINATION "${APP_NAME}.app/Contents/Frameworks")
 		include(InstallRequiredSystemLibraries)
 
+		message("To store notarization credentials run:")
+		message("xcrun notarytool store-credentials \"CMNotaryProfile\" --apple-id \"you@your.com\" --team-id '${TEAM_ID}' --password \"app-specific-password\"")
+
+		set(PACKAGE_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/package.sh")
+
 		install(CODE "
 			include(BundleUtilities)
 			fixup_bundle(\"${CMAKE_CURRENT_BINARY_DIR}/${APP_NAME}.app\" \"\" \"${CMAKE_BINARY_DIR}\")
-			execute_process(COMMAND codesign --force --deep --sign ${TEAM_ID} \"${CMAKE_CURRENT_BINARY_DIR}/${APP_NAME}.app\")
-			execute_process(COMMAND codesign --verify --verbose=2 \"${CMAKE_CURRENT_BINARY_DIR}/${APP_NAME}.app\")
-			message(\"To sign the .dgm run\")
-			message(\"codesign --force --verbose=2 --sign $(security find-identity -v -p codesigning | grep 'Developer ID Application' | sed -n 's/.*(\\\\(.*\\\\)).*/\\\\1/p') '${CMAKE_CURRENT_BINARY_DIR}/${CPACK_PACKAGE_FILE_NAME}.dmg'\")
-			message(\"To verify the .dgm is signed run\")
-			message(\"codesign --verify --verbose=2 '${CMAKE_CURRENT_BINARY_DIR}/${CPACK_PACKAGE_FILE_NAME}.dmg'\")
+			fixup_bundle(\"${CMAKE_CURRENT_BINARY_DIR}/${APP_NAME}.app\" \"\" \"${CMAKE_BINARY_DIR}\")
+
+			file(REMOVE \"${CMAKE_CURRENT_BINARY_DIR}/${CPACK_PACKAGE_FILE_NAME}.dmg\")
+
+			file(WRITE ${PACKAGE_SCRIPT} \"#!/bin/bash\n\")
+
+			file(APPEND ${PACKAGE_SCRIPT} \"cd \\\"${CMAKE_CURRENT_BINARY_DIR}\\\"\\n\")
+
+			file(APPEND ${PACKAGE_SCRIPT} \"rm -rf \\\"./out\\\"\\n\")
+			file(APPEND ${PACKAGE_SCRIPT} \"mkdir \\\"./out\\\"\\n\")
+
+			file(APPEND ${PACKAGE_SCRIPT} \"hdiutil attach \\\"./${CPACK_PACKAGE_FILE_NAME}.dmg\\\"\\n\")
+
+			file(APPEND ${PACKAGE_SCRIPT} \"cp -R \\\"/Volumes/${CPACK_PACKAGE_FILE_NAME}/${APP_NAME}.app\\\" \\\"./out\\\" \\n\")
+
+			file(APPEND ${PACKAGE_SCRIPT} \"hdiutil detach \\\"/Volumes/${CPACK_PACKAGE_FILE_NAME}\\\"\\n\")
+
+			file(APPEND ${PACKAGE_SCRIPT} \"rm -r \\\"./${CPACK_PACKAGE_FILE_NAME}.dmg\\\"\\n\")
+
+			file(APPEND ${PACKAGE_SCRIPT} \"codesign --force -vvv --deep --strict --options runtime --sign \\\"${TEAM_ID}\\\" \\\"./out/${APP_NAME}.app\\\"\\n\")
+
+			file(APPEND ${PACKAGE_SCRIPT} \"codesign --verify --deep --strict --verbose=2 \\\"./out/${APP_NAME}.app\\\"\\n\")
+
+			file(APPEND ${PACKAGE_SCRIPT} \"cd \\\"${CMAKE_CURRENT_BINARY_DIR}/out\\\"\\n\")
+			file(APPEND ${PACKAGE_SCRIPT} \"ditto -c -k --sequesterRsrc --keepParent \\\"${APP_NAME}.app\\\" \\\"${APP_NAME}.app.zip\\\"\\n\")
+			file(APPEND ${PACKAGE_SCRIPT} \"cd \\\"${CMAKE_CURRENT_BINARY_DIR}\\\"\\n\")
+
+			file(APPEND ${PACKAGE_SCRIPT} \"xcrun notarytool submit \\\"./out/${APP_NAME}.app.zip\\\" --keychain-profile \\\"CMNotaryProfile\\\" --wait\\n\")
+			file(APPEND ${PACKAGE_SCRIPT} \"rm -r \\\"./out/${APP_NAME}.app.zip\\\"\\n\")
+
+			file(APPEND ${PACKAGE_SCRIPT} \"xcrun stapler staple \\\"./out/${APP_NAME}.app\\\"\\n\")
+			file(APPEND ${PACKAGE_SCRIPT} \"spctl --assess --type execute --verbose \\\"./out/${APP_NAME}.app\\\"\\n\")
+
+			file(APPEND ${PACKAGE_SCRIPT} \"ln -s /Applications \\\"./out/Applications\\\"\\n\")
+
+			file(APPEND ${PACKAGE_SCRIPT} \"hdiutil create -volname \\\"${CPACK_PACKAGE_FILE_NAME}\\\" -srcfolder \\\"./out\\\" -ov -format UDZO \\\"./out/${CPACK_PACKAGE_FILE_NAME}.dmg\\\"\\n\")
+
+			file(APPEND ${PACKAGE_SCRIPT} \"codesign --force -vvv --strict --sign \\\"${TEAM_ID}\\\" \\\"./out/${CPACK_PACKAGE_FILE_NAME}.dmg\\\"\\n\")
+
+			file(APPEND ${PACKAGE_SCRIPT} \"xcrun notarytool submit \\\"./out/${CPACK_PACKAGE_FILE_NAME}.dmg\\\" --keychain-profile \\\"CMNotaryProfile\\\" --wait\\n\")
+			file(APPEND ${PACKAGE_SCRIPT} \"xcrun stapler staple \\\"./out/${CPACK_PACKAGE_FILE_NAME}.dmg\\\"\\n\")
+			file(APPEND ${PACKAGE_SCRIPT} \"spctl --assess --type install --verbose \\\"./out/${APP_NAME}.app\\\"\\n\")
+
+			message(\"\")
+			message(\"\")
+			message(\"bash \\\"${PACKAGE_SCRIPT}\\\"\")
+			message(\"\")
+			message(\"\")
 		")
+
+		# file(APPEND ${PACKAGE_SCRIPT} \"xcrun notarytool submit \\\"./out/${CPACK_PACKAGE_FILE_NAME}.dmg\\\" --keychain-profile \\\"CMNotaryProfile\\\" --wait\\n\")
+		# file(APPEND ${PACKAGE_SCRIPT} \"spctl --assess --type execute --verbose \\\"./out/${APP_NAME}.app\\\"\\n\")
+		# file(APPEND ${PACKAGE_SCRIPT} \"spctl --assess --type install --verbose \\\"./out/${APP_NAME}.app\\\"\\n\")
+		# execute_process(COMMAND codesign --force -vvv --deep --strict --options runtime --sign \"${TEAM_ID}\" \"${CMAKE_CURRENT_BINARY_DIR}/${APP_NAME}.app\")
+		# execute_process(COMMAND codesign --verify --deep --strict --verbose=2 \"${CMAKE_CURRENT_BINARY_DIR}/${APP_NAME}.app\")
+
+		# message(\"\")
+		# execute_process(
+		# 	COMMAND ditto -c -k --sequesterRsrc --keepParent \"${APP_NAME}.app\" \"${APP_NAME}.app.zip\"
+		# 	WORKING_DIRECTORY \"${CMAKE_CURRENT_BINARY_DIR}\"
+		# )
+		# execute_process(COMMAND xcrun notarytool submit \"${CMAKE_CURRENT_BINARY_DIR}/${APP_NAME}.app.zip\" --keychain-profile \"CMNotaryProfile\" --wait)
+		# execute_process(COMMAND xcrun stapler staple \"${CMAKE_CURRENT_BINARY_DIR}/${APP_NAME}.app\")
+		# execute_process(COMMAND spctl --assess --type execute --verbose \"${CMAKE_CURRENT_BINARY_DIR}/${APP_NAME}.app\")
+
+		# message(\"\")
+		# execute_process(COMMAND hdiutil create -volname \"Connection-Machine\" -srcfolder \"${TEAM_ID}\" \"${CMAKE_CURRENT_BINARY_DIR}/${APP_NAME}.app\" -ov -format UDZO \"${CMAKE_CURRENT_BINARY_DIR}/${CPACK_PACKAGE_FILE_NAME}.dmg\")
+		# execute_process(COMMAND codesign --force -vvv --strict --sign \"TEAM_ID\" --timestamp \"${CMAKE_CURRENT_BINARY_DIR}/${CPACK_PACKAGE_FILE_NAME}.dmg\")
+
+		# message(\"\")
+		# message(\"\")
+		# message(\"To sign the .dmg run:\")
+		# message(\"codesign --force -vvv --deep --strict --options runtime --sign \"${TEAM_ID}\" --timestamp '${CMAKE_CURRENT_BINARY_DIR}/${CPACK_PACKAGE_FILE_NAME}.dmg'\")
+		# message(\"To verify the .dmg is signed run:\")
+		# message(\"codesign --verify --deep --strict --verbose=2 '${CMAKE_CURRENT_BINARY_DIR}/${CPACK_PACKAGE_FILE_NAME}.dmg'\")
+		# message(\"To notarize the .dmg is signed run:\")
+		# execute_process(COMMAND xcrun notarytool submit '${CMAKE_CURRENT_BINARY_DIR}/${CPACK_PACKAGE_FILE_NAME}.dmg' --keychain-profile \"CMNotaryProfile\" --wait)
+		# message(\"spctl --assess --type execute --verbose\")
+		# execute_process(COMMAND xcrun stapler staple '${CMAKE_CURRENT_BINARY_DIR}/${CPACK_PACKAGE_FILE_NAME}.dmg')
 
 		set(CPACK_GENERATOR "DragNDrop")
 		include(CPack)
