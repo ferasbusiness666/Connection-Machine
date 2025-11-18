@@ -199,9 +199,6 @@ void Evaluator::edit_deleteICContents(SimPauseGuard& pauseGuard, eval_circuit_id
 		nodesToRemove.emplace_back(pos, node);
 	});
 	for (const auto& [pos, node] : nodesToRemove) {
-#ifdef TRACY_PROFILER
-		ZoneScopedN("Evaluator::edit_deleteICContents - forEachNode");
-#endif
 		removeDependentInterCircuitConnections(pauseGuard, node);
 		if (node.isIC()) {
 			eval_circuit_id_t icId = node.getEvalCircuitId();
@@ -457,9 +454,6 @@ void Evaluator::removeTrackedInterCircuitConnection(SimPauseGuard& pauseGuard, s
 }
 
 void Evaluator::removeDependentInterCircuitConnections(SimPauseGuard& pauseGuard, CircuitPortDependency circuitPortDependency) {
-#ifdef TRACY_PROFILER
-	ZoneScopedN("Evaluator::removeDependentInterCircuitConnections - by CircuitPortDependency");
-#endif
 	// delete any connections that have the pair {circuitId, connectionEndId} in their traceSet
 	auto indexIt = circuitPortDependencyIndex.find(circuitPortDependency);
 	if (indexIt == circuitPortDependencyIndex.end()) {
@@ -476,9 +470,6 @@ void Evaluator::removeDependentInterCircuitConnections(SimPauseGuard& pauseGuard
 }
 
 void Evaluator::removeDependentInterCircuitConnections(SimPauseGuard& pauseGuard, CircuitNode node) {
-#ifdef TRACY_PROFILER
-	ZoneScopedN("Evaluator::removeDependentInterCircuitConnections - by CircuitNode");
-#endif
 	auto indexIt = circuitNodeDependencyIndex.find(node);
 	if (indexIt == circuitNodeDependencyIndex.end()) {
 		return;
@@ -620,9 +611,6 @@ std::optional<EvalConnectionPoint> Evaluator::getConnectionPoint(
 	const Position portPosition,
 	Direction direction
 ) const {
-#ifdef TRACY_PROFILER
-	ZoneScopedN("Evaluator::getConnectionPoint without dependencies");
-#endif
 	EvalCircuit* evalCircuit = evalCircuitContainer.getCircuit(evalCircuitId);
 	if (!evalCircuit) [[unlikely]] {
 		return std::nullopt;
@@ -710,9 +698,6 @@ std::optional<EvalConnectionPoint> Evaluator::getConnectionPoint(
 	std::set<EvalPosition>& visitedEvalPositions,
 	bool isInterCircuit
 ) const {
-#ifdef TRACY_PROFILER
-	ZoneScopedN("Evaluator::getConnectionPoint with dependencies");
-#endif
 	EvalCircuit* evalCircuit = evalCircuitContainer.getCircuit(evalCircuitId);
 	if (!evalCircuit) [[unlikely]] {
 		return std::nullopt;
@@ -970,9 +955,6 @@ void Evaluator::setState(const Address& address, logic_state_t state) {
 }
 
 void Evaluator::checkToCreateExternalConnections(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, Position position) {
-#ifdef TRACY_PROFILER
-	ZoneScoped;
-#endif
 	// logInfo("Checking to create external connections for evalCircuitId {} at position {}", "Evaluator::checkToCreateExternalConnections", evalCircuitId,
 	// position.toString());
 	EvalCircuit* evalCircuit = evalCircuitContainer.getCircuit(evalCircuitId);
@@ -1344,7 +1326,7 @@ void Evaluator::processDirtyNodes() {
 
 	{
 #ifdef TRACY_PROFILER
-		ZoneScoped;
+		ZoneScopedN("Send Simulator Mapping Updates");
 #endif
 		for (const auto& [evalCircuitId, updates] : simulatorMappingUpdates) {
 			sendSimulatorMappingUpdate(evalCircuitId, updates);
@@ -1353,9 +1335,6 @@ void Evaluator::processDirtyNodes() {
 }
 
 void Evaluator::dirtyBlockAt(Position position, eval_circuit_id_t evalCircuitId) {
-#ifdef TRACY_PROFILER
-	ZoneScoped;
-#endif
 	EvalCircuit* evalCircuit = evalCircuitContainer.getCircuit(evalCircuitId);
 	if (!evalCircuit) {
 		logError("EvalCircuit with id {} not found", "Evaluator::dirtyBlockAt", evalCircuitId);
