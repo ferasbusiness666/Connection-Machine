@@ -48,6 +48,9 @@ struct TrackedGate {
 	}
 
 	bool removeReferencesToId(const middle_id_t id) {
+#ifdef TRACY_PROFILER
+		ZoneScopedN("TrackedGate::removeReferencesToId");
+#endif
 		size_t initialSize = inputs.size() + outputs.size();
 		inputs.erase(std::remove_if(inputs.begin(), inputs.end(),
 			[&](const EvalConnection& conn) { return conn.source.gateId == id || conn.destination.gateId == id; }), inputs.end());
@@ -130,6 +133,9 @@ public:
 		replacer.removeGate(pauseGuard, gateId);
 		deleteTrackedGate(gateId);
 		for (auto& trackedGate : trackedGates) {
+#ifdef TRACY_PROFILER
+			ZoneScopedN("GateSubstituter::removeGate - per tracked gate");
+#endif
 			bool success = trackedGate.second.removeReferencesToId(gateId);
 			if (success) {
 				TrackedGate& trackedGateRef = trackedGate.second;

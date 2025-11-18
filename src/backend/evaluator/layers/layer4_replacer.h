@@ -25,6 +25,9 @@ public:
 		blockDataManager(blockDataManager) {}
 
 	void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
+#ifdef TRACY_PROFILER
+		ZoneScoped;
+#endif
 		busInterfacePassthrough.addGate(pauseGuard, blockType, gateId);
 		if (isJunctionType(blockType)) {
 			existingJunctionIds.insert(gateId);
@@ -32,6 +35,9 @@ public:
 	}
 
 	void removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
+#ifdef TRACY_PROFILER
+		ZoneScoped;
+#endif
 		pingId(pauseGuard, gateId, 0);
 		busInterfacePassthrough.removeGate(pauseGuard, gateId);
 		existingJunctionIds.erase(gateId);
@@ -103,12 +109,18 @@ public:
 	}
 
 	void makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
+#ifdef TRACY_PROFILER
+		ZoneScoped;
+#endif
 		pingId(pauseGuard, connection.source.gateId, 0);
 		pingId(pauseGuard, connection.destination.gateId, 0);
 		busInterfacePassthrough.makeConnection(pauseGuard, connection);
 	}
 
 	void removeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
+#ifdef TRACY_PROFILER
+		ZoneScoped;
+#endif
 		pingId(pauseGuard, connection.source.gateId, 0);
 		pingId(pauseGuard, connection.destination.gateId, 0);
 		busInterfacePassthrough.removeConnection(pauseGuard, connection);

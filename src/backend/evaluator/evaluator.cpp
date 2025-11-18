@@ -193,11 +193,15 @@ void Evaluator::edit_deleteICContents(SimPauseGuard& pauseGuard, eval_circuit_id
 		logError("EvalCircuit with id {} not found", "Evaluator::edit_deleteIC", evalCircuitId);
 		return;
 	}
-	std::vector<std::pair<Position, CircuitNode>> nodesToRemove;
+	static std::vector<std::pair<Position, CircuitNode>> nodesToRemove;
+	nodesToRemove.clear();
 	evalCircuit->forEachNode([&](Position pos, const CircuitNode& node) {
 		nodesToRemove.emplace_back(pos, node);
 	});
 	for (const auto& [pos, node] : nodesToRemove) {
+#ifdef TRACY_PROFILER
+		ZoneScopedN("Evaluator::edit_deleteICContents - forEachNode");
+#endif
 		removeDependentInterCircuitConnections(pauseGuard, node);
 		if (node.isIC()) {
 			eval_circuit_id_t icId = node.getEvalCircuitId();
@@ -382,6 +386,9 @@ void Evaluator::edit_createConnection(
 // }
 
 void Evaluator::removeDependentInterCircuitConnections(SimPauseGuard& pauseGuard, CircuitPortDependency circuitPortDependency) {
+#ifdef TRACY_PROFILER
+	ZoneScopedN("Evaluator::removeDependentInterCircuitConnections - by CircuitPortDependency");
+#endif
 	// delete any connections that have the pair {circuitId, connectionEndId} in their traceSet
 	for (auto it = interCircuitConnections.begin(); it != interCircuitConnections.end();) {
 		if (it->circuitPortDependencies.find(circuitPortDependency) != it->circuitPortDependencies.end()) {
@@ -395,6 +402,9 @@ void Evaluator::removeDependentInterCircuitConnections(SimPauseGuard& pauseGuard
 }
 
 void Evaluator::removeDependentInterCircuitConnections(SimPauseGuard& pauseGuard, CircuitNode node) {
+#ifdef TRACY_PROFILER
+	ZoneScopedN("Evaluator::removeDependentInterCircuitConnections - by CircuitNode");
+#endif
 	for (auto it = interCircuitConnections.begin(); it != interCircuitConnections.end();) {
 		if (it->circuitNodeDependencies.find(node) != it->circuitNodeDependencies.end()) {
 			evalSimulator->removeConnection(pauseGuard, it->connection);
