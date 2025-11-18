@@ -46,7 +46,7 @@ private:
     void runSetStatesCommand(TestCommand testCommand, const SharedEvaluator eval, NamePositionMap& nameToConnectedBlockPosition);
     bool runCheckStatesCommand(TestCommand testCommand, const SharedEvaluator eval, NamePositionMap& nameToConnectedBlockPosition);
 
-    std::unordered_map<std::string, std::vector<TestCommand>> testCommandGroups;
+    std::vector<TestCommand> testCommands;
 };
 
 #endif

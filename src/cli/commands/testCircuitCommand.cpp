@@ -6,6 +6,7 @@
 #include "../commandManager.h"
 #include "backend/circuitTestCase/circuitTestCase.h"
 #include "backend/container/block/blockDefs.h"
+#include "computerAPI/testCaseFileManager.h"
 
 runAtStartup(CommandManager::get().registerCommand(std::make_unique<TestCircuitCommand>());)
 
@@ -15,8 +16,12 @@ void TestCircuitCommand::run(const std::vector<std::string>& args, Environment& 
 		return;
 	}
 
-    CircuitTestCase testCase;
-    if (!testCase.runTest(BlockType::TRISTATE_BUFFER, false, environment)) {
+    std::optional<CircuitTestCase> testCase = TestCaseFileManager::getCircuitTestCaseFromFilePath(args[1]);
+    if (testCase == std::nullopt) {
+        logInfo("No tests run", "TestCircuitCommand");
+        return;
+    }
+    if (!testCase.value().runTest(BlockType::TRISTATE_BUFFER, false, environment)) {
         logInfo("Test case failed.", "TestCircuitCommand");
     }
     else {

@@ -31,11 +31,35 @@ std::optional<CircuitTestCase> TestCaseFileManager::getCircuitTestCaseFromFilePa
         return std::nullopt;
     }
 
-    inputFile >>token;
+    std::string testName;
+    inputFile >> token;
+
+    if (token == "Test:") {
+        inputFile >> std::quoted(testName);
+    } else {
+        logError("Invalid file format, expected 'Test:' on line 2", "TestCaseFileManager");
+        return std::nullopt;
+    }
+
+    std::vector<std::string> portNames = {};
+    inputFile >> token;
+    if (token == "Ports:") {
+        while(inputFile.peek() == '"') {
+            std::string portName;
+            inputFile >> std::quoted(portName);
+            portNames.push_back(portName);
+        }
+    } else {
+        logError("Invalid file format, expected 'Ports:' on line 3", "TestCaseFileManager");
+        return std::nullopt;
+    }
+
+
 
     while (inputFile >> token) {
         
     }
 
+    logInfo("Loaded test", "TestCaseFileManager");
     return std::nullopt;
 }

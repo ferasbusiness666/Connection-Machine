@@ -75,6 +75,7 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
                     TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)})
                 };*/
 
+    testCommands = {};
     // retrieve necessary objects to run test
     bool fullTestSucceedStatus = true;
     Backend& backend = environment.getBackend();
