@@ -51,8 +51,8 @@ void Replacer::pingId(SimPauseGuard& pauseGuard, middle_id_t id, int minLayer) {
 	if (node.empty()) {
 		return;
 	}
-	std::set<replacement_id_t>& replacementsSet = node.mapped();
-	std::set<replacement_id_t> remaining;
+	std::unordered_set<replacement_id_t>& replacementsSet = node.mapped();
+	std::unordered_set<replacement_id_t> remaining;
 	std::vector<replacement_id_t> toRevert;
 	for (replacement_id_t replacementId : replacementsSet) {
 		if (replacements[replacementId]->getLayer() < minLayer) {
@@ -522,7 +522,7 @@ nlohmann::json Replacer::dumpConnectionPointMap(const std::unordered_map<connect
 	return pointMapJson;
 }
 
-nlohmann::json Replacer::dumpReplacementIdSet(const std::set<replacement_id_t>& idSet) const {
+nlohmann::json Replacer::dumpReplacementIdSet(const std::unordered_set<replacement_id_t>& idSet) const {
 	nlohmann::json idSetJson = nlohmann::json::array();
 	for (const replacement_id_t id : idSet) {
 		idSetJson.push_back(id.get());

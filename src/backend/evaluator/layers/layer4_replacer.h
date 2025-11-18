@@ -253,10 +253,10 @@ private:
 	static bool isJunctionType(BlockType blockType) {
 		return blockType == BlockType::JUNCTION || blockType == BlockType::JUNCTION_L || blockType == BlockType::JUNCTION_H || blockType == BlockType::JUNCTION_X;
 	}
-	std::unordered_map<middle_id_t, std::set<replacement_id_t>> dependentReplacements;
+	std::unordered_map<middle_id_t, std::unordered_set<replacement_id_t>> dependentReplacements;
 
 	nlohmann::json dumpConnectionPointMap(const std::unordered_map<connection_end_id_t, EvalConnectionPoint>& pointMap) const;
-	nlohmann::json dumpReplacementIdSet(const std::set<replacement_id_t>& idSet) const;
+	nlohmann::json dumpReplacementIdSet(const std::unordered_set<replacement_id_t>& idSet) const;
 	std::unordered_set<middle_id_t> existingJunctionIds;
 };
 
