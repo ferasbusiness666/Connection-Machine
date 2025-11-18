@@ -245,29 +245,24 @@ void Replacer::mergeJunctions(SimPauseGuard& pauseGuard, int layer) {
 #ifdef TRACY_PROFILER
 	ZoneScoped;
 #endif
-	std::vector<middle_id_t> allMiddleIds = middleIdProvider.getUsedIds();
-	for (const middle_id_t id : allMiddleIds) {
+	std::vector<middle_id_t> junctionIdsToErase;
+	for (const middle_id_t id : existingJunctionIds) {
 #ifdef TRACY_PROFILER
-	ZoneScoped;
+		ZoneScoped;
 #endif
 		if (replacementIdLayers.contains(id)) {
 			if (replacementIdLayers.at(id) >= layer) {
 				continue;
 			}
 		}
-		// check if we're a junction
-		BlockType blockType = busInterfacePassthrough.getBlockType(id);
-		if (!isJunctionType(blockType)) {
-			continue;
-		}
 		JunctionFloodFillResult floodFillResult = junctionFloodFill(id);
 
-		if (floodFillResult.outputsGoingIntoJunctions.size() == 0 && floodFillResult.defaultState == logic_state_t::FLOATING) {
-			continue;
-		}
-
 		Replacement& replacement = makeReplacement(layer);
-		if (floodFillResult.outputsGoingIntoJunctions.size() == 1 && floodFillResult.defaultState == logic_state_t::FLOATING) {
+		if (floodFillResult.outputsGoingIntoJunctions.size() == 0 && floodFillResult.defaultState == logic_state_t::FLOATING) {
+			for (const middle_id_t junctionId : floodFillResult.junctionIds) {
+				replacement.trackGate(junctionId);
+			}
+		} else if (floodFillResult.outputsGoingIntoJunctions.size() == 1 && floodFillResult.defaultState == logic_state_t::FLOATING) {
 			EvalConnectionPoint output = floodFillResult.outputsGoingIntoJunctions.at(0);
 			for (const middle_id_t junctionId : floodFillResult.junctionIds) {
 				replacement.removeGate(pauseGuard, junctionId, { {connection_end_id_t(0), output }, {connection_end_id_t(1), output } });
@@ -304,6 +299,18 @@ void Replacer::mergeJunctions(SimPauseGuard& pauseGuard, int layer) {
 				replacement.makeConnection(pauseGuard, newConnection);
 			}
 		}
+		for (const middle_id_t junctionId : floodFillResult.junctionIds) {
+			junctionIdsToErase.push_back(junctionId);
+		}
+		std::vector<middle_id_t> junctionIdsCopy = floodFillResult.junctionIds;
+		replacement.addRevertAction([this, junctionIdsCopy]() {
+			for (const middle_id_t junctionId : junctionIdsCopy) {
+				existingJunctionIds.insert(junctionId);
+			}
+		});
+	}
+	for (const middle_id_t junctionId : junctionIdsToErase) {
+		existingJunctionIds.erase(junctionId);
 	}
 }
 

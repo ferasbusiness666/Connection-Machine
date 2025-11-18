@@ -26,11 +26,15 @@ public:
 
 	void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
 		busInterfacePassthrough.addGate(pauseGuard, blockType, gateId);
+		if (isJunctionType(blockType)) {
+			existingJunctionIds.insert(gateId);
+		}
 	}
 
 	void removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
 		pingId(pauseGuard, gateId, 0);
 		busInterfacePassthrough.removeGate(pauseGuard, gateId);
+		existingJunctionIds.erase(gateId);
 	}
 
 	inline SimPauseGuard beginEdit() {
@@ -246,13 +250,14 @@ private:
 	JunctionFloodFillResult junctionFloodFill(middle_id_t junctionId);
 	BlockDataManager& blockDataManager;
 	std::vector<middle_id_t>& dirtyMiddleIds;
-	bool isJunctionType(BlockType blockType) const {
+	static bool isJunctionType(BlockType blockType) {
 		return blockType == BlockType::JUNCTION || blockType == BlockType::JUNCTION_L || blockType == BlockType::JUNCTION_H || blockType == BlockType::JUNCTION_X;
 	}
 	std::unordered_map<middle_id_t, std::set<replacement_id_t>> dependentReplacements;
 
 	nlohmann::json dumpConnectionPointMap(const std::unordered_map<connection_end_id_t, EvalConnectionPoint>& pointMap) const;
 	nlohmann::json dumpReplacementIdSet(const std::set<replacement_id_t>& idSet) const;
+	std::unordered_set<middle_id_t> existingJunctionIds;
 };
 
 #endif /* replacer_h */
