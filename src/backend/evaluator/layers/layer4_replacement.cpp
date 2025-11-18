@@ -8,14 +8,16 @@ void Replacement::removeGate(
 	std::unordered_map<connection_end_id_t, EvalConnectionPoint> replacementConnectionPoints) {
 	isEmpty = false;
 	// track connection removals
-	std::vector<EvalConnection> outputs = replacer->busInterfacePassthrough.getOutputs(gateId);
-	std::vector<EvalConnection> inputs = replacer->busInterfacePassthrough.getInputs(gateId);
-	for (const auto& conn : outputs) {
+	std::pair<const std::vector<EvalConnection>&, std::vector<EvalConnection>> outputs = replacer->busInterfacePassthrough.getOutputs(gateId);
+	std::pair<const std::vector<EvalConnection>&, std::vector<EvalConnection>> inputs = replacer->busInterfacePassthrough.getInputs(gateId);
+	for (int i = 0; i < outputs.first.size() + outputs.second.size(); i++) {
+		const EvalConnection& conn = (i < outputs.first.size()) ? outputs.first.at(i) : outputs.second[i - outputs.first.size()];
 		if (conn.destination.gateId != conn.source.gateId) {
 			deletedConnections.push_back(conn);
 		}
 	}
-	for (const auto& conn : inputs) {
+	for (int i = 0; i < inputs.first.size() + inputs.second.size(); i++) {
+		const EvalConnection& conn = (i < inputs.first.size()) ? inputs.first.at(i) : inputs.second[i - inputs.first.size()];
 		deletedConnections.push_back(conn);
 	}
 	deletedGates.push_back({ gateId, replacer->busInterfacePassthrough.getBlockType(gateId) });
@@ -34,14 +36,16 @@ void Replacement::removeGate(
 #endif
 	isEmpty = false;
 	// track connection removals
-	std::vector<EvalConnection> outputs = replacer->busInterfacePassthrough.getOutputs(gateId);
-	std::vector<EvalConnection> inputs = replacer->busInterfacePassthrough.getInputs(gateId);
-	for (const auto& conn : outputs) {
+	std::pair<const std::vector<EvalConnection>&, std::vector<EvalConnection>> outputs = replacer->busInterfacePassthrough.getOutputs(gateId);
+	std::pair<const std::vector<EvalConnection>&, std::vector<EvalConnection>> inputs = replacer->busInterfacePassthrough.getInputs(gateId);
+	for (int i = 0; i < outputs.first.size() + outputs.second.size(); i++) {
+		const EvalConnection& conn = (i < outputs.first.size()) ? outputs.first.at(i) : outputs.second[i - outputs.first.size()];
 		if (conn.destination.gateId != conn.source.gateId) {
 			deletedConnections.push_back(conn);
 		}
 	}
-	for (const auto& conn : inputs) {
+	for (int i = 0; i < inputs.first.size() + inputs.second.size(); i++) {
+		const EvalConnection& conn = (i < inputs.first.size()) ? inputs.first.at(i) : inputs.second[i - inputs.first.size()];
 		deletedConnections.push_back(conn);
 	}
 	deletedGates.push_back({ gateId, replacer->busInterfacePassthrough.getBlockType(gateId) });

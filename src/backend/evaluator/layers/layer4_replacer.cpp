@@ -155,9 +155,10 @@ void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, int layer, int junctionOv
 			replacement.markIdAsReplaced(current.blockId, junctionOverpowerLayer);
 		}
 		// get all inputs/outputs, and add them to the queue if the lanes line up
-		std::vector<EvalConnection> inputs = busInterfacePassthrough.getInputs(current.blockId);
+		std::pair<const std::vector<EvalConnection>&, std::vector<EvalConnection>> inputs = busInterfacePassthrough.getInputs(current.blockId);
 		BlockData* blockData = blockDataManager.getBlockData(blockType);
-		for (const EvalConnection& input : inputs) {
+		for (int i = 0; i < inputs.first.size() + inputs.second.size(); i++) {
+			const EvalConnection& input = (i < inputs.first.size()) ? inputs.first.at(i) : inputs.second[i - inputs.first.size()];
 			const BlockData::ConnectionData* connectionData = blockData->getConnectionData(input.destination.portId);
 			unsigned int connectionLaneIndex = current.laneId;
 			BlockType sourceBlockType = busInterfacePassthrough.getBlockType(input.source.gateId);
@@ -198,8 +199,9 @@ void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, int layer, int junctionOv
 				visited.insert(sourceLane);
 			}
 		}
-		std::vector<EvalConnection> outputs = busInterfacePassthrough.getOutputs(current.blockId);
-		for (const EvalConnection& output : outputs) {
+		std::pair<const std::vector<EvalConnection>&, std::vector<EvalConnection>> outputs = busInterfacePassthrough.getOutputs(current.blockId);
+		for (int i = 0; i < outputs.first.size() + outputs.second.size(); i++) {
+			const EvalConnection& output = (i < outputs.first.size()) ? outputs.first.at(i) : outputs.second[i - outputs.first.size()];
 			const BlockData::ConnectionData* connectionData = blockData->getConnectionData(output.source.portId);
 			unsigned int connectionLaneIndex = current.laneId;
 			BlockType destBlockType = busInterfacePassthrough.getBlockType(output.destination.gateId);
@@ -340,8 +342,8 @@ Replacer::JunctionFloodFillResult Replacer::junctionFloodFill(middle_id_t juncti
 		middle_id_t currentId = queue.front();
 		queue.pop();
 		result.junctionIds.push_back(currentId);
-		std::vector<EvalConnection> outputs = busInterfacePassthrough.getOutputs(currentId);
-		std::vector<EvalConnection> inputs = busInterfacePassthrough.getInputs(currentId);
+		std::pair<const std::vector<EvalConnection>&, std::vector<EvalConnection>> outputs = busInterfacePassthrough.getOutputs(currentId);
+		std::pair<const std::vector<EvalConnection>&, std::vector<EvalConnection>> inputs = busInterfacePassthrough.getInputs(currentId);
 		BlockType currentBlockType = busInterfacePassthrough.getBlockType(currentId);
 		if (currentBlockType == BlockType::JUNCTION_L) {
 			if (defaultState == logic_state_t::HIGH) {
@@ -358,10 +360,11 @@ Replacer::JunctionFloodFillResult Replacer::junctionFloodFill(middle_id_t juncti
 		} else if (currentBlockType == BlockType::JUNCTION_X) {
 			defaultState = logic_state_t::UNDEFINED;
 		}
-		for (const EvalConnection& output : outputs) {
+		for (int i = 0; i < outputs.first.size() + outputs.second.size(); i++) {
 #ifdef TRACY_PROFILER
 			ZoneScopedN("junctionFloodFill: per junction output");
 #endif
+			const EvalConnection& output = (i < outputs.first.size()) ? outputs.first.at(i) : outputs.second[i - outputs.first.size()];
 			if (visited.contains(output.destination.gateId)) {
 				continue;
 			}
@@ -373,10 +376,11 @@ Replacer::JunctionFloodFillResult Replacer::junctionFloodFill(middle_id_t juncti
 			}
 			result.inputsPullingFromJunctions.push_back(output);
 		}
-		for (const EvalConnection& input : inputs) {
+		for (int i = 0; i < inputs.first.size() + inputs.second.size(); i++) {
 #ifdef TRACY_PROFILER
 			ZoneScopedN("junctionFloodFill: per junction input");
 #endif
+			const EvalConnection& input = (i < inputs.first.size()) ? inputs.first.at(i) : inputs.second[i - inputs.first.size()];
 			if (visited.contains(input.source.gateId)) {
 				continue;
 			}
@@ -392,11 +396,12 @@ Replacer::JunctionFloodFillResult Replacer::junctionFloodFill(middle_id_t juncti
 			}
 			visitedOutputs.insert(input.source);
 			result.outputsGoingIntoJunctions.push_back(input.source);
-			std::vector<EvalConnection> nodeOutputs = busInterfacePassthrough.getOutputs(input.source.gateId);
-			for (const EvalConnection& nodeOutput : nodeOutputs) {
+			std::pair<const std::vector<EvalConnection>&, std::vector<EvalConnection>> nodeOutputs = busInterfacePassthrough.getOutputs(input.source.gateId);
+			for (int j = 0; j < nodeOutputs.first.size() + nodeOutputs.second.size(); j++) {
 #ifdef TRACY_PROFILER
 				ZoneScopedN("junctionFloodFill: per junction input per output");
 #endif
+				const EvalConnection& nodeOutput = (j < nodeOutputs.first.size()) ? nodeOutputs.first.at(j) : nodeOutputs.second[j - nodeOutputs.first.size()];
 				if (nodeOutput.source.portId != input.source.portId) {
 					continue; // only consider outputs from the same port
 				}

@@ -173,10 +173,11 @@ public:
         return simulatorOptimizer.getBlockType(middleId);
     }
 
-    std::vector<EvalConnection> getInputs(middle_id_t middleId) const {
+    std::pair<const std::vector<EvalConnection>&, std::vector<EvalConnection>> getInputs(middle_id_t middleId) const {
 #ifdef TRACY_PROFILER
         ZoneScoped;
 #endif
+        static std::vector<EvalConnection> emptyConns;
         std::vector<EvalConnection> conns = {};
         if (omittedConnections.contains(middleId)) {
             for (const EvalConnection& conn : omittedConnections.at(middleId)) {
@@ -186,18 +187,16 @@ public:
             }
         }
         if (busInterfaces.contains(middleId)) {
-            return conns;
+            return {emptyConns, conns};
         }
-        for (const EvalConnection& conn : simulatorOptimizer.getInputs(middleId)) {
-            conns.push_back(conn);
-        }
-        return conns;
+        return {simulatorOptimizer.getInputs(middleId), conns};
     }
 
-    std::vector<EvalConnection> getOutputs(middle_id_t middleId) const {
+    std::pair<const std::vector<EvalConnection>&, std::vector<EvalConnection>> getOutputs(middle_id_t middleId) const {
 #ifdef TRACY_PROFILER
         ZoneScoped;
 #endif
+        static std::vector<EvalConnection> emptyConns;
         std::vector<EvalConnection> conns = {};
         if (omittedConnections.contains(middleId)) {
             for (const EvalConnection& conn : omittedConnections.at(middleId)) {
@@ -207,12 +206,9 @@ public:
             }
         }
         if (busInterfaces.contains(middleId)) {
-            return conns;
+            return {emptyConns, conns};
         }
-        for (const EvalConnection& conn : simulatorOptimizer.getOutputs(middleId)) {
-            conns.push_back(conn);
-        }
-        return conns;
+        return {simulatorOptimizer.getOutputs(middleId), conns};
     }
     int getNumOutputs(middle_id_t middleId) const {
         int count = 0;
