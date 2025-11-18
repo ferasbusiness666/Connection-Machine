@@ -1557,7 +1557,7 @@ void Evaluator::increaseTickrateSeq() {
 }
 void Evaluator::decreaseTickrateSeq() {
 	double currentTickrate = getTickrate();
-	double newTickrate = std::max(0.1, prev_in_sequence(currentTickrate));
+	double newTickrate = std::max(MIN_TICKRATE_DECREASABLE, prev_in_sequence(currentTickrate));
 	setTickrate(newTickrate);
 }
 
