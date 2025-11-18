@@ -160,7 +160,7 @@ void SimulatorOptimizer::removeConnection(SimPauseGuard& pauseGuard, EvalConnect
 	}
 }
 
-std::vector<EvalConnection> SimulatorOptimizer::getInputs(middle_id_t middleId) const {
+const std::vector<EvalConnection>& SimulatorOptimizer::getInputs(middle_id_t middleId) const {
 #ifdef TRACY_PROFILER
 	ZoneScoped;
 #endif
@@ -170,7 +170,7 @@ std::vector<EvalConnection> SimulatorOptimizer::getInputs(middle_id_t middleId) 
 	return inputConnections.at(middleId);
 }
 
-std::vector<EvalConnection> SimulatorOptimizer::getOutputs(middle_id_t middleId) const {
+const std::vector<EvalConnection>& SimulatorOptimizer::getOutputs(middle_id_t middleId) const {
 #ifdef TRACY_PROFILER
 	ZoneScoped;
 #endif
