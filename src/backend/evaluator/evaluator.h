@@ -152,6 +152,8 @@ private:
 	std::unique_ptr<EvalSimulator> evalSimulator;
 
 	bool changedICs = false;
+	bool changedSim = false;
+	bool changedPositioning = false;
 
 	void makeEditInPlace(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, DifferenceSharedPtr difference, DiffCache& diffCache);
 
