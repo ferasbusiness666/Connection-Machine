@@ -2,7 +2,7 @@
 #define tutorialloader_h
 
 #include <vector>
-#include "gui/viewportManager/circuitView/tutorial.h"
+#include "gui/viewportManager/circuitView/tutorialManager.h"
 
 void parseTutorialFile(std::string& fileName);
 

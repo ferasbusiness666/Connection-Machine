@@ -48,9 +48,9 @@ struct TutorialStep {
 	TutorialAction action;
 };
 
-class Tutorial {
+class TutorialManager {
 public:
-	Tutorial(Environment& environment, CircuitView& circuitView);
+	TutorialManager(Environment& environment, CircuitView& circuitView);
 	void StartTutorial();
 	void Stop();
 	void setTutorial(const std::vector<TutorialStep>& steps);
