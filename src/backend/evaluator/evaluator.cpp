@@ -33,6 +33,7 @@ Evaluator::Evaluator(
 	const Difference difference = blockContainer.getCreationDifference();
 	receiver.linkFunction("circuitBlockDataConnectionPositionRemove", std::bind(&Evaluator::removeCircuitIO, this, std::placeholders::_1));
 	receiver.linkFunction("circuitBlockDataConnectionPositionSet", std::bind(&Evaluator::setCircuitIO, this, std::placeholders::_1));
+	receiver.linkFunction("blockDataPortBitConfigurationSet", std::bind(&Evaluator::setCircuitIO, this, std::placeholders::_1)); // TODO: this only works for ICs, needs to work for all blocks
 
 	makeEdit(std::make_shared<Difference>(difference), circuitId);
 }
@@ -417,7 +418,7 @@ void Evaluator::setCircuitIO(const DataUpdateEventManager::EventData* data) {
 
 	circuit_id_t circuitId = circuitBlockDataManager.getCircuitId(blockType);
 	if (circuitId == 0) {
-		logError("Circuit ID for BlockType {} is 0, cannot set IO", "Evaluator::setCircuitIO", blockType);
+		// logError("Circuit ID for BlockType {} is 0, cannot set IO", "Evaluator::setCircuitIO", blockType);
 		return;
 	}
 	SimPauseGuard pauseGuard = evalSimulator->beginEdit();
