@@ -83,80 +83,80 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
     const EvaluatorManager& evalManager = backend.getEvaluatorManager();
     BlockDataManager& blockDataManager = backend.getBlockDataManager();
 
-    // circuit_id_t cirId = cirManager.createNewCircuit(false);
-    // SharedCircuit cir = cirManager.getCircuit(cirId);
-    // evaluator_id_t evalId = backend.createEvaluator(cirId).value();
-    // const SharedEvaluator eval = evalManager.getEvaluator(evalId);
-    // eval->setPause(true);
-    // const BlockContainer blockContainer = cir->getBlockContainer();
+    circuit_id_t cirId = cirManager.createNewCircuit(false);
+    SharedCircuit cir = cirManager.getCircuit(cirId);
+    evaluator_id_t evalId = backend.createEvaluator(cirId).value();
+    const SharedEvaluator eval = evalManager.getEvaluator(evalId);
+    eval->setPause(true);
+    const BlockContainer blockContainer = cir->getBlockContainer();
 
-    // const BlockData* blockData = blockDataManager.getBlockData(blockType);
-    // std::unordered_map<connection_end_id_t, BlockData::ConnectionData> connections = blockData->getConnections();
-    // // change implementation of this when BlockData::getConnectionNameToId is implemented
-    // NamePositionMap nameToConnectedBlockPosition;
+    const BlockData* blockData = blockDataManager.getBlockData(blockType);
+    std::unordered_map<connection_end_id_t, BlockData::ConnectionData> connections = blockData->getConnections();
+    // change implementation of this when BlockData::getConnectionNameToId is implemented
+    NamePositionMap nameToConnectedBlockPosition;
 
-    // // generate the test circuit
-    // if (!cir->tryInsertBlock(Position(0,0), Orientation(), blockType)) {
-    //     logError("Couldn't insert test circuit block {}", "circuitTestCase", "blockType");
-    //     return false;
-    // }
+    // generate the test circuit
+    if (!cir->tryInsertBlock(Position(0,0), Orientation(), blockType)) {
+        logError("Couldn't insert test circuit block {}", "circuitTestCase", "blockType");
+        return false;
+    }
 
-    // for (auto iter = connections.begin(); iter != connections.end(); iter++) {
-    //     if (iter->second.portType == BlockData::ConnectionData::PortType::INPUT || iter->second.portType == BlockData::ConnectionData::PortType::BIDIRECTIONAL) {
-    //         Position internalConnPos = Position(iter->second.positionOnBlock.dx, iter->second.positionOnBlock.dy);
-    //         Position externalConnPos = Position(-1-nameToConnectedBlockPosition.size(), 0);
-    //         if (!cir->tryInsertBlock(externalConnPos, Orientation(), SWITCH)) {
-    //             logError("Couldn't insert test circuit block", "circuitTestCase");
-    //             return false;
-    //         }
-    //         if (!cir->tryCreateConnection(externalConnPos, internalConnPos)) {
-    //             logError("Couldn't create test circuit connection", "circuitTestCase");
-    //             return false;
-    //         }
-    //         nameToConnectedBlockPosition.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
-    //     }
-    //     if (iter->second.portType == BlockData::ConnectionData::PortType::OUTPUT || iter->second.portType == BlockData::ConnectionData::PortType::BIDIRECTIONAL) {
-    //         Position internalConnPos = Position(iter->second.positionOnBlock.dx, iter->second.positionOnBlock.dy);
-    //         Position externalConnPos = Position(-1-nameToConnectedBlockPosition.size(), 0);
-    //         if (!cir->tryInsertBlock(externalConnPos, Orientation(), LIGHT)) {
-    //             logError("Couldn't insert test circuit block", "circuitTestCase");
-    //             return false;
-    //         }
-    //         if (!cir->tryCreateConnection(internalConnPos, externalConnPos)) {
-    //             logError("Couldn't create test circuit connection", "circuitTestCase");
-    //             return false;
-    //         }
-    //         nameToConnectedBlockPosition.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
-    //     }
-    // }
+    for (auto iter = connections.begin(); iter != connections.end(); iter++) {
+        if (iter->second.portType == BlockData::ConnectionData::PortType::INPUT || iter->second.portType == BlockData::ConnectionData::PortType::BIDIRECTIONAL) {
+            Position internalConnPos = Position(iter->second.positionOnBlock.dx, iter->second.positionOnBlock.dy);
+            Position externalConnPos = Position(-1-nameToConnectedBlockPosition.size(), 0);
+            if (!cir->tryInsertBlock(externalConnPos, Orientation(), SWITCH)) {
+                logError("Couldn't insert test circuit block", "circuitTestCase");
+                return false;
+            }
+            if (!cir->tryCreateConnection(externalConnPos, internalConnPos)) {
+                logError("Couldn't create test circuit connection", "circuitTestCase");
+                return false;
+            }
+            nameToConnectedBlockPosition.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
+        }
+        if (iter->second.portType == BlockData::ConnectionData::PortType::OUTPUT || iter->second.portType == BlockData::ConnectionData::PortType::BIDIRECTIONAL) {
+            Position internalConnPos = Position(iter->second.positionOnBlock.dx, iter->second.positionOnBlock.dy);
+            Position externalConnPos = Position(-1-nameToConnectedBlockPosition.size(), 0);
+            if (!cir->tryInsertBlock(externalConnPos, Orientation(), LIGHT)) {
+                logError("Couldn't insert test circuit block", "circuitTestCase");
+                return false;
+            }
+            if (!cir->tryCreateConnection(internalConnPos, externalConnPos)) {
+                logError("Couldn't create test circuit connection", "circuitTestCase");
+                return false;
+            }
+            nameToConnectedBlockPosition.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
+        }
+    }
 
-    // // run tests on the generated test circuit
-    // for (auto commandIter = testCommands.begin(); commandIter != testCommands.end(); commandIter++) {
-    //     logInfo("Performing a test command of type {}", "CircuitTestCase", getTestCommandTypeString(commandIter->type));
-    //     bool isTestGroupSuccessful = true;
-    //     if (commandIter->type == NOP_COMMAND) {
-    //         continue;
-    //     } else if (commandIter->type == SET_STATES) {
-    //         runSetStatesCommand(*commandIter, eval, nameToConnectedBlockPosition);
-    //     } else if (commandIter->type == CHECK_STATES) {
-    //         isTestGroupSuccessful = runCheckStatesCommand(*commandIter, eval, nameToConnectedBlockPosition);
-    //     } else if (commandIter->type == TICK_STEP) {
-    //         logInfo("Stepping forward by {} ticks", "CircuitTestCase - TICK_STEP", commandIter->ticks);
-    //         eval->tickStep(commandIter->ticks);
-    //     } else {
-    //         logError("Unrecognized test command", "CircuitTestCase");
-    //         isTestGroupSuccessful = false;
-    //     }
+    // run tests on the generated test circuit
+    for (auto commandIter = testCommands.begin(); commandIter != testCommands.end(); commandIter++) {
+        logInfo("Performing a test command of type {}", "CircuitTestCase", getTestCommandTypeString(commandIter->type));
+        bool isTestGroupSuccessful = true;
+        if (commandIter->type == NOP_COMMAND) {
+            continue;
+        } else if (commandIter->type == SET_STATES) {
+            runSetStatesCommand(*commandIter, eval, nameToConnectedBlockPosition);
+        } else if (commandIter->type == CHECK_STATES) {
+            isTestGroupSuccessful = runCheckStatesCommand(*commandIter, eval, nameToConnectedBlockPosition);
+        } else if (commandIter->type == TICK_STEP) {
+            logInfo("Stepping forward by {} ticks", "CircuitTestCase - TICK_STEP", commandIter->ticks);
+            eval->tickStep(commandIter->ticks);
+        } else {
+            logError("Unrecognized test command", "CircuitTestCase");
+            isTestGroupSuccessful = false;
+        }
 
-    //     if (!isTestGroupSuccessful) {
-    //         logError("Test group failed.", "CircuitTestCase");
-    //         fullTestSucceedStatus = false;
-    //         if (haltOnFailure) {
-    //             return false;
-    //         }
-    //     }
-    // }
-    // return fullTestSucceedStatus;
+        if (!isTestGroupSuccessful) {
+            logError("Test group failed.", "CircuitTestCase");
+            fullTestSucceedStatus = false;
+            if (haltOnFailure) {
+                return false;
+            }
+        }
+    }
+    return fullTestSucceedStatus;
 }
 
 void CircuitTestCase::runSetStatesCommand(TestCommand testCommand, const SharedEvaluator eval, NamePositionMap& nameToConnectedBlockPosition) {
