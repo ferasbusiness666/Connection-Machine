@@ -115,3 +115,72 @@ TEST_F(PassthroughEvaluatorTest, PassthroughDisconnectSwitch) {
 	evaluator->setState(switchPos, L);
 	EXPECT_EQ(evaluator->getState(lightPos), L);
 }
+
+TEST_F(PassthroughEvaluatorTest, PassthroughDisconnectLight) {
+	Position blockPos(0, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, PT));
+	Position switchPos(-1, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(switchPos, 0, BlockType::SWITCH));
+	Position lightPos(1, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(lightPos, 0, BlockType::LIGHT));
+
+	// connect
+	ASSERT_TRUE(circuit->tryCreateConnection(switchPos, blockPos));
+	ASSERT_TRUE(circuit->tryCreateConnection(blockPos, lightPos));
+
+	EXPECT_EQ(evaluator->getState(lightPos), L);
+	evaluator->setState(switchPos, H);
+	EXPECT_EQ(evaluator->getState(lightPos), H);
+
+	// disconnect light
+	ASSERT_TRUE(circuit->tryRemoveConnection(blockPos, lightPos));
+
+	EXPECT_EQ(evaluator->getState(lightPos), Z);
+	evaluator->setState(switchPos, L);
+	EXPECT_EQ(evaluator->getState(lightPos), Z);
+}
+
+TEST_F(PassthroughEvaluatorTest, DoublePassthrough) {
+	Position block1Pos(0, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(block1Pos, 0, PT));
+	Position block2Pos(1, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(block2Pos, 0, PT));
+	Position switchPos(-1, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(switchPos, 0, BlockType::SWITCH));
+	Position lightPos(2, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(lightPos, 0, BlockType::LIGHT));
+
+	// connect
+	ASSERT_TRUE(circuit->tryCreateConnection(switchPos, block1Pos));
+	ASSERT_TRUE(circuit->tryCreateConnection(block1Pos, block2Pos));
+	ASSERT_TRUE(circuit->tryCreateConnection(block2Pos, lightPos));
+
+	EXPECT_EQ(evaluator->getState(lightPos), L);
+	evaluator->setState(switchPos, H);
+	EXPECT_EQ(evaluator->getState(lightPos), H);
+	evaluator->setState(switchPos, L);
+	EXPECT_EQ(evaluator->getState(lightPos), L);
+}
+
+TEST_F(PassthroughEvaluatorTest, PassthroughLoop) {
+	Position block1Pos(0, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(block1Pos, 0, PT));
+	Position block2Pos(1, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(block2Pos, 0, PT));
+	Position switchPos(-1, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(switchPos, 0, BlockType::SWITCH));
+	Position lightPos(2, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(lightPos, 0, BlockType::LIGHT));
+
+	// connect
+	ASSERT_TRUE(circuit->tryCreateConnection(switchPos, block1Pos));
+	ASSERT_TRUE(circuit->tryCreateConnection(block1Pos, block2Pos));
+	ASSERT_TRUE(circuit->tryCreateConnection(block2Pos, block1Pos));
+	ASSERT_TRUE(circuit->tryCreateConnection(block2Pos, lightPos));
+
+	EXPECT_EQ(evaluator->getState(lightPos), L);
+	evaluator->setState(switchPos, H);
+	EXPECT_EQ(evaluator->getState(lightPos), H);
+	evaluator->setState(switchPos, L);
+	EXPECT_EQ(evaluator->getState(lightPos), L);
+}
