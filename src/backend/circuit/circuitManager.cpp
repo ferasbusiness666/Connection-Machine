@@ -61,11 +61,11 @@ circuit_id_t CircuitManager::createNewCircuit(const ParsedCircuit& parsedCircuit
 			// this duplicates check won't really work with open circuits ics because we have no way of knowing
 			// unless we save which paths we have loaded. Though this would require then linking the IC blocktype to
 			// the parsed circuit which seems annoying
-			logWarning("Dependency Circuit with UUID {} already exists; not creating custom block.", "CircuitManager", uuid);
+			logInfo("Dependency Circuit with UUID {} already exists; not creating custom block.", "CircuitManager", uuid);
 			return possibleExistingCircuit->getCircuitId();
 		} else {
 			if (getProceduralCircuitManager().getProceduralCircuit(uuid)) {
-				logWarning("Dependency Circuit with UUID {} already exists as ProceduralCircuit. Can't create block.", "CircuitManager", uuid);
+				logInfo("Dependency Circuit with UUID {} already exists as ProceduralCircuit. Can't create block.", "CircuitManager", uuid);
 				return 0;
 			}
 		}

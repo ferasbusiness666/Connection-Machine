@@ -72,16 +72,8 @@ public:
         return simulatorOptimizer.getSimIdFromMiddleId(middleId);
     }
 
-    inline logic_state_t getState(EvalConnectionPoint point) const {
-        return simulatorOptimizer.getState(point);
-    }
-
-    inline std::vector<logic_state_t> getStates(const std::vector<EvalConnectionPoint>& points) const {
-        return simulatorOptimizer.getStates(points);
-    }
-
-    inline std::vector<logic_state_t> getPinStates(const std::vector<EvalConnectionPoint>& points) const {
-        return simulatorOptimizer.getPinStates(points);
+    inline logic_state_t getStateFromSimulatorId(simulator_id_t simulatorId) const {
+        return simulatorOptimizer.getStateFromSimulatorId(simulatorId);
     }
 
     inline std::vector<logic_state_t> getStatesFromSimulatorIds(const std::vector<simulator_id_t>& simulatorIds) const {
@@ -118,8 +110,8 @@ public:
         return simulatorOptimizer.getPinSimulatorIds(points);
     }
 
-    inline void setState(EvalConnectionPoint point, logic_state_t state) {
-        simulatorOptimizer.setState(point, state);
+    inline void setState(simulator_id_t simulatorId, logic_state_t state) {
+        simulatorOptimizer.setState(simulatorId, state);
     }
 
     void makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {

@@ -28,26 +28,20 @@ public:
 	inline void removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
 		gateSubstituter.removeGate(pauseGuard, gateId);
 	}
-	inline logic_state_t getState(EvalConnectionPoint point) const {
-		return gateSubstituter.getState(point);
-	}
-	inline std::vector<logic_state_t> getStates(const std::vector<EvalConnectionPoint>& points) const {
-		return gateSubstituter.getStates(points);
-	}
-	inline std::vector<logic_state_t> getPinStates(const std::vector<EvalConnectionPoint>& points) const {
-		return gateSubstituter.getPinStates(points);
+	inline logic_state_t getStateFromSimulatorId(simulator_id_t simulatorId) const {
+		return gateSubstituter.getStateFromSimulatorId(simulatorId);
 	}
 	inline std::vector<logic_state_t> getStatesFromSimulatorIds(const std::vector<simulator_id_t>& simulatorIds) const {
 		return gateSubstituter.getStatesFromSimulatorIds(simulatorIds);
 	}
-	inline std::vector<simulator_id_t> getBlockSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
-		return gateSubstituter.getBlockSimulatorIds(points);
+	inline simulator_id_t getBlockSimulatorId(EvalConnectionPoint point) const {
+		return gateSubstituter.getBlockSimulatorId(point);
 	}
-	inline std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getPinSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
-		return gateSubstituter.getPinSimulatorIds(points);
+	inline std::variant<simulator_id_t, std::vector<simulator_id_t>> getPinSimulatorId(EvalConnectionPoint point) const {
+		return gateSubstituter.getPinSimulatorId(point);
 	}
-	inline void setState(EvalConnectionPoint point, logic_state_t state) {
-		gateSubstituter.setState(point, state);
+	inline void setState(simulator_id_t simulatorId, logic_state_t state) {
+		gateSubstituter.setState(simulatorId, state);
 	}
 	inline void makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
 		gateSubstituter.makeConnection(pauseGuard, connection);

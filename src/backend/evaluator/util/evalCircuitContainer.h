@@ -68,6 +68,7 @@ public:
 	std::optional<eval_circuit_id_t> traverse(eval_circuit_id_t startingPoint, const Address& address) const;
 	eval_circuit_id_t traverseToTopLevelIC(const Address& address) const;
 	eval_circuit_id_t traverseToTopLevelIC(eval_circuit_id_t startingPoint, const Address& address) const;
+	std::pair<eval_circuit_id_t, Position> traverseToTopLevelICAndPosition(const Address& address) const;
 
 	std::optional<circuit_id_t> getCircuitId(eval_circuit_id_t evalCircuitId) const noexcept;
 

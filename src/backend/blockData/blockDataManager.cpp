@@ -223,10 +223,10 @@ void BlockDataManager::initializeDefaults() {
 	tristateBufferBlockData->setDefaultData(false);
 	tristateBufferBlockData->setConnectionInput(Vector(0, 1), connection_end_id_t(0));
 	tristateBufferBlockData->setConnnectionPortOffset(connection_end_id_t(0), FVector(0.5f - edgeDistance, 0.5f - sideShift));
-	tristateBufferBlockData->setConnectionIdName(connection_end_id_t(0), "Enable");
+	tristateBufferBlockData->setConnectionIdName(connection_end_id_t(0), "Data");
 	tristateBufferBlockData->setConnectionInput(Vector(0, 0), connection_end_id_t(1));
 	tristateBufferBlockData->setConnnectionPortOffset(connection_end_id_t(1), FVector(0.5f - edgeDistance, 0.5f - sideShift));
-	tristateBufferBlockData->setConnectionIdName(connection_end_id_t(1), "Input");
+	tristateBufferBlockData->setConnectionIdName(connection_end_id_t(1), "Enable");
 	tristateBufferBlockData->setConnectionOutput(Vector(0, 1), connection_end_id_t(2));
 	tristateBufferBlockData->setConnnectionPortOffset(connection_end_id_t(2), FVector(0.5f + edgeDistance, 0.5f + sideShift));
 	tristateBufferBlockData->setConnectionIdName(connection_end_id_t(2), "Output");

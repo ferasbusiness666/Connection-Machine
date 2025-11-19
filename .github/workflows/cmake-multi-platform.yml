@@ -147,7 +147,7 @@ jobs:
   # Deploy only after the matrix completes; it will pick up the uploaded artifact
   deploy:
     needs: build
-    if: always() && needs.build.result == 'success' && github.event_name != 'pull_request'
+    if: always() && needs.build.result == 'success' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

@@ -1,0 +1,12 @@
+version_8
+import "passthrough.cir"
+Circuit: "nest_passthru"
+UUID: 2c4b11b8-aa8e-4e19-bd78-78f398d5325c
+size: 1x2
+ports:
+	(IN, 0, (0, 0), <0, 0>, <0.500000, 0.500000>, "", 1)
+	(OUT, 1, (1, 0), <0, 1>, <0.500000, 0.500000>, "", 1)
+blockId 1 "deb7c102-c2a1-4247-ab9d-1f6496fcd069" 1 0 ZERO
+	(connId:0) (2 1)
+blockId 2 "deb7c102-c2a1-4247-ab9d-1f6496fcd069" 0 0 ZERO
+	(connId:1) (1 0)
