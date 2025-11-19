@@ -5,188 +5,188 @@ Circuit: "URCL 16bit ALU"
 UUID: 4a137917-bbcf-422e-bb93-3eb716d13b92
 size: 2x3
 ports:
-	(OUT, 3, (2, -1), <1, 0>, <0.900000, 0.500000>, "Out", 16)
-	(IN, 2, (-13, 0), <0, 2>, <0.100000, 0.500000>, "Data 2", 16)
+	(IN, 0, (-13, -4), <0, 0>, <0.100000, 0.500000>, "Instruc", 2)
 	(IN, 1, (-13, -1), <0, 1>, <0.100000, 0.500000>, "Data 1", 16)
-	(IN, 0, (-13, -4), <0, 0>, <0.100000, 0.500000>, "Instruc", 1)
-blockId 45 Bus ( 1 0 2, 0 1 [ 1 ], 0 0 [ 0 ]) -13 -4 ONE_EIGHTY_FLIPPED
-	(connId:0) (39 0) (41 0) (44 0)
-	(connId:1) (42 0) (43 0) (44 0)
-blockId 44 AND -10 -3 ZERO
-	(connId:0) (45 0) (45 1)
-blockId 43 NOT -11 -3 ZERO_FLIPPED
-	(connId:0) (45 1)
-	(connId:1) (40 0) (41 0)
-blockId 42 AND -10 -4 ZERO
-	(connId:0) (39 1) (45 1)
-	(connId:1) (6 2)
-blockId 41 AND -10 -5 ZERO
-	(connId:0) (43 1) (45 0)
-	(connId:1) (5 2)
-blockId 40 AND -10 -6 ZERO
-	(connId:0) (39 1) (43 1)
-	(connId:1) (1 2)
-blockId 39 NOT -11 -4 ZERO_FLIPPED
-	(connId:0) (45 0)
-	(connId:1) (40 0) (42 0)
+	(IN, 2, (-13, 0), <0, 2>, <0.100000, 0.500000>, "Data 2", 16)
+	(OUT, 3, (2, -1), <1, 0>, <0.900000, 0.500000>, "Out", 16)
+blockId 36 Bus ( 1 0 2, 0 1 [ 1 ], 0 0 [ 0 ]) -13 -4 ONE_EIGHTY_FLIPPED
+	(connId:0) (20 0) (25 0) (33 0)
+	(connId:1) (27 0) (30 0) (33 0)
+blockId 35 NOR -4 26 ZERO_FLIPPED
+	(connId:0) (3 9) (12 9)
+	(connId:1) (10 9)
 blockId 34 JUNCTION 2 -1 ZERO_FLIPPED
-	(connId:0) (1 1) (5 1) (6 1)
-blockId 33 JUNCTION -13 -1 ZERO_FLIPPED
-	(connId:0) (3 0) (10 16) (12 16)
-blockId 32 JUNCTION -13 0 ZERO_FLIPPED
-	(connId:0) (3 1) (11 16)
-blockId 29 CONSTANT_OFF -6 16 ZERO_FLIPPED
-	(connId:0) (7 15)
-blockId 28 NOR -4 32 ZERO_FLIPPED
-	(connId:0) (11 15) (12 15)
-	(connId:1) (8 15)
-blockId 27 NOR -4 31 ZERO_FLIPPED
-	(connId:0) (11 14) (12 14)
-	(connId:1) (8 14)
-blockId 25 NOR -4 29 ZERO_FLIPPED
-	(connId:0) (11 12) (12 12)
-	(connId:1) (8 12)
-blockId 23 NOR -4 27 ZERO_FLIPPED
-	(connId:0) (11 10) (12 10)
-	(connId:1) (8 10)
-blockId 22 NOR -4 26 ZERO_FLIPPED
-	(connId:0) (11 9) (12 9)
-	(connId:1) (8 9)
-blockId 21 NOR -4 25 ZERO_FLIPPED
-	(connId:0) (11 8) (12 8)
-	(connId:1) (8 8)
-blockId 20 NOR -4 24 ZERO_FLIPPED
-	(connId:0) (11 7) (12 7)
-	(connId:1) (8 7)
-blockId 19 NOR -4 23 ZERO_FLIPPED
-	(connId:0) (11 6) (12 6)
-	(connId:1) (8 6)
-blockId 18 NOR -4 22 ZERO_FLIPPED
-	(connId:0) (11 5) (12 5)
-	(connId:1) (8 5)
-blockId 17 NOR -4 21 ZERO_FLIPPED
-	(connId:0) (11 4) (12 4)
-	(connId:1) (8 4)
-blockId 16 NOR -4 20 ZERO_FLIPPED
-	(connId:0) (11 3) (12 3)
-	(connId:1) (8 3)
-blockId 15 NOR -4 19 ZERO_FLIPPED
-	(connId:0) (11 2) (12 2)
+	(connId:0) (1 1) (4 1) (8 1)
+blockId 33 AND -10 -3 ZERO
+	(connId:0) (36 0) (36 1)
+blockId 32 NOR -4 25 ZERO_FLIPPED
+	(connId:0) (3 8) (12 8)
+	(connId:1) (10 8)
+blockId 31 JUNCTION -13 -1 ZERO_FLIPPED
+	(connId:0) (3 16) (5 0) (11 16)
+blockId 30 NOT -11 -3 ZERO_FLIPPED
+	(connId:0) (36 1)
+	(connId:1) (23 0) (25 0)
+blockId 29 NOR -4 24 ZERO_FLIPPED
+	(connId:0) (3 7) (12 7)
+	(connId:1) (10 7)
+blockId 28 JUNCTION -13 0 ZERO_FLIPPED
+	(connId:0) (5 1) (12 16)
+blockId 27 AND -10 -4 ZERO
+	(connId:0) (20 1) (36 1)
+	(connId:1) (4 2)
+blockId 26 NOR -4 23 ZERO_FLIPPED
+	(connId:0) (3 6) (12 6)
+	(connId:1) (10 6)
+blockId 25 AND -10 -5 ZERO
+	(connId:0) (30 1) (36 0)
 	(connId:1) (8 2)
-blockId 13 NOR -4 17 ZERO_FLIPPED
-	(connId:0) (11 0) (12 0)
-	(connId:1) (8 0)
-blockId 11 Bus ( 1 0 16, 0 15 [ 15 ], 0 14 [ 14 ], 0 13 [ 13 ], 0 12 [ 12 ], 0 11 [ 11 ], 0 10 [ 10 ], 0 9 [ 9 ], 0 8 [ 8 ], 0 7 [ 7 ], 0 6 [ 6 ], 0 5 [ 5 ], 0 4 [ 4 ], 0 3 [ 3 ], 0 2 [ 2 ], 0 1 [ 1 ], 0 0 [ 0 ]) -6 17 ONE_EIGHTY_FLIPPED
-	(connId:0) (13 0)
-	(connId:1) (14 0)
-	(connId:2) (15 0)
-	(connId:3) (16 0)
-	(connId:4) (17 0)
-	(connId:5) (18 0)
-	(connId:6) (19 0)
-	(connId:7) (20 0)
-	(connId:8) (21 0)
-	(connId:9) (22 0)
-	(connId:10) (23 0)
-	(connId:11) (24 0)
-	(connId:12) (25 0)
-	(connId:13) (26 0)
-	(connId:14) (27 0)
-	(connId:15) (28 0)
-	(connId:16) (32 0)
-blockId 10 Bus ( 1 0 16, 0 15 [ 15 ], 0 14 [ 14 ], 0 13 [ 13 ], 0 12 [ 12 ], 0 11 [ 11 ], 0 10 [ 10 ], 0 9 [ 9 ], 0 8 [ 8 ], 0 7 [ 7 ], 0 6 [ 6 ], 0 5 [ 5 ], 0 4 [ 4 ], 0 3 [ 3 ], 0 2 [ 2 ], 0 1 [ 1 ], 0 0 [ 0 ]) -5 1 ONE_EIGHTY_FLIPPED
-	(connId:1) (7 0)
-	(connId:2) (7 1)
-	(connId:3) (7 2)
-	(connId:4) (7 3)
-	(connId:5) (7 4)
-	(connId:6) (7 5)
-	(connId:7) (7 6)
-	(connId:8) (7 7)
-	(connId:9) (7 8)
-	(connId:10) (7 9)
-	(connId:11) (7 10)
-	(connId:12) (7 11)
-	(connId:13) (7 12)
-	(connId:14) (7 13)
-	(connId:15) (7 14)
-	(connId:16) (33 0)
-blockId 8 Bus ( 1 0 16, 0 15 [ 15 ], 0 14 [ 14 ], 0 13 [ 13 ], 0 12 [ 12 ], 0 11 [ 11 ], 0 10 [ 10 ], 0 9 [ 9 ], 0 8 [ 8 ], 0 7 [ 7 ], 0 6 [ 6 ], 0 5 [ 5 ], 0 4 [ 4 ], 0 3 [ 3 ], 0 2 [ 2 ], 0 1 [ 1 ], 0 0 [ 0 ]) -3 17 ZERO
-	(connId:0) (13 1)
-	(connId:1) (14 1)
-	(connId:2) (15 1)
-	(connId:3) (16 1)
-	(connId:4) (17 1)
-	(connId:5) (18 1)
-	(connId:6) (19 1)
-	(connId:7) (20 1)
-	(connId:8) (21 1)
-	(connId:9) (22 1)
-	(connId:10) (23 1)
-	(connId:11) (24 1)
-	(connId:12) (25 1)
-	(connId:13) (26 1)
-	(connId:14) (27 1)
-	(connId:15) (28 1)
-	(connId:16) (6 0)
-blockId 7 Bus ( 1 0 16, 0 15 [ 15 ], 0 14 [ 14 ], 0 13 [ 13 ], 0 12 [ 12 ], 0 11 [ 11 ], 0 10 [ 10 ], 0 9 [ 9 ], 0 8 [ 8 ], 0 7 [ 7 ], 0 6 [ 6 ], 0 5 [ 5 ], 0 4 [ 4 ], 0 3 [ 3 ], 0 2 [ 2 ], 0 1 [ 1 ], 0 0 [ 0 ]) -3 1 ZERO
-	(connId:0) (10 1)
+blockId 24 NOR -4 22 ZERO_FLIPPED
+	(connId:0) (3 5) (12 5)
+	(connId:1) (10 5)
+blockId 23 AND -10 -6 ZERO
+	(connId:0) (20 1) (30 1)
+	(connId:1) (1 2)
+blockId 22 NOR -4 21 ZERO_FLIPPED
+	(connId:0) (3 4) (12 4)
+	(connId:1) (10 4)
+blockId 21 CONSTANT_OFF -6 16 ZERO_FLIPPED
+	(connId:0) (9 15)
+blockId 20 NOT -11 -4 ZERO_FLIPPED
+	(connId:0) (36 0)
+	(connId:1) (23 0) (27 0)
+blockId 19 NOR -4 20 ZERO_FLIPPED
+	(connId:0) (3 3) (12 3)
+	(connId:1) (10 3)
+blockId 18 NOR -4 32 ZERO_FLIPPED
+	(connId:0) (3 15) (12 15)
+	(connId:1) (10 15)
+blockId 17 NOR -4 31 ZERO_FLIPPED
+	(connId:0) (3 14) (12 14)
+	(connId:1) (10 14)
+blockId 16 NOR -4 29 ZERO_FLIPPED
+	(connId:0) (3 12) (12 12)
+	(connId:1) (10 12)
+blockId 15 NOR -4 27 ZERO_FLIPPED
+	(connId:0) (3 10) (12 10)
+	(connId:1) (10 10)
+blockId 14 NOR -4 19 ZERO_FLIPPED
+	(connId:0) (3 2) (12 2)
 	(connId:1) (10 2)
-	(connId:2) (10 3)
-	(connId:3) (10 4)
-	(connId:4) (10 5)
-	(connId:5) (10 6)
-	(connId:6) (10 7)
-	(connId:7) (10 8)
-	(connId:8) (10 9)
-	(connId:9) (10 10)
-	(connId:10) (10 11)
-	(connId:11) (10 12)
-	(connId:12) (10 13)
-	(connId:13) (10 14)
-	(connId:14) (10 15)
-	(connId:15) (29 0)
-	(connId:16) (5 0)
-blockId 5 "0662c20a-c47f-4586-bafc-f582587b230b" ("size": 16) -1 1 ZERO
-	(connId:0) (7 16)
-	(connId:1) (34 0)
-	(connId:2) (41 1)
-blockId 14 NOR -4 18 ZERO_FLIPPED
-	(connId:0) (11 1) (12 1)
-	(connId:1) (8 1)
-blockId 26 NOR -4 30 ZERO_FLIPPED
-	(connId:0) (11 13) (12 13)
-	(connId:1) (8 13)
-blockId 3 "348fbb6c-5f61-4432-86c6-5fd4a5d6ea64" -2 -1 ZERO
-	(connId:0) (33 0)
-	(connId:1) (32 0)
-	(connId:2) (1 0)
-blockId 6 "0662c20a-c47f-4586-bafc-f582587b230b" ("size": 16) -1 3 ZERO
-	(connId:0) (8 16)
-	(connId:1) (34 0)
-	(connId:2) (42 1)
-blockId 12 Bus ( 1 0 16, 0 15 [ 15 ], 0 14 [ 14 ], 0 13 [ 13 ], 0 12 [ 12 ], 0 11 [ 11 ], 0 10 [ 10 ], 0 9 [ 9 ], 0 8 [ 8 ], 0 7 [ 7 ], 0 6 [ 6 ], 0 5 [ 5 ], 0 4 [ 4 ], 0 3 [ 3 ], 0 2 [ 2 ], 0 1 [ 1 ], 0 0 [ 0 ]) -8 17 ONE_EIGHTY_FLIPPED
+blockId 13 NOR -4 17 ZERO_FLIPPED
+	(connId:0) (3 0) (12 0)
+	(connId:1) (10 0)
+blockId 12 Bus ( 1 0 16, 0 15 [ 15 ], 0 14 [ 14 ], 0 13 [ 13 ], 0 12 [ 12 ], 0 11 [ 11 ], 0 10 [ 10 ], 0 9 [ 9 ], 0 8 [ 8 ], 0 7 [ 7 ], 0 6 [ 6 ], 0 5 [ 5 ], 0 4 [ 4 ], 0 3 [ 3 ], 0 2 [ 2 ], 0 1 [ 1 ], 0 0 [ 0 ]) -6 17 ONE_EIGHTY_FLIPPED
 	(connId:0) (13 0)
-	(connId:1) (14 0)
-	(connId:2) (15 0)
-	(connId:3) (16 0)
-	(connId:4) (17 0)
-	(connId:5) (18 0)
-	(connId:6) (19 0)
-	(connId:7) (20 0)
-	(connId:8) (21 0)
-	(connId:9) (22 0)
-	(connId:10) (23 0)
-	(connId:11) (24 0)
-	(connId:12) (25 0)
-	(connId:13) (26 0)
-	(connId:14) (27 0)
-	(connId:15) (28 0)
-	(connId:16) (33 0)
-blockId 24 NOR -4 28 ZERO_FLIPPED
-	(connId:0) (11 11) (12 11)
-	(connId:1) (8 11)
-blockId 1 "0662c20a-c47f-4586-bafc-f582587b230b" ("size": 16) -1 -1 ZERO
-	(connId:0) (3 2)
+	(connId:1) (7 0)
+	(connId:2) (14 0)
+	(connId:3) (19 0)
+	(connId:4) (22 0)
+	(connId:5) (24 0)
+	(connId:6) (26 0)
+	(connId:7) (29 0)
+	(connId:8) (32 0)
+	(connId:9) (35 0)
+	(connId:10) (15 0)
+	(connId:11) (2 0)
+	(connId:12) (16 0)
+	(connId:13) (6 0)
+	(connId:14) (17 0)
+	(connId:15) (18 0)
+	(connId:16) (28 0)
+blockId 11 Bus ( 1 0 16, 0 15 [ 15 ], 0 14 [ 14 ], 0 13 [ 13 ], 0 12 [ 12 ], 0 11 [ 11 ], 0 10 [ 10 ], 0 9 [ 9 ], 0 8 [ 8 ], 0 7 [ 7 ], 0 6 [ 6 ], 0 5 [ 5 ], 0 4 [ 4 ], 0 3 [ 3 ], 0 2 [ 2 ], 0 1 [ 1 ], 0 0 [ 0 ]) -5 1 ONE_EIGHTY_FLIPPED
+	(connId:1) (9 0)
+	(connId:2) (9 1)
+	(connId:3) (9 2)
+	(connId:4) (9 3)
+	(connId:5) (9 4)
+	(connId:6) (9 5)
+	(connId:7) (9 6)
+	(connId:8) (9 7)
+	(connId:9) (9 8)
+	(connId:10) (9 9)
+	(connId:11) (9 10)
+	(connId:12) (9 11)
+	(connId:13) (9 12)
+	(connId:14) (9 13)
+	(connId:15) (9 14)
+	(connId:16) (31 0)
+blockId 10 Bus ( 1 0 16, 0 15 [ 15 ], 0 14 [ 14 ], 0 13 [ 13 ], 0 12 [ 12 ], 0 11 [ 11 ], 0 10 [ 10 ], 0 9 [ 9 ], 0 8 [ 8 ], 0 7 [ 7 ], 0 6 [ 6 ], 0 5 [ 5 ], 0 4 [ 4 ], 0 3 [ 3 ], 0 2 [ 2 ], 0 1 [ 1 ], 0 0 [ 0 ]) -3 17 ZERO
+	(connId:0) (13 1)
+	(connId:1) (7 1)
+	(connId:2) (14 1)
+	(connId:3) (19 1)
+	(connId:4) (22 1)
+	(connId:5) (24 1)
+	(connId:6) (26 1)
+	(connId:7) (29 1)
+	(connId:8) (32 1)
+	(connId:9) (35 1)
+	(connId:10) (15 1)
+	(connId:11) (2 1)
+	(connId:12) (16 1)
+	(connId:13) (6 1)
+	(connId:14) (17 1)
+	(connId:15) (18 1)
+	(connId:16) (4 0)
+blockId 9 Bus ( 1 0 16, 0 15 [ 15 ], 0 14 [ 14 ], 0 13 [ 13 ], 0 12 [ 12 ], 0 11 [ 11 ], 0 10 [ 10 ], 0 9 [ 9 ], 0 8 [ 8 ], 0 7 [ 7 ], 0 6 [ 6 ], 0 5 [ 5 ], 0 4 [ 4 ], 0 3 [ 3 ], 0 2 [ 2 ], 0 1 [ 1 ], 0 0 [ 0 ]) -3 1 ZERO
+	(connId:0) (11 1)
+	(connId:1) (11 2)
+	(connId:2) (11 3)
+	(connId:3) (11 4)
+	(connId:4) (11 5)
+	(connId:5) (11 6)
+	(connId:6) (11 7)
+	(connId:7) (11 8)
+	(connId:8) (11 9)
+	(connId:9) (11 10)
+	(connId:10) (11 11)
+	(connId:11) (11 12)
+	(connId:12) (11 13)
+	(connId:13) (11 14)
+	(connId:14) (11 15)
+	(connId:15) (21 0)
+	(connId:16) (8 0)
+blockId 8 "0662c20a-c47f-4586-bafc-f582587b230b" ("size": 16) -1 1 ZERO
+	(connId:0) (9 16)
 	(connId:1) (34 0)
-	(connId:2) (40 1)
+	(connId:2) (25 1)
+blockId 7 NOR -4 18 ZERO_FLIPPED
+	(connId:0) (3 1) (12 1)
+	(connId:1) (10 1)
+blockId 6 NOR -4 30 ZERO_FLIPPED
+	(connId:0) (3 13) (12 13)
+	(connId:1) (10 13)
+blockId 5 "348fbb6c-5f61-4432-86c6-5fd4a5d6ea64" -2 -1 ZERO
+	(connId:0) (31 0)
+	(connId:1) (28 0)
+	(connId:2) (1 0)
+blockId 4 "0662c20a-c47f-4586-bafc-f582587b230b" ("size": 16) -1 3 ZERO
+	(connId:0) (10 16)
+	(connId:1) (34 0)
+	(connId:2) (27 1)
+blockId 3 Bus ( 1 0 16, 0 15 [ 15 ], 0 14 [ 14 ], 0 13 [ 13 ], 0 12 [ 12 ], 0 11 [ 11 ], 0 10 [ 10 ], 0 9 [ 9 ], 0 8 [ 8 ], 0 7 [ 7 ], 0 6 [ 6 ], 0 5 [ 5 ], 0 4 [ 4 ], 0 3 [ 3 ], 0 2 [ 2 ], 0 1 [ 1 ], 0 0 [ 0 ]) -8 17 ONE_EIGHTY_FLIPPED
+	(connId:0) (13 0)
+	(connId:1) (7 0)
+	(connId:2) (14 0)
+	(connId:3) (19 0)
+	(connId:4) (22 0)
+	(connId:5) (24 0)
+	(connId:6) (26 0)
+	(connId:7) (29 0)
+	(connId:8) (32 0)
+	(connId:9) (35 0)
+	(connId:10) (15 0)
+	(connId:11) (2 0)
+	(connId:12) (16 0)
+	(connId:13) (6 0)
+	(connId:14) (17 0)
+	(connId:15) (18 0)
+	(connId:16) (31 0)
+blockId 2 NOR -4 28 ZERO_FLIPPED
+	(connId:0) (3 11) (12 11)
+	(connId:1) (10 11)
+blockId 1 "0662c20a-c47f-4586-bafc-f582587b230b" ("size": 16) -1 -1 ZERO
+	(connId:0) (5 2)
+	(connId:1) (34 0)
+	(connId:2) (23 1)
