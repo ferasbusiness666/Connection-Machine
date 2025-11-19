@@ -70,3 +70,8 @@ TEST_F(NoEditEvaluatorTest, UseTickrateSetting) {
 	evaluator->setUseTickrate(true);
 	EXPECT_TRUE(evaluator->getUseTickrate());
 }
+
+TEST_F(NoEditEvaluatorTest, EvalName) {
+	std::string expectedName = "Eval " + std::to_string(evaluator->getEvaluatorId()) + " (" + circuit->getCircuitNameNumber() + ")";
+	EXPECT_EQ(evaluator->getEvaluatorName(), expectedName);
+}
