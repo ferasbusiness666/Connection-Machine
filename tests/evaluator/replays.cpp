@@ -20,12 +20,7 @@ void ReplaysEvaluatorTest::SetUp() {
 	circuit = environment.getBackend().getCircuit(circuitId);
 	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuitId).value();
 	evaluator = environment.getBackend().getEvaluator(evalId);
-	evaluator->setPause(true);
 	ASSERT_TRUE(evaluator->isPause());
-
-	// clear any initial simulation that may have occurred between evaluator creation and pausing
-	circuit->tryInsertBlock(Position(0, 0), 0, BlockType::SWITCH);
-	circuit->clear(true);
 	ASSERT_FALSE(evaluator->isViewingReplay());
 }
 

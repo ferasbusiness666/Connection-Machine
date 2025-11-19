@@ -162,7 +162,7 @@ public:
 		}
 		unusedIds.insert(id.get());
 	}
-	constexpr bool isIdUsed(id_type id) const { return id.get() < nextId && !unusedIds.contains(id.get()); }
+	constexpr bool isIdUsed(id_type id) const { return id.get() < nextId && id.get() >= initialValue && !unusedIds.contains(id.get()); }
 	constexpr id_type peekNext() const { return id_type(nextId); }
 	void reset() {
 		nextId = initialValue;

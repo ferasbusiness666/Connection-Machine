@@ -6,7 +6,7 @@ LogicSimulator::LogicSimulator(
 	std::vector<simulator_id_t>& dirtySimulatorIds) :
 	evalConfig(evalConfig),
 	dirtySimulatorIds(dirtySimulatorIds),
-	simulatorIdProvider(0) {
+	simulatorIdProvider(4) {
 	evalConfig.subscribe([this]() {
 		{
 			SimPauseGuard pauseGuard(*this);
@@ -19,9 +19,17 @@ LogicSimulator::LogicSimulator(
 		cv.notify_all();
 	});
 
+	extendDataVectors(simulator_id_t(4));
+
+	statesA[0] = logic_state_t::LOW;
+	statesB[0] = logic_state_t::LOW;
+	statesA[1] = logic_state_t::HIGH;
+	statesB[1] = logic_state_t::HIGH;
+	statesA[2] = logic_state_t::FLOATING;
+	statesB[2] = logic_state_t::FLOATING;
+	statesA[3] = logic_state_t::UNDEFINED;
+	statesB[3] = logic_state_t::UNDEFINED;
 	simulationThread = std::thread(&LogicSimulator::simulationLoop, this);
-	extendDataVectors(simulatorIdProvider.getNewId()); // reserve the 0th id to be used as an invalid id
-	setState(simulator_id_t(0), logic_state_t::LOW);
 }
 
 LogicSimulator::~LogicSimulator() {
@@ -165,6 +173,9 @@ void LogicSimulator::processPendingStateChanges() {
 
 void LogicSimulator::setState(simulator_id_t id, logic_state_t st) {
 	if (viewingReplay) {
+		return;
+	}
+	if (!simulatorIdProvider.isIdUsed(id)) {
 		return;
 	}
 	// we don't want to freeze up if the mutexes are locked, so we'll only set the state if we can successfully lock. otherwise, we'll wait until the next tick to set the states.
@@ -419,7 +430,7 @@ simulator_id_t LogicSimulator::addGate(const BlockType blockType) {
 	// 	return 0;
 	default:
 		logError("Cannot add gate of type {}", "LogicSimulator::addGate", (unsigned int)blockType);
-		return simulator_id_t(0);
+		return simulator_id_t(3);
 	}
 
 	return simulatorId;

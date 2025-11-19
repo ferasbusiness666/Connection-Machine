@@ -142,8 +142,13 @@ public:
 	const EvalAddressTree buildAddressTree() const;
 	const EvalAddressTree buildAddressTree(eval_circuit_id_t evalCircuitId) const;
 
+	simulator_id_t getBlockSimulatorId(const Address& address) const;
+	std::variant<simulator_id_t, std::vector<simulator_id_t>> getPinSimulatorId(const Address& address) const;
+
 	std::vector<simulator_id_t> getBlockSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const;
 	std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getPinSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const;
+
+	logic_state_t getStateFromSimulatorId(simulator_id_t simulatorId) const;
 	std::vector<logic_state_t> getStatesFromSimulatorIds(const std::vector<simulator_id_t>& simulatorIds) const;
 
 	void connectListener(
@@ -194,6 +199,11 @@ private:
 	std::optional<middle_id_t> getMiddleId(const eval_circuit_id_t startingPoint, const Address& address) const;
 	std::optional<middle_id_t> getMiddleId(const eval_circuit_id_t startingPoint, const Address& address, const BlockContainer& blockContainer) const;
 	std::optional<middle_id_t> getMiddleId(const Address& address) const;
+
+	simulator_id_t getBlockSimulatorId(eval_circuit_id_t evalCircuitId, const Position& position) const;
+	std::variant<simulator_id_t, std::vector<simulator_id_t>> getPinSimulatorId(eval_circuit_id_t evalCircuitId, const Position& position) const;
+	std::vector<simulator_id_t> getBlockSimulatorIds(const std::vector<EvalConnectionPoint>& evalConnectionPoints) const;
+	std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getPinSimulatorIds(const std::vector<EvalConnectionPoint>& evalConnectionPoints) const;
 
 	std::optional<connection_end_id_t> getPortId(const circuit_id_t circuitId, const Position blockPosition, const Position portPosition, Direction direction) const;
 	std::optional<connection_end_id_t> getPortId(const BlockContainer& blockContainer, const Position blockPosition, const Position portPosition, Direction direction) const;

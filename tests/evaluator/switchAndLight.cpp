@@ -20,7 +20,6 @@ void SwitchAndLightEvaluatorTest::SetUp() {
 	circuit = environment.getBackend().getCircuit(circuitId);
 	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuitId).value();
 	evaluator = environment.getBackend().getEvaluator(evalId);
-	evaluator->setPause(true);
 	ASSERT_TRUE(evaluator->isPause());
 }
 
