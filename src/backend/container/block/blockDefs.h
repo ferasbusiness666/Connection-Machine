@@ -64,9 +64,7 @@ inline std::string blocktype_to_string(const BlockType blockType) {
 
 template <>
 struct fmt::formatter<BlockType> : fmt::formatter<std::string> {
-    auto format(BlockType blockType, format_context& ctx) const {
-        return formatter<std::string>::format(blocktype_to_string(blockType), ctx);
-    }
+	auto format(BlockType blockType, format_context& ctx) const { return formatter<std::string>::format(blocktype_to_string(blockType), ctx); }
 };
 
 #endif /* blockDefs_h */
