@@ -41,10 +41,12 @@ Evaluator::Evaluator(
 std::string Evaluator::getEvaluatorName() const {
 	std::optional<circuit_id_t> circuitId = evalCircuitContainer.getCircuitId(eval_circuit_id_t(0));
 	if (!circuitId.has_value()) {
+		logError("EvalCircuit with id {} has no circuitId", "Evaluator::getEvaluatorName", eval_circuit_id_t(0));
 		return "Eval " + std::to_string(evaluatorId) + " (No Circuit)";
 	}
 	auto circuit = circuitManager.getCircuit(circuitId.value());
 	if (!circuit) {
+		logError("Circuit with id {} not found", "Evaluator::getEvaluatorName", circuitId.value());
 		return "Eval " + std::to_string(evaluatorId) + " (Invalid Circuit)";
 	}
 	return "Eval " + std::to_string(evaluatorId) + " (" + circuit->getCircuitNameNumber() + ")";
