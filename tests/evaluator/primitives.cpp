@@ -9,6 +9,10 @@ protected:
     Environment environment {false};
     SharedEvaluator evaluator = nullptr;
     SharedCircuit circuit = nullptr;
+    logic_state_t L = logic_state_t::LOW;
+    logic_state_t H = logic_state_t::HIGH;
+    logic_state_t Z = logic_state_t::FLOATING;
+    logic_state_t X = logic_state_t::UNDEFINED;
 };
 
 void PrimitivesEvaluatorTest::SetUp() {
@@ -21,4 +25,14 @@ void PrimitivesEvaluatorTest::SetUp() {
 void PrimitivesEvaluatorTest::TearDown() {
     circuit.reset();
     evaluator.reset();
+}
+
+TEST_F(PrimitivesEvaluatorTest, SingleSwitch) {
+    Position switchPos(0, 0);
+    ASSERT_TRUE(circuit->tryInsertBlock(switchPos, 0, BlockType::SWITCH));
+    ASSERT_EQ(evaluator->getState(switchPos), L);
+    evaluator->setState(switchPos, H);
+    ASSERT_EQ(evaluator->getState(switchPos), H);
+    evaluator->setState(switchPos, L);
+    ASSERT_EQ(evaluator->getState(switchPos), L);
 }
