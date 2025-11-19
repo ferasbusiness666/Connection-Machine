@@ -1,3 +1,5 @@
 cmake --build --preset tests
-rm -r coverage
-call .\opencpp_coverage.cmd
+if %ERRORLEVEL% == 0 (
+    rm -r coverage
+    call .\opencpp_coverage.cmd
+)

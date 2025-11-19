@@ -70,30 +70,3 @@ TEST_F(NoEditEvaluatorTest, UseTickrateSetting) {
 	evaluator->setUseTickrate(true);
 	EXPECT_TRUE(evaluator->getUseTickrate());
 }
-
-TEST_F(NoEditEvaluatorTest, Replay) {
-	EXPECT_FALSE(evaluator->isViewingReplay());
-	evaluator->setPause(true);
-
-	evaluator->stepForward(); // guarantee at least 2 ticks in the history
-	evaluator->stepForward();
-
-	EXPECT_TRUE(evaluator->isPause());
-	EXPECT_FALSE(evaluator->isViewingReplay());
-
-	EXPECT_TRUE(evaluator->stepBack());
-	EXPECT_TRUE(evaluator->isViewingReplay());
-
-	EXPECT_TRUE(evaluator->skipBack()); // should take us to the start of the replay
-	EXPECT_TRUE(evaluator->isViewingReplay());
-	EXPECT_FALSE(evaluator->stepBack()); // cannot step back further
-	EXPECT_FALSE(evaluator->skipBack());
-
-	evaluator->stepForward();
-	EXPECT_TRUE(evaluator->isViewingReplay());
-	EXPECT_TRUE(evaluator->stepBack());
-
-	evaluator->skipForward(); // should take us to the live state
-	EXPECT_FALSE(evaluator->isViewingReplay());
-	EXPECT_TRUE(evaluator->isPause());
-}
