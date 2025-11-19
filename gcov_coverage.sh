@@ -1,5 +1,6 @@
 mkdir -p coverage
 gcovr \
+    --verbose \
     --root . \
     --filter 'src/.*' \
     --exclude 'external/.*' \
