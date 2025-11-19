@@ -88,28 +88,6 @@ EvalConnectionPoint Replacer::getReplacementConnectionPoint(EvalConnectionPoint 
 	return point;
 }
 
-std::vector<EvalConnectionPoint> Replacer::getReplacementConnectionPoints(const std::vector<EvalConnectionPoint>& points) const {
-	std::vector<EvalConnectionPoint> result;
-	result.reserve(points.size());
-	for (const EvalConnectionPoint& point : points) {
-		result.push_back(getReplacementConnectionPoint(point));
-	}
-	return result;
-}
-
-std::vector<std::optional<EvalConnectionPoint>> Replacer::getReplacementConnectionPoints(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
-	std::vector<std::optional<EvalConnectionPoint>> result;
-	result.reserve(points.size());
-	for (const std::optional<EvalConnectionPoint>& point : points) {
-		if (!point.has_value()) {
-			result.push_back(std::nullopt);
-			continue;
-		}
-		result.push_back(getReplacementConnectionPoint(point.value()));
-	}
-	return result;
-}
-
 void Replacer::mergeBuses(SimPauseGuard& pauseGuard, int layer, int junctionOverpowerLayer) {
 	std::vector<middle_id_t> allMiddleIds = middleIdProvider.getUsedIds();
 	for (const middle_id_t id : allMiddleIds) {

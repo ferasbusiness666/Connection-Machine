@@ -165,8 +165,6 @@ private:
 	void cleanReplacements();
 	void pingId(SimPauseGuard& pauseGuard, middle_id_t id, int minLayer);
 	EvalConnectionPoint getReplacementConnectionPoint(EvalConnectionPoint point) const;
-	std::vector<EvalConnectionPoint> getReplacementConnectionPoints(const std::vector<EvalConnectionPoint>& points) const;
-	std::vector<std::optional<EvalConnectionPoint>> getReplacementConnectionPoints(const std::vector<std::optional<EvalConnectionPoint>>& points) const;
 	struct BusInternalJunctionArray {
 		std::vector<middle_id_t> junctionIds {};
 		int numDefined { 0 };
