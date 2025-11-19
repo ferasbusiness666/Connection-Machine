@@ -184,3 +184,109 @@ TEST_F(PassthroughEvaluatorTest, PassthroughLoop) {
 	evaluator->setState(switchPos, L);
 	EXPECT_EQ(evaluator->getState(lightPos), L);
 }
+
+TEST_F(PassthroughEvaluatorTest, DeleteSwitch) {
+	Position blockPos(0, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, PT));
+	Position switchPos(-1, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(switchPos, 0, BlockType::SWITCH));
+	Position lightPos(1, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(lightPos, 0, BlockType::LIGHT));
+
+	// connect
+	ASSERT_TRUE(circuit->tryCreateConnection(switchPos, blockPos));
+	ASSERT_TRUE(circuit->tryCreateConnection(blockPos, lightPos));
+
+	EXPECT_EQ(evaluator->getState(lightPos), L);
+	evaluator->setState(switchPos, H);
+	EXPECT_EQ(evaluator->getState(lightPos), H);
+
+	// delete switch
+	ASSERT_TRUE(circuit->tryRemoveBlock(switchPos));
+
+	// states should no longer propagate
+	EXPECT_EQ(evaluator->getState(lightPos), L); // pulls state from switch inside passthrough
+	evaluator->setState(switchPos, L); // does nothing since switch is deleted
+	EXPECT_EQ(evaluator->getState(lightPos), L);
+}
+
+TEST_F(PassthroughEvaluatorTest, DeleteLight) {
+	Position blockPos(0, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, PT));
+	Position switchPos(-1, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(switchPos, 0, BlockType::SWITCH));
+	Position lightPos(1, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(lightPos, 0, BlockType::LIGHT));
+
+	// connect
+	ASSERT_TRUE(circuit->tryCreateConnection(switchPos, blockPos));
+	ASSERT_TRUE(circuit->tryCreateConnection(blockPos, lightPos));
+
+	EXPECT_EQ(evaluator->getState(lightPos), L);
+	evaluator->setState(switchPos, H);
+	EXPECT_EQ(evaluator->getState(lightPos), H);
+
+	// delete light
+	ASSERT_TRUE(circuit->tryRemoveBlock(lightPos));
+
+	// states should no longer propagate
+	EXPECT_EQ(evaluator->getState(lightPos), X);
+	evaluator->setState(switchPos, L);
+	EXPECT_EQ(evaluator->getState(lightPos), X);
+}
+
+TEST_F(PassthroughEvaluatorTest, MultipleSwitches) {
+	Position blockPos(0, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, PT));
+	Position switch1Pos(-1, -1);
+	ASSERT_TRUE(circuit->tryInsertBlock(switch1Pos, 0, BlockType::SWITCH));
+	Position switch2Pos(-1, 1);
+	ASSERT_TRUE(circuit->tryInsertBlock(switch2Pos, 0, BlockType::SWITCH));
+	Position lightPos(1, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(lightPos, 0, BlockType::LIGHT));
+
+	// connect
+	ASSERT_TRUE(circuit->tryCreateConnection(switch1Pos, blockPos));
+	ASSERT_TRUE(circuit->tryCreateConnection(switch2Pos, blockPos));
+	ASSERT_TRUE(circuit->tryCreateConnection(blockPos, lightPos));
+
+	EXPECT_EQ(evaluator->getState(lightPos), L);
+	evaluator->setState(switch1Pos, H);
+	EXPECT_EQ(evaluator->getState(lightPos), X); // contention
+	evaluator->setState(switch1Pos, L);
+	EXPECT_EQ(evaluator->getState(lightPos), L);
+	evaluator->setState(switch2Pos, H);
+	EXPECT_EQ(evaluator->getState(lightPos), X); // contention
+	evaluator->setState(switch1Pos, H);
+	EXPECT_EQ(evaluator->getState(lightPos), H);
+	evaluator->setState(switch2Pos, L);
+	EXPECT_EQ(evaluator->getState(lightPos), X); // contention
+	evaluator->setState(switch1Pos, L);
+	EXPECT_EQ(evaluator->getState(lightPos), L);
+}
+
+TEST_F(PassthroughEvaluatorTest, MultipleSwitchesDeleteOne) {
+	Position blockPos(0, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, PT));
+	Position switch1Pos(-1, -1);
+	ASSERT_TRUE(circuit->tryInsertBlock(switch1Pos, 0, BlockType::SWITCH));
+	Position switch2Pos(-1, 1);
+	ASSERT_TRUE(circuit->tryInsertBlock(switch2Pos, 0, BlockType::SWITCH));
+	Position lightPos(1, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(lightPos, 0, BlockType::LIGHT));
+
+	// connect
+	ASSERT_TRUE(circuit->tryCreateConnection(switch1Pos, blockPos));
+	ASSERT_TRUE(circuit->tryCreateConnection(switch2Pos, blockPos));
+	ASSERT_TRUE(circuit->tryCreateConnection(blockPos, lightPos));
+
+	EXPECT_EQ(evaluator->getState(lightPos), L);
+	evaluator->setState(switch1Pos, H);
+	EXPECT_EQ(evaluator->getState(lightPos), X); // contention
+
+	// delete one switch
+	ASSERT_TRUE(circuit->tryRemoveBlock(switch2Pos));
+	EXPECT_EQ(evaluator->getState(lightPos), H);
+	evaluator->setState(switch1Pos, L);
+	EXPECT_EQ(evaluator->getState(lightPos), L);
+}
