@@ -32,8 +32,8 @@ Evaluator::Evaluator(
 	const BlockContainer& blockContainer = circuit->getBlockContainer();
 	const Difference difference = blockContainer.getCreationDifference();
 	receiver.linkFunction("circuitBlockDataConnectionPositionRemove", std::bind(&Evaluator::removeCircuitIO, this, std::placeholders::_1));
-	receiver.linkFunction("circuitBlockDataConnectionPositionSet", std::bind(&Evaluator::setCircuitIO, this, std::placeholders::_1));
-	receiver.linkFunction("blockDataPortBitConfigurationSet", std::bind(&Evaluator::setCircuitIO, this, std::placeholders::_1)); // TODO: this only works for ICs, needs to work for all blocks
+	receiver.linkFunction("circuitBlockDataConnectionPositionSet", std::bind(&Evaluator::setCircuitIO, this, std::placeholders::_1, false));
+	receiver.linkFunction("blockDataPortBitConfigurationSet", std::bind(&Evaluator::setCircuitIO, this, std::placeholders::_1, true)); // TODO: this only works for ICs, needs to work for all blocks
 
 	makeEdit(std::make_shared<Difference>(difference), circuitId);
 }
@@ -510,7 +510,7 @@ void Evaluator::removeCircuitIO(const DataUpdateEventManager::EventData* data) {
 	}
 }
 
-void Evaluator::setCircuitIO(const DataUpdateEventManager::EventData* data) {
+void Evaluator::setCircuitIO(const DataUpdateEventManager::EventData* data, bool okIfNoPosition) {
 	const DataUpdateEventManager::EventDataWithValue<SetCircuitIOData>* eventData =
 		dynamic_cast<const DataUpdateEventManager::EventDataWithValue<SetCircuitIOData>*>(data);
 	if (!eventData) {
@@ -538,7 +538,7 @@ void Evaluator::setCircuitIO(const DataUpdateEventManager::EventData* data) {
 	}
 	const Position* position = circuitBlockData->getConnectionIdToPosition(connectionEndId);
 	if (!position) {
-		logError("Position for connection end ID {} not found in CircuitBlockData for Circuit ID {}", "Evaluator::setCircuitIO", connectionEndId, circuitId);
+		if (!okIfNoPosition) logError("Position for connection end ID {} not found in CircuitBlockData for Circuit ID {}", "Evaluator::setCircuitIO", connectionEndId, circuitId);
 		return;
 	}
 	// find block position

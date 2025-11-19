@@ -189,7 +189,7 @@ private:
 	void removeDependentInterCircuitConnections(SimPauseGuard& pauseGuard, CircuitPortDependency circuitPortDependency);
 	void removeDependentInterCircuitConnections(SimPauseGuard& pauseGuard, CircuitNode node);
 	void removeCircuitIO(const DataUpdateEventManager::EventData* data);
-	void setCircuitIO(const DataUpdateEventManager::EventData* data);
+	void setCircuitIO(const DataUpdateEventManager::EventData* data, bool okIfNoPosition);
 
 	std::optional<middle_id_t> getMiddleId(const eval_circuit_id_t startingPoint, const Address& address) const;
 	std::optional<middle_id_t> getMiddleId(const eval_circuit_id_t startingPoint, const Address& address, const BlockContainer& blockContainer) const;
