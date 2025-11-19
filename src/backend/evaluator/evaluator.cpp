@@ -847,7 +847,6 @@ std::optional<middle_id_t> Evaluator::getMiddleId(const eval_circuit_id_t starti
 	Position blockPosition = address.getPosition(address.size() - 1);
 	const Block* block = blockContainer.getBlock(blockPosition);
 	if (!block) {
-		logError("Block not found at position {}", "Evaluator::getMiddleId", blockPosition.toString());
 		return std::nullopt;
 	}
 	std::optional<CircuitNode> node = evalCircuitContainer.getNode(block->getPosition(), evalCircuitId);
@@ -866,7 +865,6 @@ std::optional<middle_id_t> Evaluator::getMiddleId(const eval_circuit_id_t starti
 	Position blockPosition = address.getPosition(address.size() - 1);
 	const Block* block = blockContainer.getBlock(blockPosition);
 	if (!block) {
-		logError("Block not found at position {}", "Evaluator::getMiddleId", blockPosition.toString());
 		return std::nullopt;
 	}
 	std::optional<CircuitNode> node = evalCircuitContainer.getNode(block->getPosition(), evalCircuitId);
@@ -907,7 +905,6 @@ logic_state_t Evaluator::getState(const Address& address) {
 
 	std::optional<EvalConnectionPoint> connectionPointOpt = getConnectionPoint(evalCircuitId, address.getPosition(address.size() - 1), Direction::OUT);
 	if (!connectionPointOpt.has_value()) {
-		logError("Connection point not found for address {}", "Evaluator::getState", address.toString());
 		return logic_state_t::UNDEFINED;
 	}
 	return evalSimulator->getState(connectionPointOpt.value());
@@ -952,7 +949,6 @@ void Evaluator::setState(const Address& address, logic_state_t state) {
 		evalSimulator->setState(connectionPoint, state);
 		return;
 	}
-	logError("Failed to get connection point for address {}", "Evaluator::setState", address.toString());
 }
 
 void Evaluator::checkToCreateExternalConnections(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, Position position) {
