@@ -16,7 +16,7 @@ protected:
 };
 
 void ReplaysEvaluatorTest::SetUp() {
-	circuit_id_t circuitId = environment.getBackend().createCircuit();
+	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
 	circuit = environment.getBackend().getCircuit(circuitId);
 	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuitId).value();
 	evaluator = environment.getBackend().getEvaluator(evalId);

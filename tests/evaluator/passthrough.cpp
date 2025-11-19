@@ -19,7 +19,7 @@ protected:
 };
 
 void PassthroughEvaluatorTest::SetUp() {
-	circuit_id_t circuitId = environment.getBackend().createCircuit();
+	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
 	circuit = environment.getBackend().getCircuit(circuitId);
 	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuitId).value();
 	evaluator = environment.getBackend().getEvaluator(evalId);
@@ -40,4 +40,78 @@ TEST_F(PassthroughEvaluatorTest, PlacePassthrough) {
 	Position blockPos(0, 0);
 	ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, PT));
 	EXPECT_EQ(evaluator->getState(blockPos), L);
+}
+
+TEST_F(PassthroughEvaluatorTest, PassthroughLogic) {
+	Position blockPos(0, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, PT));
+	Position switchPos(-1, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(switchPos, 0, BlockType::SWITCH));
+	Position lightPos(1, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(lightPos, 0, BlockType::LIGHT));
+
+	EXPECT_EQ(evaluator->getState(lightPos), Z);
+	evaluator->setState(switchPos, H);
+	EXPECT_EQ(evaluator->getState(lightPos), Z);
+	evaluator->setState(switchPos, L);
+	EXPECT_EQ(evaluator->getState(lightPos), Z);
+
+	// connect
+	ASSERT_TRUE(circuit->tryCreateConnection(switchPos, blockPos));
+	ASSERT_TRUE(circuit->tryCreateConnection(blockPos, lightPos));
+
+	EXPECT_EQ(evaluator->getState(lightPos), L);
+	evaluator->setState(switchPos, H);
+	EXPECT_EQ(evaluator->getState(lightPos), H);
+	evaluator->setState(switchPos, L);
+	EXPECT_EQ(evaluator->getState(lightPos), L);
+}
+
+TEST_F(PassthroughEvaluatorTest, PassthroughDelete) {
+	Position blockPos(0, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, PT));
+	Position switchPos(-1, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(switchPos, 0, BlockType::SWITCH));
+	Position lightPos(1, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(lightPos, 0, BlockType::LIGHT));
+
+	// connect
+	ASSERT_TRUE(circuit->tryCreateConnection(switchPos, blockPos));
+	ASSERT_TRUE(circuit->tryCreateConnection(blockPos, lightPos));
+
+	EXPECT_EQ(evaluator->getState(lightPos), L);
+	evaluator->setState(switchPos, H);
+	EXPECT_EQ(evaluator->getState(lightPos), H);
+
+	// delete passthrough
+	ASSERT_TRUE(circuit->tryRemoveBlock(blockPos));
+
+	// states should no longer propagate
+	EXPECT_EQ(evaluator->getState(lightPos), Z);
+	evaluator->setState(switchPos, L);
+	EXPECT_EQ(evaluator->getState(lightPos), Z);
+}
+
+TEST_F(PassthroughEvaluatorTest, PassthroughDisconnectSwitch) {
+	Position blockPos(0, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, PT));
+	Position switchPos(-1, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(switchPos, 0, BlockType::SWITCH));
+	Position lightPos(1, 0);
+	ASSERT_TRUE(circuit->tryInsertBlock(lightPos, 0, BlockType::LIGHT));
+
+	// connect
+	ASSERT_TRUE(circuit->tryCreateConnection(switchPos, blockPos));
+	ASSERT_TRUE(circuit->tryCreateConnection(blockPos, lightPos));
+
+	EXPECT_EQ(evaluator->getState(lightPos), L);
+	evaluator->setState(switchPos, H);
+	EXPECT_EQ(evaluator->getState(lightPos), H);
+
+	// disconnect switch
+	ASSERT_TRUE(circuit->tryRemoveConnection(switchPos, blockPos));
+
+	EXPECT_EQ(evaluator->getState(lightPos), L);
+	evaluator->setState(switchPos, L);
+	EXPECT_EQ(evaluator->getState(lightPos), L);
 }
