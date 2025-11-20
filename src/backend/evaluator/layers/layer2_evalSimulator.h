@@ -67,7 +67,7 @@ public:
 	inline bool isViewingReplay() const {
 		return gateSubstituter.isViewingReplay();
 	}
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
 		nlohmann::json stateJson;
 		stateJson["gateSubstituter"] = gateSubstituter.dumpState();
 		return stateJson;

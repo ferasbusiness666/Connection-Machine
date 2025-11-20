@@ -21,7 +21,7 @@ public:
 
 	auto operator<=>(const ConnectionEnd&) const = default;
 
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
 		nlohmann::json stateJson;
 		stateJson["blockId"] = blockId;
 		stateJson["connectId"] = connectionId.get();

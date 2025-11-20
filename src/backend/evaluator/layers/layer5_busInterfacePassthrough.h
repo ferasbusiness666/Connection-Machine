@@ -246,7 +246,7 @@ public:
         return simulatorOptimizer.isViewingReplay();
     }
 
-    nlohmann::json dumpState() const {
+    nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
         nlohmann::json stateJson;
         stateJson["simulatorOptimizer"] = simulatorOptimizer.dumpState();
         stateJson["omittedConnections"] = nlohmann::json::object();

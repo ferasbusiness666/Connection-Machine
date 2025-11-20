@@ -44,7 +44,7 @@ public:
 	inline const BidirectionalMultiSecondKeyMap<connection_end_id_t, Position>::constIteratorPairT2 getConnectionPositionToId(Position position) const {
 		return connectionIdPosition.get(position);
 	}
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
 		nlohmann::json stateJson;
 		stateJson["circuitId"] = id;
 		stateJson["blockType"] = blocktype_to_string(blockType);

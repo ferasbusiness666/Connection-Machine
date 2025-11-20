@@ -11,7 +11,7 @@ public:
 
 	inline void setBlockId(block_id_t blockId) { this->blockId = blockId; }
 
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
 		return blockId;
 	}
 

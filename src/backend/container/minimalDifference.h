@@ -92,7 +92,7 @@ public:
 		return stateJson;
 	}
 
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
 		nlohmann::json stateJson;
 		stateJson["modifications"] = nlohmann::json::array();
 		for (const Modification& modification : modifications) {

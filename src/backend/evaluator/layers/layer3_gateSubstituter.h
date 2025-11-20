@@ -63,7 +63,7 @@ struct TrackedGate {
 		return (initialSize != inputs.size() + outputs.size());
 	}
 
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
 		nlohmann::json stateJson;
 		stateJson["id"] = id.get();
 		stateJson["currentState"] = blocktype_to_string(currentState);
@@ -86,7 +86,7 @@ struct GateWithLinkedIO {
 	middle_id_t id;
 	std::vector<middle_id_t> idsCreated;
 	std::unordered_map<connection_end_id_t, EvalConnectionPoint> linkedIO;
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
 		nlohmann::json stateJson;
 		stateJson["id"] = id.get();
 		stateJson["idsCreated"] = nlohmann::json::array();
@@ -283,7 +283,7 @@ public:
 		return replacer.isViewingReplay();
 	}
 
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
 		nlohmann::json stateJson;
 		stateJson["replacer"] = replacer.dumpState();
 		stateJson["trackedGates"] = nlohmann::json::object();

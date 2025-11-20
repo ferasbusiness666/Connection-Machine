@@ -15,7 +15,7 @@ public:
         std::unordered_map<std::string, unsigned long long> lastSavedEdit; // only for circuits
 		std::unordered_set<std::string> UUIDs;
 
-		nlohmann::json dumpState() const {
+		nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
 			nlohmann::json fileDataJson;
 			fileDataJson["fileLocation"] = "fileLocation";
 			fileDataJson["UUIDs"] = nlohmann::json::array();

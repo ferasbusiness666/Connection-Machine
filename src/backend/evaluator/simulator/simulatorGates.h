@@ -169,7 +169,7 @@ struct ANDLikeGate : public MultiInputGate {
 		MultiInputGate::removeIdRefs(otherId);
 	}
 
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
 		nlohmann::json stateJson = nlohmann::json::object();
 		stateJson["id"] = id.get();
 		stateJson["inputsInverted"] = inputsInverted;
@@ -216,7 +216,7 @@ struct XORLikeGate : public MultiInputGate {
 		applyRealisticTick(targetState, statesA, statesB);
 	}
 
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
 		nlohmann::json stateJson = nlohmann::json::object();
 		stateJson["id"] = id.get();
 		stateJson["outputInverted"] = outputInverted;
@@ -293,7 +293,7 @@ struct JunctionGate : public SimulatorGate {
 		return {id};
 	}
 
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
 		nlohmann::json stateJson = nlohmann::json::object();
 		stateJson["id"] = id.get();
 		stateJson["defaultState"] = logicstate_to_string(defaultState);
@@ -322,7 +322,7 @@ struct BufferGate : public BufferGateBase {
 
 	inline void tick(const IdVector<simulator_id_t, logic_state_t>& statesA, IdVector<simulator_id_t, logic_state_t>& statesB) noexcept {}
 
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
 		nlohmann::json stateJson = nlohmann::json::object();
 		stateJson["id"] = id.get();
 		stateJson["outputInverted"] = outputInverted;
@@ -360,7 +360,7 @@ struct SingleBufferGate : public BufferGateBase {
 		applyRealisticTick(targetState, statesA, statesB);
 	}
 
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
 		nlohmann::json stateJson = nlohmann::json::object();
 		stateJson["id"] = id.get();
 		stateJson["outputInverted"] = outputInverted;
@@ -447,7 +447,7 @@ struct TristateBufferGate : public SimulatorGate {
 		return {id};
 	}
 
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
 		nlohmann::json stateJson = nlohmann::json::object();
 		stateJson["id"] = id.get();
 		stateJson["enableInverted"] = enableInverted;
@@ -487,7 +487,7 @@ struct ConstantGate : public ConstantGateBase {
 	ConstantGate(simulator_id_t id, logic_state_t outputState = logic_state_t::LOW)
 		: ConstantGateBase(id, outputState) {}
 
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
 		nlohmann::json stateJson = nlohmann::json::object();
 		stateJson["id"] = id.get();
 		stateJson["outputState"] = logicstate_to_string(outputState);
@@ -507,7 +507,7 @@ struct ConstantResetGate : public ConstantGateBase {
 		statesB[id] = calculate();
 	}
 
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
 		nlohmann::json stateJson = nlohmann::json::object();
 		stateJson["id"] = id.get();
 		stateJson["outputState"] = logicstate_to_string(outputState);
@@ -540,7 +540,7 @@ struct CopySelfOutputGate : public LogicGate {
 		states[id] = logic_state_t::LOW;
 	}
 
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
 		nlohmann::json stateJson = nlohmann::json::object();
 		stateJson["id"] = id.get();
 		return stateJson;
@@ -610,7 +610,7 @@ struct PortsToIntGate : public SimulatorGate {
 		return {id};
 	}
 
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
 		nlohmann::json stateJson = nlohmann::json::object();
 		stateJson["id"] = id.get();
 		stateJson["inputPorts"] = nlohmann::json::array();

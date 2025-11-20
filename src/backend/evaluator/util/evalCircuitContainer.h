@@ -29,7 +29,7 @@ struct EvalPosition {
 		return position <=> other.position;
 	}
 
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
 		nlohmann::json stateJson;
 		stateJson["position"] = position.toString();
 		stateJson["evalCircuitId"] = evalCircuitId.get();

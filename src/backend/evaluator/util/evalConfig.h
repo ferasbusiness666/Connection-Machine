@@ -99,7 +99,7 @@ public:
 		subscribers.clear();
 	}
 
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
 		nlohmann::json stateJson;
 		stateJson["targetTickrate"] = getTargetTickrate();
 		stateJson["tickrateLimiter"] = isTickrateLimiterEnabled();

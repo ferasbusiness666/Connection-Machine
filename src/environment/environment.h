@@ -35,7 +35,7 @@ public:
 	const FileListener& getFileListener() const { return fileListener; }
 	FileListener& getFileListener() { return fileListener; }
 
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
 		nlohmann::json stateJson;
 		stateJson["backend"] = backend.dumpState();
 		stateJson["circuitFileManager"] = circuitFileManager.dumpState();
