@@ -38,9 +38,9 @@ TEST_F(GetNonExistingObjects, Circuit) {
 		std::make_shared<ProjectionSelection>(Position(74, 0), Vector(-2, 9), 5),
 		std::make_shared<ProjectionSelection>(Position(-3, 19), Vector(28, 9), 8)
 	));
-	ASSERT_FALSE(
+	ASSERT_TRUE(
 		circuit->tryMoveBlocks(std::make_shared<ProjectionSelection>(Position(47, -5), Vector(-5, 1), 2), Vector(58, 29), Orientation(Rotation::TWO_SEVENTY, true))
-	);
+	); // moving no blocks mean nothing will block the move and so this is true
 	ASSERT_FALSE(circuit->tryMoveBlock(Position(-758, 17), Position(-15, 421), Orientation(Rotation::TWO_SEVENTY, true)));
 }
 
