@@ -177,7 +177,7 @@ public:
 		}
 		return usedIds;
 	}
-	nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
+	nlohmann::json dumpState() const {
 		nlohmann::json stateJson;
 		stateJson["nextId"] = nextId;
 		stateJson["initialValue"] = initialValue;

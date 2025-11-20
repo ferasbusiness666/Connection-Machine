@@ -30,7 +30,7 @@ public:
 	inline std::string toString() const {
 		return isIC() ? "IC(" + std::to_string(getEvalCircuitId()) + ")" : "mid(" + std::to_string(getMiddleId()) + ")";
 	}
-	nlohmann::json dumpState() const { // GCOVR_EXCL_FUNCTION
+	nlohmann::json dumpState() const {
 		nlohmann::json stateJson;
 		if (isIC()) {
 			stateJson["type"] = "IC";
