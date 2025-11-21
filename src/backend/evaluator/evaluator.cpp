@@ -887,6 +887,18 @@ logic_state_t Evaluator::getState(const Address& address) {
 	return getStateFromSimulatorId(getBlockSimulatorId(address));
 }
 
+std::variant<logic_state_t, std::vector<logic_state_t>> Evaluator::getPinState(const Address& address) {
+	std::shared_lock lk(simMutex);
+	std::variant<simulator_id_t, std::vector<simulator_id_t>> simulatorIdVariant = getPinSimulatorId(address);
+	if (std::holds_alternative<simulator_id_t>(simulatorIdVariant)) {
+		simulator_id_t simulatorId = std::get<simulator_id_t>(simulatorIdVariant);
+		return getStateFromSimulatorId(simulatorId);
+	} else {
+		std::vector<simulator_id_t> simulatorIds = std::get<std::vector<simulator_id_t>>(simulatorIdVariant);
+		return getStatesFromSimulatorIds(simulatorIds);
+	}
+}
+
 void Evaluator::setState(const Address& address, logic_state_t state) {
 	std::unique_lock lk(simMutex);
 	evalSimulator->setState(getBlockSimulatorId(address), state);
