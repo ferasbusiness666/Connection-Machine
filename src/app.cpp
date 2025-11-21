@@ -300,7 +300,7 @@ void App::startTryingToQuit() {
 
 void App::stopTryingToQuit() { tryingToQuit = false; }
 
-nlohmann::json App::dumpState() const {
+nlohmann::json App::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["environment"] = environment.dumpState();
 	stateJson["version"] = getCurrentVersion().toString();

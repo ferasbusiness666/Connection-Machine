@@ -453,7 +453,7 @@ std::variant<simulator_id_t, std::vector<simulator_id_t>> Replacer::getPinSimula
 	}
 }
 
-nlohmann::json Replacer::dumpState() const {
+nlohmann::json Replacer::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["busInterfacePassthrough"] = busInterfacePassthrough.dumpState();
 	stateJson["replacements"] = nlohmann::json::object();
@@ -484,7 +484,7 @@ nlohmann::json Replacer::dumpState() const {
 	return stateJson;
 }
 
-nlohmann::json Replacer::dumpConnectionPointMap(const std::unordered_map<connection_end_id_t, EvalConnectionPoint>& pointMap) const {
+nlohmann::json Replacer::dumpConnectionPointMap(const std::unordered_map<connection_end_id_t, EvalConnectionPoint>& pointMap) const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json pointMapJson;
 	for (const auto& [portId, connPoint] : pointMap) {
 		pointMapJson[std::to_string(portId.get())] = connPoint.dumpState();
@@ -492,7 +492,7 @@ nlohmann::json Replacer::dumpConnectionPointMap(const std::unordered_map<connect
 	return pointMapJson;
 }
 
-nlohmann::json Replacer::dumpReplacementIdSet(const std::unordered_set<replacement_id_t>& idSet) const {
+nlohmann::json Replacer::dumpReplacementIdSet(const std::unordered_set<replacement_id_t>& idSet) const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json idSetJson = nlohmann::json::array();
 	for (const replacement_id_t id : idSet) {
 		idSetJson.push_back(id.get());
@@ -500,7 +500,7 @@ nlohmann::json Replacer::dumpReplacementIdSet(const std::unordered_set<replaceme
 	return idSetJson;
 }
 
-nlohmann::json Replacer::BusInternalJunctionArray::dumpState() const {
+nlohmann::json Replacer::BusInternalJunctionArray::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["junctionIds"] = nlohmann::json::array();
 	for (const middle_id_t junctionId : junctionIds) {

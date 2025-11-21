@@ -246,7 +246,7 @@ public:
         return simulatorOptimizer.isViewingReplay();
     }
 
-    nlohmann::json dumpState() const {
+    nlohmann::json dumpState() const /* GCOVR_EXCL_FUNCTION */ {
         nlohmann::json stateJson;
         stateJson["simulatorOptimizer"] = simulatorOptimizer.dumpState();
         stateJson["omittedConnections"] = nlohmann::json::object();
@@ -267,7 +267,7 @@ private:
     std::vector<simulator_id_t>& dirtySimulatorIds;
     BlockDataManager& blockDataManager;
 
-    nlohmann::json dumpEvalConnectionVector(const std::vector<EvalConnection>& connections) const {
+    nlohmann::json dumpEvalConnectionVector(const std::vector<EvalConnection>& connections) const /* GCOVR_EXCL_FUNCTION */ {
         nlohmann::json connArray = nlohmann::json::array();
         for (const EvalConnection& conn : connections) {
             connArray.push_back(conn.dumpState());

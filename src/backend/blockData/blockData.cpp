@@ -206,7 +206,7 @@ void BlockData::setConnectionBitConfiguration(connection_end_id_t connectionId, 
 	);
 }
 
-nlohmann::json BlockData::dumpState() const {
+nlohmann::json BlockData::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json blockJson;
 	blockJson["blockType"] = blocktype_to_string(blockType);
 	blockJson["defaultData"] = defaultData;
@@ -235,7 +235,7 @@ nlohmann::json BlockData::dumpState() const {
 	return blockJson;
 }
 
-nlohmann::json BlockData::ConnectionData::dumpState() const {
+nlohmann::json BlockData::ConnectionData::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json connectionJson;
 	connectionJson["positionOnBlock"] = positionOnBlock.toString();
 	switch (portType) {

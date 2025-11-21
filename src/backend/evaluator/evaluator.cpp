@@ -1551,7 +1551,7 @@ void Evaluator::decreaseTickrateSeq() {
 	setTickrate(newTickrate);
 }
 
-nlohmann::json Evaluator::dumpState() const {
+nlohmann::json Evaluator::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["evaluatorId"] = evaluatorId.get();
 	stateJson["evalCircuitContainer"] = evalCircuitContainer.dumpState();

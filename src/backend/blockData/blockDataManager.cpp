@@ -362,7 +362,7 @@ BlockType BlockDataManager::getBusBlock(std::vector<BusConnectionData> busConnec
 	return blockType;
 }
 
-nlohmann::json BlockDataManager::dumpState() const {
+nlohmann::json BlockDataManager::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["blockData"] = nlohmann::json::array();
 	for (const BlockData& bd : blockData) {
@@ -378,7 +378,7 @@ nlohmann::json BlockDataManager::dumpState() const {
 	return stateJson;
 }
 
-nlohmann::json BlockDataManager::dumpBusConnectionDataVector(const std::vector<BlockDataManager::BusConnectionData>& busConnections) {
+nlohmann::json BlockDataManager::dumpBusConnectionDataVector(const std::vector<BlockDataManager::BusConnectionData>& busConnections) /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json busConnectionsJson = nlohmann::json::array();
 	for (const BusConnectionData& busConnection : busConnections) {
 		busConnectionsJson.push_back(busConnection.dumpState());
@@ -386,7 +386,7 @@ nlohmann::json BlockDataManager::dumpBusConnectionDataVector(const std::vector<B
 	return busConnectionsJson;
 }
 
-nlohmann::json BlockDataManager::BusConnectionData::dumpState() const {
+nlohmann::json BlockDataManager::BusConnectionData::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json busConnectionJson;
 	busConnectionJson["positionOnBlock"] = positionOnBlock.toString();
 	if (std::holds_alternative<unsigned int>(bitConfiguration)) {

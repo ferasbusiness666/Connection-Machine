@@ -305,7 +305,7 @@ CircuitFileManager::FileData* CircuitFileManager::setSaveFilePathAndGetFileData(
 	return &(iter->second);
 }
 
-nlohmann::json CircuitFileManager::dumpState() const {
+nlohmann::json CircuitFileManager::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	try {
 		nlohmann::json fileDataJson;

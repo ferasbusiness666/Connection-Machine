@@ -176,7 +176,7 @@ const std::vector<EvalConnection>& SimulatorOptimizer::getOutputs(middle_id_t mi
 	return outputConnections.at(middleId);
 }
 
-nlohmann::json SimulatorOptimizer::dumpState() const {
+nlohmann::json SimulatorOptimizer::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["logicSimulator"] = simulator.dumpState();
 	stateJson["simulatorToMiddleIds"] = nlohmann::json::array();

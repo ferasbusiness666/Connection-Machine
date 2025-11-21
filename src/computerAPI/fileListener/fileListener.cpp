@@ -87,7 +87,7 @@ void FileListener::watcherThreadFunc() {
 	}
 }
 
-nlohmann::json FileListener::dumpState() const {
+nlohmann::json FileListener::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	try {
 		std::lock_guard<std::mutex> lock(watchedFilesMutex_);

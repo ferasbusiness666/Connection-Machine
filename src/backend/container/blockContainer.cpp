@@ -751,7 +751,7 @@ unsigned int BlockContainer::getBitwidthOfJunctionIgnorePort(const Block* block,
 	return 0;
 }
 
-nlohmann::json BlockContainer::dumpState() const {
+nlohmann::json BlockContainer::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["selfBlockType"] = static_cast<unsigned int>(selfBlockType);
 	stateJson["lastId"] = lastId;

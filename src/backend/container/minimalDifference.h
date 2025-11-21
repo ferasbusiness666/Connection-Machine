@@ -60,7 +60,7 @@ public:
 	inline bool empty() const { return modifications.empty(); }
 	inline const std::vector<Modification>& getModifications() const { return modifications; }
 
-	static nlohmann::json dumpModification(const Modification& modification) {
+	static nlohmann::json dumpModification(const Modification& modification) /* GCOVR_EXCL_FUNCTION */ {
 		nlohmann::json stateJson;
 		stateJson["type"] = modification.first;
 		switch (modification.first) {
@@ -92,7 +92,7 @@ public:
 		return stateJson;
 	}
 
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 		nlohmann::json stateJson;
 		stateJson["modifications"] = nlohmann::json::array();
 		for (const Modification& modification : modifications) {

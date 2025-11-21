@@ -404,13 +404,13 @@ void WasmProceduralCircuit::makeCircuit(const ProceduralCircuitParameters& param
 	wasmInstance.makeCircuit(parameters, generatedCircuit);
 }
 
-nlohmann::json WasmProceduralCircuit::dumpStateInherited() const {
+nlohmann::json WasmProceduralCircuit::dumpStateInherited() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["wasmInstance"] = wasmInstance.dumpState();
 	return stateJson;
 }
 
-nlohmann::json WasmProceduralCircuit::WasmInstance::dumpState() const {
+nlohmann::json WasmProceduralCircuit::WasmInstance::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["valid"] = valid;
 	stateJson["name"] = name;

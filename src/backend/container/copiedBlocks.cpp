@@ -60,7 +60,7 @@ CopiedBlocks::CopiedBlocks(const BlockContainer& blockContainer, SharedSelection
 	logInfo("Copied {} blocks", "CopiedBlocks", blocks.size());
 }
 
-nlohmann::json CopiedBlocks::dumpState() const {
+nlohmann::json CopiedBlocks::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["minPosition"] = minPosition.toString();
 	stateJson["maxPosition"] = maxPosition.toString();

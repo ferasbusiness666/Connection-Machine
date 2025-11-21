@@ -20,7 +20,7 @@ struct CircuitPortDependency {
 	auto operator<=>(const CircuitPortDependency& other) const {
 		return std::tie(circuitId, connectionEndId) <=> std::tie(other.circuitId, other.connectionEndId);
 	}
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 		nlohmann::json stateJson;
 		stateJson["circuitId"] = circuitId;
 		stateJson["connectionEndId"] = connectionEndId.get();
@@ -51,7 +51,7 @@ struct InterCircuitConnection {
 	std::set<CircuitPortDependency> circuitPortDependencies;
 	std::set<CircuitNode> circuitNodeDependencies;
 
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 		nlohmann::json stateJson;
 		stateJson["connection"] = connection.dumpState();
 		stateJson["circuitPortDependencies"] = nlohmann::json::array();

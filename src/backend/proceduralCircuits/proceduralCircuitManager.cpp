@@ -60,7 +60,7 @@ const SharedProceduralCircuit ProceduralCircuitManager::getProceduralCircuit(con
 	return iter->second;
 }
 
-nlohmann::json ProceduralCircuitManager::dumpState() const {
+nlohmann::json ProceduralCircuitManager::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["pathToUUID"] = pathToUUID;
 	stateJson["proceduralCircuits"] = nlohmann::json::object();

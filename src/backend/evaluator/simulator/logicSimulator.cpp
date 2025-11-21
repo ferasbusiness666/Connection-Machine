@@ -988,7 +988,7 @@ bool LogicSimulator::skipForward() {
 	return true;
 }
 
-nlohmann::json LogicSimulator::dumpState() const {
+nlohmann::json LogicSimulator::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	std::unique_lock<std::mutex> lock(mainDataMutex);
 	nlohmann::json stateJson;
 	stateJson["running"] = running.load();
@@ -1051,18 +1051,18 @@ nlohmann::json LogicSimulator::dumpState() const {
 	return stateJson;
 }
 
-nlohmann::json LogicSimulator::StateChange::dumpState() const {
+nlohmann::json LogicSimulator::StateChange::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["simulatorId"] = id.get();
 	stateJson["newState"] = logicstate_to_string(state);
 	return stateJson;
 }
 
-nlohmann::json LogicSimulator::GateDependency::dumpState() const {
+nlohmann::json LogicSimulator::GateDependency::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	return gateId.get();
 }
 
-nlohmann::json LogicSimulator::GateLocation::dumpState() const {
+nlohmann::json LogicSimulator::GateLocation::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["gateType"] = simgatetype_to_string(gateType);
 	stateJson["gateIndex"] = gateIndex;

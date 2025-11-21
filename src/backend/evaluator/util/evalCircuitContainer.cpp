@@ -104,7 +104,7 @@ std::pair<eval_circuit_id_t, Position> EvalCircuitContainer::traverseToTopLevelI
 	return { currentCircuitId, lastValidPosition };
 }
 
-nlohmann::json EvalCircuitContainer::dumpState() const {
+nlohmann::json EvalCircuitContainer::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	for (const eval_circuit_id_t id : circuits.ids()) {
 		EvalCircuit* circuit = circuits.at(id);

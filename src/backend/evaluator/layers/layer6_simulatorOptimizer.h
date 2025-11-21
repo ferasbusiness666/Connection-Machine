@@ -176,7 +176,7 @@ private:
 		return blockType == BlockType::JUNCTION || blockType == BlockType::JUNCTION_L || blockType == BlockType::JUNCTION_H || blockType == BlockType::JUNCTION_X;
 	}
 
-    nlohmann::json dumpEvalConnectionVector(const std::vector<EvalConnection>& connections) const {
+    nlohmann::json dumpEvalConnectionVector(const std::vector<EvalConnection>& connections) const /* GCOVR_EXCL_FUNCTION */ {
         nlohmann::json connArray = nlohmann::json::array();
         for (const EvalConnection& conn : connections) {
             connArray.push_back(conn.dumpState());

@@ -671,7 +671,7 @@ void Circuit::setCircuitName(const std::string& name) {
 	if (blockData) blockData->setName(getCircuitNameNumber());
 }
 
-nlohmann::json Circuit::dumpState() const {
+nlohmann::json Circuit::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["circuitId"] = circuitId;
 	stateJson["circuitUUID"] = circuitUUID;

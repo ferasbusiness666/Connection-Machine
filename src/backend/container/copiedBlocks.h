@@ -16,7 +16,7 @@ public:
 	    CopiedBlockData(BlockType type, Position pos, Orientation rot)
 			: blockType(type), position(pos), orientation(rot) {}
 
-		nlohmann::json dumpState() const {
+		nlohmann::json dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 			nlohmann::json blockJson;
 			blockJson["blockType"] = blocktype_to_string(blockType);
 			blockJson["position"] = position.toString();

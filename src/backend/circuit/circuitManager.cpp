@@ -315,7 +315,7 @@ void CircuitManager::updateExistingCircuit(circuit_id_t id, const GeneratedCircu
 	dataUpdateEventManager.sendEvent("blockDataUpdate");
 }
 
-nlohmann::json CircuitManager::dumpState() const {
+nlohmann::json CircuitManager::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["lastId"] = lastId;
 	stateJson["circuits"] = nlohmann::json::object();
