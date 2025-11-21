@@ -123,20 +123,7 @@ public:
 	circuit_id_t getCircuitId() const { return evalCircuitContainer.getCircuitId(eval_circuit_id_t(0)).value_or(0); }
 	circuit_id_t getCircuitId(const Address& address) const {
 		std::shared_lock lk(simMutex);
-		eval_circuit_id_t evalCircuitId = eval_circuit_id_t(0);
-		for (int i = 0; i < address.size(); i++) {
-			std::optional<CircuitNode> node = evalCircuitContainer.getNode(address.getPosition(i), evalCircuitId);
-			if (!node.has_value()) {
-				logError("CircuitNode not found for address {}", "Evaluator::getCircuitId", "Evaluator::getCircuitId", address.toString());
-				return getCircuitId(); // Invalid circuit ID
-			}
-			if (node->isIC()) {
-				evalCircuitId = node->getEvalCircuitId();
-			} else {
-				logError("Address {} does not point to an IC", "Evaluator::getCircuitId", address.toString());
-				return getCircuitId();
-			}
-		}
+		eval_circuit_id_t evalCircuitId = evalCircuitContainer.traverseToTopLevelIC(address);
 		return evalCircuitContainer.getCircuitId(evalCircuitId).value_or(0);
 	}
 	const EvalAddressTree buildAddressTree() const;
