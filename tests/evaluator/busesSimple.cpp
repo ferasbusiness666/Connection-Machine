@@ -129,3 +129,35 @@ TEST_F(BusesSimpleEvaluatorTest, BusTristate) {
 	evaluator->tickStep();
 	EXPECT_EQ(std::get<std::vector<logic_state_t>>(evaluator->getPinState(tristatePos)), std::vector<logic_state_t>({ Z, Z }));
 }
+
+TEST_F(BusesSimpleEvaluatorTest, BusEndsHaveSameSimIds) {
+	BlockDataManager& blockDataManager = environment.getBackend().getBlockDataManager();
+	const BlockData* bus2Data = blockDataManager.getBlockData(BUS2);
+	ASSERT_NE(bus2Data, nullptr);
+
+	Position bus1Pos(0, 0);
+	Position bus2Pos(2, 0);
+	Position bus3Pos(4, 0);
+	Position switch1Pos(0, 2);
+	Position switch2Pos(1, 2);
+	ASSERT_TRUE(circuit->tryInsertBlock(bus1Pos, 0, BUS2));
+	ASSERT_TRUE(circuit->tryInsertBlock(bus2Pos, 0, BUS2));
+	ASSERT_TRUE(circuit->tryInsertBlock(bus3Pos, 0, BUS2));
+	ASSERT_TRUE(circuit->tryInsertBlock(switch1Pos, 0, BlockType::SWITCH));
+	ASSERT_TRUE(circuit->tryInsertBlock(switch2Pos, 0, BlockType::SWITCH));
+
+	ASSERT_TRUE(circuit->tryCreateConnection(switch1Pos, bus1Pos + *bus2Data->getConnectionVector(0)));
+	ASSERT_TRUE(circuit->tryCreateConnection(switch2Pos, bus3Pos + *bus2Data->getConnectionVector(1)));
+	ASSERT_TRUE(circuit->tryCreateConnection(bus1Pos + *bus2Data->getConnectionVector(2), bus2Pos + *bus2Data->getConnectionVector(2)));
+	ASSERT_TRUE(circuit->tryCreateConnection(bus2Pos + *bus2Data->getConnectionVector(2), bus3Pos + *bus2Data->getConnectionVector(2)));
+
+	std::variant<simulator_id_t, std::vector<simulator_id_t>> bus1OutputSimId = evaluator->getPinSimulatorId(bus1Pos + *(bus2Data->getConnectionVector(2)));
+	std::variant<simulator_id_t, std::vector<simulator_id_t>> bus2OutputSimId = evaluator->getPinSimulatorId(bus2Pos + *(bus2Data->getConnectionVector(2)));
+	std::variant<simulator_id_t, std::vector<simulator_id_t>> bus3OutputSimId = evaluator->getPinSimulatorId(bus3Pos + *(bus2Data->getConnectionVector(2)));
+
+	ASSERT_TRUE(std::holds_alternative<std::vector<simulator_id_t>>(bus1OutputSimId));
+	ASSERT_TRUE(std::holds_alternative<std::vector<simulator_id_t>>(bus2OutputSimId));
+	ASSERT_TRUE(std::holds_alternative<std::vector<simulator_id_t>>(bus3OutputSimId));
+	EXPECT_EQ(std::get<std::vector<simulator_id_t>>(bus1OutputSimId), std::get<std::vector<simulator_id_t>>(bus2OutputSimId));
+	EXPECT_EQ(std::get<std::vector<simulator_id_t>>(bus2OutputSimId), std::get<std::vector<simulator_id_t>>(bus3OutputSimId));
+}
