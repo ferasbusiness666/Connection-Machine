@@ -246,7 +246,6 @@ bool Circuit::tryInsertParsedCircuit(const ParsedCircuit& parsedCircuit, Positio
 		}
 		ConnectionEnd output(realIds[conn.outputBlockId], conn.outputEndId);
 		ConnectionEnd input(realIds[conn.inputBlockId], conn.inputEndId);
-
 		if (blockContainer.connectionExists(output, input)) {
 			continue;
 		}
@@ -294,7 +293,6 @@ bool Circuit::tryInsertGeneratedCircuit(const GeneratedCircuit& generatedCircuit
 			// skip inputs
 			continue;
 		}
-
 		ConnectionEnd output(realIds[conn.outputBlockId], conn.outputId);
 		ConnectionEnd input(realIds[conn.inputBlockId], conn.inputId);
 		if (blockContainer.connectionExists(output, input)) {

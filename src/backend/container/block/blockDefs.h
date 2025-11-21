@@ -7,13 +7,13 @@ typedef std::uint8_t block_size_t;
 typedef unsigned int block_id_t;
 
 enum BlockType : std::uint16_t {
-	NONE,
-	AND,
-	OR,
-	XOR,
-	NAND,
-	NOR,
-	XNOR,
+	NONE=0,
+	AND=1, // needed
+	OR=2,
+	XOR=3,
+	NAND=4,
+	NOR=5,
+	XNOR=6,
 	BUFFER,
 	NOT,
 	JUNCTION,

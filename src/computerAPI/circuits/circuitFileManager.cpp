@@ -3,6 +3,7 @@
 #include "BLIFParser.h"
 #include "backend/wasm/wasm.h"
 #include "connectionMachineParser.h"
+#include "scrapMechanicParser.h"
 
 CircuitFileManager::CircuitFileManager(CircuitManager& circuitManager) : circuitManager(circuitManager) { }
 
@@ -23,15 +24,13 @@ std::vector<circuit_id_t> CircuitFileManager::loadFromFile(const std::string& pa
 	if (path.size() >= 4 && path.substr(path.size() - 4) == ".cir") {
 		// our Connection Machine file parser function
 		ConnectionMachineParser parser(*this, circuitManager);
-
 		std::vector<circuit_id_t> circuits = parser.load(path);
 		if (circuits.empty()) {
 			logWarning("No circuits loaded from {}. This may be a error", "CircuitFileManager", path);
 		}
 		return circuits;
 	} else if (path.size() >= 5 && path.substr(path.size() - 5) == ".blif") {
-		SharedParsedCircuit parsedCircuit = std::make_shared<ParsedCircuit>();
-		// open circuit file parser function
+		// blif circuit file parser function
 		BLIFParser parser(*this, circuitManager);
 		std::vector<circuit_id_t> circuits = parser.load(path);
 		if (circuits.empty()) {
@@ -48,8 +47,20 @@ std::vector<circuit_id_t> CircuitFileManager::loadFromFile(const std::string& pa
 		} else {
 			logError("Failed to load wasm module", "CircuitFileManager");
 		}
+	} else if (path.size() >= 5 && path.substr(path.size() - 5) == ".json") {
+		// SM circuit file parser function
+		ScrapMechanicParser parser(*this, circuitManager);
+		std::vector<circuit_id_t> circuits = parser.load(path);
+		if (circuits.empty()) {
+			logWarning("No circuits loaded from {}. This may be a error", "CircuitFileManager", path);
+		}
+		return circuits;
 	} else {
-		logError("Unsupported file extension \"{}\". Expected .cir, .blif, .wat, or .wasm", "CircuitFileManager", std::filesystem::path(path).extension().generic_string());
+		logError(
+			"Unsupported file extension \"{}\". Expected .cir, .blif, .wat, or .wasm",
+			"CircuitFileManager",
+			std::filesystem::path(path).extension().generic_string()
+		);
 	}
 	return {};
 }
@@ -241,7 +252,8 @@ circuit_id_t CircuitFileManager::loadParsedCircuit(ParsedCircuit& parsedCircuit)
 	circuit_id_t id = circuitManager.createNewCircuit(parsedCircuit);
 	if (parsedCircuit.getAbsoluteFilePath() != "") {
 		SharedCircuit circuit = circuitManager.getCircuit(id);
-		FileData* fileData = setSaveFilePathAndGetFileData(circuit->getUUID(), parsedCircuit.getAbsoluteFilePath(), false); // we do not want ot add .cir because this file already exists
+		FileData* fileData =
+			setSaveFilePathAndGetFileData(circuit->getUUID(), parsedCircuit.getAbsoluteFilePath(), false); // we do not want ot add .cir because this file already exists
 		fileData->lastSavedEdit[circuit->getUUID()] = circuit->getEditCount();
 		if (parsedCircuit.isOldFileVersion()) {
 			circuit->addEdit(); // old files have data that should be updated because we want to kee pold files up to date
