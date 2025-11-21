@@ -29,7 +29,13 @@ void Tutorial::StartTutorial() {
 		return false;
 	});
 	std::string a("BasicTutorial.tir");
-	parseTutorialFile(a);
+	try {
+		std::string filename = "basictutorial.tir";
+		parseTutorialFile(filename);
+	} catch (const std::string& e) {
+		std::cerr << "Tutorial error: " << e << std::endl;
+		return;
+	}
 	tutorialSteps = basicTutorialInitialize();
 	runCurrentStep();
 }
@@ -218,4 +224,3 @@ std::vector<TutorialStep> basicTutorialInitialize() {
 	}
 	return steps;
 }
-

@@ -53,8 +53,8 @@ void registerSettings() {
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Increase UI Scale", Keybind(Keybind::KeyId::KI_OEM_PLUS, Keybind::KeyMod::KM_CTRL));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Decrease UI Scale", Keybind(Keybind::KeyId::KI_OEM_MINUS, Keybind::KeyMod::KM_CTRL));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Reset UI Scale", Keybind(Keybind::KeyId::KI_0, Keybind::KeyMod::KM_CTRL));
-	// Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Tutorial/Start", Keybind(Keybind::KeyId::KI_J));
-	// Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Tutorial/Stop", Keybind(Keybind::KeyId::KI_K));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Tutorial/Start", Keybind(Keybind::KeyId::KI_1, Keybind::KeyMod::KM_ALT));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Tutorial/Stop", Keybind(Keybind::KeyId::KI_2, Keybind::KeyMod::KM_ALT));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Zoom", Keybind(Keybind::KeyId::KI_UNKNOWN, Keybind::KeyMod::KM_SHIFT));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Home", Keybind(Keybind::KeyId::KI_F));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Pan", Keybind(Keybind::KeyId::KI_UNKNOWN, Keybind::KeyMod::KM_ALT));
