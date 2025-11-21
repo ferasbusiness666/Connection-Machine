@@ -122,7 +122,9 @@ jobs:
       working-directory: ${{ github.workspace }}
       run: |
           sudo apt-get update
-          sudo apt-get install -y gcovr
+          sudo apt-get install -y python3-pip
+          pip install --upgrade gcovr  # gets latest (8.x)
+          gcovr --version
           bash gcov_coverage.sh
           mv ./coverage/coverage.html ./coverage/index.html
           ls ./coverage
