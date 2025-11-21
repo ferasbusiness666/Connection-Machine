@@ -7,75 +7,22 @@
 #include "backend/evaluator/simulator/logicState.h"
 #include "backend/position/position.h"
 
+void CircuitTestCase::addSetStatesCommand(std::vector<std::pair<std::string, logic_state_t>> states) {
+    TestCommand testCommand = TestCommand(SET_STATES, 0, states);
+    testCommands.push_back(testCommand);
+}
+
+void CircuitTestCase::addCheckStatesCommand(std::vector<std::pair<std::string, logic_state_t>> states) {
+    TestCommand testCommand = TestCommand(CHECK_STATES, 0, states);
+    testCommands.push_back(testCommand);
+}
+
+void CircuitTestCase::addTickStepCommand(int ticks) {
+    TestCommand testCommand = TestCommand(TICK_STEP, ticks, {});
+    testCommands.push_back(testCommand);
+}
 
 bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environment& environment) {
-    /*testCommands = {// 0 0 Z
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)0), std::make_pair("Enable", (logic_state_t)0)}},
-                    TestCommand(TICK_STEP, 10),
-                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)2)}),
-                    // 0 1 0
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)1), std::make_pair("Enable", (logic_state_t)0)}},
-                    TestCommand(TICK_STEP, 10),
-                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)0)}),
-                    // 0 Z X
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)2), std::make_pair("Enable", (logic_state_t)0)}},
-                    TestCommand(TICK_STEP, 10),
-                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
-                    // 0 X X
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)3), std::make_pair("Enable", (logic_state_t)0)}},
-                    TestCommand(TICK_STEP, 10),
-                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
-                    // 1 0 Z
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)0), std::make_pair("Enable", (logic_state_t)1)}},
-                    TestCommand(TICK_STEP, 10),
-                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)2)}),
-                    // 1 1 1
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)1), std::make_pair("Enable", (logic_state_t)1)}},
-                    TestCommand(TICK_STEP, 10),
-                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)1)}),
-                    // 1 Z X
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)2), std::make_pair("Enable", (logic_state_t)1)}},
-                    TestCommand(TICK_STEP, 10),
-                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
-                    // 1 X X
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)3), std::make_pair("Enable", (logic_state_t)1)}},
-                    TestCommand(TICK_STEP, 10),
-                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
-                    // Z 0 Z
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)0), std::make_pair("Enable", (logic_state_t)2)}},
-                    TestCommand(TICK_STEP, 10),
-                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)2)}),
-                    // Z 1 X
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)1), std::make_pair("Enable", (logic_state_t)2)}},
-                    TestCommand(TICK_STEP, 10),
-                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
-                    // Z Z X
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)2), std::make_pair("Enable", (logic_state_t)2)}},
-                    TestCommand(TICK_STEP, 10),
-                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
-                    // Z X X
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)3), std::make_pair("Enable", (logic_state_t)2)}},
-                    TestCommand(TICK_STEP, 10),
-                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
-                    // X 0 Z
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)0), std::make_pair("Enable", (logic_state_t)3)}},
-                    TestCommand(TICK_STEP, 10),
-                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)2)}),
-                    // X 1 X
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)1), std::make_pair("Enable", (logic_state_t)3)}},
-                    TestCommand(TICK_STEP, 10),
-                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
-                    // X Z X
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)2), std::make_pair("Enable", (logic_state_t)3)}},
-                    TestCommand(TICK_STEP, 10),
-                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)}),
-                    // X X X
-                    TestCommand{SET_STATES, 0, {std::make_pair("Input", (logic_state_t)3), std::make_pair("Enable", (logic_state_t)3)}},
-                    TestCommand(TICK_STEP, 10),
-                    TestCommand(CHECK_STATES, 0, {std::make_pair("Output", (logic_state_t)3)})
-                };*/
-
-    testCommands = {};
     // retrieve necessary objects to run test
     bool fullTestSucceedStatus = true;
     Backend& backend = environment.getBackend();

@@ -2,6 +2,7 @@
 #include "backend/circuitTestCase/circuitTestCase.h"
 #include "backend/evaluator/simulator/logicState.h"
 #include "logging/logging.h"
+#include <utility>
 
 std::optional<logic_state_t> stringToLogicState(const std::string& str) {
     if (str == "LOW" || str == "L") return (logic_state_t)0;
@@ -61,22 +62,35 @@ std::optional<CircuitTestCase> TestCaseFileManager::getCircuitTestCaseFromFilePa
     while (inputFile >> token) {
         if (token[0] == '>') {
             if (token.substr(1) == "Set:" || token.substr(1) == "Check:") {
-                logInfo("Set/Check", "TestCaseFileManager");
                 std::vector<std::pair<std::string, logic_state_t>> states = {};
                 inputFile >> std::ws;
-                while (inputFile.peek() != '>') {
+                while (inputFile.peek() != '>' && !inputFile.eof()) {
                     std::string portName;
                     inputFile >> std::quoted(portName);
-                } //read number by >> into int
-
+                    inputFile >> std::ws;
+                    char colon;
+                    inputFile >> colon;
+                    int portState;
+                    inputFile >> portState;
+                    inputFile >> std::ws;
+                    states.push_back(std::make_pair(portName, (logic_state_t)portState));
+                }
+                if (token.substr(1) == "Set:") {
+                    testCase.addSetStatesCommand(states);
+                } else {
+                    testCase.addCheckStatesCommand(states);
+                }
             } else if (token.substr(1) == "Step") {
-                logInfo("Step", "TestCaseFileManager");
+                int ticks;
+                inputFile >> ticks;
+                testCase.addTickStepCommand(ticks);
             } else {
                 logError("Unknown command in test file", "TestCaseFileManager");
+                return std::nullopt;
             }
         }
     }
 
     logInfo("Loaded test", "TestCaseFileManager");
-    return std::nullopt;
+    return testCase;
 }

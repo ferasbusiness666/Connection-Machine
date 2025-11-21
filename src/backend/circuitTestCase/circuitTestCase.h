@@ -11,8 +11,8 @@ class CircuitTestCase {
 public:
     CircuitTestCase() {}
     bool runTest(BlockType blockType, bool haltOnFailure, Environment& environment);
-    void addSetStatesCommand(std::vector<std::pair<std::string, logic_state_t>>& states);
-    void addCheckStatesCommand(std::vector<std::pair<std::string, logic_state_t>>& states);
+    void addSetStatesCommand(std::vector<std::pair<std::string, logic_state_t>> states);
+    void addCheckStatesCommand(std::vector<std::pair<std::string, logic_state_t>> states);
     void addTickStepCommand(int ticks);
 
 private:
