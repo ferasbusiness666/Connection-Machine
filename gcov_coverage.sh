@@ -1,6 +1,7 @@
 mkdir -p coverage
 gcovr \
     --verbose \
+    --gcov-executable gcov-14 \
     --root . \
     --filter 'src/.*' \
     --exclude 'external/.*' \
