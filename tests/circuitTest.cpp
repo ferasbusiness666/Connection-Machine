@@ -4,7 +4,7 @@
 const int loopsPerTest = 100; // upped
 
 void CircuitTest::SetUp() {
-	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit("Circuit", generate_uuid_v4(), true);
+	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit("Circuit", generate_uuid_v4(), false);
 	circuit = environment.getBackend().getCircuitManager().getCircuit(circuitId);
 	i = 0;
 }
