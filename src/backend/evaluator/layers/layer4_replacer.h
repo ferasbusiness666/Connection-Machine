@@ -30,15 +30,9 @@ public:
 #ifdef TRACY_PROFILER
 		ZoneScoped;
 #endif
-		if (gateId == middle_id_t(446)) {
-			logInfo("Adding gate {} of type {}", "Replacer::addGate", gateId, blocktype_to_string(blockType));
-		}
 		busInterfacePassthrough.addGate(pauseGuard, blockType, gateId);
 		if (isJunctionType(blockType)) {
 			existingJunctionIds.insert(gateId);
-			if (gateId == middle_id_t(446)) {
-				logInfo("Registered junction {}", "Replacer::addGate", gateId);
-			}
 		}
 	}
 
