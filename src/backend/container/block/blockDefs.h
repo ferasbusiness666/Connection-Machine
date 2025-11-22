@@ -33,7 +33,7 @@ enum BlockType : std::uint16_t {
 	CUSTOM, // placeholder for custom blocks in parsed circuit
 };
 
-inline std::string blocktype_to_string(const BlockType blockType) {
+inline std::string blocktype_to_string(const BlockType blockType) /* GCOVR_EXCL_FUNCTION */ {
 	switch (blockType) {
 	case BlockType::NONE: return "NONE";
 	case BlockType::AND: return "AND";
@@ -64,7 +64,7 @@ inline std::string blocktype_to_string(const BlockType blockType) {
 
 template <>
 struct fmt::formatter<BlockType> : fmt::formatter<std::string> {
-	auto format(BlockType blockType, format_context& ctx) const { return formatter<std::string>::format(blocktype_to_string(blockType), ctx); }
+	auto format(BlockType blockType, format_context& ctx) const /* GCOVR_EXCL_FUNCTION */ { return formatter<std::string>::format(blocktype_to_string(blockType), ctx); }
 };
 
 #endif /* blockDefs_h */

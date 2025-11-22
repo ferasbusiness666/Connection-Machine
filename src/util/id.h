@@ -104,7 +104,7 @@ namespace fmt {
 template <class Tag, class Rep>
 struct formatter<Id<Tag, Rep>> : formatter<Rep> {
 	template <typename FormatContext>
-	auto format(const Id<Tag, Rep>& id, FormatContext& ctx) const {
+	auto format(const Id<Tag, Rep>& id, FormatContext& ctx) const /* GCOVR_EXCL_FUNCTION */ {
 		return formatter<Rep>::format(id.get(), ctx);
 	}
 };

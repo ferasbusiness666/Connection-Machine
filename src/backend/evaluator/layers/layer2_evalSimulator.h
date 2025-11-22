@@ -13,6 +13,9 @@ public:
 		BlockDataManager& blockDataManager
 	) :
 		gateSubstituter(evalConfig, middleIdProvider, dirtySimulatorIds, dirtyMiddleIds, blockDataManager) {}
+	inline void resetStates() {
+		gateSubstituter.resetStates();
+	}
 	inline SimPauseGuard beginEdit() {
 		return gateSubstituter.beginEdit();
 	}

@@ -29,7 +29,7 @@ struct Vec2Int {
 
 template <>
 struct fmt::formatter<Vec2Int> : fmt::formatter<std::string> {
-	auto format(Vec2Int v, format_context& ctx) const { return formatter<std::string>::format(v.toString(), ctx); }
+	auto format(Vec2Int v, format_context& ctx) const /* GCOVR_EXCL_FUNCTION */ { return formatter<std::string>::format(v.toString(), ctx); }
 };
 
 inline Vec2Int rotateVector(Vec2Int vector, Rotation rotationAmount) noexcept {
@@ -84,7 +84,7 @@ struct Vec2 {
 
 template <>
 struct fmt::formatter<Vec2> : fmt::formatter<std::string> {
-	auto format(Vec2 v, format_context& ctx) const { return formatter<std::string>::format(v.toString(), ctx); }
+	auto format(Vec2 v, format_context& ctx) const /* GCOVR_EXCL_FUNCTION */ { return formatter<std::string>::format(v.toString(), ctx); }
 };
 
 #endif /* vec2_h */

@@ -19,6 +19,8 @@ public:
 		// middleToSimulatorIds.resize(1000);
 	}
 
+	void resetStates() { simulator.resetStates(); }
+
 	void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId);
 	void removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId);
 	SimPauseGuard beginEdit() {
@@ -26,7 +28,7 @@ public:
 	}
 	void endEdit(SimPauseGuard& pauseGuard) {
 		simulator.endEdit();
-	};
+	}
 
 	std::optional<simulator_id_t> getSimIdFromMiddleId(middle_id_t middleId) const {
 		if (middleId < middleToSimulatorIds.size()) {

@@ -143,6 +143,35 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 			this->mainWindow.logError("Cant skip back simulation when there is none");
 		}
 	});
+	keybindHandler.addListener("Keybinds/Simulation/Reset Simulation", [this]() {
+		if (!circuitView->getEvaluator()) {
+			this->mainWindow.logError("Cant reset simulation when there is none");
+			return;
+		}
+		bool showConfirm = *Settings::get<SettingType::BOOL>("Preferences/Simulation/Show Confirmation for Reset Simulation");
+		if (showConfirm) {
+			evaluator_id_t evaluatorId = circuitView->getEvaluator()->getEvaluatorId();
+			SharedEvaluator evaluator = circuitView->getBackend().getEvaluator(evaluatorId);
+
+			this->mainWindow.getPopUpManager().addOptionsPopUp(
+				"Reset Simulation States?",
+				{
+					{
+						"Reset",
+						[this, evaluator]() {
+							evaluator->resetStates();
+						}
+					},
+					{
+						"Cancel",
+						[]() {}
+					}
+				}
+			);
+		} else {
+			circuitView->getEvaluator()->resetStates();
+		}
+	});
 	keybindHandler.addListener("Keybinds/Editing/Copy", [this]() { circuitView->getEventRegister().doEvent(Event("Copy")); });
 	keybindHandler.addListener("Keybinds/Editing/Rotate CCW", [this]() { circuitView->getEventRegister().doEvent(Event("Tool Rotate Block CCW")); });
 	keybindHandler.addListener("Keybinds/Editing/Rotate CW", [this]() { circuitView->getEventRegister().doEvent(Event("Tool Rotate Block CW")); });

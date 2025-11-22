@@ -21,14 +21,7 @@ LogicSimulator::LogicSimulator(
 
 	extendDataVectors(simulator_id_t(4));
 
-	statesA[0] = logic_state_t::LOW;
-	statesB[0] = logic_state_t::LOW;
-	statesA[1] = logic_state_t::HIGH;
-	statesB[1] = logic_state_t::HIGH;
-	statesA[2] = logic_state_t::FLOATING;
-	statesB[2] = logic_state_t::FLOATING;
-	statesA[3] = logic_state_t::UNDEFINED;
-	statesB[3] = logic_state_t::UNDEFINED;
+	resetStates();
 	simulationThread = std::thread(&LogicSimulator::simulationLoop, this);
 }
 
@@ -193,6 +186,40 @@ void LogicSimulator::setState(simulator_id_t id, logic_state_t st) {
 		pendingStateChanges.push({ id, st });
 		cv.notify_one();
 	}
+}
+
+void LogicSimulator::resetStates() {
+	std::unique_lock lkMain(mainDataMutex);
+	std::unique_lock lkA(statesAMutex);
+	for (simulator_id_t id : statesA.ids()) {
+		statesA[id] = logic_state_t::UNDEFINED;
+		statesB[id] = logic_state_t::UNDEFINED;
+	}
+	statesA[0] = logic_state_t::LOW;
+	statesB[0] = logic_state_t::LOW;
+	statesA[1] = logic_state_t::HIGH;
+	statesB[1] = logic_state_t::HIGH;
+	statesA[2] = logic_state_t::FLOATING;
+	statesB[2] = logic_state_t::FLOATING;
+	statesA[3] = logic_state_t::UNDEFINED;
+	statesB[3] = logic_state_t::UNDEFINED;
+	auto resetGateStates = [this](auto& gates) {
+		for (auto& gate : gates) {
+			gate.resetState(evalConfig.isRealistic(), statesA);
+			gate.resetState(evalConfig.isRealistic(), statesB);
+		}
+		};
+	resetGateStates(andGates);
+	resetGateStates(xorGates);
+	resetGateStates(junctions);
+	resetGateStates(buffers);
+	resetGateStates(singleBuffers);
+	resetGateStates(tristateBuffers);
+	resetGateStates(constantGates);
+	resetGateStates(constantResetGates);
+	resetGateStates(copySelfOutputGates);
+	resetGateStates(portsToIntGates);
+	for (auto& junction : junctions) junction.doubleTick(statesA, statesB);
 }
 
 logic_state_t LogicSimulator::getState(simulator_id_t id) const {
