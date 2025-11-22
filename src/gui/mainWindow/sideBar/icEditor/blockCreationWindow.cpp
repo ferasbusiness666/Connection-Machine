@@ -520,6 +520,27 @@ void BlockCreationWindow::addListItem(
 	}
 
 	Rml::ElementPtr row = document->CreateElement("div");
+	row->AddEventListener(Rml::EventId::Mouseover, new EventPasser([this, row=row.get()](Rml::Event& event) {
+		if (event.GetTargetElement() != row) return;
+		elementCreator.reset();
+		try {
+			Rml::ElementList elements;
+			row->GetElementsByClassName(elements, "connection-list-item-pos-x");
+			if (elements.empty()) return;
+			coordinate_t x = std::stoi(rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->GetValue());
+			elements.clear();
+			row->GetElementsByClassName(elements, "connection-list-item-pos-y");
+			if (elements.empty()) return;
+			coordinate_t y = std::stoi(rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->GetValue());
+			elementCreator.emplace(mainWindow.getActiveCircuitViewWidget()->getCircuitView()->getViewportId());
+			elementCreator.value().addSelectionElement(SelectionElement(Position(x, y), Position(x, y)));
+		} catch (const std::exception& e) {}
+	}));
+	row->AddEventListener(Rml::EventId::Mouseout, new EventPasser([this, row=row.get()](Rml::Event& event) {
+		if (event.GetTargetElement() != row) return;
+		elementCreator.reset();
+	}));
+
 	// name
 	Rml::XMLAttributes nameAttributes;
 	nameAttributes["type"] = "text";

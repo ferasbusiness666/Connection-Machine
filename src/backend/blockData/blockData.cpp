@@ -15,8 +15,12 @@ void BlockData::setDefaultData(bool defaultData) noexcept {
 			dataUpdateEventManager.sendEvent<std::pair<BlockType, Size>>("preBlockSizeChange", { blockType, Size(1) });
 			sentPre = true;
 		}
-		dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, BlockData::ConnectionData::PortType>>("preBlockDataSetConnection", { blockType, connection_end_id_t(0), BlockData::ConnectionData::PortType::INPUT });
-		dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, BlockData::ConnectionData::PortType>>("preBlockDataSetConnection", { blockType, connection_end_id_t(1), BlockData::ConnectionData::PortType::OUTPUT });
+		dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, BlockData::ConnectionData::PortType>>(
+			"preBlockDataSetConnection", { blockType, connection_end_id_t(0), BlockData::ConnectionData::PortType::INPUT }
+		);
+		dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, BlockData::ConnectionData::PortType>>(
+			"preBlockDataSetConnection", { blockType, connection_end_id_t(1), BlockData::ConnectionData::PortType::OUTPUT }
+		);
 	}
 	this->defaultData = defaultData;
 	blockSize = Size(1);
