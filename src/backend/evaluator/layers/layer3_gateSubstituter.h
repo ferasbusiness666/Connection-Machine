@@ -113,6 +113,8 @@ public:
 		middleIdProvider(middleIdProvider),
 		blockDataManager(blockDataManager) {}
 
+	void resetStates() { replacer.resetStates(); }
+
 	void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
 #ifdef TRACY_PROFILER
 		ZoneScoped;

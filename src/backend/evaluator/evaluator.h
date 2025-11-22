@@ -88,7 +88,7 @@ public:
 	inline evaluator_id_t getEvaluatorId() const { return evaluatorId; }
 	std::string getEvaluatorName() const;
 
-	void reset();
+	void resetStates();
 	void setPause(bool pause) { evalConfig.setRunning(!pause); }
 	bool isPause() const { return !evalConfig.isRunning(); }
 	void addSprint(unsigned int nTicks) { evalConfig.addSprint(nTicks); }

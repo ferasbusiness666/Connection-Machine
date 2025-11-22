@@ -61,6 +61,8 @@ public:
 	double getAverageTickrate() const;
 	void setState(simulator_id_t id, logic_state_t state);
 
+	void resetStates();
+
 	logic_state_t getState(simulator_id_t id) const;
 	std::vector<logic_state_t> getStates(const std::vector<simulator_id_t>& ids) const;
 	std::optional<simulator_id_t> getOutputPortId(simulator_id_t simId, connection_end_id_t portId) const;

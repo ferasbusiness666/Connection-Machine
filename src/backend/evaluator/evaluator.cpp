@@ -1613,7 +1613,9 @@ nlohmann::json Evaluator::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 		stateJson["circuitNodeToBlockTypeMap"][circuitNode.toString()] = blocktype_to_string(blockType);
 	}
 
-
-
 	return stateJson;
+}
+
+void Evaluator::resetStates() {
+	evalSimulator->resetStates();
 }
