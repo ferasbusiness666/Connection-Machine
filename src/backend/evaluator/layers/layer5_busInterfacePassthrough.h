@@ -21,6 +21,12 @@ public:
 #ifdef TRACY_PROFILER
 		ZoneScoped;
 #endif
+		if (gateId == 466) {
+			logInfo("Adding gate {} of type {}", "BusInterfacePassthrough::addGate", gateId, blocktype_to_string(blockType));
+			if (blockType == BlockType::JUNCTION) {
+				logInfo("It's a junction!", "BusInterfacePassthrough::addGate");
+			}
+		}
 		BlockData* blockData = blockDataManager.getBlockData(blockType);
 		if (blockData->isBus()) {
 			busInterfaces[gateId] = blockType;

@@ -140,6 +140,7 @@ TEST_P(BasicFuzzingEvaluatorTest, FuzzInteractions) {
 		logInfo("Saved fuzzing circuit to " + savePath.string(), "BasicFuzzingEvaluatorTest");
 	}
 
+	logInfo("Creating reference evaluator", "BasicFuzzingEvaluatorTest");
 	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuit->getCircuitId()).value();
 	rEval = environment.getBackend().getEvaluator(evalId);
 	rEval->setRealistic(runRealistic);

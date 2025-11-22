@@ -119,6 +119,10 @@ void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, int layer, int junctionOv
 	Replacement& replacement = makeReplacement(layer);
 	middle_id_t newJunctionId = replacement.getNewId();
 	replacement.addGate(pauseGuard, BlockType::JUNCTION, newJunctionId);
+	existingJunctionIds.insert(newJunctionId);
+	replacement.addRevertAction([this, newJunctionId]() {
+		existingJunctionIds.erase(newJunctionId);
+	});
 	std::queue<BlockLane> mergeQueue;
 	std::unordered_set<BlockLane, BlockLane::Hash> visited;
 	mergeQueue.push({ id, laneId });
@@ -240,6 +244,11 @@ void Replacer::mergeJunctions(SimPauseGuard& pauseGuard, int layer) {
 		}
 		JunctionFloodFillResult floodFillResult = junctionFloodFill(id);
 
+		if (id == 446) {
+			nlohmann::json debugJson = floodFillResult.dumpState();
+			logInfo("Initial flood fill state: {}", "Replacer::junctionFloodFill", debugJson.dump(4));
+		}
+
 		Replacement& replacement = makeReplacement(layer);
 		if (floodFillResult.outputsGoingIntoJunctions.size() == 0 && floodFillResult.defaultState == logic_state_t::FLOATING) {
 #ifdef TRACY_PROFILER
@@ -309,6 +318,9 @@ Replacer::JunctionFloodFillResult Replacer::junctionFloodFill(middle_id_t juncti
 #ifdef TRACY_PROFILER
 	ZoneScoped;
 #endif
+	if (junctionId == 446) {
+		logInfo("Starting flood fill for junction {}", "Replacer::junctionFloodFill", junctionId);
+	}
 	JunctionFloodFillResult result;
 	std::unordered_set<middle_id_t> visited;
 	std::unordered_set<EvalConnectionPoint> visitedOutputs;
@@ -321,11 +333,16 @@ Replacer::JunctionFloodFillResult Replacer::junctionFloodFill(middle_id_t juncti
 		ZoneScopedN("junctionFloodFill: per junction");
 #endif
 		middle_id_t currentId = queue.front();
+		if (junctionId == 446) logInfo("Visiting junction {}", "Replacer::junctionFloodFill", currentId);
 		queue.pop();
 		result.junctionIds.push_back(currentId);
 		std::pair<const std::vector<EvalConnection>&, std::vector<EvalConnection>> outputs = busInterfacePassthrough.getOutputs(currentId);
 		std::pair<const std::vector<EvalConnection>&, std::vector<EvalConnection>> inputs = busInterfacePassthrough.getInputs(currentId);
+		if (junctionId == 446) {
+			logInfo("Junction {} has {} outputs and {} inputs", "Replacer::junctionFloodFill", currentId, outputs.first.size() + outputs.second.size(), inputs.first.size() + inputs.second.size());
+		}
 		BlockType currentBlockType = busInterfacePassthrough.getBlockType(currentId);
+		if (junctionId == 446) logInfo("Junction {} is of type {}", "Replacer::junctionFloodFill", currentId, blocktype_to_string(currentBlockType));
 		if (currentBlockType == BlockType::JUNCTION_L) {
 			if (defaultState == logic_state_t::HIGH) {
 				defaultState = logic_state_t::UNDEFINED;

@@ -30,9 +30,15 @@ public:
 #ifdef TRACY_PROFILER
 		ZoneScoped;
 #endif
+		if (gateId == middle_id_t(446)) {
+			logInfo("Adding gate {} of type {}", "Replacer::addGate", gateId, blocktype_to_string(blockType));
+		}
 		busInterfacePassthrough.addGate(pauseGuard, blockType, gateId);
 		if (isJunctionType(blockType)) {
 			existingJunctionIds.insert(gateId);
+			if (gateId == middle_id_t(446)) {
+				logInfo("Registered junction {}", "Replacer::addGate", gateId);
+			}
 		}
 	}
 
@@ -153,6 +159,28 @@ private:
 		// connections that are connected to the junctions through the outputs of other gates
 		// A -> JUNCTION, A -> B, A -> B is a connection to reroute because B should actually pull from the junction
 		logic_state_t defaultState { logic_state_t::FLOATING };
+
+		nlohmann::json dumpState() const {
+			nlohmann::json stateJson;
+			stateJson["outputsGoingIntoJunctions"] = nlohmann::json::array();
+			for (const EvalConnectionPoint& point : outputsGoingIntoJunctions) {
+				stateJson["outputsGoingIntoJunctions"].push_back(point.dumpState());
+			}
+			stateJson["inputsPullingFromJunctions"] = nlohmann::json::array();
+			for (const EvalConnection& conn : inputsPullingFromJunctions) {
+				stateJson["inputsPullingFromJunctions"].push_back(conn.dumpState());
+			}
+			stateJson["junctionIds"] = nlohmann::json::array();
+			for (const middle_id_t& id : junctionIds) {
+				stateJson["junctionIds"].push_back(id.get());
+			}
+			stateJson["connectionsToReroute"] = nlohmann::json::array();
+			for (const EvalConnection& conn : connectionsToReroute) {
+				stateJson["connectionsToReroute"].push_back(conn.dumpState());
+			}
+			stateJson["defaultState"] = static_cast<uint8_t>(defaultState);
+			return stateJson;
+		}
 	};
 
 	struct BusFloodFillResult {
