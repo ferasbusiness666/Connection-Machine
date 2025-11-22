@@ -119,6 +119,10 @@ void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, int layer, int junctionOv
 	Replacement& replacement = makeReplacement(layer);
 	middle_id_t newJunctionId = replacement.getNewId();
 	replacement.addGate(pauseGuard, BlockType::JUNCTION, newJunctionId);
+	existingJunctionIds.insert(newJunctionId);
+	replacement.addRevertAction([this, newJunctionId]() {
+		existingJunctionIds.erase(newJunctionId);
+	});
 	std::queue<BlockLane> mergeQueue;
 	std::unordered_set<BlockLane, BlockLane::Hash> visited;
 	mergeQueue.push({ id, laneId });
