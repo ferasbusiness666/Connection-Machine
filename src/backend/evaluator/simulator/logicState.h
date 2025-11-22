@@ -8,7 +8,7 @@ enum class logic_state_t : std::uint8_t {
 	UNDEFINED = 3
 };
 
-inline std::string logicstate_to_string(logic_state_t state) {
+inline std::string logicstate_to_string(logic_state_t state) /* GCOVR_EXCL_FUNCTION */ {
 	switch (state) {
 		case logic_state_t::LOW:
 			return "L";
