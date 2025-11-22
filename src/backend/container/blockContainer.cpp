@@ -429,8 +429,8 @@ bool BlockContainer::tryRemoveConnection(ConnectionEnd connectionEndB, Connectio
 		assert(blockB);
 		bool secondSuc = blockB->getConnectionContainer().tryRemoveConnection(connectionEndB.getConnectionId(), connectionEndA);
 		assert(secondSuc);
-		BlockData::ConnectionData::PortType portAType = blockDataManager.getBlockData(blockA->type())->getConnectionPortType(connectionEndA.getConnectionId());
-		BlockData::ConnectionData::PortType portBType = blockDataManager.getBlockData(blockB->type())->getConnectionPortType(connectionEndB.getConnectionId());
+		BlockData::ConnectionData::PortType portAType = blockA->getConnectionPortType(connectionEndA.getConnectionId());
+		BlockData::ConnectionData::PortType portBType = blockB->getConnectionPortType(connectionEndB.getConnectionId());
 		if (portAType == BlockData::ConnectionData::PortType::INPUT || portBType == BlockData::ConnectionData::PortType::OUTPUT) {
 			difference->addRemovedConnection(
 				blockB->getPosition(), blockB->getConnectionPosition(connectionEndB.getConnectionId()).value(),
@@ -477,13 +477,59 @@ bool BlockContainer::tryRemoveConnection(Position outputPosition, Position input
 	return false;
 }
 
-void BlockContainer::addConnectionPort(BlockType blockType, connection_end_id_t endId, Difference* difference) { } // do nothing because the connection containers use hashes rn
+void BlockContainer::addConnectionPort(BlockType blockType, connection_end_id_t endId, BlockData::ConnectionData::PortType portType, Difference* difference) {
+	if (portType == BlockData::ConnectionData::PortType::BIDIRECTIONAL) {
+		return; // if its becoming bidirectional then any existing connection will still be valid
+	}
+	if (blockTypeCounts.size() <= blockType || blockTypeCounts[blockType] == 0) return;
+	BlockData::ConnectionData::PortType oldPortType = blockDataManager.getBlockData(blockType)->getConnectionPortType(endId);
+	if (oldPortType == BlockData::ConnectionData::PortType::NONE) {
+		return; // if it did not have a port before nothing needs to be updated
+	}
+	if (oldPortType == portType) {
+		return; // port type did not update
+	}
+	for (auto& pair : blocks) {
+		Block& block = pair.second;
+		if (block.type() != blockType) continue;
+		// block.
+		std::optional<Position> connectionPosition = block.getConnectionPosition(endId);
+		assert(connectionPosition);
+		auto connections = block.getConnectionContainer().getConnections(endId);
+		if (!connections) continue;
+		const std::unordered_set<ConnectionEnd> connectionsCopy = *connections;
+		for (auto& connectionEnd : connectionsCopy) {
+			Block* otherBlock = getBlock_(connectionEnd.getBlockId());
+			if (otherBlock->type() == blockType && connectionEnd.getConnectionId() == endId) {
+				assert(oldPortType == BlockData::ConnectionData::PortType::BIDIRECTIONAL); // should never happen otherwise
+				difference->addRemovedConnection(
+					otherBlock->getPosition(), otherBlock->getConnectionPosition(connectionEnd.getConnectionId()).value(),
+					block.getPosition(), connectionPosition.value()
+				);
+			} else {
+				BlockData::ConnectionData::PortType otherPortType = otherBlock->getConnectionPortType(connectionEnd.getConnectionId());
+				if (otherPortType == BlockData::ConnectionData::PortType::BIDIRECTIONAL || otherPortType != portType) continue;
+				if (oldPortType == BlockData::ConnectionData::PortType::INPUT || otherPortType == BlockData::ConnectionData::PortType::OUTPUT) {
+					difference->addRemovedConnection(
+						otherBlock->getPosition(), otherBlock->getConnectionPosition(connectionEnd.getConnectionId()).value(),
+						block.getPosition(), connectionPosition.value()
+					);
+				} else {
+					difference->addCreatedConnection(
+						block.getPosition(), connectionPosition.value(),
+						otherBlock->getPosition(), otherBlock->getConnectionPosition(connectionEnd.getConnectionId()).value()
+					);
+				}
+			}
+		}
+	}
+}
 
 void BlockContainer::setConnectionPortBitwidth(BlockType blockType, connection_end_id_t endId, unsigned int bitwidth, Difference* difference) {
 	if (blockTypeCounts.size() <= blockType || blockTypeCounts[blockType] == 0) return;
 	BlockData::ConnectionData::PortType portType = blockDataManager.getBlockData(blockType)->getConnectionPortType(endId);
 	if (portType == BlockData::ConnectionData::PortType::NONE) {
-		logError("Called removeConnectionPort on non existent port id {} for block type {}", "BlockContainer", endId, blockType);
+		logError("Called setConnectionPortBitwidth on non existent port id {} for block type {}", "BlockContainer", endId, blockType);
 		return;
 	}
 	for (auto& pair : blocks) {
@@ -508,7 +554,7 @@ void BlockContainer::setConnectionPortBitwidth(BlockType blockType, connection_e
 				if (block.getConnectionContainer().tryRemoveConnection(endId, connectionEnd)) {
 					bool secondSuc = otherBlock->getConnectionContainer().tryRemoveConnection(connectionEnd.getConnectionId(), ConnectionEnd(block.id(), endId));
 					assert(secondSuc);
-					BlockData::ConnectionData::PortType otherPortType = blockDataManager.getBlockData(otherBlock->type())->getConnectionPortType(connectionEnd.getConnectionId());
+					BlockData::ConnectionData::PortType otherPortType = otherBlock->getConnectionPortType(connectionEnd.getConnectionId());
 					if (portType == BlockData::ConnectionData::PortType::INPUT || otherPortType == BlockData::ConnectionData::PortType::OUTPUT) {
 						difference->addRemovedConnection(
 							otherBlock->getPosition(), otherBlock->getConnectionPosition(connectionEnd.getConnectionId()).value(),
@@ -547,7 +593,7 @@ void BlockContainer::removeConnectionPort(BlockType blockType, connection_end_id
 				assert(otherBlock);
 				bool secondSuc = otherBlock->getConnectionContainer().tryRemoveConnection(connectionEnd.getConnectionId(), ConnectionEnd(block.id(), endId));
 				assert(secondSuc);
-				BlockData::ConnectionData::PortType otherPortType = blockDataManager.getBlockData(otherBlock->type())->getConnectionPortType(connectionEnd.getConnectionId());
+				BlockData::ConnectionData::PortType otherPortType = otherBlock->getConnectionPortType(connectionEnd.getConnectionId());
 				if (portType == BlockData::ConnectionData::PortType::INPUT || otherPortType == BlockData::ConnectionData::PortType::OUTPUT) {
 					difference->addRemovedConnection(
 						otherBlock->getPosition(), otherBlock->getConnectionPosition(connectionEnd.getConnectionId()).value(),

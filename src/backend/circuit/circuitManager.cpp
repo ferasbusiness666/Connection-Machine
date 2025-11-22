@@ -245,6 +245,7 @@ void CircuitManager::updateExistingCircuit(circuit_id_t id, const GeneratedCircu
 	if (!circuitBlockData) {
 		circuitBlockDataManager.newCircuitBlockData(id, blockType);
 		circuit->setBlockType(blockType);
+		circuitBlockData = circuitBlockDataManager.getCircuitBlockData(id);
 	}
 
 	if (!circuitBlockData) {

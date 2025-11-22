@@ -624,13 +624,13 @@ void Circuit::addConnectionPort(const DataUpdateEventManager::EventData* eventDa
 		logError("eventData passed was null", "Circuit");
 		return;
 	}
-	auto data = eventData->cast<std::pair<BlockType, connection_end_id_t>>();
+	auto data = eventData->cast<std::tuple<BlockType, connection_end_id_t, BlockData::ConnectionData::PortType>>();
 	if (!data) {
 		logError("Could not get std::pair<BlockType, connection_end_id_t> from eventData", "Circuit");
 		return;
 	}
 	DifferenceSharedPtr difference = std::make_shared<Difference>();
-	blockContainer.addConnectionPort(data->get().first, data->get().second, difference.get());
+	blockContainer.addConnectionPort(std::get<0>(data->get()), std::get<1>(data->get()), std::get<2>(data->get()), difference.get());
 	sendDifference(std::move(difference));
 }
 

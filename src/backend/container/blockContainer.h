@@ -86,7 +86,7 @@ public:
 	// Trys to remove a connection. Returns if successful. Pass a Difference* to read the what changes were made.
 	bool tryRemoveConnection(Position outputPosition, Position inputPosition, Difference* difference);
 	// Sets up connection containers to have the new end id
-	void addConnectionPort(BlockType blockType, connection_end_id_t endId, Difference* difference);
+	void addConnectionPort(BlockType blockType, connection_end_id_t endId, BlockData::ConnectionData::PortType portType, Difference* difference);
 	// Removes all connects made to port that are a invalide bitwidth
 	void setConnectionPortBitwidth(BlockType blockType, connection_end_id_t endId, unsigned int bitwidth, Difference* difference);
 	// Removes all connects and set connection containers to not have the end id
