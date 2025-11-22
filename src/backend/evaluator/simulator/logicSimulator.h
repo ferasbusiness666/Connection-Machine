@@ -22,7 +22,7 @@ enum class SimGateType : int {
 	PORTS_TO_INT = 9
 };
 
-inline std::string simgatetype_to_string(SimGateType type) {
+inline std::string simgatetype_to_string(SimGateType type) /* GCOVR_EXCL_FUNCTION */ {
 	switch (type) {
 		case SimGateType::AND:
 			return "AND";

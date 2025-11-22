@@ -43,7 +43,7 @@ inline logic_state_t fromBool(bool value) {
 	return value ? logic_state_t::HIGH : logic_state_t::LOW;
 }
 
-inline std::string to_string(logic_state_t state) {
+inline std::string to_string(logic_state_t state) /* GCOVR_EXCL_FUNCTION */ {
 	switch (state) {
 		case logic_state_t::LOW:
 			return "L";
@@ -61,7 +61,7 @@ inline std::string to_string(logic_state_t state) {
 namespace fmt{
 	template <>
 	struct formatter<logic_state_t> : formatter<std::string> {
-		auto format(logic_state_t state, format_context& ctx) const {
+		auto format(logic_state_t state, format_context& ctx) const /* GCOVR_EXCL_FUNCTION */ {
 			return formatter<std::string>::format(::to_string(state), ctx);
 		}
 	};
