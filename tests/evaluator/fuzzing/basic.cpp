@@ -78,6 +78,9 @@ TEST_P(BasicFuzzingEvaluatorTest, FuzzInteractions) {
 		if (operation <= 1) { // place block
 			Orientation orientation(Rotation(gen() % 4), (gen() % 2) == 0);
 			BlockType blockType = BlockType((gen() % blockDataManager.maxBlockId()) + 1);
+			if (!blockDataManager.blockExists(blockType)) {
+				continue;
+			}
 			Position pos(distPos(gen), distPos(gen));
 			bool success = circuit->tryInsertBlock(pos, orientation, blockType);
 			if (!success) continue;
@@ -213,13 +216,11 @@ TEST_P(BasicFuzzingEvaluatorTest, FuzzInteractions) {
 
 	ASSERT_EQ(simulatorIdsTest.size(), simulatorIdsRef.size());
 	for (int i = 0; i < numTestOperations; ++i) {
-		logInfo("Starting test operation {} of {}", "BasicFuzzingEvaluatorTest", i + 1, numTestOperations);
 		// set random states
 		for (int j = 0; j < numStatesSetPerTest; ++j) {
 			block_id_t blockId = blockIds[gen() % blockIds.size()];
 			Position pos = blockIdToPosition.at(blockId);
 			logic_state_t state = logic_state_t(gen() % 4);
-			logInfo("Setting state at block ID {} position {} to {}", "BasicFuzzingEvaluatorTest", blockId, pos.toString(), logicstate_to_string(state));
 			rEval->setState(pos, state);
 			tEval->setState(pos, state);
 		}
@@ -229,24 +230,24 @@ TEST_P(BasicFuzzingEvaluatorTest, FuzzInteractions) {
 		std::vector<logic_state_t> statesRef = rEval->getStatesFromSimulatorIds(simulatorIdsRef);
 		ASSERT_EQ(statesTest.size(), statesRef.size());
 		for (size_t k = 0; k < statesTest.size(); ++k) {
-			if (statesTest[k] != statesRef[k]) {
-				simulator_id_t testSimId = simulatorIdsTest[k];
-				simulator_id_t refSimId = simulatorIdsRef[k];
-				logInfo("Mismatch at simulator ID index {} (simulator ID test: {}, ref: {}) at p {}", "BasicFuzzingEvaluatorTest", k, testSimId.get(), refSimId.get(), ps.at(k));
-				int stepBackAmount = 6;
-				for (int m = 0; m < stepBackAmount; ++m) {
-					tEval->stepBack();
-					rEval->stepBack();
-				}
-				for (size_t m = 0; m < stepBackAmount; ++m) {
-					logInfo("After stepping back {} ticks:", "BasicFuzzingEvaluatorTest", stepBackAmount - m);
-					logic_state_t stateTest = tEval->getStateFromSimulatorId(testSimId);
-					logic_state_t stateRef = rEval->getStateFromSimulatorId(refSimId);
-					logInfo("  Test evaluator state: {}, Reference evaluator state: {}", "BasicFuzzingEvaluatorTest", logicstate_to_string(stateTest), logicstate_to_string(stateRef));
-					rEval->stepForward();
-					tEval->stepForward();
-				}
-			}
+			// if (statesTest[k] != statesRef[k]) {
+			// 	simulator_id_t testSimId = simulatorIdsTest[k];
+			// 	simulator_id_t refSimId = simulatorIdsRef[k];
+			// 	logInfo("Mismatch at simulator ID index {} (simulator ID test: {}, ref: {}) at p {}", "BasicFuzzingEvaluatorTest", k, testSimId.get(), refSimId.get(), ps.at(k));
+			// 	int stepBackAmount = 6;
+			// 	for (int m = 0; m < stepBackAmount; ++m) {
+			// 		tEval->stepBack();
+			// 		rEval->stepBack();
+			// 	}
+			// 	for (size_t m = 0; m < stepBackAmount; ++m) {
+			// 		logInfo("After stepping back {} ticks:", "BasicFuzzingEvaluatorTest", stepBackAmount - m);
+			// 		logic_state_t stateTest = tEval->getStateFromSimulatorId(testSimId);
+			// 		logic_state_t stateRef = rEval->getStateFromSimulatorId(refSimId);
+			// 		logInfo("  Test evaluator state: {}, Reference evaluator state: {}", "BasicFuzzingEvaluatorTest", logicstate_to_string(stateTest), logicstate_to_string(stateRef));
+			// 		rEval->stepForward();
+			// 		tEval->stepForward();
+			// 	}
+			// }
 			ASSERT_EQ(statesTest[k], statesRef[k]) << "Mismatch at simulator ID index " << k << " at p " << ps.at(k);
 		}
 
@@ -259,24 +260,24 @@ TEST_P(BasicFuzzingEvaluatorTest, FuzzInteractions) {
 		statesRef = rEval->getStatesFromSimulatorIds(simulatorIdsRef);
 		ASSERT_EQ(statesTest.size(), statesRef.size());
 		for (size_t k = 0; k < statesTest.size(); ++k) {
-			if (statesTest[k] != statesRef[k]) {
-				simulator_id_t testSimId = simulatorIdsTest[k];
-				simulator_id_t refSimId = simulatorIdsRef[k];
-				logInfo("Mismatch at simulator ID index {} (simulator ID test: {}, ref: {}) at p {}", "BasicFuzzingEvaluatorTest", k, testSimId.get(), refSimId.get(), ps.at(k));
-				int stepBackAmount = 6;
-				for (int m = 0; m < stepBackAmount; ++m) {
-					tEval->stepBack();
-					rEval->stepBack();
-				}
-				for (size_t m = 0; m < stepBackAmount; ++m) {
-					logInfo("After stepping back {} ticks:", "BasicFuzzingEvaluatorTest", stepBackAmount - m);
-					logic_state_t stateTest = tEval->getStateFromSimulatorId(testSimId);
-					logic_state_t stateRef = rEval->getStateFromSimulatorId(refSimId);
-					logInfo("  Test evaluator state: {}, Reference evaluator state: {}", "BasicFuzzingEvaluatorTest", logicstate_to_string(stateTest), logicstate_to_string(stateRef));
-					rEval->stepForward();
-					tEval->stepForward();
-				}
-			}
+			// if (statesTest[k] != statesRef[k]) {
+			// 	simulator_id_t testSimId = simulatorIdsTest[k];
+			// 	simulator_id_t refSimId = simulatorIdsRef[k];
+			// 	logInfo("Mismatch at simulator ID index {} (simulator ID test: {}, ref: {}) at p {}", "BasicFuzzingEvaluatorTest", k, testSimId.get(), refSimId.get(), ps.at(k));
+			// 	int stepBackAmount = 6;
+			// 	for (int m = 0; m < stepBackAmount; ++m) {
+			// 		tEval->stepBack();
+			// 		rEval->stepBack();
+			// 	}
+			// 	for (size_t m = 0; m < stepBackAmount; ++m) {
+			// 		logInfo("After stepping back {} ticks:", "BasicFuzzingEvaluatorTest", stepBackAmount - m);
+			// 		logic_state_t stateTest = tEval->getStateFromSimulatorId(testSimId);
+			// 		logic_state_t stateRef = rEval->getStateFromSimulatorId(refSimId);
+			// 		logInfo("  Test evaluator state: {}, Reference evaluator state: {}", "BasicFuzzingEvaluatorTest", logicstate_to_string(stateTest), logicstate_to_string(stateRef));
+			// 		rEval->stepForward();
+			// 		tEval->stepForward();
+			// 	}
+			// }
 			ASSERT_EQ(statesTest[k], statesRef[k]) << "Mismatch at simulator ID index " << k << " at p " << ps.at(k);
 		}
 	}
@@ -285,6 +286,6 @@ TEST_P(BasicFuzzingEvaluatorTest, FuzzInteractions) {
 INSTANTIATE_TEST_SUITE_P(
 	RandomSeeds,
 	BasicFuzzingEvaluatorTest,
-	// ::testing::Range(uint64_t(0), uint64_t(10))
-	::testing::Values(uint64_t(3))
+	::testing::Range(uint64_t(0), uint64_t(10))
+	// ::testing::Values(uint64_t(3))
 );
