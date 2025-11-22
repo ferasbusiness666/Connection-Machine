@@ -154,6 +154,13 @@ void LogicSimulator::processPendingStateChanges() {
 			const StateChange& change = localQueue.front();
 
 			extendDataVectors(change.id);
+			if (!gateLocations.contains(change.id)) {
+				continue;
+			}
+			GateLocation& gateLocation = gateLocations.at(change.id);
+			if (gateLocation.gateType == SimGateType::CONSTANT) {
+				continue;
+			}
 
 			statesA[change.id] = change.state;
 			statesB[change.id] = change.state;
@@ -172,11 +179,19 @@ void LogicSimulator::setState(simulator_id_t id, logic_state_t st) {
 		return;
 	}
 	// we don't want to freeze up if the mutexes are locked, so we'll only set the state if we can successfully lock. otherwise, we'll wait until the next tick to set the states.
+
 	std::unique_lock lkMain(mainDataMutex, std::try_to_lock);
 	std::unique_lock lkA(statesAMutex, std::try_to_lock);
 
 	if (lkMain.owns_lock() && lkA.owns_lock()) {
 		extendDataVectors(id);
+		if (!gateLocations.contains(id)) {
+			return;
+		}
+		GateLocation& gateLocation = gateLocations.at(id);
+		if (gateLocation.gateType == SimGateType::CONSTANT) {
+			return;
+		}
 		statesA[id] = st;
 		statesB[id] = st;
 		setStateUsed[replayHead] = true;

@@ -1,5 +1,4 @@
 cmake --build --preset tests
 if %ERRORLEVEL% == 0 (
-    rm -r coverage
-    call .\opencpp_coverage.cmd
+    call "build-tests/Debug/Connection_Machine_tests.exe" --gtest_filter=*Fuzz*
 )
