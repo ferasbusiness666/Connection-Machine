@@ -158,7 +158,7 @@ void LogicSimulator::processPendingStateChanges() {
 				continue;
 			}
 			GateLocation& gateLocation = gateLocations.at(change.id);
-			if (gateLocation.gateType == SimGateType::CONSTANT) {
+			if (gateLocation.gateType == SimGateType::CONSTANT || gateLocation.gateType == SimGateType::JUNCTION) {
 				continue;
 			}
 
@@ -189,7 +189,7 @@ void LogicSimulator::setState(simulator_id_t id, logic_state_t st) {
 			return;
 		}
 		GateLocation& gateLocation = gateLocations.at(id);
-		if (gateLocation.gateType == SimGateType::CONSTANT) {
+		if (gateLocation.gateType == SimGateType::CONSTANT || gateLocation.gateType == SimGateType::JUNCTION) {
 			return;
 		}
 		statesA[id] = st;
