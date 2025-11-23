@@ -33,16 +33,18 @@ public:
 			block_id_t internalBlockId,
 			connection_end_id_t internalBlockConnectionEndId,
 			const std::string& portName,
+			FVector portOffset = FVector(0.5),
 			unsigned int bitWidth = 1
 		) :
 			isInput(isInput), connectionEndId(connectionEndId), positionOnBlock(positionOnBlock), internalBlockId(internalBlockId),
-			internalBlockConnectionEndId(internalBlockConnectionEndId), portName(portName), bitWidth(bitWidth) { }
+			internalBlockConnectionEndId(internalBlockConnectionEndId), portName(portName), portOffset(portOffset), bitWidth(bitWidth) { }
 		bool isInput;
 		connection_end_id_t connectionEndId;
 		Vector positionOnBlock;
 		block_id_t internalBlockId;
 		connection_end_id_t internalBlockConnectionEndId;
 		std::string portName;
+		FVector portOffset;
 		unsigned int bitWidth;
 	};
 
@@ -53,9 +55,11 @@ public:
 		block_id_t internalBlockId,
 		connection_end_id_t internalBlockConnectionEndId,
 		const std::string& portName,
+		FVector portOffset = FVector(0.5f),
 		unsigned int bitWidth = 1
 	);
 	void setConnectionPortBitWidth(connection_end_id_t connectionEndId, unsigned int bitWidth);
+	void setConnectionPortOffset(connection_end_id_t connectionEndId, FVector offset);
 	const std::vector<ConnectionPort>& getConnectionPorts() const { return ports; }
 
 	block_id_t addBlock(Position pos, Orientation orientation, BlockType type);

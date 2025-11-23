@@ -79,7 +79,7 @@ void BlockDataManager::initializeDefaults() {
 	buttonBlockData->setName("Button");
 	buttonBlockData->setDefaultData(false);
 	buttonBlockData->setConnectionOutput(Vector(0), connection_end_id_t(0));
-	buttonBlockData->setConnnectionPortOffset(connection_end_id_t(0), FVector(0.5f + edgeDistance, 0.5f + sideShift));
+	buttonBlockData->setConnectionPortOffset(connection_end_id_t(0), FVector(0.5f + edgeDistance, 0.5f + sideShift));
 	buttonBlockData->setTexturePath(mainTexturePath);
 	buttonBlockData->setUsesTileMapTexture(true);
 	buttonBlockData->setTextureTileSize({ 256, 256 });
@@ -90,7 +90,7 @@ void BlockDataManager::initializeDefaults() {
 	tickButtonBlockData->setName("Tick Button");
 	tickButtonBlockData->setDefaultData(false);
 	tickButtonBlockData->setConnectionOutput(Vector(0), connection_end_id_t(0));
-	tickButtonBlockData->setConnnectionPortOffset(connection_end_id_t(0), FVector(0.5f + edgeDistance, 0.5f + sideShift));
+	tickButtonBlockData->setConnectionPortOffset(connection_end_id_t(0), FVector(0.5f + edgeDistance, 0.5f + sideShift));
 	tickButtonBlockData->setTexturePath(mainTexturePath);
 	tickButtonBlockData->setUsesTileMapTexture(true);
 	tickButtonBlockData->setTextureTileSize({ 256, 256 });
@@ -101,7 +101,7 @@ void BlockDataManager::initializeDefaults() {
 	switchBlockData->setName("Switch");
 	switchBlockData->setDefaultData(false);
 	switchBlockData->setConnectionOutput(Vector(0), connection_end_id_t(0));
-	switchBlockData->setConnnectionPortOffset(connection_end_id_t(0), FVector(0.5f + edgeDistance, 0.5f + sideShift));
+	switchBlockData->setConnectionPortOffset(connection_end_id_t(0), FVector(0.5f + edgeDistance, 0.5f + sideShift));
 	switchBlockData->setTexturePath(mainTexturePath);
 	switchBlockData->setUsesTileMapTexture(true);
 	switchBlockData->setTextureTileSize({ 256, 256 });
@@ -112,7 +112,7 @@ void BlockDataManager::initializeDefaults() {
 	constantOffBlockData->setName("Constant");
 	constantOffBlockData->setDefaultData(false);
 	constantOffBlockData->setConnectionOutput(Vector(0), connection_end_id_t(0));
-	constantOffBlockData->setConnnectionPortOffset(connection_end_id_t(0), FVector(0.5f + edgeDistance, 0.5f + sideShift));
+	constantOffBlockData->setConnectionPortOffset(connection_end_id_t(0), FVector(0.5f + edgeDistance, 0.5f + sideShift));
 	constantOffBlockData->setTexturePath(mainTexturePath);
 	constantOffBlockData->setUsesTileMapTexture(true);
 	constantOffBlockData->setTextureTileSize({ 256, 256 });
@@ -124,7 +124,7 @@ void BlockDataManager::initializeDefaults() {
 	constantOnBlockData->setDefaultData(false);
 	constantOnBlockData->setIsPlaceable(false);
 	constantOnBlockData->setConnectionOutput(Vector(0), connection_end_id_t(0));
-	constantOnBlockData->setConnnectionPortOffset(connection_end_id_t(0), FVector(0.5f + edgeDistance, 0.5f + sideShift));
+	constantOnBlockData->setConnectionPortOffset(connection_end_id_t(0), FVector(0.5f + edgeDistance, 0.5f + sideShift));
 	constantOnBlockData->setTexturePath(mainTexturePath);
 	constantOnBlockData->setUsesTileMapTexture(true);
 	constantOnBlockData->setTextureTileSize({ 256, 256 });
@@ -136,7 +136,7 @@ void BlockDataManager::initializeDefaults() {
 	constantZBlockData->setDefaultData(false);
 	constantZBlockData->setIsPlaceable(false);
 	constantZBlockData->setConnectionOutput(Vector(0), connection_end_id_t(0));
-	constantZBlockData->setConnnectionPortOffset(connection_end_id_t(0), FVector(0.5f + edgeDistance, 0.5f + sideShift));
+	constantZBlockData->setConnectionPortOffset(connection_end_id_t(0), FVector(0.5f + edgeDistance, 0.5f + sideShift));
 	constantZBlockData->setTexturePath(mainTexturePath);
 	constantZBlockData->setUsesTileMapTexture(true);
 	constantZBlockData->setTextureTileSize({ 256, 256 });
@@ -148,7 +148,7 @@ void BlockDataManager::initializeDefaults() {
 	constantXBlockData->setDefaultData(false);
 	constantXBlockData->setIsPlaceable(false);
 	constantXBlockData->setConnectionOutput(Vector(0), connection_end_id_t(0));
-	constantXBlockData->setConnnectionPortOffset(connection_end_id_t(0), FVector(0.5f + edgeDistance, 0.5f + sideShift));
+	constantXBlockData->setConnectionPortOffset(connection_end_id_t(0), FVector(0.5f + edgeDistance, 0.5f + sideShift));
 	constantXBlockData->setTexturePath(mainTexturePath);
 	constantXBlockData->setUsesTileMapTexture(true);
 	constantXBlockData->setTextureTileSize({ 256, 256 });
@@ -159,7 +159,7 @@ void BlockDataManager::initializeDefaults() {
 	lightBlockData->setName("Light");
 	lightBlockData->setDefaultData(false);
 	lightBlockData->setConnectionInput(Vector(0), connection_end_id_t(0));
-	lightBlockData->setConnnectionPortOffset(connection_end_id_t(0), FVector(0.5f - edgeDistance, 0.5f - sideShift));
+	lightBlockData->setConnectionPortOffset(connection_end_id_t(0), FVector(0.5f - edgeDistance, 0.5f - sideShift));
 	lightBlockData->setTexturePath(mainTexturePath);
 	lightBlockData->setUsesTileMapTexture(true);
 	lightBlockData->setTextureTileSize({ 256, 256 });
@@ -222,13 +222,13 @@ void BlockDataManager::initializeDefaults() {
 	tristateBufferBlockData->setPath("Hi-Z");
 	tristateBufferBlockData->setDefaultData(false);
 	tristateBufferBlockData->setConnectionInput(Vector(0, 1), connection_end_id_t(0));
-	tristateBufferBlockData->setConnnectionPortOffset(connection_end_id_t(0), FVector(0.5f - edgeDistance, 0.5f - sideShift));
+	tristateBufferBlockData->setConnectionPortOffset(connection_end_id_t(0), FVector(0.5f - edgeDistance, 0.5f - sideShift));
 	tristateBufferBlockData->setConnectionIdName(connection_end_id_t(0), "Data");
 	tristateBufferBlockData->setConnectionInput(Vector(0, 0), connection_end_id_t(1));
-	tristateBufferBlockData->setConnnectionPortOffset(connection_end_id_t(1), FVector(0.5f - edgeDistance, 0.5f - sideShift));
+	tristateBufferBlockData->setConnectionPortOffset(connection_end_id_t(1), FVector(0.5f - edgeDistance, 0.5f - sideShift));
 	tristateBufferBlockData->setConnectionIdName(connection_end_id_t(1), "Enable");
 	tristateBufferBlockData->setConnectionOutput(Vector(0, 1), connection_end_id_t(2));
-	tristateBufferBlockData->setConnnectionPortOffset(connection_end_id_t(2), FVector(0.5f + edgeDistance, 0.5f + sideShift));
+	tristateBufferBlockData->setConnectionPortOffset(connection_end_id_t(2), FVector(0.5f + edgeDistance, 0.5f + sideShift));
 	tristateBufferBlockData->setConnectionIdName(connection_end_id_t(2), "Output");
 	tristateBufferBlockData->setSize(Size(1, 2));
 	tristateBufferBlockData->setTexturePath(mainTexturePath);
@@ -243,7 +243,7 @@ void BlockDataManager::initializeDefaults() {
 	colorLightBlockData->setPath("Other");
 	colorLightBlockData->setDefaultData(false);
 	colorLightBlockData->setConnectionInput(Vector(0), connection_end_id_t(0));
-	colorLightBlockData->setConnnectionPortOffset(connection_end_id_t(0), FVector(0.5f - edgeDistance, 0.5f - sideShift));
+	colorLightBlockData->setConnectionPortOffset(connection_end_id_t(0), FVector(0.5f - edgeDistance, 0.5f - sideShift));
 	colorLightBlockData->setConnectionBitConfiguration(connection_end_id_t(0), std::vector<unsigned int>{ 0, 1, 2, 3, 4, 5 });
 	colorLightBlockData->setUsesTileMapTexture(true);
 	colorLightBlockData->setTexturePath((DirectoryManager::getResourceDirectory() / "colorLight.png").string());

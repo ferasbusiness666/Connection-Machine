@@ -3,6 +3,7 @@ pub const connection_end_id_t = i32;
 pub const block_size_t = u8;
 pub const block_id_t = i32;
 pub const coord_t = i32;
+pub const f_coord_t = f32;
 pub const Orientation = u8;
 
 pub extern "env" fn importFile(path: [*:0]const u8) u32;
@@ -22,6 +23,7 @@ pub extern "env" fn addConnectionInputNamed(external_port_x: coord_t, external_p
 pub extern "env" fn addConnectionOutput(external_port_x: coord_t, external_port_y: coord_t, internal_block_id: block_id_t, internal_port_id: connection_end_id_t) connection_end_id_t;
 pub extern "env" fn addConnectionOutputNamed(external_port_x: coord_t, external_port_y: coord_t, internal_block_id: block_id_t, internal_port_id: connection_end_id_t, port_name: [*:0]const u8) connection_end_id_t;
 pub extern "env" fn setConnectionPortBitWidth(connection_end_id: connection_end_id_t, bit_width: u32) void;
+pub extern "env" fn setConnectionPortOffset(connection_end_id: connection_end_id_t, xOffset: f_coord_t, yOffset: f_coord_t) void;
 
 pub extern "env" fn setSize(width: coord_t, height: coord_t) void;
 pub extern "env" fn logInfo(msg: [*:0]const u8) void;

@@ -130,7 +130,7 @@ circuit_id_t CircuitManager::createNewCircuit(const ParsedCircuit& parsedCircuit
 			circuitBlockData->setConnectionIdPosition(port.connectionEndId, port.positionOfBlock.value());
 		}
 		blockData->setConnectionBitConfiguration(port.connectionEndId, port.bitWidth);
-		blockData->setConnnectionPortOffset(port.connectionEndId, port.portOffset);
+		blockData->setConnectionPortOffset(port.connectionEndId, port.portOffset);
 	}
 
 	dataUpdateEventManager.sendEvent("blockDataUpdate");
@@ -187,6 +187,7 @@ circuit_id_t CircuitManager::createNewCircuit(const GeneratedCircuit& generatedC
 		if (!port.portName.empty()) {
 			blockData->setConnectionIdName(port.connectionEndId, port.portName);
 		}
+		blockData->setConnectionPortOffset(port.connectionEndId, port.portOffset);
 		blockData->setConnectionBitConfiguration(port.connectionEndId, port.bitWidth);
 		if (port.internalBlockId == 0) {
 			logError("Can't find port.internalBlockId should not be 0.", "CircuitManager");

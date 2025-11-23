@@ -18,9 +18,14 @@ bool generateCircuit() {
 	block_id_t inBus = createBlockAtPosition(0, 0, 6, blockType_Bus);
 	block_id_t outBus = createBlockAtPosition(5, 0, 0, blockType_Bus);
 	block_id_t enable = createBlockAtPosition(0, -1, 0, blockType_SWITCH);
-	setConnectionPortBitWidth(addConnectionInputNamed(0, 0, inBus, size, "Out"), size);
-	setConnectionPortBitWidth(addConnectionOutputNamed(0, 0, outBus, size, "In"), size);
-	addConnectionInputNamed(0, 1, enable, 0, "Enable");
+	connection_end_id_t inBusEndId = addConnectionInputNamed(0, 0, inBus, size, "Out");
+	connection_end_id_t outBusEndId = addConnectionOutputNamed(0, 0, outBus, size, "In");
+	connection_end_id_t enableEndId = addConnectionInputNamed(0, 1, enable, 0, "Enable");
+	setConnectionPortBitWidth(inBusEndId, size);
+	setConnectionPortBitWidth(outBusEndId, size);
+	setConnectionPortOffset(inBusEndId, 0.1f, 0.5f);
+	setConnectionPortOffset(outBusEndId, 0.9f, 0.5f);
+	setConnectionPortOffset(enableEndId, 0.1f, 0.5f);
 
 	block_id_t C;
 	for (int i = 0; i < size; i++) {

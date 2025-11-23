@@ -7,15 +7,25 @@ void GeneratedCircuit::addConnectionPort(
 	block_id_t internalBlockId,
 	connection_end_id_t internalBlockConnectionEndId,
 	const std::string& portName,
+	FVector offset,
 	unsigned int bitWidth
 ) {
-	ports.emplace_back(isInput, connectionEndId, positionOnBlock, internalBlockId, internalBlockConnectionEndId, portName, bitWidth);
+	ports.emplace_back(isInput, connectionEndId, positionOnBlock, internalBlockId, internalBlockConnectionEndId, portName, offset, bitWidth);
 }
 
 void GeneratedCircuit::setConnectionPortBitWidth(connection_end_id_t connectionEndId, unsigned int bitWidth) {
 	for (ConnectionPort& port : ports) {
 		if (port.connectionEndId == connectionEndId) {
 			port.bitWidth = bitWidth;
+			return;
+		}
+	}
+}
+
+void GeneratedCircuit::setConnectionPortOffset(connection_end_id_t connectionEndId, FVector offset) {
+	for (ConnectionPort& port : ports) {
+		if (port.connectionEndId == connectionEndId) {
+			port.portOffset = offset;
 			return;
 		}
 	}

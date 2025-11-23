@@ -414,7 +414,7 @@ void BlockCreationWindow::updateFromMenu() {
 		if (!portName.empty()) blockData->setConnectionIdName(endId, portName);
 
 		blockData->setConnectionBitConfiguration(endId, bitWidth);
-		blockData->setConnnectionPortOffset(endId, portOffset);
+		blockData->setConnectionPortOffset(endId, portOffset);
 
 		circuitBlockData->setConnectionIdPosition(endId, portBlockPosition);
 	}

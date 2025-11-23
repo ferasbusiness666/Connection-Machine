@@ -108,7 +108,7 @@ public:
 	void setConnectionIdName(connection_end_id_t connectionId, const std::string& name);
 	std::optional<std::string> getConnectionIdToName(connection_end_id_t connectionId) const;
 	// connection_end_id_t getConnectionNameToId(const std::string& connectionName) const;
-	void setConnnectionPortOffset(connection_end_id_t connectionId, FVector offset);
+	void setConnectionPortOffset(connection_end_id_t connectionId, FVector offset);
 	inline std::optional<FVector> getConnectionPortOffset(connection_end_id_t connectionId) const noexcept;
 	inline std::optional<FVector> getConnectionPortOffset(connection_end_id_t connectionId, Orientation orientation) const noexcept;
 	inline unsigned int getConnectionBitWidth(connection_end_id_t connectionId) const noexcept;
