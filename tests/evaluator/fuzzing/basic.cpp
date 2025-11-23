@@ -5,7 +5,117 @@
 #include "backend/blockData/blockDataManager.h"
 #include "computerAPI/directoryManager.h"
 
-class BasicFuzzingEvaluatorTest : public ::testing::TestWithParam<uint64_t> {
+namespace {
+
+	struct BusDef {
+		unsigned int numInputs;
+		unsigned int numOutputs;
+		unsigned int inputLaneWidth;
+		unsigned int outputLaneWidth;
+	};
+
+	struct RunningConfig {
+		unsigned int numEditOperations;
+		unsigned int numTestOperations;
+		unsigned int numTicksBetweenTests;
+		unsigned int numStatesSetPerTest;
+	};
+
+	struct BlockTypesAllowed {
+		std::vector<BlockType> blockTypesToUse;
+		std::vector<BusDef> busDefinitions;
+		std::vector<std::string> customBlockPaths;
+		std::string hash() const {
+			std::string h;
+			for (BlockType bt : blockTypesToUse) {
+				h += std::to_string(static_cast<uint16_t>(bt)) + "-";
+			}
+			for (const BusDef& busDef : busDefinitions) {
+				h += "b" + std::to_string(busDef.numInputs) + "_" + std::to_string(busDef.numOutputs) + "_" +
+					std::to_string(busDef.inputLaneWidth) + "_" + std::to_string(busDef.outputLaneWidth) + "-";
+			}
+			for (const std::string& path : customBlockPaths) {
+				h += "c" + path + "-";
+			}
+			return h;
+		};
+	};
+
+	struct TestcaseConfig {
+		uint64_t seed;
+		bool realistic;
+		RunningConfig runningConfig;
+		BlockTypesAllowed blockTypesAllowed;
+		int index;
+	};
+
+	std::string testcase_config_to_string(const TestcaseConfig& config) {
+		std::string str = std::string("s_") + std::to_string(config.seed);
+		str += "_r_";
+		str += (config.realistic ? "1" : "0");
+		RunningConfig runConfig = config.runningConfig;
+		str += "_eo_" + std::to_string(runConfig.numEditOperations);
+		str += "_to_" + std::to_string(runConfig.numTestOperations);
+		str += "_tbt_" + std::to_string(runConfig.numTicksBetweenTests);
+		str += "_spt_" + std::to_string(runConfig.numStatesSetPerTest);
+		str += "_bt_" + config.blockTypesAllowed.hash();
+		return std::to_string(std::hash<std::string>{}(str));
+	};
+
+	int u = 0;
+	std::vector<TestcaseConfig> makeTestcases() {
+		std::vector<TestcaseConfig> testcases;
+		for (uint64_t seed = 0; seed < 5; ++seed) {
+			for (bool realistic : {false, true}) {
+				RunningConfig runningConfig = {5000, 100, 3, 50};
+				BlockTypesAllowed blockTypesAllowed = {
+					{
+						BlockType::AND,
+						BlockType::OR,
+						BlockType::XOR,
+						BlockType::NAND,
+						BlockType::NOR,
+						BlockType::XNOR,
+						BlockType::BUFFER,
+						BlockType::NOT,
+						BlockType::TRISTATE_BUFFER,
+						BlockType::JUNCTION,
+						BlockType::JUNCTION_L,
+						BlockType::JUNCTION_H,
+						BlockType::JUNCTION_X,
+						BlockType::LIGHT,
+						BlockType::SWITCH,
+						BlockType::BUTTON
+					}, {}, {}
+				};
+				testcases.push_back(TestcaseConfig { seed, realistic, runningConfig, blockTypesAllowed, u++ });
+
+				blockTypesAllowed = {
+					{}, {}, {}
+				};
+				for (unsigned int i = 1; i <= 21; ++i) {
+					blockTypesAllowed.blockTypesToUse.push_back(BlockType(i));
+				}
+				blockTypesAllowed.busDefinitions.push_back(BusDef {2, 1, 1, 2});
+				blockTypesAllowed.busDefinitions.push_back(BusDef {4, 1, 1, 4});
+				blockTypesAllowed.busDefinitions.push_back(BusDef {2, 1, 2, 4});
+				blockTypesAllowed.busDefinitions.push_back(BusDef {8, 1, 1, 8});
+				blockTypesAllowed.busDefinitions.push_back(BusDef {4, 1, 2, 8});
+				blockTypesAllowed.busDefinitions.push_back(BusDef {2, 1, 4, 8});
+				blockTypesAllowed.busDefinitions.push_back(BusDef { 2, 4, 4, 2 });
+
+				blockTypesAllowed.customBlockPaths.push_back("passthrough.cir");
+				blockTypesAllowed.customBlockPaths.push_back("full_adder.cir");
+				blockTypesAllowed.customBlockPaths.push_back("bus_tristate_2.cir");
+				blockTypesAllowed.customBlockPaths.push_back("nested_passthrough.cir");
+				testcases.push_back(TestcaseConfig { seed, realistic, runningConfig, blockTypesAllowed, u++ });
+			}
+		}
+		return testcases;
+	}
+}; // namespace 
+
+class BasicFuzzingEvaluatorTest : public ::testing::TestWithParam<TestcaseConfig> {
 protected:
 	void SetUp() override;
 	void TearDown() override;
@@ -14,10 +124,17 @@ protected:
 	SharedCircuit circuit = nullptr;
 	SharedEvaluator tEval = nullptr; // testing evaluator
 	SharedEvaluator rEval = nullptr; // reference evaluator
+	BlockType loadCircuit(const std::filesystem::path& path);
 };
 
+BlockType BasicFuzzingEvaluatorTest::loadCircuit(const std::filesystem::path& path) {
+	CircuitFileManager& circuitFileManager = environment.getCircuitFileManager();
+	circuit_id_t circuitId = circuitFileManager.loadFromFile(path.string()).at(0);
+	SharedCircuit circuit = environment.getBackend().getCircuitManager().getCircuit(circuitId);
+	return circuit->getBlockType();
+}
+
 void BasicFuzzingEvaluatorTest::SetUp() {
-	gen.seed(GetParam());
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
 	circuit = environment.getBackend().getCircuit(circuitId);
 	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuitId).value();
@@ -64,23 +181,40 @@ std::optional<connection_end_id_t> getRandomConnectionEnd(const BlockData* block
 }
 
 TEST_P(BasicFuzzingEvaluatorTest, FuzzInteractions) {
-	bool runRealistic = gen() % 2 == 0;
+	TestcaseConfig config = GetParam();
+	gen.seed(config.seed);
+	bool runRealistic = config.realistic;
 	tEval->setRealistic(runRealistic);
 	BlockDataManager& blockDataManager = environment.getBackend().getBlockDataManager();
 	std::uniform_int_distribution<int> distPos(-20, 20);
 	std::vector<block_id_t> blockIds;
-	int numEditOperations = 5000;
-	int numTestOperations = 100;
-	int numTicksBetweenTests = 3;
-	int numStatesSetPerTest = 50;
+	RunningConfig runningConfig = config.runningConfig;
+	int numEditOperations = runningConfig.numEditOperations;
+	int numTestOperations = runningConfig.numTestOperations;
+	int numTicksBetweenTests = runningConfig.numTicksBetweenTests;
+	int numStatesSetPerTest = runningConfig.numStatesSetPerTest;
+	BlockTypesAllowed typeConfig = config.blockTypesAllowed;
+	std::vector<BlockType> allowedBlockTypes = typeConfig.blockTypesToUse;
+	for (BusDef& busDef : typeConfig.busDefinitions) {
+		BlockType busBlockType = blockDataManager.getBusBlock(
+			busDef.numInputs,
+			busDef.numOutputs,
+			busDef.inputLaneWidth,
+			busDef.outputLaneWidth
+		);
+		allowedBlockTypes.push_back(busBlockType);
+	}
+	for (const std::string& customBlockPath : typeConfig.customBlockPaths) {
+		BlockType customBlockType = loadCircuit(DirectoryManager::getResourceDirectory() / "circuits" / "evaluator" / customBlockPath);
+		allowedBlockTypes.push_back(customBlockType);
+	}
+	logInfo("Fuzzing test with seed {}, realistic {}, {} edit operations, {} test operations, {} ticks between tests, {} states per test, {} allowed block types. config idx: {}", "BasicFuzzingEvaluatorTest", config.seed, runRealistic, numEditOperations, numTestOperations, numTicksBetweenTests, numStatesSetPerTest, allowedBlockTypes.size(), config.index);
 	for (int i = 0; i < numEditOperations; ++i) {
 		int operation = gen() % 8; // 0,1: place, 2: remove, 3,4,5: connect, 6,7: disconnect
 		if (operation <= 1) { // place block
 			Orientation orientation(Rotation(gen() % 4), (gen() % 2) == 0);
-			BlockType blockType = BlockType((gen() % blockDataManager.maxBlockId()) + 1);
-			if (!blockDataManager.blockExists(blockType)) {
-				continue;
-			}
+			BlockType blockType = allowedBlockTypes[gen() % allowedBlockTypes.size()];
+			ASSERT_TRUE(blockDataManager.blockExists(blockType));
 			Position pos(distPos(gen), distPos(gen));
 			bool success = circuit->tryInsertBlock(pos, orientation, blockType);
 			if (!success) continue;
@@ -137,7 +271,7 @@ TEST_P(BasicFuzzingEvaluatorTest, FuzzInteractions) {
 	{
 		CircuitFileManager& circuitFileManager = environment.getCircuitFileManager();
 		const std::filesystem::path savePath =
-			DirectoryManager::getConfigDirectory() / "tmp" / ("BasicFuzzingCircuit_" + std::to_string(GetParam()) + ".cir");
+			DirectoryManager::getConfigDirectory() / "tmp" / ("BasicFuzzingCircuit_" + testcase_config_to_string(config) + ".cir");
 		std::filesystem::create_directories(savePath.parent_path());
 		ASSERT_TRUE(circuitFileManager.saveToFile(savePath.string(), circuit->getUUID()));
 		logInfo("Saved fuzzing circuit to " + savePath.string(), "BasicFuzzingEvaluatorTest");
@@ -286,6 +420,41 @@ TEST_P(BasicFuzzingEvaluatorTest, FuzzInteractions) {
 INSTANTIATE_TEST_SUITE_P(
 	RandomSeeds,
 	BasicFuzzingEvaluatorTest,
-	::testing::Range(uint64_t(0), uint64_t(10))
+	// ::testing::Range(uint64_t(0), uint64_t(10))
 	// ::testing::Values(uint64_t(3))
+	testing::ValuesIn(makeTestcases())
+	// testing::Combine(
+	// 	testing::Values(
+	// 		uint64_t(0),
+	// 		uint64_t(1),
+	// 		uint64_t(2),
+	// 		uint64_t(3),
+	// 		uint64_t(4)
+	// 	),
+	// 	testing::Values(false, true),
+	// 	testing::Values(
+	// 		RunningConfig{5000, 100, 3, 50},
+	// 	),
+	// 	testing::Values(
+	// 		BlockTypesAllowed(
+	// 			{
+	// 				BlockType::AND,
+	// 				BlockType::OR,
+	// 				BlockType::XOR,
+	// 				BlockType::NAND,
+	// 				BlockType::NOR,
+	// 				BlockType::XNOR,
+	// 				BlockType::BUFFER,
+	// 				BlockType::NOT,
+	// 				BlockType::JUNCTION,
+	// 				BlockType::TRISTATE_BUFFER,
+	// 				BlockType::BUTTON,
+	// 				BlockType::SWITCH,
+	// 				BlockType::CONSTANT_OFF,
+	// 				BlockType::CONSTANT_ON,
+	// 				BlockType::LIGHT,
+	// 			}, {}, {}
+	// 		)
+	// 	)
+	// )
 );
