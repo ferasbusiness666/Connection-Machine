@@ -401,6 +401,38 @@ private:
 		}
 		GateWithLinkedIO& gate = gatesWithLinkedIO.at(gateId);
 		for (middle_id_t middleId : gate.idsCreated) {
+			std::vector<middle_id_t> referencingGates = collectReferencingTrackedGates(middleId);
+			for (const auto& referencingGateId : referencingGates) {
+#ifdef TRACY_PROFILER
+				ZoneScopedN("GateSubstituter::deleteGateWithLinkedIO - per tracked gate");
+#endif
+				auto trackedGateIter = trackedGates.find(referencingGateId);
+				if (trackedGateIter == trackedGates.end()) {
+					continue;
+				}
+				TrackedGate& trackedGateRef = trackedGateIter->second;
+				bool success = trackedGateRef.removeReferencesToId(middleId);
+				if (!success) {
+					continue;
+				}
+				BlockType newState = trackedGateRef.evaluate();
+				if (newState != trackedGateRef.currentState) {
+					trackedGateRef.currentState = newState;
+					replacer.removeGate(pauseGuard, trackedGateRef.id);
+					replacer.addGate(pauseGuard, newState, trackedGateRef.id);
+					for (const auto& input : trackedGateRef.inputs) {
+						replacer.makeConnection(pauseGuard, input);
+					}
+					for (const auto& output : trackedGateRef.outputs) {
+						if (output.source.gateId == output.destination.gateId) {
+							continue;
+						}
+						replacer.makeConnection(pauseGuard, output);
+					}
+				}
+			}
+		}
+		for (middle_id_t middleId : gate.idsCreated) {
 			replacer.removeGate(pauseGuard, middleId);
 			middleIdProvider.releaseId(middleId);
 		}
