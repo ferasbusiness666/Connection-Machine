@@ -5,46 +5,228 @@ Circuit: "URCL 16bit ALU"
 UUID: 4a137917-bbcf-422e-bb93-3eb716d13b92
 size: 2x3
 ports:
-	(IN, 0, (-13, -4), <0, 0>, <0.100000, 0.500000>, "Instruc", 2)
-	(IN, 1, (-13, -1), <0, 1>, <0.100000, 0.500000>, "Data 1", 16)
+	(OUT, 3, (12, -1), <1, 0>, <0.900000, 0.500000>, "Out", 16)
 	(IN, 2, (-13, 0), <0, 2>, <0.100000, 0.500000>, "Data 2", 16)
-	(OUT, 3, (2, -1), <1, 0>, <0.900000, 0.500000>, "Out", 16)
-blockId 36 Bus ( 1 0 2, 0 1 [ 1 ], 0 0 [ 0 ]) -13 -4 ONE_EIGHTY_FLIPPED
+	(IN, 1, (-13, -1), <0, 1>, <0.100000, 0.500000>, "Data 1", 16)
+	(IN, 0, (4, -4), <0, 0>, <0.100000, 0.500000>, "Instruc", 2)
+blockId 196 OR 1 33 ZERO
+	(connId:0) (180 1) (181 1) (182 1) (183 1) (184 1) (185 1) (186 1) (187 1) (188 1) (189 1) (190 1) (191 1) (192 1) (193 1) (194 1) (195 1) (200 1)
+	(connId:1) (40 0)
+blockId 195 AND -2 48 ZERO
+	(connId:0) (41 15) (58 1) (198 0)
+	(connId:1) (196 0)
+blockId 194 AND -2 47 ZERO
+	(connId:0) (41 14) (59 1) (104 1)
+	(connId:1) (196 0)
+blockId 193 AND -2 46 ZERO
+	(connId:0) (41 13) (60 1) (103 1)
+	(connId:1) (196 0)
+blockId 192 AND -2 45 ZERO
+	(connId:0) (41 12) (73 1) (102 1)
+	(connId:1) (196 0)
+blockId 191 AND -2 44 ZERO
+	(connId:0) (41 11) (61 1) (101 1)
+	(connId:1) (196 0)
+blockId 190 AND -2 43 ZERO
+	(connId:0) (41 10) (62 1) (100 1)
+	(connId:1) (196 0)
+blockId 189 AND -2 42 ZERO
+	(connId:0) (41 9) (63 1) (99 1)
+	(connId:1) (196 0)
+blockId 188 AND -2 41 ZERO
+	(connId:0) (41 8) (64 1) (98 1)
+	(connId:1) (196 0)
+blockId 187 AND -2 39 ZERO
+	(connId:0) (41 6) (66 1) (96 1)
+	(connId:1) (196 0)
+blockId 186 AND -2 38 ZERO
+	(connId:0) (41 5) (67 1) (95 1)
+	(connId:1) (196 0)
+blockId 185 AND -2 37 ZERO
+	(connId:0) (41 4) (68 1) (94 1)
+	(connId:1) (196 0)
+blockId 184 AND -2 36 ZERO
+	(connId:0) (41 3) (69 1) (93 1)
+	(connId:1) (196 0)
+blockId 183 AND -2 35 ZERO
+	(connId:0) (41 2) (70 1) (92 1)
+	(connId:1) (196 0)
+blockId 182 AND -2 34 ZERO
+	(connId:0) (41 1) (71 1) (91 1)
+	(connId:1) (196 0)
+blockId 181 AND -2 33 ZERO
+	(connId:0) (41 0) (72 1) (90 1)
+	(connId:1) (196 0)
+blockId 180 AND -2 40 ZERO
+	(connId:0) (41 7) (65 1) (97 1)
+	(connId:1) (196 0)
+blockId 97 NOR -3 40 ZERO
+	(connId:0) (58 1) (59 1) (60 1) (61 1) (62 1) (63 1) (64 1) (73 1)
+	(connId:1) (180 0)
+blockId 96 NOR -3 39 ZERO
+	(connId:0) (58 1) (59 1) (60 1) (61 1) (62 1) (63 1) (64 1) (65 1) (73 1)
+	(connId:1) (187 0)
+blockId 95 NOR -3 38 ZERO
+	(connId:0) (58 1) (59 1) (60 1) (61 1) (62 1) (63 1) (64 1) (65 1) (66 1) (73 1)
+	(connId:1) (186 0)
+blockId 94 NOR -3 37 ZERO
+	(connId:0) (58 1) (59 1) (60 1) (61 1) (62 1) (63 1) (64 1) (65 1) (66 1) (67 1) (73 1)
+	(connId:1) (185 0)
+blockId 93 NOR -3 36 ZERO
+	(connId:0) (58 1) (59 1) (60 1) (61 1) (62 1) (63 1) (64 1) (65 1) (66 1) (67 1) (68 1) (73 1)
+	(connId:1) (184 0)
+blockId 92 NOR -3 35 ZERO
+	(connId:0) (58 1) (59 1) (60 1) (61 1) (62 1) (63 1) (64 1) (65 1) (66 1) (67 1) (68 1) (69 1) (73 1)
+	(connId:1) (183 0)
+blockId 91 NOR -3 34 ZERO
+	(connId:0) (58 1) (59 1) (60 1) (61 1) (62 1) (63 1) (64 1) (65 1) (66 1) (67 1) (68 1) (69 1) (70 1) (73 1)
+	(connId:1) (182 0)
+blockId 90 NOR -3 33 ZERO
+	(connId:0) (58 1) (59 1) (60 1) (61 1) (62 1) (63 1) (64 1) (65 1) (66 1) (67 1) (68 1) (69 1) (70 1) (71 1) (73 1)
+	(connId:1) (181 0) (200 0)
+blockId 73 XOR -4 45 ZERO
+	(connId:0) (41 12) (57 12)
+	(connId:1) (90 0) (91 0) (92 0) (93 0) (94 0) (95 0) (96 0) (97 0) (98 0) (99 0) (100 0) (101 0) (192 0)
+blockId 72 XOR -4 33 ZERO
+	(connId:0) (41 0) (57 0)
+	(connId:1) (181 0) (199 0)
+blockId 71 XOR -4 34 ZERO
+	(connId:0) (41 1) (57 1)
+	(connId:1) (90 0) (182 0)
+blockId 70 XOR -4 35 ZERO
+	(connId:0) (41 2) (57 2)
+	(connId:1) (90 0) (91 0) (183 0)
+blockId 69 XOR -4 36 ZERO
+	(connId:0) (41 3) (57 3)
+	(connId:1) (90 0) (91 0) (92 0) (184 0)
+blockId 68 XOR -4 37 ZERO
+	(connId:0) (41 4) (57 4)
+	(connId:1) (90 0) (91 0) (92 0) (93 0) (185 0)
+blockId 67 XOR -4 38 ZERO
+	(connId:0) (41 5) (57 5)
+	(connId:1) (90 0) (91 0) (92 0) (93 0) (94 0) (186 0)
+blockId 66 XOR -4 39 ZERO
+	(connId:0) (41 6) (57 6)
+	(connId:1) (90 0) (91 0) (92 0) (93 0) (94 0) (95 0) (187 0)
+blockId 65 XOR -4 40 ZERO
+	(connId:0) (41 7) (57 7)
+	(connId:1) (90 0) (91 0) (92 0) (93 0) (94 0) (95 0) (96 0) (180 0)
+blockId 64 XOR -4 41 ZERO
+	(connId:0) (41 8) (57 8)
+	(connId:1) (90 0) (91 0) (92 0) (93 0) (94 0) (95 0) (96 0) (97 0) (188 0)
+blockId 63 XOR -4 42 ZERO
+	(connId:0) (41 9) (57 9)
+	(connId:1) (90 0) (91 0) (92 0) (93 0) (94 0) (95 0) (96 0) (97 0) (98 0) (189 0)
+blockId 62 XOR -4 43 ZERO
+	(connId:0) (41 10) (57 10)
+	(connId:1) (90 0) (91 0) (92 0) (93 0) (94 0) (95 0) (96 0) (97 0) (98 0) (99 0) (190 0)
+blockId 61 XOR -4 44 ZERO
+	(connId:0) (41 11) (57 11)
+	(connId:1) (90 0) (91 0) (92 0) (93 0) (94 0) (95 0) (96 0) (97 0) (98 0) (99 0) (100 0) (191 0)
+blockId 60 XOR -4 46 ZERO
+	(connId:0) (41 13) (57 13)
+	(connId:1) (90 0) (91 0) (92 0) (93 0) (94 0) (95 0) (96 0) (97 0) (98 0) (99 0) (100 0) (101 0) (102 0) (193 0)
+blockId 59 XOR -4 47 ZERO
+	(connId:0) (41 14) (57 14)
+	(connId:1) (90 0) (91 0) (92 0) (93 0) (94 0) (95 0) (96 0) (97 0) (98 0) (99 0) (100 0) (101 0) (102 0) (103 0) (194 0)
+blockId 58 XOR -4 48 ZERO
+	(connId:0) (41 15) (57 15)
+	(connId:1) (90 0) (91 0) (92 0) (93 0) (94 0) (95 0) (96 0) (97 0) (98 0) (99 0) (100 0) (101 0) (102 0) (103 0) (104 0) (195 0)
+blockId 57 Bus ( 1 0 16, 0 15 [ 15 ], 0 14 [ 14 ], 0 13 [ 13 ], 0 12 [ 12 ], 0 11 [ 11 ], 0 10 [ 10 ], 0 9 [ 9 ], 0 8 [ 8 ], 0 7 [ 7 ], 0 6 [ 6 ], 0 5 [ 5 ], 0 4 [ 4 ], 0 3 [ 3 ], 0 2 [ 2 ], 0 1 [ 1 ], 0 0 [ 0 ]) -6 33 ONE_EIGHTY_FLIPPED
+	(connId:0) (72 0)
+	(connId:1) (71 0)
+	(connId:2) (70 0)
+	(connId:3) (69 0)
+	(connId:4) (68 0)
+	(connId:5) (67 0)
+	(connId:6) (66 0)
+	(connId:7) (65 0)
+	(connId:8) (64 0)
+	(connId:9) (63 0)
+	(connId:10) (62 0)
+	(connId:11) (61 0)
+	(connId:12) (73 0)
+	(connId:13) (60 0)
+	(connId:14) (59 0)
+	(connId:15) (58 0)
+	(connId:16) (28 0)
+blockId 41 Bus ( 1 0 16, 0 15 [ 15 ], 0 14 [ 14 ], 0 13 [ 13 ], 0 12 [ 12 ], 0 11 [ 11 ], 0 10 [ 10 ], 0 9 [ 9 ], 0 8 [ 8 ], 0 7 [ 7 ], 0 6 [ 6 ], 0 5 [ 5 ], 0 4 [ 4 ], 0 3 [ 3 ], 0 2 [ 2 ], 0 1 [ 1 ], 0 0 [ 0 ]) -8 33 ONE_EIGHTY_FLIPPED
+	(connId:0) (72 0) (181 0)
+	(connId:1) (71 0) (182 0)
+	(connId:2) (70 0) (183 0)
+	(connId:3) (69 0) (184 0)
+	(connId:4) (68 0) (185 0)
+	(connId:5) (67 0) (186 0)
+	(connId:6) (66 0) (187 0)
+	(connId:7) (65 0) (180 0)
+	(connId:8) (64 0) (188 0)
+	(connId:9) (63 0) (189 0)
+	(connId:10) (62 0) (190 0)
+	(connId:11) (61 0) (191 0)
+	(connId:12) (73 0) (192 0)
+	(connId:13) (60 0) (193 0)
+	(connId:14) (59 0) (194 0)
+	(connId:15) (58 0) (195 0)
+	(connId:16) (31 0)
+blockId 40 Bus ( 1 0 16, 0 15 [ 15 ], 0 14 [ 14 ], 0 13 [ 13 ], 0 12 [ 12 ], 0 11 [ 11 ], 0 10 [ 10 ], 0 9 [ 9 ], 0 8 [ 8 ], 0 7 [ 7 ], 0 6 [ 6 ], 0 5 [ 5 ], 0 4 [ 4 ], 0 3 [ 3 ], 0 2 [ 2 ], 0 1 [ 1 ], 0 0 [ 0 ]) 2 33 ZERO
+	(connId:0) (196 1)
+	(connId:1) (201 0)
+	(connId:2) (201 0)
+	(connId:3) (201 0)
+	(connId:4) (201 0)
+	(connId:5) (201 0)
+	(connId:6) (201 0)
+	(connId:7) (201 0)
+	(connId:8) (201 0)
+	(connId:9) (201 0)
+	(connId:10) (201 0)
+	(connId:11) (201 0)
+	(connId:12) (201 0)
+	(connId:13) (201 0)
+	(connId:14) (201 0)
+	(connId:15) (201 0)
+	(connId:16) (37 0)
+blockId 37 "0662c20a-c47f-4586-bafc-f582587b230b" ("size": 16) 9 5 ZERO
+	(connId:0) (40 16)
+	(connId:1) (34 0)
+	(connId:2) (33 1)
+blockId 36 Bus ( 1 0 2, 0 1 [ 1 ], 0 0 [ 0 ]) 4 -4 ONE_EIGHTY_FLIPPED
 	(connId:0) (20 0) (25 0) (33 0)
 	(connId:1) (27 0) (30 0) (33 0)
 blockId 35 NOR -4 26 ZERO_FLIPPED
 	(connId:0) (3 9) (12 9)
 	(connId:1) (10 9)
-blockId 34 JUNCTION 2 -1 ZERO_FLIPPED
-	(connId:0) (1 1) (4 1) (8 1)
-blockId 33 AND -10 -3 ZERO
+blockId 34 JUNCTION 12 -1 ZERO_FLIPPED
+	(connId:0) (1 1) (4 1) (8 1) (37 1)
+blockId 33 AND 7 -3 ZERO
 	(connId:0) (36 0) (36 1)
+	(connId:1) (37 2)
 blockId 32 NOR -4 25 ZERO_FLIPPED
 	(connId:0) (3 8) (12 8)
 	(connId:1) (10 8)
 blockId 31 JUNCTION -13 -1 ZERO_FLIPPED
-	(connId:0) (3 16) (5 0) (11 16)
-blockId 30 NOT -11 -3 ZERO_FLIPPED
+	(connId:0) (3 16) (5 0) (11 16) (41 16)
+blockId 30 NOT 6 -3 ZERO_FLIPPED
 	(connId:0) (36 1)
 	(connId:1) (23 0) (25 0)
 blockId 29 NOR -4 24 ZERO_FLIPPED
 	(connId:0) (3 7) (12 7)
 	(connId:1) (10 7)
 blockId 28 JUNCTION -13 0 ZERO_FLIPPED
-	(connId:0) (5 1) (12 16)
-blockId 27 AND -10 -4 ZERO
+	(connId:0) (5 1) (12 16) (57 16)
+blockId 27 AND 7 -4 ZERO
 	(connId:0) (20 1) (36 1)
 	(connId:1) (4 2)
 blockId 26 NOR -4 23 ZERO_FLIPPED
 	(connId:0) (3 6) (12 6)
 	(connId:1) (10 6)
-blockId 25 AND -10 -5 ZERO
+blockId 25 AND 7 -5 ZERO
 	(connId:0) (30 1) (36 0)
 	(connId:1) (8 2)
 blockId 24 NOR -4 22 ZERO_FLIPPED
 	(connId:0) (3 5) (12 5)
 	(connId:1) (10 5)
-blockId 23 AND -10 -6 ZERO
+blockId 23 AND 7 -6 ZERO
 	(connId:0) (20 1) (30 1)
 	(connId:1) (1 2)
 blockId 22 NOR -4 21 ZERO_FLIPPED
@@ -52,7 +234,7 @@ blockId 22 NOR -4 21 ZERO_FLIPPED
 	(connId:1) (10 4)
 blockId 21 CONSTANT_OFF -6 16 ZERO_FLIPPED
 	(connId:0) (9 15)
-blockId 20 NOT -11 -4 ZERO_FLIPPED
+blockId 20 NOT 6 -4 ZERO_FLIPPED
 	(connId:0) (36 0)
 	(connId:1) (23 0) (27 0)
 blockId 19 NOR -4 20 ZERO_FLIPPED
@@ -147,24 +329,44 @@ blockId 9 Bus ( 1 0 16, 0 15 [ 15 ], 0 14 [ 14 ], 0 13 [ 13 ], 0 12 [ 12 ], 0 11
 	(connId:14) (11 15)
 	(connId:15) (21 0)
 	(connId:16) (8 0)
-blockId 8 "0662c20a-c47f-4586-bafc-f582587b230b" ("size": 16) -1 1 ZERO
+blockId 8 "0662c20a-c47f-4586-bafc-f582587b230b" ("size": 16) 9 1 ZERO
 	(connId:0) (9 16)
 	(connId:1) (34 0)
 	(connId:2) (25 1)
+blockId 104 NOR -3 47 ZERO
+	(connId:0) (58 1)
+	(connId:1) (194 0)
 blockId 7 NOR -4 18 ZERO_FLIPPED
 	(connId:0) (3 1) (12 1)
 	(connId:1) (10 1)
+blockId 103 NOR -3 46 ZERO
+	(connId:0) (58 1) (59 1)
+	(connId:1) (193 0)
 blockId 6 NOR -4 30 ZERO_FLIPPED
 	(connId:0) (3 13) (12 13)
 	(connId:1) (10 13)
+blockId 102 NOR -3 45 ZERO
+	(connId:0) (58 1) (59 1) (60 1)
+	(connId:1) (192 0)
 blockId 5 "348fbb6c-5f61-4432-86c6-5fd4a5d6ea64" -2 -1 ZERO
 	(connId:0) (31 0)
 	(connId:1) (28 0)
 	(connId:2) (1 0)
-blockId 4 "0662c20a-c47f-4586-bafc-f582587b230b" ("size": 16) -1 3 ZERO
+blockId 101 NOR -3 44 ZERO
+	(connId:0) (58 1) (59 1) (60 1) (73 1)
+	(connId:1) (191 0)
+blockId 201 CONSTANT_OFF 1 34 ZERO
+	(connId:0) (40 1) (40 2) (40 3) (40 4) (40 5) (40 6) (40 7) (40 8) (40 9) (40 10) (40 11) (40 12) (40 13) (40 14) (40 15)
+blockId 4 "0662c20a-c47f-4586-bafc-f582587b230b" ("size": 16) 9 3 ZERO
 	(connId:0) (10 16)
 	(connId:1) (34 0)
 	(connId:2) (27 1)
+blockId 100 NOR -3 43 ZERO
+	(connId:0) (58 1) (59 1) (60 1) (61 1) (73 1)
+	(connId:1) (190 0)
+blockId 200 AND 0 33 ZERO
+	(connId:0) (90 1) (199 1)
+	(connId:1) (196 0)
 blockId 3 Bus ( 1 0 16, 0 15 [ 15 ], 0 14 [ 14 ], 0 13 [ 13 ], 0 12 [ 12 ], 0 11 [ 11 ], 0 10 [ 10 ], 0 9 [ 9 ], 0 8 [ 8 ], 0 7 [ 7 ], 0 6 [ 6 ], 0 5 [ 5 ], 0 4 [ 4 ], 0 3 [ 3 ], 0 2 [ 2 ], 0 1 [ 1 ], 0 0 [ 0 ]) -8 17 ONE_EIGHTY_FLIPPED
 	(connId:0) (13 0)
 	(connId:1) (7 0)
@@ -183,10 +385,21 @@ blockId 3 Bus ( 1 0 16, 0 15 [ 15 ], 0 14 [ 14 ], 0 13 [ 13 ], 0 12 [ 12 ], 0 11
 	(connId:14) (17 0)
 	(connId:15) (18 0)
 	(connId:16) (31 0)
+blockId 99 NOR -3 42 ZERO
+	(connId:0) (58 1) (59 1) (60 1) (61 1) (62 1) (73 1)
+	(connId:1) (189 0)
+blockId 199 NOT -1 33 ZERO
+	(connId:0) (72 1)
+	(connId:1) (200 0)
 blockId 2 NOR -4 28 ZERO_FLIPPED
 	(connId:0) (3 11) (12 11)
 	(connId:1) (10 11)
-blockId 1 "0662c20a-c47f-4586-bafc-f582587b230b" ("size": 16) -1 -1 ZERO
+blockId 98 NOR -3 41 ZERO
+	(connId:0) (58 1) (59 1) (60 1) (61 1) (62 1) (63 1) (73 1)
+	(connId:1) (188 0)
+blockId 198 CONSTANT_ON -3 48 ZERO
+	(connId:0) (195 0)
+blockId 1 "0662c20a-c47f-4586-bafc-f582587b230b" ("size": 16) 9 -1 ZERO
 	(connId:0) (5 2)
 	(connId:1) (34 0)
 	(connId:2) (23 1)
