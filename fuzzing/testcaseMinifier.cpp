@@ -8,37 +8,47 @@ FuzzTestcase TestcaseMinifier::minifyTestcase(const FuzzTestcase& originalTestca
 	std::mt19937_64 gen;
 	gen.seed(std::random_device {}());
 
-	for (int i = 0; i < 50; ++i) {
-		std::set<size_t> editActionsToTry;
-		std::set<size_t> testActionsToTry;
-		size_t numEditActions = originalTestcase.getEditActions().size();
-		size_t numTestActions = originalTestcase.getTestActions().size();
-		bool canOmitEdit = numEditActions > 0;
-		bool canOmitTest = numTestActions > 0;
-		if (!canOmitEdit && !canOmitTest) {
-			return originalTestcase;
+	FuzzTestcase currentTestcase = originalTestcase;
+	while (true) {
+		bool reduced = false;
+		for (int i = 0; i < 200; ++i) {
+			std::set<size_t> editActionsToTry;
+			std::set<size_t> testActionsToTry;
+			size_t numEditActions = currentTestcase.getEditActions().size();
+			size_t numTestActions = currentTestcase.getTestActions().size();
+			bool canOmitEdit = numEditActions > 0;
+			bool canOmitTest = numTestActions > 0;
+			if (!canOmitEdit && !canOmitTest) {
+				return currentTestcase;
+			}
+			bool trueIfOmitEditElseTest = false;
+			if (canOmitEdit && canOmitTest) {
+				trueIfOmitEditElseTest = (gen() % 2) == 0;
+			} else if (canOmitEdit) {
+				trueIfOmitEditElseTest = true;
+			} else {
+				trueIfOmitEditElseTest = false;
+			}
+			if (trueIfOmitEditElseTest) {
+				size_t index = gen() % numEditActions;
+				editActionsToTry.insert(index);
+			} else {
+				size_t index = gen() % numTestActions;
+				testActionsToTry.insert(index);
+			}
+			std::unique_ptr<FuzzTestcase> newTestcase = tryRemoveEditActions(currentTestcase, editActionsToTry, testActionsToTry);
+			if (newTestcase) {
+				currentTestcase = std::move(*newTestcase);
+				gen.seed(std::random_device {}());
+				reduced = true;
+				break;
+			}
 		}
-		bool trueIfOmitEditElseTest = false;
-		if (canOmitEdit && canOmitTest) {
-			trueIfOmitEditElseTest = (gen() % 2) == 0;
-		} else if (canOmitEdit) {
-			trueIfOmitEditElseTest = true;
-		} else {
-			trueIfOmitEditElseTest = false;
+		if (!reduced) {
+			return currentTestcase;
 		}
-		if (trueIfOmitEditElseTest) {
-			size_t index = gen() % numEditActions;
-			editActionsToTry.insert(index);
-		} else {
-			size_t index = gen() % numTestActions;
-			testActionsToTry.insert(index);
-		}
-		std::unique_ptr<FuzzTestcase> newTestcase = tryRemoveEditActions(originalTestcase, editActionsToTry, testActionsToTry);
-		if (newTestcase) {
-			return minifyTestcase(*newTestcase);
-		}
+		logInfo("Current testcase size: {} edit actions, {} test actions", "", currentTestcase.getEditActions().size(), currentTestcase.getTestActions().size());
 	}
-	return originalTestcase;
 }
 
 std::unique_ptr<FuzzTestcase> TestcaseMinifier::tryRemoveEditActions(const FuzzTestcase& testcase, std::set<size_t> editActions, std::set<size_t> testActions) {

@@ -5,6 +5,7 @@
 
 std::unique_ptr<FuzzTestcase> FailingCaseFinder::findFailingCases(unsigned int maxAttempts) {
 	for (unsigned int attempt = 0; attempt < maxAttempts; ++attempt) {
+		logInfo("Attempting to generate failing testcase (attempt {}/{})", "", attempt + 1, maxAttempts);
 		std::unique_ptr<FuzzTestcase> failingCase = tryMakeFailingCase();
 		if (failingCase) {
 			return failingCase;
@@ -62,7 +63,7 @@ std::unique_ptr<FuzzTestcase> FailingCaseFinder::tryMakeFailingCase() {
 	std::uniform_int_distribution<int> distPos(-20, 20);
 	gen.seed(std::random_device {}());
 	bool runRealistic = (gen() % 2) == 0;
-	int numEditOperations = 100;
+	int numEditOperations = 1000;
 	int numTestOperations = 50;
 	int numTicksBetweenTests = 3;
 	int numStatesSetPerTest = 20;
@@ -70,6 +71,8 @@ std::unique_ptr<FuzzTestcase> FailingCaseFinder::tryMakeFailingCase() {
 	std::vector<block_id_t> blockIds;
 
 	BlockDataManager& blockDataManager = environment.getBackend().getBlockDataManager();
+
+	logInfo("Generating edit operations...", "FailingCaseFinder::tryMakeFailingCase");
 
 	for (int i = 0; i < numEditOperations; ++i) {
 		int operation = gen() % 8; // 0,1: place, 2: remove, 3,4,5: connect, 6,7: disconnect
@@ -146,6 +149,8 @@ std::unique_ptr<FuzzTestcase> FailingCaseFinder::tryMakeFailingCase() {
 	std::vector<simulator_id_t> simulatorIdsRef;
 	std::unordered_map<block_id_t, Position> blockIdToPosition;
 
+	logInfo("Mapping block IDs to positions...", "FailingCaseFinder::tryMakeFailingCase");
+
 	for (block_id_t blockId : blockIds) {
 		const Block* block = circuit->getBlockContainer().getBlock(blockId);
 		if (block == nullptr) continue;
@@ -197,6 +202,8 @@ std::unique_ptr<FuzzTestcase> FailingCaseFinder::tryMakeFailingCase() {
 			}
 		}
 	}
+
+	logInfo("Beginning test operations...", "FailingCaseFinder::tryMakeFailingCase");
 
 	for (int i = 0; i < numTestOperations; ++i) {
 		for (int j = 0; j < numStatesSetPerTest; ++j) {
