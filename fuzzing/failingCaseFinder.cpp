@@ -1,3 +1,4 @@
+#include "fuzzTestcase.h"
 #include "failingCaseFinder.h"
 #include "environment/environment.h"
 #include "backend/evaluator/evaluator.h"
@@ -138,7 +139,7 @@ std::unique_ptr<FuzzTestcase> FailingCaseFinder::tryMakeFailingCase() {
 	rEval = environment.getBackend().getEvaluator(refEvalId);
 	tEval->setRealistic(runRealistic);
 	rEval->setRealistic(runRealistic);
-	testcase->addTestAction(SetRealisticModeAction { runRealistic });
+	testcase->setRealistic(runRealistic);
 	tEval->resetStates();
 	rEval->resetStates();
 	std::vector<simulator_id_t> simulatorIdsTest;
@@ -184,7 +185,9 @@ std::unique_ptr<FuzzTestcase> FailingCaseFinder::tryMakeFailingCase() {
 				} else if (std::holds_alternative<std::vector<simulator_id_t>>(simIdTest) && std::holds_alternative<std::vector<simulator_id_t>>(simIdRef)) {
 					std::vector<simulator_id_t>& vecTest = std::get<std::vector<simulator_id_t>>(simIdTest);
 					std::vector<simulator_id_t>& vecRef = std::get<std::vector<simulator_id_t>>(simIdRef);
-					return testcase;
+					if (vecTest.size() != vecRef.size()){
+						return testcase;
+					}
 					simulatorIdsTest.insert(simulatorIdsTest.end(), vecTest.begin(), vecTest.end());
 					simulatorIdsRef.insert(simulatorIdsRef.end(), vecRef.begin(), vecRef.end());
 
@@ -197,6 +200,7 @@ std::unique_ptr<FuzzTestcase> FailingCaseFinder::tryMakeFailingCase() {
 
 	for (int i = 0; i < numTestOperations; ++i) {
 		for (int j = 0; j < numStatesSetPerTest; ++j) {
+			if (blockIds.empty()) continue;
 			block_id_t blockId = blockIds[gen() % blockIds.size()];
 			Position pos = blockIdToPosition.at(blockId);
 			logic_state_t state = logic_state_t(gen() % 4);

@@ -34,10 +34,6 @@ struct TickEvalAction {
 	unsigned int numTicks;
 };
 
-struct SetRealisticModeAction {
-	bool realisticMode;
-};
-
 using FuzzEditAction = std::variant<
 	PlaceBlockAction,
 	RemoveBlockAction,
@@ -47,8 +43,7 @@ using FuzzEditAction = std::variant<
 
 using FuzzTestAction = std::variant<
 	SetBlockStateAction,
-	TickEvalAction,
-	SetRealisticModeAction
+	TickEvalAction
 >;
 
 class FuzzTestcase {
@@ -81,6 +76,14 @@ public:
 		if (index < testActions.size()) {
 			testActions.erase(testActions.begin() + index);
 		}
+	}
+
+	bool getRunRealistic() const {
+		return runRealistic;
+	}
+
+	void setRealistic(bool realistic) {
+		runRealistic = realistic;
 	}
 
 private:

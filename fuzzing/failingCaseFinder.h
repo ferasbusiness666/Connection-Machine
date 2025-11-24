@@ -1,7 +1,7 @@
 #ifndef failingCaseFinder_h
 #define failingCaseFinder_h
 
-#include "fuzzTestcase.h"
+class FuzzTestcase;
 
 class FailingCaseFinder {
 public:
