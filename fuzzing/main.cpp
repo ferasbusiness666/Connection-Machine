@@ -9,18 +9,18 @@ int main(int argc, char** argv) {
 	std::string failingTestcasePath = (DirectoryManager::getConfigDirectory() / "fuzzing" / "failing_testcase.json").string();
 	FailingCaseFinder finder;
 	std::vector<FuzzBlockType> blockTypesUsed = {
-		FuzzPrimitiveType { "AND" },
-		FuzzPrimitiveType { "OR" },
-		FuzzPrimitiveType { "XOR" },
-		FuzzPrimitiveType { "NAND" },
-		FuzzPrimitiveType { "NOR" },
-		FuzzPrimitiveType { "XNOR" },
-		FuzzPrimitiveType { "JUNCTION" },
-		FuzzPrimitiveType { "SWITCH" },
-		FuzzPrimitiveType { "CONSTANT_OFF" },
-		FuzzPrimitiveType { "CONSTANT_ON" },
-		FuzzPrimitiveType { "CONSTANT_Z" },
-		FuzzPrimitiveType { "CONSTANT_X" },
+		FuzzPrimitiveType { BlockType::AND },
+		FuzzPrimitiveType { BlockType::OR },
+		FuzzPrimitiveType { BlockType::XOR },
+		FuzzPrimitiveType { BlockType::NAND },
+		FuzzPrimitiveType { BlockType::NOR },
+		FuzzPrimitiveType { BlockType::XNOR },
+		FuzzPrimitiveType { BlockType::JUNCTION },
+		FuzzPrimitiveType { BlockType::SWITCH },
+		FuzzPrimitiveType { BlockType::CONSTANT_OFF },
+		FuzzPrimitiveType { BlockType::CONSTANT_ON },
+		FuzzPrimitiveType { BlockType::CONSTANT_Z },
+		FuzzPrimitiveType { BlockType::CONSTANT_X },
 	};
 	std::unique_ptr<FuzzTestcase> testcase = finder.findFailingCases(1000, blockTypesUsed);
 	if (testcase) {

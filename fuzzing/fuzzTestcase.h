@@ -5,6 +5,7 @@
 #include "backend/position/position.h"
 #include "backend/container/block/blockDefs.h"
 #include "backend/evaluator/simulator/logicState.h"
+#include "computerAPI/circuits/textParser.h"
 
 #include <nlohmann/json.hpp>
 
@@ -91,11 +92,11 @@ using FuzzTestAction = std::variant<
 >;
 
 struct FuzzPrimitiveType {
-	std::string name;
+	BlockType blockType;
 	nlohmann::json toJson() const {
 		nlohmann::json j;
 		j["type"] = "FuzzPrimitiveType";
-		j["name"] = name;
+		j["name"] = blockTypeToString(blockType);
 		return j;
 	}
 };

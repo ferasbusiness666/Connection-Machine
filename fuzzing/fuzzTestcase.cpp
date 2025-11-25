@@ -1,5 +1,4 @@
 #include "fuzzTestcase.h"
-#include "computerAPI/circuits/textParser.h"
 
 std::string FuzzTestcase::serialize() const {
 	nlohmann::json j;
@@ -33,7 +32,7 @@ FuzzTestcase FuzzTestcase::deserialize(const std::string& data) {
 		std::string type = blockTypeJson.value("type", "");
 		if (type == "FuzzPrimitiveType") {
 			FuzzPrimitiveType blockType;
-			blockType.name = blockTypeJson["name"].get<std::string>();
+			blockType.blockType = stringToBlockType(blockTypeJson["name"].get<std::string>());
 			blockTypesUsed.push_back(blockType);
 		} else if (type == "FuzzBusType") {
 			FuzzBusType blockType;
@@ -96,8 +95,7 @@ FuzzTestcase FuzzTestcase::deserialize(const std::string& data) {
 BlockType getBlockTypeFromFuzzBlockType(const FuzzBlockType& fuzzBlockType, Environment& environment) {
 	BlockDataManager& blockDataManager = environment.getBackend().getBlockDataManager();
 	if (std::holds_alternative<FuzzPrimitiveType>(fuzzBlockType)) {
-		const std::string& name = std::get<FuzzPrimitiveType>(fuzzBlockType).name;
-		return stringToBlockType(name);
+		return std::get<FuzzPrimitiveType>(fuzzBlockType).blockType;
 	} else if (std::holds_alternative<FuzzBusType>(fuzzBlockType)) {
 		return blockDataManager.getBusBlock(
 			std::get<FuzzBusType>(fuzzBlockType).numInputs,
