@@ -2,6 +2,7 @@
 #include "testcaseMinifier.h"
 #include "environment/environment.h"
 #include "backend/evaluator/evaluator.h"
+#include "backend/container/block/blockDefs.h"
 
 FuzzTestcase TestcaseMinifier::minifyTestcase(const FuzzTestcase& originalTestcase) {
 	logInfo("----------------------------------------Starting testcase minification: {} edit actions, {} test actions", "", originalTestcase.getEditActions().size(), originalTestcase.getTestActions().size());
@@ -31,19 +32,24 @@ FuzzTestcase TestcaseMinifier::minifyTestcase(const FuzzTestcase& originalTestca
 			}
 		}
 		if (!reduced) {
-			return currentTestcase;
+			break;
 		}
 	}
+	currentTestcase.tryRemoveBlockTypesNotUsed();
+	logInfo("Finished testcase minification: {} edit actions, {} test actions", "", currentTestcase.getEditActions().size(), currentTestcase.getTestActions().size());
+	return currentTestcase;
 }
 
 std::unique_ptr<FuzzTestcase> TestcaseMinifier::tryRemoveEditActions(const FuzzTestcase& testcase, std::set<size_t> editActions, std::set<size_t> testActions) {
-	std::unique_ptr<FuzzTestcase> outputTestcase = std::make_unique<FuzzTestcase>();
+	std::unique_ptr<FuzzTestcase> outputTestcase = std::make_unique<FuzzTestcase>(testcase.getBlockTypesUsed());
 	Environment environment { false };
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
 	SharedCircuit circuit = environment.getBackend().getCircuit(circuitId);
 	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuitId).value();
 	SharedEvaluator tEval = environment.getBackend().getEvaluator(evalId); // test evaluator
 	SharedEvaluator rEval = nullptr; // reference evaluator
+
+	std::vector<BlockType> blockTypesUsed = makeBlockTypesUsableVector(testcase.getBlockTypesUsed(), environment);
 
 	std::vector<block_id_t> blockIds;
 
@@ -53,7 +59,9 @@ std::unique_ptr<FuzzTestcase> TestcaseMinifier::tryRemoveEditActions(const FuzzT
 		std::visit([&](auto&& arg) {
 			using T = std::decay_t<decltype(arg)>;
 			if constexpr (std::is_same_v<T, PlaceBlockAction>) {
-				bool success = circuit->tryInsertBlock(arg.position, arg.orientation, arg.blockType);
+				int fuzzBlockTypeIndex = arg.fuzzBlockTypeIndex;
+				BlockType blockType = blockTypesUsed[fuzzBlockTypeIndex];
+				bool success = circuit->tryInsertBlock(arg.position, arg.orientation, blockType);
 				if (success) {
 					outputTestcase->addEditAction(arg);
 					const Block* block = circuit->getBlockContainer().getBlock(arg.position);

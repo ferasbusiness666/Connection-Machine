@@ -1,12 +1,12 @@
-#include "fuzzTestcase.h"
 #include "failingCaseFinder.h"
 #include "environment/environment.h"
 #include "backend/evaluator/evaluator.h"
+#include "backend/container/block/blockDefs.h"
 
-std::unique_ptr<FuzzTestcase> FailingCaseFinder::findFailingCases(unsigned int maxAttempts) {
+std::unique_ptr<FuzzTestcase> FailingCaseFinder::findFailingCases(unsigned int maxAttempts, const std::vector<FuzzBlockType>& blockTypesUsed) {
 	for (unsigned int attempt = 0; attempt < maxAttempts; ++attempt) {
 		logInfo("Attempting to generate failing testcase (attempt {}/{})", "", attempt + 1, maxAttempts);
-		std::unique_ptr<FuzzTestcase> failingCase = tryMakeFailingCase();
+		std::unique_ptr<FuzzTestcase> failingCase = tryMakeFailingCase(blockTypesUsed);
 		if (failingCase) {
 			return failingCase;
 		}
@@ -50,14 +50,16 @@ std::optional<connection_end_id_t> getRandomConnectionEnd(const BlockData* block
 
 } // namespace
 
-std::unique_ptr<FuzzTestcase> FailingCaseFinder::tryMakeFailingCase() {
-	std::unique_ptr<FuzzTestcase> testcase = std::make_unique<FuzzTestcase>();
+std::unique_ptr<FuzzTestcase> FailingCaseFinder::tryMakeFailingCase(const std::vector<FuzzBlockType>& blockTypesUsed) {
+	std::unique_ptr<FuzzTestcase> testcase = std::make_unique<FuzzTestcase>(blockTypesUsed);
 	Environment environment { false };
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
 	SharedCircuit circuit = environment.getBackend().getCircuit(circuitId);
 	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuitId).value();
 	SharedEvaluator tEval = environment.getBackend().getEvaluator(evalId); // test evaluator
 	SharedEvaluator rEval = nullptr; // reference evaluator
+
+	std::vector<BlockType> blockTypesUsable = makeBlockTypesUsableVector(blockTypesUsed, environment);
 
 	std::mt19937_64 gen;
 	std::uniform_int_distribution<int> distPos(-20, 20);
@@ -78,12 +80,14 @@ std::unique_ptr<FuzzTestcase> FailingCaseFinder::tryMakeFailingCase() {
 		int operation = gen() % 8; // 0,1: place, 2: remove, 3,4,5: connect, 6,7: disconnect
 		if (operation <= 1) { // place block
 			Orientation orientation(Rotation(gen() % 4), (gen() % 2) == 0);
-			BlockType blockType = BlockType(1 + (gen() % blockDataManager.maxBlockId()));
+			int fuzzBlockTypeIndex = gen() % blockTypesUsable.size();
+			BlockType blockType = blockTypesUsable[fuzzBlockTypeIndex];
+			// BlockType blockType = BlockType(1 + (gen() % blockDataManager.maxBlockId()));
 			if (!blockDataManager.blockExists(blockType)) continue;
 			Position pos(distPos(gen), distPos(gen));
 			bool success = circuit->tryInsertBlock(pos, orientation, blockType);
 			if (!success) continue;
-			testcase->addEditAction(PlaceBlockAction { pos, blockType, orientation });
+			testcase->addEditAction(PlaceBlockAction { pos, fuzzBlockTypeIndex, orientation });
 			const Block* block = circuit->getBlockContainer().getBlock(pos);
 			blockIds.push_back(block->id());
 		} else if (operation <= 2) {

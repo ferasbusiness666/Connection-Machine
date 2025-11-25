@@ -1,6 +1,7 @@
 #ifndef fuzzTestcase_h
 #define fuzzTestcase_h
 
+#include "environment/environment.h"
 #include "backend/position/position.h"
 #include "backend/container/block/blockDefs.h"
 #include "backend/evaluator/simulator/logicState.h"
@@ -9,13 +10,13 @@
 
 struct PlaceBlockAction {
 	Position position;
-	BlockType blockType;
+	int fuzzBlockTypeIndex;
 	Orientation orientation;
 	nlohmann::json toJson() const {
 		nlohmann::json j;
 		j["type"] = "PlaceBlockAction";
 		j["position"] = { {"x", position.x}, {"y", position.y} };
-		j["blockType"] = static_cast<uint16_t>(blockType);
+		j["fuzzBlockTypeIndex"] = fuzzBlockTypeIndex;
 		j["orientation"] = { {"rotation", static_cast<uint8_t>(orientation.rotation)}, {"flipped", orientation.flipped} };
 		return j;
 	}
@@ -89,9 +90,58 @@ using FuzzTestAction = std::variant<
 	TickEvalAction
 >;
 
+struct FuzzPrimitiveType {
+	std::string name;
+	nlohmann::json toJson() const {
+		nlohmann::json j;
+		j["type"] = "FuzzPrimitiveType";
+		j["name"] = name;
+		return j;
+	}
+};
+
+struct FuzzBusType {
+	unsigned int numInputs;
+	unsigned int numOutputs;
+	unsigned int inputLaneWidth;
+	unsigned int outputLaneWidth;
+	nlohmann::json toJson() const {
+		nlohmann::json j;
+		j["type"] = "FuzzBusType";
+		j["numInputs"] = numInputs;
+		j["numOutputs"] = numOutputs;
+		j["inputLaneWidth"] = inputLaneWidth;
+		j["outputLaneWidth"] = outputLaneWidth;
+		return j;
+	}
+};
+
+struct FuzzCustomCircuitType {
+	std::string path;
+	nlohmann::json toJson() const {
+		nlohmann::json j;
+		j["type"] = "FuzzCustomCircuitType";
+		j["path"] = path;
+		return j;
+	}
+};
+
+using FuzzBlockType = std::variant<
+	FuzzPrimitiveType,
+	FuzzBusType,
+	FuzzCustomCircuitType
+>;
+
+BlockType getBlockTypeFromFuzzBlockType(const FuzzBlockType& fuzzBlockType, Environment& environment);
+std::vector<BlockType> makeBlockTypesUsableVector(const std::vector<FuzzBlockType>& fuzzBlockTypes, Environment& environment);
+
 class FuzzTestcase {
 public:
-	FuzzTestcase() = default;
+	FuzzTestcase(std::vector<FuzzBlockType> blockTypesUsed) : blockTypesUsed(blockTypesUsed) {}
+
+	const std::vector<FuzzBlockType>& getBlockTypesUsed() const {
+		return blockTypesUsed;
+	}
 
 	void addEditAction(const FuzzEditAction& action) {
 		editActions.push_back(action);
@@ -132,7 +182,10 @@ public:
 	std::string serialize() const;
 	static FuzzTestcase deserialize(const std::string& data);
 
+	void tryRemoveBlockTypesNotUsed();
+
 private:
+	std::vector<FuzzBlockType> blockTypesUsed;
 	std::vector<FuzzEditAction> editActions;
 	std::vector<FuzzTestAction> testActions;
 	bool runRealistic;

@@ -1,15 +1,14 @@
 #ifndef failingCaseFinder_h
 #define failingCaseFinder_h
 
-class FuzzTestcase;
-
+#include "fuzzTestcase.h"
 class FailingCaseFinder {
 public:
 	FailingCaseFinder() = default;
 
-	std::unique_ptr<FuzzTestcase> findFailingCases(unsigned int maxAttampts);
+	std::unique_ptr<FuzzTestcase> findFailingCases(unsigned int maxAttampts, const std::vector<FuzzBlockType>& blockTypesUsed);
 private:
-	std::unique_ptr<FuzzTestcase> tryMakeFailingCase();
+	std::unique_ptr<FuzzTestcase> tryMakeFailingCase(const std::vector<FuzzBlockType>& blockTypesUsed);
 };
 
 #endif /* failingCaseFinder_h */

@@ -8,7 +8,21 @@ int main(int argc, char** argv) {
 	DirectoryManager::findDirectories();
 	std::string failingTestcasePath = (DirectoryManager::getConfigDirectory() / "fuzzing" / "failing_testcase.json").string();
 	FailingCaseFinder finder;
-	std::unique_ptr<FuzzTestcase> testcase = finder.findFailingCases(1000);
+	std::vector<FuzzBlockType> blockTypesUsed = {
+		FuzzPrimitiveType { "AND" },
+		FuzzPrimitiveType { "OR" },
+		FuzzPrimitiveType { "XOR" },
+		FuzzPrimitiveType { "NAND" },
+		FuzzPrimitiveType { "NOR" },
+		FuzzPrimitiveType { "XNOR" },
+		FuzzPrimitiveType { "JUNCTION" },
+		FuzzPrimitiveType { "SWITCH" },
+		FuzzPrimitiveType { "CONSTANT_OFF" },
+		FuzzPrimitiveType { "CONSTANT_ON" },
+		FuzzPrimitiveType { "CONSTANT_Z" },
+		FuzzPrimitiveType { "CONSTANT_X" },
+	};
+	std::unique_ptr<FuzzTestcase> testcase = finder.findFailingCases(1000, blockTypesUsed);
 	if (testcase) {
 		logInfo("Found failing testcase with {} edit actions and {} test actions", "", testcase->getEditActions().size(), testcase->getTestActions().size());
 		TestcaseMinifier minifier;
