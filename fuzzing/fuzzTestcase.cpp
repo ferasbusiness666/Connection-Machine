@@ -1,4 +1,5 @@
 #include "fuzzTestcase.h"
+#include "computerAPI/directoryManager.h"
 
 std::string FuzzTestcase::serialize() const {
 	nlohmann::json j;
@@ -105,7 +106,7 @@ BlockType getBlockTypeFromFuzzBlockType(const FuzzBlockType& fuzzBlockType, Envi
 		);
 	} else if (std::holds_alternative<FuzzCustomCircuitType>(fuzzBlockType)) {
 		CircuitFileManager& circuitFileManager = environment.getCircuitFileManager();
-		circuit_id_t circuitId = circuitFileManager.loadFromFile(std::get<FuzzCustomCircuitType>(fuzzBlockType).path).at(0);
+		circuit_id_t circuitId = circuitFileManager.loadFromFile(DirectoryManager::getResourceDirectory() / std::get<FuzzCustomCircuitType>(fuzzBlockType).path).at(0);
 		SharedCircuit circuit = environment.getBackend().getCircuitManager().getCircuit(circuitId);
 		return circuit->getBlockType();
 	}
