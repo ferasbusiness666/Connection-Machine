@@ -2,7 +2,7 @@
 
 void SimulatorOptimizer::addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
 #ifdef TRACY_PROFILER
-		ZoneScoped;
+	ZoneScoped;
 #endif
 	simulator_id_t simulatorId = simulator.addGate(blockType);
 
@@ -31,7 +31,7 @@ void SimulatorOptimizer::addGate(SimPauseGuard& pauseGuard, const BlockType bloc
 
 void SimulatorOptimizer::removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
 #ifdef TRACY_PROFILER
-		ZoneScoped;
+	ZoneScoped;
 #endif
 	// Find the gate in the simulator and remove it
 
@@ -75,7 +75,7 @@ void SimulatorOptimizer::removeGate(SimPauseGuard& pauseGuard, const middle_id_t
 
 void SimulatorOptimizer::makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
 #ifdef TRACY_PROFILER
-		ZoneScoped;
+	ZoneScoped;
 #endif
 	middle_id_t sourceGateId = connection.source.gateId;
 	middle_id_t destinationGateId = connection.destination.gateId;
@@ -109,7 +109,7 @@ void SimulatorOptimizer::makeConnection(SimPauseGuard& pauseGuard, EvalConnectio
 
 void SimulatorOptimizer::removeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
 #ifdef TRACY_PROFILER
-		ZoneScoped;
+	ZoneScoped;
 #endif
 	middle_id_t sourceGateId = connection.source.gateId;
 	middle_id_t destinationGateId = connection.destination.gateId;
