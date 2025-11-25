@@ -176,7 +176,6 @@ namespace {
 }
 
 TEST_F(PrimitivesEvaluatorTest, AllBasicGatesBehavior) {
-	return;
 	struct Testcase {
 		BlockType blockType;
 		std::vector<logic_state_t> inputStates;
@@ -317,4 +316,43 @@ TEST_F(PrimitivesEvaluatorTest, TristateBufferBehavior) {
 			EXPECT_EQ(expectedState, computedState2);
 		}
 	}
+}
+
+TEST_F(PrimitivesEvaluatorTest, ConstJunctionAnd) {
+	Position constPosition(0, 0);
+	Position junctionPosition(1, 0);
+	Position andPosition(2, 0);
+
+	logInfo("Inserting blocks");
+	logInfo("Inserting constant ON at {}", "", constPosition.toString());
+	ASSERT_TRUE(circuit->tryInsertBlock(constPosition, Rotation::ZERO, BlockType::CONSTANT_ON));
+	logInfo("Inserting junction at {}", "", junctionPosition.toString());
+	ASSERT_TRUE(circuit->tryInsertBlock(junctionPosition, Rotation::ZERO, BlockType::JUNCTION));
+	logInfo("Inserting AND gate at {}", "", andPosition.toString());
+	ASSERT_TRUE(circuit->tryInsertBlock(andPosition, Rotation::ZERO, BlockType::AND));
+	logInfo("Creating connections");
+	logInfo("Connecting constant ON to junction");
+	ASSERT_TRUE(circuit->tryCreateConnection(constPosition, junctionPosition));
+	logInfo("Connecting junction to AND gate");
+	ASSERT_TRUE(circuit->tryCreateConnection(junctionPosition, andPosition));
+	logInfo("Starting evaluation");
+	ASSERT_TRUE(circuit->tryCreateConnection(constPosition, andPosition));
+
+	evaluator->tickStep(2);
+	EXPECT_EQ(evaluator->getState(constPosition), logic_state_t::HIGH);
+	EXPECT_EQ(evaluator->getState(junctionPosition), logic_state_t::HIGH);
+	EXPECT_EQ(evaluator->getState(andPosition), logic_state_t::HIGH);
+
+	logInfo("Removing junction at {}", "", junctionPosition.toString());
+	ASSERT_TRUE(circuit->tryRemoveBlock(junctionPosition));
+
+	evaluator->tickStep(2);
+	EXPECT_EQ(evaluator->getState(constPosition), logic_state_t::HIGH);
+	EXPECT_EQ(evaluator->getState(andPosition), logic_state_t::HIGH);
+
+	logInfo("Removing constant ON at {}", "", constPosition.toString());
+	ASSERT_TRUE(circuit->tryRemoveBlock(constPosition));
+
+	evaluator->tickStep(2);
+	EXPECT_EQ(evaluator->getState(andPosition), logic_state_t::LOW);
 }
