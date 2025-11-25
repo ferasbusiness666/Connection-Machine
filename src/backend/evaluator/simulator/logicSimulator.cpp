@@ -848,7 +848,8 @@ void LogicSimulator::removeOutputDependency(simulator_id_t outputId, simulator_i
 	auto it = outputDependencies.find(outputId);
 	if (it != outputDependencies.end()) {
 		auto& deps = it->second;
-		deps.erase(std::remove(deps.begin(), deps.end(), GateDependency(dependentGateId)), deps.end());
+		auto it2 = std::find(deps.begin(), deps.end(), GateDependency(dependentGateId));
+		if (it2 != deps.end()) deps.erase(it2);
 		if (deps.empty()) {
 			outputDependencies.erase(it);
 		}
