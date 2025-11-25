@@ -323,19 +323,11 @@ TEST_F(PrimitivesEvaluatorTest, ConstJunctionAnd) {
 	Position junctionPosition(1, 0);
 	Position andPosition(2, 0);
 
-	logInfo("Inserting blocks");
-	logInfo("Inserting constant ON at {}", "", constPosition.toString());
 	ASSERT_TRUE(circuit->tryInsertBlock(constPosition, Rotation::ZERO, BlockType::CONSTANT_ON));
-	logInfo("Inserting junction at {}", "", junctionPosition.toString());
 	ASSERT_TRUE(circuit->tryInsertBlock(junctionPosition, Rotation::ZERO, BlockType::JUNCTION));
-	logInfo("Inserting AND gate at {}", "", andPosition.toString());
 	ASSERT_TRUE(circuit->tryInsertBlock(andPosition, Rotation::ZERO, BlockType::AND));
-	logInfo("Creating connections");
-	logInfo("Connecting constant ON to junction");
 	ASSERT_TRUE(circuit->tryCreateConnection(constPosition, junctionPosition));
-	logInfo("Connecting junction to AND gate");
 	ASSERT_TRUE(circuit->tryCreateConnection(junctionPosition, andPosition));
-	logInfo("Starting evaluation");
 	ASSERT_TRUE(circuit->tryCreateConnection(constPosition, andPosition));
 
 	evaluator->tickStep(2);
@@ -343,16 +335,46 @@ TEST_F(PrimitivesEvaluatorTest, ConstJunctionAnd) {
 	EXPECT_EQ(evaluator->getState(junctionPosition), logic_state_t::HIGH);
 	EXPECT_EQ(evaluator->getState(andPosition), logic_state_t::HIGH);
 
-	logInfo("Removing junction at {}", "", junctionPosition.toString());
 	ASSERT_TRUE(circuit->tryRemoveBlock(junctionPosition));
 
 	evaluator->tickStep(2);
 	EXPECT_EQ(evaluator->getState(constPosition), logic_state_t::HIGH);
 	EXPECT_EQ(evaluator->getState(andPosition), logic_state_t::HIGH);
 
-	logInfo("Removing constant ON at {}", "", constPosition.toString());
 	ASSERT_TRUE(circuit->tryRemoveBlock(constPosition));
 
 	evaluator->tickStep(2);
 	EXPECT_EQ(evaluator->getState(andPosition), logic_state_t::LOW);
+}
+
+TEST_F(PrimitivesEvaluatorTest, ButtonBuffer) {
+	Position buttonPos(0, 0);
+	Position bufferPos(1, 0);
+
+	ASSERT_TRUE(circuit->tryInsertBlock(buttonPos, Rotation::ZERO, BlockType::BUTTON));
+	ASSERT_TRUE(circuit->tryInsertBlock(bufferPos, Rotation::ZERO, BlockType::BUFFER));
+
+	evaluator->tickStep();
+	EXPECT_EQ(evaluator->getState(buttonPos), logic_state_t::LOW);
+	EXPECT_EQ(evaluator->getState(bufferPos), logic_state_t::UNDEFINED);
+
+	ASSERT_TRUE(circuit->tryCreateConnection(buttonPos, bufferPos));
+	evaluator->tickStep();
+	EXPECT_EQ(evaluator->getState(buttonPos), logic_state_t::LOW);
+	EXPECT_EQ(evaluator->getState(bufferPos), logic_state_t::LOW);
+
+	evaluator->setState(buttonPos, logic_state_t::HIGH);
+	evaluator->tickStep();
+	EXPECT_EQ(evaluator->getState(buttonPos), logic_state_t::HIGH);
+	EXPECT_EQ(evaluator->getState(bufferPos), logic_state_t::HIGH);
+
+	evaluator->setState(buttonPos, logic_state_t::LOW);
+	evaluator->tickStep();
+	EXPECT_EQ(evaluator->getState(buttonPos), logic_state_t::LOW);
+	EXPECT_EQ(evaluator->getState(bufferPos), logic_state_t::LOW);
+
+	ASSERT_TRUE(circuit->tryRemoveConnection(buttonPos, bufferPos));
+	evaluator->tickStep();
+	EXPECT_EQ(evaluator->getState(buttonPos), logic_state_t::LOW);
+	EXPECT_EQ(evaluator->getState(bufferPos), logic_state_t::UNDEFINED);
 }
