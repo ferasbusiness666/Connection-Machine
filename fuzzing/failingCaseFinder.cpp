@@ -64,9 +64,9 @@ std::unique_ptr<FuzzTestcase> FailingCaseFinder::tryMakeFailingCase() {
 	gen.seed(std::random_device {}());
 	bool runRealistic = (gen() % 2) == 0;
 	int numEditOperations = 1000;
-	int numTestOperations = 50;
+	int numTestOperations = 10;
 	int numTicksBetweenTests = 3;
-	int numStatesSetPerTest = 20;
+	int numStatesSetPerTest = 200;
 
 	std::vector<block_id_t> blockIds;
 

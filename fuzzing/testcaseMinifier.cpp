@@ -5,41 +5,27 @@
 
 FuzzTestcase TestcaseMinifier::minifyTestcase(const FuzzTestcase& originalTestcase) {
 	logInfo("----------------------------------------Starting testcase minification: {} edit actions, {} test actions", "", originalTestcase.getEditActions().size(), originalTestcase.getTestActions().size());
-	std::mt19937_64 gen;
-	gen.seed(std::random_device {}());
+	// std::mt19937_64 gen;
+	// gen.seed(std::random_device {}());
 
 	FuzzTestcase currentTestcase = originalTestcase;
 	while (true) {
 		bool reduced = false;
-		for (int i = 0; i < 200; ++i) {
+		for (int i = 0; i < currentTestcase.getTestActions().size() + currentTestcase.getEditActions().size(); ++i) {
+			logInfo("Trying to remove action {}/{}...", "", i + 1, currentTestcase.getTestActions().size() + currentTestcase.getEditActions().size());
 			std::set<size_t> editActionsToTry;
 			std::set<size_t> testActionsToTry;
 			size_t numEditActions = currentTestcase.getEditActions().size();
 			size_t numTestActions = currentTestcase.getTestActions().size();
-			bool canOmitEdit = numEditActions > 0;
-			bool canOmitTest = numTestActions > 0;
-			if (!canOmitEdit && !canOmitTest) {
-				return currentTestcase;
-			}
-			bool trueIfOmitEditElseTest = false;
-			if (canOmitEdit && canOmitTest) {
-				trueIfOmitEditElseTest = (gen() % 2) == 0;
-			} else if (canOmitEdit) {
-				trueIfOmitEditElseTest = true;
+			if (i < numTestActions) {
+				testActionsToTry.insert(i);
 			} else {
-				trueIfOmitEditElseTest = false;
-			}
-			if (trueIfOmitEditElseTest) {
-				size_t index = gen() % numEditActions;
-				editActionsToTry.insert(index);
-			} else {
-				size_t index = gen() % numTestActions;
-				testActionsToTry.insert(index);
+				editActionsToTry.insert(i - numTestActions);
 			}
 			std::unique_ptr<FuzzTestcase> newTestcase = tryRemoveEditActions(currentTestcase, editActionsToTry, testActionsToTry);
 			if (newTestcase) {
 				currentTestcase = std::move(*newTestcase);
-				gen.seed(std::random_device {}());
+				// gen.seed(std::random_device {}());
 				reduced = true;
 				break;
 			}
@@ -47,7 +33,6 @@ FuzzTestcase TestcaseMinifier::minifyTestcase(const FuzzTestcase& originalTestca
 		if (!reduced) {
 			return currentTestcase;
 		}
-		logInfo("Current testcase size: {} edit actions, {} test actions", "", currentTestcase.getEditActions().size(), currentTestcase.getTestActions().size());
 	}
 }
 
