@@ -79,9 +79,9 @@ public:
 	// Trys to remove a connection. Returns if successful.
 	bool tryRemoveConnection(Position outputPosition, Position inputPosition);
 	// Trys to creates a connection. Returns if successful.
-	bool tryCreateConnection(ConnectionEnd outputConnectionEnd, ConnectionEnd inputConnectionEnd);
+	bool tryCreateConnection(ConnectionEnd connectionEndA, ConnectionEnd connectionEndB);
 	// Trys to remove a connection. Returns if successful.
-	bool tryRemoveConnection(ConnectionEnd outputConnectionEnd, ConnectionEnd inputConnectionEnd);
+	bool tryRemoveConnection(ConnectionEnd connectionEndA, ConnectionEnd connectionEndB);
 	// Trys to creates a connection. Returns if successful.
 	bool tryCreateConnection(const SharedSelection& outputSelection, const SharedSelection& inputSelection);
 	// Trys to remove connections.
