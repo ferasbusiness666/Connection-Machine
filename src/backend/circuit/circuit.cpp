@@ -369,22 +369,22 @@ bool Circuit::tryRemoveConnection(Position outputPosition, Position inputPositio
 	return out;
 }
 
-bool Circuit::tryCreateConnection(ConnectionEnd outputConnectionEnd, ConnectionEnd inputConnectionEnd) {
+bool Circuit::tryCreateConnection(ConnectionEnd connectionEndA, ConnectionEnd connectionEndB) {
 #ifdef TRACY_PROFILER
 	ZoneScoped;
 #endif
 	DifferenceSharedPtr difference = std::make_shared<Difference>();
-	bool out = blockContainer.tryCreateConnection(outputConnectionEnd, inputConnectionEnd, difference.get());
+	bool out = blockContainer.tryCreateConnection(connectionEndA, connectionEndB, difference.get());
 	sendDifference(std::move(difference));
 	return out;
 }
 
-bool Circuit::tryRemoveConnection(ConnectionEnd outputConnectionEnd, ConnectionEnd inputConnectionEnd) {
+bool Circuit::tryRemoveConnection(ConnectionEnd connectionEndA, ConnectionEnd connectionEndB) {
 #ifdef TRACY_PROFILER
 	ZoneScoped;
 #endif
 	DifferenceSharedPtr difference = std::make_shared<Difference>();
-	bool out = blockContainer.tryRemoveConnection(outputConnectionEnd, inputConnectionEnd, difference.get());
+	bool out = blockContainer.tryRemoveConnection(connectionEndA, connectionEndB, difference.get());
 	sendDifference(std::move(difference));
 	return out;
 }
