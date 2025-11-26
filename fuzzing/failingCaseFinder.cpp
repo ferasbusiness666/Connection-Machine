@@ -65,10 +65,15 @@ std::unique_ptr<FuzzTestcase> FailingCaseFinder::tryMakeFailingCase(const std::v
 	std::uniform_int_distribution<int> distPos(-20, 20);
 	gen.seed(std::random_device {}());
 	bool runRealistic = (gen() % 2) == 0;
+	// gen.seed(20);
 	int numEditOperations = 1000;
-	int numTestOperations = 10;
-	int numTicksBetweenTests = 3;
-	int numStatesSetPerTest = 200;
+	int numTestOperations = 20;
+	int numTicksBetweenTests = 1;
+	int numStatesSetPerTest = 500;
+	// int numEditOperations = 100;
+	// int numTestOperations = 50;
+	// int numTicksBetweenTests = 3;
+	// int numStatesSetPerTest = 20;
 
 	std::vector<block_id_t> blockIds;
 
@@ -119,6 +124,7 @@ std::unique_ptr<FuzzTestcase> FailingCaseFinder::tryMakeFailingCase(const std::v
 			Position posA = blockA->getConnectionPosition(*connA).value();
 			Position posB = blockB->getConnectionPosition(*connB).value();
 			bool success = circuit->tryCreateConnection(posA, posB);
+			// bool success = circuit->tryCreateConnection({blockIdA, *connA}, {blockIdB, *connB});
 			if (!success) continue;
 			testcase->addEditAction(CreateConnectionAction { posA, posB });
 		} else if (operation <= 7) { // disconnect
@@ -137,6 +143,7 @@ std::unique_ptr<FuzzTestcase> FailingCaseFinder::tryMakeFailingCase(const std::v
 			Position posA = blockA->getConnectionPosition(*connA).value();
 			Position posB = blockB->getConnectionPosition(*connB).value();
 			bool success = circuit->tryRemoveConnection(posA, posB);
+			// bool success = circuit->tryRemoveConnection({blockIdA, *connA}, {blockIdB, *connB});
 			if (!success) continue;
 			testcase->addEditAction(RemoveConnectionAction { posA, posB });
 		}

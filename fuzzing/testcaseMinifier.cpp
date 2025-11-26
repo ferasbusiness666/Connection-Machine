@@ -82,9 +82,37 @@ std::unique_ptr<FuzzTestcase> TestcaseMinifier::tryRemoveEditActions(const FuzzT
 					}
 				}
 			} else if constexpr (std::is_same_v<T, CreateConnectionAction>) {
+				// const Block* sourceBlock = circuit->getBlockContainer().getBlock(arg.source);
+				// const Block* destBlock = circuit->getBlockContainer().getBlock(arg.destination);
+				// // find connection end IDs at the positions
+				// if (sourceBlock == nullptr || destBlock == nullptr) {
+				// 	return;
+				// }
+				// std::optional<connection_end_id_t> sourceConnectionIdOpt = sourceBlock->getOutputOrBidirectionalConnectionId(arg.source);
+				// std::optional<connection_end_id_t> destConnectionIdOpt = destBlock->getInputOrBidirectionalConnectionId(arg.destination);
+				// if (!sourceConnectionIdOpt.has_value() || !destConnectionIdOpt.has_value()) {
+				// 	return;
+				// }
+				// connection_end_id_t sourceConnectionId = sourceConnectionIdOpt.value();
+				// connection_end_id_t destConnectionId = destConnectionIdOpt.value();
+				// bool success = circuit->tryCreateConnection({sourceBlock->id(), sourceConnectionId}, {destBlock->id(), destConnectionId});
 				bool success = circuit->tryCreateConnection(arg.source, arg.destination);
 				if (success) outputTestcase->addEditAction(arg);
 			} else if constexpr (std::is_same_v<T, RemoveConnectionAction>) {
+				// const Block* sourceBlock = circuit->getBlockContainer().getBlock(arg.source);
+				// const Block* destBlock = circuit->getBlockContainer().getBlock(arg.destination);
+				// // find connection end IDs at the positions
+				// if (sourceBlock == nullptr || destBlock == nullptr) {
+				// 	return;
+				// }
+				// std::optional<connection_end_id_t> sourceConnectionIdOpt = sourceBlock->getOutputOrBidirectionalConnectionId(arg.source);
+				// std::optional<connection_end_id_t> destConnectionIdOpt = destBlock->getInputOrBidirectionalConnectionId(arg.destination);
+				// if (!sourceConnectionIdOpt.has_value() || !destConnectionIdOpt.has_value()) {
+				// 	return;
+				// }
+				// connection_end_id_t sourceConnectionId = sourceConnectionIdOpt.value();
+				// connection_end_id_t destConnectionId = destConnectionIdOpt.value();
+				// bool success = circuit->tryRemoveConnection({ sourceBlock->id(), sourceConnectionId }, { destBlock->id(), destConnectionId });
 				bool success = circuit->tryRemoveConnection(arg.source, arg.destination);
 				if (success) outputTestcase->addEditAction(arg);
 			}
