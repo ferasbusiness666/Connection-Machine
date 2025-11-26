@@ -113,7 +113,8 @@ namespace {
 			}
 		}
 		// return { testcases.at(33) };//, testcases.at(35), testcases.at(84), testcases.at(86), testcases.at(148) };
-		return {testcases.at(80)};
+		// return {testcases.at(80)};
+		return testcases;
 	}
 }; // namespace 
 
@@ -249,7 +250,10 @@ TEST_P(BasicFuzzingEvaluatorTest, FuzzInteractions) {
 			std::optional<connection_end_id_t> connA = getRandomConnectionEnd(blockDataA, gen, false);
 			std::optional<connection_end_id_t> connB = getRandomConnectionEnd(blockDataB, gen, true);
 			if (!connA || !connB) continue;
-			circuit->tryCreateConnection({blockIdA, *connA}, {blockIdB, *connB});
+			// circuit->tryCreateConnection({blockIdA, *connA}, {blockIdB, *connB});
+			Position posA = blockA->getConnectionPosition(*connA).value();
+			Position posB = blockB->getConnectionPosition(*connB).value();
+			circuit->tryCreateConnection(posA, posB);
 		} else if (operation <= 7) { // disconnect
 			if (blockIds.empty()) continue;
 			block_id_t blockIdA = blockIds[gen() % blockIds.size()];
@@ -265,7 +269,10 @@ TEST_P(BasicFuzzingEvaluatorTest, FuzzInteractions) {
 			std::optional<connection_end_id_t> connA = getRandomConnectionEnd(blockDataA, gen, false);
 			std::optional<connection_end_id_t> connB = getRandomConnectionEnd(blockDataB, gen, true);
 			if (!connA || !connB) continue;
-			circuit->tryRemoveConnection({blockIdA, *connA}, {blockIdB, *connB});
+			// circuit->tryRemoveConnection({blockIdA, *connA}, {blockIdB, *connB});
+			Position posA = blockA->getConnectionPosition(*connA).value();
+			Position posB = blockB->getConnectionPosition(*connB).value();
+			circuit->tryRemoveConnection(posA, posB);
 		}
 	}
 
