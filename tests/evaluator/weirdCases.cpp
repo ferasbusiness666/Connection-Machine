@@ -131,3 +131,33 @@ TEST_F(WeirdCasesEvaluatorTest, InitializationBehaviorWithICs) {
 	evaluator2->tickStep(1);
 	EXPECT_EQ(evaluator2->getState(xnorPos), logic_state_t::LOW);
 }
+
+TEST_F(WeirdCasesEvaluatorTest, PullUpPullDownButWithDifferentConnectionMethod) {
+	Position pullUpPos(0, 0);
+	Position pullDownPos(1, 0);
+
+	logInfo("Inserting pull-up and pull-down junctions", "WeirdCasesEvaluatorTest::PullUpPullDownButWithDifferentConnectionMethod");
+
+	ASSERT_TRUE(circuit->tryInsertBlock(pullUpPos, Rotation::ZERO, BlockType::JUNCTION_H));
+	ASSERT_TRUE(circuit->tryInsertBlock(pullDownPos, Rotation::ZERO, BlockType::JUNCTION_L));
+
+	EXPECT_EQ(evaluator->getState(pullUpPos), logic_state_t::HIGH);
+	EXPECT_EQ(evaluator->getState(pullDownPos), logic_state_t::LOW);
+
+	const Block* pullUpBlock = circuit->getBlockContainer().getBlock(pullUpPos);
+	const Block* pullDownBlock = circuit->getBlockContainer().getBlock(pullDownPos);
+	ASSERT_NE(pullUpBlock, nullptr);
+	ASSERT_NE(pullDownBlock, nullptr);
+
+	logInfo("Creating connection between pull-up and pull-down junctions", "WeirdCasesEvaluatorTest::PullUpPullDownButWithDifferentConnectionMethod");
+
+	ASSERT_TRUE(circuit->tryCreateConnection({ pullUpBlock->id(), connection_end_id_t(0) }, { pullDownBlock->id(), connection_end_id_t(0) }));
+	EXPECT_EQ(evaluator->getState(pullUpPos), logic_state_t::UNDEFINED);
+	EXPECT_EQ(evaluator->getState(pullDownPos), logic_state_t::UNDEFINED);
+
+	logInfo("Removing connection between pull-up and pull-down junctions", "WeirdCasesEvaluatorTest::PullUpPullDownButWithDifferentConnectionMethod");
+
+	ASSERT_TRUE(circuit->tryRemoveConnection({ pullDownBlock->id(), connection_end_id_t(0) }, { pullUpBlock->id(), connection_end_id_t(0) }));
+	EXPECT_EQ(evaluator->getState(pullUpPos), logic_state_t::HIGH);
+	EXPECT_EQ(evaluator->getState(pullDownPos), logic_state_t::LOW);
+}

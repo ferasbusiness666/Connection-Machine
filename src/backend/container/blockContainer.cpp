@@ -437,7 +437,7 @@ bool BlockContainer::tryRemoveConnection(ConnectionEnd connectionEndB, Connectio
 				blockA->getPosition(), blockA->getConnectionPosition(connectionEndA.getConnectionId()).value()
 			);
 		} else {
-			difference->addCreatedConnection(
+			difference->addRemovedConnection(
 				blockA->getPosition(), blockA->getConnectionPosition(connectionEndA.getConnectionId()).value(),
 				blockB->getPosition(), blockB->getConnectionPosition(connectionEndB.getConnectionId()).value()
 			);
