@@ -356,7 +356,6 @@ void Evaluator::edit_createConnection(
 		dirtyNodes.insert(evalPosition);
 		changedPositioning = true;
 	}
-	logInfo("Making connection {}", "Evaluator::edit_createConnection", connection.toString());
 	evalSimulator->makeConnection(pauseGuard, connection);
 	changedSim = true;
 }
@@ -1165,7 +1164,6 @@ void Evaluator::traceOutwardsIC(
 				evalConnection = EvalConnection(targetConnectionPoint, connectionPoint.value());
 			}
 			// if (checkIfBitWidthsMatch(evalConnection)) {
-			logInfo("Making connection {}", "Evaluator::traceOutwardsIC", evalConnection.toString());
 			evalSimulator->makeConnection(pauseGuard, evalConnection);
 			changedSim = true;
 			addInterCircuitConnection(evalConnection, std::move(circuitPortDependenciesCopy), std::move(circuitNodeDependenciesCopy));
