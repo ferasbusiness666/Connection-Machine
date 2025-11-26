@@ -78,7 +78,7 @@ void Evaluator::makeEdit(DifferenceSharedPtr difference, circuit_id_t circuitId)
 		DiffCache diffCache(circuitManager);
 		for (eval_circuit_id_t evalCircuitId : evalCircuitContainer.ids()) {
 			if (evalCircuitContainer.getCircuitId(evalCircuitId) == circuitId) {
-				makeEditInPlace(pauseGuard, evalCircuitId, difference, diffCache);
+				makeEditInPlace(pauseGuard, evalCircuitId, difference, diffCache, false);
 			}
 		}
 		if (changedSim){
@@ -96,7 +96,7 @@ void Evaluator::makeEdit(DifferenceSharedPtr difference, circuit_id_t circuitId)
 	}
 }
 
-void Evaluator::makeEditInPlace(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, DifferenceSharedPtr difference, DiffCache& diffCache) {
+void Evaluator::makeEditInPlace(SimPauseGuard& pauseGuard, eval_circuit_id_t evalCircuitId, DifferenceSharedPtr difference, DiffCache& diffCache, bool freshICContents) {
 #ifdef TRACY_PROFILER
 	ZoneScoped;
 #endif
@@ -132,7 +132,7 @@ void Evaluator::makeEditInPlace(SimPauseGuard& pauseGuard, eval_circuit_id_t eva
 		}
 		case Difference::ModificationType::PLACE_BLOCK: {
 			const auto& [position, orientation, blockType] = std::get<Difference::block_modification_t>(modificationData);
-			edit_placeBlock(pauseGuard, evalCircuitId, diffCache, position, orientation, blockType);
+			edit_placeBlock(pauseGuard, evalCircuitId, diffCache, position, orientation, blockType, freshICContents);
 			break;
 		}
 		case Difference::ModificationType::MOVE_BLOCK: {
@@ -234,7 +234,8 @@ void Evaluator::edit_placeBlock(
 	DiffCache& diffCache,
 	Position position,
 	Orientation orientation,
-	BlockType blockType
+	BlockType blockType,
+	bool freshICContents
 ) {
 #ifdef TRACY_PROFILER
 	ZoneScoped;
@@ -258,7 +259,9 @@ void Evaluator::edit_placeBlock(
 	evalCircuit->setNode(position, node);
 	circuitNodeToBlockTypeMap[node] = blockType;
 	dirtyBlockAt(position, evalCircuitId);
-	checkToCreateExternalConnections(pauseGuard, evalCircuitId, position);
+	if (!freshICContents){
+		checkToCreateExternalConnections(pauseGuard, evalCircuitId, position);
+	}
 }
 
 void Evaluator::edit_placeIC(
@@ -282,7 +285,7 @@ void Evaluator::edit_placeIC(
 	evalCircuit->setNode(position, CircuitNode::fromIC(newEvalCircuitId));
 	dirtyBlockAt(position, evalCircuitId);
 	DifferenceSharedPtr diff = diffCache.getDifference(circuitId);
-	makeEditInPlace(pauseGuard, newEvalCircuitId, diff, diffCache);
+	makeEditInPlace(pauseGuard, newEvalCircuitId, diff, diffCache, true);
 }
 
 void Evaluator::edit_removeConnection(
@@ -353,6 +356,7 @@ void Evaluator::edit_createConnection(
 		dirtyNodes.insert(evalPosition);
 		changedPositioning = true;
 	}
+	logInfo("Making connection {}", "Evaluator::edit_createConnection", connection.toString());
 	evalSimulator->makeConnection(pauseGuard, connection);
 	changedSim = true;
 }
@@ -1161,6 +1165,7 @@ void Evaluator::traceOutwardsIC(
 				evalConnection = EvalConnection(targetConnectionPoint, connectionPoint.value());
 			}
 			// if (checkIfBitWidthsMatch(evalConnection)) {
+			logInfo("Making connection {}", "Evaluator::traceOutwardsIC", evalConnection.toString());
 			evalSimulator->makeConnection(pauseGuard, evalConnection);
 			changedSim = true;
 			addInterCircuitConnection(evalConnection, std::move(circuitPortDependenciesCopy), std::move(circuitNodeDependenciesCopy));

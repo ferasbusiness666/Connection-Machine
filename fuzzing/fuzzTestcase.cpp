@@ -106,7 +106,7 @@ BlockType getBlockTypeFromFuzzBlockType(const FuzzBlockType& fuzzBlockType, Envi
 		);
 	} else if (std::holds_alternative<FuzzCustomCircuitType>(fuzzBlockType)) {
 		CircuitFileManager& circuitFileManager = environment.getCircuitFileManager();
-		circuit_id_t circuitId = circuitFileManager.loadFromFile(DirectoryManager::getResourceDirectory() / std::get<FuzzCustomCircuitType>(fuzzBlockType).path).at(0);
+		circuit_id_t circuitId = circuitFileManager.loadFromFile((DirectoryManager::getResourceDirectory() / std::get<FuzzCustomCircuitType>(fuzzBlockType).path).string()).at(0);
 		SharedCircuit circuit = environment.getBackend().getCircuitManager().getCircuit(circuitId);
 		return circuit->getBlockType();
 	}
@@ -130,17 +130,17 @@ void FuzzTestcase::tryRemoveBlockTypesNotUsed() {
 			usedIndices.insert(placeAction.fuzzBlockTypeIndex);
 		}
 	}
-	for (size_t newIndex = 0; newIndex < blockTypesUsed.size(); ++newIndex) {
-		if (usedIndices.find(static_cast<int>(newIndex)) != usedIndices.end()) {
-			mapping[static_cast<int>(newIndex)] = static_cast<int>(mapping.size());
+	std::vector<FuzzBlockType> newBlockTypesUsed;
+	int newIndex = 0;
+	for (size_t i = 0; i < blockTypesUsed.size(); ++i) {
+		if (usedIndices.find(i) != usedIndices.end()) {
+			mapping[i] = newIndex;
+			newBlockTypesUsed.push_back(blockTypesUsed[i]);
+			newIndex++;
 		}
 	}
-	std::vector<FuzzBlockType> newBlockTypesUsed;
-	for (const auto& index : usedIndices) {
-		newBlockTypesUsed.push_back(blockTypesUsed[index]);
-	}
 	blockTypesUsed = std::move(newBlockTypesUsed);
-	for (auto& action : editActions) {
+	for (FuzzEditAction& action : editActions) {
 		if (std::holds_alternative<PlaceBlockAction>(action)) {
 			PlaceBlockAction& placeAction = std::get<PlaceBlockAction>(action);
 			placeAction.fuzzBlockTypeIndex = mapping[placeAction.fuzzBlockTypeIndex];
