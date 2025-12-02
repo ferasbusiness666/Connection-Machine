@@ -11,7 +11,7 @@ Step:
 		Block Preview: SWITCH (0, 2) ZERO
 Step:
 	Condition:
-		Block: AND (2, 1)
+		Block: AND (2, 1) ZERO
 	Action:
 		Message: "Click the 'AND' button on the left side menu, and place an AND block where prompted."
 		Message: "The AND block outputs ON only when all inputs are ON."
@@ -22,7 +22,7 @@ Step:
 	Action:
 		Message: "Click the 'Connection' tool and connect both switches to the AND block."
 		Message: "Connect 2 blocks by clicking the one you want the output from, and then clicking the one you want the output to go to."
-		Connection Preview: (0, 0) (2, 1) (0, 2) (2, 1)
+		Connection Preview: (0, 0) (2, 1)
 Step:
 	Condition:
 		Block: LIGHT (4, 1) ZERO

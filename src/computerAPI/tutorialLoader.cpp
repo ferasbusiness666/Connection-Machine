@@ -10,26 +10,32 @@ void parseTutorialFile(std::string& fileName) {
 	std::ifstream istream("TutorialLib/" + fileName);
 	std::vector<TutorialStep> steps;
 	std::string cur;
+	int line = 0;
 	istream >> cur;
+	line++;
 	if (cur != "version_0") {
-		throw std::string("tutorial/parser version mismatch\n");
+		throw std::string("tutorial/parser version mismatch\nError on line: " + std::to_string(line) + "\n");
 	}
 	istream >> cur;
+	line++;
 	if (cur != "Tutorial:") {
-		throw std::string("tutorial missing name\n");
+		throw std::string("tutorial missing name\nError on line: " + std::to_string(line) + "\n");
 	}
 	std::string name;
 
 	istream >> std::quoted(name);
-
-	for (; istream >> cur;) {
+	istream >> cur;
+	line++;
+	for (;;) {
 		TutorialStep step;
 		if (cur == "Step:") {
 			istream >> cur;
+			line++;
 			if (cur == "Condition:") {
 				TutorialCondition c;
 				while (true) {
 					istream >> cur;
+					line++;
 					if (cur == "Block:") {
 						istream >> cur;
 						BlockType blockName(stringToBlockType(cur));
@@ -42,20 +48,18 @@ void parseTutorialFile(std::string& fileName) {
 						Orientation orietnation(stringToOrientation((cur)));
 						c.blocks.emplace_back(p, blockName, orietnation);
 					} else if (cur == "Connection:") {
-						std::string p1a;
-						std::string p1b;
-						std::string p2a;
-						std::string p2b;
-						istream >> p1a;
-						istream >> p1b;
-						istream >> p2a;
-						istream >> p2b;
-						p1a.pop_back();
-						p2a.pop_back();
-						Position p1 = getPositionFromString(p1a, p1b);
-						Position p2 = getPositionFromString(p2a, p2b);
+						std::string px;
+						std::string py;
+						istream >> px;
+						istream >> py;
+						px.pop_back();
+						Position p1 = getPositionFromString(px, py);
+						istream >> px;
+						istream >> py;
+						px.pop_back();
+						Position p2 = getPositionFromString(px, py);
 						c.connections.emplace_back(p1, p2);
-					} else if (cur == "State") {
+					} else if (cur == "State:") {
 						std::string stateStr;
 						istream >> stateStr;
 						logic_state_t state;
@@ -64,21 +68,24 @@ void parseTutorialFile(std::string& fileName) {
 						} else if (stateStr == "l") {
 							state = logic_state_t::LOW;
 						}
-						std::string p1;
-						std::string p2;
-						istream >> p1;
-						istream >> p2;
-						p1.pop_back();
-						Position pos = getPositionFromString(p1, p2);
+						std::string px;
+						std::string py;
+						istream >> px;
+						istream >> py;
+						px.pop_back();
+						Position pos = getPositionFromString(px, py);
 						int numSteps;
 						istream >> numSteps;
 						c.logicStates.emplace_back(pos, state, numSteps);
 					} else if (cur == "Action:") {
 						// do nothing and let it go to Action check
 						step.condition = c;
+						c.blocks.clear();
+						c.connections.clear();
+						c.logicStates.clear();
 						break;
 					} else {
-						throw std::string("incorrectly formatted condition\n");
+						throw std::string("incorrectly formatted condition\nError on line: " + std::to_string(line) + "\n");
 					}
 				}
 
@@ -88,6 +95,7 @@ void parseTutorialFile(std::string& fileName) {
 						if (!(istream >> cur)) {
 							break;
 						}
+						line++;
 						if (cur == "Message:") {
 							std::string msg;
 							istream >> std::quoted(msg);
@@ -96,46 +104,46 @@ void parseTutorialFile(std::string& fileName) {
 							istream >> cur;
 							istream >> cur;
 							BlockType blockName(stringToBlockType(cur));
-							std::string tmp1;
-							std::string tmp2;
-							istream >> tmp1;
-							istream >> tmp2;
-							tmp1.pop_back();
-							Position p = getPositionFromString(tmp1, tmp2);
+							std::string tmp;
+							istream >> tmp;
+							istream >> cur;
+							tmp.pop_back();
+							Position p = getPositionFromString(tmp, cur);
 							istream >> cur;
 							Orientation orientation(stringToOrientation(cur));
 							a.blockPreviews.emplace_back(p, blockName, orientation);
 						} else if (cur == "Connection") {
 							istream >> cur;
-							std::string p1a;
-							std::string p1b;
-							std::string p2a;
-							std::string p2b;
-							istream >> p1a;
-							istream >> p1b;
-							istream >> p2a;
-							istream >> p2b;
-							p1a.pop_back();
-							p2a.pop_back();
-							Position p1 = getPositionFromString(p1a, p1b);
-							Position p2 = getPositionFromString(p2a, p2b);
+							std::string px;
+							std::string py;
+							istream >> px;
+							istream >> py;
+							px.pop_back();
+							Position p1 = getPositionFromString(px, py);
+							istream >> px;
+							istream >> py;
+							px.pop_back();
+							Position p2 = getPositionFromString(px, py);
 							a.connectionPreviews.emplace_back(p1, p2);
 						} else if (cur == "Step:") {
 							// do nothing and let it go back to Step:
 							step.action = a;
 							break;
 						} else {
-							throw std::string("incorrectly formatted action\n" + cur);
+							throw std::string("incorrectly formatted action\nError on line: " + std::to_string(line) + "\n");
 						}
 					}
 				} else {
-					throw std::string("incorrect format (missing 'Action:' or 'Condition:')\n");
+					throw std::string("incorrect format (missing 'Action:' or 'Condition:')\nError on line: " + std::to_string(line) + "\n");
 				}
 			} else {
-				throw std::string("incorrect format (missing 'Step:')\n");
+				throw std::string("incorrect format (missing 'Step:')\nError on line: " + std::to_string(line) + "\n");
 			}
 		}
 		steps.push_back(step);
+		if (!(istream >> cur)) {
+			break;
+		}
 	}
 
 	return;
