@@ -107,9 +107,9 @@ MainWindow::MainWindow(Environment& environment) :
 }
 
 MainWindow::~MainWindow() {
-	if (sdlWindow) App::get().deregisterWindow(*sdlWindow);
 	if (rmlContext) Rml::RemoveContext(rmlContext->GetName());
 	if (windowId != 0) MainRenderer::get().deregisterWindow(windowId);
+	if (sdlWindow) App::get().deregisterWindow(*sdlWindow);
 }
 
 bool MainWindow::recieveEvent(SDL_Event& event) {
