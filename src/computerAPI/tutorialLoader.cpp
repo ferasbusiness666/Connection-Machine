@@ -141,7 +141,7 @@ void parseTutorialFile(std::string& fileName) {
 			}
 		}
 		steps.push_back(step);
-		if (!(istream >> cur)) {
+		if (istream.peek() == EOF) {
 			break;
 		}
 	}
