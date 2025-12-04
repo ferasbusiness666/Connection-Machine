@@ -20,7 +20,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # ======================================== PROJECT SETUP ========================================
 set(BUILD_SHARED_LIBS OFF) # Don't build shared libs
-project(Connection_Machine VERSION 0.13.1)
+project(Connection_Machine VERSION 0.13.2)
 if (APPLE)
 	set(APP_NAME "Connection Machine") # name of the bundle
 else()
