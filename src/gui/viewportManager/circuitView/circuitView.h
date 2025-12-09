@@ -5,6 +5,8 @@
 #include "renderer/circuitRenderManager.h"
 #include "tools/toolManager.h"
 #include "tutorial.h"
+#include "tutorialDataManager.h"
+#include "computerAPI/tutorialLoader.h"
 #include "viewManager/viewManager.h"
 
 #include "gpu/mainRendererDefs.h"
@@ -34,6 +36,10 @@ public:
 
 	Tutorial& getTutorialManager() { return tutorialManager; }
 	const Tutorial& getTutorialManager() const { return tutorialManager; }
+
+	// void loadTutorial(const std::vector<TutorialStep>& steps) { tutorialManager.setTutorial(std::move(steps)); };
+
+	void initializeTutorial(std::string filename) { tutorialManager.setTutorial(std::move(loadTutorialFromFile(filename))); }
 
 	ViewManager& getViewManager() { return viewManager; }
 	const ViewManager& getViewManager() const { return viewManager; }

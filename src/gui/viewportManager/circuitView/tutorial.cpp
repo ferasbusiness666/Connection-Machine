@@ -1,16 +1,15 @@
 #include "tutorial.h"
-
 #include "circuitView.h"
+
 #include "environment/environment.h"
 #include "events/customEvents.h"
-
-std::vector<TutorialStep> basicTutorialInitialize();
 
 Tutorial::Tutorial(Environment& environment, CircuitView& circuitView) :
 	circuitView(&circuitView), elementCreator(circuitView.getViewportId()), environment(environment), tutorialRunning(false), tutorialState(0) { }
 
 void Tutorial::StartTutorial() {
 	if (tutorialRunning) return;
+	if (tutorialSteps.empty()) return;
 	tutorialRunning = true;
 	tutorialState = 0;
 	circuit_id_t circuitId = circuitView->getBackend().getCircuitManager().createNewCircuit(false);
@@ -28,15 +27,6 @@ void Tutorial::StartTutorial() {
 		this->checkTutorialState(stateSetEvent->getPosition(), stateSetEvent->getState());
 		return false;
 	});
-	std::string a("BasicTutorial.tir");
-	try {
-		std::string filename = "basictutorial.tir";
-		parseTutorialFile(filename);
-	} catch (const std::string& e) {
-		std::cerr << "Tutorial error: " << e << std::endl;
-		return;
-	}
-	tutorialSteps = basicTutorialInitialize();
 	runCurrentStep();
 }
 
@@ -150,77 +140,4 @@ void Tutorial::runCurrentStep() {
 			ConnectionPreview(FPosition(it->pos1.x, it->pos1.y) + optionalPos1Offset.value(), FPosition(it->pos2.x, it->pos2.y) + optionalPos2Offset.value())
 		);
 	}
-}
-
-std::vector<TutorialStep> basicTutorialInitialize() {
-	std::vector<TutorialStep> steps;
-	// step 0
-	{
-		TutorialStep s;
-		s.action.messages = { "Welcome to the Connection Machine tutorial.",
-							  "Click the 'Switch' button on the left side menu, and click to place 2 switches where prompted." };
-		s.action.blockPreviews = { { Position(0, 0), BlockType::SWITCH, Orientation() }, { Position(0, 2), BlockType::SWITCH, Orientation() } };
-		s.condition.blocks = { { Position(0, 0), BlockType::SWITCH, Orientation() }, { Position(0, 2), BlockType::SWITCH, Orientation() } };
-
-		steps.push_back(s);
-	}
-
-	// step 1
-	{
-		TutorialStep s;
-		s.action.messages = { "Click the 'AND' button on the left side menu, and place an AND block where prompted.",
-							  "The AND block outputs ON only when all inputs are ON." };
-		s.action.blockPreviews = { { Position(2, 1), BlockType::AND, Orientation() } };
-		s.condition.blocks = { { Position(2, 1), BlockType::AND } };
-
-		steps.push_back(s);
-	}
-
-	// step 2
-	{
-		TutorialStep s;
-		s.action.messages = { "Click the 'Connection' tool and connect both switches to the AND block." };
-		s.action.connectionPreviews = { { Position(0, 0), Position(2, 1) }, { Position(0, 2), Position(2, 1) } };
-		s.condition.connections = { { Position(0, 0), Position(2, 1) }, { Position(0, 2), Position(2, 1) } };
-
-		steps.push_back(s);
-	}
-
-	// step 3
-	{
-		TutorialStep s;
-		s.condition.blocks = { { Position(4, 1), BlockType::LIGHT } };
-		s.condition.connections = { { Position(2, 1), Position(4, 1) } };
-		s.action.messages = { "Place a LIGHT and connect the AND output to the LIGHT." };
-		s.action.blockPreviews = { { Position(4, 1), BlockType::LIGHT, Orientation() } };
-		s.action.connectionPreviews = { { Position(2, 1), Position(4, 1) } };
-		steps.push_back(s);
-	}
-
-	// step 4
-	{
-		TutorialStep s;
-		s.condition.logicStates = { { Position(2, 1), logic_state_t::HIGH, 2 } };
-
-		s.action.messages = { "Switch to the state changer and flip the switches so the AND output turns ON." };
-		steps.push_back(s);
-	}
-
-	// // step 5
-	// {
-	// 	TutorialStep s;
-	// 	s.condition.blocks = { { Position(2, 0), BlockType::LIGHT } };
-
-	// 	s.action.messages = { "Place an extra LIGHT at (2, 0) to finish." };
-	// 	s.action.blockPreviews = { { Position(2, 0), BlockType::LIGHT, Orientation() } };
-	// 	steps.push_back(s);
-	// }
-
-	// step 6
-	{
-		TutorialStep s;
-		s.action.messages = { "Tutorial complete." };
-		steps.push_back(s);
-	}
-	return steps;
 }

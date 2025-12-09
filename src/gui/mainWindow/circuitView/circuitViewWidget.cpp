@@ -10,6 +10,7 @@
 #include "gui/mainWindow/mainWindow.h"
 #include "gui/viewportManager/circuitView/circuitView.h"
 #include "gui/viewportManager/circuitView/events/customEvents.h"
+// #include "gui/viewportManager/circuitView/tutorialDataManager.h"
 
 // #include "backend/circuitTestCase/circuitTestCase.h"
 
@@ -181,7 +182,7 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 	keybindHandler.addListener("Keybinds/Editing/Tools/Cycle Mode", [this]() { this->mainWindow.getToolManagerManager().cycleActiveToolMode(); });
 	keybindHandler.addListener("Keybinds/Editing/Tools/Cycle Mode Back", [this]() { this->mainWindow.getToolManagerManager().cycleActiveToolMode(-1); });
 	keybindHandler.addListener("Keybinds/File/New", [this]() { newCircuit(); });
-	keybindHandler.addListener("Keybinds/Tutorial/Start", [this]() { circuitView->getTutorialManager().StartTutorial(); });
+	keybindHandler.addListener("Keybinds/Tutorial/Start", [this]() { circuitView->initializeTutorial("BasicTutorial.tir"); circuitView->getTutorialManager().StartTutorial(); });
 	keybindHandler.addListener("Keybinds/Tutorial/Stop", [this]() { circuitView->getTutorialManager().Stop(); });
 
 	Rml::Element* root = document->GetElementById("main-container");

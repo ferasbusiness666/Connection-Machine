@@ -4,9 +4,9 @@
 class CircuitView;
 class Environment;
 
-#include "renderer/elementCreator.h"
 #include "./viewManager/viewManager.h"
-#include "computerAPI/tutorialLoader.h"
+#include "renderer/elementCreator.h"
+
 
 struct TutorialCondition {
 	struct BlockRequirement {
@@ -50,6 +50,7 @@ struct TutorialStep {
 
 class Tutorial {
 public:
+
 	Tutorial(Environment& environment, CircuitView& circuitView);
 	void StartTutorial();
 	void Stop();
@@ -60,8 +61,8 @@ private:
 	void checkTutorialState(Position pos, logic_state_t state);
 
 	void runCurrentStep();
-    bool isCurrentStepComplete() const;
-    void advanceTutorial();
+	bool isCurrentStepComplete() const;
+	void advanceTutorial();
 
 	CircuitView* circuitView;
 	ElementCreator elementCreator;
@@ -75,4 +76,4 @@ private:
 	std::vector<TutorialStep> tutorialSteps;
 };
 
-#endif /*tutorialManager_h*/
+#endif /* tutorialManager_h */
