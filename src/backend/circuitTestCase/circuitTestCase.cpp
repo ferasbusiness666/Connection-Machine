@@ -52,7 +52,7 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
 
     for (auto iter = connections.begin(); iter != connections.end(); iter++) {
         if (iter->second.portType == BlockData::ConnectionData::PortType::INPUT || iter->second.portType == BlockData::ConnectionData::PortType::BIDIRECTIONAL) {
-            Position internalConnPos = Position(0, 0) + iter->second.positionOnBlock;
+            Position internalConnPos = Position(iter->second.positionOnBlock.dx, iter->second.positionOnBlock.dy);
             Position externalConnPos = Position(-1-nameToConnectedBlockPosition.size(), 0);
             if (!cir->tryInsertBlock(externalConnPos, Orientation(), SWITCH)) {
                 logError("Couldn't insert switch test circuit block", "circuitTestCase");
