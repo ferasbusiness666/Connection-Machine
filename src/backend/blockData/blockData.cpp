@@ -7,15 +7,20 @@ void BlockData::setDefaultData(bool defaultData) noexcept {
 	bool sentPre = false;
 	if (defaultData) {
 		for (auto connection : connections) {
+			if (connection.first == 0 || connection.first == 1) continue;
 			dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataRemoveConnection", { blockType, connection.first });
-			dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataSetConnection", { blockType, connection.first });
+			// dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, BlockData::ConnectionData::PortType>>("preBlockDataSetConnection", { blockType, connection.first, connection.second.portType });
 		}
 		if (getSize() != Size(1)) {
 			dataUpdateEventManager.sendEvent<std::pair<BlockType, Size>>("preBlockSizeChange", { blockType, Size(1) });
 			sentPre = true;
 		}
-		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataSetConnection", { blockType, connection_end_id_t(0) });
-		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataSetConnection", { blockType, connection_end_id_t(1) });
+		dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, BlockData::ConnectionData::PortType>>(
+			"preBlockDataSetConnection", { blockType, connection_end_id_t(0), BlockData::ConnectionData::PortType::INPUT }
+		);
+		dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, BlockData::ConnectionData::PortType>>(
+			"preBlockDataSetConnection", { blockType, connection_end_id_t(1), BlockData::ConnectionData::PortType::OUTPUT }
+		);
 	}
 	this->defaultData = defaultData;
 	blockSize = Size(1);
@@ -128,7 +133,7 @@ void BlockData::removeConnection(connection_end_id_t connectionId) noexcept {
 	sendBlockDataUpdate();
 }
 void BlockData::setConnectionInput(Vector positionOnBlock, connection_end_id_t connectionId) noexcept {
-	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataSetConnection", { blockType, connectionId });
+	dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, ConnectionData::PortType>>("preBlockDataSetConnection", { blockType, connectionId, ConnectionData::PortType::INPUT });
 	connections.insert_or_assign(connectionId, ConnectionData(positionOnBlock, ConnectionData::PortType::INPUT));
 	inputConnectionCount++;
 	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connectionId });
@@ -136,7 +141,7 @@ void BlockData::setConnectionInput(Vector positionOnBlock, connection_end_id_t c
 }
 // trys to set a connection output in the block. Returns success.
 void BlockData::setConnectionOutput(Vector positionOnBlock, connection_end_id_t connectionId) noexcept {
-	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataSetConnection", { blockType, connectionId });
+	dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, ConnectionData::PortType>>("preBlockDataSetConnection", { blockType, connectionId, ConnectionData::PortType::OUTPUT });
 	connections.insert_or_assign(connectionId, ConnectionData(positionOnBlock, ConnectionData::PortType::OUTPUT));
 	outputConnectionCount++;
 	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connectionId });
@@ -144,7 +149,7 @@ void BlockData::setConnectionOutput(Vector positionOnBlock, connection_end_id_t 
 }
 
 void BlockData::setConnectionBidirectional(Vector positionOnBlock, connection_end_id_t connectionId) noexcept {
-	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataSetConnection", { blockType, connectionId });
+	dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, ConnectionData::PortType>>("preBlockDataSetConnection", { blockType, connectionId, ConnectionData::PortType::BIDIRECTIONAL });
 	connections.insert_or_assign(connectionId, ConnectionData(positionOnBlock, ConnectionData::PortType::BIDIRECTIONAL));
 	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connectionId });
 	sendBlockDataUpdate();
@@ -169,7 +174,7 @@ std::optional<std::string> BlockData::getConnectionIdToName(connection_end_id_t 
 // 	connection_end_id_t connectionId = connectionIdNames.get(connectionName);
 // }
 
-void BlockData::setConnnectionPortOffset(connection_end_id_t connectionId, FVector offset) {
+void BlockData::setConnectionPortOffset(connection_end_id_t connectionId, FVector offset) {
 	if (!FSize(1).containsVector(offset)) {
 		logError("Can't set connection port offset to vector {} that makes it leave its cell", "BlockData", offset);
 		return;
@@ -206,7 +211,7 @@ void BlockData::setConnectionBitConfiguration(connection_end_id_t connectionId, 
 	);
 }
 
-nlohmann::json BlockData::dumpState() const {
+nlohmann::json BlockData::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json blockJson;
 	blockJson["blockType"] = blocktype_to_string(blockType);
 	blockJson["defaultData"] = defaultData;
@@ -235,7 +240,7 @@ nlohmann::json BlockData::dumpState() const {
 	return blockJson;
 }
 
-nlohmann::json BlockData::ConnectionData::dumpState() const {
+nlohmann::json BlockData::ConnectionData::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json connectionJson;
 	connectionJson["positionOnBlock"] = positionOnBlock.toString();
 	switch (portType) {

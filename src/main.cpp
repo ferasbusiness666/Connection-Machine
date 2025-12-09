@@ -24,6 +24,7 @@ void registerSettings() {
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Simulation/Skip Back", Keybind(Keybind::KeyId::KI_LEFT, Keybind::KeyMod::KM_CTRL));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Simulation/Increase Speed", Keybind(Keybind::KeyId::KI_UP));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Simulation/Decrease Speed", Keybind(Keybind::KeyId::KI_DOWN));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Simulation/Reset Simulation", Keybind(Keybind::KeyId::KI_R, Keybind::KeyMod::KM_CTRL));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Undo", Keybind(Keybind::KeyId::KI_Z, Keybind::KeyMod::KM_CTRL));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Redo", Keybind(Keybind::KeyId::KI_Z, Keybind::KeyMod::KM_CTRL | Keybind::KeyMod::KM_SHIFT));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Copy", Keybind(Keybind::KeyId::KI_C, Keybind::KeyMod::KM_CTRL));
@@ -61,6 +62,7 @@ void registerSettings() {
 	Settings::registerSetting<SettingType::BOOL>("Keybinds/Camera/Scroll Panning", true);
 	Settings::registerSetting<SettingType::BOOL>("Keybinds/Settings/Match Keyboard Layout", true);
 	Settings::registerSetting<SettingType::BOOL>("Preferences/Editing/Pick Block Copy Orientation", true);
+	Settings::registerSetting<SettingType::BOOL>("Preferences/Simulation/Show Confirmation for Reset Simulation", true);
 	Settings::registerSetting<SettingType::DECIMAL>("Appearance/UI Scale", 1.0);
 	Settings::registerSetting<SettingType::UINT>("Simulation/Max Thread Count", std::thread::hardware_concurrency() / 2);
 	Settings::registerSetting<SettingType::DECIMAL>("Appearance/Corner Log/Message Timeout", 3.f);

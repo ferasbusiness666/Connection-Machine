@@ -118,12 +118,12 @@ bool CircuitValidator::setOverlapsUnpositioned() {
 
 		if (hasOverlap) {
 			// set the block position as undefined
-			logInfo(
-				"Found overlapped block position at {} --> {}, setting to undefined position",
-				"CircuitValidator",
-				block.position.toString(),
-				intPos.toString()
-			);
+			// logInfo(
+			// 	"Found overlapped block position at {} --> {}, setting to undefined position",
+			// 	"CircuitValidator",
+			// 	block.position.toString(),
+			// 	intPos.toString()
+			// );
 			block.position.setInvalid();
 		} else {
 			// mark all positions as occupied

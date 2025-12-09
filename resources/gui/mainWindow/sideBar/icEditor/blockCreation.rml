@@ -52,9 +52,9 @@
 			</div>
 			<div id="connection-menu" class="surface-raised pad-sm">
 				<div class="section-header">Inputs <button id="connection-list-add-input" class="btn btn-outline btn-sm"><span>Add Input</span></button></div>
-				<div id="connection-list-input" class="connection-list scroll-y alt-rows"></div>
+				<div id="connection-list-input" class="connection-list alt-rows"></div>
 				<div class="section-header">Outputs <button id="connection-list-add-output" class="btn btn-outline btn-sm"><span>Add Output</span></button></div>
-				<div id="connection-list-output" class="connection-list scroll-y alt-rows"></div>
+				<div id="connection-list-output" class="connection-list alt-rows"></div>
 			</div>
 			<div class="form-actions">
 				<button id="reset-block-creation" class="btn btn-text">Reset</button>

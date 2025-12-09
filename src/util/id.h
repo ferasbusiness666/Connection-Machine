@@ -104,7 +104,7 @@ namespace fmt {
 template <class Tag, class Rep>
 struct formatter<Id<Tag, Rep>> : formatter<Rep> {
 	template <typename FormatContext>
-	auto format(const Id<Tag, Rep>& id, FormatContext& ctx) const {
+	auto format(const Id<Tag, Rep>& id, FormatContext& ctx) const /* GCOVR_EXCL_FUNCTION */ {
 		return formatter<Rep>::format(id.get(), ctx);
 	}
 };
@@ -162,7 +162,7 @@ public:
 		}
 		unusedIds.insert(id.get());
 	}
-	constexpr bool isIdUsed(id_type id) const { return id.get() < nextId && !unusedIds.contains(id.get()); }
+	constexpr bool isIdUsed(id_type id) const { return id.get() < nextId && id.get() >= initialValue && !unusedIds.contains(id.get()); }
 	constexpr id_type peekNext() const { return id_type(nextId); }
 	void reset() {
 		nextId = initialValue;
@@ -177,7 +177,7 @@ public:
 		}
 		return usedIds;
 	}
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 		nlohmann::json stateJson;
 		stateJson["nextId"] = nextId;
 		stateJson["initialValue"] = initialValue;

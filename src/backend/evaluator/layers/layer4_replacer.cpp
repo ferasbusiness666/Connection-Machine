@@ -88,28 +88,6 @@ EvalConnectionPoint Replacer::getReplacementConnectionPoint(EvalConnectionPoint 
 	return point;
 }
 
-std::vector<EvalConnectionPoint> Replacer::getReplacementConnectionPoints(const std::vector<EvalConnectionPoint>& points) const {
-	std::vector<EvalConnectionPoint> result;
-	result.reserve(points.size());
-	for (const EvalConnectionPoint& point : points) {
-		result.push_back(getReplacementConnectionPoint(point));
-	}
-	return result;
-}
-
-std::vector<std::optional<EvalConnectionPoint>> Replacer::getReplacementConnectionPoints(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
-	std::vector<std::optional<EvalConnectionPoint>> result;
-	result.reserve(points.size());
-	for (const std::optional<EvalConnectionPoint>& point : points) {
-		if (!point.has_value()) {
-			result.push_back(std::nullopt);
-			continue;
-		}
-		result.push_back(getReplacementConnectionPoint(point.value()));
-	}
-	return result;
-}
-
 void Replacer::mergeBuses(SimPauseGuard& pauseGuard, int layer, int junctionOverpowerLayer) {
 	std::vector<middle_id_t> allMiddleIds = middleIdProvider.getUsedIds();
 	for (const middle_id_t id : allMiddleIds) {
@@ -141,6 +119,10 @@ void Replacer::mergeBusLane(SimPauseGuard& pauseGuard, int layer, int junctionOv
 	Replacement& replacement = makeReplacement(layer);
 	middle_id_t newJunctionId = replacement.getNewId();
 	replacement.addGate(pauseGuard, BlockType::JUNCTION, newJunctionId);
+	existingJunctionIds.insert(newJunctionId);
+	replacement.addRevertAction([this, newJunctionId]() {
+		existingJunctionIds.erase(newJunctionId);
+	});
 	std::queue<BlockLane> mergeQueue;
 	std::unordered_set<BlockLane, BlockLane::Hash> visited;
 	mergeQueue.push({ id, laneId });
@@ -256,6 +238,9 @@ void Replacer::mergeJunctions(SimPauseGuard& pauseGuard, int layer) {
 			if (replacementIdLayers.at(id) >= layer) {
 				continue;
 			}
+		}
+		if (!isJunctionType(busInterfacePassthrough.getBlockType(id))) {
+			continue;
 		}
 		JunctionFloodFillResult floodFillResult = junctionFloodFill(id);
 
@@ -422,73 +407,60 @@ Replacer::JunctionFloodFillResult Replacer::junctionFloodFill(middle_id_t juncti
 	return result;
 }
 
-std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> Replacer::getPinSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
-	// return busInterfacePassthrough.getPinSimulatorIds(getReplacementConnectionPoints(points));
-	std::vector<std::optional<EvalConnectionPoint>> replacedPoints = getReplacementConnectionPoints(points);
-	std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> result;
-	result.reserve(replacedPoints.size());
-	for (const auto& point : replacedPoints) {
-		if (!point.has_value()) {
-			result.emplace_back(static_cast<simulator_id_t>(0));
-			continue;
-		}
-		BlockType blockType = busInterfacePassthrough.getBlockType(point->gateId);
-		if (blockType == BlockType::NONE) {
-			result.emplace_back(static_cast<simulator_id_t>(0));
-			continue;
-		}
-		if (blockType == BlockType::JUNCTION) {
-			if (busInternalJunctions.contains(point->gateId)) {
-				const BusInternalJunctionArray& busInternalJunctionArray = busInternalJunctions.at(point->gateId);
-				std::vector<simulator_id_t> simIds;
-				simIds.reserve(busInternalJunctionArray.junctionIds.size());
-				for (const middle_id_t junctionId : busInternalJunctionArray.junctionIds) {
-					simIds.push_back(busInterfacePassthrough.getPinSimulatorId(getReplacementConnectionPoint({junctionId, connection_end_id_t(0)})));
-				}
-				if (simIds.size() == 1) {
-					result.emplace_back(simIds.at(0));
-				} else {
-					result.emplace_back(std::move(simIds));
-				}
+std::variant<simulator_id_t, std::vector<simulator_id_t>> Replacer::getPinSimulatorId(EvalConnectionPoint point) const {
+	EvalConnectionPoint replacedPoint = getReplacementConnectionPoint(point);
+	BlockType blockType = busInterfacePassthrough.getBlockType(replacedPoint.gateId);
+	if (blockType == BlockType::NONE) {
+		return simulator_id_t(3);
+	}
+	if (blockType == BlockType::JUNCTION) {
+		if (busInternalJunctions.contains(replacedPoint.gateId)) {
+			const BusInternalJunctionArray& busInternalJunctionArray = busInternalJunctions.at(replacedPoint.gateId);
+			std::vector<simulator_id_t> simIds;
+			simIds.reserve(busInternalJunctionArray.junctionIds.size());
+			for (const middle_id_t junctionId : busInternalJunctionArray.junctionIds) {
+				simIds.push_back(busInterfacePassthrough.getPinSimulatorId(getReplacementConnectionPoint({junctionId, connection_end_id_t(0)})));
+			}
+			if (simIds.size() == 1) {
+				return simIds.at(0);
 			} else {
-				simulator_id_t simId = busInterfacePassthrough.getPinSimulatorId(*point);
-				result.emplace_back(simId);
+				return std::move(simIds);
 			}
 		} else {
-			const BlockData* blockData = blockDataManager.getBlockData(blockType);
-			if (blockData && blockData->isBus()) {
-				const BlockData::ConnectionData* connectionData = blockData->getConnectionData(point->portId);
-				std::vector<simulator_id_t> simIds;
-				simIds.reserve(connectionData->getBitWidth());
-				if (busInternalJunctions.contains(point->gateId)) {
-					const BusInternalJunctionArray& busInternalJunctionArray = busInternalJunctions.at(point->gateId);
-					if (std::holds_alternative<unsigned int>(connectionData->bitConfiguration)) {
-						for (unsigned int laneId = 0; laneId < std::get<unsigned int>(connectionData->bitConfiguration); laneId++) {
-							simIds.push_back(busInterfacePassthrough.getPinSimulatorId(getReplacementConnectionPoint({busInternalJunctionArray.junctionIds[laneId], connection_end_id_t(0)})));
-						}
-					} else {
-						for (unsigned int laneId : std::get<std::vector<unsigned int>>(connectionData->bitConfiguration)) {
-							simIds.push_back(busInterfacePassthrough.getPinSimulatorId(getReplacementConnectionPoint({busInternalJunctionArray.junctionIds[laneId], connection_end_id_t(0)})));
-						}
+			return busInterfacePassthrough.getPinSimulatorId(replacedPoint);
+		}
+	} else {
+		const BlockData* blockData = blockDataManager.getBlockData(blockType);
+		if (blockData && blockData->isBus()) {
+			const BlockData::ConnectionData* connectionData = blockData->getConnectionData(replacedPoint.portId);
+			std::vector<simulator_id_t> simIds;
+			simIds.reserve(connectionData->getBitWidth());
+			if (busInternalJunctions.contains(replacedPoint.gateId)) {
+				const BusInternalJunctionArray& busInternalJunctionArray = busInternalJunctions.at(replacedPoint.gateId);
+				if (std::holds_alternative<unsigned int>(connectionData->bitConfiguration)) {
+					for (unsigned int laneId = 0; laneId < std::get<unsigned int>(connectionData->bitConfiguration); laneId++) {
+						simIds.push_back(busInterfacePassthrough.getPinSimulatorId(getReplacementConnectionPoint({busInternalJunctionArray.junctionIds[laneId], connection_end_id_t(0)})));
 					}
 				} else {
-					simIds.resize(connectionData->getBitWidth(), simulator_id_t(0));
-				}
-				if (simIds.size() == 1) {
-					result.emplace_back(simIds.at(0));
-				} else {
-					result.emplace_back(std::move(simIds));
+					for (unsigned int laneId : std::get<std::vector<unsigned int>>(connectionData->bitConfiguration)) {
+						simIds.push_back(busInterfacePassthrough.getPinSimulatorId(getReplacementConnectionPoint({busInternalJunctionArray.junctionIds[laneId], connection_end_id_t(0)})));
+					}
 				}
 			} else {
-				simulator_id_t simId = busInterfacePassthrough.getPinSimulatorId(*point);
-				result.emplace_back(simId);
+				simIds.resize(connectionData->getBitWidth(), simulator_id_t(0));
 			}
+			if (simIds.size() == 1) {
+				return simIds.at(0);
+			} else {
+				return std::move(simIds);
+			}
+		} else {
+			return busInterfacePassthrough.getPinSimulatorId(replacedPoint);
 		}
 	}
-	return result;
 }
 
-nlohmann::json Replacer::dumpState() const {
+nlohmann::json Replacer::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["busInterfacePassthrough"] = busInterfacePassthrough.dumpState();
 	stateJson["replacements"] = nlohmann::json::object();
@@ -519,7 +491,7 @@ nlohmann::json Replacer::dumpState() const {
 	return stateJson;
 }
 
-nlohmann::json Replacer::dumpConnectionPointMap(const std::unordered_map<connection_end_id_t, EvalConnectionPoint>& pointMap) const {
+nlohmann::json Replacer::dumpConnectionPointMap(const std::unordered_map<connection_end_id_t, EvalConnectionPoint>& pointMap) const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json pointMapJson;
 	for (const auto& [portId, connPoint] : pointMap) {
 		pointMapJson[std::to_string(portId.get())] = connPoint.dumpState();
@@ -527,7 +499,7 @@ nlohmann::json Replacer::dumpConnectionPointMap(const std::unordered_map<connect
 	return pointMapJson;
 }
 
-nlohmann::json Replacer::dumpReplacementIdSet(const std::unordered_set<replacement_id_t>& idSet) const {
+nlohmann::json Replacer::dumpReplacementIdSet(const std::unordered_set<replacement_id_t>& idSet) const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json idSetJson = nlohmann::json::array();
 	for (const replacement_id_t id : idSet) {
 		idSetJson.push_back(id.get());
@@ -535,7 +507,7 @@ nlohmann::json Replacer::dumpReplacementIdSet(const std::unordered_set<replaceme
 	return idSetJson;
 }
 
-nlohmann::json Replacer::BusInternalJunctionArray::dumpState() const {
+nlohmann::json Replacer::BusInternalJunctionArray::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["junctionIds"] = nlohmann::json::array();
 	for (const middle_id_t junctionId : junctionIds) {

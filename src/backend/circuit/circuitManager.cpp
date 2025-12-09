@@ -61,11 +61,11 @@ circuit_id_t CircuitManager::createNewCircuit(const ParsedCircuit& parsedCircuit
 			// this duplicates check won't really work with open circuits ics because we have no way of knowing
 			// unless we save which paths we have loaded. Though this would require then linking the IC blocktype to
 			// the parsed circuit which seems annoying
-			logWarning("Dependency Circuit with UUID {} already exists; not creating custom block.", "CircuitManager", uuid);
+			logInfo("Dependency Circuit with UUID {} already exists; not creating custom block.", "CircuitManager", uuid);
 			return possibleExistingCircuit->getCircuitId();
 		} else {
 			if (getProceduralCircuitManager().getProceduralCircuit(uuid)) {
-				logWarning("Dependency Circuit with UUID {} already exists as ProceduralCircuit. Can't create block.", "CircuitManager", uuid);
+				logInfo("Dependency Circuit with UUID {} already exists as ProceduralCircuit. Can't create block.", "CircuitManager", uuid);
 				return 0;
 			}
 		}
@@ -130,7 +130,7 @@ circuit_id_t CircuitManager::createNewCircuit(const ParsedCircuit& parsedCircuit
 			circuitBlockData->setConnectionIdPosition(port.connectionEndId, port.positionOfBlock.value());
 		}
 		blockData->setConnectionBitConfiguration(port.connectionEndId, port.bitWidth);
-		blockData->setConnnectionPortOffset(port.connectionEndId, port.portOffset);
+		blockData->setConnectionPortOffset(port.connectionEndId, port.portOffset);
 	}
 
 	dataUpdateEventManager.sendEvent("blockDataUpdate");
@@ -187,6 +187,7 @@ circuit_id_t CircuitManager::createNewCircuit(const GeneratedCircuit& generatedC
 		if (!port.portName.empty()) {
 			blockData->setConnectionIdName(port.connectionEndId, port.portName);
 		}
+		blockData->setConnectionPortOffset(port.connectionEndId, port.portOffset);
 		blockData->setConnectionBitConfiguration(port.connectionEndId, port.bitWidth);
 		if (port.internalBlockId == 0) {
 			logError("Can't find port.internalBlockId should not be 0.", "CircuitManager");
@@ -245,6 +246,7 @@ void CircuitManager::updateExistingCircuit(circuit_id_t id, const GeneratedCircu
 	if (!circuitBlockData) {
 		circuitBlockDataManager.newCircuitBlockData(id, blockType);
 		circuit->setBlockType(blockType);
+		circuitBlockData = circuitBlockDataManager.getCircuitBlockData(id);
 	}
 
 	if (!circuitBlockData) {
@@ -315,7 +317,7 @@ void CircuitManager::updateExistingCircuit(circuit_id_t id, const GeneratedCircu
 	dataUpdateEventManager.sendEvent("blockDataUpdate");
 }
 
-nlohmann::json CircuitManager::dumpState() const {
+nlohmann::json CircuitManager::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["lastId"] = lastId;
 	stateJson["circuits"] = nlohmann::json::object();

@@ -32,7 +32,7 @@ SharedEvaluator Backend::getEvaluator(evaluator_id_t evaluatorId) {
 	return evaluatorManager.getEvaluator(evaluatorId);
 }
 
-nlohmann::json Backend::dumpState() const {
+nlohmann::json Backend::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["clipboardEditCounter"] = clipboardEditCounter;
 	stateJson["clipboard"] = clipboard ? clipboard->dumpState() : nullptr;

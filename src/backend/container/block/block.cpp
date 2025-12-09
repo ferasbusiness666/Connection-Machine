@@ -1,6 +1,6 @@
 #include "block.h"
 
-nlohmann::json Block::dumpState() const {
+nlohmann::json Block::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["id"] = blockId;
 	stateJson["type"] = blocktype_to_string(blockType);

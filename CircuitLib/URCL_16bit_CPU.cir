@@ -1,0 +1,274 @@
+version_8
+import "procedural/wasm/busTristate.wasm"
+import "16bit_Bus_DFF.cir"
+import "FourBitDecoder.cir"
+import "URCL_16bit_CPU_internal.cir"
+Circuit: "circuit8"
+UUID: a5650c05-ad68-435b-9642-7d94c154a1eb
+size: 1x1
+ports:
+blockId 110 CONSTANT_ON -4 -18 ZERO
+	(connId:0) (69 0)
+blockId 95 CONSTANT_OFF -4 -17 ZERO
+	(connId:0) (69 1)
+blockId 92 "0662c20a-c47f-4586-bafc-f582587b230b" ("size": 2) -1 -14 ZERO
+	(connId:0) (74 2)
+	(connId:1) (117 0)
+	(connId:2) (5 9)
+blockId 90 "0662c20a-c47f-4586-bafc-f582587b230b" ("size": 2) -1 -18 ZERO
+	(connId:0) (69 2)
+	(connId:1) (115 0)
+	(connId:2) (5 5)
+blockId 88 "0662c20a-c47f-4586-bafc-f582587b230b" ("size": 2) -5 -15 ZERO
+	(connId:0) (73 2)
+	(connId:1) (116 0)
+	(connId:2) (5 8)
+blockId 86 "0662c20a-c47f-4586-bafc-f582587b230b" ("size": 2) -5 -19 ZERO
+	(connId:0) (68 2)
+	(connId:1) (114 0)
+	(connId:2) (5 4)
+blockId 74 Bus ( 1 0 2, 0 1 [ 1 ], 0 0 [ 0 ]) -3 -14 ZERO
+	(connId:0) (98 0)
+	(connId:1) (113 0)
+	(connId:2) (92 0)
+blockId 73 Bus ( 1 0 2, 0 1 [ 1 ], 0 0 [ 0 ]) -7 -15 ZERO
+	(connId:0) (111 0)
+	(connId:1) (112 0)
+	(connId:2) (88 0)
+blockId 69 Bus ( 1 0 2, 0 1 [ 1 ], 0 0 [ 0 ]) -3 -18 ZERO
+	(connId:0) (110 0)
+	(connId:1) (95 0)
+	(connId:2) (90 0)
+blockId 68 Bus ( 1 0 2, 0 1 [ 1 ], 0 0 [ 0 ]) -7 -19 ZERO
+	(connId:0) (102 0)
+	(connId:1) (103 0)
+	(connId:2) (86 0)
+blockId 63 JUNCTION 0 -3 ZERO
+	(connId:0) (62 0) (117 0)
+blockId 62 JUNCTION 0 11 ZERO
+	(connId:0) (1 3) (63 0)
+blockId 61 JUNCTION -12 12 ZERO
+	(connId:0) (53 0) (57 0) (60 0)
+blockId 60 Bus ( 1 0 16, 0 1 [ 8 9 10 11 12 13 14 15 ], 0 0 [ 0 1 2 3 4 5 6 7 ]) -10 12 ZERO
+	(connId:0) (61 0)
+	(connId:1) (55 0)
+	(connId:2) (1 5)
+blockId 59 Bus ( 1 0 16, 0 15 [ 15 ], 0 14 [ 14 ], 0 13 [ 13 ], 0 12 [ 12 ], 0 11 [ 11 ], 0 10 [ 10 ], 0 9 [ 9 ], 0 8 [ 8 ], 0 7 [ 7 ], 0 6 [ 6 ], 0 5 [ 5 ], 0 4 [ 4 ], 0 3 [ 3 ], 0 2 [ 2 ], 0 1 [ 1 ], 0 0 [ 0 ]) -30 -6 ZERO
+	(connId:0) (6 0)
+	(connId:1) (8 0)
+	(connId:2) (40 0)
+	(connId:3) (43 0)
+	(connId:4) (23 0)
+	(connId:5) (46 0)
+	(connId:6) (49 0)
+	(connId:7) (52 0)
+	(connId:8) (54 0)
+	(connId:9) (56 0)
+	(connId:10) (17 0)
+	(connId:11) (18 0)
+	(connId:12) (19 0)
+	(connId:13) (20 0)
+	(connId:14) (21 0)
+	(connId:15) (22 0)
+	(connId:16) (11 0)
+blockId 57 JUNCTION -12 21 TWO_SEVENTY
+	(connId:0) (27 8) (61 0)
+blockId 56 SWITCH -31 3 ZERO
+	(connId:0) (59 9)
+blockId 55 JUNCTION -13 13 TWO_SEVENTY
+	(connId:0) (26 8) (50 0) (60 1)
+blockId 54 SWITCH -31 2 ZERO
+	(connId:0) (59 8)
+blockId 53 JUNCTION -12 4 TWO_SEVENTY
+	(connId:0) (48 0) (61 0)
+blockId 52 SWITCH -31 1 ZERO
+	(connId:0) (59 7)
+blockId 51 "0662c20a-c47f-4586-bafc-f582587b230b" ("size": 8) -14 6 ZERO
+	(connId:0) (2 8)
+	(connId:1) (50 0)
+blockId 50 JUNCTION -13 6 TWO_SEVENTY
+	(connId:0) (51 1) (55 0)
+blockId 49 SWITCH -31 0 ZERO
+	(connId:0) (59 6)
+blockId 48 "0662c20a-c47f-4586-bafc-f582587b230b" ("size": 8) -14 4 ZERO
+	(connId:0) (2 8) (53 0)
+blockId 47 JUNCTION_L -20 28 TWO_SEVENTY
+	(connId:0) (27 7)
+blockId 46 SWITCH -31 -1 ZERO
+	(connId:0) (59 5)
+blockId 45 JUNCTION 5 2 ZERO
+	(connId:0) (1 6) (25 2)
+blockId 44 JUNCTION_L -20 27 TWO_SEVENTY
+	(connId:0) (27 6)
+blockId 43 SWITCH -31 -3 ZERO
+	(connId:0) (59 3)
+blockId 42 JUNCTION 4 0 ZERO
+	(connId:0) (1 4) (4 2)
+blockId 41 JUNCTION_L -20 26 TWO_SEVENTY
+	(connId:0) (27 5)
+blockId 40 SWITCH -31 -4 ZERO
+	(connId:0) (59 2)
+blockId 39 JUNCTION_L -20 25 TWO_SEVENTY
+	(connId:0) (27 4)
+blockId 38 JUNCTION_L -20 24 TWO_SEVENTY
+	(connId:0) (27 3)
+blockId 37 JUNCTION_L -20 23 TWO_SEVENTY
+	(connId:0) (27 2)
+blockId 35 JUNCTION_L -20 22 TWO_SEVENTY
+	(connId:0) (27 1)
+blockId 34 BUTTON -23 -5 ZERO
+	(connId:0) (15 1)
+blockId 33 JUNCTION_L -20 19 TWO_SEVENTY
+	(connId:0) (26 6)
+blockId 32 JUNCTION_L -20 17 TWO_SEVENTY
+	(connId:0) (26 4)
+blockId 31 JUNCTION_L -20 16 TWO_SEVENTY
+	(connId:0) (26 3)
+blockId 127 CONSTANT_OFF 3 7 NINETY
+	(connId:0) (1 8)
+blockId 30 JUNCTION_L -20 15 TWO_SEVENTY
+	(connId:0) (26 2)
+blockId 29 JUNCTION_L -20 14 TWO_SEVENTY
+	(connId:0) (26 1)
+blockId 28 JUNCTION_L -20 13 TWO_SEVENTY
+	(connId:0) (26 0)
+blockId 27 Bus ( 1 0 8, 0 7 [ 7 ], 0 6 [ 6 ], 0 5 [ 5 ], 0 4 [ 4 ], 0 3 [ 3 ], 0 2 [ 2 ], 0 1 [ 1 ], 0 0 [ 0 ]) -17 21 ZERO
+	(connId:0) (16 0)
+	(connId:1) (35 0)
+	(connId:2) (37 0)
+	(connId:3) (38 0)
+	(connId:4) (39 0)
+	(connId:5) (41 0)
+	(connId:6) (44 0)
+	(connId:7) (47 0)
+	(connId:8) (57 0)
+blockId 26 Bus ( 1 0 8, 0 7 [ 7 ], 0 6 [ 6 ], 0 5 [ 5 ], 0 4 [ 4 ], 0 3 [ 3 ], 0 2 [ 2 ], 0 1 [ 1 ], 0 0 [ 0 ]) -17 13 ZERO
+	(connId:0) (28 0)
+	(connId:1) (29 0)
+	(connId:2) (30 0)
+	(connId:3) (31 0)
+	(connId:4) (32 0)
+	(connId:5) (12 0)
+	(connId:6) (33 0)
+	(connId:7) (14 0)
+	(connId:8) (55 0)
+blockId 25 Bus ( 1 0 2, 0 1 [ 1 ], 0 0 [ 0 ]) -17 2 ZERO
+	(connId:0) (3 8)
+	(connId:1) (3 9)
+	(connId:2) (45 0)
+blockId 24 Bus ( 1 0 2, 0 1 [ 1 ], 0 0 [ 0 ]) -17 -2 ZERO
+	(connId:0) (3 4)
+	(connId:1) (3 5)
+	(connId:2) (10 0)
+blockId 23 SWITCH -31 -2 ZERO
+	(connId:0) (59 4)
+blockId 22 SWITCH -31 9 ZERO
+	(connId:0) (59 15)
+blockId 21 SWITCH -31 8 ZERO
+	(connId:0) (59 14)
+blockId 117 JUNCTION 0 -14 ZERO
+	(connId:0) (63 0) (92 1) (116 0)
+blockId 20 SWITCH -31 7 ZERO
+	(connId:0) (59 13)
+blockId 116 JUNCTION 0 -15 ZERO
+	(connId:0) (88 1) (115 0) (117 0)
+blockId 19 SWITCH -31 6 ZERO
+	(connId:0) (59 12)
+blockId 115 JUNCTION 0 -18 ZERO
+	(connId:0) (90 1) (114 0) (116 0)
+blockId 18 SWITCH -31 5 ZERO
+	(connId:0) (59 11)
+blockId 114 JUNCTION 0 -19 ZERO
+	(connId:0) (86 1) (115 0)
+blockId 17 SWITCH -31 4 ZERO
+	(connId:0) (59 10)
+blockId 113 CONSTANT_ON -4 -13 ZERO
+	(connId:0) (74 1)
+blockId 16 JUNCTION_L -20 21 TWO_SEVENTY
+	(connId:0) (27 0)
+blockId 112 CONSTANT_ON -8 -14 ZERO
+	(connId:0) (73 1)
+blockId 15 "2fd3b9f0-ed34-4de8-a5a3-72485e4a57d9" -21 -6 ZERO
+	(connId:0) (11 0)
+	(connId:1) (34 0)
+	(connId:2) (3 16)
+blockId 111 CONSTANT_ON -8 -15 ZERO
+	(connId:0) (73 0)
+blockId 14 JUNCTION_L -20 20 TWO_SEVENTY
+	(connId:0) (26 7)
+blockId 12 JUNCTION_L -20 18 TWO_SEVENTY
+	(connId:0) (26 5)
+blockId 11 JUNCTION -27 -6 ZERO
+	(connId:0) (15 0) (59 16)
+blockId 10 JUNCTION 2 -2 ZERO
+	(connId:0) (1 2) (24 2)
+blockId 9 Bus ( 1 0 4, 0 3 [ 3 ], 0 2 [ 2 ], 0 1 [ 1 ], 0 0 [ 0 ]) -16 -18 ONE_EIGHTY_FLIPPED
+	(connId:0) (5 0)
+	(connId:1) (5 1)
+	(connId:2) (5 2)
+	(connId:3) (5 3)
+	(connId:4) (7 4)
+blockId 8 SWITCH -31 -5 ZERO
+	(connId:0) (59 1)
+blockId 7 Bus ( 1 0 4, 0 3 [ 3 ], 0 2 [ 2 ], 0 1 [ 1 ], 0 0 [ 0 ]) -17 -6 ZERO
+	(connId:0) (3 0)
+	(connId:1) (3 1)
+	(connId:2) (3 2)
+	(connId:3) (3 3)
+	(connId:4) (9 4)
+blockId 103 CONSTANT_OFF -8 -18 ZERO
+	(connId:0) (68 1)
+blockId 6 SWITCH -31 -6 ZERO
+	(connId:0) (59 0)
+blockId 102 CONSTANT_OFF -8 -19 ZERO
+	(connId:0) (68 0)
+blockId 5 "c5ea9727-1e28-4082-ba17-e2f44dffe631" -14 -18 ZERO
+	(connId:0) (9 0)
+	(connId:1) (9 1)
+	(connId:2) (9 2)
+	(connId:3) (9 3)
+	(connId:4) (86 2)
+	(connId:5) (90 2)
+	(connId:8) (88 2)
+	(connId:9) (92 2)
+blockId 4 Bus ( 1 0 2, 0 1 [ 1 ], 0 0 [ 0 ]) -17 0 ZERO
+	(connId:0) (3 6)
+	(connId:1) (3 7)
+	(connId:2) (42 0)
+blockId 3 Bus ( 1 0 16, 0 15 [ 15 ], 0 14 [ 14 ], 0 13 [ 13 ], 0 12 [ 12 ], 0 11 [ 11 ], 0 10 [ 10 ], 0 9 [ 9 ], 0 8 [ 8 ], 0 7 [ 7 ], 0 6 [ 6 ], 0 5 [ 5 ], 0 4 [ 4 ], 0 3 [ 3 ], 0 2 [ 2 ], 0 1 [ 1 ], 0 0 [ 0 ]) -19 -6 ONE_EIGHTY_FLIPPED
+	(connId:0) (7 0)
+	(connId:1) (7 1)
+	(connId:2) (7 2)
+	(connId:3) (7 3)
+	(connId:4) (24 0)
+	(connId:5) (24 1)
+	(connId:6) (4 0)
+	(connId:7) (4 1)
+	(connId:8) (2 0) (25 0)
+	(connId:9) (2 1) (25 1)
+	(connId:10) (2 2)
+	(connId:11) (2 3)
+	(connId:12) (2 4)
+	(connId:13) (2 5)
+	(connId:14) (2 6)
+	(connId:15) (2 7)
+	(connId:16) (15 2)
+blockId 2 Bus ( 1 0 8, 0 7 [ 7 ], 0 6 [ 6 ], 0 5 [ 5 ], 0 4 [ 4 ], 0 3 [ 3 ], 0 2 [ 2 ], 0 1 [ 1 ], 0 0 [ 0 ]) -17 4 ZERO
+	(connId:0) (3 8)
+	(connId:1) (3 9)
+	(connId:2) (3 10)
+	(connId:3) (3 11)
+	(connId:4) (3 12)
+	(connId:5) (3 13)
+	(connId:6) (3 14)
+	(connId:7) (3 15)
+	(connId:8) (48 0) (51 0)
+blockId 98 CONSTANT_OFF -4 -14 ZERO
+	(connId:0) (74 0)
+blockId 1 "7185368b-640d-48f6-a802-3b1ac6ffea8e" 1 9 ZERO
+	(connId:2) (10 0)
+	(connId:3) (62 0)
+	(connId:4) (42 0)
+	(connId:5) (60 2)
+	(connId:6) (45 0)
+	(connId:8) (127 0)

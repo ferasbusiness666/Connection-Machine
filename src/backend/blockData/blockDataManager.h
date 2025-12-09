@@ -19,8 +19,12 @@ public:
 		// sending data events for default data
 		// pre
 		dataUpdateEventManager.sendEvent<std::pair<BlockType, Size>>("preBlockSizeChange", { blockType, Size(1) });
-		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataSetConnection", { blockType, connection_end_id_t(0) });
-		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataSetConnection", { blockType, connection_end_id_t(1) });
+		dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, BlockData::ConnectionData::PortType>>(
+			"preBlockDataSetConnection", { blockType, connection_end_id_t(0), BlockData::ConnectionData::PortType::INPUT }
+		);
+		dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, BlockData::ConnectionData::PortType>>(
+			"preBlockDataSetConnection", { blockType, connection_end_id_t(1), BlockData::ConnectionData::PortType::OUTPUT }
+		);
 		// post
 		dataUpdateEventManager.sendEvent<std::pair<BlockType, Size>>("postBlockSizeChange", { blockType, Size(1) });
 		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connection_end_id_t(0) });

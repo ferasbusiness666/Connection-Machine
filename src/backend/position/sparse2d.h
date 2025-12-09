@@ -97,7 +97,7 @@ void Sparse2dArray<T>::clear() {
 }
 
 template <class T>
-nlohmann::json Sparse2dArray<T>::dumpState() const {
+nlohmann::json Sparse2dArray<T>::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	for (const auto& [pos, value] : data) {
 		stateJson[pos.toString()] = value;
@@ -106,7 +106,7 @@ nlohmann::json Sparse2dArray<T>::dumpState() const {
 }
 
 template <class T>
-nlohmann::json Sparse2dArray<T>::dumpStateAndInner() const {
+nlohmann::json Sparse2dArray<T>::dumpStateAndInner() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	for (const auto& [pos, value] : data) {
 		stateJson[pos.toString()] = value.dumpState();

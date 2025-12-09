@@ -19,7 +19,7 @@ void EvaluatorManager::applyDiff(DifferenceSharedPtr difference, circuit_id_t ci
 	}
 }
 
-nlohmann::json EvaluatorManager::dumpState() const {
+nlohmann::json EvaluatorManager::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	for (const auto& [evaluatorId, evaluator] : evaluators) {
 		stateJson.push_back(evaluator->dumpState());

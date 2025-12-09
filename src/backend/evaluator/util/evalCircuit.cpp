@@ -8,7 +8,7 @@ std::optional<CircuitNode> EvalCircuit::getNode(Position pos) const noexcept {
 	return std::nullopt;
 }
 
-nlohmann::json EvalCircuit::dumpState() const {
+nlohmann::json EvalCircuit::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["id"] = id.get();
 	stateJson["parentEvalId"] = parentEvalId.get();

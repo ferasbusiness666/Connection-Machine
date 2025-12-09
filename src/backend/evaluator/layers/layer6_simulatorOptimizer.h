@@ -19,6 +19,8 @@ public:
 		// middleToSimulatorIds.resize(1000);
 	}
 
+	void resetStates() { simulator.resetStates(); }
+
 	void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId);
 	void removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId);
 	SimPauseGuard beginEdit() {
@@ -26,7 +28,7 @@ public:
 	}
 	void endEdit(SimPauseGuard& pauseGuard) {
 		simulator.endEdit();
-	};
+	}
 
 	std::optional<simulator_id_t> getSimIdFromMiddleId(middle_id_t middleId) const {
 		if (middleId < middleToSimulatorIds.size()) {
@@ -43,57 +45,20 @@ public:
 		return simulator.getOutputPortId(gateId.value(), point.portId);
 	}
 
-	logic_state_t getState(EvalConnectionPoint point) const {
-		std::optional<simulator_id_t> simIdOpt = getSimIdFromConnectionPoint(point);
-		if (!simIdOpt.has_value()) {
-			logError("Sim ID not found for connection point", "SimulatorOptimizer::getState");
-			return logic_state_t::UNDEFINED; // or some other default state
-		}
-		simulator_id_t simId = simIdOpt.value();
-		return simulator.getState(simId);
-	}
-	std::vector<logic_state_t> getStates(const std::vector<EvalConnectionPoint>& points) const {
-		std::vector<simulator_id_t> simIds;
-		simIds.reserve(points.size());
-		for (const auto& point : points) {
-			std::optional<simulator_id_t> simIdOpt = getSimIdFromConnectionPoint(point);
-			simIds.push_back(simIdOpt.value_or(simulator_id_t(0)));
-		}
-		return simulator.getStates(simIds);
-	}
-	std::vector<logic_state_t> getPinStates(const std::vector<EvalConnectionPoint>& points) const {
-		std::vector<simulator_id_t> simIds;
-		simIds.reserve(points.size());
-		for (const auto& point : points) {
-			// get num outputs
-			int numOutputs = getNumOutputs(point.gateId);
-			if (numOutputs == 1) {
-				std::vector<EvalConnection> outputs = getOutputs(point.gateId);
-				EvalConnection output = outputs.at(0);
-				BlockType blockType = getBlockType(output.destination.gateId);
-				if (isJunctionType(blockType)) {
-					// get the simId of the output
-					std::optional<simulator_id_t> simIdOpt = getSimIdFromConnectionPoint(output.destination);
-					simIds.push_back(simIdOpt.value_or(simulator_id_t(0)));
-					continue;
-				}
-			}
-			std::optional<simulator_id_t> simIdOpt = getSimIdFromConnectionPoint(point);
-			simIds.push_back(simIdOpt.value_or(simulator_id_t(0)));
-		}
-		return simulator.getStates(simIds);
+	inline logic_state_t getStateFromSimulatorId(simulator_id_t simulatorId) const {
+		return simulator.getState(simulatorId);
 	}
 	inline std::vector<logic_state_t> getStatesFromSimulatorIds(const std::vector<simulator_id_t>& simulatorIds) const {
 		return simulator.getStates(simulatorIds);
 	}
 	simulator_id_t getBlockSimulatorId(EvalConnectionPoint point) const {
 		std::optional<simulator_id_t> simIdOpt = getSimIdFromConnectionPoint(point);
-		return simIdOpt.value_or(simulator_id_t(0));
+		return simIdOpt.value_or(simulator_id_t(3));
 	}
 	simulator_id_t getPinSimulatorId(EvalConnectionPoint point) const {
 		std::optional<simulator_id_t> simIdOpt = getSimIdFromConnectionPoint(point);
 		if (!simIdOpt.has_value()) {
-			return simulator_id_t(0);
+			return simulator_id_t(3);
 		}
 		int numOutputs = getNumOutputs(point.gateId);
 		if (numOutputs == 1) {
@@ -103,7 +68,7 @@ public:
 			if (isJunctionType(blockType)) {
 				// get the simId of the output
 				std::optional<simulator_id_t> pinSimIdOpt = getSimIdFromConnectionPoint(output.destination);
-				return pinSimIdOpt.value_or(simulator_id_t(0));
+				return pinSimIdOpt.value_or(simulator_id_t(3));
 			}
 		}
 		return simIdOpt.value();
@@ -129,7 +94,7 @@ public:
 		result.reserve(points.size());
 		for (const auto& pointOpt : points) {
 			if (!pointOpt.has_value()) {
-				result.push_back(simulator_id_t(0));
+				result.push_back(simulator_id_t(3));
 				continue;
 			}
 			result.push_back(getBlockSimulatorId(pointOpt.value()));
@@ -141,26 +106,15 @@ public:
 		result.reserve(points.size());
 		for (const auto& pointOpt : points) {
 			if (!pointOpt.has_value()) {
-				result.push_back(simulator_id_t(0));
+				result.push_back(simulator_id_t(3));
 				continue;
 			}
 			result.push_back(getPinSimulatorId(pointOpt.value()));
 		}
 		return result;
 	}
-	void setState(EvalConnectionPoint point, logic_state_t state) {
-		std::optional<simulator_id_t> simIdOpt = getSimIdFromConnectionPoint(point);
-		if (!simIdOpt.has_value()) {
-			logError("Sim ID not found for connection point", "SimulatorOptimizer::setState");
-			return;
-		}
-		BlockType blockType = getBlockType(point.gateId);
-		if (blockType == BlockType::CONSTANT_ON || blockType == BlockType::CONSTANT_OFF ||
-			blockType == BlockType::CONSTANT_Z || blockType == BlockType::CONSTANT_X) {
-			// cannot set state of constant blocks
-			return;
-		}
-		simulator.setState(simIdOpt.value(), state);
+	void setState(simulator_id_t simulatorId, logic_state_t state) {
+		simulator.setState(simulatorId, state);
 	}
 	void makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection);
 	void removeConnection(SimPauseGuard& pauseGuard, EvalConnection connection);
@@ -224,7 +178,7 @@ private:
 		return blockType == BlockType::JUNCTION || blockType == BlockType::JUNCTION_L || blockType == BlockType::JUNCTION_H || blockType == BlockType::JUNCTION_X;
 	}
 
-    nlohmann::json dumpEvalConnectionVector(const std::vector<EvalConnection>& connections) const {
+    nlohmann::json dumpEvalConnectionVector(const std::vector<EvalConnection>& connections) const /* GCOVR_EXCL_FUNCTION */ {
         nlohmann::json connArray = nlohmann::json::array();
         for (const EvalConnection& conn : connections) {
             connArray.push_back(conn.dumpState());

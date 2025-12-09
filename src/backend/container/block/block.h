@@ -71,6 +71,7 @@ public:
 	inline bool isConnectionBidirectional(connection_end_id_t connectionId) const { return blockDataManager.isConnectionBidirectional(type(), connectionId); }
 	inline bool isConnectionInputOrBidirectional(connection_end_id_t connectionId) const { return blockDataManager.isConnectionInputOrBidirectional(type(), connectionId); }
 	inline bool isConnectionOutputOrBidirectional(connection_end_id_t connectionId) const { return blockDataManager.isConnectionOutputOrBidirectional(type(), connectionId); }
+	inline BlockData::ConnectionData::PortType getConnectionPortType(connection_end_id_t connectionId) const { return blockDataManager.getBlockData(type())->getConnectionPortType(connectionId); }
 	nlohmann::json dumpState() const;
 
 protected:

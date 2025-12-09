@@ -1,6 +1,22 @@
-#include "evaluatorICTest.h"
-
+#include <gtest/gtest.h>
+#include "environment/environment.h"
 #include "backend/evaluator/evaluator.h"
+
+class EvaluatorICTest : public ::testing::Test {
+protected:
+    void SetUp() override;
+    void TearDown() override;
+	Environment environment {false};
+	SharedCircuit parentCircuit = nullptr;
+	SharedEvaluator evaluator = nullptr;
+    int idx;
+
+    circuit_id_t createPassThroughIC(const std::string& name);
+    inline BlockType getICBlockType(circuit_id_t cid) {
+        auto* cbd = environment.getBackend().getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(cid);
+        return cbd ? cbd->getBlockType() : BlockType::NONE;
+    }
+};
 
 void EvaluatorICTest::SetUp() {
     circuit_id_t circuitId = environment.getBackend().createCircuit();

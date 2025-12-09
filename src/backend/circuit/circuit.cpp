@@ -246,7 +246,6 @@ bool Circuit::tryInsertParsedCircuit(const ParsedCircuit& parsedCircuit, Positio
 		}
 		ConnectionEnd output(realIds[conn.outputBlockId], conn.outputEndId);
 		ConnectionEnd input(realIds[conn.inputBlockId], conn.inputEndId);
-
 		if (blockContainer.connectionExists(output, input)) {
 			continue;
 		}
@@ -294,7 +293,6 @@ bool Circuit::tryInsertGeneratedCircuit(const GeneratedCircuit& generatedCircuit
 			// skip inputs
 			continue;
 		}
-
 		ConnectionEnd output(realIds[conn.outputBlockId], conn.outputId);
 		ConnectionEnd input(realIds[conn.inputBlockId], conn.inputId);
 		if (blockContainer.connectionExists(output, input)) {
@@ -371,22 +369,22 @@ bool Circuit::tryRemoveConnection(Position outputPosition, Position inputPositio
 	return out;
 }
 
-bool Circuit::tryCreateConnection(ConnectionEnd outputConnectionEnd, ConnectionEnd inputConnectionEnd) {
+bool Circuit::tryCreateConnection(ConnectionEnd connectionEndA, ConnectionEnd connectionEndB) {
 #ifdef TRACY_PROFILER
 	ZoneScoped;
 #endif
 	DifferenceSharedPtr difference = std::make_shared<Difference>();
-	bool out = blockContainer.tryCreateConnection(outputConnectionEnd, inputConnectionEnd, difference.get());
+	bool out = blockContainer.tryCreateConnection(connectionEndA, connectionEndB, difference.get());
 	sendDifference(std::move(difference));
 	return out;
 }
 
-bool Circuit::tryRemoveConnection(ConnectionEnd outputConnectionEnd, ConnectionEnd inputConnectionEnd) {
+bool Circuit::tryRemoveConnection(ConnectionEnd connectionEndA, ConnectionEnd connectionEndB) {
 #ifdef TRACY_PROFILER
 	ZoneScoped;
 #endif
 	DifferenceSharedPtr difference = std::make_shared<Difference>();
-	bool out = blockContainer.tryRemoveConnection(outputConnectionEnd, inputConnectionEnd, difference.get());
+	bool out = blockContainer.tryRemoveConnection(connectionEndA, connectionEndB, difference.get());
 	sendDifference(std::move(difference));
 	return out;
 }
@@ -626,13 +624,13 @@ void Circuit::addConnectionPort(const DataUpdateEventManager::EventData* eventDa
 		logError("eventData passed was null", "Circuit");
 		return;
 	}
-	auto data = eventData->cast<std::pair<BlockType, connection_end_id_t>>();
+	auto data = eventData->cast<std::tuple<BlockType, connection_end_id_t, BlockData::ConnectionData::PortType>>();
 	if (!data) {
 		logError("Could not get std::pair<BlockType, connection_end_id_t> from eventData", "Circuit");
 		return;
 	}
 	DifferenceSharedPtr difference = std::make_shared<Difference>();
-	blockContainer.addConnectionPort(data->get().first, data->get().second, difference.get());
+	blockContainer.addConnectionPort(std::get<0>(data->get()), std::get<1>(data->get()), std::get<2>(data->get()), difference.get());
 	sendDifference(std::move(difference));
 }
 
@@ -673,7 +671,7 @@ void Circuit::setCircuitName(const std::string& name) {
 	if (blockData) blockData->setName(getCircuitNameNumber());
 }
 
-nlohmann::json Circuit::dumpState() const {
+nlohmann::json Circuit::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["circuitId"] = circuitId;
 	stateJson["circuitUUID"] = circuitUUID;

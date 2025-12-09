@@ -144,7 +144,7 @@ struct std::hash<Vector> {
 
 template <>
 struct fmt::formatter<Vector> : fmt::formatter<std::string> {
-	auto format(Vector v, format_context& ctx) const { return formatter<std::string>::format(v.toString(), ctx); }
+	auto format(Vector v, format_context& ctx) const /* GCOVR_EXCL_FUNCTION */ { return formatter<std::string>::format(v.toString(), ctx); }
 };
 
 struct FVector {
@@ -196,7 +196,7 @@ struct FVector {
 
 template <>
 struct fmt::formatter<FVector> : fmt::formatter<std::string> {
-	auto format(FVector v, format_context& ctx) const { return formatter<std::string>::format(v.toString(), ctx); }
+	auto format(FVector v, format_context& ctx) const /* GCOVR_EXCL_FUNCTION */ { return formatter<std::string>::format(v.toString(), ctx); }
 };
 
 struct Position {
@@ -347,7 +347,7 @@ struct std::hash<std::pair<Position, Position>> {
 
 template <>
 struct fmt::formatter<Position> : fmt::formatter<std::string> {
-	auto format(Position v, format_context& ctx) const { return formatter<std::string>::format(v.toString(), ctx); }
+	auto format(Position v, format_context& ctx) const /* GCOVR_EXCL_FUNCTION */ { return formatter<std::string>::format(v.toString(), ctx); }
 };
 
 struct FPosition {
@@ -402,7 +402,7 @@ inline bool areaWithinArea(FPosition area1Small, FPosition area1Large, FPosition
 
 template <>
 struct fmt::formatter<FPosition> : fmt::formatter<std::string> {
-	auto format(FPosition v, format_context& ctx) const { return formatter<std::string>::format(v.toString(), ctx); }
+	auto format(FPosition v, format_context& ctx) const /* GCOVR_EXCL_FUNCTION */ { return formatter<std::string>::format(v.toString(), ctx); }
 };
 
 struct Size {
@@ -447,7 +447,7 @@ struct Size {
 
 template <>
 struct fmt::formatter<Size> : fmt::formatter<std::string> {
-	auto format(Size v, format_context& ctx) const { return formatter<std::string>::format(v.toString(), ctx); }
+	auto format(Size v, format_context& ctx) const /* GCOVR_EXCL_FUNCTION */ { return formatter<std::string>::format(v.toString(), ctx); }
 };
 
 class Size::Iterator {
@@ -562,7 +562,7 @@ struct FSize {
 
 template <>
 struct fmt::formatter<FSize> : fmt::formatter<std::string> {
-	auto format(FSize v, format_context& ctx) const { return formatter<std::string>::format(v.toString(), ctx); }
+	auto format(FSize v, format_context& ctx) const /* GCOVR_EXCL_FUNCTION */ { return formatter<std::string>::format(v.toString(), ctx); }
 };
 
 // conversion
@@ -583,7 +583,7 @@ enum Rotation : std::uint8_t {
 
 template <>
 struct fmt::formatter<Rotation> : fmt::formatter<std::string> {
-	auto format(Rotation v, format_context& ctx) const {
+	auto format(Rotation v, format_context& ctx) const /* GCOVR_EXCL_FUNCTION */ {
 		switch (v) {
 		case Rotation::TWO_SEVENTY: return "TWO_SEVENTY";
 		case Rotation::ONE_EIGHTY: return "ONE_EIGHTY";
@@ -739,7 +739,7 @@ struct Orientation {
 
 template <>
 struct fmt::formatter<Orientation> : fmt::formatter<std::string> {
-	auto format(Orientation o, format_context& ctx) const { return formatter<std::string>::format(o.toString(), ctx); }
+	auto format(Orientation o, format_context& ctx) const /* GCOVR_EXCL_FUNCTION */ { return formatter<std::string>::format(o.toString(), ctx); }
 };
 
 #endif /* position_h */

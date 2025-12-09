@@ -5,10 +5,19 @@
 #include "../circuit/circuitManager.h"
 #include "computerAPI/circuits/circuitFileManager.h"
 
-
 WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, CircuitManager& circuitManager, CircuitFileManager& fileManager) : circuitManager(&circuitManager), fileManager(&fileManager), thisPtr(std::make_unique<WasmInstance*>(this)) {
 	WasmInstance** thisPtrPtr = thisPtr.get();
-	wasmtime::Func importFileFunc = wasmtime::Func::wrap(*Wasm::getStore(),
+	// Linker to associate "env" functions
+	wasmtime::Linker linker(*Wasm::getEngine());
+
+	auto tryLinkWasmFunc = [&](std::string name, auto func) {
+		wasmtime::Result<std::monostate> linkerResult = linker.define(*Wasm::getStore(), "env", name, wasmtime::Func::wrap(*Wasm::getStore(), func));
+		if (!linkerResult) {
+			logWarning("could not create link to env." + name, "WasmProceduralCircuit::WasmInstance");
+		}
+	};
+
+	tryLinkWasmFunc("importFile",
 		[thisPtrPtr](int32_t fileStrOffset) -> int32_t {
 			std::string path = (*thisPtrPtr)->wasmToString(fileStrOffset);
 			if (std::filesystem::path(path).is_relative()) {
@@ -16,16 +25,18 @@ WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, Circu
 				path = std::filesystem::path(*thisPath).replace_filename(std::filesystem::path(path)).generic_string();
 			}
 			return (*thisPtrPtr)->fileManager->loadFromFile(path).size();
-		});
+		}
+	);
 
-	wasmtime::Func getParameterFunc = wasmtime::Func::wrap(*Wasm::getStore(),
+	tryLinkWasmFunc("getParameter",
 		[thisPtrPtr](int32_t keyStrOffset) -> int32_t {
 			const std::map<std::string, int>& parameters = (*thisPtrPtr)->parameters->parameters;
 			auto iter = parameters.find((*thisPtrPtr)->wasmToString(keyStrOffset));
 			return (iter == parameters.end()) ? 0 : iter->second;
-		});
+		}
+	);
 
-	wasmtime::Func getPrimitiveTypeFunc = wasmtime::Func::wrap(*Wasm::getStore(),
+	tryLinkWasmFunc("getPrimitiveType",
 		[thisPtrPtr](int32_t nameStrOffset) -> int32_t {
 			std::string blockName = (*thisPtrPtr)->wasmToString(nameStrOffset);
 			if (blockName == "AND") return BlockType::AND;
@@ -47,9 +58,10 @@ WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, Circu
 			else if (blockName == "CONSTANT_X") return BlockType::CONSTANT_X;
 			else if (blockName == "LIGHT") return BlockType::LIGHT;
 			return BlockType::NONE;
-		});
+		}
+	);
 
-	wasmtime::Func getNonPrimitiveTypeFunc = wasmtime::Func::wrap(*Wasm::getStore(),
+	tryLinkWasmFunc("getNonPrimitiveType",
 		[thisPtrPtr](int32_t UUIDStrOffset) -> int32_t {
 			std::string UUID = (*thisPtrPtr)->wasmToString(UUIDStrOffset);
 			SharedCircuit circuit = (*thisPtrPtr)->circuitManager->getCircuit(UUID);
@@ -62,9 +74,10 @@ WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, Circu
 			}
 			logError("Failed to find Circuit with UUID", "WasmInstance", UUID);
 			return BlockType::NONE;
-		});
+		}
+	);
 
-	wasmtime::Func getProceduralCircuitTypeFunc = wasmtime::Func::wrap(*Wasm::getStore(),
+	tryLinkWasmFunc("getProceduralCircuitType",
 		[thisPtrPtr](int32_t UUIDStrOffset, int32_t parametersStrOffset) -> int32_t {
 			std::string UUID = (*thisPtrPtr)->wasmToString(UUIDStrOffset);
 			SharedProceduralCircuit proceduralCircuit = (*thisPtrPtr)->circuitManager->getProceduralCircuitManager().getProceduralCircuit(UUID);
@@ -78,9 +91,10 @@ WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, Circu
 			}
 			logError("Failed to find ProceduralCircuit with UUID", "WasmInstance", UUID);
 			return BlockType::NONE;
-		});
+		}
+	);
 
-	wasmtime::Func getBusBlockFunc = wasmtime::Func::wrap(*Wasm::getStore(),
+	tryLinkWasmFunc("getBusBlock",
 		[thisPtrPtr](int32_t bitWidth) -> int32_t {
 			if (bitWidth <= 0) {
 				logError("getBusBlock expects a positive bit width but received {}", "WasmProceduralCircuit::WasmInstance", bitWidth);
@@ -88,9 +102,10 @@ WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, Circu
 			}
 			BlockType blockType = (*thisPtrPtr)->circuitManager->getBlockDataManager().getBusBlock(static_cast<unsigned int>(bitWidth));
 			return static_cast<int32_t>(blockType);
-		});
+		}
+	);
 
-	wasmtime::Func getBusBlockAdvancedFunc = wasmtime::Func::wrap(*Wasm::getStore(),
+	tryLinkWasmFunc("getBusBlockAdvanced",
 		[thisPtrPtr](
 			int32_t numInputs,
 			int32_t numOutputs,
@@ -112,162 +127,86 @@ WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, Circu
 				static_cast<unsigned int>(outputLaneWidth)
 			);
 			return static_cast<int32_t>(blockType);
-		});
+		}
+	);
 
-	wasmtime::Func createBlockFunc = wasmtime::Func::wrap(*Wasm::getStore(),
+	tryLinkWasmFunc("createBlock",
 		[thisPtrPtr](int32_t blockType) -> int32_t {
 			return (*thisPtrPtr)->generatedCircuit->addBlock((BlockType)blockType);
-		});
+		}
+	);
 
-	wasmtime::Func createBlockAtPositionFunc = wasmtime::Func::wrap(*Wasm::getStore(),
+	tryLinkWasmFunc("createBlockAtPosition",
 		[thisPtrPtr](int32_t x, int32_t y, int32_t orientation, int32_t blockType) -> int32_t {
 			return (*thisPtrPtr)->generatedCircuit->addBlock(Position(x, y), Orientation(orientation), (BlockType)blockType);
-		});
+		}
+	);
 
-	wasmtime::Func createConnectionFunc = wasmtime::Func::wrap(*Wasm::getStore(),
+	tryLinkWasmFunc("createConnection",
 		[thisPtrPtr](int32_t outputBlockId, int32_t outputPortId, int32_t inputBlockId, int32_t inputPortId) {
 			(*thisPtrPtr)->generatedCircuit->addConnection(outputBlockId, connection_end_id_t(outputPortId), inputBlockId, connection_end_id_t(inputPortId));
-		});
+		}
+	);
 
-	wasmtime::Func addConnectionInputFunc = wasmtime::Func::wrap(*Wasm::getStore(),
+	tryLinkWasmFunc("addConnectionInput",
 		[thisPtrPtr](int32_t portX, int32_t portY, int32_t internalBlockId, int32_t internalBlockPortId) -> int32_t {
 			(*thisPtrPtr)->generatedCircuit->addConnectionPort(true, connection_end_id_t((*thisPtrPtr)->portId), Vector(portX, portY), internalBlockId, connection_end_id_t(internalBlockPortId), "Port" + std::to_string((*thisPtrPtr)->portId));
 			return ((*thisPtrPtr)->portId)++;
-		});
+		}
+	);
 
-	wasmtime::Func addConnectionInputNamedFunc = wasmtime::Func::wrap(*Wasm::getStore(),
+	tryLinkWasmFunc("addConnectionInputNamed",
 		[thisPtrPtr](int32_t portX, int32_t portY, int32_t internalBlockId, int32_t internalBlockPortId, int32_t portNameStrOffset) -> int32_t {
 			std::string portName = (*thisPtrPtr)->wasmToString(portNameStrOffset);
 			(*thisPtrPtr)->generatedCircuit->addConnectionPort(true, connection_end_id_t((*thisPtrPtr)->portId), Vector(portX, portY), internalBlockId, connection_end_id_t(internalBlockPortId), portName);
 			return ((*thisPtrPtr)->portId)++;
-		});
+		}
+	);
 
-	wasmtime::Func addConnectionOutputFunc = wasmtime::Func::wrap(*Wasm::getStore(),
+	tryLinkWasmFunc("addConnectionOutput",
 		[thisPtrPtr](int32_t portX, int32_t portY, int32_t internalBlockId, int32_t internalBlockPortId) -> int32_t {
 			(*thisPtrPtr)->generatedCircuit->addConnectionPort(false, connection_end_id_t((*thisPtrPtr)->portId), Vector(portX, portY), internalBlockId, connection_end_id_t(internalBlockPortId), "Port" + std::to_string((*thisPtrPtr)->portId));
 			return ((*thisPtrPtr)->portId)++;
-		});
+		}
+	);
 
-	wasmtime::Func addConnectionOutputNamedFunc = wasmtime::Func::wrap(*Wasm::getStore(),
+	tryLinkWasmFunc("addConnectionOutputNamed",
 		[thisPtrPtr](int32_t portX, int32_t portY, int32_t internalBlockId, int32_t internalBlockPortId, int32_t portNameStrOffset) -> int32_t {
 			std::string portName = (*thisPtrPtr)->wasmToString(portNameStrOffset);
 			(*thisPtrPtr)->generatedCircuit->addConnectionPort(false, connection_end_id_t((*thisPtrPtr)->portId), Vector(portX, portY), internalBlockId, connection_end_id_t(internalBlockPortId), portName);
 			return ((*thisPtrPtr)->portId)++;
-		});
+		}
+	);
 
-	wasmtime::Func setConnectionPortBitWidthFunc = wasmtime::Func::wrap(*Wasm::getStore(),
+	tryLinkWasmFunc("setConnectionPortBitWidth",
 		[thisPtrPtr](int32_t portId, int32_t bitWidth) {
 			(*thisPtrPtr)->generatedCircuit->setConnectionPortBitWidth(connection_end_id_t(portId), static_cast<unsigned int>(bitWidth));
-		});
+		}
+	);
 
-	wasmtime::Func setSizeFunc = wasmtime::Func::wrap(*Wasm::getStore(),
+	tryLinkWasmFunc("setConnectionPortOffset",
+		[thisPtrPtr](int32_t portId, float32_t xOffset, float32_t yOffset) {
+			(*thisPtrPtr)->generatedCircuit->setConnectionPortOffset(connection_end_id_t(portId), FVector(xOffset, yOffset));
+		}
+	);
+
+	tryLinkWasmFunc("setSize",
 		[thisPtrPtr](int32_t width, int32_t height) {
 			(*thisPtrPtr)->generatedCircuit->setSize(Size(width, height));
-		});
+		}
+	);
 
-	wasmtime::Func logInfoFunc = wasmtime::Func::wrap(*Wasm::getStore(),
+	tryLinkWasmFunc("logInfo",
 		[thisPtrPtr](int32_t strOffset) {
 			logInfo((*thisPtrPtr)->wasmToString(strOffset), "WasmProceduralCircuit > WasmCode");
-		});
+		}
+	);
 
-	wasmtime::Func logErrorFunc = wasmtime::Func::wrap(*Wasm::getStore(),
+	tryLinkWasmFunc("logError",
 		[thisPtrPtr](int32_t strOffset) {
 			logError((*thisPtrPtr)->wasmToString(strOffset), "WasmProceduralCircuit > WasmCode");
-		});
-
-	// Linker to associate "env" functions
-	wasmtime::Linker linker(*Wasm::getEngine());
-	wasmtime::Result<std::monostate> linkerResult = wasmtime::Result<std::monostate>(nullptr);
-	linkerResult = linker.define(*Wasm::getStore(), "env", "importFile", importFileFunc);
-	if (!linkerResult) {
-		logError("could not create link to env.importFile", "WasmProceduralCircuit::WasmInstance");
-		return;
-	}
-	linkerResult = linker.define(*Wasm::getStore(), "env", "getParameter", getParameterFunc);
-	if (!linkerResult) {
-		logError("could not create link to env.getParameter", "WasmProceduralCircuit::WasmInstance");
-		return;
-	}
-	linkerResult = linker.define(*Wasm::getStore(), "env", "getPrimitiveType", getPrimitiveTypeFunc);
-	if (!linkerResult) {
-		logError("could not create link to env.getPrimitiveType", "WasmProceduralCircuit::WasmInstance");
-		return;
-	}
-	linkerResult = linker.define(*Wasm::getStore(), "env", "getNonPrimitiveType", getNonPrimitiveTypeFunc);
-	if (!linkerResult) {
-		logError("could not create link to env.getNonPrimitiveType", "WasmProceduralCircuit::WasmInstance");
-		return;
-	}
-	linkerResult = linker.define(*Wasm::getStore(), "env", "getProceduralCircuitType", getProceduralCircuitTypeFunc);
-	if (!linkerResult) {
-		logError("could not create link to env.getProceduralCircuitType", "WasmProceduralCircuit::WasmInstance");
-		return;
-	}
-	linkerResult = linker.define(*Wasm::getStore(), "env", "getBusBlock", getBusBlockFunc);
-	if (!linkerResult) {
-		logError("could not create link to env.getBusBlock", "WasmProceduralCircuit::WasmInstance");
-		return;
-	}
-	linkerResult = linker.define(*Wasm::getStore(), "env", "getBusBlockAdvanced", getBusBlockAdvancedFunc);
-	if (!linkerResult) {
-		logError("could not create link to env.getBusBlockAdvanced", "WasmProceduralCircuit::WasmInstance");
-		return;
-	}
-	linkerResult = linker.define(*Wasm::getStore(), "env", "createBlock", createBlockFunc);
-	if (!linkerResult) {
-		logError("could not create link to env.createBlockFunc", "WasmProceduralCircuit::WasmInstance");
-		return;
-	}
-	linkerResult = linker.define(*Wasm::getStore(), "env", "createBlockAtPosition", createBlockAtPositionFunc);
-	if (!linkerResult) {
-		logError("could not create link to env.createBlockAtPosition", "WasmProceduralCircuit::WasmInstance");
-		return;
-	}
-	linkerResult = linker.define(*Wasm::getStore(), "env", "createConnection", createConnectionFunc);
-	if (!linkerResult) {
-		logError("could not create link to env.createConnection", "WasmProceduralCircuit::WasmInstance");
-		return;
-	}
-	linkerResult = linker.define(*Wasm::getStore(), "env", "addConnectionInput", addConnectionInputFunc);
-	if (!linkerResult) {
-		logError("could not create link to env.addConnectionInput", "WasmProceduralCircuit::WasmInstance");
-		return;
-	}
-	linkerResult = linker.define(*Wasm::getStore(), "env", "addConnectionInputNamed", addConnectionInputNamedFunc);
-	if (!linkerResult) {
-		logError("could not create link to env.addConnectionInputNamed", "WasmProceduralCircuit::WasmInstance");
-		return;
-	}
-	linkerResult = linker.define(*Wasm::getStore(), "env", "addConnectionOutput", addConnectionOutputFunc);
-	if (!linkerResult) {
-		logError("could not create link to env.addConnectionOutput", "WasmProceduralCircuit::WasmInstance");
-		return;
-	}
-	linkerResult = linker.define(*Wasm::getStore(), "env", "addConnectionOutputNamed", addConnectionOutputNamedFunc);
-	if (!linkerResult) {
-		logError("could not create link to env.addConnectionOutputNamed", "WasmProceduralCircuit::WasmInstance");
-		return;
-	}
-	linkerResult = linker.define(*Wasm::getStore(), "env", "setConnectionPortBitWidth", setConnectionPortBitWidthFunc);
-	if (!linkerResult) {
-		logError("could not create link to env.setConnectionPortBitWidth", "WasmProceduralCircuit::WasmInstance");
-		return;
-	}
-	linkerResult = linker.define(*Wasm::getStore(), "env", "setSize", setSizeFunc);
-	if (!linkerResult) {
-		logError("could not create link to env.setSize", "WasmProceduralCircuit::WasmInstance");
-		return;
-	}
-	linkerResult = linker.define(*Wasm::getStore(), "env", "logInfo", logInfoFunc);
-	if (!linkerResult) {
-		logError("could not create link to env.logInfo", "WasmProceduralCircuit::WasmInstance");
-		return;
-	}
-	linkerResult = linker.define(*Wasm::getStore(), "env", "logError", logErrorFunc);
-	if (!linkerResult) {
-		logError("could not create link to env.logError", "WasmProceduralCircuit::WasmInstance");
-		return;
-	}
+		}
+	);
 
 	// Instantiate the module
 	auto instanceResult = linker.instantiate(*Wasm::getStore(), module);
@@ -404,13 +343,13 @@ void WasmProceduralCircuit::makeCircuit(const ProceduralCircuitParameters& param
 	wasmInstance.makeCircuit(parameters, generatedCircuit);
 }
 
-nlohmann::json WasmProceduralCircuit::dumpStateInherited() const {
+nlohmann::json WasmProceduralCircuit::dumpStateInherited() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["wasmInstance"] = wasmInstance.dumpState();
 	return stateJson;
 }
 
-nlohmann::json WasmProceduralCircuit::WasmInstance::dumpState() const {
+nlohmann::json WasmProceduralCircuit::WasmInstance::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["valid"] = valid;
 	stateJson["name"] = name;

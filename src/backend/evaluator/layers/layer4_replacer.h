@@ -24,6 +24,8 @@ public:
 		middleIdProvider(middleIdProvider),
 		blockDataManager(blockDataManager) {}
 
+	void resetStates() { busInterfacePassthrough.resetStates(); }
+
 	void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
 #ifdef TRACY_PROFILER
 		ZoneScoped;
@@ -59,53 +61,34 @@ public:
 		return busInterfacePassthrough.getSimIdFromMiddleId(middleId);
 	}
 
-	inline logic_state_t getState(EvalConnectionPoint point) const {
-		return busInterfacePassthrough.getState(getReplacementConnectionPoint(point));
-	}
-
-	inline std::vector<logic_state_t> getStates(const std::vector<EvalConnectionPoint>& points) const {
-		return busInterfacePassthrough.getStates(getReplacementConnectionPoints(points));
-	}
-
-	inline std::vector<logic_state_t> getPinStates(const std::vector<EvalConnectionPoint>& points) const {
-		return busInterfacePassthrough.getPinStates(getReplacementConnectionPoints(points));
+	inline logic_state_t getStateFromSimulatorId(simulator_id_t simulatorId) const {
+		return busInterfacePassthrough.getStateFromSimulatorId(simulatorId);
 	}
 
 	inline std::vector<logic_state_t> getStatesFromSimulatorIds(const std::vector<simulator_id_t>& simulatorIds) const {
 		return busInterfacePassthrough.getStatesFromSimulatorIds(simulatorIds);
 	}
 
-	inline std::vector<simulator_id_t> getBlockSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
-		std::vector<simulator_id_t> result;
-		for (const auto& pointOpt : points) {
-			if (!pointOpt.has_value()) {
-				result.emplace_back(0);
-				continue;
+	inline simulator_id_t getBlockSimulatorId(EvalConnectionPoint point) const {
+		BlockType originalBlockType = busInterfacePassthrough.getBlockType(point.gateId);
+		if (originalBlockType != BlockType::NONE) {
+			const BlockData* blockData = blockDataManager.getBlockData(originalBlockType);
+			if (!blockData->hasBlockState()) {
+				return simulator_id_t(0);
 			}
-			BlockType originalBlockType = busInterfacePassthrough.getBlockType(pointOpt->gateId);
-			if (originalBlockType != BlockType::NONE) {
-				const BlockData* blockData = blockDataManager.getBlockData(originalBlockType);
-				if (!blockData->hasBlockState()) {
-					result.emplace_back(0);
-					continue;
-				}
-			}
-			EvalConnectionPoint replacedPoint = getReplacementConnectionPoint(*pointOpt);
-			BlockType blockType = busInterfacePassthrough.getBlockType(replacedPoint.gateId);
-			if (blockType == BlockType::NONE) {
-				result.emplace_back(0);
-				continue;
-			}
-			simulator_id_t simId = busInterfacePassthrough.getBlockSimulatorId(replacedPoint);
-			result.emplace_back(simId);
 		}
-		return result;
+		EvalConnectionPoint replacedPoint = getReplacementConnectionPoint(point);
+		BlockType blockType = busInterfacePassthrough.getBlockType(replacedPoint.gateId);
+		if (blockType == BlockType::NONE) {
+			return simulator_id_t(3);
+		}
+		return busInterfacePassthrough.getBlockSimulatorId(replacedPoint);
 	}
 
-	std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getPinSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const;
+	std::variant<simulator_id_t, std::vector<simulator_id_t>> getPinSimulatorId(EvalConnectionPoint point) const;
 
-	inline void setState(EvalConnectionPoint id, logic_state_t state) {
-		busInterfacePassthrough.setState(getReplacementConnectionPoint(id), state);
+	inline void setState(simulator_id_t simulatorId, logic_state_t state) {
+		busInterfacePassthrough.setState(simulatorId, state);
 	}
 
 	void makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
@@ -170,6 +153,28 @@ private:
 		// connections that are connected to the junctions through the outputs of other gates
 		// A -> JUNCTION, A -> B, A -> B is a connection to reroute because B should actually pull from the junction
 		logic_state_t defaultState { logic_state_t::FLOATING };
+
+		nlohmann::json dumpState() const {
+			nlohmann::json stateJson;
+			stateJson["outputsGoingIntoJunctions"] = nlohmann::json::array();
+			for (const EvalConnectionPoint& point : outputsGoingIntoJunctions) {
+				stateJson["outputsGoingIntoJunctions"].push_back(point.dumpState());
+			}
+			stateJson["inputsPullingFromJunctions"] = nlohmann::json::array();
+			for (const EvalConnection& conn : inputsPullingFromJunctions) {
+				stateJson["inputsPullingFromJunctions"].push_back(conn.dumpState());
+			}
+			stateJson["junctionIds"] = nlohmann::json::array();
+			for (const middle_id_t& id : junctionIds) {
+				stateJson["junctionIds"].push_back(id.get());
+			}
+			stateJson["connectionsToReroute"] = nlohmann::json::array();
+			for (const EvalConnection& conn : connectionsToReroute) {
+				stateJson["connectionsToReroute"].push_back(conn.dumpState());
+			}
+			stateJson["defaultState"] = static_cast<uint8_t>(defaultState);
+			return stateJson;
+		}
 	};
 
 	struct BusFloodFillResult {
@@ -184,8 +189,6 @@ private:
 	void cleanReplacements();
 	void pingId(SimPauseGuard& pauseGuard, middle_id_t id, int minLayer);
 	EvalConnectionPoint getReplacementConnectionPoint(EvalConnectionPoint point) const;
-	std::vector<EvalConnectionPoint> getReplacementConnectionPoints(const std::vector<EvalConnectionPoint>& points) const;
-	std::vector<std::optional<EvalConnectionPoint>> getReplacementConnectionPoints(const std::vector<std::optional<EvalConnectionPoint>>& points) const;
 	struct BusInternalJunctionArray {
 		std::vector<middle_id_t> junctionIds {};
 		int numDefined { 0 };

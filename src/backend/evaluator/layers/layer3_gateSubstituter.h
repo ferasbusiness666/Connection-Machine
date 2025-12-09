@@ -63,7 +63,7 @@ struct TrackedGate {
 		return (initialSize != inputs.size() + outputs.size());
 	}
 
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 		nlohmann::json stateJson;
 		stateJson["id"] = id.get();
 		stateJson["currentState"] = blocktype_to_string(currentState);
@@ -86,7 +86,7 @@ struct GateWithLinkedIO {
 	middle_id_t id;
 	std::vector<middle_id_t> idsCreated;
 	std::unordered_map<connection_end_id_t, EvalConnectionPoint> linkedIO;
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 		nlohmann::json stateJson;
 		stateJson["id"] = id.get();
 		stateJson["idsCreated"] = nlohmann::json::array();
@@ -112,6 +112,8 @@ public:
 		replacer(evalConfig, middleIdProvider, dirtySimulatorIds, dirtyMiddleIds, blockDataManager),
 		middleIdProvider(middleIdProvider),
 		blockDataManager(blockDataManager) {}
+
+	void resetStates() { replacer.resetStates(); }
 
 	void addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
 #ifdef TRACY_PROFILER
@@ -173,26 +175,20 @@ public:
 		replacer.endEdit(pauseGuard);
 	}
 
-	inline logic_state_t getState(EvalConnectionPoint point) const {
-		return replacer.getState(point);
-	}
-	inline std::vector<logic_state_t> getStates(const std::vector<EvalConnectionPoint>& points) const {
-		return replacer.getStates(points);
-	}
-	inline std::vector<logic_state_t> getPinStates(const std::vector<EvalConnectionPoint>& points) const {
-		return replacer.getPinStates(points);
+	inline logic_state_t getStateFromSimulatorId(simulator_id_t simulatorId) const {
+		return replacer.getStateFromSimulatorId(simulatorId);
 	}
 	inline std::vector<logic_state_t> getStatesFromSimulatorIds(const std::vector<simulator_id_t>& simulatorIds) const {
 		return replacer.getStatesFromSimulatorIds(simulatorIds);
 	}
-	inline std::vector<simulator_id_t> getBlockSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
-		return replacer.getBlockSimulatorIds(points);
+	inline simulator_id_t getBlockSimulatorId(EvalConnectionPoint point) const {
+		return replacer.getBlockSimulatorId(point);
 	}
-	inline std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getPinSimulatorIds(const std::vector<std::optional<EvalConnectionPoint>>& points) const {
-		return replacer.getPinSimulatorIds(points);
+	inline std::variant<simulator_id_t, std::vector<simulator_id_t>> getPinSimulatorId(EvalConnectionPoint point) const {
+		return replacer.getPinSimulatorId(point);
 	}
-	inline void setState(EvalConnectionPoint point, logic_state_t state) {
-		replacer.setState(point, state);
+	inline void setState(simulator_id_t simulatorId, logic_state_t state) {
+		replacer.setState(simulatorId, state);
 	}
 	void makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
 #ifdef TRACY_PROFILER
@@ -289,7 +285,7 @@ public:
 		return replacer.isViewingReplay();
 	}
 
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 		nlohmann::json stateJson;
 		stateJson["replacer"] = replacer.dumpState();
 		stateJson["trackedGates"] = nlohmann::json::object();
@@ -404,6 +400,38 @@ private:
 			return;
 		}
 		GateWithLinkedIO& gate = gatesWithLinkedIO.at(gateId);
+		for (middle_id_t middleId : gate.idsCreated) {
+			std::vector<middle_id_t> referencingGates = collectReferencingTrackedGates(middleId);
+			for (const auto& referencingGateId : referencingGates) {
+#ifdef TRACY_PROFILER
+				ZoneScopedN("GateSubstituter::deleteGateWithLinkedIO - per tracked gate");
+#endif
+				auto trackedGateIter = trackedGates.find(referencingGateId);
+				if (trackedGateIter == trackedGates.end()) {
+					continue;
+				}
+				TrackedGate& trackedGateRef = trackedGateIter->second;
+				bool success = trackedGateRef.removeReferencesToId(middleId);
+				if (!success) {
+					continue;
+				}
+				BlockType newState = trackedGateRef.evaluate();
+				if (newState != trackedGateRef.currentState) {
+					trackedGateRef.currentState = newState;
+					replacer.removeGate(pauseGuard, trackedGateRef.id);
+					replacer.addGate(pauseGuard, newState, trackedGateRef.id);
+					for (const auto& input : trackedGateRef.inputs) {
+						replacer.makeConnection(pauseGuard, input);
+					}
+					for (const auto& output : trackedGateRef.outputs) {
+						if (output.source.gateId == output.destination.gateId) {
+							continue;
+						}
+						replacer.makeConnection(pauseGuard, output);
+					}
+				}
+			}
+		}
 		for (middle_id_t middleId : gate.idsCreated) {
 			replacer.removeGate(pauseGuard, middleId);
 			middleIdProvider.releaseId(middleId);

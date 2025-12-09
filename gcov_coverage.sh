@@ -1,9 +1,12 @@
 mkdir -p coverage
 gcovr \
+    --verbose \
+    --gcov-executable gcov-14 \
     --root . \
     --filter 'src/.*' \
     --exclude 'external/.*' \
     --exclude '/usr/include/.*' \
+    --gcov-exclude-directories 'build/_deps' \
     --html \
     --html-nested \
     -o coverage/coverage.html \

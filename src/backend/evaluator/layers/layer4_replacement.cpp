@@ -177,9 +177,6 @@ void Replacement::revert(SimPauseGuard& pauseGuard) {
 	for (const auto& entry : replacementLayerEntries) {
 		replacer->replacementIdLayers.erase(entry.id);
 	}
-	for (const auto& reservedId : reservedIds) {
-		replacer->middleIdProvider.releaseId(reservedId);
-	}
 	auto callbacksWithPauseGuard = std::move(revertCallbacksWithPauseGuard);
 	for (auto& callback : callbacksWithPauseGuard) {
 		if (callback) {
@@ -196,6 +193,9 @@ void Replacement::revert(SimPauseGuard& pauseGuard) {
 		if (replacer->dependentReplacements.contains(idToTrack)) {
 			replacer->dependentReplacements.at(idToTrack).erase(id);
 		}
+	}
+	for (const auto& reservedId : reservedIds) {
+		replacer->middleIdProvider.releaseId(reservedId);
 	}
 
 	addedConnections.clear();
@@ -217,7 +217,7 @@ void Replacement::trackId(middle_id_t middleId) {
 	idsToTrack.insert(middleId);
 }
 
-nlohmann::json Replacement::dumpState() const {
+nlohmann::json Replacement::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["id"] = id.get();
 	stateJson["layer"] = layer;
@@ -258,11 +258,11 @@ nlohmann::json Replacement::dumpState() const {
 	return stateJson;
 }
 
-nlohmann::json Replacement::ReplacementLayerEntry::dumpState() const {
+nlohmann::json Replacement::ReplacementLayerEntry::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	return id.get();
 }
 
-nlohmann::json Replacement::ReplacementConnectionPointOverride::dumpState() const {
+nlohmann::json Replacement::ReplacementConnectionPointOverride::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["gateId"] = gateId.get();
 	stateJson["portId"] = portId.get();
@@ -274,7 +274,7 @@ nlohmann::json Replacement::ReplacementConnectionPointOverride::dumpState() cons
 	return stateJson;
 }
 
-nlohmann::json ReplacementGate::dumpState() const {
+nlohmann::json ReplacementGate::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["id"] = id.get();
 	stateJson["type"] = blocktype_to_string(type);

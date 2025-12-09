@@ -152,12 +152,12 @@ void ProceduralCircuit::regenerateAll() {
 	}
 }
 
-nlohmann::json ProceduralCircuitParameters::dumpState() const {
+nlohmann::json ProceduralCircuitParameters::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson = parameters;
 	return stateJson;
 }
 
-nlohmann::json ProceduralCircuit::dumpState() const {
+nlohmann::json ProceduralCircuit::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["proceduralCircuitName"] = proceduralCircuitName;
 	stateJson["proceduralCircuitUUID"] = proceduralCircuitUUID;
