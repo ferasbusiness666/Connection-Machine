@@ -9,6 +9,7 @@
 #include "network/network.h"
 #include "util/compression.h"
 #include "util/version.h"
+#include "util/logsSanitizer.h"
 
 #include <RmlUi/Debugger.h>
 
@@ -17,8 +18,8 @@
 std::optional<PopUpManager::PopUpWindow> PopUpManager::createPopUp(bool blocking, const std::string& windowName, unsigned int width, unsigned int height) {
 	if (blocking) {
 		Rml::Element* allPopUps = mainWindow.getRmlDocument()->GetElementById("all-pop-ups");
-		allPopUps->SetClass("invisible", false);
 		assert(allPopUps);
+		allPopUps->SetClass("invisible", false);
 		Rml::Element* popUpOverlay = allPopUps->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
 		popUpOverlay->SetClass("pop-up-overlay", true);
 		Rml::Element* popUpOverlayInternal = popUpOverlay->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
@@ -28,6 +29,7 @@ std::optional<PopUpManager::PopUpWindow> PopUpManager::createPopUp(bool blocking
 		popUpWindow->SetClass("pop-up-window-blocked", true);
 		popUpWindow->SetClass("bordered", true);
 		popUpWindow->SetClass("bg-3", true);
+		popUpWindow->SetAttribute("style", "width: 350dp;");
 		return PopUpWindow(popUpOverlay->GetContext(), popUpOverlay, [popUpOverlay, allPopUps]() {
 			App::get().queForEndOfUpdate([popUpOverlay, allPopUps]() {
 				allPopUps->RemoveChild(popUpOverlay);
@@ -55,7 +57,7 @@ std::optional<PopUpManager::PopUpWindow> PopUpManager::createPopUp(bool blocking
 					if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
 						Rml::RemoveContext(rmlContext->GetName());
 						MainRenderer::get().deregisterWindow(windowId);
-						App::get().deregisterWindow(sdlWindow);
+						App::get().deregisterWindow(*sdlWindow);
 						return true;
 					}
 
@@ -75,7 +77,7 @@ std::optional<PopUpManager::PopUpWindow> PopUpManager::createPopUp(bool blocking
 				App::get().queForEndOfUpdate([windowId, rmlContext, sdlWindow]() {
 					Rml::RemoveContext(rmlContext->GetName());
 					MainRenderer::get().deregisterWindow(windowId);
-					App::get().deregisterWindow(sdlWindow);
+					App::get().deregisterWindow(*sdlWindow);
 				});
 			});
 		}
@@ -132,19 +134,23 @@ void PopUpManager::addOptionsPopUp(
 	}
 }
 
-
 void PopUpManager::savePopUp(const std::string& circuitUUID) {
+	logInfo("Attempting to save circuit {}", "PopUpManager::savePopUp", circuitUUID);
 	if (mainWindow.getEnvironment().getCircuitFileManager().save(circuitUUID)) {
+		logInfo("Circuit {} saved successfully via quick save", "PopUpManager::savePopUp", circuitUUID);
 		mainWindow.log("Circuit was successfully saved.");
 	} else {
 		// if failed to save the circuit with out a path
+		logInfo("Circuit {} missing save path, opening Save As dialog", "PopUpManager::savePopUp", circuitUUID);
 		saveAsPopUp(circuitUUID);
 	}
 }
 
 void PopUpManager::saveAsPopUp(const std::string& circuitUUID) {
+	logInfo("Prompting Save As dialog for circuit {}", "PopUpManager::saveAsPopUp", circuitUUID);
 	static const SDL_DialogFileFilter filters[] = { { "Circuit Files", "cir" } };
-	std::pair<CircuitFileManager*, std::string>* data = new std::pair<CircuitFileManager*, std::string>(&mainWindow.getEnvironment().getCircuitFileManager(), circuitUUID);
+	std::pair<CircuitFileManager*, std::string>* data =
+		new std::pair<CircuitFileManager*, std::string>(&mainWindow.getEnvironment().getCircuitFileManager(), circuitUUID);
 	SDL_ShowSaveFileDialog(SaveCallback, data, nullptr, filters, 1, nullptr); // should call mainWindow.log("Circuit was successfully saved.");
 }
 
@@ -195,7 +201,7 @@ void PopUpManager::aboutConnectionMachine() {
 
 	Rml::Element* gitHubLink = links->AppendChild(mainWindow.getRmlDocument()->CreateElement("p"));
 	gitHubLink->SetInnerRML("GitHub: <p style=\"color: #6969ffff\">github.com/Connection-Machine</p>");
-	gitHubLink->AddEventListener(Rml::EventId::Click, new EventPasser([](Rml::Event& event){
+	gitHubLink->AddEventListener(Rml::EventId::Click, new EventPasser([](Rml::Event& event) {
 		SDL_OpenURL("https://github.com/Martian-Technologies/Connection-Machine");
 	}));
 
@@ -203,55 +209,52 @@ void PopUpManager::aboutConnectionMachine() {
 
 	Rml::Element* website = links->AppendChild(mainWindow.getRmlDocument()->CreateElement("p"));
 	website->SetInnerRML("Website: <p style=\"color: #6969ffff\">connection-machine.com</p>");
-	website->AddEventListener(Rml::EventId::Click, new EventPasser([](Rml::Event& event){
-		SDL_OpenURL("https://connection-machine.com");
-	}));
+	website->AddEventListener(Rml::EventId::Click, new EventPasser([](Rml::Event& event) { SDL_OpenURL("https://connection-machine.com"); }));
 
 	leftdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"))->SetAttribute("style", "flex: 1");
 
-    Rml::Element* rightdiv = leftandright->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
-    rightdiv->SetAttribute("style", "display: flex; flex-direction: column; width: 144dp; height: 100%; background-color:#303030;");
+	Rml::Element* rightdiv = leftandright->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
+	rightdiv->SetAttribute("style", "display: flex; flex-direction: column; width: 144dp; height: 100%; background-color:#303030;");
 
-    // Add a logo (adjust the src path to your actual asset)
-    Rml::Element* logo = rightdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("img"));
-    logo->SetAttribute("src", "../../gateIcon.png");
+	// Add a logo (adjust the src path to your actual asset)
+	Rml::Element* logo = rightdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("img"));
+	logo->SetAttribute("src", "../../gateIcon.png");
 	logo->SetAttribute("style", "margin-left: 15%; margin-right: 15%; margin-bottom: 5%; width: 108dp; height: 108dp;");
 
-    // Add contributor names
-    Rml::Element* contributorsTitle = rightdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("p"));
-    contributorsTitle->SetInnerRML("Contributors:");
-    contributorsTitle->SetClass("popup-subtitle", true);
+	// Add contributor names
+	Rml::Element* contributorsTitle = rightdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("p"));
+	contributorsTitle->SetInnerRML("Contributors:");
+	contributorsTitle->SetClass("popup-subtitle", true);
 
 	Rml::Element* rightdivScrollArea = rightdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
 	rightdivScrollArea->SetAttribute("style", "position: relative; flex-grow: 1; border-radius: 8dp; background-color:#3b3b3b;");
 	Rml::Element* rightdivScroll = rightdivScrollArea->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
 
-	std::vector<std::string> contributors = {
-        "Ben Herman", "Nikita Lurye", "Jack Jamison", "Connor Kostiew", "Gregory Lemonnier", "James P", "Sam C", "Alek Krupka",
-		"August Bernberg", "Nicholas Ciuica", "Matthew Durcan", "Tiffany Cheng", "Patrick Chen", "Nathan Chen", "Dante L"
-    };
+	std::vector<std::string> contributors = { "Ben Herman",		"Nikita Lurye",	 "Jack Jamison", "Connor Kostiew",	"Gregory Lemonnier",
+											  "James P",		"Sam C",		 "Alek Krupka",	 "August Bernberg", "Nicholas Ciuica",
+											  "Matthew Durcan", "Tiffany Cheng", "Patrick Chen", "Nathan Chen",		"Dante L" };
 
 	std::string all_contributors = "";
-    for (const auto& name : contributors){
+	for (const auto& name : contributors) {
 		all_contributors = all_contributors + "<p>" + name.c_str() + "</p>";
 	}
 	rightdivScroll->SetInnerRML(all_contributors);
-	rightdivScroll->SetAttribute("style", "position: absolute; top: 0; bottom: 0; width: 100%; overflow-y: scroll; display: flex; flex-direction: column; color: #d1963a; padding: 8dp;");
+	rightdivScroll->SetAttribute(
+		"style",
+		"position: absolute; top: 0; bottom: 0; width: 100%; overflow-y: scroll; display: flex; flex-direction: column; color: #d1963a; padding: 8dp;"
+	);
 
 	Rml::Element* close = popUpWindow.getPopUpWindow()->AppendChild(mainWindow.getRmlDocument()->CreateElement("button"));
-    close->SetInnerRML("Close");
-    close->SetClass("popup-button", true);
-	close->AddEventListener(Rml::EventId::Click, new EventPasser(
-	    [popUpWindow](Rml::Event& event) {
-	        popUpWindow.destroy();
-	    }
-	));
+	close->SetInnerRML("Close");
+	close->SetClass("popup-button", true);
+	close->AddEventListener(Rml::EventId::Click, new EventPasser([popUpWindow](Rml::Event& event) { popUpWindow.destroy(); }));
 }
 
 void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature complaint, feedback
 	std::optional<PopUpWindow> optionalPopUpWindow = createPopUp(false);
 	if (!optionalPopUpWindow) return;
 	PopUpWindow popUpWindow = std::move(optionalPopUpWindow.value());
+	logInfo("Opened feedback popup", "PopUpManager::addFeedbackPopup");
 
 	Rml::Element* title = popUpWindow.getPopUpWindow()->AppendChild(mainWindow.getRmlDocument()->CreateElement("p"));
 	title->SetInnerRML("We'd love your feedback");
@@ -263,7 +266,10 @@ void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature 
 	Rml::Element* textareaField = content->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
 	textareaField->SetAttribute("style", "display: flex; flex-direction: column; gap: 0.35em;");
 	Rml::Element* textareaHint = textareaField->AppendChild(mainWindow.getRmlDocument()->CreateElement("p"));
-	textareaHint->SetInnerRML("<div \"style\"=\"width: 1in; height: 1in; background-color: #cccccc;\"></div>Tell us what's working well, what's broken, or what would make the experience smoother.");
+	textareaHint->SetInnerRML(
+		"<div \"style\"=\"width: 1in; height: 1in; background-color: #cccccc;\"></div>Tell us what's working well, what's broken, or what would make the experience "
+		"smoother."
+	);
 	textareaHint->SetAttribute("style", "font-size: 0.9em; color: #c0c0c0;");
 
 	Rml::Element* textarea = textareaField->AppendChild(mainWindow.getRmlDocument()->CreateElement("textarea"));
@@ -280,19 +286,14 @@ void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature 
 	includeStateCheckbox->SetAttribute("id", "feedback_include_state");
 	includeStateCheckbox->SetAttribute("style", "margin-top: 0.2em;");
 
-	includeStateField->AddEventListener(
-		Rml::EventId::Click,
-		new EventPasser(
-			[includeStateCheckbox](Rml::Event& event){
-				if (event.GetTargetElement() == includeStateCheckbox) return;
-				if (includeStateCheckbox->HasAttribute("checked")) {
-					includeStateCheckbox->RemoveAttribute("checked");
-				} else {
-					includeStateCheckbox->SetAttribute("checked", true);
-				}
-			}
-		)
-	);
+	includeStateField->AddEventListener(Rml::EventId::Click, new EventPasser([includeStateCheckbox](Rml::Event& event) {
+		if (event.GetTargetElement() == includeStateCheckbox) return;
+		if (includeStateCheckbox->HasAttribute("checked")) {
+			includeStateCheckbox->RemoveAttribute("checked");
+		} else {
+			includeStateCheckbox->SetAttribute("checked", true);
+		}
+	}));
 
 	Rml::Element* includeStateCopy = includeStateField->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
 	includeStateCopy->SetAttribute("style", "display: flex; flex-direction: column; gap: 0.2em;");
@@ -310,50 +311,63 @@ void PopUpManager::addFeedbackPopup() { // feature request, bug report, feature 
 	Rml::Element* cancelButton = buttonContainer->AppendChild(mainWindow.getRmlDocument()->CreateElement("button"));
 	cancelButton->SetInnerRML("Cancel");
 	cancelButton->SetClass("popup-button", true);
-	cancelButton->AddEventListener(Rml::EventId::Click, new EventPasser([popUpWindow](Rml::Event& event) {
-		popUpWindow.destroy();
-	}));
+	cancelButton->AddEventListener(Rml::EventId::Click, new EventPasser([popUpWindow](Rml::Event& event) { popUpWindow.destroy(); }));
 
 	Rml::Element* submitButton = buttonContainer->AppendChild(mainWindow.getRmlDocument()->CreateElement("button"));
 	submitButton->SetInnerRML("Send Feedback");
 	submitButton->SetClass("popup-button", true);
-	submitButton->AddEventListener(
-		Rml::EventId::Click,
-		new EventPasser([this, popUpWindow, textarea, includeStateCheckbox](Rml::Event& event) {
-			auto* textareaControl = dynamic_cast<Rml::ElementFormControlTextArea*>(textarea);
-			std::string textareaValue = textareaControl ? textareaControl->GetValue().c_str() : "";
+	submitButton->AddEventListener(Rml::EventId::Click, new EventPasser([this, popUpWindow, textarea, includeStateCheckbox](Rml::Event& event) {
+		auto* textareaControl = dynamic_cast<Rml::ElementFormControlTextArea*>(textarea);
+		std::string textareaValue = textareaControl ? textareaControl->GetValue().c_str() : "";
 
-			// logInfo("Feedback body: {}", "", textareaValue);
-			// logInfo("Include app state: {}", "", includeStateCheckbox->HasAttribute("checked") ? "true" : "false");
-			std::vector<Network::Attachment> attachments;
-			if (includeStateCheckbox->HasAttribute("checked")) {
-				Network::Attachment appStateAttachment;
-				std::string appState = App::get().dumpState().dump(1, '\t');
-				std::optional<std::string> compressedAppState = compressString(appState);
-				if (compressedAppState){
-					appStateAttachment.data = compressedAppState.value();
-					appStateAttachment.context = "app_state.json.json.br";
-					appStateAttachment.contentType = "application/x-brotli";
-				} else {
-					appStateAttachment.data = appState;
-					appStateAttachment.context = "app_state.json";
-					appStateAttachment.contentType = "application/json";
-				}
-				attachments.push_back(appStateAttachment);
+		// logInfo("Feedback body: {}", "", textareaValue);
+		// logInfo("Include app state: {}", "", includeStateCheckbox->HasAttribute("checked") ? "true" : "false");
+		bool includeState = includeStateCheckbox->HasAttribute("checked");
+		logInfo("Feedback submission initiated (chars={}, include_state={})", "PopUpManager::addFeedbackPopup", textareaValue.size(), includeState);
+		std::vector<Network::Attachment> attachments;
+		if (includeState) {
+			Network::Attachment appStateAttachment;
+			std::string appState = App::get().dumpState().dump(1, '\t');
+			std::optional<std::string> compressedAppState = compressString(appState);
+			if (compressedAppState) {
+				appStateAttachment.data = compressedAppState.value();
+				appStateAttachment.context = "app_state.json.br";
+				appStateAttachment.contentType = "application/x-brotli";
+				logInfo("Attached compressed app state snapshot ({} bytes)", "PopUpManager::addFeedbackPopup", appStateAttachment.data.size());
+			} else {
+				appStateAttachment.data = appState;
+				appStateAttachment.context = "app_state.json";
+				appStateAttachment.contentType = "application/json";
+				logInfo("Attached uncompressed app state snapshot ({} bytes)", "PopUpManager::addFeedbackPopup", appStateAttachment.data.size());
 			}
+			attachments.push_back(appStateAttachment);
 
-			Network::get().sendFeedback(
-				*this,
-				"User Feedback from Connection Machine UI v" + getCurrentVersion().toString(),
-				textareaValue,
-				attachments
-			);
+			Network::Attachment logsAttachment;
+			logInfo("Logs will now be attached to feedback. no logs past this point", "PopUpManager::addFeedbackPopup");
+			std::string logs = getLogContents();
+			std::string pathSanitizedLogs = sanitizeLogsForPaths(logs);
+			std::optional<std::string> compressedLogs = compressString(pathSanitizedLogs);
+			if (compressedLogs) {
+				logsAttachment.data = compressedLogs.value();
+				logsAttachment.context = "logs.txt.br";
+				logsAttachment.contentType = "application/x-brotli";
+				logInfo("Attached compressed sanitized logs ({} bytes)", "PopUpManager::addFeedbackPopup", logsAttachment.data.size());
+			} else {
+				logsAttachment.data = pathSanitizedLogs;
+				logsAttachment.context = "logs.txt";
+				logsAttachment.contentType = "text/plain";
+				logInfo("Attached uncompressed sanitized logs ({} bytes)", "PopUpManager::addFeedbackPopup", logsAttachment.data.size());
+			}
+			attachments.push_back(logsAttachment);
+		}
+		logInfo("Feedback includes {} attachment(s)", "PopUpManager::addFeedbackPopup", attachments.size());
 
-			popUpWindow.destroy();
-		})
-	);
+		Network::get().sendFeedback(*this, "User Feedback from Connection Machine UI v" + getCurrentVersion().toString(), textareaValue, attachments);
+		logInfo("Feedback submission dispatched to network API", "PopUpManager::addFeedbackPopup");
+
+		popUpWindow.destroy();
+	}));
 }
-
 
 void PopUpManager::controlsConnectionMachine() {
 	std::optional<PopUpWindow> optionalPopUpWindow = createPopUp(true);
@@ -362,149 +376,100 @@ void PopUpManager::controlsConnectionMachine() {
 	PopUpWindow popUpWindow = std::move(optionalPopUpWindow.value());
 
 	// Rml::ElementList windowList;
-    // overlay->GetElementsByClassName(windowList, "pop-up-window");
-    // if (windowList.empty()) return;
-    // Rml::Element* window = windowList.front();
+	// overlay->GetElementsByClassName(windowList, "pop-up-window");
+	// if (windowList.empty()) return;
+	// Rml::Element* window = windowList.front();
 	popUpWindow.getPopUpWindow()->SetAttribute("style", "display: flex; flex-direction: column; width: 520dp; height: 400dp; background-color:#303030;");
 
 	Rml::Element* title = popUpWindow.getPopUpWindow()->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
 	title->SetInnerRML("Controls");
 
-	Rml::Element* leftandright = popUpWindow.getPopUpWindow()->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
-	leftandright->SetAttribute("style", "display: flex; flex-direction: row; width: 100%; height: 100%; background-color:#303030;");
-
-
+	Rml::Element* rows = popUpWindow.getPopUpWindow()->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
+	rows->SetAttribute("style", "display: flex; flex-direction: row; width: 100%; height: 100%; background-color:#303030;");
 
 	std::vector<std::string> keybindSettingKeys = {
-    	"Keybinds/File/Save",
-    	"Keybinds/File/New",
-    	"Keybinds/Editing/Undo",
-    	"Keybinds/Editing/Redo",
-    	"Keybinds/Editing/Copy",
-    	"Keybinds/Editing/Paste",
-    	"Keybinds/Editing/Rotate CCW",
-    	"Keybinds/Editing/Rotate CW",
-    	"Keybinds/Editing/Confirm",
-    	"Keybinds/Camera/Zoom",
-    	"Keybinds/Camera/Home"
+		"Keybinds/File/Save",
+		"Keybinds/File/New",
+		"Keybinds/Editing/Undo",
+		"Keybinds/Editing/Redo",
+		"Keybinds/Editing/Copy",
+		"Keybinds/Editing/Paste",
+		"Keybinds/Editing/Rotate CCW",
+		"Keybinds/Editing/Rotate CW",
+		"Keybinds/Editing/Confirm",
+		"Keybinds/Camera/Zoom",
+		"Keybinds/Camera/Pan",
+		"Keybinds/Camera/Home"
 	};
-	std::vector<std::string> keybindSettingKeysNames = {
-    	"Save",
-    	"New",
-    	"Undo",
-    	"Redo",
-    	"Copy",
-    	"Paste",
-    	"Rotate CCW",
-    	"Rotate CW",
-    	"Confirm",
-    	"Zoom",
-    	"Home"
+	std::vector<std::pair<std::string, std::string>> keybindSettingDescriptions = {
+		{"Press ", " to save the curent circuit."},
+		{"Press ", " to create a new circuit."},
+		{"Press ", " to undo a change."},
+		{"Press ", " to redo a change."},
+		{"Press ", " to copy a selection."},
+		{"Press ", " to paste from clipboard."},
+		{"Press ", " to rotate stuff CCW"},
+		{"Press ", " to rotate stuff CW"},
+		{"Press ", " to confirm action."},
+		{"Press ", " and scroll to zoom."},
+		{"Press ", " and click to pan."},
+		{"Press ", " to go home."}
 	};
-	std::vector<std::string> keybindSettingKeysNamesFiltered = {};
 
-	SettingsMap& settings = Settings::getSettingsMap();
-    std::vector<std::pair<std::string, std::string>> result;
+	Rml::Element* controls = popUpWindow.getPopUpWindow()->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
+	controls->SetAttribute("style", "display: flex; flex-direction: column; width: 80%; background-color:#303030;");
 
-	for (const auto& pair : settings.getAllKeys()) {
+	for (int i = 0; i < keybindSettingKeys.size(); ++i) {
+		const std::string& key = keybindSettingKeys[i];
+		if (Settings::hasKey(key)) {
+			std::string value;
+			switch (Settings::getType(key)) {
+			case SettingType::STRING: value = *Settings::get<SettingType::STRING>(key); break;
+			case SettingType::INT: value = std::to_string(*Settings::get<SettingType::INT>(key)); break;
+			case SettingType::UINT: value = std::to_string(*Settings::get<SettingType::UINT>(key)); break;
+			case SettingType::DECIMAL: value = std::to_string(*Settings::get<SettingType::DECIMAL>(key)); break;
+			case SettingType::BOOL: value = *Settings::get<SettingType::BOOL>(key) ? "true" : "false"; break;
+			case SettingType::KEYBIND: value = Settings::get<SettingType::KEYBIND>(key)->toString(true); break;
+			case SettingType::FILE_PATH: value = *Settings::get<SettingType::FILE_PATH>(key); break;
+			default: value = "<void>"; break;
+			}
 
-	    const std::string& key = pair.first;
+			// Only call quoted on STRING, not on raw values
+			std::ostringstream oss;
+			oss << std::quoted(value);
+			std::string quotedValue = oss.str();
 
-		for (int i = 0; i < keybindSettingKeys.size(); ++i) {
+			Rml::Element* row = controls->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
+			row->SetAttribute("style", "display: flex; flex-direction: row; width: 100%; height: 20dp; border-radius: 8dp; margin: 1dp; padding: 2dp;");
+			row->SetClass("surface-raised", true);
+			Rml::Element* description = row->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
+			description->SetAttribute("style", "flex: 1; height: 100%;");
+			description->AppendChild(mainWindow.getRmlDocument()->CreateTextNode(keybindSettingDescriptions[i].first));
+			Rml::Element* control = description->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
+			control->AppendChild(mainWindow.getRmlDocument()->CreateTextNode(quotedValue));
+			control->SetAttribute("style", "border-radius: 4dp;");
+			control->SetClass("surface-base", true);
+			description->AppendChild(mainWindow.getRmlDocument()->CreateTextNode(keybindSettingDescriptions[i].second));
 
-			std::string keykeep = keybindSettingKeys[i];
-
-	        if (keykeep == key) {
-	            std::string value;
-
-	            switch (pair.second->getType()) {
-
-	            case SettingType::STRING:
-	                value = *settings.get<SettingType::STRING>(key);
-	                break;
-
-	            case SettingType::INT:
-	                value = std::to_string(*settings.get<SettingType::INT>(key));
-	                break;
-
-	            case SettingType::UINT:
-	                value = std::to_string(*settings.get<SettingType::UINT>(key));
-	                break;
-
-	            case SettingType::DECIMAL:
-	                value = std::to_string(*settings.get<SettingType::DECIMAL>(key));
-	                break;
-
-	            case SettingType::BOOL:
-	                value = *settings.get<SettingType::BOOL>(key) ? "true" : "false";
-	                break;
-
-	            case SettingType::KEYBIND:
-	                value = settings.get<SettingType::KEYBIND>(key)->toString(true);
-	                break;
-
-	            case SettingType::FILE_PATH:
-	                value = *settings.get<SettingType::FILE_PATH>(key);
-	                break;
-
-	            case SettingType::VOID:
-	            default:
-	                value = "<void>";
-	                break;
-	            }
-
-	            // Only call quoted on STRING, not on raw values
-				std::ostringstream oss;
-				oss << std::quoted(value);
-				std::string quotedValue = oss.str();
-				logInfo("key {}, value {}", "",key,quotedValue);
-	            result.emplace_back(key, quotedValue);
-				keybindSettingKeysNamesFiltered.push_back(keybindSettingKeysNames[i]);
-
-	        }
-	    }
+		}
 	}
 
-	Rml::Element* leftdiv = leftandright->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
-	leftdiv->SetAttribute("style", "display: flex; flex-direction: column; width: 50%; height: 85%; background-color:#303030;");
-
-	Rml::Element* rightdiv = leftandright->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
-    rightdiv->SetAttribute("style", "display: flex; flex-direction: column; width: 50%; height: 85%; background-color:#303030;");
-	int i = 0;
-	for (const auto& pair : result) {
-    	const std::string& key = pair.first;
-    	const std::string& value = pair.second;
-
-		Rml::Element* temp = leftdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
-		temp->SetInnerRML(keybindSettingKeysNames[i]);
-
-		Rml::Element* temp2 = rightdiv->AppendChild(mainWindow.getRmlDocument()->CreateElement("div"));
-		temp2->SetInnerRML(value.substr(1, value.length() - 2));
-    	logInfo("key: {}, value: {}", "", key, value);
-		i += 1;
-	}
-
-/* Settings to include
-Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/Save", Keybind(Keybind::KeyId::KI_S, Keybind::KeyMod::KM_CTRL));
-Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/New", Keybind(Keybind::KeyId::KI_N, Keybind::KeyMod::KM_CTRL));
-Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Undo", Keybind(Keybind::KeyId::KI_Z, Keybind::KeyMod::KM_CTRL));
-Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Redo", Keybind(Keybind::KeyId::KI_Z, Keybind::KeyMod::KM_CTRL | Keybind::KeyMod::KM_SHIFT));
-Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Copy", Keybind(Keybind::KeyId::KI_C, Keybind::KeyMod::KM_CTRL));
-Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Paste", Keybind(Keybind::KeyId::KI_V, Keybind::KeyMod::KM_CTRL));
-Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Rotate CCW", Keybind(Keybind::KeyId::KI_Q));
-Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Rotate CW", Keybind(Keybind::KeyId::KI_E));
-Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Confirm", Keybind(Keybind::KeyId::KI_E));
-Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Zoom", Keybind(Keybind::KeyId::KI_UNKNOWN, Keybind::KeyMod::KM_SHIFT));
-Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Home", Keybind(Keybind::KeyId::KI_F));
-*/
+	/* Settings to include
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/Save", Keybind(Keybind::KeyId::KI_S, Keybind::KeyMod::KM_CTRL));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/New", Keybind(Keybind::KeyId::KI_N, Keybind::KeyMod::KM_CTRL));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Undo", Keybind(Keybind::KeyId::KI_Z, Keybind::KeyMod::KM_CTRL));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Redo", Keybind(Keybind::KeyId::KI_Z, Keybind::KeyMod::KM_CTRL | Keybind::KeyMod::KM_SHIFT));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Copy", Keybind(Keybind::KeyId::KI_C, Keybind::KeyMod::KM_CTRL));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Paste", Keybind(Keybind::KeyId::KI_V, Keybind::KeyMod::KM_CTRL));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Rotate CCW", Keybind(Keybind::KeyId::KI_Q));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Rotate CW", Keybind(Keybind::KeyId::KI_E));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Confirm", Keybind(Keybind::KeyId::KI_E));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Zoom", Keybind(Keybind::KeyId::KI_UNKNOWN, Keybind::KeyMod::KM_SHIFT));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Home", Keybind(Keybind::KeyId::KI_F));
+	*/
 
 	Rml::Element* close = popUpWindow.getPopUpWindow()->AppendChild(mainWindow.getRmlDocument()->CreateElement("button"));
-    close->SetInnerRML("Close");
-    close->SetClass("popup-button", true);
-	close->AddEventListener(Rml::EventId::Click, new EventPasser(
-	    [popUpWindow](Rml::Event& event) {
-	        popUpWindow.destroy();
-	    }
-	));
-
+	close->SetInnerRML("Close");
+	close->SetClass("popup-button", true);
+	close->AddEventListener(Rml::EventId::Click, new EventPasser([popUpWindow](Rml::Event& event) { popUpWindow.destroy(); }));
 }

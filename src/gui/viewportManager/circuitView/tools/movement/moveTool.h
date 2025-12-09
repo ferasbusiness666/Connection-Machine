@@ -20,6 +20,7 @@ public:
 
 	bool rotateCW(const Event* event);
 	bool rotateCCW(const Event* event);
+	bool flip(const Event* event);
 	bool click(const Event* event);
 	bool unclick(const Event* event);
 

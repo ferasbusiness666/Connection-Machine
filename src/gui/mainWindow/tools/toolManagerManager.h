@@ -17,6 +17,14 @@ public:
 		for (auto view : circuitViews) {
 			view->getToolManager().selectBlock(blockType);
 		}
+		sendChangedSignal();
+	}
+
+	inline void setOrientation(Orientation orientation) {
+		for (auto view : circuitViews) {
+			view->getToolManager().setOrientation(orientation);
+		}
+		sendChangedSignal();
 	}
 
 	inline void setTool(std::string toolName) {

@@ -109,12 +109,12 @@ bool GeneratedCircuitValidator::setOverlapsUnpositioned() {
 
 		if (hasOverlap) {
 			// set the block position as undefined
-			logInfo(
-				"Found overlapped block position at {} --> {}, setting to undefined position",
-				"GeneratedCircuitValidator",
-				block.position.toString(),
-				intPos.toString()
-			);
+			// logInfo(
+			// 	"Found overlapped block position at {} --> {}, setting to undefined position",
+			// 	"GeneratedCircuitValidator",
+			// 	block.position.toString(),
+			// 	intPos.toString()
+			// );
 			block.position.x = std::numeric_limits<coordinate_t>::max();
 			block.position.y = std::numeric_limits<coordinate_t>::max();
 		} else {

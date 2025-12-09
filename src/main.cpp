@@ -24,23 +24,28 @@ void registerSettings() {
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Simulation/Skip Back", Keybind(Keybind::KeyId::KI_LEFT, Keybind::KeyMod::KM_CTRL));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Simulation/Increase Speed", Keybind(Keybind::KeyId::KI_UP));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Simulation/Decrease Speed", Keybind(Keybind::KeyId::KI_DOWN));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Simulation/Reset Simulation", Keybind(Keybind::KeyId::KI_R, Keybind::KeyMod::KM_CTRL));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Undo", Keybind(Keybind::KeyId::KI_Z, Keybind::KeyMod::KM_CTRL));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Redo", Keybind(Keybind::KeyId::KI_Z, Keybind::KeyMod::KM_CTRL | Keybind::KeyMod::KM_SHIFT));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Copy", Keybind(Keybind::KeyId::KI_C, Keybind::KeyMod::KM_CTRL));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Paste", Keybind(Keybind::KeyId::KI_V, Keybind::KeyMod::KM_CTRL));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Pick Block", Keybind(Keybind::KeyId::KI_UNKNOWN, Keybind::KeyMod::KM_CTRL));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/State Changer", Keybind(Keybind::KeyId::KI_I));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Connection", Keybind(Keybind::KeyId::KI_C));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Tensor Connect", Keybind(Keybind::KeyId::KI_R));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Move", Keybind(Keybind::KeyId::KI_M));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Mode Changer", Keybind(Keybind::KeyId::KI_T));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Placement", Keybind(Keybind::KeyId::KI_P));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Area Placement", Keybind(Keybind::KeyId::KI_A));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Selection Maker", Keybind(Keybind::KeyId::KI_S));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Cycle Mode", Keybind(Keybind::KeyId::KI_TAB));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tools/Cycle Mode Back", Keybind(Keybind::KeyId::KI_TAB, Keybind::KeyMod::KM_SHIFT));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Rotate CCW", Keybind(Keybind::KeyId::KI_Q));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Rotate CW", Keybind(Keybind::KeyId::KI_E));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Flip", Keybind(Keybind::KeyId::KI_W));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Confirm", Keybind(Keybind::KeyId::KI_E));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Tool Invert Mode", Keybind(Keybind::KeyId::KI_Q));
-	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/(DEBUG) Test Circuit", Keybind(Keybind::KeyId::KI_L));
+	// Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/(DEBUG) Test Circuit", Keybind(Keybind::KeyId::KI_L));
 #ifdef __APPLE__
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Toggle Fullscreen", Keybind(Keybind::KeyId::KI_F, Keybind::KeyMod::KM_META | Keybind::KeyMod::KM_SHIFT));
 #else
@@ -49,15 +54,18 @@ void registerSettings() {
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Increase UI Scale", Keybind(Keybind::KeyId::KI_OEM_PLUS, Keybind::KeyMod::KM_CTRL));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Decrease UI Scale", Keybind(Keybind::KeyId::KI_OEM_MINUS, Keybind::KeyMod::KM_CTRL));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Reset UI Scale", Keybind(Keybind::KeyId::KI_0, Keybind::KeyMod::KM_CTRL));
-	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Tutorial/Start", Keybind(Keybind::KeyId::KI_J));
-	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Tutorial/Stop", Keybind(Keybind::KeyId::KI_K));
+	// Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Tutorial/Start", Keybind(Keybind::KeyId::KI_J));
+	// Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Tutorial/Stop", Keybind(Keybind::KeyId::KI_K));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Zoom", Keybind(Keybind::KeyId::KI_UNKNOWN, Keybind::KeyMod::KM_SHIFT));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Home", Keybind(Keybind::KeyId::KI_F));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Pan", Keybind(Keybind::KeyId::KI_UNKNOWN, Keybind::KeyMod::KM_ALT));
 	Settings::registerSetting<SettingType::BOOL>("Keybinds/Camera/Scroll Panning", true);
 	Settings::registerSetting<SettingType::BOOL>("Keybinds/Settings/Match Keyboard Layout", true);
+	Settings::registerSetting<SettingType::BOOL>("Preferences/Editing/Pick Block Copy Orientation", true);
+	Settings::registerSetting<SettingType::BOOL>("Preferences/Simulation/Show Confirmation for Reset Simulation", true);
 	Settings::registerSetting<SettingType::DECIMAL>("Appearance/UI Scale", 1.0);
 	Settings::registerSetting<SettingType::UINT>("Simulation/Max Thread Count", std::thread::hardware_concurrency() / 2);
-	Settings::registerSetting<SettingType::DECIMAL>("Corner Log/Message Timeout", 3.f);
+	Settings::registerSetting<SettingType::DECIMAL>("Appearance/Corner Log/Message Timeout", 3.f);
 	SaveSettings save;
 	save.load();
 	// set font again incase another font was loaded because other fonts wont work for now
@@ -75,6 +83,9 @@ int main(int argc, char* argv[]) {
 #ifdef MAIN_TRY_CATCH
 	try {
 #endif
+		// Set up directory manager
+		DirectoryManager::findDirectories(); // if this fails we wont get logs :(
+
 		// if command line args are "--cli" run cli app
 		// TODO: proper arg parsing
 		if (argc > 1) {
@@ -87,10 +98,13 @@ int main(int argc, char* argv[]) {
 			} else if (firstArg == "--version") {
 				logInfo("Connection Machine Version: {}", "", getCurrentVersion().toString());
 				return EXIT_SUCCESS;
+			} else {
+				logInfo("Unknown command argument \"{}\". Use '--cli' or '--version'", "", firstArg);
+				return EXIT_FAILURE;
 			}
 		}
-		// Set up directory manager
-		DirectoryManager::findDirectories();
+
+		// regular app
 		registerSettings();
 
 		App::get().runLoop();

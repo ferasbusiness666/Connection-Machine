@@ -57,6 +57,7 @@ function(add_main_dependencies)
 		NAME fmt
 		GITHUB_REPOSITORY fmtlib/fmt
 		GIT_TAG 11.2.0
+		EXCLUDE_FROM_ALL YES
 		OPTIONS
 			"FMT_INSTALL OFF"
 		SOURCE_DIR "${EXTERNAL_DIR}/fmt"
@@ -92,7 +93,7 @@ function(add_main_dependencies)
 			SOURCE_DIR "${EXTERNAL_DIR}/wasmtime"
 		)
 		set_target_properties(wasmtime PROPERTIES
-			IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib-binary/libwasmtime.a"
+			IMPORTED_LOCATION "${EXTERNAL_DIR}/wasmtime/target/aarch64-apple-darwin/release/libwasmtime.a"
 			INTERFACE_INCLUDE_DIRECTORIES "${EXTERNAL_DIR}/wasmtime/crates/c-api"  # where .h file is
 		)
 	else()
@@ -127,7 +128,7 @@ function(add_main_dependencies)
 		CPMAddPackage(
 			NAME TracyClient
 			GITHUB_REPOSITORY wolfpld/tracy
-			GIT_TAG v0.12.2
+			GIT_TAG v0.13.0
 			OPTIONS
 				"TRACY_ENABLE ON"
 				"TRACY_ON_DEMAND ON"
@@ -149,8 +150,8 @@ function(add_main_dependencies)
 	# Volk vulkan meta loader
 	CPMAddPackage(
 		NAME volk
-		GITHUB_REPOSITORY zeux/volk
-		GIT_TAG 3f1e9f3549c6a0fe0c4901e0f6a2f66b6bb8de3f
+		GITHUB_REPOSITORY itchytrack/volk
+		GIT_TAG b131b168d833f4d6bbe2e5bc8d41fb9792f818f8
 		EXCLUDE_FROM_ALL YES
 		SOURCE_DIR "${EXTERNAL_DIR}/volk"
 	)
@@ -208,16 +209,30 @@ function(add_main_dependencies)
 	list(APPEND EXTERNAL_LINKS stb_image)
 
 	# Freetype
-	CPMAddPackage(
-        NAME freetype
-        GITHUB_REPOSITORY libsdl-org/freetype
-        GIT_TAG VER-2-13-3
-        OPTIONS
+	if(APPLE)
+		CPMAddPackage(
+			NAME freetype
+			GITHUB_REPOSITORY libsdl-org/freetype
+			GIT_TAG VER-2-13-3
+			OPTIONS
+				"FT_DISABLE_HARFBUZZ ON"
+				"FT_WITH_HARFBUZZ OFF"
+				"FT_DISABLE_BROTLI ON"
+			EXCLUDE_FROM_ALL YES
+			SOURCE_DIR "${EXTERNAL_DIR}/freetype"
+		)
+	else()
+		CPMAddPackage(
+			NAME freetype
+			GITHUB_REPOSITORY libsdl-org/freetype
+			GIT_TAG VER-2-13-3
+			OPTIONS
 			"FT_DISABLE_HARFBUZZ ON"
 			"FT_WITH_HARFBUZZ OFF"
-		EXCLUDE_FROM_ALL YES
-		SOURCE_DIR "${EXTERNAL_DIR}/freetype"
-    )
+			EXCLUDE_FROM_ALL YES
+			SOURCE_DIR "${EXTERNAL_DIR}/freetype"
+			)
+	endif()
 	add_library(Freetype::Freetype ALIAS freetype)
 	list(APPEND EXTERNAL_LINKS freetype)
 
@@ -264,16 +279,30 @@ function(add_main_dependencies)
 	list(APPEND EXTERNAL_LINKS RmlUi::Debugger)
 
 	# httplib
-	CPMAddPackage(
-		NAME httplib
-		GITHUB_REPOSITORY yhirose/cpp-httplib
-		GIT_TAG v0.26.0
-		EXCLUDE_FROM_ALL YES
-		SOURCE_DIR "${EXTERNAL_DIR}/cpp-httplib"
-		OPTIONS
-			"HTTPLIB_REQUIRE_OPENSSL ON"
-			"HTTPLIB_USE_ZSTD_IF_AVAILABLE OFF"
-	)
+	if (CONNECTION_MACHINE_DISTRIBUTE_APP)
+		CPMAddPackage(
+			NAME httplib
+			GITHUB_REPOSITORY yhirose/cpp-httplib
+			GIT_TAG v0.26.0
+			EXCLUDE_FROM_ALL YES
+			SOURCE_DIR "${EXTERNAL_DIR}/cpp-httplib"
+			OPTIONS
+				"HTTPLIB_REQUIRE_OPENSSL ON"
+				"OPENSSL_USE_STATIC_LIBS TRUE"
+				"HTTPLIB_USE_ZSTD_IF_AVAILABLE OFF"
+		)
+	else()
+		CPMAddPackage(
+			NAME httplib
+			GITHUB_REPOSITORY yhirose/cpp-httplib
+			GIT_TAG v0.26.0
+			EXCLUDE_FROM_ALL YES
+			SOURCE_DIR "${EXTERNAL_DIR}/cpp-httplib"
+			OPTIONS
+				"HTTPLIB_REQUIRE_OPENSSL ON"
+				"HTTPLIB_USE_ZSTD_IF_AVAILABLE OFF"
+		)
+	endif()
 	list(APPEND EXTERNAL_LINKS httplib)
 
 	# readline This will be added at some point!

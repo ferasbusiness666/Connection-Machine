@@ -105,6 +105,7 @@ def build_files(file_paths: list[pathlib.Path], build_cache: BuildCache, target_
 
 def main():
     script_dir = pathlib.Path(__file__).parent.resolve()
+    os.chdir(script_dir)
 
     build_cache_path = script_dir/"build_cache.json"
     build_cache: BuildCache = load_build_cache(build_cache_path)

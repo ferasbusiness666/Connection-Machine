@@ -8,18 +8,26 @@ void PasteTool::activate() {
 	CircuitTool::activate();
 	registerFunction("Tool Rotate Block CW", std::bind(&PasteTool::rotateCW, this, std::placeholders::_1));
 	registerFunction("Tool Rotate Block CCW", std::bind(&PasteTool::rotateCCW, this, std::placeholders::_1));
+	registerFunction("Tool Flip Block", std::bind(&PasteTool::flip, this, std::placeholders::_1));
 	registerFunction("Tool Primary Activate", std::bind(&PasteTool::place, this, std::placeholders::_1));
 }
 
 bool PasteTool::rotateCW(const Event* event) {
-	transformAmount.nextOrientation();
+	transformAmount.nextRotation();
 	elementId = 0; // remake elements
 	updateElements();
 	return true;
 }
 
 bool PasteTool::rotateCCW(const Event* event) {
-	transformAmount.lastOrientation();
+	transformAmount.lastRotation();
+	elementId = 0; // remake elements
+	updateElements();
+	return true;
+}
+
+bool PasteTool::flip(const Event* event) {
+	transformAmount.flip();
 	elementId = 0; // remake elements
 	updateElements();
 	return true;
@@ -28,7 +36,6 @@ bool PasteTool::rotateCCW(const Event* event) {
 bool PasteTool::place(const Event* event) {
 	SharedCopiedBlocks copiedBlocks = circuitView->getBackend().getClipboard();
 	if (copiedBlocks) circuit->tryInsertCopiedBlocks(copiedBlocks, lastPointerPosition, transformAmount);
-
 	return true;
 }
 

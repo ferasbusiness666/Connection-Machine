@@ -22,7 +22,7 @@ enum class SimGateType : int {
 	PORTS_TO_INT = 9
 };
 
-inline std::string simgatetype_to_string(SimGateType type) {
+inline std::string simgatetype_to_string(SimGateType type) /* GCOVR_EXCL_FUNCTION */ {
 	switch (type) {
 		case SimGateType::AND:
 			return "AND";
@@ -60,6 +60,8 @@ public:
 	void clearState();
 	double getAverageTickrate() const;
 	void setState(simulator_id_t id, logic_state_t state);
+
+	void resetStates();
 
 	logic_state_t getState(simulator_id_t id) const;
 	std::vector<logic_state_t> getStates(const std::vector<simulator_id_t>& ids) const;
@@ -269,10 +271,10 @@ private:
 
 	void extendDataVectors(simulator_id_t id) {
 		if (statesA.size() <= id) {
-			statesA.resizeWithOffset(id, 1, logic_state_t::UNDEFINED);
-			statesB.resizeWithOffset(id, 1, logic_state_t::UNDEFINED);
+			statesA.smartResizeWithOffset(id, 1, logic_state_t::UNDEFINED);
+			statesB.smartResizeWithOffset(id, 1, logic_state_t::UNDEFINED);
 			for (IdVector<simulator_id_t, logic_state_t>& replayStates : statesReplay) {
-				replayStates.resizeWithOffset(id, 1, logic_state_t::UNDEFINED);
+				replayStates.smartResizeWithOffset(id, 1, logic_state_t::UNDEFINED);
 			}
 		}
 	}

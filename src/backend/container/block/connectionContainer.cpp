@@ -28,7 +28,7 @@ bool ConnectionContainer::hasConnection(connection_end_id_t thisEndId, Connectio
 	return iter != connections.end() && iter->second.contains(otherConnectionEnd);
 }
 
-nlohmann::json ConnectionContainer::dumpState() const {
+nlohmann::json ConnectionContainer::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	for (const auto& [endId, connectionSet] : connections) {
 		nlohmann::json connectionArray = nlohmann::json::array();

@@ -6,7 +6,7 @@ LogicSimulator::LogicSimulator(
 	std::vector<simulator_id_t>& dirtySimulatorIds) :
 	evalConfig(evalConfig),
 	dirtySimulatorIds(dirtySimulatorIds),
-	simulatorIdProvider(0) {
+	simulatorIdProvider(4) {
 	evalConfig.subscribe([this]() {
 		{
 			SimPauseGuard pauseGuard(*this);
@@ -19,9 +19,10 @@ LogicSimulator::LogicSimulator(
 		cv.notify_all();
 	});
 
+	extendDataVectors(simulator_id_t(4));
+
+	resetStates();
 	simulationThread = std::thread(&LogicSimulator::simulationLoop, this);
-	extendDataVectors(simulatorIdProvider.getNewId()); // reserve the 0th id to be used as an invalid id
-	setState(simulator_id_t(0), logic_state_t::LOW);
 }
 
 LogicSimulator::~LogicSimulator() {
@@ -153,6 +154,13 @@ void LogicSimulator::processPendingStateChanges() {
 			const StateChange& change = localQueue.front();
 
 			extendDataVectors(change.id);
+			if (!gateLocations.contains(change.id)) {
+				continue;
+			}
+			GateLocation& gateLocation = gateLocations.at(change.id);
+			if (gateLocation.gateType == SimGateType::CONSTANT || gateLocation.gateType == SimGateType::JUNCTION) {
+				continue;
+			}
 
 			statesA[change.id] = change.state;
 			statesB[change.id] = change.state;
@@ -167,12 +175,23 @@ void LogicSimulator::setState(simulator_id_t id, logic_state_t st) {
 	if (viewingReplay) {
 		return;
 	}
+	if (!simulatorIdProvider.isIdUsed(id)) {
+		return;
+	}
 	// we don't want to freeze up if the mutexes are locked, so we'll only set the state if we can successfully lock. otherwise, we'll wait until the next tick to set the states.
+
 	std::unique_lock lkMain(mainDataMutex, std::try_to_lock);
 	std::unique_lock lkA(statesAMutex, std::try_to_lock);
 
 	if (lkMain.owns_lock() && lkA.owns_lock()) {
 		extendDataVectors(id);
+		if (!gateLocations.contains(id)) {
+			return;
+		}
+		GateLocation& gateLocation = gateLocations.at(id);
+		if (gateLocation.gateType == SimGateType::CONSTANT || gateLocation.gateType == SimGateType::JUNCTION) {
+			return;
+		}
 		statesA[id] = st;
 		statesB[id] = st;
 		setStateUsed[replayHead] = true;
@@ -182,6 +201,40 @@ void LogicSimulator::setState(simulator_id_t id, logic_state_t st) {
 		pendingStateChanges.push({ id, st });
 		cv.notify_one();
 	}
+}
+
+void LogicSimulator::resetStates() {
+	std::unique_lock lkMain(mainDataMutex);
+	std::unique_lock lkA(statesAMutex);
+	for (simulator_id_t id : statesA.ids()) {
+		statesA[id] = logic_state_t::UNDEFINED;
+		statesB[id] = logic_state_t::UNDEFINED;
+	}
+	statesA[0] = logic_state_t::LOW;
+	statesB[0] = logic_state_t::LOW;
+	statesA[1] = logic_state_t::HIGH;
+	statesB[1] = logic_state_t::HIGH;
+	statesA[2] = logic_state_t::FLOATING;
+	statesB[2] = logic_state_t::FLOATING;
+	statesA[3] = logic_state_t::UNDEFINED;
+	statesB[3] = logic_state_t::UNDEFINED;
+	auto resetGateStates = [this](auto& gates) {
+		for (auto& gate : gates) {
+			gate.resetState(evalConfig.isRealistic(), statesA);
+			gate.resetState(evalConfig.isRealistic(), statesB);
+		}
+		};
+	resetGateStates(andGates);
+	resetGateStates(xorGates);
+	resetGateStates(junctions);
+	resetGateStates(buffers);
+	resetGateStates(singleBuffers);
+	resetGateStates(tristateBuffers);
+	resetGateStates(constantGates);
+	resetGateStates(constantResetGates);
+	resetGateStates(copySelfOutputGates);
+	resetGateStates(portsToIntGates);
+	for (auto& junction : junctions) junction.doubleTick(statesA, statesB);
 }
 
 logic_state_t LogicSimulator::getState(simulator_id_t id) const {
@@ -419,7 +472,7 @@ simulator_id_t LogicSimulator::addGate(const BlockType blockType) {
 	// 	return 0;
 	default:
 		logError("Cannot add gate of type {}", "LogicSimulator::addGate", (unsigned int)blockType);
-		return simulator_id_t(0);
+		return simulator_id_t(3);
 	}
 
 	return simulatorId;
@@ -795,7 +848,8 @@ void LogicSimulator::removeOutputDependency(simulator_id_t outputId, simulator_i
 	auto it = outputDependencies.find(outputId);
 	if (it != outputDependencies.end()) {
 		auto& deps = it->second;
-		deps.erase(std::remove(deps.begin(), deps.end(), GateDependency(dependentGateId)), deps.end());
+		auto it2 = std::find(deps.begin(), deps.end(), GateDependency(dependentGateId));
+		if (it2 != deps.end()) deps.erase(it2);
 		if (deps.empty()) {
 			outputDependencies.erase(it);
 		}
@@ -977,7 +1031,7 @@ bool LogicSimulator::skipForward() {
 	return true;
 }
 
-nlohmann::json LogicSimulator::dumpState() const {
+nlohmann::json LogicSimulator::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	std::unique_lock<std::mutex> lock(mainDataMutex);
 	nlohmann::json stateJson;
 	stateJson["running"] = running.load();
@@ -1040,18 +1094,18 @@ nlohmann::json LogicSimulator::dumpState() const {
 	return stateJson;
 }
 
-nlohmann::json LogicSimulator::StateChange::dumpState() const {
+nlohmann::json LogicSimulator::StateChange::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["simulatorId"] = id.get();
 	stateJson["newState"] = logicstate_to_string(state);
 	return stateJson;
 }
 
-nlohmann::json LogicSimulator::GateDependency::dumpState() const {
+nlohmann::json LogicSimulator::GateDependency::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	return gateId.get();
 }
 
-nlohmann::json LogicSimulator::GateLocation::dumpState() const {
+nlohmann::json LogicSimulator::GateLocation::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["gateType"] = simgatetype_to_string(gateType);
 	stateJson["gateIndex"] = gateIndex;

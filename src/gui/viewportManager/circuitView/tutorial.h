@@ -6,6 +6,7 @@ class Environment;
 
 #include "renderer/elementCreator.h"
 #include "./viewManager/viewManager.h"
+#include "computerAPI/tutorialLoader.h"
 
 struct TutorialCondition {
 	struct BlockRequirement {
@@ -47,16 +48,16 @@ struct TutorialStep {
 	TutorialAction action;
 };
 
-class TutorialManager {
+class Tutorial {
 public:
-	TutorialManager(Environment& environment, CircuitView& circuitView);
+	Tutorial(Environment& environment, CircuitView& circuitView);
 	void StartTutorial();
 	void Stop();
 	void setTutorial(const std::vector<TutorialStep>& steps);
 
 private:
 	void checkTutorial(DifferenceSharedPtr diff, circuit_id_t circuitId);
-	void checkTutorialState(Position pos, bool state);
+	void checkTutorialState(Position pos, logic_state_t state);
 
 	void runCurrentStep();
     bool isCurrentStepComplete() const;

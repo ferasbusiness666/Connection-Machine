@@ -18,14 +18,17 @@ extern "C"
 #endif
 	typedef unsigned int BlockType;
 
-	typedef unsigned int connection_end_id_t;
+	typedef int connection_end_id_t;
 	typedef unsigned char block_size_t;
 	typedef int block_id_t;
 	typedef int coord_t;
+	typedef float f_coord_t;
 
-	typedef char Rotation;
+	typedef char Orientation;
 
-	exportedVar(char*, UUID, UUID) exportedVar(char*, name, Name) exportedVar(char*, defaultParameters, DefaultParameters);
+	exportedVar(char*, UUID, UUID)
+	exportedVar(char*, name, Name)
+	exportedVar(char*, defaultParameters, DefaultParameters);
 	// returns number of files imported
 	externalFunction(importFile) unsigned int importFile(const char* filePath);
 	externalFunction(getParameter) int getParameter(const char* key);
@@ -35,10 +38,14 @@ extern "C"
 	externalFunction(getBusBlock) BlockType getBusBlock(unsigned int bitWidth);
 	externalFunction(getBusBlockAdvanced) BlockType getBusBlockAdvanced(unsigned int numInputs, unsigned int numOutputs, unsigned int inputLaneWidth, unsigned int outputLaneWidth);
 	externalFunction(createBlock) block_id_t createBlock(BlockType blockType);
-	externalFunction(createBlockAtPosition) block_id_t createBlockAtPosition(coord_t x, coord_t y, Rotation rotation, BlockType blockType);
+	externalFunction(createBlockAtPosition) block_id_t createBlockAtPosition(coord_t x, coord_t y, Orientation orientation, BlockType blockType);
 	externalFunction(createConnection) void createConnection(block_id_t outputBlockId, int outputPortId, block_id_t inputBlockId, int inputPortId);
-	externalFunction(addConnectionInput) void addConnectionInput(coord_t portX, coord_t portY, block_id_t internalBlockId, connection_end_id_t internalBlockPortId);
-	externalFunction(addConnectionOutput) void addConnectionOutput(coord_t portX, coord_t portY, block_id_t internalBlockId, connection_end_id_t internalBlockPortId);
+	externalFunction(addConnectionInput) connection_end_id_t addConnectionInput(coord_t portX, coord_t portY, block_id_t internalBlockId, connection_end_id_t internalBlockPortId);
+	externalFunction(addConnectionInputNamed) connection_end_id_t addConnectionInputNamed(coord_t portX, coord_t portY, block_id_t internalBlockId, connection_end_id_t internalBlockPortId, const char* portName);
+	externalFunction(addConnectionOutput) connection_end_id_t addConnectionOutput(coord_t portX, coord_t portY, block_id_t internalBlockId, connection_end_id_t internalBlockPortId);
+	externalFunction(addConnectionOutputNamed) connection_end_id_t addConnectionOutputNamed(coord_t portX, coord_t portY, block_id_t internalBlockId, connection_end_id_t internalBlockPortId, const char* portName);
+	externalFunction(setConnectionPortBitWidth) void setConnectionPortBitWidth(connection_end_id_t connectionEndId, unsigned int bitWidth);
+	externalFunction(setConnectionPortOffset) void setConnectionPortOffset(connection_end_id_t connectionEndId, f_coord_t xOffset, f_coord_t yOffset);
 	externalFunction(setSize) void setSize(coord_t width, coord_t height);
 	externalFunction(logInfo) void logInfo(const char* msg);
 	externalFunction(logError) void logError(const char* msg);

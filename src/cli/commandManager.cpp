@@ -21,6 +21,9 @@ void CommandManager::registerCommand(std::unique_ptr<Command>&& command) {
 }
 
 void CommandManager::run(const std::vector<std::string>& commandArgs, Environment& environment) {
+	if (commandArgs.empty()) {
+		return; // do nothing
+	}
     auto iter = commandMap.find(commandArgs[0]);
     if (iter == commandMap.end()) {
 		logError("Failed to run nonexistent command {}. Use the \"help\" command for a list of commands.", "CommandManager", commandArgs[0]);

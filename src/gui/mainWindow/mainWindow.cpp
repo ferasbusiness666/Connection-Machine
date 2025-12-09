@@ -68,10 +68,24 @@ MainWindow::MainWindow(Environment& environment) :
 	rmlDocument->AddEventListener(Rml::EventId::Keydown, &keybindHandler);
 	keybindHandler.addListener("Keybinds/Editing/Paste", [this]() { toolManagerManager.setTool("paste tool"); });
 	keybindHandler.addListener("Keybinds/Editing/Tools/State Changer", [this]() { toolManagerManager.setTool("state changer"); });
-	keybindHandler.addListener("Keybinds/Editing/Tools/Connection", [this]() { toolManagerManager.setTool("connection"); });
+	keybindHandler.addListener("Keybinds/Editing/Tools/Connection", [this]() {
+		toolManagerManager.setTool("connection");
+		toolManagerManager.setMode("Single");
+	});
+	keybindHandler.addListener("Keybinds/Editing/Tools/Tensor Connect", [this]() {
+		toolManagerManager.setTool("connection");
+		toolManagerManager.setMode("Tensor");
+	});
 	keybindHandler.addListener("Keybinds/Editing/Tools/Move", [this]() { toolManagerManager.setTool("move"); });
 	keybindHandler.addListener("Keybinds/Editing/Tools/Mode Changer", [this]() { toolManagerManager.setTool("mode changer"); });
-	keybindHandler.addListener("Keybinds/Editing/Tools/Placement", [this]() { toolManagerManager.setTool("placement"); });
+	keybindHandler.addListener("Keybinds/Editing/Tools/Placement", [this]() {
+		toolManagerManager.setTool("placement");
+		toolManagerManager.setMode("Single");
+	});
+	keybindHandler.addListener("Keybinds/Editing/Tools/Area Placement", [this]() {
+		toolManagerManager.setTool("placement");
+		toolManagerManager.setMode("Area");
+	});
 	keybindHandler.addListener("Keybinds/Editing/Tools/Selection Maker", [this]() { toolManagerManager.setTool("selection maker"); });
 	keybindHandler.addListener("Keybinds/Window/Toggle Fullscreen", [this]() { sdlWindow->toggleBorderlessFullscreen(); });
 	keybindHandler.addListener("Keybinds/Window/Increase UI Scale", [this]() { offsetUiScale(kUiScaleStep); });
@@ -93,10 +107,9 @@ MainWindow::MainWindow(Environment& environment) :
 }
 
 MainWindow::~MainWindow() {
-	App::get().deregisterWindow(sdlWindow);
-	Rml::RemoveContext(rmlContext->GetName());
-	MainRenderer::get().deregisterWindow(windowId);
-	rmlContext = nullptr;
+	if (rmlContext) Rml::RemoveContext(rmlContext->GetName());
+	if (windowId != 0) MainRenderer::get().deregisterWindow(windowId);
+	if (sdlWindow) App::get().deregisterWindow(*sdlWindow);
 }
 
 bool MainWindow::recieveEvent(SDL_Event& event) {
@@ -111,7 +124,12 @@ bool MainWindow::recieveEvent(SDL_Event& event) {
 
 	if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
 		if (App::get().closeMainWindow(this)) {
-			App::get().deregisterWindow(sdlWindow.get());
+			Rml::RemoveContext(rmlContext->GetName());
+			rmlContext = nullptr;
+			MainRenderer::get().deregisterWindow(windowId);
+			windowId = 0;
+			App::get().deregisterWindow(*sdlWindow);
+			sdlWindow = nullptr;
 		}
 		return true;
 	}

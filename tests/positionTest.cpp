@@ -1,11 +1,6 @@
 #include "positionTest.h"
-#include "util/uuid.h"
 
-void PositionTest::SetUp() { }
-
-void PositionTest::TearDown() {
-
-}
+#include "randomGens.h"
 
 TEST_F(PositionTest, VectorBasicOperations) {
 	Vector a(5, 5);
@@ -161,4 +156,165 @@ TEST_F(PositionTest, FPositionComparisons) {
 	ASSERT_TRUE(a - b == FPosition(3.2, 6.1));
 	ASSERT_TRUE(a2 == FPosition(3.2, 6.1));
 	ASSERT_TRUE(a * 3.1 == FPosition(19.84, 28.52));
+}
+
+TEST_F(PositionTest, ZeroConstructor) {
+	Position zeroPos;
+	ASSERT_EQ(zeroPos.x, 0);
+	ASSERT_EQ(zeroPos.y, 0);
+
+	FPosition zeroFPos;
+	ASSERT_EQ(zeroFPos.x, 0);
+	ASSERT_EQ(zeroFPos.y, 0);
+	ASSERT_TRUE(zeroFPos.isValid());
+
+	Vector zeroVec;
+	ASSERT_EQ(zeroVec.dx, 0);
+	ASSERT_EQ(zeroVec.dy, 0);
+
+	FVector zeroFVec;
+	ASSERT_EQ(zeroFVec.dx, 0);
+	ASSERT_EQ(zeroFVec.dy, 0);
+
+	Size zeroSize;
+	ASSERT_EQ(zeroSize.w, 0);
+	ASSERT_EQ(zeroSize.h, 0);
+
+	FSize zeroFSize;
+	ASSERT_EQ(zeroFSize.w, 0);
+	ASSERT_EQ(zeroFSize.h, 0);
+	ASSERT_TRUE(zeroFSize.isValid());
+
+	Orientation zeroOrientation;
+	ASSERT_EQ(zeroOrientation.rotation, Rotation::ZERO);
+	ASSERT_EQ(zeroOrientation.flipped, false);
+}
+
+TEST_F(PositionTest, FPositionInvalid) {
+	FPosition zeroVec = FPosition::getInvalid();
+	ASSERT_TRUE(zeroVec.isInvalid());
+	ASSERT_FALSE(zeroVec.isValid());
+	zeroVec = FPosition(1, 2);
+	ASSERT_EQ(zeroVec.x, 1);
+	ASSERT_EQ(zeroVec.y, 2);
+	ASSERT_FALSE(zeroVec.isInvalid());
+	ASSERT_TRUE(zeroVec.isValid());
+	zeroVec.setInvalid();
+	ASSERT_TRUE(zeroVec.isInvalid());
+	ASSERT_FALSE(zeroVec.isValid());
+	zeroVec.x = 0;
+	ASSERT_TRUE(zeroVec.isInvalid());
+	ASSERT_FALSE(zeroVec.isValid());
+	zeroVec.y = 0;
+	ASSERT_EQ(zeroVec.x, 0);
+	ASSERT_EQ(zeroVec.y, 0);
+	ASSERT_FALSE(zeroVec.isInvalid());
+	ASSERT_TRUE(zeroVec.isValid());
+	zeroVec.setInvalid();
+	ASSERT_TRUE(zeroVec.isInvalid());
+	ASSERT_FALSE(zeroVec.isValid());
+	zeroVec.y = 0;
+	ASSERT_TRUE(zeroVec.isInvalid());
+	ASSERT_FALSE(zeroVec.isValid());
+}
+
+TEST_F(PositionTest, toString) {
+	Position pos;
+	ASSERT_EQ(pos.toString(), "(0, 0)");
+	pos.x = 10;
+	ASSERT_EQ(pos.toString(), "(10, 0)");
+	pos.y = -51;
+	ASSERT_EQ(pos.toString(), "(10, -51)");
+	pos.x = -1161231;
+	ASSERT_EQ(pos.toString(), "(-1161231, -51)");
+
+	Vector vec;
+	ASSERT_EQ(vec.toString(), "<0, 0>");
+	vec.dx = 10;
+	ASSERT_EQ(vec.toString(), "<10, 0>");
+	vec.dy = -51;
+	ASSERT_EQ(vec.toString(), "<10, -51>");
+	vec.dx = -1161231;
+	ASSERT_EQ(vec.toString(), "<-1161231, -51>");
+
+	Size size;
+	ASSERT_EQ(size.toString(), "0x0");
+	size.w = 10;
+	ASSERT_EQ(size.toString(), "10x0");
+	size.h = 14371;
+	ASSERT_EQ(size.toString(), "10x14371");
+	size.h = -51;
+	ASSERT_EQ(size.toString(), "10x-51");
+	size.w = -1161231;
+	ASSERT_EQ(size.toString(), "-1161231x-51");
+
+	Orientation orientation;
+
+	ASSERT_EQ(orientation.toString(), "(r:0, f:0)");
+}
+
+TEST_F(PositionTest, vectorIter) {
+	for (unsigned int i = 0; i < 50; i++) {
+		Vector v = randVec();
+		v.dx %= 1000; // takes too long otherwise
+		v.dy %= 1000;
+
+		unsigned long long area = 0;
+		for (Vector::Iterator iter = v.iter(); iter; iter++) {
+			Vector::Iterator curIter = iter;
+			Vector::Iterator nextIter = (++iter)--;
+			ASSERT_EQ(iter++, curIter);
+			ASSERT_EQ(iter--, nextIter);
+			ASSERT_EQ(++iter, nextIter);
+			ASSERT_EQ(--iter, curIter);
+			area++;
+		}
+		ASSERT_EQ(area, (v.dx+1)*(v.dy+1));
+	}
+}
+
+TEST_F(PositionTest, sizeIter) {
+	for (unsigned int i = 0; i < 50; i++) {
+		Size s = randSize();
+		s.w = abs(s.w) % 1000 + 1; // takes too long otherwise, move than 1 w&h
+		s.h = abs(s.h) % 1000 + 1;
+		ASSERT_TRUE(s.isValid());
+
+		unsigned long long area = 0;
+		for (Size::Iterator iter = s.iter(); iter; iter++) {
+			Size::Iterator curIter = iter;
+			Size::Iterator nextIter = (++iter)--;
+			ASSERT_EQ(iter++, curIter);
+			ASSERT_EQ(iter--, nextIter);
+			ASSERT_EQ(++iter, nextIter);
+			ASSERT_EQ(--iter, curIter);
+			area++;
+		}
+		ASSERT_EQ(area, s.w*s.h);
+		ASSERT_EQ(area, s.area());
+	}
+}
+
+TEST_F(PositionTest, positionIter) {
+	for (unsigned int i = 0; i < 50; i++) {
+		Position p1 = randPos();
+		Position p2 = randPos();
+		p1.x %= 1000; // takes too long otherwise
+		p1.y %= 1000; // takes too long otherwise
+		p2.x %= 1000; // takes too long otherwise
+		p2.y %= 1000; // takes too long otherwise
+
+		unsigned long long area = 0;
+		// ASSERT_EQ(*(p1.iterTo(p2)), p1); // not guaranteed. Should it be?
+		for (Position::Iterator iter = p1.iterTo(p2); iter; iter++) {
+			Position::Iterator curIter = iter;
+			Position::Iterator nextIter = (++iter)--;
+			ASSERT_EQ(iter++, curIter);
+			ASSERT_EQ(iter--, nextIter);
+			ASSERT_EQ(++iter, nextIter);
+			ASSERT_EQ(--iter, curIter);
+			area++;
+		}
+		ASSERT_EQ(area, (abs(p1.x - p2.x)+1) * (abs(p1.y - p2.y)+1));
+	}
 }

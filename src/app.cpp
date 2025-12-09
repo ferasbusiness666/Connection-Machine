@@ -20,6 +20,7 @@ App& App::get() {
 		logInfo("Creating App", "App");
 		appSingleton.emplace();
 		appSingleton->newMainWindow();
+		appSingleton->windows.back()->getActiveCircuitViewWidget()->newCircuit();
 	}
 	return *appSingleton;
 }
@@ -54,18 +55,19 @@ void App::preShutdownStep() {
 App::~App() { logInfo("App shut down", "App"); }
 
 std::shared_ptr<SdlWindow> App::registerWindow(const std::string& windowName) { return sdlWindows.emplace_back(std::make_shared<SdlWindow>(windowName)); }
+std::shared_ptr<SdlWindow> App::registerWindow(SDL_Window* handle) { return sdlWindows.emplace_back(std::make_shared<SdlWindow>(handle)); }
 std::shared_ptr<SdlWindow> App::registerWindow(const std::string& windowName, unsigned int width, unsigned int height) {
 	return sdlWindows.emplace_back(std::make_shared<SdlWindow>(windowName, width, height));
 }
 
-void App::deregisterWindow(std::shared_ptr<SdlWindow>& sdlWindow) {
-	auto iter = std::find(sdlWindows.begin(), sdlWindows.end(), sdlWindow);
-	if (iter != sdlWindows.end()) sdlWindows.erase(iter);
-}
-
-void App::deregisterWindow(const SdlWindow* sdlWindow) {
-	auto iter = std::find_if(sdlWindows.begin(), sdlWindows.end(), [sdlWindow](const std::shared_ptr<SdlWindow>& a) { return a.get() == sdlWindow; });
-	if (iter != sdlWindows.end()) sdlWindows.erase(iter);
+void App::deregisterWindow(SdlWindow& sdlWindow) {
+	auto iter = std::find_if(sdlWindows.begin(), sdlWindows.end(), [sdlWindow = &sdlWindow](const std::shared_ptr<SdlWindow>& a) { return a.get() == sdlWindow; });
+	std::shared_ptr<SdlWindow> sdlWindowPtr = nullptr;
+	if (iter != sdlWindows.end()) {
+		sdlWindowPtr = *iter; // keep shared ptr alive until end of function
+		sdlWindows.erase(iter);
+	}
+	sdlWindow.clear();
 }
 
 void App::newMainWindow() {
@@ -140,15 +142,17 @@ void App::runLoop() {
 				}
 				default: {
 					// Send event to all windows
-					std::vector<SdlWindow*> windowsToSendEvents;
+					std::vector<std::weak_ptr<SdlWindow>> windowsToSendEvents;
 					for (unsigned int i = 0; i < sdlWindows.size(); ++i) {
-						windowsToSendEvents.push_back(sdlWindows[i].get());
+						windowsToSendEvents.push_back(sdlWindows[i]);
 					}
 					for (unsigned int i = 0; i < windowsToSendEvents.size(); ++i) {
-						if (std::any_of(sdlWindows.begin(), sdlWindows.end(), [windowPtr = windowsToSendEvents[i]](const std::shared_ptr<SdlWindow>& a) {
+						std::shared_ptr<SdlWindow> thisWindow = windowsToSendEvents[i].lock();
+						if (!thisWindow) continue;
+						if (std::any_of(sdlWindows.begin(), sdlWindows.end(), [windowPtr = thisWindow.get()](const std::shared_ptr<SdlWindow>& a) {
 							return a.get() == windowPtr;
 						})) {
-							windowsToSendEvents[i]->recieveEvent(event);
+							thisWindow->recieveEvent(event);
 						}
 					}
 				}
@@ -167,8 +171,14 @@ void App::runLoop() {
 			windowsToDestroy.clear();
 		}
 		// tell all windows to update rml
-		for (auto& sdlWindow : sdlWindows) {
-			sdlWindow->render();
+		std::vector<std::weak_ptr<SdlWindow>> windowsToRender;
+		for (unsigned int i = 0; i < sdlWindows.size(); ++i) {
+			windowsToRender.push_back(sdlWindows[i]);
+		}
+		for (unsigned int i = 0; i < windowsToRender.size(); ++i) {
+			std::shared_ptr<SdlWindow> thisWindow = windowsToRender[i].lock();
+			if (!thisWindow) continue;
+			thisWindow->render();
 		}
 		for (auto* window : newlyCreatedWindows) {
 			for (auto circuitViewWidget : window->getCircuitViewWidgets()) {
@@ -254,7 +264,7 @@ void App::startTryingToQuit() {
 	}
 	for (auto& circuit : environment.getBackend().getCircuitManager().getCircuits()) {
 		if (environment.getCircuitFileManager().getSavePath(circuit.second->getUUID())) continue;
-		if (!circuit.second->isEditable()) continue;
+		if (circuit.second->isEmpty() || circuit.second->getEditCount() == 0 || !circuit.second->isEditable()) continue;
 		++tasksToFinishToQuit;
 		windowIter->get()->getPopUpManager().addOptionsPopUp(
 			"Do you want to save: " + circuit.second->getCircuitName(),
@@ -290,7 +300,7 @@ void App::startTryingToQuit() {
 
 void App::stopTryingToQuit() { tryingToQuit = false; }
 
-nlohmann::json App::dumpState() const {
+nlohmann::json App::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["environment"] = environment.dumpState();
 	stateJson["version"] = getCurrentVersion().toString();
@@ -327,7 +337,7 @@ void App::launchRmlDebugger(Rml::Context* rmlContext) {
 				if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
 					Rml::RemoveContext(debuggerRmlContext->GetName());
 					MainRenderer::get().deregisterWindow(windowId);
-					App::get().deregisterWindow(sdlWindow);
+					App::get().deregisterWindow(*sdlWindow);
 					this->debuggingWindow = nullptr;
 					Rml::Debugger::Shutdown();
 					return true;

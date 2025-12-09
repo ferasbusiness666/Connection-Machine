@@ -104,7 +104,7 @@ namespace fmt {
 template <class Tag, class Rep>
 struct formatter<Id<Tag, Rep>> : formatter<Rep> {
 	template <typename FormatContext>
-	auto format(const Id<Tag, Rep>& id, FormatContext& ctx) const {
+	auto format(const Id<Tag, Rep>& id, FormatContext& ctx) const /* GCOVR_EXCL_FUNCTION */ {
 		return formatter<Rep>::format(id.get(), ctx);
 	}
 };
@@ -162,7 +162,7 @@ public:
 		}
 		unusedIds.insert(id.get());
 	}
-	constexpr bool isIdUsed(id_type id) const { return id.get() < nextId && !unusedIds.contains(id.get()); }
+	constexpr bool isIdUsed(id_type id) const { return id.get() < nextId && id.get() >= initialValue && !unusedIds.contains(id.get()); }
 	constexpr id_type peekNext() const { return id_type(nextId); }
 	void reset() {
 		nextId = initialValue;
@@ -177,7 +177,7 @@ public:
 		}
 		return usedIds;
 	}
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 		nlohmann::json stateJson;
 		stateJson["nextId"] = nextId;
 		stateJson["initialValue"] = initialValue;
@@ -234,6 +234,45 @@ public:
 	inline void resize(id_type n, const T& value) { storage.resize(n.get(), value); }
 	inline void resizeWithOffset(id_type n, int offset) { storage.resize(n.get() + offset); }
 	inline void resizeWithOffset(id_type n, int offset, const T& value) { storage.resize(n.get() + offset, value); }
+
+	inline void smartResize(id_type n) { // exponential growth strategy
+		if (n.get() > storage.size()) {
+			size_t newSize = storage.size() == 0 ? 1 : storage.size();
+			while (newSize < n.get()) {
+				newSize *= 2;
+			}
+			storage.resize(newSize);
+		}
+	}
+	inline void smartResize(id_type n, T& value) {
+		if (n.get() > storage.size()) {
+			size_t oldSize = storage.size();
+			size_t newSize = oldSize == 0 ? 1 : oldSize;
+			while (newSize < n.get()) {
+				newSize *= 2;
+			}
+			storage.resize(newSize, value);
+		}
+	}
+	inline void smartResizeWithOffset(id_type n, int offset) {
+		if (n.get() + offset > storage.size()) {
+			size_t newSize = storage.size() == 0 ? 1 : storage.size();
+			while (newSize < n.get() + offset) {
+				newSize *= 2;
+			}
+			storage.resize(newSize);
+		}
+	}
+	inline void smartResizeWithOffset(id_type n, int offset, const T& value) {
+		if (n.get() + offset > storage.size()) {
+			size_t oldSize = storage.size();
+			size_t newSize = oldSize == 0 ? 1 : oldSize;
+			while (newSize < n.get() + offset) {
+				newSize *= 2;
+			}
+			storage.resize(newSize, value);
+		}
+	}
 
 	inline void clear() noexcept { storage.clear(); }
 

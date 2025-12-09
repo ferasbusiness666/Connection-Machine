@@ -2,6 +2,7 @@
 
 #include "gui/helper/eventPasser.h"
 #include "searchBar.h"
+#include "backend/settings/settings.h"
 
 #include <RmlUi/Core/Element.h>
 
@@ -11,6 +12,10 @@ SettingsWindow::SettingsWindow(Rml::ElementDocument* document) : contentManager(
 	context->GetElementById("settings-close")->AddEventListener(Rml::EventId::Click, new EventPasser([this](Rml::Event& event) { toggleVisibility(); }));
 
 	searchBar = std::make_unique<SearchBar>(document);
+
+	Settings::registerListener<SettingType::BOOL>("Keybinds/Settings/Match Keyboard Layout", [this](const bool&) {
+		reloadContent();
+	});
 
 	// connectCategoryListeners();
 	// connectWindowOptions();

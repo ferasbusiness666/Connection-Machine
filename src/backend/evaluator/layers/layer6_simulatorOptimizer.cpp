@@ -1,32 +1,38 @@
 #include "layer6_simulatorOptimizer.h"
 
 void SimulatorOptimizer::addGate(SimPauseGuard& pauseGuard, const BlockType blockType, const middle_id_t gateId) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	simulator_id_t simulatorId = simulator.addGate(blockType);
 
 	// if simulatorToMiddleIds is too short, extend it
 	if (simulatorToMiddleIds.size() <= simulatorId) {
-		simulatorToMiddleIds.resizeWithOffset(simulatorId, 1);
+		simulatorToMiddleIds.smartResizeWithOffset(simulatorId, 1);
 	}
 	simulatorToMiddleIds[simulatorId] = gateId;
 
 	// Ensure connection tracking vectors are large enough
 	if (middleToSimulatorIds.size() <= gateId) {
-		middleToSimulatorIds.resizeWithOffset(gateId, 1);
+		middleToSimulatorIds.smartResizeWithOffset(gateId, 1);
 	}
 	middleToSimulatorIds[gateId] = simulatorId;
 	if (inputConnections.size() <= gateId) {
-		inputConnections.resizeWithOffset(gateId, 1, std::vector<EvalConnection>());
+		inputConnections.smartResizeWithOffset(gateId, 1, std::vector<EvalConnection>());
 	}
 	if (outputConnections.size() <= gateId) {
-		outputConnections.resizeWithOffset(gateId, 1, std::vector<EvalConnection>());
+		outputConnections.smartResizeWithOffset(gateId, 1, std::vector<EvalConnection>());
 	}
 	if (blockTypes.size() <= gateId) {
-		blockTypes.resizeWithOffset(gateId, 1, BlockType::NONE);
+		blockTypes.smartResizeWithOffset(gateId, 1, BlockType::NONE);
 	}
 	blockTypes[gateId] = blockType;
 }
 
 void SimulatorOptimizer::removeGate(SimPauseGuard& pauseGuard, const middle_id_t gateId) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	// Find the gate in the simulator and remove it
 
 	if (gateId < middleToSimulatorIds.size()) {
@@ -68,6 +74,9 @@ void SimulatorOptimizer::removeGate(SimPauseGuard& pauseGuard, const middle_id_t
 }
 
 void SimulatorOptimizer::makeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	middle_id_t sourceGateId = connection.source.gateId;
 	middle_id_t destinationGateId = connection.destination.gateId;
 	connection_end_id_t sourcePort = connection.source.portId;
@@ -87,10 +96,10 @@ void SimulatorOptimizer::makeConnection(SimPauseGuard& pauseGuard, EvalConnectio
 	simulator.makeConnection(sourceId, sourcePort, destinationId, destinationPort);
 
 	if (inputConnections.size() <= destinationGateId) {
-		inputConnections.resizeWithOffset(destinationGateId, 1);
+		inputConnections.smartResizeWithOffset(destinationGateId, 1);
 	}
 	if (outputConnections.size() <= sourceGateId) {
-		outputConnections.resizeWithOffset(sourceGateId, 1);
+		outputConnections.smartResizeWithOffset(sourceGateId, 1);
 	}
 
 	// Add to connection tracking
@@ -99,6 +108,9 @@ void SimulatorOptimizer::makeConnection(SimPauseGuard& pauseGuard, EvalConnectio
 }
 
 void SimulatorOptimizer::removeConnection(SimPauseGuard& pauseGuard, EvalConnection connection) {
+#ifdef TRACY_PROFILER
+	ZoneScoped;
+#endif
 	middle_id_t sourceGateId = connection.source.gateId;
 	middle_id_t destinationGateId = connection.destination.gateId;
 	connection_end_id_t sourcePort = connection.source.portId;
@@ -148,21 +160,23 @@ void SimulatorOptimizer::removeConnection(SimPauseGuard& pauseGuard, EvalConnect
 	}
 }
 
-std::vector<EvalConnection> SimulatorOptimizer::getInputs(middle_id_t middleId) const {
+const std::vector<EvalConnection>& SimulatorOptimizer::getInputs(middle_id_t middleId) const {
+	static const std::vector<EvalConnection> emptyConnections;
 	if (middleId >= inputConnections.size()) {
-		return {};
+		return emptyConnections;
 	}
 	return inputConnections.at(middleId);
 }
 
-std::vector<EvalConnection> SimulatorOptimizer::getOutputs(middle_id_t middleId) const {
+const std::vector<EvalConnection>& SimulatorOptimizer::getOutputs(middle_id_t middleId) const {
+	static const std::vector<EvalConnection> emptyConnections;
 	if (middleId >= outputConnections.size()) {
-		return {};
+		return emptyConnections;
 	}
 	return outputConnections.at(middleId);
 }
 
-nlohmann::json SimulatorOptimizer::dumpState() const {
+nlohmann::json SimulatorOptimizer::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["logicSimulator"] = simulator.dumpState();
 	stateJson["simulatorToMiddleIds"] = nlohmann::json::array();

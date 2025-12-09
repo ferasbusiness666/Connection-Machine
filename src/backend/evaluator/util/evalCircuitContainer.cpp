@@ -85,7 +85,26 @@ eval_circuit_id_t EvalCircuitContainer::traverseToTopLevelIC(const Address& addr
 	return traverseToTopLevelIC(eval_circuit_id_t(0), address);
 }
 
-nlohmann::json EvalCircuitContainer::dumpState() const {
+std::pair<eval_circuit_id_t, Position> EvalCircuitContainer::traverseToTopLevelICAndPosition(const Address& address) const {
+	eval_circuit_id_t currentCircuitId = eval_circuit_id_t(0);
+	Position lastValidPosition(0, 0);
+	for (int i = 0; i < address.size(); ++i) {
+		Position pos = address.getPosition(i);
+		std::optional<CircuitNode> node = getNode(pos, currentCircuitId);
+		if (!node.has_value() || !node->isIC()) {
+			return { currentCircuitId, pos };
+		}
+		// If this is the last element and it's an IC, stop at the IC (do not descend into its contents)
+		if (i == address.size() - 1) {
+			return { currentCircuitId, pos };
+		}
+		currentCircuitId = node->getEvalCircuitId();
+		lastValidPosition = pos;
+	}
+	return { currentCircuitId, lastValidPosition };
+}
+
+nlohmann::json EvalCircuitContainer::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	for (const eval_circuit_id_t id : circuits.ids()) {
 		EvalCircuit* circuit = circuits.at(id);

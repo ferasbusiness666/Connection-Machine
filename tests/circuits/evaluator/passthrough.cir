@@ -1,0 +1,13 @@
+version_8
+Circuit: "passthrough"
+UUID: deb7c102-c2a1-4247-ab9d-1f6496fcd069
+size: 1x1
+ports:
+	(IN, 0, (-2, -2), <0, 0>, <0.500000, 0.500000>, "input", 1)
+	(OUT, 1, (2, -2), <0, 0>, <0.500000, 0.500000>, "output", 1)
+blockId 1 SWITCH -2 -2 ZERO
+	(connId:0) (4 0)
+blockId 4 JUNCTION 0 -2 ZERO
+	(connId:0) (1 0) (5 0)
+blockId 5 LIGHT 2 -2 ZERO
+	(connId:0) (4 0)

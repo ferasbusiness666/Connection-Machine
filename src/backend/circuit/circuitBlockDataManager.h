@@ -85,7 +85,7 @@ public:
 		if (iter == blockTypeToCircuitId.end()) return 0; // there is never a circuit with id 0
 		return iter->second;
 	}
-	nlohmann::json dumpState() const {
+	nlohmann::json dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 		nlohmann::json stateJson;
 		stateJson["blockTypeToCircuitId"] = nlohmann::json::object();
 		for (const auto& [blockType, circuitId] : blockTypeToCircuitId) {

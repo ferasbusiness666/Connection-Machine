@@ -1,0 +1,12 @@
+version_8
+import "passthrough.cir"
+Circuit: "nest_pass_bork"
+UUID: c6cf02d0-474e-4653-ac17-f23dcdd7edf9
+size: 1x2
+ports:
+	(IN, 0, (0, 1), <0, 0>, <0.500000, 0.500000>, "", 1)
+	(OUT, 1, (1, 1), <0, 1>, <0.500000, 0.500000>, "", 1)
+blockId 1 "deb7c102-c2a1-4247-ab9d-1f6496fcd069" 1 0 ZERO
+	(connId:0) (2 1)
+blockId 2 "deb7c102-c2a1-4247-ab9d-1f6496fcd069" 0 0 ZERO
+	(connId:1) (1 0)

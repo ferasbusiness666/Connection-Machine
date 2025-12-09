@@ -1,13 +1,10 @@
 #include "circuitTest.h"
 
-Position randPos() {
-	return Position(rand() % 100000, rand() % 100000);
-}
-
+#include "randomGens.h"
 const int loopsPerTest = 100; // upped
 
 void CircuitTest::SetUp() {
-	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit("Circuit", generate_uuid_v4());
+	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit("Circuit", generate_uuid_v4(), false);
 	circuit = environment.getBackend().getCircuitManager().getCircuit(circuitId);
 	i = 0;
 }
@@ -365,7 +362,7 @@ TEST_F(CircuitTest, ConnectionRemovalConnectionEnd) {
 }
 
 TEST_F(CircuitTest, CircuitPlacement) {
-	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(generate_uuid_v4(), "Circuit");
+	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(generate_uuid_v4(), "Circuit", false);
 	SharedCircuit circuit2 = environment.getBackend().getCircuitManager().getCircuit(circuitId);
 	const BlockType blockType = environment.getBackend().getCircuitManager().setupBlockData(circuitId);
 

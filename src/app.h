@@ -19,9 +19,9 @@ public:
 	void preShutdownStep();
 
 	std::shared_ptr<SdlWindow> registerWindow(const std::string& windowName);
+	std::shared_ptr<SdlWindow> registerWindow(SDL_Window* handle);
 	std::shared_ptr<SdlWindow> registerWindow(const std::string& windowName, unsigned int width, unsigned int height);
-	void deregisterWindow(std::shared_ptr<SdlWindow>& sdlWindow);
-	void deregisterWindow(const SdlWindow* sdlWindow);
+	void deregisterWindow(SdlWindow& sdlWindow);
 	void queForEndOfUpdate(std::function<void()> function) { functionsToRunAtEndOfUpdate.push_back(function); }
 
 	void newMainWindow();

@@ -17,6 +17,7 @@ public:
 	}
 
 	void selectStack(int stack);
+	void setOrientation(Orientation orientation);
 	int getStack() const { return activeToolStack; }
 	void selectBlock(BlockType blockType);
 	SharedCircuitTool selectTool(SharedCircuitTool tool);

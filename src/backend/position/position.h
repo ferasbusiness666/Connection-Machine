@@ -78,6 +78,20 @@ public:
 		yNeg = 1 - 2 * (vector.dy < 0);
 		end = (yNeg * vector.dy + 1) * width - 1;
 	}
+	inline bool operator==(const Iterator& other) const {
+		return (
+			xNeg == other.xNeg && yNeg == other.yNeg &&
+			end == other.end && cur == other.cur &&
+			width == other.width && notDone == other.notDone
+		);
+	}
+	inline bool operator!=(const Iterator& other) const {
+		return (
+			xNeg != other.xNeg || yNeg != other.yNeg ||
+			end != other.end || cur != other.cur ||
+			width != other.width || notDone != other.notDone
+		);
+	}
 	inline Iterator& operator++() {
 		next();
 		return *this;
@@ -106,8 +120,8 @@ private:
 		cur += notDone;
 	}
 	inline void prev() {
+		cur -= notDone && (cur != 0);
 		notDone = true;
-		cur -= cur != 0;
 	}
 	std::uint8_t xNeg;
 	std::uint8_t yNeg;
@@ -130,7 +144,7 @@ struct std::hash<Vector> {
 
 template <>
 struct fmt::formatter<Vector> : fmt::formatter<std::string> {
-	auto format(Vector v, format_context& ctx) const { return formatter<std::string>::format(v.toString(), ctx); }
+	auto format(Vector v, format_context& ctx) const /* GCOVR_EXCL_FUNCTION */ { return formatter<std::string>::format(v.toString(), ctx); }
 };
 
 struct FVector {
@@ -182,7 +196,7 @@ struct FVector {
 
 template <>
 struct fmt::formatter<FVector> : fmt::formatter<std::string> {
-	auto format(FVector v, format_context& ctx) const { return formatter<std::string>::format(v.toString(), ctx); }
+	auto format(FVector v, format_context& ctx) const /* GCOVR_EXCL_FUNCTION */ { return formatter<std::string>::format(v.toString(), ctx); }
 };
 
 struct Position {
@@ -254,6 +268,18 @@ public:
 			this->start.y = start.y;
 		}
 	}
+	inline bool operator==(const Iterator& other) const {
+		return (
+			end == other.end && cur == other.cur &&
+			width == other.width && notDone == other.notDone
+		);
+	}
+	inline bool operator!=(const Iterator& other) const {
+		return (
+			end != other.end || cur != other.cur ||
+			width != other.width || notDone != other.notDone
+		);
+	}
 	inline Iterator& operator++() noexcept {
 		next();
 		return *this;
@@ -282,7 +308,7 @@ private:
 		cur += notDone;
 	}
 	inline void prev() {
-		cur -= notDone && cur != 0;
+		cur -= notDone && (cur != 0);
 		notDone = true;
 	}
 	Position start;
@@ -321,7 +347,7 @@ struct std::hash<std::pair<Position, Position>> {
 
 template <>
 struct fmt::formatter<Position> : fmt::formatter<std::string> {
-	auto format(Position v, format_context& ctx) const { return formatter<std::string>::format(v.toString(), ctx); }
+	auto format(Position v, format_context& ctx) const /* GCOVR_EXCL_FUNCTION */ { return formatter<std::string>::format(v.toString(), ctx); }
 };
 
 struct FPosition {
@@ -376,7 +402,7 @@ inline bool areaWithinArea(FPosition area1Small, FPosition area1Large, FPosition
 
 template <>
 struct fmt::formatter<FPosition> : fmt::formatter<std::string> {
-	auto format(FPosition v, format_context& ctx) const { return formatter<std::string>::format(v.toString(), ctx); }
+	auto format(FPosition v, format_context& ctx) const /* GCOVR_EXCL_FUNCTION */ { return formatter<std::string>::format(v.toString(), ctx); }
 };
 
 struct Size {
@@ -421,7 +447,7 @@ struct Size {
 
 template <>
 struct fmt::formatter<Size> : fmt::formatter<std::string> {
-	auto format(Size v, format_context& ctx) const { return formatter<std::string>::format(v.toString(), ctx); }
+	auto format(Size v, format_context& ctx) const /* GCOVR_EXCL_FUNCTION */ { return formatter<std::string>::format(v.toString(), ctx); }
 };
 
 class Size::Iterator {
@@ -435,6 +461,18 @@ public:
 		}
 		width = size.w;
 		end = size.area() - 1;
+	}
+	inline bool operator==(const Iterator& other) const {
+		return (
+			end == other.end && cur == other.cur &&
+			width == other.width && notDone == other.notDone
+		);
+	}
+	inline bool operator!=(const Iterator& other) const {
+		return (
+			end != other.end || cur != other.cur ||
+			width != other.width || notDone != other.notDone
+		);
 	}
 	inline Iterator& operator++() {
 		next();
@@ -466,13 +504,12 @@ public:
 	// inline Vector operator->() const { return *(*this); }
 
 private:
-
 	inline void next() {
 		notDone = cur != end;
 		cur += notDone;
 	}
 	inline void prev() {
-		cur -= cur != 0;
+		cur -= notDone && (cur != 0);
 		notDone = (bool)end;
 	}
 	unsigned int end;
@@ -525,7 +562,7 @@ struct FSize {
 
 template <>
 struct fmt::formatter<FSize> : fmt::formatter<std::string> {
-	auto format(FSize v, format_context& ctx) const { return formatter<std::string>::format(v.toString(), ctx); }
+	auto format(FSize v, format_context& ctx) const /* GCOVR_EXCL_FUNCTION */ { return formatter<std::string>::format(v.toString(), ctx); }
 };
 
 // conversion
@@ -546,7 +583,7 @@ enum Rotation : std::uint8_t {
 
 template <>
 struct fmt::formatter<Rotation> : fmt::formatter<std::string> {
-	auto format(Rotation v, format_context& ctx) const {
+	auto format(Rotation v, format_context& ctx) const /* GCOVR_EXCL_FUNCTION */ {
 		switch (v) {
 		case Rotation::TWO_SEVENTY: return "TWO_SEVENTY";
 		case Rotation::ONE_EIGHTY: return "ONE_EIGHTY";
@@ -635,25 +672,26 @@ struct Orientation {
 	Rotation rotation = Rotation::ZERO;
 	bool flipped = false;
 
-	Orientation(Rotation rotation = Rotation::ZERO, bool flipped = false) noexcept : rotation(rotation), flipped(flipped) { }
+	Orientation(int value) noexcept : rotation((Rotation)(value & 0b11)), flipped((value & 0b100) != 0) {}
+	Orientation(Rotation rotation = Rotation::ZERO, bool flipped = false) noexcept : rotation(rotation), flipped(flipped) {}
 
 	inline std::string toString() const { return "(r:" + std::to_string(rotation) + ", f:" + std::to_string(flipped) + ")"; }
 
 	inline void nextOrientation() {
-		// logInfo("n pre: {}", "", toString());
 		if (rotation == Rotation::ONE_EIGHTY && !flipped) flipped = true;
 		else if (rotation == Rotation::TWO_SEVENTY && flipped) flipped = false;
 		else rotate(!flipped);
-		// logInfo("n pre: {}", "", toString());
 	}
 
 	inline void lastOrientation() {
-		// logInfo("l post: {}", "", toString());
 		if (rotation == Rotation::ONE_EIGHTY && flipped) flipped = false;
 		else if (rotation == Rotation::TWO_SEVENTY && !flipped) flipped = true;
 		else rotate(flipped);
-		// logInfo("l post: {}", "", toString());
 	}
+
+	inline void nextRotation() { rotate(true); }
+
+	inline void lastRotation() { rotate(false); }
 
 	inline Vector operator*(Vector vector) const noexcept {
 		Vector vec(vector.dx, flipped ? -vector.dy : vector.dy);
@@ -701,7 +739,7 @@ struct Orientation {
 
 template <>
 struct fmt::formatter<Orientation> : fmt::formatter<std::string> {
-	auto format(Orientation o, format_context& ctx) const { return formatter<std::string>::format(o.toString(), ctx); }
+	auto format(Orientation o, format_context& ctx) const /* GCOVR_EXCL_FUNCTION */ { return formatter<std::string>::format(o.toString(), ctx); }
 };
 
 #endif /* position_h */

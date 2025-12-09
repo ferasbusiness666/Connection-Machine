@@ -35,7 +35,7 @@ bool generateCircuit() {
 		return false;
 	}
 	block_id_t input = createBlockAtPosition(0, 0, 0, BlockType_SWITCH);
-	addConnectionInput(0, 0, input, 0);
+	addConnectionInputNamed(0, 0, input, 0, "i");
 	createConnection(input, 0, endGate, 0);
 	block_id_t wait = createBlockAtPosition(1, 1, 0, BlockType_NOR);
 	createConnection(input, 0, wait, 0);
@@ -47,7 +47,7 @@ bool generateCircuit() {
 	createConnection(wait, 1, endGate, 0);
 	block_id_t output = createBlockAtPosition(pulse+3, 0, 0, BlockType_LIGHT);
 	createConnection(endGate, 1, output, 0);
-	addConnectionOutput(0, 0, output, 0);
+	addConnectionOutputNamed(0, 0, output, 0, "o");
 
 	return true;
 }
