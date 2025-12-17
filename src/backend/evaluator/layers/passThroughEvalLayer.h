@@ -4,7 +4,7 @@
 class EvalLayerState;
 
 namespace PassThroughEvalLayer {
-	void run(const EvalLayerState& before, const EvalLayerState& after);
+	void run(const EvalLayerState& before, EvalLayerState& after);
 };
 
 #endif /* passThrough_h */
