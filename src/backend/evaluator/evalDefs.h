@@ -27,14 +27,6 @@ struct SimulatorMappingUpdateListener {
 	std::function<void(const std::vector<SimulatorMappingUpdate>&)> callback;
 };
 
-enum class Direction {
-	IN,
-	OUT,
-};
-inline Direction operator!(Direction dir) {
-	return (dir == Direction::IN) ? Direction::OUT : Direction::IN;
-}
-
 class Evaluator;
 typedef std::shared_ptr<class Evaluator> SharedEvaluator;
 

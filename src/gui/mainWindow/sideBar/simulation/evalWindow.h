@@ -1,7 +1,7 @@
 #ifndef evalWindow_h
 #define evalWindow_h
 
-#include "backend/evaluator/util/evalAddressTree.h"
+#include "backend/circuit/circuit.h"
 #include "gui/helper/menuTree.h"
 
 class EvaluatorManager;
@@ -24,7 +24,7 @@ public:
 
 private:
 	void updateSelected(std::string string);
-	void makePaths(std::vector<std::vector<std::string>>& paths, std::vector<std::string>& path, const EvalAddressTree& addressTree);
+	void makePaths(std::vector<std::vector<std::string>>& paths, std::vector<std::string>& path/*, const EvalAddressTree& addressTree*/);
 	void selectEvaluatorForCircuit(circuit_id_t circuitId);
 	void onCircuitCreatedSelect(const DataUpdateEventManager::EventData* eventData);
 

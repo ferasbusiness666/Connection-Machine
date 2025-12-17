@@ -1,13 +1,12 @@
 #include "evalWindow.h"
 
+#include "backend/address.h"
 #include "backend/circuit/circuitManager.h"
 #include "backend/dataUpdateEventManager.h"
 #include "backend/evaluator/evaluatorManager.h"
 
 #include "gui/mainWindow/circuitView/circuitViewWidget.h"
 #include "gui/mainWindow/mainWindow.h"
-
-#include "util/algorithm.h"
 
 EvalWindow::EvalWindow(
 	const EvaluatorManager& evaluatorManager,
@@ -33,7 +32,7 @@ void EvalWindow::updateList() {
 	std::vector<std::vector<std::string>> paths;
 	for (const auto& pair : this->evaluatorManager.getEvaluators()) {
 		std::vector<std::string> path({ pair.second->getEvaluatorName() });
-		makePaths(paths, path, pair.second->buildAddressTree());
+		makePaths(paths, path);// pair.second->buildAddressTree()
 	}
 	menuTree.setPaths(paths);
 }
@@ -130,17 +129,17 @@ void EvalWindow::refreshSidebar(bool rebuildItems) {
 	}
 }
 
-void EvalWindow::makePaths(std::vector<std::vector<std::string>>& paths, std::vector<std::string>& path, const EvalAddressTree& addressTree) {
-	auto& branches = addressTree.getBranches();
-	if (branches.empty()) {
-		paths.push_back(path);
-	} else {
-		for (auto& pair : branches) {
-			path.push_back(circuitManager.getCircuit(pair.second.getContainerId())->getCircuitName() + pair.first.toString());
-			makePaths(paths, path, pair.second);
-			path.pop_back();
-		}
-	}
+void EvalWindow::makePaths(std::vector<std::vector<std::string>>& paths, std::vector<std::string>& path/*, const EvalAddressTree& addressTree*/) {
+	paths.push_back(path);
+	// auto& branches = addressTree.getBranches();
+	// if (branches.empty()) {
+	// } else {
+	// 	for (auto& pair : branches) {
+	// 		path.push_back(circuitManager.getCircuit(pair.second.getContainerId())->getCircuitName() + pair.first.toString());
+	// 		makePaths(paths, path, pair.second);
+	// 		path.pop_back();
+	// 	}
+	// }
 }
 
 void EvalWindow::updateSelected(std::string string) {

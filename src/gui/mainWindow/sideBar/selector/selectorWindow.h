@@ -1,6 +1,7 @@
 #ifndef selectorWindow_h
 #define selectorWindow_h
 
+#include "backend/proceduralCircuits/proceduralCircuitManager.h"
 #include "backend/blockData/blockDataManager.h"
 #include "gui/helper/elementList.h"
 #include "gui/helper/menuTree.h"

@@ -35,10 +35,14 @@ void CircuitView::setEvaluator(evaluator_id_t evaluatorId, const Address& addres
 		if (evaluator == nullptr) {
 			logError("When setting CircuitView's evaluator, a evaluator with a different backend. Failed to connect! Doing nothing!", "CircuitView");
 		} else {
-			this->evaluatorId = evaluatorId;
-			this->address = address;
 			circuit_id_t circuitId = evaluator->getCircuitId(address);
 			SharedCircuit circuit = backend.getCircuit(circuitId); // ok if null
+			if (circuit == nullptr){
+				logError("When setting CircuitView's evaluator, failed to find circuit for evaluator with circuit id {}", "CircuitView", circuitId);
+				return;
+			}
+			this->evaluatorId = evaluatorId;
+			this->address = address;
 			this->circuitId = circuit->getCircuitId();
 			circuitRenderManager.emplace(backend, this->circuitId, viewportId);
 			MainRenderer::get().setViewportEvaluator(viewportId, evaluator.get(), address);
@@ -63,10 +67,14 @@ void CircuitView::setEvaluator(std::shared_ptr<Evaluator> evaluator, const Addre
 	} else if (backend.getEvaluatorManager().getEvaluator(evaluator->getEvaluatorId()) != evaluator) {
 		logError("When setting CircuitView's evaluator, a evaluator with a different backend. Failed to connect! Doing nothing!", "CircuitView");
 	} else {
-		this->evaluatorId = evaluator->getEvaluatorId();
-		this->address = address;
 		circuit_id_t circuitId = evaluator->getCircuitId(address);
 		SharedCircuit circuit = backend.getCircuit(circuitId); // ok if null
+		if (circuit == nullptr){
+			logError("When setting CircuitView's evaluator, failed to find circuit for evaluator with circuit id {}", "CircuitView", circuitId);
+			return;
+		}
+		this->evaluatorId = evaluator->getEvaluatorId();
+		this->address = address;
 		this->circuitId = circuit->getCircuitId();
 		circuitRenderManager.emplace(backend, circuit->getCircuitId(), viewportId);
 		MainRenderer::get().setViewportEvaluator(viewportId, evaluator.get(), address);
