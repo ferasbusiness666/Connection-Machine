@@ -62,27 +62,27 @@ void Evaluator::makeEdit(DifferenceSharedPtr difference, circuit_id_t circuitId)
 		switch (modificationType) {
 		case Difference::ModificationType::REMOVED_BLOCK: {
 			const auto& [position, orientation, blockType] = std::get<Difference::block_modification_t>(modificationData);
-			evaluatorInternal->addGate(gateId, EvalGateType type)
+			evaluatorInternal->removeBlock(position, orientation, blockType);
 			break;
 		}
 		case Difference::ModificationType::PLACE_BLOCK: {
 			const auto& [position, orientation, blockType] = std::get<Difference::block_modification_t>(modificationData);
-			edit_placeBlock(pauseGuard, evalCircuitId, diffCache, position, orientation, blockType, freshICContents);
+			evaluatorInternal->addBlock(position, orientation, blockType);
 			break;
 		}
 		case Difference::ModificationType::MOVE_BLOCK: {
 			const auto& [curPosition, curOrientation, newPosition, newOrientation, finalMove] = std::get<Difference::move_modification_t>(modificationData);
-			edit_moveBlock(pauseGuard, evalCircuitId, diffCache, curPosition, curOrientation, newPosition, newOrientation, finalMove);
+			evaluatorInternal->moveBlock(curPosition, curOrientation, newPosition, newOrientation);
 			break;
 		}
 		case Difference::ModificationType::REMOVED_CONNECTION: {
 			const auto& [outputBlockPosition, outputPosition, inputBlockPosition, inputPosition] = std::get<Difference::connection_modification_t>(modificationData);
-			edit_removeConnection(pauseGuard, evalCircuitId, diffCache, blockContainer, outputBlockPosition, outputPosition, inputBlockPosition, inputPosition);
+			evaluatorInternal->removeConnection(outputBlockPosition, outputPosition, inputBlockPosition, inputPosition);
 			break;
 		}
 		case Difference::ModificationType::CREATED_CONNECTION: {
 			const auto& [outputBlockPosition, outputPosition, inputBlockPosition, inputPosition] = std::get<Difference::connection_modification_t>(modificationData);
-			edit_createConnection(pauseGuard, evalCircuitId, diffCache, blockContainer, outputBlockPosition, outputPosition, inputBlockPosition, inputPosition);
+			evaluatorInternal->createConnection(outputBlockPosition, outputPosition, inputBlockPosition, inputPosition);
 			break;
 		}
 		}

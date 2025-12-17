@@ -7,6 +7,7 @@
 
 class EvaluatorInternal {
 public:
+	EvaluatorInternal() : evalGateIdProvider(1) {}
 	void startEdit();
 	void endEdit();
 	void addBlock(Position position, Orientation orientation, BlockType blockType);
