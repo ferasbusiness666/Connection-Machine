@@ -7,6 +7,7 @@
 #include "backend/circuit/circuit.h"
 #include "backend/circuit/circuitBlockDataManager.h"
 
+class EvaluatorInternal;
 class DataUpdateEventManager;
 class CircuitManager;
 
@@ -99,6 +100,7 @@ private:
 	DataUpdateEventManager::DataUpdateEventReceiver receiver;
 	EvalConfig evalConfig;
 	std::map<void*, SimulatorMappingUpdateListener> listeners;
+	std::unique_ptr<EvaluatorInternal> evaluatorInternal;
 };
 
 #endif /* evaluator_h */

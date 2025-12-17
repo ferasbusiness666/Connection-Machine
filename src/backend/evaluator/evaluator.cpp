@@ -1,6 +1,7 @@
 #include "evaluator.h"
 
 #include "backend/circuit/circuitManager.h"
+#include "evaluatorInternal.h"
 
 #ifdef TRACY_PROFILER
 #include <tracy/Tracy.hpp>
@@ -23,7 +24,8 @@ Evaluator::Evaluator(
 	dataUpdateEventManager(dataUpdateEventManager),
 	receiver(dataUpdateEventManager),
 	evalConfig(dataUpdateEventManager, evaluatorId),
-	circuitId(circuitId)
+	circuitId(circuitId),
+	evaluatorInternal(std::make_unique<EvaluatorInternal>())
 {
 	const auto circuit = circuitManager.getCircuit(circuitId);
 	if (!circuit) {
@@ -55,6 +57,36 @@ std::string Evaluator::getEvaluatorName() const {
 }
 
 void Evaluator::makeEdit(DifferenceSharedPtr difference, circuit_id_t circuitId) {
+	for (const Difference::Modification& modification : difference->getModifications()) {
+		const auto& [modificationType, modificationData] = modification;
+		switch (modificationType) {
+		case Difference::ModificationType::REMOVED_BLOCK: {
+			const auto& [position, orientation, blockType] = std::get<Difference::block_modification_t>(modificationData);
+			evaluatorInternal->addGate(gateId, EvalGateType type)
+			break;
+		}
+		case Difference::ModificationType::PLACE_BLOCK: {
+			const auto& [position, orientation, blockType] = std::get<Difference::block_modification_t>(modificationData);
+			edit_placeBlock(pauseGuard, evalCircuitId, diffCache, position, orientation, blockType, freshICContents);
+			break;
+		}
+		case Difference::ModificationType::MOVE_BLOCK: {
+			const auto& [curPosition, curOrientation, newPosition, newOrientation, finalMove] = std::get<Difference::move_modification_t>(modificationData);
+			edit_moveBlock(pauseGuard, evalCircuitId, diffCache, curPosition, curOrientation, newPosition, newOrientation, finalMove);
+			break;
+		}
+		case Difference::ModificationType::REMOVED_CONNECTION: {
+			const auto& [outputBlockPosition, outputPosition, inputBlockPosition, inputPosition] = std::get<Difference::connection_modification_t>(modificationData);
+			edit_removeConnection(pauseGuard, evalCircuitId, diffCache, blockContainer, outputBlockPosition, outputPosition, inputBlockPosition, inputPosition);
+			break;
+		}
+		case Difference::ModificationType::CREATED_CONNECTION: {
+			const auto& [outputBlockPosition, outputPosition, inputBlockPosition, inputPosition] = std::get<Difference::connection_modification_t>(modificationData);
+			edit_createConnection(pauseGuard, evalCircuitId, diffCache, blockContainer, outputBlockPosition, outputPosition, inputBlockPosition, inputPosition);
+			break;
+		}
+		}
+	}
 }
 
 

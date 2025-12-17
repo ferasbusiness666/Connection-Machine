@@ -1,11 +1,13 @@
-#ifndef passThrough_h
-#define passThrough_h
+#ifndef passThroughEvalLayer_h
+#define passThroughEvalLayer_h
+
+#include "baseEvalLayer.h"
 
 class EvalLayerState;
 
-class PassThroughEvalLayer {
+class PassThroughEvalLayer : public BaseEvalLayer {
 public:
-	void run(const EvalLayerState& before, EvalLayerState& after);
+	void run(const EvalLayerState& before, EvalLayerState& after) override final;
 };
 
-#endif /* passThrough_h */
+#endif /* passThroughEvalLayer_h */

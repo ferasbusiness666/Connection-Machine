@@ -81,13 +81,13 @@ public:
 	std::unordered_set<EvalConnection>::const_iterator getRemovedConnectionsEnd() const { return removedConnections.end(); }
 	bool removeEditContainsConnection(EvalConnection evalConnection) const { return removedConnections.contains(evalConnection); }
 
-private:
 	void resetEdits() {
 		addedGates.clear();
 		removedGates.clear();
 		addedConnections.clear();
 		removedConnections.clear();
 	}
+private:
 
 	std::unordered_map<eval_gate_id, EvalGate> gates;
 	std::unordered_map<EvalConnectionPoint, EvalConnectionPoint> connectionPointRemapping;
