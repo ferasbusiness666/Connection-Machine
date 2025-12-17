@@ -11,5 +11,5 @@ void PassThroughEvalLayer::run(const EvalLayerState& before, EvalLayerState& aft
 		// after.addGate(iter->get());
 	}
 	before.getAddedGatesBegin();
-	before.getAddedConnectionsBegin()
+	before.getAddedConnectionsBegin();
 }
