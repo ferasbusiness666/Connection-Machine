@@ -14,15 +14,20 @@ struct EvalGate {
 
 class EvalLayerState {
 public:
-	eval_gate_id addGate(EvalGateType type) { // TODO: add transparent junction merging
-		eval_gate_id gateId = gateIdProvider.getNewId();
-		gates.try_emplace(gateId, type, gateId);
-		return gateId;
+	void addGate(eval_gate_id gateId, EvalGateType type) { // TODO: add transparent junction merging
+		bool suc = gates.try_emplace(gateId, type, gateId).second;
+		assert(suc);
+		addedGates.insert(gateId);
+		assert(!removedGates.contains(gateId));
 	}
 	void removeGate(eval_gate_id gateId) { // TODO: add transparent junction splitting
 		auto iter = gates.find(gateId);
 		assert(iter != gates.end());
 		assert(iter->second.connections.empty());
+		gates.erase(iter);
+		if (addedGates.erase(gateId) == 0) {
+			removedGates.insert(gateId);
+		}
 	}
 	void addConnection(const EvalConnection& evalConnection) { // TODO: add transparent junction merging
 		auto gateAIterBoolPair = gates.find(evalConnection.connectionPointA.gateId);
@@ -33,6 +38,8 @@ public:
 		auto gateBIterBoolPair = gates.find(evalConnection.connectionPointB.gateId);
 		assert(gateBIterBoolPair != gates.end());
 		gateBIterBoolPair->second.connections[evalConnection.connectionPointB.connectionEndId].insert(evalConnection.connectionPointA);
+		addedConnections.insert(evalConnection);
+		assert(!removedConnections.contains(evalConnection));
 	}
 	void removeConnection(const EvalConnection& evalConnection) { // TODO: add transparent junction splitting
 		auto gateAIterBoolPair = gates.find(evalConnection.connectionPointA.gateId);
@@ -47,6 +54,9 @@ public:
 		auto gateBConnectionIter = gateBIterBoolPair->second.connections.find(evalConnection.connectionPointB.connectionEndId);
 		if (gateBConnectionIter->second.size() == 1) gateBIterBoolPair->second.connections.erase(gateBConnectionIter);
 		else gateBConnectionIter->second.erase(evalConnection.connectionPointA);
+		if (addedConnections.erase(evalConnection) == 0) {
+			removedConnections.insert(evalConnection);
+		}
 	}
 
  	const EvalGate* getGate(eval_gate_id gateId) const {
@@ -79,8 +89,8 @@ private:
 		removedConnections.clear();
 	}
 
-	IdProvider<eval_gate_id> gateIdProvider;
 	std::unordered_map<eval_gate_id, EvalGate> gates;
+	std::unordered_map<EvalConnectionPoint, EvalConnectionPoint> connectionPointRemapping;
 
 	std::unordered_set<eval_gate_id> addedGates;
 	std::unordered_set<eval_gate_id> removedGates;

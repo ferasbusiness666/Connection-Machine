@@ -3,7 +3,8 @@
 
 class EvalLayerState;
 
-namespace PassThroughEvalLayer {
+class PassThroughEvalLayer {
+public:
 	void run(const EvalLayerState& before, EvalLayerState& after);
 };
 
