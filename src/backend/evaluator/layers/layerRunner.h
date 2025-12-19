@@ -7,9 +7,9 @@ class BaseEvalLayer;
 class LayerRunner {
 public:
 	LayerRunner();
-	void runAll(const EvalLayerState& before, EvalLayerState& after);
+	void runAll();
 private:
-	std::vector<EvalLayerState> evalLayerStates;
+	std::unique_ptr<EvalLayerState> evalTopLayerState;
 	std::vector<std::unique_ptr<BaseEvalLayer>> layers;
 };
 

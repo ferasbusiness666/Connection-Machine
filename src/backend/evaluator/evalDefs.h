@@ -35,6 +35,8 @@ struct EvalConnectionPoint {
 
 	eval_gate_id gateId;
 	connection_end_id_t connectionEndId;
+
+	bool operator==(const EvalConnectionPoint other) const { return gateId == other.gateId && connectionEndId == other.connectionEndId; }
 };
 
 template <>
@@ -55,6 +57,8 @@ struct EvalConnection {
 
 	EvalConnectionPoint connectionPointA;
 	EvalConnectionPoint connectionPointB;
+
+	bool operator==(const EvalConnection other) const { return connectionPointA == other.connectionPointA && connectionPointB == other.connectionPointB; }
 };
 
 template <>

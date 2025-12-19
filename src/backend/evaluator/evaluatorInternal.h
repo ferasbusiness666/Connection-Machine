@@ -7,7 +7,7 @@
 
 class EvaluatorInternal {
 public:
-	EvaluatorInternal() : evalGateIdProvider(1) {}
+	EvaluatorInternal() : evalGateIdProvider(1) { }
 	void startEdit();
 	void endEdit();
 	void addBlock(Position position, Orientation orientation, BlockType blockType);
@@ -15,6 +15,7 @@ public:
 	void moveBlock(Position curPosition, Orientation curOrientation, Position newPosition, Orientation newOrientation);
 	void removeConnection(Position outputBlockPosition, Position outputPosition, Position inputBlockPosition, Position inputPosition);
 	void createConnection(Position outputBlockPosition, Position outputPosition, Position inputBlockPosition, Position inputPosition);
+
 private:
 	IdProvider<eval_gate_id> evalGateIdProvider;
 	std::unordered_map<Position, eval_gate_id> positionRemapping;

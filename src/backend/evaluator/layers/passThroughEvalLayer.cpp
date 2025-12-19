@@ -1,20 +1,17 @@
 #include "passThroughEvalLayer.h"
 #include "../util/evalLayerState.h"
 
-void PassThroughEvalLayer::run(const EvalLayerState& before, EvalLayerState& after) {
-	for (auto iter = before.getRemovedConnectionsBegin(); iter != before.getRemovedConnectionsEnd(); ++iter) {
-		after.removeConnection(*iter);
+void PassThroughEvalLayer::run(const EvalLayerState& currentState, EvalLayerState& nextState) {
+	for (auto iter = currentState.getRemovedConnectionsBegin(); iter != currentState.getRemovedConnectionsEnd(); ++iter) {
+		nextState.passRemoveConnection(*iter);
 	}
-	for (auto iter = before.getRemovedGatesBegin(); iter != before.getRemovedGatesEnd(); ++iter) {
-		after.removeGate(*iter);
+	for (auto iter = currentState.getRemovedGatesBegin(); iter != currentState.getRemovedGatesEnd(); ++iter) {
+		nextState.passRemoveGate(*iter);
 	}
-	for (auto iter = before.getAddedGatesBegin(); iter != before.getAddedGatesEnd(); ++iter) {
-		const EvalGate* evalGate = before.getGate(*iter);
-		after.addGate(evalGate->gateId, evalGate->type);
+	for (auto iter = currentState.getAddedGatesBegin(); iter != currentState.getAddedGatesEnd(); ++iter) {
+		nextState.passAddGate(*iter);
 	}
-	for (auto iter = before.getAddedConnectionsBegin(); iter != before.getAddedConnectionsEnd(); ++iter) {
-		after.addConnection(*iter);
+	for (auto iter = currentState.getAddedConnectionsBegin(); iter != currentState.getAddedConnectionsEnd(); ++iter) {
+		nextState.passAddConnection(*iter);
 	}
-	before.getAddedGatesBegin();
-	before.getAddedConnectionsBegin();
 }

@@ -7,7 +7,7 @@ class EvalLayerState;
 
 class PassThroughEvalLayer : public BaseEvalLayer {
 public:
-	void run(const EvalLayerState& before, EvalLayerState& after) override final;
+	void run(const EvalLayerState& currentState, EvalLayerState& nextState) override final;
 };
 
 #endif /* passThroughEvalLayer_h */

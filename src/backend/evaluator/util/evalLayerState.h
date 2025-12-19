@@ -14,6 +14,23 @@ struct EvalGate {
 
 class EvalLayerState {
 public:
+	// will also update connection points accordingly
+	void passAddGate(eval_gate_id gateId) {
+		assert(lastLayerState);
+		addGate(gateId, lastLayerState->getGate(gateId)->type); // TODO: Update connectionPointRemapping
+	}
+	void passRemoveGate(eval_gate_id gateId) {
+		assert(lastLayerState);
+		removeGate(gateId); // TODO: Update connectionPointRemapping
+	}
+	void passAddConnection(const EvalConnection& evalConnection) {
+		assert(lastLayerState);
+		addConnection(evalConnection);
+	}
+	void passRemoveConnection(const EvalConnection& evalConnection) {
+		assert(lastLayerState);
+		removeConnection(evalConnection);
+	}
 	void addGate(eval_gate_id gateId, EvalGateType type) { // TODO: add transparent junction merging
 		bool suc = gates.try_emplace(gateId, type, gateId).second;
 		assert(suc);
@@ -87,7 +104,19 @@ public:
 		addedConnections.clear();
 		removedConnections.clear();
 	}
+
+	EvalLayerState& getNextLayerState() {
+		if (!nextLayerState) {
+			nextLayerState = std::make_unique<EvalLayerState>();
+			nextLayerState->setLastLayer(this);
+		}
+		return *nextLayerState;
+	}
 private:
+	void setLastLayer(const EvalLayerState* lastLayerState) { this->lastLayerState = lastLayerState; }
+
+	std::unique_ptr<EvalLayerState> nextLayerState;
+	const EvalLayerState* lastLayerState;
 
 	std::unordered_map<eval_gate_id, EvalGate> gates;
 	std::unordered_map<EvalConnectionPoint, EvalConnectionPoint> connectionPointRemapping;

@@ -7,16 +7,15 @@ LayerRunner::LayerRunner() {
 	layers.emplace_back(std::make_unique<PassThroughEvalLayer>());
 	layers.emplace_back(std::make_unique<PassThroughEvalLayer>());
 	layers.emplace_back(std::make_unique<PassThroughEvalLayer>());
-	evalLayerStates.resize(layers.size() - 1);
+	evalTopLayerState = std::make_unique<EvalLayerState>();
 }
 
-void LayerRunner::runAll(const EvalLayerState& before, EvalLayerState& after) {
-	const EvalLayerState* last = &before;
-	for (unsigned int i = 0; i < layers.size() - 1; i++) {
-		evalLayerStates[i].resetEdits();
-		layers[i]->run(*last, evalLayerStates[i]);
-		last = &evalLayerStates[i];
+void LayerRunner::runAll() {
+	EvalLayerState* last = evalTopLayerState.get();
+	for (unsigned int i = 0; i < layers.size(); i++) {
+		EvalLayerState& next = last->getNextLayerState();
+		next.resetEdits();
+		layers[i]->run(*last, next);
+		last = &next;
 	}
-	after.resetEdits();
-	layers[layers.size() - 1]->run(*last, after);
 }

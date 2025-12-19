@@ -5,8 +5,8 @@ class EvalLayerState;
 
 class BaseEvalLayer {
 public:
-	virtual ~BaseEvalLayer() = 0;
-	virtual void run(const EvalLayerState& before, EvalLayerState& after) = 0;
+	virtual ~BaseEvalLayer() = default;
+	virtual void run(const EvalLayerState& currentState, EvalLayerState& nextState) = 0;
 };
 
 #endif /* baseEvalLayer_h */
