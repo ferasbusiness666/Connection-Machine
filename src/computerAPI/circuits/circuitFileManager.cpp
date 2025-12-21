@@ -4,21 +4,27 @@
 #include "backend/wasm/wasm.h"
 #include "connectionMachineParser.h"
 #include "scrapMechanicParser.h"
+#include "wasmCompiler.h"
 
 CircuitFileManager::CircuitFileManager(CircuitManager& circuitManager) : circuitManager(circuitManager) { }
 
 std::vector<circuit_id_t> CircuitFileManager::loadFromFile(const std::string& path) {
 	auto iter = filePathToFile.find(path);
 	if (iter != filePathToFile.end()) {
-		logInfo("Duplicate import detected. skipping file: " + path, "CircuitFileManager");
-		std::vector<circuit_id_t> circuitIds;
-		for (const std::string& uuid : iter->second.UUIDs) {
-			SharedCircuit circuit = circuitManager.getCircuit(uuid);
-			if (circuit) {
-				circuitIds.push_back(circuit->getCircuitId());
+		if (!(
+			((path.size() >= 4 && path.substr(path.size() - 4) == ".wat") || (path.size() >= 5 && path.substr(path.size() - 5) == ".wasm")) ||
+			((path.size() >= 4 && path.substr(path.size() - 4) == ".cpp") || (path.size() >= 4 && path.substr(path.size() - 4) == ".zig") || (path.size() >= 3 && path.substr(path.size() - 3) == ".rs"))
+		)) {
+			logInfo("Duplicate import detected. skipping file: " + path, "CircuitFileManager");
+			std::vector<circuit_id_t> circuitIds;
+			for (const std::string& uuid : iter->second.UUIDs) {
+				SharedCircuit circuit = circuitManager.getCircuit(uuid);
+				if (circuit) {
+					circuitIds.push_back(circuit->getCircuitId());
+				}
 			}
+			return circuitIds;
 		}
-		return circuitIds;
 	}
 
 	if (path.size() >= 4 && path.substr(path.size() - 4) == ".cir") {
@@ -46,6 +52,16 @@ std::vector<circuit_id_t> CircuitFileManager::loadFromFile(const std::string& pa
 			}
 		} else {
 			logError("Failed to load wasm module", "CircuitFileManager");
+		}
+	} else if ((path.size() >= 4 && path.substr(path.size() - 4) == ".cpp") || (path.size() >= 4 && path.substr(path.size() - 4) == ".zig") || (path.size() >= 3 && path.substr(path.size() - 3) == ".rs")) {
+		std::optional<wasmtime::Module> module = WasmCompiler::compileFile(path);
+		if (module) {
+			const std::string* UUID = circuitManager.getProceduralCircuitManager().createWasmProceduralCircuit(module.value());
+			if (UUID) {
+				setSaveFilePath(*UUID, std::filesystem::absolute(std::filesystem::path(path)).generic_string());
+			}
+		} else {
+			logError("Failed to compile/load wasm module", "CircuitFileManager");
 		}
 	} else if (path.size() >= 5 && path.substr(path.size() - 5) == ".json") {
 		// SM circuit file parser function

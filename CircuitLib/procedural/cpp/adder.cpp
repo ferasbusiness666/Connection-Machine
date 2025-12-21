@@ -12,7 +12,7 @@ bool generateCircuit() {
 
 	BlockType BlockType_AND = getPrimitiveType("AND");
 	BlockType BlockType_XOR = getPrimitiveType("XOR");
-	BlockType BlockType_OR = getPrimitiveType("XOR");
+	BlockType BlockType_OR = getPrimitiveType("OR");
 	BlockType BlockType_SWITCH = getPrimitiveType("SWITCH");
 	BlockType BlockType_LIGHT = getPrimitiveType("LIGHT");
 
