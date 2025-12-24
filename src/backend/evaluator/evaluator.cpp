@@ -25,7 +25,7 @@ Evaluator::Evaluator(
 	receiver(dataUpdateEventManager),
 	evalConfig(dataUpdateEventManager, evaluatorId),
 	circuitId(circuitId),
-	evaluatorInternal(std::make_unique<EvaluatorInternal>())
+	evaluatorInternal(std::make_unique<EvaluatorInternal>(blockDataManager, circuitBlockDataManager))
 {
 	const auto circuit = circuitManager.getCircuit(circuitId);
 	if (!circuit) {

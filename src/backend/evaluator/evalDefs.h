@@ -12,6 +12,9 @@ DECLARE_ID_TYPE(simulator_id_t, unsigned int);
 
 typedef unsigned int EvalGateType;
 
+inline EvalGateType getEvalGateType(BlockType blockType) { return (EvalGateType)blockType; }
+inline BlockType getBlockType(EvalGateType evalGateType) { return (BlockType)evalGateType; }
+
 enum class SimulatorMappingUpdateType {
 	BLOCK,
 	PIN

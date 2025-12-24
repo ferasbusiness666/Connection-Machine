@@ -7,7 +7,10 @@ class BaseEvalLayer;
 class LayerRunner {
 public:
 	LayerRunner();
+	~LayerRunner();
 	void runAll();
+	EvalLayerState& getInputLayer();
+	const EvalLayerState& getOutputLayer() const;
 private:
 	std::unique_ptr<EvalLayerState> evalTopLayerState;
 	std::vector<std::unique_ptr<BaseEvalLayer>> layers;

@@ -4,10 +4,15 @@
 #include "evalDefs.h"
 
 #include "backend/evaluator/util/evalLayerState.h"
+#include "layers/layerRunner.h"
+
+class BlockDataManager;
+class CircuitBlockDataManager;
 
 class EvaluatorInternal {
 public:
-	EvaluatorInternal() : evalGateIdProvider(1) { }
+	EvaluatorInternal(const BlockDataManager& blockDataManager, const CircuitBlockDataManager& circuitBlockDataManager) :
+		evalGateIdProvider(1), blockDataManager(blockDataManager), circuitBlockDataManager(circuitBlockDataManager) { }
 	void startEdit();
 	void endEdit();
 	void addBlock(Position position, Orientation orientation, BlockType blockType);
@@ -18,9 +23,12 @@ public:
 
 private:
 	IdProvider<eval_gate_id> evalGateIdProvider;
-	std::unordered_map<Position, eval_gate_id> positionRemapping;
+	std::unordered_map<Position, std::pair<eval_gate_id, Orientation>> positionRemapping;
 	EvalLayerState before;
 	EvalLayerState after;
+	const BlockDataManager& blockDataManager;
+	const CircuitBlockDataManager& circuitBlockDataManager;
+	LayerRunner layerRunner;
 };
 
 #endif /* evaluatorInternal_h */

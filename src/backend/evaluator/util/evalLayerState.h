@@ -112,6 +112,9 @@ public:
 		}
 		return *nextLayerState;
 	}
+	const EvalLayerState* getNextLayerState() const {
+		return nextLayerState.get();
+	}
 private:
 	void setLastLayer(const EvalLayerState* lastLayerState) { this->lastLayerState = lastLayerState; }
 
