@@ -300,7 +300,7 @@ public:
 	}
 	inline explicit operator bool() const noexcept { return notDone; }
 	inline const Position operator*() const noexcept { return start + Vector(cur % width, cur / width); }
-	inline const Position operator->() const noexcept { return *(*this); }
+	// inline const Position operator->() const noexcept { return *(*this); }
 
 private:
 	inline void next() {
@@ -440,7 +440,7 @@ struct Size {
 
 	inline Iterator iter() const noexcept;
 
-	inline Vector getLargestVectorInArea() { return Vector(w - 1, h - 1); }
+	inline Vector getLargestVectorInArea() const noexcept { return Vector(w - 1, h - 1); }
 
 	coordinate_t w, h;
 };

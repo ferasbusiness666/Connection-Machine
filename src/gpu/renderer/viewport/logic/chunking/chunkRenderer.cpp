@@ -68,7 +68,7 @@ void ChunkRenderer::cleanup() {
 	wirePipeline.cleanup();
 }
 
-void ChunkRenderer::render(Frame& frame, const glm::mat4& viewMatrix, Evaluator* evaluator, const Address& address, const std::vector<std::shared_ptr<VulkanChunkAllocation>>& chunks) {
+void ChunkRenderer::render(Frame& frame, const glm::mat4& viewMatrix, Evaluator* evaluator, const Address& address, const std::vector<std::shared_ptr<VulkanLogicAllocation>>& chunks) {
 #ifdef TRACY_PROFILER
 	ZoneScoped;
 #endif
@@ -82,7 +82,7 @@ void ChunkRenderer::render(Frame& frame, const glm::mat4& viewMatrix, Evaluator*
 	pushConstants.mvp = viewMatrix;
 
 	// fill state buffers
-	for (std::shared_ptr<VulkanChunkAllocation> chunk : chunks) {
+	for (std::shared_ptr<VulkanLogicAllocation> chunk : chunks) {
 		if (chunk->getStateBuffer().has_value()) {
 			chunk->getStateBuffer()->incrementBufferFrame();
 
@@ -111,7 +111,7 @@ void ChunkRenderer::render(Frame& frame, const glm::mat4& viewMatrix, Evaluator*
 		frame.lifetime.push(blockTexture);
 		vkCmdBindDescriptorSets(frame.mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, blockPipeline.getLayout(), 1, 1, &blockTexture->descriptor, 0, nullptr);
 
-		for (std::shared_ptr<VulkanChunkAllocation> chunk : chunks) {
+		for (std::shared_ptr<VulkanLogicAllocation> chunk : chunks) {
 			if (chunk->getBlockBuffer().has_value()) {
 
 				// bind vertex buffers
@@ -147,7 +147,7 @@ void ChunkRenderer::render(Frame& frame, const glm::mat4& viewMatrix, Evaluator*
 		// bind push constants
 		wirePipeline.cmdPushConstants(frame.mainCommandBuffer, &pushConstants);
 
-		for (std::shared_ptr<VulkanChunkAllocation> chunk : chunks) {
+		for (std::shared_ptr<VulkanLogicAllocation> chunk : chunks) {
 			if (chunk->getWireBuffer().has_value()) {
 
 				// bind vertex buffers
