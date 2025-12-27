@@ -104,6 +104,7 @@ public:
 	inline bool isConnectionOutputOrBidirectional(connection_end_id_t connectionId) const noexcept;
 	inline ConnectionData::PortType getConnectionPortType(connection_end_id_t connectionId) const noexcept;
 	inline const std::unordered_map<connection_end_id_t, ConnectionData>& getConnections() const noexcept;
+	inline const std::unordered_map<connection_end_id_t, ConnectionData> getConnectionsSafe() const noexcept;
 	inline const ConnectionData* getConnectionData(connection_end_id_t connectionId) const noexcept;
 	void setConnectionIdName(connection_end_id_t connectionId, const std::string& name);
 	std::optional<std::string> getConnectionIdToName(connection_end_id_t connectionId) const;
@@ -342,6 +343,10 @@ inline BlockData::ConnectionData::PortType BlockData::getConnectionPortType(conn
 }
 inline const std::unordered_map<connection_end_id_t, BlockData::ConnectionData>& BlockData::getConnections() const noexcept {
 	assert((!defaultData) && "this will be empty if defaultData is true");
+	return connections;
+}
+inline const std::unordered_map<connection_end_id_t, BlockData::ConnectionData> BlockData::getConnectionsSafe() const noexcept {
+	if (defaultData) return {{0, ConnectionData(Vector(0), ConnectionData::PortType::INPUT)}, {1, ConnectionData(Vector(0), ConnectionData::PortType::OUTPUT)}};
 	return connections;
 }
 inline const BlockData::ConnectionData* BlockData::getConnectionData(connection_end_id_t connectionId) const noexcept {

@@ -6,6 +6,7 @@
 #include "backend/address.h"
 #include "backend/circuit/circuit.h"
 #include "backend/circuit/circuitBlockDataManager.h"
+#include "simulator/evalLogicSimulator.h"
 
 class EvaluatorInternal;
 class DataUpdateEventManager;
@@ -33,7 +34,7 @@ public:
 	inline evaluator_id_t getEvaluatorId() const { return evaluatorId; }
 	std::string getEvaluatorName() const;
 
-	void resetStates() {}
+	void resetStates() { evalLogicSimulator.resetStates(); }
 	void setPause(bool pause) { evalConfig.setRunning(!pause); }
 	bool isPause() const { return !evalConfig.isRunning(); }
 	void addSprint(unsigned int nTicks) { evalConfig.addSprint(nTicks); }
@@ -45,11 +46,11 @@ public:
 		waitForSprintComplete();
 	}
 	void tickStep() { tickStep(1); }
-	bool stepBack() { return false; }
-	void stepForward() {}
-	bool skipBack() { return false; }
-	bool skipForward() { return false; }
-	bool isViewingReplay() const { return false; }
+	bool stepBack() { return evalLogicSimulator.stepBack(); }
+	void stepForward() { evalLogicSimulator.stepForward(); }
+	bool skipBack() { return evalLogicSimulator.skipBack(); }
+	bool skipForward() { return evalLogicSimulator.skipForward(); }
+	bool isViewingReplay() const { return evalLogicSimulator.isViewingReplay(); }
 	void setRealistic(bool realistic) { evalConfig.setRealistic(realistic); }
 	bool isRealistic() const { return evalConfig.isRealistic(); }
 	void setTickrate(double tickrate) { evalConfig.setTargetTickrate(tickrate); }
@@ -58,37 +59,32 @@ public:
 	void decreaseTickrateSeq() {}
 	void setUseTickrate(bool useTickrate) { evalConfig.setTickrateLimiter(useTickrate); }
 	bool getUseTickrate() const { return evalConfig.isTickrateLimiterEnabled(); }
-	double getRealTickrate() const { return 0; }
+	double getRealTickrate() const { return evalLogicSimulator.getAverageTickrate(); }
 	void makeEdit(DifferenceSharedPtr difference, circuit_id_t circuitId);
-	logic_state_t getState(const Address& address) { return logic_state_t::LOW; }
-	void setState(const Address& address, logic_state_t state) {}
+	logic_state_t getState(const Address& address) const;
+	void setState(const Address& address, logic_state_t state);
 	circuit_id_t getCircuitId() const { return circuitId; }
 	circuit_id_t getCircuitId(const Address& address) const { if (address.size() == 0) return circuitId; return 0; }
 	// const EvalAddressTree buildAddressTree() const;
 	// const EvalAddressTree buildAddressTree(eval_circuit_id_t evalCircuitId) const;
 
-	simulator_id_t getBlockSimulatorId(const Address& address) const { return 0; }
+	simulator_id_t getBlockSimulatorId(const Address& address) const;
 	std::variant<simulator_id_t, std::vector<simulator_id_t>> getPinSimulatorId(const Address& address) const { return 0; }
 
-	std::vector<simulator_id_t> getBlockSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const{ return {0}; }
+	std::vector<simulator_id_t> getBlockSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const;
 	std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getPinSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const { return {0}; }
 
-	logic_state_t getStateFromSimulatorId(simulator_id_t simulatorId) const { return logic_state_t::UNDEFINED; }
-	std::vector<logic_state_t> getStatesFromSimulatorIds(const std::vector<simulator_id_t>& simulatorIds) const { return {logic_state_t::UNDEFINED}; }
+	logic_state_t getStateFromSimulatorId(simulator_id_t simulatorId) const { return evalLogicSimulator.getState(simulatorId); }
+	std::vector<logic_state_t> getStatesFromSimulatorIds(const std::vector<simulator_id_t>& simulatorIds) const { return evalLogicSimulator.getStates(simulatorIds); }
+
+	nlohmann::json dumpState() const;
 
 	void connectListener(
 		void* object,
 		const Address& address,
 		SimulatorMappingUpdateListenerFunction func
-	) {}
-	void disconnectListener(void* object) {
-		auto iter = listeners.find(object);
-		if (iter != listeners.end()) {
-			listeners.erase(iter);
-		}
-	}
-
-	nlohmann::json dumpState() const;
+	) { evalLogicSimulator.connectListener(object, address, func); }
+	void disconnectListener(void* object) { evalLogicSimulator.disconnectListener(object); }
 
 private:
 	circuit_id_t circuitId;
@@ -99,8 +95,8 @@ private:
 	DataUpdateEventManager& dataUpdateEventManager;
 	DataUpdateEventManager::DataUpdateEventReceiver receiver;
 	EvalConfig evalConfig;
-	std::map<void*, SimulatorMappingUpdateListener> listeners;
 	std::unique_ptr<EvaluatorInternal> evaluatorInternal;
+	EvalLogicSimulator evalLogicSimulator;
 };
 
 #endif /* evaluator_h */

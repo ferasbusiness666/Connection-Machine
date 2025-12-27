@@ -1,17 +1,23 @@
 #ifndef layerRunner_h
 #define layerRunner_h
 
+#include "../evalDefs.h"
+
+class BlockDataManager;
 class EvalLayerState;
 class BaseEvalLayer;
 
 class LayerRunner {
 public:
-	LayerRunner();
+	LayerRunner(const BlockDataManager& blockDataManager);
 	~LayerRunner();
 	void runAll();
 	EvalLayerState& getInputLayer();
 	const EvalLayerState& getOutputLayer() const;
+	EvalConnectionPoint getMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint) const;
+	std::vector<EvalConnectionPoint> getReversedMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint) const;
 private:
+	const BlockDataManager& blockDataManager;
 	std::unique_ptr<EvalLayerState> evalTopLayerState;
 	std::vector<std::unique_ptr<BaseEvalLayer>> layers;
 };

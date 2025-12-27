@@ -25,7 +25,8 @@ Evaluator::Evaluator(
 	receiver(dataUpdateEventManager),
 	evalConfig(dataUpdateEventManager, evaluatorId),
 	circuitId(circuitId),
-	evaluatorInternal(std::make_unique<EvaluatorInternal>(blockDataManager, circuitBlockDataManager))
+	evaluatorInternal(std::make_unique<EvaluatorInternal>(blockDataManager, circuitBlockDataManager)),
+	evalLogicSimulator(evalConfig, blockDataManager, *evaluatorInternal)
 {
 	const auto circuit = circuitManager.getCircuit(circuitId);
 	if (!circuit) {
@@ -57,6 +58,7 @@ std::string Evaluator::getEvaluatorName() const {
 }
 
 void Evaluator::makeEdit(DifferenceSharedPtr difference, circuit_id_t circuitId) {
+	evaluatorInternal->startEdit();
 	for (const Difference::Modification& modification : difference->getModifications()) {
 		const auto& [modificationType, modificationData] = modification;
 		switch (modificationType) {
@@ -87,6 +89,76 @@ void Evaluator::makeEdit(DifferenceSharedPtr difference, circuit_id_t circuitId)
 		}
 		}
 	}
+	evaluatorInternal->endEdit();
+	evalLogicSimulator.makeEdit();
+}
+
+logic_state_t Evaluator::getState(const Address& address) const {
+	if (address.size() != 1) {
+		logError("Evaluator::getState(const Address& address) failed. Eval not working with ICs!");
+		return logic_state_t::UNDEFINED;
+	}
+	auto iter = evaluatorInternal->getPositionRemapping().find(address.getPosition(0));
+	if (iter == evaluatorInternal->getPositionRemapping().end()) {
+		logError("Evaluator::getState(const Address& address) failed. Failed to get eval id");
+		return logic_state_t::UNDEFINED;
+	}
+	auto iter2 = evalLogicSimulator.getGateIdMapping().find(evaluatorInternal->getLayerRunner().getMappedEvalConnectionPoint(EvalConnectionPoint(iter->second.first, 1)).gateId);
+	if (iter2 == evalLogicSimulator.getGateIdMapping().end()) {
+		logError("Evaluator::getState(const Address& address) failed. Failed to get sim id");
+		return logic_state_t::UNDEFINED;
+	}
+	return evalLogicSimulator.getState(iter2->second);
+}
+
+void Evaluator::setState(const Address& address, logic_state_t state) {
+	if (address.size() != 1) {
+		logError("Evaluator::getState(const Address& address) failed. Eval not working with ICs!");
+		return;
+	}
+	auto iter = evaluatorInternal->getPositionRemapping().find(address.getPosition(0));
+	if (iter == evaluatorInternal->getPositionRemapping().end()) {
+		logError("Evaluator::getState(const Address& address) failed. Failed to get eval id");
+		return;
+	}
+	auto iter2 = evalLogicSimulator.getGateIdMapping().find(evaluatorInternal->getLayerRunner().getMappedEvalConnectionPoint(EvalConnectionPoint(iter->second.first, 1)).gateId);
+	if (iter2 == evalLogicSimulator.getGateIdMapping().end()) {
+		logError("Evaluator::getState(const Address& address) failed. Failed to get sim id");
+		return;
+	}
+	evalLogicSimulator.setState(iter2->second, state);
+}
+
+simulator_id_t Evaluator::getBlockSimulatorId(const Address& address) const {
+	if (address.size() != 1) {
+		logError("Evaluator::getBlockSimulatorId(const Address& address) failed. Eval not working with ICs!");
+		return 0;
+	}
+	auto iter = evaluatorInternal->getPositionRemapping().find(address.getPosition(0));
+	if (iter == evaluatorInternal->getPositionRemapping().end()) {
+		logError("Evaluator::getBlockSimulatorId(const Address& address) failed. Failed to get eval id");
+		return 0;
+	}
+	auto iter2 = evalLogicSimulator.getGateIdMapping().find(evaluatorInternal->getLayerRunner().getMappedEvalConnectionPoint(EvalConnectionPoint(iter->second.first, 1)).gateId);
+	if (iter2 == evalLogicSimulator.getGateIdMapping().end()) {
+		logError("Evaluator::getBlockSimulatorId(const Address& address) failed. Failed to get sim id");
+		return 0;
+	}
+	return iter2->second;
+}
+
+std::vector<simulator_id_t> Evaluator::getBlockSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const {
+	if (addressOrigin.size() != 0) {
+		logError("Evaluator::getBlockSimulatorId(const Address& address) failed. Eval not working with ICs!");
+		return { };
+	}
+	std::vector<simulator_id_t> simIds;
+	for (auto pos : positions) {
+		Address address(addressOrigin);
+		address.nestPosition(pos);
+		simIds.push_back(getBlockSimulatorId(address));
+	}
+	return simIds;
 }
 
 nlohmann::json Evaluator::dumpState() const /* GCOVR_EXCL_FUNCTION */ {

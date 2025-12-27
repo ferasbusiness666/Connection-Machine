@@ -2,6 +2,7 @@
 #define evalLayerState_h
 
 #include "../evalDefs.h"
+#include "backend/blockData/blockDataManager.h"
 
 struct EvalGate {
 	EvalGate(EvalGateType type, eval_gate_id gateId) : type(type), gateId(gateId) { }
@@ -12,16 +13,34 @@ struct EvalGate {
 	std::unordered_map<connection_end_id_t, std::unordered_set<EvalConnectionPoint>> connections;
 };
 
+class BlockDataManager;
+
 class EvalLayerState {
 public:
+	EvalLayerState(const BlockDataManager& blockDataManager) : blockDataManager(blockDataManager) {}
+
 	// will also update connection points accordingly
 	void passAddGate(eval_gate_id gateId) {
 		assert(lastLayerState);
-		addGate(gateId, lastLayerState->getGate(gateId)->type); // TODO: Update connectionPointRemapping
+		const EvalGate* evalGate = lastLayerState->getGate(gateId);
+		const BlockData* blockData = blockDataManager.getBlockData(getBlockType(evalGate->type));
+		assert(blockData);
+		for (auto iter : blockData->getConnectionsSafe()) {
+			connectionPointRemapping.emplace(EvalConnectionPoint(gateId, iter.first), EvalConnectionPoint(gateId, iter.first));
+			connectionPointReverseRemapping.emplace(EvalConnectionPoint(gateId, iter.first), EvalConnectionPoint(gateId, iter.first));
+		}
+		addGate(gateId, evalGate->type);
 	}
 	void passRemoveGate(eval_gate_id gateId) {
 		assert(lastLayerState);
-		removeGate(gateId); // TODO: Update connectionPointRemapping
+		const EvalGate* evalGate = getGate(gateId);
+		const BlockData* blockData = blockDataManager.getBlockData(getBlockType(evalGate->type));
+		assert(blockData);
+		for (auto iter : blockData->getConnectionsSafe()) {
+			connectionPointRemapping.erase(EvalConnectionPoint(gateId, iter.first));
+			connectionPointReverseRemapping.erase(EvalConnectionPoint(gateId, iter.first));
+		}
+		removeGate(gateId);
 	}
 	void passAddConnection(const EvalConnection& evalConnection) {
 		assert(lastLayerState);
@@ -107,7 +126,7 @@ public:
 
 	EvalLayerState& getNextLayerState() {
 		if (!nextLayerState) {
-			nextLayerState = std::make_unique<EvalLayerState>();
+			nextLayerState = std::make_unique<EvalLayerState>(blockDataManager);
 			nextLayerState->setLastLayer(this);
 		}
 		return *nextLayerState;
@@ -115,14 +134,20 @@ public:
 	const EvalLayerState* getNextLayerState() const {
 		return nextLayerState.get();
 	}
+	const std::unordered_map<EvalConnectionPoint, EvalConnectionPoint>& getConnectionPointRemapping() const { return connectionPointRemapping; }
+	const std::unordered_multimap<EvalConnectionPoint, EvalConnectionPoint>& getConnectionPointReverseRemapping() const { return connectionPointReverseRemapping; }
+
 private:
 	void setLastLayer(const EvalLayerState* lastLayerState) { this->lastLayerState = lastLayerState; }
 
 	std::unique_ptr<EvalLayerState> nextLayerState;
 	const EvalLayerState* lastLayerState;
 
+	const BlockDataManager& blockDataManager;
+
 	std::unordered_map<eval_gate_id, EvalGate> gates;
 	std::unordered_map<EvalConnectionPoint, EvalConnectionPoint> connectionPointRemapping;
+	std::unordered_multimap<EvalConnectionPoint, EvalConnectionPoint> connectionPointReverseRemapping;
 
 	std::unordered_set<eval_gate_id> addedGates;
 	std::unordered_set<eval_gate_id> removedGates;
