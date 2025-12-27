@@ -13,6 +13,7 @@
 #include "gpu/helper/nBuffer.h"
 
 class SimulatorMappingUpdate;
+class BlockRenderDataManager;
 
 // ====================================================================================================================
 
@@ -32,8 +33,8 @@ struct BlockInstance {
 		bindingDescriptions[0].stride = sizeof(BlockInstance);
 		bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
-        return bindingDescriptions;
-    }
+		return bindingDescriptions;
+	}
 
 	inline static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
 		std::vector<VkVertexInputAttributeDescription> attributeDescriptions(7);
@@ -89,8 +90,8 @@ struct WireInstance {
 		bindingDescriptions[0].stride = sizeof(WireInstance);
 		bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
-        return bindingDescriptions;
-    }
+		return bindingDescriptions;
+	}
 
 	inline static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
 		std::vector<VkVertexInputAttributeDescription> attributeDescriptions(4);
@@ -187,6 +188,7 @@ private:
 class LogicGroup {
 public:
 	inline RenderedBlocks& getRenderedBlocks() { return blocks; }
+	inline std::unordered_map<Position, Position>& getBlockStatePortMapping() { return blockStatePortMapping; }
 	inline RenderedWires& getRenderedWires() { return wires; }
 	void rebuildAllocation(VulkanDevice* device, const Evaluator* evaluator, const Address& address);
 
@@ -198,6 +200,7 @@ private:
 private:
 	RenderedBlocks blocks;
 	RenderedWires wires;
+	std::unordered_map<Position, Position> blockStatePortMapping;
 
 	std::optional<std::shared_ptr<VulkanLogicAllocation>> newestAllocation;
 	std::optional<std::shared_ptr<VulkanLogicAllocation>> currentlyAllocating;

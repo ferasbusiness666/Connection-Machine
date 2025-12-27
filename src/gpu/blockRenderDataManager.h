@@ -20,9 +20,10 @@ public:
 		Size size = Size(1);
 		BlockTextureCords blockTextureCords = BlockTextureCords({0, 0}, {1, 1}, 0, {0, 0});
 		std::map<BlockPortRenderDataId, BlockPortRenderData> blockPortRenderData;
+		std::optional<Vector> blockStatePortPosition;
 	};
 
-	const BlockRenderData* getBlockRenderData(BlockRenderDataId blockRenderDataId);
+	const BlockRenderData* getBlockRenderData(BlockRenderDataId blockRenderDataId) const;
 
 	BlockRenderDataId addBlockRenderData();
 	void removeBlockRenderData(BlockRenderDataId blockRenderDataId);
@@ -35,6 +36,7 @@ public:
 	void removeBlockPort(BlockRenderDataId blockRenderDataId, BlockPortRenderDataId blockPortRenderDataId);
 	void moveBlockPort(BlockRenderDataId blockRenderDataId, BlockPortRenderDataId blockPortRenderDataId, FVector newPositionOnBlock);
 	void setBlockPortName(BlockRenderDataId blockRenderDataId, BlockPortRenderDataId blockPortRenderDataId, const std::string newPortName);
+	void setBlockStatePortPosition(BlockRenderDataId blockRenderDataId, Vector blockStatePortPosition);
 
 private:
 	std::map<BlockRenderDataId, BlockRenderData> blockRenderData;

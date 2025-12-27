@@ -3,7 +3,7 @@
 #include "util/algorithm.h"
 #include "mainRenderer.h"
 
-const BlockRenderDataManager::BlockRenderData* BlockRenderDataManager::getBlockRenderData(BlockRenderDataId blockRenderDataId) {
+const BlockRenderDataManager::BlockRenderData* BlockRenderDataManager::getBlockRenderData(BlockRenderDataId blockRenderDataId) const {
 	auto iter = blockRenderData.find(blockRenderDataId);
 	if (iter == blockRenderData.end()) {
 		logError("Failed to get BlockRenderData with BlockRenderDataId {}.", "BlockRenderDataManager", blockRenderDataId);
@@ -139,4 +139,13 @@ void BlockRenderDataManager::setBlockPortName(BlockRenderDataId blockRenderDataI
 		return;
 	}
 	portIter->second.portName = newPortName;
+}
+
+void BlockRenderDataManager::setBlockStatePortPosition(BlockRenderDataId blockRenderDataId, Vector blockStatePortPosition) {
+	auto iter = blockRenderData.find(blockRenderDataId);
+	if (iter == blockRenderData.end()) {
+		logError("Failed to call setBlockStatePort on non existent BlockRenderData {}.", "BlockRenderDataManager", blockRenderDataId);
+		return;
+	}
+	iter->second.blockStatePortPosition = blockStatePortPosition;
 }

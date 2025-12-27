@@ -15,15 +15,9 @@ typedef unsigned int EvalGateType;
 inline EvalGateType getEvalGateType(BlockType blockType) { return (EvalGateType)blockType; }
 inline BlockType getBlockType(EvalGateType evalGateType) { return (BlockType)evalGateType; }
 
-enum class SimulatorMappingUpdateType {
-	BLOCK,
-	PIN
-};
-
 struct SimulatorMappingUpdate {
 	Position portPosition;
 	std::variant<simulator_id_t, std::vector<simulator_id_t>> simulatorIds;
-	SimulatorMappingUpdateType type;
 };
 
 typedef std::function<void(const std::vector<SimulatorMappingUpdate>&)> SimulatorMappingUpdateListenerFunction;

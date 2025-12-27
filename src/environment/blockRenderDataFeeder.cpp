@@ -40,6 +40,20 @@ void BlockRenderDataFeeder::newBlockTypeUpdate(const DataUpdateEventManager::Eve
 	blockTypeToRenderData.emplace(data->get(), blockRenderDataId);
 
 	blockTexturesToUpdate.insert(data->get());
+
+	switch (data->get()) {
+	case BlockType::JUNCTION_H:
+	case BlockType::JUNCTION_L:
+	case BlockType::JUNCTION_X:
+		MainRenderer::get().setBlockStatePortPosition(blockRenderDataId, Vector(0, 2));
+		break;
+	case BlockType::TRISTATE_BUFFER:
+		MainRenderer::get().setBlockStatePortPosition(blockRenderDataId, Vector(0, 1));
+		break;
+	default:
+		MainRenderer::get().setBlockStatePortPosition(blockRenderDataId, Vector(0, 0)); // may need to change
+		break;
+	}
 }
 
 void BlockRenderDataFeeder::postBlockSizeChangeUpdate(const DataUpdateEventManager::EventData* dataEvent) {
