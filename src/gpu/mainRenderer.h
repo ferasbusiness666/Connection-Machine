@@ -69,6 +69,7 @@ public:
 	void removeBlockPort(BlockRenderDataId blockRenderDataId, BlockPortRenderDataId blockPortRenderDataId);
 	void moveBlockPort(BlockRenderDataId blockRenderDataId, BlockPortRenderDataId blockPortRenderDataId, FVector newPositionOnBlock);
 	void setBlockPortName(BlockRenderDataId blockRenderDataId, BlockPortRenderDataId blockPortRenderDataId, const std::string& newPortName);
+	void setBlockStatePortPosition(BlockRenderDataId blockRenderDataId, Vector blockStatePortPosition);
 	void regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDataId);
 
 

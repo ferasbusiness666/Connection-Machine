@@ -207,6 +207,10 @@ void MainRenderer::setBlockPortName(BlockRenderDataId blockRenderDataId, BlockPo
 	blockRenderDataManager.setBlockPortName(blockRenderDataId, blockPortRenderDataId, newPortName);
 }
 
+void MainRenderer::setBlockStatePortPosition(BlockRenderDataId blockRenderDataId, Vector blockStatePortPosition) {
+	blockRenderDataManager.setBlockStatePortPosition(blockRenderDataId, blockStatePortPosition);
+}
+
 void MainRenderer::regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDataId) {
 	for (std::pair<const unsigned int, ViewportRenderData>& pair : viewportRenderers) {
 		pair.second.getChunker().regenerateAllChunksWithBlock(blockRenderDataId);

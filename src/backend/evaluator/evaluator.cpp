@@ -1,9 +1,8 @@
 #include "evaluator.h"
 
 #include "backend/circuit/circuitManager.h"
-#include "util/algorithm.h"
-#include "util/id.h"
 #include "layers/layer2_evalSimulator.h"
+#include "util/id.h"
 
 #ifdef TRACY_PROFILER
 #include <tracy/Tracy.hpp>
@@ -1256,7 +1255,7 @@ void Evaluator::processDirtyNodes() {
 	for (int i = 0; i < dirtyPointsToProcess.size(); ++i) {
 		const EvalPosition& evalPosition = dirtyPointsToProcess.at(i);
 		std::variant<simulator_id_t, std::vector<simulator_id_t>> pinSimId = pinSimIds.at(i);
-		simulatorMappingUpdates[evalPosition.evalCircuitId].push_back({ evalPosition.position, pinSimId, SimulatorMappingUpdateType::PIN });
+		simulatorMappingUpdates[evalPosition.evalCircuitId].push_back({ evalPosition.position, pinSimId });
 		if (std::holds_alternative<simulator_id_t>(pinSimId)) {
 			simulator_id_t singlePinSimId = std::get<simulator_id_t>(pinSimId);
 			pinSimulatorIdToEvalPositionMap.insert({ singlePinSimId, evalPosition });
@@ -1274,19 +1273,19 @@ void Evaluator::processDirtyNodes() {
 		// 	std::to_string(pinSimId)
 		// 	);
 	}
-	for (int i = 0; i < blocksToGatherBlockSimIds.size(); ++i) {
-		const EvalConnectionPoint& blockPoint = blocksToGatherBlockSimIds.at(i);
-		simulator_id_t blockSimId = blockSimIds.at(i);
-		EvalPosition evalPosition = middleIdToEvalPositionMap.at(blockPoint.gateId);
-		simulatorMappingUpdates[evalPosition.evalCircuitId].push_back({ evalPosition.position, blockSimId, SimulatorMappingUpdateType::BLOCK });
-		// logInfo(
-		// 	"Processed dirty block at evalCircuitId {}, position {}, simulatorId {}",
-		// 	"Evaluator::processDirtyNodes",
-		// 	evalPosition.evalCircuitId,
-		// 	evalPosition.position.toString(),
-		// 	std::to_string(blockSimId)
-		// );
-	}
+	// for (int i = 0; i < blocksToGatherBlockSimIds.size(); ++i) {
+	// 	const EvalConnectionPoint& blockPoint = blocksToGatherBlockSimIds.at(i);
+	// 	simulator_id_t blockSimId = blockSimIds.at(i);
+	// 	EvalPosition evalPosition = middleIdToEvalPositionMap.at(blockPoint.gateId);
+	// 	simulatorMappingUpdates[evalPosition.evalCircuitId].push_back({ evalPosition.position, blockSimId, SimulatorMappingUpdateType::BLOCK });
+	// 	// logInfo(
+	// 	// 	"Processed dirty block at evalCircuitId {}, position {}, simulatorId {}",
+	// 	// 	"Evaluator::processDirtyNodes",
+	// 	// 	evalPosition.evalCircuitId,
+	// 	// 	evalPosition.position.toString(),
+	// 	// 	std::to_string(blockSimId)
+	// 	// );
+	// }
 
 	{
 #ifdef TRACY_PROFILER

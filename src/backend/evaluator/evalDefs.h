@@ -9,15 +9,9 @@ DECLARE_ID_TYPE(eval_circuit_id_t, unsigned int);
 DECLARE_ID_TYPE(middle_id_t, unsigned int);
 DECLARE_ID_TYPE(simulator_id_t, unsigned int);
 
-enum class SimulatorMappingUpdateType {
-	BLOCK,
-	PIN
-};
-
 struct SimulatorMappingUpdate {
 	Position portPosition;
 	std::variant<simulator_id_t, std::vector<simulator_id_t>> simulatorIds;
-	SimulatorMappingUpdateType type;
 };
 
 typedef std::function<void(const std::vector<SimulatorMappingUpdate>&)> SimulatorMappingUpdateListenerFunction;
@@ -31,6 +25,7 @@ enum class Direction {
 	IN,
 	OUT,
 };
+
 inline Direction operator!(Direction dir) {
 	return (dir == Direction::IN) ? Direction::OUT : Direction::IN;
 }
