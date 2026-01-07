@@ -105,7 +105,16 @@ void Evaluator::setState(const Address& address, logic_state_t state) {
 	evalLogicSimulator.setState(iter2->second, state);
 }
 
-simulator_id_t Evaluator::getBlockSimulatorId(const Address& address) const {
+// simulator_id_t Evaluator::getBlockSimulatorId(const Address& address) const {
+// 	auto iter2 = evalLogicSimulator.getGateIdMapping().find(evaluatorInternal->mapFromAddressToBottomConnectionPoint(address).gateId);
+// 	if (iter2 == evalLogicSimulator.getGateIdMapping().end()) {
+// 		logError("Evaluator::getBlockSimulatorId(const Address& address) failed. Failed to get sim id");
+// 		return 0;
+// 	}
+// 	return iter2->second;
+// }
+
+std::variant<simulator_id_t, std::vector<simulator_id_t>> Evaluator::getPinSimulatorId(const Address& address) const {
 	auto iter2 = evalLogicSimulator.getGateIdMapping().find(evaluatorInternal->mapFromAddressToBottomConnectionPoint(address).gateId);
 	if (iter2 == evalLogicSimulator.getGateIdMapping().end()) {
 		logError("Evaluator::getBlockSimulatorId(const Address& address) failed. Failed to get sim id");
@@ -114,18 +123,28 @@ simulator_id_t Evaluator::getBlockSimulatorId(const Address& address) const {
 	return iter2->second;
 }
 
-std::vector<simulator_id_t> Evaluator::getBlockSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const {
-	if (addressOrigin.size() != 0) {
-		logError("Evaluator::getBlockSimulatorId(const Address& address) failed. Eval not working with ICs!");
-		return { };
+// std::vector<simulator_id_t> Evaluator::getBlockSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const {
+// 	if (addressOrigin.size() != 0) {
+// 		logError("Evaluator::getBlockSimulatorId(const Address& address) failed. Eval not working with ICs!");
+// 		return { };
+// 	}
+// 	std::vector<simulator_id_t> simIds;
+// 	for (auto pos : positions) {
+// 		Address address(addressOrigin);
+// 		address.nestPosition(pos);
+// 		simIds.push_back(getBlockSimulatorId(address));
+// 	}
+// 	return simIds;
+// }
+
+std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> Evaluator::getPinSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const {
+	std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> output;
+	for (Position position : positions) {
+		Address address = addressOrigin;
+		address.addBlockId(position);
+		output.push_back(getPinSimulatorId(address));
 	}
-	std::vector<simulator_id_t> simIds;
-	for (auto pos : positions) {
-		Address address(addressOrigin);
-		address.nestPosition(pos);
-		simIds.push_back(getBlockSimulatorId(address));
-	}
-	return simIds;
+	return output;
 }
 
 nlohmann::json Evaluator::dumpState() const /* GCOVR_EXCL_FUNCTION */ {

@@ -68,11 +68,11 @@ public:
 	// const EvalAddressTree buildAddressTree() const;
 	// const EvalAddressTree buildAddressTree(eval_circuit_id_t evalCircuitId) const;
 
-	simulator_id_t getBlockSimulatorId(const Address& address) const;
-	std::variant<simulator_id_t, std::vector<simulator_id_t>> getPinSimulatorId(const Address& address) const { return 0; }
+	// simulator_id_t getBlockSimulatorId(const Address& address) const;
+	std::variant<simulator_id_t, std::vector<simulator_id_t>> getPinSimulatorId(const Address& address) const;
 
-	std::vector<simulator_id_t> getBlockSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const;
-	std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getPinSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const { return {0}; }
+	// std::vector<simulator_id_t> getBlockSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const;
+	std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getPinSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const;
 
 	logic_state_t getStateFromSimulatorId(simulator_id_t simulatorId) const { return evalLogicSimulator.getState(simulatorId); }
 	std::vector<logic_state_t> getStatesFromSimulatorIds(const std::vector<simulator_id_t>& simulatorIds) const { return evalLogicSimulator.getStates(simulatorIds); }

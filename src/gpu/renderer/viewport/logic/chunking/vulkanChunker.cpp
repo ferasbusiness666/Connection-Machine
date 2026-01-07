@@ -85,15 +85,20 @@ VulkanLogicAllocation::VulkanLogicAllocation(
 
 			// blocks are added to state array
 			blockStateIndex[block.first] = simulatorIds.size();
-			positions.push_back(block.first);
+			std::optional<Vector> blockStatePortPosition = MainRenderer::get().getBlockRenderDataManager().getBlockRenderData(block.second.blockRenderDataId)->blockStatePortPosition;
+			positions.push_back(block.first + blockStatePortPosition.value_or(Vector(0)));
 			indices.push_back(simulatorIds.size());
 			simulatorIds.push_back(simulator_id_t(0));
 		}
 
 		if (evaluator) {
-			std::vector<simulator_id_t> simIds = evaluator->getBlockSimulatorIds(address, positions);
+			std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> simIds = evaluator->getPinSimulatorIds(address, positions);
 			for (size_t i = 0; i < simIds.size(); i++) {
-				simulatorIds[indices[i]] = simIds[i];
+				if (std::holds_alternative<std::vector<simulator_id_t>>(simIds[i])) {
+					simulatorIds[indices[i]] = 0;
+				} else {
+					simulatorIds[indices[i]] = std::get<simulator_id_t>(simIds[i]);
+				}
 			}
 		}
 
