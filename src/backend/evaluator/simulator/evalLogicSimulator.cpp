@@ -69,6 +69,7 @@ void EvalLogicSimulator::makeEdit() {
 			}
 			std::vector<EvalConnectionPoint> evalConnectionPoints = evaluatorInternal.getLayerRunner().getReversedMappedEvalConnectionPoint(EvalConnectionPoint(evalGate->gateId, pair.first));
 			for (EvalConnectionPoint evalConnectionPoint : evalConnectionPoints) {
+				evaluatorInternal.mapFromTopConnectionPointToAddress(evalConnectionPoint);
 				auto iter = evaluatorInternal.getPositionReverseRemapping().find(evalConnectionPoint.gateId);
 				if (iter == evaluatorInternal.getPositionReverseRemapping().end()) {
 					logError("Could not find pos of gate wth eval id {}", "EvalLogicSimulator::makeEdit", evalConnectionPoint.gateId);

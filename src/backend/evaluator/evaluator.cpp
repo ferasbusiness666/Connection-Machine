@@ -12,27 +12,21 @@ Evaluator::~Evaluator() = default;
 Evaluator::Evaluator(
 	evaluator_id_t evaluatorId,
 	CircuitManager& circuitManager,
-	BlockDataManager& blockDataManager,
-	CircuitBlockDataManager& circuitBlockDataManager,
 	circuit_id_t circuitId,
 	DataUpdateEventManager& dataUpdateEventManager
 ) :
 	evaluatorId(evaluatorId),
 	circuitManager(circuitManager),
-	blockDataManager(blockDataManager),
-	circuitBlockDataManager(circuitBlockDataManager),
 	dataUpdateEventManager(dataUpdateEventManager),
 	receiver(dataUpdateEventManager),
 	evalConfig(dataUpdateEventManager, evaluatorId),
 	circuitId(circuitId),
-	evaluatorInternal(std::make_unique<EvaluatorInternal>(blockDataManager, circuitBlockDataManager)),
-	evalLogicSimulator(evalConfig, blockDataManager, *evaluatorInternal)
+	evaluatorInternal(std::make_unique<EvaluatorInternal>(circuitId, circuitManager)),
+	evalLogicSimulator(evalConfig, circuitManager.getBlockDataManager(), *evaluatorInternal)
 {
-	const auto circuit = circuitManager.getCircuit(circuitId);
-	if (!circuit) {
-		logError("Circuit with ID {} not found", "Evaluator::Evaluator", circuitId);
-		return;
-	}
+	const Circuit* circuit = circuitManager.getCircuit(circuitId).get();
+	assert(circuit);
+
 	logInfo("Creating Evaluator with ID {} for Circuit ID {}", "Evaluator", evaluatorId, circuitId);
 	const BlockContainer& blockContainer = circuit->getBlockContainer();
 	const Difference difference = blockContainer.getCreationDifference();
@@ -94,16 +88,7 @@ void Evaluator::makeEdit(DifferenceSharedPtr difference, circuit_id_t circuitId)
 }
 
 logic_state_t Evaluator::getState(const Address& address) const {
-	if (address.size() != 1) {
-		logError("Evaluator::getState(const Address& address) failed. Eval not working with ICs!");
-		return logic_state_t::UNDEFINED;
-	}
-	auto iter = evaluatorInternal->getPositionRemapping().find(address.getPosition(0));
-	if (iter == evaluatorInternal->getPositionRemapping().end()) {
-		logError("Evaluator::getState(const Address& address) failed. Failed to get eval id");
-		return logic_state_t::UNDEFINED;
-	}
-	auto iter2 = evalLogicSimulator.getGateIdMapping().find(evaluatorInternal->getLayerRunner().getMappedEvalConnectionPoint(EvalConnectionPoint(iter->second.first, 1)).gateId);
+	auto iter2 = evalLogicSimulator.getGateIdMapping().find(evaluatorInternal->mapFromAddressToBottomConnectionPoint(address).gateId);
 	if (iter2 == evalLogicSimulator.getGateIdMapping().end()) {
 		logError("Evaluator::getState(const Address& address) failed. Failed to get sim id");
 		return logic_state_t::UNDEFINED;
@@ -112,16 +97,7 @@ logic_state_t Evaluator::getState(const Address& address) const {
 }
 
 void Evaluator::setState(const Address& address, logic_state_t state) {
-	if (address.size() != 1) {
-		logError("Evaluator::getState(const Address& address) failed. Eval not working with ICs!");
-		return;
-	}
-	auto iter = evaluatorInternal->getPositionRemapping().find(address.getPosition(0));
-	if (iter == evaluatorInternal->getPositionRemapping().end()) {
-		logError("Evaluator::getState(const Address& address) failed. Failed to get eval id");
-		return;
-	}
-	auto iter2 = evalLogicSimulator.getGateIdMapping().find(evaluatorInternal->getLayerRunner().getMappedEvalConnectionPoint(EvalConnectionPoint(iter->second.first, 1)).gateId);
+	auto iter2 = evalLogicSimulator.getGateIdMapping().find(evaluatorInternal->mapFromAddressToBottomConnectionPoint(address).gateId);
 	if (iter2 == evalLogicSimulator.getGateIdMapping().end()) {
 		logError("Evaluator::getState(const Address& address) failed. Failed to get sim id");
 		return;
@@ -130,16 +106,7 @@ void Evaluator::setState(const Address& address, logic_state_t state) {
 }
 
 simulator_id_t Evaluator::getBlockSimulatorId(const Address& address) const {
-	if (address.size() != 1) {
-		logError("Evaluator::getBlockSimulatorId(const Address& address) failed. Eval not working with ICs!");
-		return 0;
-	}
-	auto iter = evaluatorInternal->getPositionRemapping().find(address.getPosition(0));
-	if (iter == evaluatorInternal->getPositionRemapping().end()) {
-		logError("Evaluator::getBlockSimulatorId(const Address& address) failed. Failed to get eval id");
-		return 0;
-	}
-	auto iter2 = evalLogicSimulator.getGateIdMapping().find(evaluatorInternal->getLayerRunner().getMappedEvalConnectionPoint(EvalConnectionPoint(iter->second.first, 1)).gateId);
+	auto iter2 = evalLogicSimulator.getGateIdMapping().find(evaluatorInternal->mapFromAddressToBottomConnectionPoint(address).gateId);
 	if (iter2 == evalLogicSimulator.getGateIdMapping().end()) {
 		logError("Evaluator::getBlockSimulatorId(const Address& address) failed. Failed to get sim id");
 		return 0;

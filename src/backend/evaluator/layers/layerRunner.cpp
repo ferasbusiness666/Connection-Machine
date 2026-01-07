@@ -27,6 +27,10 @@ EvalLayerState& LayerRunner::getInputLayer() {
 	return *evalTopLayerState;
 }
 
+const EvalLayerState& LayerRunner::getInputLayer() const {
+	return *evalTopLayerState;
+}
+
 const EvalLayerState& LayerRunner::getOutputLayer() const {
 	const EvalLayerState* last = evalTopLayerState.get();
 	for (unsigned int i = 0; i < layers.size(); i++) {

@@ -4,10 +4,14 @@
 #include "evaluator.h"
 
 evaluator_id_t EvaluatorManager::createNewEvaluator(CircuitManager& circuitManager, circuit_id_t circuitId) {
+	if (!circuitManager.getCircuit(circuitId)) {
+		logError("Could not make evaluator because circuit {} was not found", "EvaluatorManager::createNewEvaluator", circuitId);
+		return 0;
+	}
 	evaluator_id_t id = evaluatorIdProvider.getNewId();
 	evaluators.emplace(
 		id,
-		std::make_shared<Evaluator>(id, circuitManager, circuitManager.getBlockDataManager(), circuitManager.getCircuitBlockDataManager(), circuitId, dataUpdateEventManager)
+		std::make_shared<Evaluator>(id, circuitManager, circuitId, dataUpdateEventManager)
 	);
 	dataUpdateEventManager.sendEvent("addressTreeMakeBranch");
 	return id;

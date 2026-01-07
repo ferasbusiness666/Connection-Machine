@@ -4,13 +4,15 @@
 #include "util/evalConfig.h"
 #include "simulator/logicState.h"
 #include "backend/address.h"
-#include "backend/circuit/circuit.h"
-#include "backend/circuit/circuitBlockDataManager.h"
+#include "backend/circuit/circuitDefs.h"
 #include "simulator/evalLogicSimulator.h"
 
 class EvaluatorInternal;
 class DataUpdateEventManager;
 class CircuitManager;
+class Difference;
+typedef std::shared_ptr<Difference> DifferenceSharedPtr;
+
 
 class Evaluator {
 public:
@@ -20,8 +22,6 @@ public:
 	Evaluator(
 		evaluator_id_t evaluatorId,
 		CircuitManager& circuitManager,
-		BlockDataManager& blockDataManager,
-		CircuitBlockDataManager& circuitBlockDataManager,
 		circuit_id_t circuitId,
 		DataUpdateEventManager& dataUpdateEventManager
 	);
@@ -90,8 +90,6 @@ private:
 	circuit_id_t circuitId;
 	evaluator_id_t evaluatorId;
 	CircuitManager& circuitManager;
-	BlockDataManager& blockDataManager;
-	CircuitBlockDataManager& circuitBlockDataManager;
 	DataUpdateEventManager& dataUpdateEventManager;
 	DataUpdateEventManager::DataUpdateEventReceiver receiver;
 	EvalConfig evalConfig;

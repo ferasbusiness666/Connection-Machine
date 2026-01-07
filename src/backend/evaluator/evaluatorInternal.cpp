@@ -1,11 +1,12 @@
 #include "evaluatorInternal.h"
 
-#include "backend/blockData/blockDataManager.h"
-// #include "backend/circuit/circuitBlockDataManager.h"
+#include "backend/circuit/circuitManager.h"
+#include "util/evalLayerState.h"
 
-EvaluatorInternal::EvaluatorInternal(const BlockDataManager& blockDataManager, const CircuitBlockDataManager& circuitBlockDataManager) :
-	evalGateIdProvider(1), blockDataManager(blockDataManager), circuitBlockDataManager(circuitBlockDataManager),
-	layerRunner(blockDataManager) { }
+extern std::thread::id mainThreadId;
+
+EvaluatorInternal::EvaluatorInternal(circuit_id_t circuitId, const CircuitManager& circuitManager) :
+	evalGateIdProvider(1), circuitManager(circuitManager), circuitId(circuitId), layerRunner(circuitManager.getBlockDataManager()) { }
 
 void EvaluatorInternal::startEdit() {
 	layerRunner.getInputLayer().resetEdits();
@@ -49,7 +50,7 @@ void EvaluatorInternal::createConnection(Position outputBlockPosition, Position 
 	if (outputRemappingIter == positionRemapping.end()) return;
 	const EvalGate* outputGate = layerRunner.getInputLayer().getGate(outputRemappingIter->second.first);
 	assert(outputGate);
-	const BlockData* outputBlockData = blockDataManager.getBlockData(getBlockType(outputGate->type));
+	const BlockData* outputBlockData = circuitManager.getBlockDataManager().getBlockData(getBlockType(outputGate->type));
 	std::optional<connection_end_id_t> outputConnectionEndId = outputBlockData->getOutputOrBidirectionalConnectionId(outputPosition - outputBlockPosition, outputRemappingIter->second.second);
 	assert(outputConnectionEndId);
 
@@ -57,7 +58,7 @@ void EvaluatorInternal::createConnection(Position outputBlockPosition, Position 
 	if (inputRemappingIter == positionRemapping.end()) return;
 	const EvalGate* inputGate = layerRunner.getInputLayer().getGate(inputRemappingIter->second.first);
 	assert(inputGate);
-	const BlockData* inputBlockData = blockDataManager.getBlockData(getBlockType(inputGate->type));
+	const BlockData* inputBlockData = circuitManager.getBlockDataManager().getBlockData(getBlockType(inputGate->type));
 	std::optional<connection_end_id_t> inputConnectionEndId = inputBlockData->getInputOrBidirectionalConnectionId(inputPosition - inputBlockPosition, inputRemappingIter->second.second);
 	assert(inputConnectionEndId);
 
@@ -69,7 +70,7 @@ void EvaluatorInternal::removeConnection(Position outputBlockPosition, Position 
 	if (outputRemappingIter == positionRemapping.end()) return;
 	const EvalGate* outputGate = layerRunner.getInputLayer().getGate(outputRemappingIter->second.first);
 	assert(outputGate);
-	const BlockData* outputBlockData = blockDataManager.getBlockData(getBlockType(outputGate->type));
+	const BlockData* outputBlockData = circuitManager.getBlockDataManager().getBlockData(getBlockType(outputGate->type));
 	std::optional<connection_end_id_t> outputConnectionEndId = outputBlockData->getOutputOrBidirectionalConnectionId(outputPosition - outputBlockPosition, outputRemappingIter->second.second);
 	assert(outputConnectionEndId);
 
@@ -77,9 +78,52 @@ void EvaluatorInternal::removeConnection(Position outputBlockPosition, Position 
 	if (inputRemappingIter == positionRemapping.end()) return;
 	const EvalGate* inputGate = layerRunner.getInputLayer().getGate(inputRemappingIter->second.first);
 	assert(inputGate);
-	const BlockData* inputBlockData = blockDataManager.getBlockData(getBlockType(inputGate->type));
+	const BlockData* inputBlockData = circuitManager.getBlockDataManager().getBlockData(getBlockType(inputGate->type));
 	std::optional<connection_end_id_t> inputConnectionEndId = inputBlockData->getInputOrBidirectionalConnectionId(inputPosition - inputBlockPosition, inputRemappingIter->second.second);
 	assert(inputConnectionEndId);
 
 	layerRunner.getInputLayer().removeConnection(EvalConnection(outputGate->gateId, *outputConnectionEndId, inputGate->gateId, *inputConnectionEndId));
+}
+
+EvalConnectionPoint EvaluatorInternal::mapFromTopConnectionPointToBottomConnectionPoint(EvalConnectionPoint topConnectionPoint) const {
+	return layerRunner.getMappedEvalConnectionPoint(topConnectionPoint);
+}
+std::optional<std::vector<EvalConnectionPoint>> EvaluatorInternal::mapFromBottomConnectionPointToTopConnectionPoint(EvalConnectionPoint bottomConnectionPoint) const {
+	return layerRunner.getReversedMappedEvalConnectionPoint(bottomConnectionPoint);
+}
+std::optional<Address> EvaluatorInternal::mapFromTopConnectionPointToAddress(EvalConnectionPoint topConnectionPoint) const {
+	if (topConnectionPoint.gateId == 0) return std::nullopt;
+	auto iter = positionReverseRemapping.find(topConnectionPoint.gateId);
+	if (iter == positionReverseRemapping.end()) return std::nullopt;
+	return iter->second.first + circuitManager.getBlockDataManager().getConnectionVector(
+		getBlockType(layerRunner.getInputLayer().getGate(topConnectionPoint.gateId)->type),
+		iter->second.second,
+		topConnectionPoint.connectionEndId
+	).value();
+}
+std::optional<std::vector<Address>> EvaluatorInternal::mapFromBottomConnectionPointToAddress(EvalConnectionPoint bottomConnectionPoint) const {
+	if (bottomConnectionPoint.gateId == 0) return std::nullopt;
+	std::optional<std::vector<EvalConnectionPoint>> topConnectionPoints = mapFromBottomConnectionPointToTopConnectionPoint(bottomConnectionPoint);
+	if (!topConnectionPoints) return std::nullopt;
+	std::vector<Address> addresses;
+	for (const EvalConnectionPoint& topConnectionPoint : topConnectionPoints.value()) {
+		addresses.push_back(mapFromTopConnectionPointToAddress(topConnectionPoint).value());
+	}
+	return addresses;
+}
+EvalConnectionPoint EvaluatorInternal::mapFromAddressToTopConnectionPoint(const Address& address) const {
+	if (address.size() != 1) return EvalConnectionPoint::null();
+	assert(mainThreadId == std::this_thread::get_id());
+	const Circuit* circuit = circuitManager.getCircuit(circuitId).get();
+	const Block* block = circuit->getBlockContainer().getBlock(address.getPosition(0));
+	auto iter = positionRemapping.find(block->getPosition());
+	if (iter == positionRemapping.end()) return EvalConnectionPoint::null();
+	std::optional<connection_end_id_t> connectionEndId = block->getOutputOrBidirectionalConnectionId(address.getPosition(0));
+	if (!connectionEndId) return  EvalConnectionPoint::null();
+	return EvalConnectionPoint(iter->second.first, connectionEndId.value());
+}
+EvalConnectionPoint EvaluatorInternal::mapFromAddressToBottomConnectionPoint(const Address& address) const {
+	EvalConnectionPoint topConnectionPoint = mapFromAddressToTopConnectionPoint(address);
+	if (topConnectionPoint.isNull()) return EvalConnectionPoint::null();
+	return mapFromTopConnectionPointToBottomConnectionPoint(topConnectionPoint);
 }
