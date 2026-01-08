@@ -85,7 +85,7 @@ std::vector<circuit_id_t> ConnectionMachineParser::load(const std::string& path)
 					coordinate_t vecX, vecY;
 					std::string portName = "";
 					inputFile >> token >> endId >> cToken >> blockId >> cToken >> cToken >> vecX >> cToken >> vecY >> cToken >> cToken >> std::quoted(portName) >> cToken;
-					currentParsedCircuit->addConnectionPort(token == "IN,", connection_end_id_t(endId), Vector(vecX, vecY), blockId, connection_end_id_t(0), portName);
+					currentParsedCircuit->addConnectionPort(token == "IN,", endId, Vector(vecX, vecY), blockId, 0, portName);
 				}
 			} else {
 				while (true) {
@@ -132,7 +132,7 @@ std::vector<circuit_id_t> ConnectionMachineParser::load(const std::string& path)
 						}
 					}
 					inputFile >> cToken;
-					currentParsedCircuit->addConnectionPort(token == "IN,", connection_end_id_t(endId), *positionOfBlock, Vector(vecX, vecY), FVector(offsetX, offsetY), portName, bitWidth);
+					currentParsedCircuit->addConnectionPort(token == "IN,", endId, *positionOfBlock, Vector(vecX, vecY), FVector(offsetX, offsetY), portName, bitWidth);
 				}
 			}
 		} else if (token == "UUID:") {
@@ -241,7 +241,7 @@ std::vector<circuit_id_t> ConnectionMachineParser::load(const std::string& path)
 						logError("Failed to parse (blockid, connection_id) token", "ConnectionMachineParser");
 						break;
 					}
-					currentParsedCircuit->addConnection(blockId, connection_end_id_t(connId), otherBlockId, connection_end_id_t(otherConnId));
+					currentParsedCircuit->addConnection(blockId, connId, otherBlockId, otherConnId);
 				}
 			}
 		}

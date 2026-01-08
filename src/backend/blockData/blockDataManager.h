@@ -20,17 +20,17 @@ public:
 		// pre
 		dataUpdateEventManager.sendEvent<std::pair<BlockType, Size>>("preBlockSizeChange", { blockType, Size(1) });
 		dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, BlockData::ConnectionData::PortType>>(
-			"preBlockDataSetConnection", { blockType, connection_end_id_t(0), BlockData::ConnectionData::PortType::INPUT }
+			"preBlockDataSetConnection", { blockType, 0, BlockData::ConnectionData::PortType::INPUT }
 		);
 		dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, BlockData::ConnectionData::PortType>>(
-			"preBlockDataSetConnection", { blockType, connection_end_id_t(1), BlockData::ConnectionData::PortType::OUTPUT }
+			"preBlockDataSetConnection", { blockType, 1, BlockData::ConnectionData::PortType::OUTPUT }
 		);
 		// post
 		dataUpdateEventManager.sendEvent<std::pair<BlockType, Size>>("postBlockSizeChange", { blockType, Size(1) });
-		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connection_end_id_t(0) });
-		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connection_end_id_t(1) });
-		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataConnectionNameSet", { blockType, connection_end_id_t(0) });
-		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataConnectionNameSet", { blockType, connection_end_id_t(1) });
+		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, 0 });
+		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, 1 });
+		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataConnectionNameSet", { blockType, 0 });
+		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataConnectionNameSet", { blockType, 1 });
 		sendBlockDataUpdate();
 		return blockType;
 	}
@@ -117,7 +117,7 @@ public:
 		return blockData[type - 1].getConnectionVector(connectionId, orientation);
 	}
 	inline connection_end_id_t getConnectionCount(BlockType type) const noexcept {
-		if (!blockExists(type)) return connection_end_id_t(0);
+		if (!blockExists(type)) return 0;
 		return blockData[type - 1].getConnectionCount();
 	}
 	inline bool connectionExists(BlockType type, connection_end_id_t connectionId) const noexcept {

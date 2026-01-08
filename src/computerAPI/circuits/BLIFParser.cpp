@@ -63,8 +63,8 @@ std::vector<circuit_id_t> BLIFParser::load(const std::string& path) {
 			while (ss >> token) {
 				if (token.front() == '#') break;
 				current.parsedCircuit->addBlock(++current.blockIdCounter, BlockType::SWITCH);
-				current.nameToConnectionEnd.try_emplace(token, current.blockIdCounter, connection_end_id_t(0));
-				current.parsedCircuit->addConnectionPort(true, current.endIdProvider.getNewId(), Vector(0, current.inPortY++), current.blockIdCounter, connection_end_id_t(0), token);
+				current.nameToConnectionEnd.try_emplace(token, current.blockIdCounter, 0);
+				current.parsedCircuit->addConnectionPort(true, current.endIdProvider.getNewId(), Vector(0, current.inPortY++), current.blockIdCounter, 0, token);
 			}
 		} else if (token == ".outputs") {
 			std::getline(inputFile, token);
@@ -72,7 +72,7 @@ std::vector<circuit_id_t> BLIFParser::load(const std::string& path) {
 			while (ss >> token) {
 				if (token.front() == '#') break;
 				current.parsedCircuit->addBlock(++current.blockIdCounter, BlockType::LIGHT);
-				current.parsedCircuit->addConnectionPort(false, current.endIdProvider.getNewId(), Vector(1, current.outPortY++), current.blockIdCounter, connection_end_id_t(0), token);
+				current.parsedCircuit->addConnectionPort(false, current.endIdProvider.getNewId(), Vector(1, current.outPortY++), current.blockIdCounter, 0, token);
 			}
 		} else if (token == ".names") {
 			std::getline(inputFile, token);
@@ -100,20 +100,20 @@ std::vector<circuit_id_t> BLIFParser::load(const std::string& path) {
 				unsigned int index = 0;
 				for (char c : token) {
 					if (c == '1') {
-						current.connectionsToMake.emplace_back(ports[index], ConnectionEnd(blockId, connection_end_id_t(0)));
+						current.connectionsToMake.emplace_back(ports[index], ConnectionEnd(blockId, 0));
 					} else if (c == '0') {
 						current.parsedCircuit->addBlock(++current.blockIdCounter, BlockType::NOR);
-						current.connectionsToMake.emplace_back(ports[index], ConnectionEnd(current.blockIdCounter, connection_end_id_t(0)));
-						current.parsedCircuit->addConnection(current.blockIdCounter, connection_end_id_t(1), blockId, connection_end_id_t(0));
+						current.connectionsToMake.emplace_back(ports[index], ConnectionEnd(current.blockIdCounter, 0));
+						current.parsedCircuit->addConnection(current.blockIdCounter, 1, blockId, 0);
 					}
 					++index;
 				}
 				inputFile >> std::ws;
 			}
 			current.parsedCircuit->addBlock(++current.blockIdCounter, BlockType::OR);
-			current.nameToConnectionEnd.emplace(output, ConnectionEnd(current.blockIdCounter, connection_end_id_t(1)));
+			current.nameToConnectionEnd.emplace(output, ConnectionEnd(current.blockIdCounter, 1));
 			for (block_id_t gate : gates) {
-				current.parsedCircuit->addConnection(gate, connection_end_id_t(1), current.blockIdCounter, connection_end_id_t(0));
+				current.parsedCircuit->addConnection(gate, 1, current.blockIdCounter, 0);
 			}
 		} else if (token == ".subckt") {
 			std::string blockName;

@@ -9,17 +9,20 @@ void BlockData::setDefaultData(bool defaultData) noexcept {
 		for (auto connection : connections) {
 			if (connection.first == 0 || connection.first == 1) continue;
 			dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataRemoveConnection", { blockType, connection.first });
-			// dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, BlockData::ConnectionData::PortType>>("preBlockDataSetConnection", { blockType, connection.first, connection.second.portType });
+			// dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, BlockData::ConnectionData::PortType>>("preBlockDataSetConnection", { blockType,
+			// connection.first, connection.second.portType });
 		}
 		if (getSize() != Size(1)) {
 			dataUpdateEventManager.sendEvent<std::pair<BlockType, Size>>("preBlockSizeChange", { blockType, Size(1) });
 			sentPre = true;
 		}
 		dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, BlockData::ConnectionData::PortType>>(
-			"preBlockDataSetConnection", { blockType, connection_end_id_t(0), BlockData::ConnectionData::PortType::INPUT }
+			"preBlockDataSetConnection",
+			{ blockType, 0, BlockData::ConnectionData::PortType::INPUT }
 		);
 		dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, BlockData::ConnectionData::PortType>>(
-			"preBlockDataSetConnection", { blockType, connection_end_id_t(1), BlockData::ConnectionData::PortType::OUTPUT }
+			"preBlockDataSetConnection",
+			{ blockType, 1, BlockData::ConnectionData::PortType::OUTPUT }
 		);
 	}
 	this->defaultData = defaultData;
@@ -33,10 +36,10 @@ void BlockData::setDefaultData(bool defaultData) noexcept {
 			dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataRemoveConnection", { blockType, connection.first });
 			dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connection.first });
 		}
-		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connection_end_id_t(0) });
-		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connection_end_id_t(1) });
-		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataConnectionNameSet", { blockType, connection_end_id_t(0) });
-		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataConnectionNameSet", { blockType, connection_end_id_t(1) });
+		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, 0 });
+		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, 1 });
+		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataConnectionNameSet", { blockType, 0 });
+		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataConnectionNameSet", { blockType, 1 });
 		connections.clear();
 	}
 	sendBlockDataUpdate();
@@ -75,6 +78,172 @@ void BlockData::setPath(const std::string& path) noexcept {
 	this->path = path;
 	sendBlockDataUpdate();
 }
+
+void BlockData::removeConnection(connection_end_id_t connectionId) noexcept {
+	auto iter = connections.find(connectionId);
+	if (iter == connections.end()) return;
+	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataRemoveConnection", { blockType, connectionId });
+	if (iter->second.portType == ConnectionData::PortType::INPUT) {
+		inputConnectionCount--;
+	} else if (iter->second.portType == ConnectionData::PortType::OUTPUT) {
+		outputConnectionCount--;
+	}
+	connections.erase(iter);
+	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataRemoveConnection", { blockType, connectionId });
+	sendBlockDataUpdate();
+}
+
+void BlockData::setConnectionInput(Vector positionOnBlock, connection_end_id_t connectionId) noexcept {
+	dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, ConnectionData::PortType>>(
+		"preBlockDataSetConnection",
+		{ blockType, connectionId, ConnectionData::PortType::INPUT }
+	);
+	connections.insert_or_assign(connectionId, ConnectionData(positionOnBlock, ConnectionData::PortType::INPUT));
+	inputConnectionCount++;
+	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connectionId });
+	sendBlockDataUpdate();
+}
+
+void BlockData::setConnectionOutput(Vector positionOnBlock, connection_end_id_t connectionId) noexcept {
+	dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, ConnectionData::PortType>>(
+		"preBlockDataSetConnection",
+		{ blockType, connectionId, ConnectionData::PortType::OUTPUT }
+	);
+	connections.insert_or_assign(connectionId, ConnectionData(positionOnBlock, ConnectionData::PortType::OUTPUT));
+	outputConnectionCount++;
+	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connectionId });
+	sendBlockDataUpdate();
+}
+
+void BlockData::setConnectionBidirectional(Vector positionOnBlock, connection_end_id_t connectionId) noexcept {
+	dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, ConnectionData::PortType>>(
+		"preBlockDataSetConnection",
+		{ blockType, connectionId, ConnectionData::PortType::BIDIRECTIONAL }
+	);
+	connections.insert_or_assign(connectionId, ConnectionData(positionOnBlock, ConnectionData::PortType::BIDIRECTIONAL));
+	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connectionId });
+	sendBlockDataUpdate();
+}
+
+void BlockData::setConnectionIdName(connection_end_id_t connectionId, const std::string& name) {
+	connectionIdNames.set(connectionId, name);
+	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>(
+		"blockDataConnectionNameSet",
+		std::pair<BlockType, connection_end_id_t>({ blockType, connectionId })
+	);
+}
+
+std::optional<std::string> BlockData::getConnectionIdToName(connection_end_id_t connectionId) const {
+	if (defaultData) return connectionId == 1 ? "Out" : "In";
+	const std::string* str = connectionIdNames.get(connectionId);
+	if (str) return *str;
+	return std::nullopt;
+}
+
+void BlockData::setConnectionPortOffset(connection_end_id_t connectionId, FVector offset) {
+	if (!FSize(1).containsVector(offset)) {
+		logError("Can't set connection port offset to vector {} that makes it leave its cell", "BlockData", offset);
+		return;
+	}
+	auto iter = connections.find(connectionId);
+	if (iter == connections.end()) return;
+	iter->second.portOffset = offset;
+	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connectionId });
+}
+
+void BlockData::setConnectionBitConfiguration(connection_end_id_t connectionId, std::variant<unsigned int, std::vector<unsigned int>> bitConfiguration) noexcept {
+	if (std::holds_alternative<std::vector<unsigned int>>(bitConfiguration) && std::get<std::vector<unsigned int>>(bitConfiguration).empty()) {
+		logError("Cant set the bit configuration of a connection to be empty", "BlockData");
+	} else if (std::holds_alternative<unsigned int>(bitConfiguration) && std::get<unsigned int>(bitConfiguration) == 0) {
+		logError("Cant set the bit configuration of a connection to be 0", "BlockData");
+	}
+	auto iter = connections.find(connectionId);
+	if (iter == connections.end()) return;
+	dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, unsigned int>>(
+		"preBlockDataPortBitConfigurationSet",
+		{
+			blockType,
+			connectionId,
+			std::holds_alternative<unsigned int>(bitConfiguration) ? std::get<unsigned int>(bitConfiguration)
+																   : std::get<std::vector<unsigned int>>(bitConfiguration).size() // get bitwidth
+		}
+	);
+	iter->second.bitConfiguration = bitConfiguration;
+	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataPortBitConfigurationSet", { blockType, connectionId });
+}
+
+nlohmann::json BlockData::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
+	nlohmann::json blockJson;
+	blockJson["blockType"] = blocktype_to_string(blockType);
+	blockJson["defaultData"] = defaultData;
+	blockJson["primitive"] = primitive;
+	blockJson["placeable"] = placeable;
+	blockJson["bus"] = bus;
+	blockJson["name"] = name;
+	blockJson["path"] = path;
+	// blockJson["texturePath"] = texturePath; // disabled for privacy
+	blockJson["usesTileMapTexture"] = usesTileMapTexture;
+	blockJson["textureTileSize"] = textureTileSize.toString();
+	blockJson["textureSmallestCordTile"] = textureSmallestCordTile.toString();
+	blockJson["textureBlockTileSize"] = textureBlockTileSize.toString();
+	blockJson["textureBlockStateOffset"] = textureBlockStateOffset.toString();
+	blockJson["blockSize"] = blockSize.toString();
+	blockJson["inputConnectionCount"] = inputConnectionCount;
+	blockJson["outputConnectionCount"] = outputConnectionCount;
+	blockJson["connections"] = nlohmann::json::object();
+	for (auto& pair : connections) {
+		blockJson["connections"][std::to_string(pair.first.get())] = pair.second.dumpState();
+	}
+	blockJson["connectionIdNames"] = nlohmann::json::object();
+	for (auto& pair : connectionIdNames.getT2Map()) {
+		blockJson["connectionIdNames"][std::to_string(pair.first.get())] = pair.second;
+	}
+	return blockJson;
+}
+
+nlohmann::json BlockData::ConnectionData::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
+	nlohmann::json connectionJson;
+	connectionJson["positionOnBlock"] = positionOnBlock.toString();
+	switch (portType) {
+	case PortType::INPUT: connectionJson["portType"] = "INPUT"; break;
+	case PortType::OUTPUT: connectionJson["portType"] = "OUTPUT"; break;
+	case PortType::BIDIRECTIONAL: connectionJson["portType"] = "BIDIRECTIONAL"; break;
+	case PortType::NONE: connectionJson["portType"] = "NONE"; break;
+	default: connectionJson["portType"] = "UNKNOWN"; break;
+	}
+	connectionJson["portOffset"] = portOffset.toString();
+	if (std::holds_alternative<unsigned int>(bitConfiguration)) {
+		connectionJson["bitConfiguration"] = std::get<unsigned int>(bitConfiguration);
+	} else {
+		connectionJson["bitConfiguration"] = std::get<std::vector<unsigned int>>(bitConfiguration);
+	}
+	return connectionJson;
+}
+
+nlohmann::json BlockData::VirtualConnectionData::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
+	nlohmann::json connectionJson;
+	connectionJson["bitWidth"] = std::to_string(bitWidth);
+	return connectionJson;
+}
+
+void BlockData::setVirtualConnection(virtual_connection_id_t virtualConnectionId, unsigned int bitWidth) {
+	dataUpdateEventManager.sendEvent<std::tuple<BlockType, virtual_connection_id_t, unsigned int>>("preBlockDataSetVirtualConnection", { blockType, virtualConnectionId, bitWidth });
+	virtualConnections.insert_or_assign(virtualConnectionId, VirtualConnectionData(bitWidth));
+	inputConnectionCount++;
+	dataUpdateEventManager.sendEvent<std::pair<BlockType, virtual_connection_id_t>>("blockDataSetVirtualConnection", { blockType, virtualConnectionId });
+	sendBlockDataUpdate();
+}
+
+void BlockData::removeVirtualConnection(virtual_connection_id_t virtualConnectionId) {
+	auto iter = virtualConnections.find(virtualConnectionId);
+	if (iter == virtualConnections.end()) return;
+	dataUpdateEventManager.sendEvent<std::pair<BlockType, virtual_connection_id_t>>("preBlockDataRemoveVirtualConnection", { blockType, virtualConnectionId });
+	virtualConnections.erase(iter);
+	dataUpdateEventManager.sendEvent<std::pair<BlockType, virtual_connection_id_t>>("blockDataRemoveVirtualConnection", { blockType, virtualConnectionId });
+	sendBlockDataUpdate();
+}
+
+// ------------------------------- Render Block Data -------------------------------
 
 void BlockData::setTexturePath(const std::string& texturePath) noexcept {
 	if (this->texturePath == texturePath) return; // what is this going to do...
@@ -116,155 +285,4 @@ void BlockData::setUsesTileMapTexture(bool usesTileMapTexture) noexcept {
 	this->usesTileMapTexture = usesTileMapTexture;
 	dataUpdateEventManager.sendEvent<std::pair<BlockType, bool>>("blockDataUsesTileMapTextureChange", { blockType, usesTileMapTexture });
 	sendBlockDataUpdate();
-}
-
-// trys to set a connection input in the block. Returns success.
-void BlockData::removeConnection(connection_end_id_t connectionId) noexcept {
-	auto iter = connections.find(connectionId);
-	if (iter == connections.end()) return;
-	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataRemoveConnection", { blockType, connectionId });
-	if (iter->second.portType == ConnectionData::PortType::INPUT) {
-		inputConnectionCount--;
-	} else if (iter->second.portType == ConnectionData::PortType::OUTPUT) {
-		outputConnectionCount--;
-	}
-	connections.erase(iter);
-	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataRemoveConnection", { blockType, connectionId });
-	sendBlockDataUpdate();
-}
-void BlockData::setConnectionInput(Vector positionOnBlock, connection_end_id_t connectionId) noexcept {
-	dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, ConnectionData::PortType>>("preBlockDataSetConnection", { blockType, connectionId, ConnectionData::PortType::INPUT });
-	connections.insert_or_assign(connectionId, ConnectionData(positionOnBlock, ConnectionData::PortType::INPUT));
-	inputConnectionCount++;
-	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connectionId });
-	sendBlockDataUpdate();
-}
-// trys to set a connection output in the block. Returns success.
-void BlockData::setConnectionOutput(Vector positionOnBlock, connection_end_id_t connectionId) noexcept {
-	dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, ConnectionData::PortType>>("preBlockDataSetConnection", { blockType, connectionId, ConnectionData::PortType::OUTPUT });
-	connections.insert_or_assign(connectionId, ConnectionData(positionOnBlock, ConnectionData::PortType::OUTPUT));
-	outputConnectionCount++;
-	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connectionId });
-	sendBlockDataUpdate();
-}
-
-void BlockData::setConnectionBidirectional(Vector positionOnBlock, connection_end_id_t connectionId) noexcept {
-	dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, ConnectionData::PortType>>("preBlockDataSetConnection", { blockType, connectionId, ConnectionData::PortType::BIDIRECTIONAL });
-	connections.insert_or_assign(connectionId, ConnectionData(positionOnBlock, ConnectionData::PortType::BIDIRECTIONAL));
-	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connectionId });
-	sendBlockDataUpdate();
-}
-
-void BlockData::setConnectionIdName(connection_end_id_t connectionId, const std::string& name) {
-	connectionIdNames.set(connectionId, name);
-	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>(
-		"blockDataConnectionNameSet",
-		std::pair<BlockType, connection_end_id_t>({ blockType, connectionId })
-	);
-}
-
-std::optional<std::string> BlockData::getConnectionIdToName(connection_end_id_t connectionId) const {
-	if (defaultData) return connectionId == connection_end_id_t(1) ? "Out" : "In";
-	const std::string* str = connectionIdNames.get(connectionId);
-	if (str) return *str;
-	return std::nullopt;
-}
-
-// connection_end_id_t BlockData::getConnectionNameToId(const std::string& connectionName) const {
-// 	connection_end_id_t connectionId = connectionIdNames.get(connectionName);
-// }
-
-void BlockData::setConnectionPortOffset(connection_end_id_t connectionId, FVector offset) {
-	if (!FSize(1).containsVector(offset)) {
-		logError("Can't set connection port offset to vector {} that makes it leave its cell", "BlockData", offset);
-		return;
-	}
-	auto iter = connections.find(connectionId);
-	if (iter == connections.end()) return;
-	iter->second.portOffset = offset;
-	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>(
-		"blockDataSetConnection",
-		{ blockType, connectionId }
-	);
-}
-
-void BlockData::setConnectionBitConfiguration(connection_end_id_t connectionId, std::variant<unsigned int, std::vector<unsigned int>> bitConfiguration) noexcept {
-	if (std::holds_alternative<std::vector<unsigned int>>(bitConfiguration) && std::get<std::vector<unsigned int>>(bitConfiguration).empty()) {
-		logError("Cant set the bit configuration of a connection to be empty", "BlockData");
-	} else if (std::holds_alternative<unsigned int>(bitConfiguration) && std::get<unsigned int>(bitConfiguration) == 0) {
-		logError("Cant set the bit configuration of a connection to be 0", "BlockData");
-	}
-	auto iter = connections.find(connectionId);
-	if (iter == connections.end()) return;
-	dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, unsigned int>>(
-		"preBlockDataPortBitConfigurationSet",
-		{
-			blockType,
-			connectionId,
-			std::holds_alternative<unsigned int>(bitConfiguration) ? std::get<unsigned int>(bitConfiguration) : std::get<std::vector<unsigned int>>(bitConfiguration).size() // get bitwidth
-		}
-	);
-	iter->second.bitConfiguration = bitConfiguration;
-	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>(
-		"blockDataPortBitConfigurationSet",
-		{ blockType, connectionId }
-	);
-}
-
-nlohmann::json BlockData::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
-	nlohmann::json blockJson;
-	blockJson["blockType"] = blocktype_to_string(blockType);
-	blockJson["defaultData"] = defaultData;
-	blockJson["primitive"] = primitive;
-	blockJson["placeable"] = placeable;
-	blockJson["bus"] = bus;
-	blockJson["name"] = name;
-	blockJson["path"] = path;
-	// blockJson["texturePath"] = texturePath; // disabled for privacy
-	blockJson["usesTileMapTexture"] = usesTileMapTexture;
-	blockJson["textureTileSize"] = textureTileSize.toString();
-	blockJson["textureSmallestCordTile"] = textureSmallestCordTile.toString();
-	blockJson["textureBlockTileSize"] = textureBlockTileSize.toString();
-	blockJson["textureBlockStateOffset"] = textureBlockStateOffset.toString();
-	blockJson["blockSize"] = blockSize.toString();
-	blockJson["inputConnectionCount"] = inputConnectionCount;
-	blockJson["outputConnectionCount"] = outputConnectionCount;
-	blockJson["connections"] = nlohmann::json::object();
-	for (auto& pair : connections) {
-		blockJson["connections"][std::to_string(pair.first.get())] = pair.second.dumpState();
-	}
-	blockJson["connectionIdNames"] = nlohmann::json::object();
-	for (auto& pair : connectionIdNames.getT2Map()) {
-		blockJson["connectionIdNames"][std::to_string(pair.first.get())] = pair.second;
-	}
-	return blockJson;
-}
-
-nlohmann::json BlockData::ConnectionData::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
-	nlohmann::json connectionJson;
-	connectionJson["positionOnBlock"] = positionOnBlock.toString();
-	switch (portType) {
-		case PortType::INPUT:
-			connectionJson["portType"] = "INPUT";
-			break;
-		case PortType::OUTPUT:
-			connectionJson["portType"] = "OUTPUT";
-			break;
-		case PortType::BIDIRECTIONAL:
-			connectionJson["portType"] = "BIDIRECTIONAL";
-			break;
-		case PortType::NONE:
-			connectionJson["portType"] = "NONE";
-			break;
-		default:
-			connectionJson["portType"] = "UNKNOWN";
-			break;
-	}
-	connectionJson["portOffset"] = portOffset.toString();
-	if (std::holds_alternative<unsigned int>(bitConfiguration)) {
-		connectionJson["bitConfiguration"] = std::get<unsigned int>(bitConfiguration);
-	} else {
-		connectionJson["bitConfiguration"] = std::get<std::vector<unsigned int>>(bitConfiguration);
-	}
-	return connectionJson;
 }

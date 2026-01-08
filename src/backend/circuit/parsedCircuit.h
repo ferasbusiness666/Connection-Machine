@@ -64,7 +64,7 @@ public:
 		FVector portOffset = FVector(0.5f, 0.5f);
 		block_id_t internalBlockId = 0;
 		std::optional<Position> positionOfBlock = std::nullopt;
-		connection_end_id_t internalBlockConnectionEndId = connection_end_id_t(0);
+		connection_end_id_t internalBlockConnectionEndId = 0;
 		std::string portName = "";
 		unsigned int bitWidth = 1;
 	};

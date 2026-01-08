@@ -144,13 +144,13 @@ WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, Circu
 
 	tryLinkWasmFunc("createConnection",
 		[thisPtrPtr](int32_t outputBlockId, int32_t outputPortId, int32_t inputBlockId, int32_t inputPortId) {
-			(*thisPtrPtr)->generatedCircuit->addConnection(outputBlockId, connection_end_id_t(outputPortId), inputBlockId, connection_end_id_t(inputPortId));
+			(*thisPtrPtr)->generatedCircuit->addConnection(outputBlockId, outputPortId, inputBlockId, inputPortId);
 		}
 	);
 
 	tryLinkWasmFunc("addConnectionInput",
 		[thisPtrPtr](int32_t portX, int32_t portY, int32_t internalBlockId, int32_t internalBlockPortId) -> int32_t {
-			(*thisPtrPtr)->generatedCircuit->addConnectionPort(true, connection_end_id_t((*thisPtrPtr)->portId), Vector(portX, portY), internalBlockId, connection_end_id_t(internalBlockPortId), "Port" + std::to_string((*thisPtrPtr)->portId));
+			(*thisPtrPtr)->generatedCircuit->addConnectionPort(true, (*thisPtrPtr)->portId, Vector(portX, portY), internalBlockId, internalBlockPortId, "Port" + std::to_string((*thisPtrPtr)->portId));
 			return ((*thisPtrPtr)->portId)++;
 		}
 	);
@@ -158,14 +158,14 @@ WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, Circu
 	tryLinkWasmFunc("addConnectionInputNamed",
 		[thisPtrPtr](int32_t portX, int32_t portY, int32_t internalBlockId, int32_t internalBlockPortId, int32_t portNameStrOffset) -> int32_t {
 			std::string portName = (*thisPtrPtr)->wasmToString(portNameStrOffset);
-			(*thisPtrPtr)->generatedCircuit->addConnectionPort(true, connection_end_id_t((*thisPtrPtr)->portId), Vector(portX, portY), internalBlockId, connection_end_id_t(internalBlockPortId), portName);
+			(*thisPtrPtr)->generatedCircuit->addConnectionPort(true, (*thisPtrPtr)->portId, Vector(portX, portY), internalBlockId, internalBlockPortId, portName);
 			return ((*thisPtrPtr)->portId)++;
 		}
 	);
 
 	tryLinkWasmFunc("addConnectionOutput",
 		[thisPtrPtr](int32_t portX, int32_t portY, int32_t internalBlockId, int32_t internalBlockPortId) -> int32_t {
-			(*thisPtrPtr)->generatedCircuit->addConnectionPort(false, connection_end_id_t((*thisPtrPtr)->portId), Vector(portX, portY), internalBlockId, connection_end_id_t(internalBlockPortId), "Port" + std::to_string((*thisPtrPtr)->portId));
+			(*thisPtrPtr)->generatedCircuit->addConnectionPort(false, (*thisPtrPtr)->portId, Vector(portX, portY), internalBlockId, internalBlockPortId, "Port" + std::to_string((*thisPtrPtr)->portId));
 			return ((*thisPtrPtr)->portId)++;
 		}
 	);
@@ -173,20 +173,20 @@ WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, Circu
 	tryLinkWasmFunc("addConnectionOutputNamed",
 		[thisPtrPtr](int32_t portX, int32_t portY, int32_t internalBlockId, int32_t internalBlockPortId, int32_t portNameStrOffset) -> int32_t {
 			std::string portName = (*thisPtrPtr)->wasmToString(portNameStrOffset);
-			(*thisPtrPtr)->generatedCircuit->addConnectionPort(false, connection_end_id_t((*thisPtrPtr)->portId), Vector(portX, portY), internalBlockId, connection_end_id_t(internalBlockPortId), portName);
+			(*thisPtrPtr)->generatedCircuit->addConnectionPort(false, (*thisPtrPtr)->portId, Vector(portX, portY), internalBlockId, internalBlockPortId, portName);
 			return ((*thisPtrPtr)->portId)++;
 		}
 	);
 
 	tryLinkWasmFunc("setConnectionPortBitWidth",
 		[thisPtrPtr](int32_t portId, int32_t bitWidth) {
-			(*thisPtrPtr)->generatedCircuit->setConnectionPortBitWidth(connection_end_id_t(portId), static_cast<unsigned int>(bitWidth));
+			(*thisPtrPtr)->generatedCircuit->setConnectionPortBitWidth(portId, static_cast<unsigned int>(bitWidth));
 		}
 	);
 
 	tryLinkWasmFunc("setConnectionPortOffset",
 		[thisPtrPtr](int32_t portId, float32_t xOffset, float32_t yOffset) {
-			(*thisPtrPtr)->generatedCircuit->setConnectionPortOffset(connection_end_id_t(portId), FVector(xOffset, yOffset));
+			(*thisPtrPtr)->generatedCircuit->setConnectionPortOffset(portId, FVector(xOffset, yOffset));
 		}
 	);
 

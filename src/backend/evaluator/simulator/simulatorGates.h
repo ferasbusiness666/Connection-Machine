@@ -382,7 +382,7 @@ struct TristateBufferGate : public SimulatorGate {
 		: SimulatorGate(id), enableInverted(enableInverted) {}
 
 	void addInput(simulator_id_t inputId, connection_end_id_t portId) override {
-		if (portId == connection_end_id_t(0)) {
+		if (portId == 0) {
 			dataInput = inputId;
 		} else {
 			enableInput = inputId;
@@ -390,7 +390,7 @@ struct TristateBufferGate : public SimulatorGate {
 	}
 
 	void removeInput(simulator_id_t inputId, connection_end_id_t portId) override {
-		if (portId == connection_end_id_t(0)) {
+		if (portId == 0) {
 			dataInput = simulator_id_t(0);
 		} else {
 			enableInput = simulator_id_t(0);
@@ -550,8 +550,8 @@ struct CopySelfOutputGate : public LogicGate {
 struct PortsToIntGate : public SimulatorGate {
 	IdVector<connection_end_id_t, simulator_id_t> inputPorts;
 
-	PortsToIntGate(simulator_id_t id, int numInputs) : SimulatorGate(id) {
-		inputPorts.resize(connection_end_id_t(numInputs), simulator_id_t(0));
+	PortsToIntGate(simulator_id_t id, unsigned int numInputs) : SimulatorGate(id) {
+		inputPorts.resize(numInputs, simulator_id_t(0));
 	}
 
 	void addInput(simulator_id_t inputId, connection_end_id_t portId) override {

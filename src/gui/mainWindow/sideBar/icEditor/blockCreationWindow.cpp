@@ -246,7 +246,7 @@ void BlockCreationWindow::updateFromMenu() {
 			Rml::Element* row = inputList->GetChild(i);
 			const std::string& rowId = row->GetId();
 			// get connection end id
-			connection_end_id_t endId = connection_end_id_t(std::stoi(rowId.substr(23, rowId.size() - 23)));
+			connection_end_id_t endId = std::stoi(rowId.substr(23, rowId.size() - 23));
 			// get port name
 			Rml::ElementList elements;
 			row->GetElementsByClassName(elements, "connection-list-item-name");
@@ -289,7 +289,7 @@ void BlockCreationWindow::updateFromMenu() {
 			Rml::Element* row = outputList->GetChild(i);
 			const std::string& rowId = row->GetId();
 			// get connection end id
-			connection_end_id_t endId = connection_end_id_t(std::stoi(rowId.substr(23, rowId.size() - 23)));
+			connection_end_id_t endId = std::stoi(rowId.substr(23, rowId.size() - 23));
 			// get port name
 			Rml::ElementList elements;
 			row->GetElementsByClassName(elements, "connection-list-item-name");
@@ -511,7 +511,7 @@ void BlockCreationWindow::addListItem(
 
 	if (findUnusedEndId) {
 		while (true) {
-			while (blockData->connectionExists(connection_end_id_t(endId))) ++endId;
+			while (blockData->connectionExists(endId)) ++endId;
 			if (inputList->GetElementById("ConnectionListItem Id: " + std::to_string(endId)) == nullptr &&
 				outputList->GetElementById("ConnectionListItem Id: " + std::to_string(endId)) == nullptr)
 				break;
@@ -613,7 +613,7 @@ void BlockCreationWindow::addListItem(
 			mainWindow.getActiveCircuitViewWidget()->getCircuitView()->getToolManager().selectTool(std::make_shared<PortSelector>(environment))
 		);
 		if (tool) {
-			tool->setPort(connection_end_id_t(endId), [this, endId](Position position) {
+			tool->setPort(endId, [this, endId](Position position) {
 				Rml::Element* row = document->GetElementById("ConnectionListItem Id: " + std::to_string(endId));
 				if (row == nullptr) return;
 				Rml::ElementList elements;
