@@ -76,8 +76,9 @@ void EvalLogicSimulator::makeEdit() {
 					continue;
 				}
 				Position portPos = iter->second.first + iter->second.second.transformVectorWithArea(pair.second.positionOnBlock, blockData->getSize());
-				logInfo("mapping update {}, {}", "", portPos, mappingPair.second);
+				// logInfo("mapping update {}, {}", "", portPos, mappingPair.second);
 				simulatorMappingUpdates.emplace_back(portPos, mappingPair.second);
+				simulatorMappingUpdates.emplace_back(portPos, 1, mappingPair.second);
 			}
 		}
 	}

@@ -207,8 +207,8 @@ void MainRenderer::setBlockPortName(BlockRenderDataId blockRenderDataId, BlockPo
 	blockRenderDataManager.setBlockPortName(blockRenderDataId, blockPortRenderDataId, newPortName);
 }
 
-void MainRenderer::setBlockStatePortPosition(BlockRenderDataId blockRenderDataId, Vector blockStatePortPosition) {
-	blockRenderDataManager.setBlockStatePortPosition(blockRenderDataId, blockStatePortPosition);
+void MainRenderer::setTextureVirtualConnection(BlockRenderDataId blockRenderDataId, std::optional<virtual_connection_id_t> textureVirtualConnection) {
+	blockRenderDataManager.setTextureVirtualConnection(blockRenderDataId, textureVirtualConnection);
 }
 
 void MainRenderer::regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDataId) {

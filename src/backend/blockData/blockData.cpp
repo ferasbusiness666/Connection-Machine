@@ -252,6 +252,20 @@ void BlockData::setTexturePath(const std::string& texturePath) noexcept {
 	sendBlockDataUpdate();
 }
 
+void BlockData::setTextureVirtualConnection(std::optional<virtual_connection_id_t> textureVirtualConnection) noexcept {
+	if (this->textureVirtualConnection == textureVirtualConnection) return;
+	this->textureVirtualConnection = textureVirtualConnection;
+	dataUpdateEventManager.sendEvent<std::pair<BlockType, std::optional<virtual_connection_id_t>>>("blockDataTextureVirtualConnectionChange", { blockType, textureVirtualConnection });
+	sendBlockDataUpdate();
+}
+
+void BlockData::setUsesTileMapTexture(bool usesTileMapTexture) noexcept {
+	if (this->usesTileMapTexture == usesTileMapTexture) return;
+	this->usesTileMapTexture = usesTileMapTexture;
+	dataUpdateEventManager.sendEvent<std::pair<BlockType, bool>>("blockDataUsesTileMapTextureChange", { blockType, usesTileMapTexture });
+	sendBlockDataUpdate();
+}
+
 void BlockData::setTextureTileSize(Vec2Int tileSize) noexcept {
 	if (this->textureTileSize == tileSize) return;
 	this->textureTileSize = tileSize;
@@ -277,12 +291,5 @@ void BlockData::setTextureBlockStateOffset(Vec2Int textureBlockStateOffset) noex
 	if (this->textureBlockStateOffset == textureBlockStateOffset) return;
 	this->textureBlockStateOffset = textureBlockStateOffset;
 	dataUpdateEventManager.sendEvent<std::pair<BlockType, Vec2Int>>("blockDataTextureBlockStateOffsetChange", { blockType, textureBlockStateOffset });
-	sendBlockDataUpdate();
-}
-
-void BlockData::setUsesTileMapTexture(bool usesTileMapTexture) noexcept {
-	if (this->usesTileMapTexture == usesTileMapTexture) return;
-	this->usesTileMapTexture = usesTileMapTexture;
-	dataUpdateEventManager.sendEvent<std::pair<BlockType, bool>>("blockDataUsesTileMapTextureChange", { blockType, usesTileMapTexture });
 	sendBlockDataUpdate();
 }

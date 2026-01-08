@@ -1,9 +1,7 @@
 #ifndef evalDefs_h
 #define evalDefs_h
 
-#include "backend/container/block/connectionEnd.h"
-#include "backend/position/position.h"
-#include "util/id.h"
+#include "backend/blockData/blockData.h"
 
 DECLARE_ID_TYPE(evaluator_id_t, unsigned int);
 DECLARE_ID_TYPE(eval_circuit_id_t, unsigned int);
@@ -16,7 +14,11 @@ inline EvalGateType getEvalGateType(BlockType blockType) { return (EvalGateType)
 inline BlockType getBlockType(EvalGateType evalGateType) { return (BlockType)evalGateType; }
 
 struct SimulatorMappingUpdate {
-	Position portPosition;
+	SimulatorMappingUpdate(Position position, const std::variant<simulator_id_t, std::vector<simulator_id_t>>& simulatorIds) : position(position), simulatorIds(simulatorIds) {}
+	SimulatorMappingUpdate(Position position, std::optional<virtual_connection_id_t> virtualConnectionId, const std::variant<simulator_id_t, std::vector<simulator_id_t>>& simulatorIds) :
+		position(position), virtualConnectionId(virtualConnectionId), simulatorIds(simulatorIds) {}
+	Position position;
+	std::optional<virtual_connection_id_t> virtualConnectionId = std::nullopt;
 	std::variant<simulator_id_t, std::vector<simulator_id_t>> simulatorIds;
 };
 

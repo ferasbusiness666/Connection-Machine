@@ -31,6 +31,7 @@ private:
 	void blockDataRemoveConnectionUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void blockDataConnectionNameSetUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void blockDataTextureChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
+	void blockDataTextureVirtualConnectionUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void blockDataUsesTileMapTextureChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void blockDataTextureTileChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
 	void updateImageIfNotSpecified(const DataUpdateEventManager::EventData* dataEvent);

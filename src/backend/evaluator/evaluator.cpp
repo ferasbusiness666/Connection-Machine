@@ -105,14 +105,9 @@ void Evaluator::setState(const Address& address, logic_state_t state) {
 	evalLogicSimulator.setState(iter2->second, state);
 }
 
-// simulator_id_t Evaluator::getBlockSimulatorId(const Address& address) const {
-// 	auto iter2 = evalLogicSimulator.getGateIdMapping().find(evaluatorInternal->mapFromAddressToBottomConnectionPoint(address).gateId);
-// 	if (iter2 == evalLogicSimulator.getGateIdMapping().end()) {
-// 		logError("Evaluator::getBlockSimulatorId(const Address& address) failed. Failed to get sim id");
-// 		return 0;
-// 	}
-// 	return iter2->second;
-// }
+std::variant<simulator_id_t, std::vector<simulator_id_t>> Evaluator::getVirtualConnectionSimulatorId(const Address& address, virtual_connection_id_t virtualConnectionId) const {
+	return getPinSimulatorId(address);
+}
 
 std::variant<simulator_id_t, std::vector<simulator_id_t>> Evaluator::getPinSimulatorId(const Address& address) const {
 	auto iter2 = evalLogicSimulator.getGateIdMapping().find(evaluatorInternal->mapFromAddressToBottomConnectionPoint(address).gateId);
@@ -123,19 +118,15 @@ std::variant<simulator_id_t, std::vector<simulator_id_t>> Evaluator::getPinSimul
 	return iter2->second;
 }
 
-// std::vector<simulator_id_t> Evaluator::getBlockSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const {
-// 	if (addressOrigin.size() != 0) {
-// 		logError("Evaluator::getBlockSimulatorId(const Address& address) failed. Eval not working with ICs!");
-// 		return { };
-// 	}
-// 	std::vector<simulator_id_t> simIds;
-// 	for (auto pos : positions) {
-// 		Address address(addressOrigin);
-// 		address.nestPosition(pos);
-// 		simIds.push_back(getBlockSimulatorId(address));
-// 	}
-// 	return simIds;
-// }
+std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> Evaluator::getVirtualConnectionSimulatorIds(const Address& addressOrigin, const std::vector<std::pair<Position, virtual_connection_id_t>>& virtualConnections) const {
+	std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> output;
+	for (std::pair<Position, virtual_connection_id_t> virtualConnection : virtualConnections) {
+		Address address = addressOrigin;
+		address.addBlockId(virtualConnection.first);
+		output.push_back(getPinSimulatorId(address));
+	}
+	return output;
+}
 
 std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> Evaluator::getPinSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const {
 	std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> output;

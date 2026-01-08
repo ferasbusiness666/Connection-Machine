@@ -1,6 +1,7 @@
 #ifndef evaluator_h
 #define evaluator_h
 
+#include "backend/blockData/blockData.h"
 #include "util/evalConfig.h"
 #include "simulator/logicState.h"
 #include "backend/address.h"
@@ -68,10 +69,10 @@ public:
 	// const EvalAddressTree buildAddressTree() const;
 	// const EvalAddressTree buildAddressTree(eval_circuit_id_t evalCircuitId) const;
 
-	// simulator_id_t getBlockSimulatorId(const Address& address) const;
+	std::variant<simulator_id_t, std::vector<simulator_id_t>> getVirtualConnectionSimulatorId(const Address& address, virtual_connection_id_t virtualConnectionId) const;
 	std::variant<simulator_id_t, std::vector<simulator_id_t>> getPinSimulatorId(const Address& address) const;
 
-	// std::vector<simulator_id_t> getBlockSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const;
+	std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getVirtualConnectionSimulatorIds(const Address& addressOrigin, const std::vector<std::pair<Position, virtual_connection_id_t>>& virtualConnections) const;
 	std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getPinSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const;
 
 	logic_state_t getStateFromSimulatorId(simulator_id_t simulatorId) const { return evalLogicSimulator.getState(simulatorId); }
