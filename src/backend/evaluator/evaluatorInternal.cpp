@@ -122,7 +122,12 @@ EvalConnectionPoint EvaluatorInternal::mapFromAddressToTopConnectionPoint(const 
 	if (block == nullptr) return EvalConnectionPoint::null();
 	auto iter = positionRemapping.find(block->getPosition());
 	if (iter == positionRemapping.end()) return EvalConnectionPoint::null();
-	if (block->type() == BlockType::LIGHT) return EvalConnectionPoint(iter->second.first, 0);
+	// hardcode some of the v port connections for primitive blocks
+	if (block->type() == BlockType::LIGHT || block->type() == BlockType::JUNCTION_H || block->type() == BlockType::JUNCTION_L || block->type() == BlockType::JUNCTION_X) {
+		return EvalConnectionPoint(iter->second.first, 0);
+	}
+	if (block->type() == BlockType::TRISTATE_BUFFER) return EvalConnectionPoint(iter->second.first, 2);
+	// other blocks are 1x1 and have a output so you just need to get what connection end id is the output
 	std::optional<connection_end_id_t> connectionEndId = block->getOutputOrBidirectionalConnectionId(address.getPosition(0));
 	if (!connectionEndId) return  EvalConnectionPoint::null();
 	return EvalConnectionPoint(iter->second.first, connectionEndId.value());
