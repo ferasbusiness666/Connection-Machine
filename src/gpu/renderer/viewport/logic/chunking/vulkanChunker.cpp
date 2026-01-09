@@ -61,7 +61,7 @@ VulkanLogicAllocation::VulkanLogicAllocation(
 	// TODO - should pre-allocate buffers with size and pool them
 	// TODO - maybe should use smaller size coordinates with one big offset
 
-	simulatorIds = { 0 }; // set first state index to 0 for blocks that dont have any state
+	// simulatorIds = { 0 }; // set first state index to 0 for blocks that dont have any state
 
 	// Generate block instances
 	if (blocks.size() > 0) {
@@ -84,13 +84,17 @@ VulkanLogicAllocation::VulkanLogicAllocation(
 
 			blockInstances.push_back(instance);
 
-			// blocks are added to state array
-			std::optional<virtual_connection_id_t> textureVirtualConnection = MainRenderer::get().getBlockRenderDataManager().getBlockRenderData(block.second.blockRenderDataId)->textureVirtualConnection;
-			if (textureVirtualConnection) {
-				blockStateIndex[block.first] = simulatorIds.size();
-				virtualConnections.push_back({block.first, textureVirtualConnection.value()});
-				indices.push_back(simulatorIds.size());
-				simulatorIds.push_back(simulator_id_t(0));
+			if (evaluator) {
+				// blocks are added to state array
+				std::optional<virtual_connection_id_t> textureVirtualConnection = MainRenderer::get().getBlockRenderDataManager().getBlockRenderData(block.second.blockRenderDataId)->textureVirtualConnection;
+				if (textureVirtualConnection) {
+					blockStateIndex[block.first] = simulatorIds.size();
+					virtualConnections.push_back({block.first, textureVirtualConnection.value()});
+					indices.push_back(simulatorIds.size());
+					simulatorIds.push_back(simulator_id_t(0));
+				} else {
+					blockStateIndex[block.first] = 0;
+				}
 			} else {
 				blockStateIndex[block.first] = 0;
 			}
@@ -478,7 +482,7 @@ void VulkanChunker::updateSimulatorIds(const std::vector<SimulatorMappingUpdate>
 				if (!vulkanLogicAllocation) continue;
 				auto blockIter = logicGroup->getRenderedBlocks().find(simulatorMappingUpdate.position);
 				if (blockIter == logicGroup->getRenderedBlocks().end()) {
-					logError("Could not find block pos {} in renderedBlocks.", "VulkanChunker::updateSimulatorIds", simulatorMappingUpdate.position);
+					// logError("Could not find block pos {} in renderedBlocks.", "VulkanChunker::updateSimulatorIds", simulatorMappingUpdate.position);
 					continue;
 				}
 				if (simulatorMappingUpdate.virtualConnectionId == MainRenderer::get().getBlockRenderDataManager().getBlockRenderData(blockIter->second.blockRenderDataId)->textureVirtualConnection) {

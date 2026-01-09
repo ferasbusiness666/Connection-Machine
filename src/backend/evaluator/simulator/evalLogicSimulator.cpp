@@ -61,11 +61,24 @@ void EvalLogicSimulator::makeEdit() {
 		const EvalGate* evalGate = evalLayerState.getGate(mappingPair.first);
 		const BlockData* blockData = blockDataManager.getBlockData(getBlockType(evalGate->type));
 		for (auto pair : blockData->getConnectionsSafe()) {
-			if (pair.second.portType == BlockData::ConnectionData::PortType::BIDIRECTIONAL) continue;
+			if (pair.second.portType == BlockData::ConnectionData::PortType::INPUT) continue;
 			std::optional<simulator_id_t> stateIndex = logicSimulator.getOutputPortId(mappingPair.second, pair.first);
 			if (!stateIndex) {
 				logError("std::optional<simulator_id_t> stateIndex = logicSimulator.getOutputPortId(mappingPair.second, pair.first); Failed", "EvalLogicSimulator::makeEdit");
 				continue;
+			}
+			simulator_id_t pinSimId = mappingPair.second;
+			auto connectionsIter = evalGate->connections.find(pair.first);
+			if (connectionsIter != evalGate->connections.end() && connectionsIter->second.size() == 1) {
+				const EvalGate* otherEvalGate = evalLayerState.getGate(connectionsIter->second.begin()->gateId);
+				if (
+					otherEvalGate->type == getEvalGateType(BlockType::JUNCTION) ||
+					otherEvalGate->type == getEvalGateType(BlockType::JUNCTION_H) ||
+					otherEvalGate->type == getEvalGateType(BlockType::JUNCTION_L) ||
+					otherEvalGate->type == getEvalGateType(BlockType::JUNCTION_X)
+				) {
+					pinSimId = gateIdMapping.at(otherEvalGate->gateId);
+				}
 			}
 			std::vector<EvalConnectionPoint> evalConnectionPoints = evaluatorInternal.getLayerRunner().getReversedMappedEvalConnectionPoint(EvalConnectionPoint(evalGate->gateId, pair.first));
 			for (EvalConnectionPoint evalConnectionPoint : evalConnectionPoints) {
@@ -76,9 +89,9 @@ void EvalLogicSimulator::makeEdit() {
 					continue;
 				}
 				Position portPos = iter->second.first + iter->second.second.transformVectorWithArea(pair.second.positionOnBlock, blockData->getSize());
-				// logInfo("mapping update {}, {}", "", portPos, mappingPair.second);
-				simulatorMappingUpdates.emplace_back(portPos, mappingPair.second);
-				simulatorMappingUpdates.emplace_back(portPos, 1, mappingPair.second);
+				logInfo("mapping update {}, {}", "", portPos, mappingPair.second);
+				simulatorMappingUpdates.emplace_back(portPos, pinSimId);
+				simulatorMappingUpdates.emplace_back(iter->second.first, 0, stateIndex.value());
 			}
 		}
 	}

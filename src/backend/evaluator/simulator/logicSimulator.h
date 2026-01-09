@@ -73,8 +73,6 @@ public:
 	void removeConnection(simulator_id_t sourceId, connection_end_id_t sourcePort, simulator_id_t destinationId, connection_end_id_t destinationPort);
 	void endEdit();
 
-	const std::vector<simulator_id_t> getOutputs(simulator_id_t simId);
-
 	bool stepBack();
 	bool stepForward();
 	bool skipBack();
