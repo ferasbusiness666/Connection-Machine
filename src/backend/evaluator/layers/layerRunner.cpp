@@ -16,7 +16,7 @@ LayerRunner::~LayerRunner() = default;
 void LayerRunner::runAll() {
 	EvalLayerState* last = evalTopLayerState.get();
 	for (unsigned int i = 0; i < layers.size(); i++) {
-		EvalLayerState& next = last->getNextLayerState();
+		EvalLayerState& next = last->getOrMakeNextLayerState();
 		next.resetEdits();
 		layers[i]->run(*last, next);
 		last = &next;
@@ -41,37 +41,46 @@ const EvalLayerState& LayerRunner::getOutputLayer() const {
 }
 
 EvalConnectionPoint LayerRunner::getMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint) const {
-	// const EvalLayerState* layerState = evalTopLayerState.get();
-	// for (unsigned int i = 0; i < layers.size() + 1; i++) {
-	// 	auto iter = layerState->getConnectionPointRemapping().find(evalConnectionPoint);
-	// 	if (iter == layerState->getConnectionPointRemapping().end()) {
-	// 		logError("layerState->getConnectionPointRemapping().find(evalConnectionPoint) failed.", "LayerRunner::getMappedEvalConnectionPoint");
-	// 		return EvalConnectionPoint(0, 0);
-	// 	}
-	// 	evalConnectionPoint = iter->second;
-	// 	if (i == layers.size()) break;
-	// 	layerState = layerState->getNextLayerState();
-	// 	assert(layerState);
-	// }
+	const EvalLayerState* layerState = evalTopLayerState.get()->getNextLayerState();
+	for (unsigned int i = 1; true; i++) {
+		auto connectionPointIter = layerState->getConnectionPointRemapping().find(evalConnectionPoint);
+		if (connectionPointIter == layerState->getConnectionPointRemapping().end()) {
+			auto evalGateIdIter = layerState->getEvalGateIdRemapping().find(evalConnectionPoint.gateId);
+			if (evalGateIdIter == layerState->getEvalGateIdRemapping().end()) {
+				logError("Could not find mapping for evalConnectionPoint.", "LayerRunner::getMappedEvalConnectionPoint");
+				return EvalConnectionPoint(0, 0);
+			}
+			evalConnectionPoint.gateId = evalGateIdIter->second;
+		} else {
+			evalConnectionPoint = connectionPointIter->second;
+		}
+		if (i == layers.size()) break;
+		layerState = layerState->getNextLayerState();
+		assert(layerState);
+	}
 	return evalConnectionPoint;
 }
 
 std::vector<EvalConnectionPoint> LayerRunner::getReversedMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint) const {
 	std::vector<EvalConnectionPoint> evalConnectionPoints = { evalConnectionPoint };
-	// std::vector<EvalConnectionPoint> lastEvalConnectionPoints;
-	// const EvalLayerState* layerState = &getOutputLayer();
-	// for (unsigned int i = 0; i < layers.size() + 1; i++) {
-	// 	lastEvalConnectionPoints = std::move(evalConnectionPoints);
-	// 	evalConnectionPoints.clear();
-	// 	for (EvalConnectionPoint point : lastEvalConnectionPoints) {
-	// 		auto iterPair = layerState->getConnectionPointReverseRemapping().equal_range(point);
-	// 		for (auto iter = iterPair.first; iter != iterPair.second; iter++) {
-	// 			evalConnectionPoints.push_back(iter->second);
-	// 		}
-	// 	}
-	// 	if (i == layers.size()) break;
-	// 	layerState = layerState->getNextLayerState();
-	// 	assert(layerState);
-	// }
+	std::vector<EvalConnectionPoint> lastEvalConnectionPoints;
+	const EvalLayerState* layerState = &getOutputLayer();
+	for (unsigned int i = 1; true; i++) {
+		lastEvalConnectionPoints = std::move(evalConnectionPoints);
+		evalConnectionPoints.clear();
+		for (EvalConnectionPoint point : lastEvalConnectionPoints) {
+			auto connectionPointIterPair = layerState->getConnectionPointReverseRemapping().equal_range(point);
+			for (auto iter = connectionPointIterPair.first; iter != connectionPointIterPair.second; iter++) {
+				evalConnectionPoints.push_back(iter->second);
+			}
+			auto evalGateIdIterPair = layerState->getEvalGateIdReverseRemapping().equal_range(point.gateId);
+			for (auto iter = evalGateIdIterPair.first; iter != evalGateIdIterPair.second; iter++) {
+				evalConnectionPoints.emplace_back(iter->second, evalConnectionPoint.connectionEndId);
+			}
+		}
+		if (i == layers.size()) break;
+		layerState = layerState->getLastLayerState();
+		assert(layerState);
+	}
 	return evalConnectionPoints;
 }

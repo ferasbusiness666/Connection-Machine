@@ -19,7 +19,6 @@ class EvalLayerState {
 public:
 	EvalLayerState(const BlockDataManager& blockDataManager) : blockDataManager(blockDataManager) {}
 
-	// will also update connection points accordingly
 	void passAddGate(eval_gate_id gateId) {
 		assert(lastLayerState);
 		const EvalGate* evalGate = lastLayerState->getGate(gateId);
@@ -29,6 +28,8 @@ public:
 			connectionPointRemapping.emplace(EvalConnectionPoint(gateId, iter.first), EvalConnectionPoint(gateId, iter.first));
 			connectionPointReverseRemapping.emplace(EvalConnectionPoint(gateId, iter.first), EvalConnectionPoint(gateId, iter.first));
 		}
+		evalGateIdRemapping.emplace(gateId, gateId);
+		evalGateIdReverseRemapping.emplace(gateId, gateId);
 		addGate(gateId, evalGate->type);
 	}
 	void passRemoveGate(eval_gate_id gateId) {
@@ -40,6 +41,14 @@ public:
 			connectionPointRemapping.erase(EvalConnectionPoint(gateId, iter.first));
 			connectionPointReverseRemapping.erase(EvalConnectionPoint(gateId, iter.first));
 		}
+		evalGateIdRemapping.erase(gateId);
+		auto iterPair = evalGateIdReverseRemapping.equal_range(gateId);
+		for (auto iter = iterPair.first; iter != iterPair.second; iter++) {
+			if (iter->second == gateId) {
+				evalGateIdRemapping.erase(iter);
+				break;
+			}
+		}
 		removeGate(gateId);
 	}
 	void passAddConnection(const EvalConnection& evalConnection) {
@@ -49,6 +58,7 @@ public:
 	void passRemoveConnection(const EvalConnection& evalConnection) {
 		assert(lastLayerState);
 		removeConnection(evalConnection);
+
 	}
 	void addGate(eval_gate_id gateId, EvalGateType type) { // TODO: add transparent junction merging
 		bool suc = gates.try_emplace(gateId, type, gateId).second;
@@ -124,16 +134,24 @@ public:
 		removedConnections.clear();
 	}
 
-	EvalLayerState& getNextLayerState() {
+	EvalLayerState& getOrMakeNextLayerState() {
 		if (!nextLayerState) {
 			nextLayerState = std::make_unique<EvalLayerState>(blockDataManager);
 			nextLayerState->setLastLayer(this);
 		}
 		return *nextLayerState;
 	}
+	EvalLayerState* getNextLayerState() {
+		return nextLayerState.get();
+	}
 	const EvalLayerState* getNextLayerState() const {
 		return nextLayerState.get();
 	}
+	const EvalLayerState* getLastLayerState() const {
+		return lastLayerState;
+	}
+	const std::unordered_map<eval_gate_id, eval_gate_id>& getEvalGateIdRemapping() const { return evalGateIdRemapping; }
+	const std::unordered_multimap<eval_gate_id, eval_gate_id>& getEvalGateIdReverseRemapping() const { return evalGateIdReverseRemapping; }
 	const std::unordered_map<EvalConnectionPoint, EvalConnectionPoint>& getConnectionPointRemapping() const { return connectionPointRemapping; }
 	const std::unordered_multimap<EvalConnectionPoint, EvalConnectionPoint>& getConnectionPointReverseRemapping() const { return connectionPointReverseRemapping; }
 
@@ -146,6 +164,10 @@ private:
 	const BlockDataManager& blockDataManager;
 
 	std::unordered_map<eval_gate_id, EvalGate> gates;
+
+	// all remappings will be eval_gate_id or EvalConnectionPoint
+	std::unordered_map<eval_gate_id, eval_gate_id> evalGateIdRemapping;
+	std::unordered_multimap<eval_gate_id, eval_gate_id> evalGateIdReverseRemapping;
 	std::unordered_map<EvalConnectionPoint, EvalConnectionPoint> connectionPointRemapping;
 	std::unordered_multimap<EvalConnectionPoint, EvalConnectionPoint> connectionPointReverseRemapping;
 
