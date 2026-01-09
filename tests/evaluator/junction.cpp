@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include "environment/environment.h"
 #include "backend/evaluator/evaluator.h"
-#include "computerAPI/directoryManager.h"
 #include "backend/blockData/blockDataManager.h"
 
 class JunctionEvaluatorTest : public ::testing::Test {
@@ -28,7 +27,7 @@ void JunctionEvaluatorTest::SetUp() {
 	circuit = environment.getBackend().getCircuit(circuitId);
 	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuitId).value();
 	evaluator = environment.getBackend().getEvaluator(evalId);
-	ASSERT_TRUE(evaluator->isPause());
+	ASSERT_TRUE(evaluator->getEvalLogicSimulator().isPause());
 }
 
 void JunctionEvaluatorTest::TearDown() {
@@ -39,19 +38,19 @@ void JunctionEvaluatorTest::TearDown() {
 TEST_F(JunctionEvaluatorTest, PlaceJunction) {
 	Position blockPos(0, 0);
 	ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, BlockType::JUNCTION));
-	EXPECT_EQ(evaluator->getState(blockPos), Z);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(blockPos), Z);
 }
 
 TEST_F(JunctionEvaluatorTest, PlacePulldown) {
 	Position blockPos(0, 0);
 	ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, BlockType::JUNCTION_L));
-	EXPECT_EQ(evaluator->getState(blockPos), L);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(blockPos), L);
 }
 
 TEST_F(JunctionEvaluatorTest, PlacePullup) {
 	Position blockPos(0, 0);
 	ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, BlockType::JUNCTION_H));
-	EXPECT_EQ(evaluator->getState(blockPos), H);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(blockPos), H);
 }
 
 TEST_F(JunctionEvaluatorTest, PlacePullupAndPulldown) {
@@ -59,14 +58,14 @@ TEST_F(JunctionEvaluatorTest, PlacePullupAndPulldown) {
 	Position pullDownPos(1, 0);
 	ASSERT_TRUE(circuit->tryInsertBlock(pullUpPos, 0, BlockType::JUNCTION_H));
 	ASSERT_TRUE(circuit->tryInsertBlock(pullDownPos, 0, BlockType::JUNCTION_L));
-	EXPECT_EQ(evaluator->getState(pullUpPos), H);
-	EXPECT_EQ(evaluator->getState(pullDownPos), L);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(pullUpPos), H);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(pullDownPos), L);
 
 	Position pullUpPortPos = pullUpPos + *(getBlockData(BlockType::JUNCTION_H)->getConnectionVector(0));
 	Position pullDownPortPos = pullDownPos + *(getBlockData(BlockType::JUNCTION_L)->getConnectionVector(0));
 	ASSERT_TRUE(circuit->tryCreateConnection(pullUpPortPos, pullDownPortPos));
-	EXPECT_EQ(evaluator->getState(pullUpPos), X);
-	EXPECT_EQ(evaluator->getState(pullDownPos), X);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(pullUpPos), X);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(pullDownPos), X);
 }
 
 TEST_F(JunctionEvaluatorTest, JunctionsPropagateThroughOutputs) {
@@ -90,14 +89,14 @@ TEST_F(JunctionEvaluatorTest, JunctionsPropagateThroughOutputs) {
 	ASSERT_TRUE(circuit->tryCreateConnection(switch2Pos, junction1Pos));
 	ASSERT_TRUE(circuit->tryCreateConnection(switch2Pos, junction2Pos));
 
-	EXPECT_EQ(evaluator->getState(junction1Pos), L);
-	EXPECT_EQ(evaluator->getState(junction2Pos), L);
-	evaluator->setState(switch1Pos, H);
-	EXPECT_EQ(evaluator->getState(junction1Pos), X);
-	EXPECT_EQ(evaluator->getState(junction2Pos), X);
-	evaluator->setState(switch2Pos, Z);
-	EXPECT_EQ(evaluator->getState(junction1Pos), H);
-	EXPECT_EQ(evaluator->getState(junction2Pos), H);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(junction1Pos), L);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(junction2Pos), L);
+	evaluator->getEvalLogicSimulator().setState(switch1Pos, H);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(junction1Pos), X);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(junction2Pos), X);
+	evaluator->getEvalLogicSimulator().setState(switch2Pos, Z);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(junction1Pos), H);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(junction2Pos), H);
 }
 
 TEST_F(JunctionEvaluatorTest, JunctionsMultiwireIntoGate) {
@@ -142,22 +141,22 @@ TEST_F(JunctionEvaluatorTest, JunctionsMultiwireIntoGate) {
 	ASSERT_TRUE(circuit->tryCreateConnection(junction2Pos, xnorGatePos3));
 	ASSERT_TRUE(circuit->tryCreateConnection(junction3Pos, xnorGatePos3));
 
-	evaluator->tickStep();
+	evaluator->getEvalLogicSimulator().tickStep();
 
-	EXPECT_EQ(evaluator->getState(andGatePos2), L);
-	EXPECT_EQ(evaluator->getState(xorGatePos2), L);
-	EXPECT_EQ(evaluator->getState(xnorGatePos2), H);
-	EXPECT_EQ(evaluator->getState(andGatePos3), L);
-	EXPECT_EQ(evaluator->getState(xorGatePos3), L);
-	EXPECT_EQ(evaluator->getState(xnorGatePos3), H);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(andGatePos2), L);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(xorGatePos2), L);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(xnorGatePos2), H);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(andGatePos3), L);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(xorGatePos3), L);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(xnorGatePos3), H);
 
-	evaluator->setState(switchPos, H);
-	evaluator->tickStep();
+	evaluator->getEvalLogicSimulator().setState(switchPos, H);
+	evaluator->getEvalLogicSimulator().tickStep();
 
-	EXPECT_EQ(evaluator->getState(andGatePos2), H);
-	EXPECT_EQ(evaluator->getState(xorGatePos2), L);
-	EXPECT_EQ(evaluator->getState(xnorGatePos2), H);
-	EXPECT_EQ(evaluator->getState(andGatePos3), H);
-	EXPECT_EQ(evaluator->getState(xorGatePos3), H);
-	EXPECT_EQ(evaluator->getState(xnorGatePos3), L);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(andGatePos2), H);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(xorGatePos2), L);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(xnorGatePos2), H);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(andGatePos3), H);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(xorGatePos3), H);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(xnorGatePos3), L);
 }

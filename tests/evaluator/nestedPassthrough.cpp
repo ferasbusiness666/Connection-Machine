@@ -25,7 +25,7 @@ void NestedPassthroughEvaluatorTest::SetUp() {
 	circuit = environment.getBackend().getCircuit(circuitId);
 	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuitId).value();
 	evaluator = environment.getBackend().getEvaluator(evalId);
-	ASSERT_TRUE(evaluator->isPause());
+	ASSERT_TRUE(evaluator->getEvalLogicSimulator().isPause());
 
 	CircuitFileManager& circuitFileManager = environment.getCircuitFileManager();
 	circuit_id_t nestedPassthroughCircuitId = circuitFileManager.loadFromFile((DirectoryManager::getResourceDirectory() / "circuits" / "evaluator" / "passthrough.cir").string()).at(0);
@@ -44,5 +44,5 @@ void NestedPassthroughEvaluatorTest::TearDown() {
 TEST_F(NestedPassthroughEvaluatorTest, PlaceNestedPassthrough) {
     Position blockPos(0, 0);
     ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, NPT));
-    EXPECT_EQ(evaluator->getState(blockPos), L);
+    EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(blockPos), L);
 }

@@ -58,8 +58,8 @@ SimControlsManager::SimControlsManager(
 	});
 
 	// std::stringstream ss(correctValue);
-	// if (!approx_equals(evaluator->getTickrate(), tps)) {
-	// 	std::string tpsStr = fmt::format("{:.1f}", evaluator->getTickrate());
+	// if (!approx_equals(evaluator->getEvalLogicSimulator().getTickrate(), tps)) {
+	// 	std::string tpsStr = fmt::format("{:.1f}", evaluator->getEvalLogicSimulator().getTickrate());
 	// 	if (tpsStr.back() == '0') tpsStr.pop_back();
 	// 	if (tpsStr.back() == '.') tpsStr.pop_back();
 	// 	tpsInputElement->SetInnerRML(std::string(tpsStr.size(), ' ') + "tps");

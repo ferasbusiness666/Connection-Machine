@@ -53,10 +53,13 @@ TEST_F(GetNonExistingObjects, Evaluator) {
 	ASSERT_NE(evaluatorId, std::nullopt);
 	SharedEvaluator evaluator = environment.getBackend().getEvaluator(*evaluatorId);
 	ASSERT_NE(evaluator, nullptr);
-	ASSERT_EQ(evaluator->getBlockSimulatorId(Address(Position(10, 29))), 3);
-	ASSERT_EQ(evaluator->getBlockSimulatorIds(Address(Position(29, -86)), {Position(-21, 18)}), std::vector<simulator_id_t>{3});
-	ASSERT_EQ(evaluator->getState(Position(-1, 2)), X);
-	ASSERT_EQ(evaluator->getState(Position(0, 0)), X);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getVirtualConnectionSimulatorId(Address(Position(10, 29)), 0), (std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>>)3);
+	ASSERT_EQ(
+		evaluator->getEvalLogicSimulator().getVirtualConnectionSimulatorIds(Address(Position(29, -86)), {{Position(-21, 18), 0}}),
+		(std::vector<std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>>>){3}
+	);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Position(-1, 2)), X);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Position(0, 0)), X);
 }
 
 TEST_F(GetNonExistingObjects, Backend) {

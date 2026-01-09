@@ -25,21 +25,21 @@ void TickrateIncDecEvaluatorTest::TearDown() {
 
 TEST_P(TickrateIncDecEvaluatorTest, IncreaseTickrate) {
 	double tickrate = GetParam();
-	evaluator->setTickrate(tickrate);
-	EXPECT_DOUBLE_EQ(evaluator->getTickrate(), tickrate);
-	evaluator->increaseTickrateSeq();
-	EXPECT_GT(evaluator->getTickrate(), tickrate);
+	evaluator->getEvalLogicSimulator().setTickrate(tickrate);
+	EXPECT_DOUBLE_EQ(evaluator->getEvalLogicSimulator().getTickrate(), tickrate);
+	evaluator->getEvalLogicSimulator().increaseTickrateSeq();
+	EXPECT_GT(evaluator->getEvalLogicSimulator().getTickrate(), tickrate);
 }
 
 TEST_P(TickrateIncDecEvaluatorTest, DecreaseTickrate) {
 	double tickrate = GetParam();
-	evaluator->setTickrate(tickrate);
-	EXPECT_DOUBLE_EQ(evaluator->getTickrate(), tickrate);
-	evaluator->decreaseTickrateSeq();
-	if (tickrate > Evaluator::MIN_TICKRATE_DECREASABLE) {
-		EXPECT_LT(evaluator->getTickrate(), tickrate);
+	evaluator->getEvalLogicSimulator().setTickrate(tickrate);
+	EXPECT_DOUBLE_EQ(evaluator->getEvalLogicSimulator().getTickrate(), tickrate);
+	evaluator->getEvalLogicSimulator().decreaseTickrateSeq();
+	if (tickrate > EvalLogicSimulator::MIN_TICKRATE_DECREASABLE) {
+		EXPECT_LT(evaluator->getEvalLogicSimulator().getTickrate(), tickrate);
 	} else {
-		EXPECT_DOUBLE_EQ(evaluator->getTickrate(), Evaluator::MIN_TICKRATE_DECREASABLE);
+		EXPECT_DOUBLE_EQ(evaluator->getEvalLogicSimulator().getTickrate(), EvalLogicSimulator::MIN_TICKRATE_DECREASABLE);
 	}
 }
 
@@ -75,12 +75,12 @@ TEST_F(TickrateIncDecEvaluatorTest, ExactSequenceRounding) {
 	};
 
 	for (const auto& c : cases) {
-		evaluator->setTickrate(c.start);
-		evaluator->increaseTickrateSeq();
-		EXPECT_DOUBLE_EQ(evaluator->getTickrate(), c.expectedNext);
+		evaluator->getEvalLogicSimulator().setTickrate(c.start);
+		evaluator->getEvalLogicSimulator().increaseTickrateSeq();
+		EXPECT_DOUBLE_EQ(evaluator->getEvalLogicSimulator().getTickrate(), c.expectedNext);
 
-		evaluator->setTickrate(c.start);
-		evaluator->decreaseTickrateSeq();
-		EXPECT_DOUBLE_EQ(evaluator->getTickrate(), c.expectedPrev);
+		evaluator->getEvalLogicSimulator().setTickrate(c.start);
+		evaluator->getEvalLogicSimulator().decreaseTickrateSeq();
+		EXPECT_DOUBLE_EQ(evaluator->getEvalLogicSimulator().getTickrate(), c.expectedPrev);
 	}
 }

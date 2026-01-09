@@ -27,6 +27,7 @@ public:
 	// Address State
 	void setState(const Address& address, logic_state_t state);
 	logic_state_t getState(const Address& address) const;
+	std::variant<logic_state_t, std::vector<logic_state_t>> getPinState(const Address& address);
 
 	// Speed/Ticking
 	void setPause(bool pause) { logicSimulator.getSimulatorConfig().setRunning(!pause); }

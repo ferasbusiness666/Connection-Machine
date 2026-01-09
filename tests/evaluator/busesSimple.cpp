@@ -60,25 +60,25 @@ TEST_F(BusesSimpleEvaluatorTest, SimpleBus2) {
 
 	Position busOutputPos = busPos + *(bus2Data->getConnectionVector(2));
 
-	std::variant<logic_state_t, std::vector<logic_state_t>> outputState = evaluator->getPinState(busOutputPos);
+	std::variant<logic_state_t, std::vector<logic_state_t>> outputState = evaluator->getEvalLogicSimulator().getPinState(busOutputPos);
 	ASSERT_TRUE(std::holds_alternative<std::vector<logic_state_t>>(outputState));
 	EXPECT_EQ(std::get<std::vector<logic_state_t>>(outputState), std::vector<logic_state_t>({ L, L }));
 
-	evaluator->setState(switch1Pos, H);
+	evaluator->getEvalLogicSimulator().setState(switch1Pos, H);
 
-	outputState = evaluator->getPinState(busOutputPos);
+	outputState = evaluator->getEvalLogicSimulator().getPinState(busOutputPos);
 	ASSERT_TRUE(std::holds_alternative<std::vector<logic_state_t>>(outputState));
 	EXPECT_EQ(std::get<std::vector<logic_state_t>>(outputState), std::vector<logic_state_t>({ H, L }));
 
-	evaluator->setState(switch2Pos, H);
+	evaluator->getEvalLogicSimulator().setState(switch2Pos, H);
 
-	outputState = evaluator->getPinState(busOutputPos);
+	outputState = evaluator->getEvalLogicSimulator().getPinState(busOutputPos);
 	ASSERT_TRUE(std::holds_alternative<std::vector<logic_state_t>>(outputState));
 	EXPECT_EQ(std::get<std::vector<logic_state_t>>(outputState), std::vector<logic_state_t>({ H, H }));
 
-	evaluator->setState(switch1Pos, L);
+	evaluator->getEvalLogicSimulator().setState(switch1Pos, L);
 
-	outputState = evaluator->getPinState(busOutputPos);
+	outputState = evaluator->getEvalLogicSimulator().getPinState(busOutputPos);
 	ASSERT_TRUE(std::holds_alternative<std::vector<logic_state_t>>(outputState));
 	EXPECT_EQ(std::get<std::vector<logic_state_t>>(outputState), std::vector<logic_state_t>({ L, H }));
 }
@@ -109,25 +109,25 @@ TEST_F(BusesSimpleEvaluatorTest, BusTristate) {
 	ASSERT_TRUE(circuit->tryCreateConnection(busOutputPos, tristatePos));
 	ASSERT_TRUE(circuit->tryCreateConnection(toggleSwitchPos, tristatePos + Vector(0, 1)));
 
-	EXPECT_EQ(std::get<std::vector<logic_state_t>>(evaluator->getPinState(tristatePos)), std::vector<logic_state_t>({ Z, Z }));
-	evaluator->setState(switch1Pos, H);
-	evaluator->tickStep();
-	EXPECT_EQ(std::get<std::vector<logic_state_t>>(evaluator->getPinState(tristatePos)), std::vector<logic_state_t>({ Z, Z }));
-	evaluator->setState(switch2Pos, H);
-	evaluator->tickStep();
-	EXPECT_EQ(std::get<std::vector<logic_state_t>>(evaluator->getPinState(tristatePos)), std::vector<logic_state_t>({ Z, Z }));
-	evaluator->setState(toggleSwitchPos, H);
-	evaluator->tickStep();
-	EXPECT_EQ(std::get<std::vector<logic_state_t>>(evaluator->getPinState(tristatePos)), std::vector<logic_state_t>({ H, H }));
-	evaluator->setState(switch1Pos, L);
-	evaluator->tickStep();
-	EXPECT_EQ(std::get<std::vector<logic_state_t>>(evaluator->getPinState(tristatePos)), std::vector<logic_state_t>({ L, H }));
-	evaluator->setState(switch2Pos, L);
-	evaluator->tickStep();
-	EXPECT_EQ(std::get<std::vector<logic_state_t>>(evaluator->getPinState(tristatePos)), std::vector<logic_state_t>({ L, L }));
-	evaluator->setState(toggleSwitchPos, L);
-	evaluator->tickStep();
-	EXPECT_EQ(std::get<std::vector<logic_state_t>>(evaluator->getPinState(tristatePos)), std::vector<logic_state_t>({ Z, Z }));
+	EXPECT_EQ(std::get<std::vector<logic_state_t>>(evaluator->getEvalLogicSimulator().getPinState(tristatePos)), std::vector<logic_state_t>({ Z, Z }));
+	evaluator->getEvalLogicSimulator().setState(switch1Pos, H);
+	evaluator->getEvalLogicSimulator().tickStep();
+	EXPECT_EQ(std::get<std::vector<logic_state_t>>(evaluator->getEvalLogicSimulator().getPinState(tristatePos)), std::vector<logic_state_t>({ Z, Z }));
+	evaluator->getEvalLogicSimulator().setState(switch2Pos, H);
+	evaluator->getEvalLogicSimulator().tickStep();
+	EXPECT_EQ(std::get<std::vector<logic_state_t>>(evaluator->getEvalLogicSimulator().getPinState(tristatePos)), std::vector<logic_state_t>({ Z, Z }));
+	evaluator->getEvalLogicSimulator().setState(toggleSwitchPos, H);
+	evaluator->getEvalLogicSimulator().tickStep();
+	EXPECT_EQ(std::get<std::vector<logic_state_t>>(evaluator->getEvalLogicSimulator().getPinState(tristatePos)), std::vector<logic_state_t>({ H, H }));
+	evaluator->getEvalLogicSimulator().setState(switch1Pos, L);
+	evaluator->getEvalLogicSimulator().tickStep();
+	EXPECT_EQ(std::get<std::vector<logic_state_t>>(evaluator->getEvalLogicSimulator().getPinState(tristatePos)), std::vector<logic_state_t>({ L, H }));
+	evaluator->getEvalLogicSimulator().setState(switch2Pos, L);
+	evaluator->getEvalLogicSimulator().tickStep();
+	EXPECT_EQ(std::get<std::vector<logic_state_t>>(evaluator->getEvalLogicSimulator().getPinState(tristatePos)), std::vector<logic_state_t>({ L, L }));
+	evaluator->getEvalLogicSimulator().setState(toggleSwitchPos, L);
+	evaluator->getEvalLogicSimulator().tickStep();
+	EXPECT_EQ(std::get<std::vector<logic_state_t>>(evaluator->getEvalLogicSimulator().getPinState(tristatePos)), std::vector<logic_state_t>({ Z, Z }));
 }
 
 TEST_F(BusesSimpleEvaluatorTest, BusEndsHaveSameSimIds) {
@@ -151,13 +151,13 @@ TEST_F(BusesSimpleEvaluatorTest, BusEndsHaveSameSimIds) {
 	ASSERT_TRUE(circuit->tryCreateConnection(bus1Pos + *bus2Data->getConnectionVector(2), bus2Pos + *bus2Data->getConnectionVector(2)));
 	ASSERT_TRUE(circuit->tryCreateConnection(bus2Pos + *bus2Data->getConnectionVector(2), bus3Pos + *bus2Data->getConnectionVector(2)));
 
-	std::variant<simulator_id_t, std::vector<simulator_id_t>> bus1OutputSimId = evaluator->getPinSimulatorId(bus1Pos + *(bus2Data->getConnectionVector(2)));
-	std::variant<simulator_id_t, std::vector<simulator_id_t>> bus2OutputSimId = evaluator->getPinSimulatorId(bus2Pos + *(bus2Data->getConnectionVector(2)));
-	std::variant<simulator_id_t, std::vector<simulator_id_t>> bus3OutputSimId = evaluator->getPinSimulatorId(bus3Pos + *(bus2Data->getConnectionVector(2)));
+	std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> bus1OutputSimId = evaluator->getEvalLogicSimulator().getPinSimulatorId(bus1Pos + *(bus2Data->getConnectionVector(2)));
+	std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> bus2OutputSimId = evaluator->getEvalLogicSimulator().getPinSimulatorId(bus2Pos + *(bus2Data->getConnectionVector(2)));
+	std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> bus3OutputSimId = evaluator->getEvalLogicSimulator().getPinSimulatorId(bus3Pos + *(bus2Data->getConnectionVector(2)));
 
-	ASSERT_TRUE(std::holds_alternative<std::vector<simulator_id_t>>(bus1OutputSimId));
-	ASSERT_TRUE(std::holds_alternative<std::vector<simulator_id_t>>(bus2OutputSimId));
-	ASSERT_TRUE(std::holds_alternative<std::vector<simulator_id_t>>(bus3OutputSimId));
-	EXPECT_EQ(std::get<std::vector<simulator_id_t>>(bus1OutputSimId), std::get<std::vector<simulator_id_t>>(bus2OutputSimId));
-	EXPECT_EQ(std::get<std::vector<simulator_id_t>>(bus2OutputSimId), std::get<std::vector<simulator_id_t>>(bus3OutputSimId));
+	ASSERT_TRUE(std::holds_alternative<std::vector<simulator_gate_id_t>>(bus1OutputSimId));
+	ASSERT_TRUE(std::holds_alternative<std::vector<simulator_gate_id_t>>(bus2OutputSimId));
+	ASSERT_TRUE(std::holds_alternative<std::vector<simulator_gate_id_t>>(bus3OutputSimId));
+	EXPECT_EQ(std::get<std::vector<simulator_gate_id_t>>(bus1OutputSimId), std::get<std::vector<simulator_gate_id_t>>(bus2OutputSimId));
+	EXPECT_EQ(std::get<std::vector<simulator_gate_id_t>>(bus2OutputSimId), std::get<std::vector<simulator_gate_id_t>>(bus3OutputSimId));
 }

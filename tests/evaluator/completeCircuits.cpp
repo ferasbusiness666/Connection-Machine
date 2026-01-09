@@ -36,7 +36,7 @@ void CompleteCircuitsEvaluatorTest::SetUp() {
 	circuit = environment.getBackend().getCircuit(circuitId);
 	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuitId).value();
 	evaluator = environment.getBackend().getEvaluator(evalId);
-	ASSERT_TRUE(evaluator->isPause());
+	ASSERT_TRUE(evaluator->getEvalLogicSimulator().isPause());
 }
 
 void CompleteCircuitsEvaluatorTest::TearDown() {
@@ -72,35 +72,35 @@ TEST_F(CompleteCircuitsEvaluatorTest, FullAdder) {
 	ASSERT_TRUE(circuit->tryCreateConnection(sumPos, light1Pos));
 	ASSERT_TRUE(circuit->tryCreateConnection(coutPos, light2Pos));
 
-	evaluator->tickStep(3);
-	EXPECT_EQ(evaluator->getState(light1Pos), L);
-	EXPECT_EQ(evaluator->getState(light2Pos), L);
-	evaluator->setState(switch1Pos, H);
-	evaluator->tickStep(3);
-	EXPECT_EQ(evaluator->getState(light1Pos), H);
-	EXPECT_EQ(evaluator->getState(light2Pos), L);
-	evaluator->setState(switch2Pos, H);
-	evaluator->tickStep(3);
-	EXPECT_EQ(evaluator->getState(light1Pos), L);
-	EXPECT_EQ(evaluator->getState(light2Pos), H);
-	evaluator->setState(switch1Pos, L);
-	evaluator->tickStep(3);
-	EXPECT_EQ(evaluator->getState(light1Pos), H);
-	EXPECT_EQ(evaluator->getState(light2Pos), L);
-	evaluator->setState(switch3Pos, H);
-	evaluator->tickStep(3);
-	EXPECT_EQ(evaluator->getState(light1Pos), L);
-	EXPECT_EQ(evaluator->getState(light2Pos), H);
-	evaluator->setState(switch2Pos, L);
-	evaluator->tickStep(3);
-	EXPECT_EQ(evaluator->getState(light1Pos), H);
-	EXPECT_EQ(evaluator->getState(light2Pos), L);
-	evaluator->setState(switch1Pos, H);
-	evaluator->tickStep(3);
-	EXPECT_EQ(evaluator->getState(light1Pos), L);
-	EXPECT_EQ(evaluator->getState(light2Pos), H);
-	evaluator->setState(switch2Pos, H);
-	evaluator->tickStep(3);
-	EXPECT_EQ(evaluator->getState(light1Pos), H);
-	EXPECT_EQ(evaluator->getState(light2Pos), H);
+	evaluator->getEvalLogicSimulator().tickStep(3);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(light1Pos), L);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(light2Pos), L);
+	evaluator->getEvalLogicSimulator().setState(switch1Pos, H);
+	evaluator->getEvalLogicSimulator().tickStep(3);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(light1Pos), H);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(light2Pos), L);
+	evaluator->getEvalLogicSimulator().setState(switch2Pos, H);
+	evaluator->getEvalLogicSimulator().tickStep(3);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(light1Pos), L);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(light2Pos), H);
+	evaluator->getEvalLogicSimulator().setState(switch1Pos, L);
+	evaluator->getEvalLogicSimulator().tickStep(3);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(light1Pos), H);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(light2Pos), L);
+	evaluator->getEvalLogicSimulator().setState(switch3Pos, H);
+	evaluator->getEvalLogicSimulator().tickStep(3);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(light1Pos), L);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(light2Pos), H);
+	evaluator->getEvalLogicSimulator().setState(switch2Pos, L);
+	evaluator->getEvalLogicSimulator().tickStep(3);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(light1Pos), H);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(light2Pos), L);
+	evaluator->getEvalLogicSimulator().setState(switch1Pos, H);
+	evaluator->getEvalLogicSimulator().tickStep(3);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(light1Pos), L);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(light2Pos), H);
+	evaluator->getEvalLogicSimulator().setState(switch2Pos, H);
+	evaluator->getEvalLogicSimulator().tickStep(3);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(light1Pos), H);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(light2Pos), H);
 }

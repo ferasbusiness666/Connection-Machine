@@ -26,6 +26,17 @@ logic_state_t EvalLogicSimulator::getState(const Address& address) const {
 	return getState(iter2->second);
 }
 
+std::variant<logic_state_t, std::vector<logic_state_t>> EvalLogicSimulator::getPinState(const Address& address) {
+	std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> simulatorIdVariant = getPinSimulatorId(address);
+	if (std::holds_alternative<simulator_gate_id_t>(simulatorIdVariant)) {
+		simulator_gate_id_t simulatorId = std::get<simulator_gate_id_t>(simulatorIdVariant);
+		return getState(simulatorId);
+	} else {
+		std::vector<simulator_gate_id_t> simulatorIds = std::get<std::vector<simulator_gate_id_t>>(simulatorIdVariant);
+		return getStates(simulatorIds);
+	}
+}
+
 void EvalLogicSimulator::waitForSprintComplete() {
 	while (logicSimulator.getSimulatorConfig().getSprintCount() > 0) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));

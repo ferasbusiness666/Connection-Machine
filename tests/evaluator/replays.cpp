@@ -20,8 +20,8 @@ void ReplaysEvaluatorTest::SetUp() {
 	circuit = environment.getBackend().getCircuit(circuitId);
 	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuitId).value();
 	evaluator = environment.getBackend().getEvaluator(evalId);
-	ASSERT_TRUE(evaluator->isPause());
-	ASSERT_FALSE(evaluator->isViewingReplay());
+	ASSERT_TRUE(evaluator->getEvalLogicSimulator().isPause());
+	ASSERT_FALSE(evaluator->getEvalLogicSimulator().isViewingReplay());
 }
 
 void ReplaysEvaluatorTest::TearDown() {
@@ -30,53 +30,53 @@ void ReplaysEvaluatorTest::TearDown() {
 }
 
 TEST_F(ReplaysEvaluatorTest, StepBackEmptyHistory) {
-	EXPECT_FALSE(evaluator->stepBack());
-	EXPECT_FALSE(evaluator->isViewingReplay());
+	EXPECT_FALSE(evaluator->getEvalLogicSimulator().stepBack());
+	EXPECT_FALSE(evaluator->getEvalLogicSimulator().isViewingReplay());
 }
 
 TEST_F(ReplaysEvaluatorTest, SkipBackEmptyHistory) {
-	EXPECT_FALSE(evaluator->skipBack());
-	EXPECT_FALSE(evaluator->isViewingReplay());
+	EXPECT_FALSE(evaluator->getEvalLogicSimulator().skipBack());
+	EXPECT_FALSE(evaluator->getEvalLogicSimulator().isViewingReplay());
 }
 
 TEST_F(ReplaysEvaluatorTest, StepForward) {
-	evaluator->stepForward();
-	EXPECT_FALSE(evaluator->isViewingReplay());
-	EXPECT_TRUE(evaluator->isPause());
+	evaluator->getEvalLogicSimulator().stepForward();
+	EXPECT_FALSE(evaluator->getEvalLogicSimulator().isViewingReplay());
+	EXPECT_TRUE(evaluator->getEvalLogicSimulator().isPause());
 }
 
 TEST_F(ReplaysEvaluatorTest, StepForwardThenBack) {
-	evaluator->stepForward();
-	EXPECT_FALSE(evaluator->isViewingReplay());
-	EXPECT_TRUE(evaluator->isPause());
-	EXPECT_TRUE(evaluator->stepBack());
-	EXPECT_TRUE(evaluator->isViewingReplay());
-	EXPECT_TRUE(evaluator->isPause());
+	evaluator->getEvalLogicSimulator().stepForward();
+	EXPECT_FALSE(evaluator->getEvalLogicSimulator().isViewingReplay());
+	EXPECT_TRUE(evaluator->getEvalLogicSimulator().isPause());
+	EXPECT_TRUE(evaluator->getEvalLogicSimulator().stepBack());
+	EXPECT_TRUE(evaluator->getEvalLogicSimulator().isViewingReplay());
+	EXPECT_TRUE(evaluator->getEvalLogicSimulator().isPause());
 }
 
 TEST_F(ReplaysEvaluatorTest, SkipForwardWithoutReplay) {
-	EXPECT_FALSE(evaluator->skipForward());
-	EXPECT_FALSE(evaluator->isViewingReplay());
-	EXPECT_TRUE(evaluator->isPause());
+	EXPECT_FALSE(evaluator->getEvalLogicSimulator().skipForward());
+	EXPECT_FALSE(evaluator->getEvalLogicSimulator().isViewingReplay());
+	EXPECT_TRUE(evaluator->getEvalLogicSimulator().isPause());
 }
 
 TEST_F(ReplaysEvaluatorTest, StepForwardALotThenBack) {
 	for (int i = 0; i < 20; i++) {
-		evaluator->stepForward();
+		evaluator->getEvalLogicSimulator().stepForward();
 	}
-	EXPECT_FALSE(evaluator->isViewingReplay());
-	EXPECT_TRUE(evaluator->isPause());
+	EXPECT_FALSE(evaluator->getEvalLogicSimulator().isViewingReplay());
+	EXPECT_TRUE(evaluator->getEvalLogicSimulator().isPause());
 	for (int i = 0; i < 20; i++) {
-		EXPECT_TRUE(evaluator->stepBack());
-		EXPECT_TRUE(evaluator->isViewingReplay());
+		EXPECT_TRUE(evaluator->getEvalLogicSimulator().stepBack());
+		EXPECT_TRUE(evaluator->getEvalLogicSimulator().isViewingReplay());
 	}
-	EXPECT_TRUE(evaluator->isPause());
+	EXPECT_TRUE(evaluator->getEvalLogicSimulator().isPause());
 
-	EXPECT_FALSE(evaluator->stepBack());
-	EXPECT_TRUE(evaluator->isViewingReplay());
-	EXPECT_TRUE(evaluator->isPause());
+	EXPECT_FALSE(evaluator->getEvalLogicSimulator().stepBack());
+	EXPECT_TRUE(evaluator->getEvalLogicSimulator().isViewingReplay());
+	EXPECT_TRUE(evaluator->getEvalLogicSimulator().isPause());
 
-	EXPECT_TRUE(evaluator->skipForward());
-	EXPECT_FALSE(evaluator->isViewingReplay());
-	EXPECT_TRUE(evaluator->isPause());
+	EXPECT_TRUE(evaluator->getEvalLogicSimulator().skipForward());
+	EXPECT_FALSE(evaluator->getEvalLogicSimulator().isViewingReplay());
+	EXPECT_TRUE(evaluator->getEvalLogicSimulator().isPause());
 }

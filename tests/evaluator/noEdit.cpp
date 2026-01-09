@@ -24,51 +24,51 @@ void NoEditEvaluatorTest::TearDown() {
 }
 
 TEST_F(NoEditEvaluatorTest, PauseUnpause) {
-	evaluator->setPause(true);
-	EXPECT_TRUE(evaluator->isPause());
-	EXPECT_DOUBLE_EQ(evaluator->getRealTickrate(), 0.0);
-	evaluator->setPause(false);
-	EXPECT_FALSE(evaluator->isPause());
+	evaluator->getEvalLogicSimulator().setPause(true);
+	EXPECT_TRUE(evaluator->getEvalLogicSimulator().isPause());
+	EXPECT_DOUBLE_EQ(evaluator->getEvalLogicSimulator().getRealTickrate(), 0.0);
+	evaluator->getEvalLogicSimulator().setPause(false);
+	EXPECT_FALSE(evaluator->getEvalLogicSimulator().isPause());
 	// wait up to 200 ms for the background thread to update the tickrate
 	auto start = std::chrono::steady_clock::now();
 	bool tickPositive = false;
 	while (std::chrono::steady_clock::now() - start < std::chrono::milliseconds(200)) {
-		if (evaluator->getRealTickrate() > 0.0) { tickPositive = true; break; }
+		if (evaluator->getEvalLogicSimulator().getRealTickrate() > 0.0) { tickPositive = true; break; }
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 	EXPECT_TRUE(tickPositive);
 }
 
 TEST_F(NoEditEvaluatorTest, TickStep) {
-	evaluator->setPause(true);
-	EXPECT_TRUE(evaluator->isPause());
-	evaluator->tickStep();
-	EXPECT_TRUE(evaluator->isPause());
-	EXPECT_DOUBLE_EQ(evaluator->getRealTickrate(), 0.0);
-	EXPECT_FALSE(evaluator->isViewingReplay());
+	evaluator->getEvalLogicSimulator().setPause(true);
+	EXPECT_TRUE(evaluator->getEvalLogicSimulator().isPause());
+	evaluator->getEvalLogicSimulator().tickStep();
+	EXPECT_TRUE(evaluator->getEvalLogicSimulator().isPause());
+	EXPECT_DOUBLE_EQ(evaluator->getEvalLogicSimulator().getRealTickrate(), 0.0);
+	EXPECT_FALSE(evaluator->getEvalLogicSimulator().isViewingReplay());
 }
 
 TEST_F(NoEditEvaluatorTest, RealisticMode) {
-	EXPECT_FALSE(evaluator->isRealistic());
-	evaluator->setRealistic(true);
-	EXPECT_TRUE(evaluator->isRealistic());
-	evaluator->setRealistic(false);
-	EXPECT_FALSE(evaluator->isRealistic());
+	EXPECT_FALSE(evaluator->getEvalLogicSimulator().isRealistic());
+	evaluator->getEvalLogicSimulator().setRealistic(true);
+	EXPECT_TRUE(evaluator->getEvalLogicSimulator().isRealistic());
+	evaluator->getEvalLogicSimulator().setRealistic(false);
+	EXPECT_FALSE(evaluator->getEvalLogicSimulator().isRealistic());
 }
 
 TEST_F(NoEditEvaluatorTest, TickrateSetting) {
-	evaluator->setTickrate(20.0);
-	EXPECT_DOUBLE_EQ(evaluator->getTickrate(), 20.0);
-	evaluator->setTickrate(100.0);
-	EXPECT_DOUBLE_EQ(evaluator->getTickrate(), 100.0);
+	evaluator->getEvalLogicSimulator().setTickrate(20.0);
+	EXPECT_DOUBLE_EQ(evaluator->getEvalLogicSimulator().getTickrate(), 20.0);
+	evaluator->getEvalLogicSimulator().setTickrate(100.0);
+	EXPECT_DOUBLE_EQ(evaluator->getEvalLogicSimulator().getTickrate(), 100.0);
 }
 
 TEST_F(NoEditEvaluatorTest, UseTickrateSetting) {
-	EXPECT_TRUE(evaluator->getUseTickrate());
-	evaluator->setUseTickrate(false);
-	EXPECT_FALSE(evaluator->getUseTickrate());
-	evaluator->setUseTickrate(true);
-	EXPECT_TRUE(evaluator->getUseTickrate());
+	EXPECT_TRUE(evaluator->getEvalLogicSimulator().getUseTickrate());
+	evaluator->getEvalLogicSimulator().setUseTickrate(false);
+	EXPECT_FALSE(evaluator->getEvalLogicSimulator().getUseTickrate());
+	evaluator->getEvalLogicSimulator().setUseTickrate(true);
+	EXPECT_TRUE(evaluator->getEvalLogicSimulator().getUseTickrate());
 }
 
 TEST_F(NoEditEvaluatorTest, EvalName) {

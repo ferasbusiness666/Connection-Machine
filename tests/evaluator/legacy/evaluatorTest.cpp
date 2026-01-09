@@ -39,34 +39,34 @@ void EvaluatorTest::TearDown() {
 
 TEST_F(EvaluatorTest, InitTest) {
 	// 0 when paused, set to be paused on evaluator's constructor
-	ASSERT_EQ(evaluator->getRealTickrate(), 0);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getRealTickrate(), 0);
 }
 
 TEST_F(EvaluatorTest, PauseUnpauseTest) {
-	evaluator->setPause(false);
-	evaluator->setUseTickrate(false);
+	evaluator->getEvalLogicSimulator().setPause(false);
+	evaluator->getEvalLogicSimulator().setUseTickrate(false);
 	// set to 1000000000 tick/min
 	// tickrate should be ~16666666.7 ?
 	std::this_thread::sleep_for(std::chrono::milliseconds(500));
-	ASSERT_GT(evaluator->getRealTickrate(), 0);
+	ASSERT_GT(evaluator->getEvalLogicSimulator().getRealTickrate(), 0);
 
-	evaluator->setPause(true);
-	ASSERT_EQ(evaluator->getRealTickrate(), 0);
+	evaluator->getEvalLogicSimulator().setPause(true);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getRealTickrate(), 0);
 }
 
 TEST_F(EvaluatorTest, TickrateTest) {
 	double new_tickrate = 10.0;
-	evaluator->setTickrate(new_tickrate);
-	evaluator->setUseTickrate(true);
-	evaluator->setPause(false);
+	evaluator->getEvalLogicSimulator().setTickrate(new_tickrate);
+	evaluator->getEvalLogicSimulator().setUseTickrate(true);
+	evaluator->getEvalLogicSimulator().setPause(false);
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-	ASSERT_GT(evaluator->getRealTickrate(), 0);
-	ASSERT_LT(evaluator->getRealTickrate(), new_tickrate*2);
+	ASSERT_GT(evaluator->getEvalLogicSimulator().getRealTickrate(), 0);
+	ASSERT_LT(evaluator->getEvalLogicSimulator().getRealTickrate(), new_tickrate*2);
 
-	evaluator->setUseTickrate(false);
-	evaluator->setPause(true);
+	evaluator->getEvalLogicSimulator().setUseTickrate(false);
+	evaluator->getEvalLogicSimulator().setPause(true);
 }
 
 TEST_F(EvaluatorTest, BasicStateManagement) {
@@ -77,11 +77,11 @@ TEST_F(EvaluatorTest, BasicStateManagement) {
 	circuit->tryInsertBlock(pos, rot, BlockType::SWITCH);
 
 	Address addr(pos);
-	ASSERT_EQ(evaluator->getState(addr), L);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(addr), L);
 
 	// set state
-	evaluator->setState(addr, H);
-	ASSERT_EQ(evaluator->getState(addr), H);
+	evaluator->getEvalLogicSimulator().setState(addr, H);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(addr), H);
 }
 
 // TEST_F(EvaluatorTest, BulkStateOperations) {
@@ -123,21 +123,21 @@ TEST_F(EvaluatorTest, LogicGateEvaluation) {
 	circuit->tryCreateConnection(in2, andPos);
 
 	// set input states
-	evaluator->setState(Address(in1), H);
-	evaluator->setState(Address(in2), H);
+	evaluator->getEvalLogicSimulator().setState(Address(in1), H);
+	evaluator->getEvalLogicSimulator().setState(Address(in2), H);
 
 	// run simulation
-	evaluator->tickStep();
+	evaluator->getEvalLogicSimulator().tickStep();
 
 	// check AND gate output
-	ASSERT_EQ(evaluator->getState(Address(andPos)), H);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address(andPos)), H);
 
 	// change one input
-	evaluator->setState(Address(in1), L);
-	evaluator->tickStep();
-	ASSERT_EQ(evaluator->getState(Address(andPos)), L);
+	evaluator->getEvalLogicSimulator().setState(Address(in1), L);
+	evaluator->getEvalLogicSimulator().tickStep();
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address(andPos)), L);
 
-	evaluator->setPause(true);
+	evaluator->getEvalLogicSimulator().setPause(true);
 }
 
 TEST_F(EvaluatorTest, EvaluatingCircuitModifications) {
@@ -154,16 +154,16 @@ TEST_F(EvaluatorTest, EvaluatingCircuitModifications) {
 	// retrieving state from address should have a check if it doesn't exist
 	// As of now we don't have a check and we attempt to retrieve a key that doesn't exist in unordered map
 	//Address removedAddr(pos1);
-	//ASSERT_EQ(evaluator->getState(removedAddr), false);
+	//ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(removedAddr), false);
 
 	// block movement
-	evaluator->setState(pos2, H);
+	evaluator->getEvalLogicSimulator().setState(pos2, H);
 	Position newPos(i, i); ++i;
 	circuit->tryMoveBlock(pos2, newPos, Orientation());
 
 	// reaccess addresses
-	//ASSERT_EQ(evaluator->getState(Address(pos2)), false); // This old address will cause an error as it is not found in address tree
-	ASSERT_EQ(evaluator->getState(Address(newPos)), H);
+	//ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address(pos2)), false); // This old address will cause an error as it is not found in address tree
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address(newPos)), H);
 }
 
 TEST_F(EvaluatorTest, ThreadSafetyAndPausing) {
@@ -172,7 +172,7 @@ TEST_F(EvaluatorTest, ThreadSafetyAndPausing) {
 	Address addr(pos);
 
 	// test rapid state changes
-	evaluator->setPause(false);
+	evaluator->getEvalLogicSimulator().setPause(false);
 
 	std::thread stateChanger([this, addr]() { changeState(addr); });
 	std::thread stateReader([this, addr]() { readState(addr); });
@@ -180,23 +180,23 @@ TEST_F(EvaluatorTest, ThreadSafetyAndPausing) {
 	stateChanger.join();
 	stateReader.join();
 
-	logic_state_t finalState = evaluator->getState(addr);
+	logic_state_t finalState = evaluator->getEvalLogicSimulator().getState(addr);
 	// the change state is ran 100 times, ending on 99%2==0
 	ASSERT_TRUE(finalState == L) << "Not synced threads";
 
-	evaluator->setPause(true);
+	evaluator->getEvalLogicSimulator().setPause(true);
 }
 
 void EvaluatorTest::changeState(const Address& addr) {
 	for (int j = 0; j < 100; j++) {
-		evaluator->setState(addr, fromBool(j % 2 == 0));
+		evaluator->getEvalLogicSimulator().setState(addr, fromBool(j % 2 == 0));
 		std::this_thread::sleep_for(std::chrono::milliseconds(2));
 	}
 }
 
 void EvaluatorTest::readState(const Address& addr) const {
 	for (int j = 0; j < 100; ++j) {
-		evaluator->getState(addr);
+		evaluator->getEvalLogicSimulator().getState(addr);
 		std::this_thread::sleep_for(std::chrono::milliseconds(2));
 	}
 }
@@ -219,7 +219,7 @@ TEST_F(EvaluatorTest, FastCircuitModifications) {
 	// check that blocks still exist
 	for (int j = 1; j < (int)positions.size(); j += 2) {
 		Address addr(positions[j]);
-		ASSERT_NO_THROW(evaluator->getState(addr));
+		ASSERT_NO_THROW(evaluator->getEvalLogicSimulator().getState(addr));
 	}
 }
 
@@ -234,21 +234,21 @@ TEST_F(EvaluatorTest, EqualityCircuit) {
 		circuit->tryCreateConnection(Position { i, 2 }, Position { 0, 3 });
 	}
 	for (int i = 0; i < 4; ++i) {
-		evaluator->setState(Address({ 0, 0 }), fromBool((i & 1) == 1));
-		evaluator->setState(Address({ 1, 0 }), fromBool((i & 2) == 2));
-		evaluator->setState(Address({ 2, 0 }), fromBool((i & 4) == 4));
-		evaluator->setState(Address({ 3, 0 }), fromBool((i & 8) == 8));
+		evaluator->getEvalLogicSimulator().setState(Address({ 0, 0 }), fromBool((i & 1) == 1));
+		evaluator->getEvalLogicSimulator().setState(Address({ 1, 0 }), fromBool((i & 2) == 2));
+		evaluator->getEvalLogicSimulator().setState(Address({ 2, 0 }), fromBool((i & 4) == 4));
+		evaluator->getEvalLogicSimulator().setState(Address({ 3, 0 }), fromBool((i & 8) == 8));
 		for (int j = 0; j < 4; ++j) {
-			evaluator->setState(Address({ 0, 1 }), fromBool((j & 1) == 1));
-			evaluator->setState(Address({ 1, 1 }), fromBool((j & 2) == 2));
-			evaluator->setState(Address({ 2, 1 }), fromBool((j & 4) == 4));
-			evaluator->setState(Address({ 3, 1 }), fromBool((j & 8) == 8));
-			evaluator->tickStep(2);
-			ASSERT_EQ(evaluator->getState(Address({ 0, 2 })), fromBool((i & 1) == (j & 1)));
-			ASSERT_EQ(evaluator->getState(Address({ 1, 2 })), fromBool((i & 2) == (j & 2)));
-			ASSERT_EQ(evaluator->getState(Address({ 2, 2 })), fromBool((i & 4) == (j & 4)));
-			ASSERT_EQ(evaluator->getState(Address({ 3, 2 })), fromBool((i & 8) == (j & 8)));
-			ASSERT_EQ(evaluator->getState(Address({ 0, 3 })), fromBool(i == j));
+			evaluator->getEvalLogicSimulator().setState(Address({ 0, 1 }), fromBool((j & 1) == 1));
+			evaluator->getEvalLogicSimulator().setState(Address({ 1, 1 }), fromBool((j & 2) == 2));
+			evaluator->getEvalLogicSimulator().setState(Address({ 2, 1 }), fromBool((j & 4) == 4));
+			evaluator->getEvalLogicSimulator().setState(Address({ 3, 1 }), fromBool((j & 8) == 8));
+			evaluator->getEvalLogicSimulator().tickStep(2);
+			ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 0, 2 })), fromBool((i & 1) == (j & 1)));
+			ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 1, 2 })), fromBool((i & 2) == (j & 2)));
+			ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 2, 2 })), fromBool((i & 4) == (j & 4)));
+			ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 3, 2 })), fromBool((i & 8) == (j & 8)));
+			ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 0, 3 })), fromBool(i == j));
 		}
 	}
 }
@@ -263,52 +263,52 @@ TEST_F(EvaluatorTest, JunctionRemovalGate) {
 	circuit->tryCreateConnection(Position { 1, 0 }, Position { 2, 0 }); // switch 2 to junction 1
 	circuit->tryCreateConnection(Position { 3, 0 }, Position { 4, 0 }); // junction 2 to and gate
 	circuit->tryCreateConnection(Position { 2, 0 }, Position { 3, 0 }); // junction 1 to junction 2
-	ASSERT_EQ(evaluator->getState(Address({ 0, 0 })), L);
-	ASSERT_EQ(evaluator->getState(Address({ 1, 0 })), L);
-	ASSERT_EQ(evaluator->getState(Address({ 2, 0 })), L);
-	ASSERT_EQ(evaluator->getState(Address({ 3, 0 })), L);
-	ASSERT_EQ(evaluator->getState(Address({ 4, 0 })), L);
-	evaluator->setState(Address({ 0, 0 }), H);
-	evaluator->tickStep(1);
-	ASSERT_EQ(evaluator->getState(Address({ 0, 0 })), H);
-	ASSERT_EQ(evaluator->getState(Address({ 1, 0 })), L);
-	ASSERT_EQ(evaluator->getState(Address({ 2, 0 })), X);
-	ASSERT_EQ(evaluator->getState(Address({ 3, 0 })), X);
-	ASSERT_EQ(evaluator->getState(Address({ 4, 0 })), X);
-	evaluator->setState(Address({ 1, 0 }), H);
-	evaluator->tickStep(1);
-	ASSERT_EQ(evaluator->getState(Address({ 0, 0 })), H);
-	ASSERT_EQ(evaluator->getState(Address({ 1, 0 })), H);
-	ASSERT_EQ(evaluator->getState(Address({ 2, 0 })), H);
-	ASSERT_EQ(evaluator->getState(Address({ 3, 0 })), H);
-	ASSERT_EQ(evaluator->getState(Address({ 4, 0 })), H);
-	evaluator->setState(Address({ 0, 0 }), L);
-	evaluator->tickStep(1);
-	ASSERT_EQ(evaluator->getState(Address({ 0, 0 })), L);
-	ASSERT_EQ(evaluator->getState(Address({ 1, 0 })), H);
-	ASSERT_EQ(evaluator->getState(Address({ 2, 0 })), X);
-	ASSERT_EQ(evaluator->getState(Address({ 3, 0 })), X);
-	ASSERT_EQ(evaluator->getState(Address({ 4, 0 })), X);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 0, 0 })), L);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 1, 0 })), L);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 2, 0 })), L);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 3, 0 })), L);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 4, 0 })), L);
+	evaluator->getEvalLogicSimulator().setState(Address({ 0, 0 }), H);
+	evaluator->getEvalLogicSimulator().tickStep(1);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 0, 0 })), H);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 1, 0 })), L);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 2, 0 })), X);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 3, 0 })), X);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 4, 0 })), X);
+	evaluator->getEvalLogicSimulator().setState(Address({ 1, 0 }), H);
+	evaluator->getEvalLogicSimulator().tickStep(1);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 0, 0 })), H);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 1, 0 })), H);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 2, 0 })), H);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 3, 0 })), H);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 4, 0 })), H);
+	evaluator->getEvalLogicSimulator().setState(Address({ 0, 0 }), L);
+	evaluator->getEvalLogicSimulator().tickStep(1);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 0, 0 })), L);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 1, 0 })), H);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 2, 0 })), X);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 3, 0 })), X);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 4, 0 })), X);
 	circuit->tryRemoveBlock(Position { 0, 0 });
-	ASSERT_EQ(evaluator->getState(Address({ 1, 0 })), H);
-	ASSERT_EQ(evaluator->getState(Address({ 2, 0 })), H);
-	ASSERT_EQ(evaluator->getState(Address({ 3, 0 })), H);
-	ASSERT_EQ(evaluator->getState(Address({ 4, 0 })), X);
-	evaluator->tickStep(1);
-	ASSERT_EQ(evaluator->getState(Address({ 1, 0 })), H);
-	ASSERT_EQ(evaluator->getState(Address({ 2, 0 })), H);
-	ASSERT_EQ(evaluator->getState(Address({ 3, 0 })), H);
-	ASSERT_EQ(evaluator->getState(Address({ 4, 0 })), H);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 1, 0 })), H);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 2, 0 })), H);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 3, 0 })), H);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 4, 0 })), X);
+	evaluator->getEvalLogicSimulator().tickStep(1);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 1, 0 })), H);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 2, 0 })), H);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 3, 0 })), H);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 4, 0 })), H);
 	circuit->tryRemoveConnection(Position { 2, 0 }, Position { 3, 0 });
-	ASSERT_EQ(evaluator->getState(Address({ 1, 0 })), H);
-	ASSERT_EQ(evaluator->getState(Address({ 2, 0 })), H);
-	ASSERT_EQ(evaluator->getState(Address({ 3, 0 })), Z);
-	ASSERT_EQ(evaluator->getState(Address({ 4, 0 })), H);
-	evaluator->tickStep(1);
-	ASSERT_EQ(evaluator->getState(Address({ 1, 0 })), H);
-	ASSERT_EQ(evaluator->getState(Address({ 2, 0 })), H);
-	ASSERT_EQ(evaluator->getState(Address({ 3, 0 })), Z);
-	ASSERT_EQ(evaluator->getState(Address({ 4, 0 })), X);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 1, 0 })), H);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 2, 0 })), H);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 3, 0 })), Z);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 4, 0 })), H);
+	evaluator->getEvalLogicSimulator().tickStep(1);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 1, 0 })), H);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 2, 0 })), H);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 3, 0 })), Z);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address({ 4, 0 })), X);
 }
 
 TEST_F(EvaluatorTest, TristateBufferEnableControlsOutput) {
@@ -329,31 +329,31 @@ TEST_F(EvaluatorTest, TristateBufferEnableControlsOutput) {
 	ASSERT_TRUE(circuit->tryCreateConnection(enablePos, tristateEnablePortPos));
 	ASSERT_TRUE(circuit->tryCreateConnection(tristateOutputPortPos, lightPos));
 
-	evaluator->setState(Address(dataPos), L);
-	evaluator->setState(Address(enablePos), L);
-	evaluator->tickStep(2);
-	EXPECT_EQ(evaluator->getState(Address(tristatePos)), Z);
-	EXPECT_EQ(evaluator->getState(Address(lightPos)), Z);
+	evaluator->getEvalLogicSimulator().setState(Address(dataPos), L);
+	evaluator->getEvalLogicSimulator().setState(Address(enablePos), L);
+	evaluator->getEvalLogicSimulator().tickStep(2);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(tristatePos)), Z);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(lightPos)), Z);
 
-	evaluator->setState(Address(dataPos), H);
-	evaluator->tickStep(2);
-	EXPECT_EQ(evaluator->getState(Address(tristatePos)), Z);
-	EXPECT_EQ(evaluator->getState(Address(lightPos)), Z);
+	evaluator->getEvalLogicSimulator().setState(Address(dataPos), H);
+	evaluator->getEvalLogicSimulator().tickStep(2);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(tristatePos)), Z);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(lightPos)), Z);
 
-	evaluator->setState(Address(enablePos), H);
-	evaluator->tickStep(2);
-	EXPECT_EQ(evaluator->getState(Address(tristatePos)), H);
-	EXPECT_EQ(evaluator->getState(Address(lightPos)), H);
+	evaluator->getEvalLogicSimulator().setState(Address(enablePos), H);
+	evaluator->getEvalLogicSimulator().tickStep(2);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(tristatePos)), H);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(lightPos)), H);
 
-	evaluator->setState(Address(dataPos), L);
-	evaluator->tickStep(2);
-	EXPECT_EQ(evaluator->getState(Address(tristatePos)), L);
-	EXPECT_EQ(evaluator->getState(Address(lightPos)), L);
+	evaluator->getEvalLogicSimulator().setState(Address(dataPos), L);
+	evaluator->getEvalLogicSimulator().tickStep(2);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(tristatePos)), L);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(lightPos)), L);
 
-	evaluator->setState(Address(enablePos), L);
-	evaluator->tickStep(2);
-	EXPECT_EQ(evaluator->getState(Address(tristatePos)), Z);
-	EXPECT_EQ(evaluator->getState(Address(lightPos)), Z);
+	evaluator->getEvalLogicSimulator().setState(Address(enablePos), L);
+	evaluator->getEvalLogicSimulator().tickStep(2);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(tristatePos)), Z);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(lightPos)), Z);
 }
 
 TEST_F(EvaluatorTest, TristateBuffersResolveContentionOnJunction) {
@@ -390,59 +390,59 @@ TEST_F(EvaluatorTest, TristateBuffersResolveContentionOnJunction) {
 	ASSERT_TRUE(circuit->tryCreateConnection(junctionPos, lightPos));
 
 	// baseline: everything low / disabled
-	evaluator->setState(Address(dataPosA), L);
-	evaluator->setState(Address(enablePosA), L);
-	evaluator->setState(Address(dataPosB), L);
-	evaluator->setState(Address(enablePosB), L);
-	evaluator->tickStep(2);
-	EXPECT_EQ(evaluator->getState(Address(tristatePosA)), Z);
-	EXPECT_EQ(evaluator->getState(Address(tristatePosB)), Z);
-	EXPECT_EQ(evaluator->getState(Address(junctionPos)), Z);
-	EXPECT_EQ(evaluator->getState(Address(lightPos)), Z);
+	evaluator->getEvalLogicSimulator().setState(Address(dataPosA), L);
+	evaluator->getEvalLogicSimulator().setState(Address(enablePosA), L);
+	evaluator->getEvalLogicSimulator().setState(Address(dataPosB), L);
+	evaluator->getEvalLogicSimulator().setState(Address(enablePosB), L);
+	evaluator->getEvalLogicSimulator().tickStep(2);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(tristatePosA)), Z);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(tristatePosB)), Z);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(junctionPos)), Z);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(lightPos)), Z);
 
 	// enable A: junction follows A's data
-	evaluator->setState(Address(dataPosA), H);
-	evaluator->setState(Address(enablePosA), H);
-	evaluator->tickStep(2);
-	EXPECT_EQ(evaluator->getState(Address(tristatePosA)), H);
-	EXPECT_EQ(evaluator->getState(Address(junctionPos)), H);
-	EXPECT_EQ(evaluator->getState(Address(lightPos)), H);
+	evaluator->getEvalLogicSimulator().setState(Address(dataPosA), H);
+	evaluator->getEvalLogicSimulator().setState(Address(enablePosA), H);
+	evaluator->getEvalLogicSimulator().tickStep(2);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(tristatePosA)), H);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(junctionPos)), H);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(lightPos)), H);
 
 	// disable A, bus should float again
-	evaluator->setState(Address(enablePosA), L);
-	evaluator->tickStep(2);
-	EXPECT_EQ(evaluator->getState(Address(tristatePosA)), Z);
-	EXPECT_EQ(evaluator->getState(Address(junctionPos)), Z);
-	EXPECT_EQ(evaluator->getState(Address(lightPos)), Z);
+	evaluator->getEvalLogicSimulator().setState(Address(enablePosA), L);
+	evaluator->getEvalLogicSimulator().tickStep(2);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(tristatePosA)), Z);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(junctionPos)), Z);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(lightPos)), Z);
 
 	// enable B: junction follows B
-	evaluator->setState(Address(dataPosB), H);
-	evaluator->setState(Address(enablePosB), H);
-	evaluator->tickStep(2);
-	EXPECT_EQ(evaluator->getState(Address(tristatePosB)), H);
-	EXPECT_EQ(evaluator->getState(Address(junctionPos)), H);
-	EXPECT_EQ(evaluator->getState(Address(lightPos)), H);
+	evaluator->getEvalLogicSimulator().setState(Address(dataPosB), H);
+	evaluator->getEvalLogicSimulator().setState(Address(enablePosB), H);
+	evaluator->getEvalLogicSimulator().tickStep(2);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(tristatePosB)), H);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(junctionPos)), H);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(lightPos)), H);
 
 	// contention: A drives LOW, B drives HIGH
-	evaluator->setState(Address(dataPosA), L);
-	evaluator->setState(Address(enablePosA), H);
-	evaluator->tickStep(2);
-	EXPECT_EQ(evaluator->getState(Address(tristatePosA)), L);
-	EXPECT_EQ(evaluator->getState(Address(tristatePosB)), H);
-	EXPECT_EQ(evaluator->getState(Address(junctionPos)), X);
-	EXPECT_EQ(evaluator->getState(Address(lightPos)), X);
+	evaluator->getEvalLogicSimulator().setState(Address(dataPosA), L);
+	evaluator->getEvalLogicSimulator().setState(Address(enablePosA), H);
+	evaluator->getEvalLogicSimulator().tickStep(2);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(tristatePosA)), L);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(tristatePosB)), H);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(junctionPos)), X);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(lightPos)), X);
 
 	// remove tri-state A while replacement mappings exist
 	ASSERT_TRUE(circuit->tryRemoveBlock(tristatePosA));
-	evaluator->tickStep(2);
-	EXPECT_EQ(evaluator->getState(Address(junctionPos)), H);
-	EXPECT_EQ(evaluator->getState(Address(lightPos)), H);
+	evaluator->getEvalLogicSimulator().tickStep(2);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(junctionPos)), H);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(lightPos)), H);
 
 	// disable remaining driver -> bus floats
-	evaluator->setState(Address(enablePosB), L);
-	evaluator->tickStep(2);
-	EXPECT_EQ(evaluator->getState(Address(junctionPos)), Z);
-	EXPECT_EQ(evaluator->getState(Address(lightPos)), Z);
+	evaluator->getEvalLogicSimulator().setState(Address(enablePosB), L);
+	evaluator->getEvalLogicSimulator().tickStep(2);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(junctionPos)), Z);
+	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(lightPos)), Z);
 }
 
 TEST_F(EvaluatorTest, LargeEvaluatorTest) {
@@ -462,7 +462,7 @@ TEST_F(EvaluatorTest, LargeEvaluatorTest) {
 
 	for (i = 0; i < LARGE_NUMBER; i++) {
 		circuit->tryInsertBlock(Position(i, 0), Rotation::ZERO, BlockType::SWITCH);
-		evaluator->setState(Position(i, 0), H);
+		evaluator->getEvalLogicSimulator().setState(Position(i, 0), H);
 	}
 	int j = 0;
 	for (BlockType type : allTypes) {
@@ -472,18 +472,18 @@ TEST_F(EvaluatorTest, LargeEvaluatorTest) {
 			circuit->tryCreateConnection(Position(i, 0), Position(i, j));
 		}
 	}
-	evaluator->tickStep(1);
+	evaluator->getEvalLogicSimulator().tickStep(1);
 	Position andGate(rand() % LARGE_NUMBER, 1);
 	// and on should be high
-	ASSERT_EQ(evaluator->getState(Address( {rand() % LARGE_NUMBER, 1})), H);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address( {rand() % LARGE_NUMBER, 1})), H);
 	// or on should be high
-	ASSERT_EQ(evaluator->getState(Address( {rand() % LARGE_NUMBER, 2})), H);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address( {rand() % LARGE_NUMBER, 2})), H);
 	// xor on should be high
-	ASSERT_EQ(evaluator->getState(Address( {rand() % LARGE_NUMBER, 3})), H);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address( {rand() % LARGE_NUMBER, 3})), H);
 	// nand on should be low
-	ASSERT_EQ(evaluator->getState(Address( {rand() % LARGE_NUMBER, 4})), L);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address( {rand() % LARGE_NUMBER, 4})), L);
 	// nor on should be low
-	ASSERT_EQ(evaluator->getState(Address( {rand() % LARGE_NUMBER, 5})), L);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address( {rand() % LARGE_NUMBER, 5})), L);
 	// xnor on should be low
-	ASSERT_EQ(evaluator->getState(Address( {rand() % LARGE_NUMBER, 6})), L);
+	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address( {rand() % LARGE_NUMBER, 6})), L);
 }
