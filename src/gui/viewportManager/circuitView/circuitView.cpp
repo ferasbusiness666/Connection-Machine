@@ -44,8 +44,9 @@ void CircuitView::setEvaluator(evaluator_id_t evaluatorId, const Address& addres
 			this->evaluatorId = evaluatorId;
 			this->address = address;
 			this->circuitId = circuit->getCircuitId();
-			circuitRenderManager.emplace(backend, this->circuitId, viewportId);
+			circuitRenderManager.reset();
 			MainRenderer::get().setViewportEvaluator(viewportId, evaluator.get(), address);
+			circuitRenderManager.emplace(backend, this->circuitId, viewportId);
 			toolManager.setCircuit(circuit.get());
 			viewManager.setCircuit(circuit.get());
 			dataUpdateEventManager.sendEvent("circuitViewChangeEvaluator", this);

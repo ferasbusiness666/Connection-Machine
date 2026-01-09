@@ -71,7 +71,6 @@ public:
 
 	std::variant<simulator_id_t, std::vector<simulator_id_t>> getVirtualConnectionSimulatorId(const Address& address, virtual_connection_id_t virtualConnectionId) const;
 	std::variant<simulator_id_t, std::vector<simulator_id_t>> getPinSimulatorId(const Address& address) const;
-
 	std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getVirtualConnectionSimulatorIds(const Address& addressOrigin, const std::vector<std::pair<Position, virtual_connection_id_t>>& virtualConnections) const;
 	std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getPinSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const;
 

@@ -44,7 +44,7 @@ void BlockRenderDataFeeder::newBlockTypeUpdate(const DataUpdateEventManager::Eve
 
 	const BlockData* blockData = backend.getBlockDataManager().getBlockData(data->get());
 	if (blockData->isDefaultData()) {
-		MainRenderer::get().setTextureVirtualConnection(blockRenderDataId, 1);
+		MainRenderer::get().setTextureVirtualConnection(blockRenderDataId, 0);
 	}
 }
 

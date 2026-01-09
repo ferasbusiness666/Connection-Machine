@@ -2,7 +2,6 @@
 
 #include "backend/circuit/circuitManager.h"
 #include "evaluatorInternal.h"
-#include "util/evalLayerState.h"
 
 #ifdef TRACY_PROFILER
 #include <tracy/Tracy.hpp>
@@ -89,80 +88,27 @@ void Evaluator::makeEdit(DifferenceSharedPtr difference, circuit_id_t circuitId)
 }
 
 logic_state_t Evaluator::getState(const Address& address) const {
-	auto iter2 = evalLogicSimulator.getGateIdMapping().find(evaluatorInternal->mapFromAddressToBottomConnectionPoint(address).gateId);
-	if (iter2 == evalLogicSimulator.getGateIdMapping().end()) {
-		logError("Evaluator::getState(const Address& address) failed. Failed to get sim id");
-		return logic_state_t::UNDEFINED;
-	}
-	return evalLogicSimulator.getState(iter2->second);
+	return evalLogicSimulator.getState(address);
 }
 
 void Evaluator::setState(const Address& address, logic_state_t state) {
-	auto iter2 = evalLogicSimulator.getGateIdMapping().find(evaluatorInternal->mapFromAddressToBottomConnectionPoint(address).gateId);
-	if (iter2 == evalLogicSimulator.getGateIdMapping().end()) {
-		logError("Evaluator::getState(const Address& address) failed. Failed to get sim id");
-		return;
-	}
-	evalLogicSimulator.setState(iter2->second, state);
+	evalLogicSimulator.setState(address, state);
 }
 
 std::variant<simulator_id_t, std::vector<simulator_id_t>> Evaluator::getVirtualConnectionSimulatorId(const Address& address, virtual_connection_id_t virtualConnectionId) const {
-	// if (virtualConnectionId != 0) return 0;
-	auto iter2 = evalLogicSimulator.getGateIdMapping().find(evaluatorInternal->mapFromAddressToBottomConnectionPoint(address).gateId);
-	if (iter2 == evalLogicSimulator.getGateIdMapping().end()) {
-		logError("Evaluator::getBlockSimulatorId(const Address& address) failed. Failed to get sim id.", "Evaluator::getVirtualConnectionSimulatorId");
-		return 0;
-	}
-	return iter2->second;
+	return evalLogicSimulator.getVirtualConnectionSimulatorId(address, virtualConnectionId);
 }
 
 std::variant<simulator_id_t, std::vector<simulator_id_t>> Evaluator::getPinSimulatorId(const Address& address) const {
-	EvalConnectionPoint evalConnectionPoint = evaluatorInternal->mapFromAddressToBottomConnectionPoint(address);
-	if (evalConnectionPoint.isNull()) {
-		logError("Evaluator::mapFromAddressToBottomConnectionPoint(const Address& address) failed. Failed to get bottom connection point.", "Evaluator::getPinSimulatorId");
-		return 0;
-	}
-	const EvalLayerState& evalLayerState = evaluatorInternal->getLayerRunner().getOutputLayer();
-	const EvalGate* evalGate = evalLayerState.getGate(evalConnectionPoint.gateId);
-	auto connectionsIter = evalGate->connections.find(evalConnectionPoint.connectionEndId);
-	eval_gate_id evalGateIdToReadState = evalConnectionPoint.gateId;
-	if (connectionsIter != evalGate->connections.end() && connectionsIter->second.size() == 1) {
-		const EvalGate* otherEvalGate = evalLayerState.getGate(connectionsIter->second.begin()->gateId);
-		if (
-			otherEvalGate->type == getEvalGateType(BlockType::JUNCTION) ||
-			otherEvalGate->type == getEvalGateType(BlockType::JUNCTION_H) ||
-			otherEvalGate->type == getEvalGateType(BlockType::JUNCTION_L) ||
-			otherEvalGate->type == getEvalGateType(BlockType::JUNCTION_X)
-		) {
-			evalGateIdToReadState = otherEvalGate->gateId;
-		}
-	}
-	auto iter2 = evalLogicSimulator.getGateIdMapping().find(evalGateIdToReadState);
-	if (iter2 == evalLogicSimulator.getGateIdMapping().end()) {
-		logError("Evaluator::getBlockSimulatorId(const Address& address) failed. Failed to get sim id.", "Evaluator::getPinSimulatorId");
-		return 0;
-	}
-	return iter2->second;
+	return evalLogicSimulator.getPinSimulatorId(address);
 }
 
 std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> Evaluator::getVirtualConnectionSimulatorIds(const Address& addressOrigin, const std::vector<std::pair<Position, virtual_connection_id_t>>& virtualConnections) const {
-	std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> output;
-	for (std::pair<Position, virtual_connection_id_t> virtualConnection : virtualConnections) {
-		Address address = addressOrigin;
-		address.addBlockId(virtualConnection.first);
-		output.push_back(getVirtualConnectionSimulatorId(address, virtualConnection.second));
-	}
-	return output;
+	return evalLogicSimulator.getVirtualConnectionSimulatorIds(addressOrigin, virtualConnections);
 }
 
 std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> Evaluator::getPinSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const {
-	std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> output;
-	for (Position position : positions) {
-		Address address = addressOrigin;
-		address.addBlockId(position);
-		output.push_back(getPinSimulatorId(address));
-	}
-	return output;
+	return evalLogicSimulator.getPinSimulatorIds(addressOrigin, positions);
 }
 
 nlohmann::json Evaluator::dumpState() const /* GCOVR_EXCL_FUNCTION */ {

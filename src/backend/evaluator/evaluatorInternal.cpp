@@ -116,6 +116,7 @@ EvalConnectionPoint EvaluatorInternal::mapFromAddressToTopConnectionPoint(const 
 	assert(mainThreadId == std::this_thread::get_id());
 	const Circuit* circuit = circuitManager.getCircuit(circuitId).get();
 	const Block* block = circuit->getBlockContainer().getBlock(address.getPosition(0));
+	if (block == nullptr) return EvalConnectionPoint::null();
 	auto iter = positionRemapping.find(block->getPosition());
 	if (iter == positionRemapping.end()) return EvalConnectionPoint::null();
 	std::optional<connection_end_id_t> connectionEndId = block->getOutputOrBidirectionalConnectionId(address.getPosition(0));
