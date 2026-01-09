@@ -1,6 +1,6 @@
 #include "layerRunner.h"
 
-#include "../util/evalLayerState.h"
+#include "evalLayerState.h"
 #include "passThroughEvalLayer.h"
 
 LayerRunner::LayerRunner(const BlockDataManager& blockDataManager) : blockDataManager(blockDataManager) {

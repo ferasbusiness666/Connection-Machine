@@ -2,7 +2,7 @@
 
 #include "backend/blockData/blockDataManager.h"
 #include "backend/evaluator/layers/layerRunner.h"
-#include "backend/evaluator/util/evalLayerState.h"
+#include "backend/evaluator/layers/evalLayerState.h"
 #include "backend/evaluator/evaluatorInternal.h"
 
 EvalLogicSimulator::EvalLogicSimulator(const BlockDataManager& blockDataManager, const EvaluatorInternal& evaluatorInternal, DataUpdateEventManager& dataUpdateEventManager) :
@@ -310,7 +310,6 @@ void EvalLogicSimulator::processEdits() {
 					continue;
 				}
 				Position portPos = iter->second.first + iter->second.second.transformVectorWithArea(pair.second.positionOnBlock, blockData->getSize());
-				logInfo("mapping update {}, {}", "", portPos, mappingPair.second);
 				simulatorMappingUpdates.emplace_back(portPos, pinSimId);
 				simulatorMappingUpdates.emplace_back(iter->second.first, 0, stateIndex.value());
 			}

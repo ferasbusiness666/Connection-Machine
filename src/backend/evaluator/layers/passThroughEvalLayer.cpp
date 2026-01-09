@@ -1,5 +1,5 @@
 #include "passThroughEvalLayer.h"
-#include "../util/evalLayerState.h"
+#include "evalLayerState.h"
 
 void PassThroughEvalLayer::run(const EvalLayerState& currentState, EvalLayerState& nextState) {
 	for (auto iter = currentState.getRemovedConnectionsBegin(); iter != currentState.getRemovedConnectionsEnd(); ++iter) {

@@ -68,9 +68,7 @@ public:
 	void addConnection(const EvalConnection& evalConnection) { // TODO: add transparent junction merging
 		auto gateAIterBoolPair = gates.find(evalConnection.connectionPointA.gateId);
 		assert(gateAIterBoolPair != gates.end());
-		logInfo(gateAIterBoolPair->second.connections[evalConnection.connectionPointA.connectionEndId].size());
 		bool suc = gateAIterBoolPair->second.connections[evalConnection.connectionPointA.connectionEndId].insert(evalConnection.connectionPointB).second;
-		logInfo(gateAIterBoolPair->second.connections[evalConnection.connectionPointA.connectionEndId].size());
 		assert(suc);
 
 		auto gateBIterBoolPair = gates.find(evalConnection.connectionPointB.gateId);
