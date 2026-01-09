@@ -1,8 +1,8 @@
 #include "logicSimulator.h"
 #include "util/fastMath.h"
 
-LogicSimulator::LogicSimulator(std::vector<simulator_gate_id_t>& dirtySimulatorIds, DataUpdateEventManager &dataUpdateEventManager) :
-	simulatorConfig(dataUpdateEventManager), dirtySimulatorIds(dirtySimulatorIds), simulatorIdProvider(4) {
+LogicSimulator::LogicSimulator(simulator_id_t simulatorId, std::vector<simulator_gate_id_t>& dirtySimulatorIds, DataUpdateEventManager &dataUpdateEventManager) :
+	simulatorConfig(simulatorId, dataUpdateEventManager), dirtySimulatorIds(dirtySimulatorIds), simulatorIdProvider(4) {
 	simulatorConfig.subscribe([this]() {
 		{
 			SimPauseGuard pauseGuard(*this);

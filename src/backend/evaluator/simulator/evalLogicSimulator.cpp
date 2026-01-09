@@ -5,8 +5,12 @@
 #include "backend/evaluator/layers/evalLayerState.h"
 #include "backend/evaluator/evaluatorInternal.h"
 
-EvalLogicSimulator::EvalLogicSimulator(const BlockDataManager& blockDataManager, const EvaluatorInternal& evaluatorInternal, DataUpdateEventManager& dataUpdateEventManager) :
-	logicSimulator(dirtySimulatorIds, dataUpdateEventManager), blockDataManager(blockDataManager), evaluatorInternal(evaluatorInternal) { }
+EvalLogicSimulator::EvalLogicSimulator(
+	simulator_id_t simulatorId,
+	const BlockDataManager& blockDataManager,
+	const EvaluatorInternal& evaluatorInternal,
+	DataUpdateEventManager& dataUpdateEventManager
+) : logicSimulator(simulatorId, dirtySimulatorIds, dataUpdateEventManager), blockDataManager(blockDataManager), evaluatorInternal(evaluatorInternal), simulatorId(simulatorId) { }
 
 void EvalLogicSimulator::setState(const Address& address, logic_state_t state) {
 	auto iter2 = gateIdMapping.find(evaluatorInternal.mapFromAddressToBottomConnectionPoint(address).gateId);

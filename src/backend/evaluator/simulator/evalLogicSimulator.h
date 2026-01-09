@@ -2,18 +2,19 @@
 #define evalLogicSimulator_h
 
 #include "logicSimulator.h"
+#include "simulatorDefs.h"
 
 class EvaluatorInternal;
 class BlockDataManager;
 class Address;
 
-DECLARE_ID_TYPE(simulator_id_t, unsigned int);
-
 class EvalLogicSimulator {
 public:
 	static constexpr double MIN_TICKRATE_DECREASABLE = 0.1;
 
-	EvalLogicSimulator(const BlockDataManager& blockDataManager, const EvaluatorInternal& evaluatorInternal, DataUpdateEventManager& dataUpdateEventManager);
+	EvalLogicSimulator(simulator_id_t simulatorId, const BlockDataManager& blockDataManager, const EvaluatorInternal& evaluatorInternal, DataUpdateEventManager& dataUpdateEventManager);
+
+	simulator_id_t getSimulatorId() const { return simulatorId; }
 
 	// --------------- Controls ---------------
 
@@ -73,6 +74,7 @@ private:
 	LogicSimulator logicSimulator;
 	const BlockDataManager& blockDataManager;
 	const EvaluatorInternal& evaluatorInternal;
+	simulator_id_t simulatorId;
 
 	std::unordered_map<eval_gate_id, simulator_gate_id_t> gateIdMapping;
 	std::map<void*, SimulatorMappingUpdateListener> simulatorMappingUpdateListeners;

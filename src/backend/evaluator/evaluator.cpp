@@ -17,7 +17,7 @@ Evaluator::Evaluator(
 	receiver(dataUpdateEventManager),
 	circuitId(circuitId),
 	evaluatorInternal(std::make_unique<EvaluatorInternal>(circuitId, circuitManager)),
-	evalLogicSimulator(circuitManager.getBlockDataManager(), *evaluatorInternal, dataUpdateEventManager)
+	evalLogicSimulator(evaluatorId.get(), circuitManager.getBlockDataManager(), *evaluatorInternal, dataUpdateEventManager)
 {
 	const Circuit* circuit = circuitManager.getCircuit(circuitId).get();
 	assert(circuit);

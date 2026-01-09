@@ -2,12 +2,12 @@
 #define simulatorConfig_h
 
 #include "backend/dataUpdateEventManager.h"
-#include "backend/evaluator/evalDefs.h"
 #include "backend/settings/settings.h"
+#include "simulatorDefs.h"
 
 class SimulatorConfig {
 public:
-	SimulatorConfig(DataUpdateEventManager& dataUpdateEventManager) : dataUpdateEventManager(dataUpdateEventManager) {
+	SimulatorConfig(simulator_id_t simulatorId, DataUpdateEventManager& dataUpdateEventManager) : simulatorId(simulatorId), dataUpdateEventManager(dataUpdateEventManager) {
 		Settings::registerListener<SettingType::UINT>("Simulation/Max Thread Count", [this](const int& newMaxThreadCount) { this->setMaxThreadCount(newMaxThreadCount); });
 	}
 
@@ -18,7 +18,7 @@ public:
 	inline void setTargetTickrate(double tickrate) {
 		targetTickrate.store(tickrate);
 		notifySubscribers();
-		dataUpdateEventManager.sendEvent("evaluatorTargetTickrateSet", std::make_pair(evaluatorId, tickrate));
+		dataUpdateEventManager.sendEvent("evaluatorTargetTickrateSet", std::make_pair(simulatorId, tickrate));
 	}
 
 	inline bool isTickrateLimiterEnabled() const {
@@ -28,7 +28,7 @@ public:
 	inline void setTickrateLimiter(bool enabled) {
 		tickrateLimiter.store(enabled);
 		notifySubscribers();
-		dataUpdateEventManager.sendEvent("evaluatorTickrateLimiterSet", std::make_pair(evaluatorId, enabled));
+		dataUpdateEventManager.sendEvent("evaluatorTickrateLimiterSet", std::make_pair(simulatorId, enabled));
 	}
 
 	inline bool isRunning() const {
@@ -38,7 +38,7 @@ public:
 	inline void setRunning(bool run) {
 		running.store(run);
 		notifySubscribers();
-		dataUpdateEventManager.sendEvent("evaluatorRunningSet", std::make_pair(evaluatorId, run));
+		dataUpdateEventManager.sendEvent("evaluatorRunningSet", std::make_pair(simulatorId, run));
 	}
 
 	inline bool isRealistic() const {
@@ -48,7 +48,7 @@ public:
 	inline void setRealistic(bool value) {
 		realistic.store(value);
 		notifySubscribers();
-		dataUpdateEventManager.sendEvent("evaluatorRealisticSet", std::make_pair(evaluatorId, value));
+		dataUpdateEventManager.sendEvent("evaluatorRealisticSet", std::make_pair(simulatorId, value));
 	}
 
 	inline int getMaxThreadCount() const {
@@ -58,7 +58,7 @@ public:
 	inline void setMaxThreadCount(int value) {
 		maxThreadCount.store(value);
 		notifySubscribers();
-		dataUpdateEventManager.sendEvent("evaluatorMaxThreadCountSet", std::make_pair(evaluatorId, value));
+		dataUpdateEventManager.sendEvent("evaluatorMaxThreadCountSet", std::make_pair(simulatorId, value));
 	}
 
 	inline void addSprint(int nTicks) {
@@ -112,7 +112,7 @@ public:
 
 private:
 	DataUpdateEventManager& dataUpdateEventManager;
-	evaluator_id_t evaluatorId;
+	simulator_id_t simulatorId;
 
 	std::atomic<double> targetTickrate = 0.0;
 	std::atomic<bool> tickrateLimiter = true;

@@ -40,7 +40,7 @@ inline std::string simgatetype_to_string(SimGateType type) /* GCOVR_EXCL_FUNCTIO
 class LogicSimulator {
 	friend class SimPauseGuard;
 public:
-	LogicSimulator(std::vector<simulator_gate_id_t>& dirtySimulatorIds, DataUpdateEventManager &dataUpdateEventManager);
+	LogicSimulator(simulator_id_t simulatorId, std::vector<simulator_gate_id_t>& dirtySimulatorIds, DataUpdateEventManager &dataUpdateEventManager);
 	~LogicSimulator();
 	double getAverageTickrate() const;
 	void setState(simulator_gate_id_t id, logic_state_t state);
