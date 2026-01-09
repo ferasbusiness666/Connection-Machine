@@ -20,6 +20,9 @@ void EvaluatorInternal::addBlock(Position position, Orientation orientation, Blo
 	eval_gate_id evalId = evalGateIdProvider.getNewId();
 	positionRemapping.try_emplace(position, evalId, orientation);
 	positionReverseRemapping.try_emplace(evalId, position, orientation);
+	if (blockType == BlockType::LIGHT) {
+		blockType = BlockType::JUNCTION;
+	}
 	layerRunner.getInputLayer().addGate(evalId, getEvalGateType(blockType));
 }
 
@@ -119,6 +122,7 @@ EvalConnectionPoint EvaluatorInternal::mapFromAddressToTopConnectionPoint(const 
 	if (block == nullptr) return EvalConnectionPoint::null();
 	auto iter = positionRemapping.find(block->getPosition());
 	if (iter == positionRemapping.end()) return EvalConnectionPoint::null();
+	if (block->type() == BlockType::LIGHT) return EvalConnectionPoint(iter->second.first, 0);
 	std::optional<connection_end_id_t> connectionEndId = block->getOutputOrBidirectionalConnectionId(address.getPosition(0));
 	if (!connectionEndId) return  EvalConnectionPoint::null();
 	return EvalConnectionPoint(iter->second.first, connectionEndId.value());

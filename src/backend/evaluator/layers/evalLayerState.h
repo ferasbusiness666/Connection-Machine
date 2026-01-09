@@ -45,7 +45,7 @@ public:
 		auto iterPair = evalGateIdReverseRemapping.equal_range(gateId);
 		for (auto iter = iterPair.first; iter != iterPair.second; iter++) {
 			if (iter->second == gateId) {
-				evalGateIdRemapping.erase(iter);
+				evalGateIdReverseRemapping.erase(iter);
 				break;
 			}
 		}
