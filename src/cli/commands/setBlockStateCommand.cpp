@@ -36,6 +36,6 @@ void SetBlockStateCommand::run(const std::vector<std::string>& args, Environment
         logError("Unrecognized evaluator ID. Available evaluators can be found with the 'list_evaluators' command.", "SetBlockStateCommand");
         return;
     }
-    eval->setState(Address(Position(xPos, yPos)), (logic_state_t)state);
+    eval->getEvalLogicSimulator().setState(Address(Position(xPos, yPos)), (logic_state_t)state);
     logInfo("Set state of block belonging to eval with ID {} in position ({}, {}) to {}", "SetBlockStateCommand", evalID, xPos, yPos, state);
 }

@@ -41,7 +41,7 @@ void GridRenderer::render(Frame& frame, const glm::mat4& viewMatrix, float viewS
 	const glm::vec3 backgroundColor(baseBackground * visibilityScale);
 	glm::vec4 gradientColor(0.0f, 0.0f, 0.0f, 0.1f);
 	// 174, 164, 249
-	if (evaluator && evaluator->isViewingReplay()) {
+	if (evaluator && evaluator->getEvalLogicSimulator().isViewingReplay()) {
 		gradientColor = glm::vec4(124.0f / 255.0f, 114.0f / 255.0f, 229.0f / 255.0f, 0.2f);
 	}
 

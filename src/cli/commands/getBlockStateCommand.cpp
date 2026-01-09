@@ -30,6 +30,6 @@ void GetBlockStateCommand::run(const std::vector<std::string>& args, Environment
         logError("Unrecognized evaluator ID. Available evaluators can be found with the 'list_evaluators' command.", "GetBlockStateCommand");
         return;
     }
-    unsigned char state = (unsigned char)eval->getState(Address(Position(xPos, yPos)));
+    unsigned char state = (unsigned char)eval->getEvalLogicSimulator().getState(Address(Position(xPos, yPos)));
     logInfo("State of block in eval with ID {} at position ({}, {}) is {}", "GetBlockStateCommand", evalID, xPos, yPos, state);
 }

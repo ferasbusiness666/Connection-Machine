@@ -86,8 +86,8 @@ bool Tutorial::isCurrentStepComplete() const {
 	}
 	for (std::vector<TutorialCondition::LogicStateRequirement>::iterator it = currentStep.condition.logicStates.begin(); it != currentStep.condition.logicStates.end();
 		 it++) {
-		evaluator->tickStep(it->numSteps);
-		if (evaluator->getState(Address(it->pos)) != it->state) {
+		evaluator->getEvalLogicSimulator().tickStep(it->numSteps);
+		if (evaluator->getEvalLogicSimulator().getState(Address(it->pos)) != it->state) {
 			return false;
 		}
 	}

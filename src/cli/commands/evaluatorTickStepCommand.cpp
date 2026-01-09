@@ -30,6 +30,6 @@ void EvaluatorTickStepCommand::run(const std::vector<std::string>& args, Environ
         logError("Unrecognized evaluator ID. Available evaluators can be found with the 'list_evaluators' command.", "EvaluatorTickStepCommand");
         return;
     }
-    eval->tickStep(ticks);
+    eval->getEvalLogicSimulator().tickStep(ticks);
     logInfo("Stepped evaluator with ID of {} forward by {} tick(s)", "EvaluatorTickStepCommand", evalID, ticks);
 }

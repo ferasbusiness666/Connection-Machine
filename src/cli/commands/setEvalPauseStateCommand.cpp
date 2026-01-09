@@ -32,6 +32,6 @@ void SetEvalPauseStateCommand::run(const std::vector<std::string>& args, Environ
         logError("Unrecognized evaluator ID. Available evaluators can be found with the 'list_evaluators' command.", "SetEvalPauseStateCommand");
         return;
     }
-    eval->setPause((bool)state);
-    logInfo("Set pause state of eval {} to: {}", "SetEvalPauseStateCommand", evalID, eval->isPause());
+    eval->getEvalLogicSimulator().setPause((bool)state);
+    logInfo("Set pause state of eval {} to: {}", "SetEvalPauseStateCommand", evalID, eval->getEvalLogicSimulator().isPause());
 }

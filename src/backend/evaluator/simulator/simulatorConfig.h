@@ -1,13 +1,13 @@
-#ifndef evalConfig_h
-#define evalConfig_h
+#ifndef simulatorConfig_h
+#define simulatorConfig_h
 
 #include "backend/dataUpdateEventManager.h"
-#include "backend/settings/settings.h"
 #include "backend/evaluator/evalDefs.h"
+#include "backend/settings/settings.h"
 
-class EvalConfig {
+class SimulatorConfig {
 public:
-	EvalConfig(DataUpdateEventManager& dataUpdateEventManager, evaluator_id_t evaluatorId) : dataUpdateEventManager(dataUpdateEventManager), evaluatorId(evaluatorId) {
+	SimulatorConfig(DataUpdateEventManager& dataUpdateEventManager) : dataUpdateEventManager(dataUpdateEventManager) {
 		Settings::registerListener<SettingType::UINT>("Simulation/Max Thread Count", [this](const int& newMaxThreadCount) { this->setMaxThreadCount(newMaxThreadCount); });
 	}
 
@@ -132,4 +132,4 @@ private:
 	}
 };
 
-#endif /* evalConfig_h */
+#endif /* simulatorConfig_h */

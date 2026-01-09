@@ -1,7 +1,6 @@
 #include "circuitTestCase.h"
 
 #include "backend/address.h"
-#include "backend/blockData/blockData.h"
 #include "backend/evaluator/evalDefs.h"
 #include "backend/evaluator/evaluator.h"
 #include "backend/evaluator/simulator/logicState.h"
@@ -162,7 +161,7 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
 void CircuitTestCase::runSetStatesCommand(TestCommand testCommand, const SharedEvaluator eval, NamePositionMap& nameToConnectedBlockPosition) {
     for (auto statesIter = testCommand.states.begin(); statesIter != testCommand.states.end(); statesIter++) {
         auto blockPosIter = nameToConnectedBlockPosition.find(statesIter->first);
-        eval->setState((Address(blockPosIter->second)), statesIter->second);
+        eval->getEvalLogicSimulator().setState((Address(blockPosIter->second)), statesIter->second);
         logInfo("Set port '{}' to state '{}'", "CircuitTestCase - SET_STATES", statesIter->first, statesIter->second);
     }
 }
@@ -172,7 +171,7 @@ bool CircuitTestCase::runCheckStatesCommand(TestCommand testCommand, const Share
     bool testSucceeded = true;
     for (auto statesIter = testCommand.states.begin(); statesIter != testCommand.states.end(); statesIter++) {
         auto blockPosIter = nameToConnectedBlockPosition.find(statesIter->first);
-        logic_state_t actualState = eval->getState((Address(blockPosIter->second)));
+        logic_state_t actualState = eval->getEvalLogicSimulator().getState((Address(blockPosIter->second)));
         if (actualState != statesIter->second) {
             testSucceeded = false;
             logError("Inner test case failed: Expected port '{}' to have output '{}', got '{}'", "CircuitTestCase - CHECK_STATES", statesIter->first, statesIter->second, actualState);

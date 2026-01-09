@@ -3,10 +3,6 @@
 #include "backend/circuit/circuitManager.h"
 #include "evaluatorInternal.h"
 
-#ifdef TRACY_PROFILER
-#include <tracy/Tracy.hpp>
-#endif
-
 Evaluator::~Evaluator() = default;
 
 Evaluator::Evaluator(
@@ -19,10 +15,9 @@ Evaluator::Evaluator(
 	circuitManager(circuitManager),
 	dataUpdateEventManager(dataUpdateEventManager),
 	receiver(dataUpdateEventManager),
-	evalConfig(dataUpdateEventManager, evaluatorId),
 	circuitId(circuitId),
 	evaluatorInternal(std::make_unique<EvaluatorInternal>(circuitId, circuitManager)),
-	evalLogicSimulator(evalConfig, circuitManager.getBlockDataManager(), *evaluatorInternal)
+	evalLogicSimulator(circuitManager.getBlockDataManager(), *evaluatorInternal, dataUpdateEventManager)
 {
 	const Circuit* circuit = circuitManager.getCircuit(circuitId).get();
 	assert(circuit);
@@ -84,37 +79,12 @@ void Evaluator::makeEdit(DifferenceSharedPtr difference, circuit_id_t circuitId)
 		}
 	}
 	evaluatorInternal->endEdit();
-	evalLogicSimulator.makeEdit();
-}
-
-logic_state_t Evaluator::getState(const Address& address) const {
-	return evalLogicSimulator.getState(address);
-}
-
-void Evaluator::setState(const Address& address, logic_state_t state) {
-	evalLogicSimulator.setState(address, state);
-}
-
-std::variant<simulator_id_t, std::vector<simulator_id_t>> Evaluator::getVirtualConnectionSimulatorId(const Address& address, virtual_connection_id_t virtualConnectionId) const {
-	return evalLogicSimulator.getVirtualConnectionSimulatorId(address, virtualConnectionId);
-}
-
-std::variant<simulator_id_t, std::vector<simulator_id_t>> Evaluator::getPinSimulatorId(const Address& address) const {
-	return evalLogicSimulator.getPinSimulatorId(address);
-}
-
-std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> Evaluator::getVirtualConnectionSimulatorIds(const Address& addressOrigin, const std::vector<std::pair<Position, virtual_connection_id_t>>& virtualConnections) const {
-	return evalLogicSimulator.getVirtualConnectionSimulatorIds(addressOrigin, virtualConnections);
-}
-
-std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> Evaluator::getPinSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const {
-	return evalLogicSimulator.getPinSimulatorIds(addressOrigin, positions);
+	evalLogicSimulator.processEdits();
 }
 
 nlohmann::json Evaluator::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["evaluatorId"] = evaluatorId.get();
-	stateJson["evalConfig"] = evalConfig.dumpState();
 	stateJson["interCircuitConnections"] = nlohmann::json::array();
 	stateJson["dirtySimulatorIds"] = nlohmann::json::array();
 	stateJson["dirtyMiddleIds"] = nlohmann::json::array();

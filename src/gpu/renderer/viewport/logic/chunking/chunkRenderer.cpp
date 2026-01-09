@@ -88,7 +88,7 @@ void ChunkRenderer::render(Frame& frame, const glm::mat4& viewMatrix, Evaluator*
 
 			std::vector<logic_state_t> states(chunk->getStateSimulatorIds().size());
 			if (evaluator != nullptr) {
-				states = evaluator->getStatesFromSimulatorIds(chunk->getStateSimulatorIds());
+				states = evaluator->getEvalLogicSimulator().getStates(chunk->getStateSimulatorIds());
 			}
 
 			vmaCopyMemoryToAllocation(device->getAllocator(), states.data(), chunk->getStateBuffer()->getCurrentBuffer().allocation, 0, states.size());

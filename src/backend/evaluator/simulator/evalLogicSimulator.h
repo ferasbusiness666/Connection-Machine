@@ -7,62 +7,73 @@ class EvaluatorInternal;
 class BlockDataManager;
 class Address;
 
+DECLARE_ID_TYPE(simulator_id_t, unsigned int);
+
 class EvalLogicSimulator {
 public:
-	EvalLogicSimulator(EvalConfig& evalConfig, const BlockDataManager& blockDataManager, const EvaluatorInternal& evaluatorInternal);
+	static constexpr double MIN_TICKRATE_DECREASABLE = 0.1;
 
-	void clearState() { logicSimulator.clearState(); }
-	double getAverageTickrate() const { return logicSimulator.getAverageTickrate(); }
+	EvalLogicSimulator(const BlockDataManager& blockDataManager, const EvaluatorInternal& evaluatorInternal, DataUpdateEventManager& dataUpdateEventManager);
+
+	// --------------- Controls ---------------
 
 	void resetStates() { logicSimulator.resetStates(); }
 
-	// simulator id
-	void setState(simulator_id_t id, logic_state_t state) { logicSimulator.setState(id, state); }
-	logic_state_t getState(simulator_id_t id) const { return logicSimulator.getState(id); }
-	std::vector<logic_state_t> getStates(const std::vector<simulator_id_t>& ids) const { return logicSimulator.getStates(ids); }
+	// Simulator Id State
+	void setState(simulator_gate_id_t id, logic_state_t state) { logicSimulator.setState(id, state); }
+	logic_state_t getState(simulator_gate_id_t id) const { return logicSimulator.getState(id); }
+	std::vector<logic_state_t> getStates(const std::vector<simulator_gate_id_t>& ids) const { return logicSimulator.getStates(ids); }
 
-	// Address
+	// Address State
 	void setState(const Address& address, logic_state_t state);
 	logic_state_t getState(const Address& address) const;
 
-	std::optional<simulator_id_t> getOutputPortId(eval_gate_id gateId, connection_end_id_t portId) const;
-
-	void makeEdit(); // knows to check evaluatorInternal
-
-	// simulator_id_t addGate(const BlockType blockType);
-	// void removeGate(simulator_id_t gateId);
-	// void makeConnection(simulator_id_t sourceId, connection_end_id_t sourcePort, simulator_id_t destinationId, connection_end_id_t destinationPort);
-	// void removeConnection(simulator_id_t sourceId, connection_end_id_t sourcePort, simulator_id_t destinationId, connection_end_id_t destinationPort);
-	// void endEdit();
-
-	bool stepBack() { return logicSimulator.stepBack(); }
-	bool stepForward() { return logicSimulator.stepForward(); }
-	bool skipBack() { return logicSimulator.skipBack(); }
-	bool skipForward() { return logicSimulator.skipForward(); }
+	// Speed/Ticking
+	void setPause(bool pause) { logicSimulator.getSimulatorConfig().setRunning(!pause); }
+	bool isPause() const { return !logicSimulator.getSimulatorConfig().isRunning(); }
+	void addSprint(unsigned int nTicks) { logicSimulator.getSimulatorConfig().addSprint(nTicks); }
+	bool isSprinting() const { return logicSimulator.getSimulatorConfig().getSprintCount() > 0; }
+	void waitForSprintComplete();
+	void tickStep(unsigned int nTicks);
+	void tickStep() { tickStep(1); }
+	bool stepBack();
+	void stepForward();
+	bool skipBack();
+	bool skipForward();
 	inline bool isViewingReplay() const { return logicSimulator.isViewingReplay(); }
+	void setRealistic(bool realistic) { logicSimulator.getSimulatorConfig().setRealistic(realistic); }
+	bool isRealistic() const { return logicSimulator.getSimulatorConfig().isRealistic(); }
+	void setTickrate(double tickrate) { logicSimulator.getSimulatorConfig().setTargetTickrate(tickrate); }
+	double getTickrate() const { return logicSimulator.getSimulatorConfig().getTargetTickrate(); }
+	void increaseTickrateSeq();
+	void decreaseTickrateSeq();
+	void setUseTickrate(bool useTickrate) { logicSimulator.getSimulatorConfig().setTickrateLimiter(useTickrate); }
+	bool getUseTickrate() const { return logicSimulator.getSimulatorConfig().isTickrateLimiterEnabled(); }
+	double getRealTickrate() const { return logicSimulator.getAverageTickrate(); }
 
-	std::variant<simulator_id_t, std::vector<simulator_id_t>> getVirtualConnectionSimulatorId(const Address& address, virtual_connection_id_t virtualConnectionId) const;
-	std::variant<simulator_id_t, std::vector<simulator_id_t>> getPinSimulatorId(const Address& address) const;
-	std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getVirtualConnectionSimulatorIds(const Address& addressOrigin, const std::vector<std::pair<Position, virtual_connection_id_t>>& virtualConnections) const;
-	std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> getPinSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const;
+	// --------------- Other ---------------
+
+	std::optional<simulator_gate_id_t> getOutputPortId(eval_gate_id gateId, connection_end_id_t portId) const;
+
+	std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> getVirtualConnectionSimulatorId(const Address& address, virtual_connection_id_t virtualConnectionId) const;
+	std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> getPinSimulatorId(const Address& address) const;
+	std::vector<std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>>> getVirtualConnectionSimulatorIds(const Address& addressOrigin, const std::vector<std::pair<Position, virtual_connection_id_t>>& virtualConnections) const;
+	std::vector<std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>>> getPinSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const;
+
+	void processEdits();
+
+	void connectListener(void* object, const Address& address, SimulatorMappingUpdateListenerFunction func);
+	void disconnectListener(void* object);
 
 	nlohmann::json dumpState() const { return logicSimulator.dumpState(); }
 
-	void connectListener(void* object, const Address& address, SimulatorMappingUpdateListenerFunction func);
-	void disconnectListener(void* object) {
-		auto iter = simulatorMappingUpdateListeners.find(object);
-		if (iter != simulatorMappingUpdateListeners.end()) {
-			simulatorMappingUpdateListeners.erase(iter);
-		}
-	}
-
 private:
-	std::vector<simulator_id_t> dirtySimulatorIds;
+	std::vector<simulator_gate_id_t> dirtySimulatorIds;
 	LogicSimulator logicSimulator;
 	const BlockDataManager& blockDataManager;
 	const EvaluatorInternal& evaluatorInternal;
 
-	std::unordered_map<eval_gate_id, simulator_id_t> gateIdMapping;
+	std::unordered_map<eval_gate_id, simulator_gate_id_t> gateIdMapping;
 	std::map<void*, SimulatorMappingUpdateListener> simulatorMappingUpdateListeners;
 };
 

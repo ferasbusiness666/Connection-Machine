@@ -82,7 +82,7 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 			this->mainWindow.logError("Cant start simulation when there is none");
 			return;
 		}
-		circuitView->getEvaluator()->setPause(!circuitView->getEvaluator()->isPause());
+		circuitView->getEvaluator()->getEvalLogicSimulator().setPause(!circuitView->getEvaluator()->getEvalLogicSimulator().isPause());
 		this->mainWindow.getSimControlsManager()->update();
 	});
 	keybindHandler.addListener("Keybinds/Simulation/Step Forward", [this]() {
@@ -90,7 +90,7 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 			this->mainWindow.logError("Cant step simulation when there is none");
 			return;
 		}
-		circuitView->getEvaluator()->stepForward();
+		circuitView->getEvaluator()->getEvalLogicSimulator().stepForward();
 		this->mainWindow.getSimControlsManager()->update();
 	});
 	keybindHandler.addListener("Keybinds/Simulation/Step Back", [this]() {
@@ -98,7 +98,7 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 			this->mainWindow.logError("Cant back step simulation when there is none");
 			return;
 		}
-		if (circuitView->getEvaluator()->stepBack()) {
+		if (circuitView->getEvaluator()->getEvalLogicSimulator().stepBack()) {
 			this->mainWindow.getSimControlsManager()->update();
 		} else {
 			this->mainWindow.logError("Cant back step simulation with no simulation data");
@@ -109,7 +109,7 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 			this->mainWindow.logError("Cant change simulation speed when there is none");
 			return;
 		}
-		circuitView->getEvaluator()->increaseTickrateSeq();
+		circuitView->getEvaluator()->getEvalLogicSimulator().increaseTickrateSeq();
 		this->mainWindow.getSimControlsManager()->update();
 	});
 	keybindHandler.addListener("Keybinds/Simulation/Decrease Speed", [this]() {
@@ -117,12 +117,12 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 			this->mainWindow.logError("Cant change simulation speed when there is none");
 			return;
 		}
-		circuitView->getEvaluator()->decreaseTickrateSeq();
+		circuitView->getEvaluator()->getEvalLogicSimulator().decreaseTickrateSeq();
 		this->mainWindow.getSimControlsManager()->update();
 	});
 	keybindHandler.addListener("Keybinds/Simulation/Skip Forward", [this]() {
 		if (circuitView->getEvaluator()) {
-			if (circuitView->getEvaluator()->skipForward()) {
+			if (circuitView->getEvaluator()->getEvalLogicSimulator().skipForward()) {
 				this->mainWindow.getSimControlsManager()->update();
 			} else {
 				this->mainWindow.logError("Cant skip forward simulation with no simulation data");
@@ -134,7 +134,7 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 	});
 	keybindHandler.addListener("Keybinds/Simulation/Skip Back", [this]() {
 		if (circuitView->getEvaluator()) {
-			if (circuitView->getEvaluator()->skipBack()) {
+			if (circuitView->getEvaluator()->getEvalLogicSimulator().skipBack()) {
 				this->mainWindow.getSimControlsManager()->update();
 			} else {
 				this->mainWindow.logError("Cant skip back simulation with no simulation data");
@@ -159,7 +159,7 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 					{
 						"Reset",
 						[this, evaluator]() {
-							evaluator->resetStates();
+							evaluator->getEvalLogicSimulator().resetStates();
 						}
 					},
 					{
@@ -169,7 +169,7 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 				}
 			);
 		} else {
-			circuitView->getEvaluator()->resetStates();
+			circuitView->getEvaluator()->getEvalLogicSimulator().resetStates();
 		}
 	});
 	keybindHandler.addListener("Keybinds/Editing/Copy", [this]() { circuitView->getEventRegister().doEvent(Event("Copy")); });
@@ -327,7 +327,7 @@ void CircuitViewWidget::updateTps() {
 	Evaluator* evaluator = circuitView->getEvaluator();
 	std::string tpsText = "Real tps: N/A";
 	if (evaluator) {
-		double tps = evaluator->getRealTickrate();
+		double tps = evaluator->getEvalLogicSimulator().getRealTickrate();
 		if (tps < 5.235) tpsText = "Real tps: " + fmt::format("{:.2f}", tps);
 		else if (tps < 100) tpsText = "Real tps: " + fmt::format("{:.1f}", tps);
 		else tpsText = "Real tps: " + fmt::format("{:.0f}", tps);
@@ -344,15 +344,15 @@ void CircuitViewWidget::updateTps() {
 }
 
 void CircuitViewWidget::setSimState(bool state) {
-	if (circuitView->getEvaluator()) circuitView->getEvaluator()->setPause(!state);
+	if (circuitView->getEvaluator()) circuitView->getEvaluator()->getEvalLogicSimulator().setPause(!state);
 }
 
 void CircuitViewWidget::simUseSpeed(bool state) {
-	if (circuitView->getEvaluator()) circuitView->getEvaluator()->setUseTickrate(state);
+	if (circuitView->getEvaluator()) circuitView->getEvaluator()->getEvalLogicSimulator().setUseTickrate(state);
 }
 
 void CircuitViewWidget::setSimSpeed(double speed) {
-	if (circuitView->getEvaluator()) circuitView->getEvaluator()->setTickrate(speed);
+	if (circuitView->getEvaluator()) circuitView->getEvaluator()->getEvalLogicSimulator().setTickrate(speed);
 }
 
 void CircuitViewWidget::newCircuit() {

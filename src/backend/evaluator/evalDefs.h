@@ -6,7 +6,7 @@
 DECLARE_ID_TYPE(evaluator_id_t, unsigned int);
 DECLARE_ID_TYPE(eval_circuit_id_t, unsigned int);
 DECLARE_ID_TYPE(eval_gate_id, unsigned int);
-DECLARE_ID_TYPE(simulator_id_t, unsigned int);
+DECLARE_ID_TYPE(simulator_gate_id_t, unsigned int);
 
 typedef unsigned int EvalGateType;
 
@@ -14,12 +14,12 @@ inline EvalGateType getEvalGateType(BlockType blockType) { return (EvalGateType)
 inline BlockType getBlockType(EvalGateType evalGateType) { return (BlockType)evalGateType; }
 
 struct SimulatorMappingUpdate {
-	SimulatorMappingUpdate(Position position, const std::variant<simulator_id_t, std::vector<simulator_id_t>>& simulatorIds) : position(position), simulatorIds(simulatorIds) {}
-	SimulatorMappingUpdate(Position position, std::optional<virtual_connection_id_t> virtualConnectionId, const std::variant<simulator_id_t, std::vector<simulator_id_t>>& simulatorIds) :
+	SimulatorMappingUpdate(Position position, const std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>>& simulatorIds) : position(position), simulatorIds(simulatorIds) {}
+	SimulatorMappingUpdate(Position position, std::optional<virtual_connection_id_t> virtualConnectionId, const std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>>& simulatorIds) :
 		position(position), virtualConnectionId(virtualConnectionId), simulatorIds(simulatorIds) {}
 	Position position;
 	std::optional<virtual_connection_id_t> virtualConnectionId = std::nullopt;
-	std::variant<simulator_id_t, std::vector<simulator_id_t>> simulatorIds;
+	std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> simulatorIds;
 };
 
 typedef std::function<void(const std::vector<SimulatorMappingUpdate>&)> SimulatorMappingUpdateListenerFunction;

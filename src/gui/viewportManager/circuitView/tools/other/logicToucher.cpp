@@ -45,9 +45,9 @@ bool LogicToucher::press(const Event* event) {
 			default:
 				Address address = circuitView->getAddress();
 				address.addBlockId(clickPosition);
-				logic_state_t state = evaluator->getState(address);
+				logic_state_t state = evaluator->getEvalLogicSimulator().getState(address);
 				state = (state == logic_state_t::HIGH) ? logic_state_t::LOW : logic_state_t::HIGH;
-				evaluator->setState(address, state);
+				evaluator->getEvalLogicSimulator().setState(address, state);
 				sendEventToCircuitView(StateSetEvent("CircuitStateSet", clickPosition, state));
 			}
 		}
@@ -66,7 +66,7 @@ bool LogicToucher::unpress(const Event* event) {
 		if (block && block->type() == BlockType::BUTTON) {
 			Address address = circuitView->getAddress();
 			address.addBlockId(clickPosition);
-			evaluator->setState(address, logic_state_t::LOW);
+			evaluator->getEvalLogicSimulator().setState(address, logic_state_t::LOW);
 			sendEventToCircuitView(StateSetEvent("CircuitStateSet", clickPosition, logic_state_t::LOW));
 		}
 		clicked = false;
@@ -85,7 +85,7 @@ bool LogicToucher::pointerMove(const Event* event) {
 		if (block && block->type() == BlockType::BUTTON) {
 			Address address = circuitView->getAddress();
 			address.addBlockId(clickPosition);
-			evaluator->setState(address, logic_state_t::LOW);
+			evaluator->getEvalLogicSimulator().setState(address, logic_state_t::LOW);
 		}
 		clickPosition = lastPointerPosition;
 		block = circuit->getBlockContainer().getBlock(clickPosition);
@@ -110,9 +110,9 @@ bool LogicToucher::pointerMove(const Event* event) {
 			default:
 				Address address = circuitView->getAddress();
 				address.addBlockId(clickPosition);
-				logic_state_t state = evaluator->getState(address);
+				logic_state_t state = evaluator->getEvalLogicSimulator().getState(address);
 				state = (state == logic_state_t::HIGH) ? logic_state_t::LOW : logic_state_t::HIGH;
-				evaluator->setState(address, state);
+				evaluator->getEvalLogicSimulator().setState(address, state);
 				sendEventToCircuitView(StateSetEvent("CircuitStateSet", clickPosition, state));
 			}
 		}
