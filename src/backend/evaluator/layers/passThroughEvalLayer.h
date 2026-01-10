@@ -3,8 +3,6 @@
 
 #include "baseEvalLayer.h"
 
-class EvalLayerState;
-
 class PassThroughEvalLayer : public BaseEvalLayer {
 public:
 	void run(const EvalLayerState& currentState, EvalLayerState& nextState) override final;

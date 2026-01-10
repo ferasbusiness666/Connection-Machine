@@ -24,10 +24,6 @@ public:
 		const EvalGate* evalGate = lastLayerState->getGate(gateId);
 		const BlockData* blockData = blockDataManager.getBlockData(getBlockType(evalGate->type));
 		assert(blockData);
-		for (auto iter : blockData->getConnectionsSafe()) {
-			connectionPointRemapping.emplace(EvalConnectionPoint(gateId, iter.first), EvalConnectionPoint(gateId, iter.first));
-			connectionPointReverseRemapping.emplace(EvalConnectionPoint(gateId, iter.first), EvalConnectionPoint(gateId, iter.first));
-		}
 		evalGateIdRemapping.emplace(gateId, gateId);
 		evalGateIdReverseRemapping.emplace(gateId, gateId);
 		addGate(gateId, evalGate->type);
@@ -37,10 +33,6 @@ public:
 		const EvalGate* evalGate = getGate(gateId);
 		const BlockData* blockData = blockDataManager.getBlockData(getBlockType(evalGate->type));
 		assert(blockData);
-		for (auto iter : blockData->getConnectionsSafe()) {
-			connectionPointRemapping.erase(EvalConnectionPoint(gateId, iter.first));
-			connectionPointReverseRemapping.erase(EvalConnectionPoint(gateId, iter.first));
-		}
 		evalGateIdRemapping.erase(gateId);
 		auto iterPair = evalGateIdReverseRemapping.equal_range(gateId);
 		for (auto iter = iterPair.first; iter != iterPair.second; iter++) {
@@ -58,13 +50,13 @@ public:
 	void passRemoveConnection(const EvalConnection& evalConnection) {
 		assert(lastLayerState);
 		removeConnection(evalConnection);
-
 	}
 	void addGate(eval_gate_id gateId, EvalGateType type) { // TODO: add transparent junction merging
 		bool suc = gates.try_emplace(gateId, type, gateId).second;
 		assert(suc);
-		addedGates.insert(gateId);
-		assert(!removedGates.contains(gateId));
+		if (removedGates.erase(gateId) == 0) {
+			addedGates.insert(gateId);
+		}
 	}
 	void removeGate(eval_gate_id gateId) { // TODO: add transparent junction splitting
 		auto iter = gates.find(gateId);
@@ -84,8 +76,9 @@ public:
 		auto gateBIterBoolPair = gates.find(evalConnection.connectionPointB.gateId);
 		assert(gateBIterBoolPair != gates.end());
 		gateBIterBoolPair->second.connections[evalConnection.connectionPointB.connectionEndId].insert(evalConnection.connectionPointA);
-		addedConnections.insert(evalConnection);
-		assert(!removedConnections.contains(evalConnection));
+		if (removedConnections.erase(evalConnection) == 0) {
+			addedConnections.insert(evalConnection);
+		}
 	}
 	void removeConnection(const EvalConnection& evalConnection) { // TODO: add transparent junction splitting
 		auto gateAIterBoolPair = gates.find(evalConnection.connectionPointA.gateId);
@@ -150,9 +143,13 @@ public:
 	const EvalLayerState* getLastLayerState() const {
 		return lastLayerState;
 	}
+	std::unordered_map<eval_gate_id, eval_gate_id>& getEvalGateIdRemapping() { return evalGateIdRemapping; }
 	const std::unordered_map<eval_gate_id, eval_gate_id>& getEvalGateIdRemapping() const { return evalGateIdRemapping; }
+	std::unordered_multimap<eval_gate_id, eval_gate_id>& getEvalGateIdReverseRemapping() { return evalGateIdReverseRemapping; }
 	const std::unordered_multimap<eval_gate_id, eval_gate_id>& getEvalGateIdReverseRemapping() const { return evalGateIdReverseRemapping; }
+	std::unordered_map<EvalConnectionPoint, EvalConnectionPoint>& getConnectionPointRemapping() { return connectionPointRemapping; }
 	const std::unordered_map<EvalConnectionPoint, EvalConnectionPoint>& getConnectionPointRemapping() const { return connectionPointRemapping; }
+	std::unordered_multimap<EvalConnectionPoint, EvalConnectionPoint>& getConnectionPointReverseRemapping() { return connectionPointReverseRemapping; }
 	const std::unordered_multimap<EvalConnectionPoint, EvalConnectionPoint>& getConnectionPointReverseRemapping() const { return connectionPointReverseRemapping; }
 
 private:

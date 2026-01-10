@@ -197,8 +197,8 @@ std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> EvalLogicSim
 		const EvalGate* otherEvalGate = evalLayerState.getGate(connectionsIter->second.begin()->gateId);
 		if (
 			otherEvalGate->type == getEvalGateType(BlockType::JUNCTION) ||
-			otherEvalGate->type == getEvalGateType(BlockType::JUNCTION_H) ||
 			otherEvalGate->type == getEvalGateType(BlockType::JUNCTION_L) ||
+			otherEvalGate->type == getEvalGateType(BlockType::JUNCTION_H) ||
 			otherEvalGate->type == getEvalGateType(BlockType::JUNCTION_X)
 		) {
 			evalGateIdToReadState = otherEvalGate->gateId;
@@ -275,6 +275,7 @@ void EvalLogicSimulator::processEdits() {
 				logError("makeEdit add connections gateIdMapping.find(iter->connectionPointB.gateId) failed. Gate id: {}", "EvalLogicSimulator::makeEdit", iter->connectionPointB.gateId);
 				continue;
 			}
+			// tmp need to order the inputs for logicSimulator
 			logicSimulator.makeConnection(gateAIdIter->second, iter->connectionPointA.connectionEndId, gateBIdIter->second, iter->connectionPointB.connectionEndId);
 		}
 		logicSimulator.endEdit();
@@ -297,8 +298,8 @@ void EvalLogicSimulator::processEdits() {
 				const EvalGate* otherEvalGate = evalLayerState.getGate(connectionsIter->second.begin()->gateId);
 				if (
 					otherEvalGate->type == getEvalGateType(BlockType::JUNCTION) ||
-					otherEvalGate->type == getEvalGateType(BlockType::JUNCTION_H) ||
 					otherEvalGate->type == getEvalGateType(BlockType::JUNCTION_L) ||
+					otherEvalGate->type == getEvalGateType(BlockType::JUNCTION_H) ||
 					otherEvalGate->type == getEvalGateType(BlockType::JUNCTION_X)
 				) {
 					pinSimId = gateIdMapping.at(otherEvalGate->gateId);
