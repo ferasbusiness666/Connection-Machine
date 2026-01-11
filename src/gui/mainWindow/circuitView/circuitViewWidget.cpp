@@ -27,16 +27,18 @@ void LoadCallback(void* userData, const char* const* filePaths, int filter) {
 			return;
 		}
 		circuit_id_t id = ids.back();
-		circuitViewWidget->getCircuitView()->setCircuit(id);
-		logInfo("Circuit view switched to loaded circuit {}", "CircuitViewWidget:LoadCallback", id);
+		bool doSetCir = true;
 		// circuitViewWidget->getCircuitView()->getBackend()->linkCircuitViewWithCircuit(circuitViewWidget->getCircuitView(), id);
 		for (auto& iter : circuitViewWidget->getCircuitView()->getBackend().getEvaluatorManager().getEvaluators()) {
 			if (iter.second->getCircuitId(Address()) == id) {
+				doSetCir = false;
 				circuitViewWidget->getCircuitView()->setEvaluator(iter.first);
 				// circuitViewWidget->getCircuitView()->getBackend()->linkCircuitViewWithEvaluator(circuitViewWidget->getCircuitView(), iter.first, Address());
 				return;
 			}
 		}
+		if (doSetCir) circuitViewWidget->getCircuitView()->setCircuit(id);
+		logInfo("Circuit view switched to loaded circuit {}", "CircuitViewWidget:LoadCallback", id);
 	} else {
 		logInfo("File dialog canceled.");
 	}
