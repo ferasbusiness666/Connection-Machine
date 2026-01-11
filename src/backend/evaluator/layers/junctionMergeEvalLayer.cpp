@@ -32,24 +32,41 @@ void JunctionMergeEvalLayer::run(const EvalLayerState& currentState, EvalLayerSt
 		}
 	}
 	for (auto iter = currentState.getRemovedGatesBegin(); iter != currentState.getRemovedGatesEnd(); ++iter) {
-		const EvalGate* junction = nextState.getGate(*iter);
-		if (!junction) {
+		const EvalGate* gate = nextState.getGate(*iter);
+		if (gate == nullptr) {
 			auto remappingIter = nextState.getGateIdRemapping().find(*iter);
 			if (remappingIter == nextState.getGateIdRemapping().end()) {
 				logError("Failled to find junction gate remapping for gate id {}.", "JunctionMergeEvalLayer::run", *iter);
 				continue;
 			}
 			junctionsToScan.insert(remappingIter->second);
+			auto iterPair = nextState.getGateIdReverseRemapping().equal_range(remappingIter->second);
+			for (auto reversedRemappingIter = iterPair.first; true /* if a->b then a<-b so it will always hit the break */; reversedRemappingIter++) {
+				assert(reversedRemappingIter != iterPair.second);
+				if (reversedRemappingIter->second == *iter) {
+					nextState.getGateIdReverseRemapping().erase(reversedRemappingIter);
+					break;
+				}
+			}
+			nextState.getGateIdRemapping().erase(remappingIter);
 			continue;
 		}
-		auto scanIter = junctionsToScan.find(*iter);
-		if (scanIter != junctionsToScan.end()) {
-			junctionsToScan.erase(scanIter);
-			if (!junction->connections.empty()) {
-				const std::unordered_set<EvalConnectionPoint>& connections = junction->connections.at(0);
-				do {
-					nextState.removeConnection(EvalConnection(EvalConnectionPoint(*iter, 0), *(connections.begin())));
-				} while ((!junction->connections.empty()));
+		if (isJunctionType(gate->type)) {
+			auto scanIter = junctionsToScan.find(*iter);
+			if (scanIter != junctionsToScan.end()) {
+				junctionsToScan.erase(scanIter);
+				if (!gate->connections.empty()) {
+					const std::unordered_set<EvalConnectionPoint>& connections = gate->connections.at(0);
+					do {
+						nextState.removeConnection(EvalConnection(EvalConnectionPoint(*iter, 0), *(connections.begin())));
+					} while ((!gate->connections.empty()));
+				}
+			}
+			auto iterPair = nextState.getGateIdReverseRemapping().equal_range(*iter);
+			assert(iterPair.first != iterPair.second);
+			for (auto reverseRemappingIter = iterPair.first; reverseRemappingIter != iterPair.second; reverseRemappingIter++) {
+				if (reverseRemappingIter->second == *iter) continue;
+				junctionsToScan.insert(reverseRemappingIter->second);
 			}
 		}
 		nextState.passRemoveGate(*iter);
@@ -113,9 +130,9 @@ void JunctionMergeEvalLayer::run(const EvalLayerState& currentState, EvalLayerSt
 						break;
 					}
 				}
-				nextState.getGateIdReverseRemapping().emplace(gateId, junctionId);
 				pair.first->second = gateId;
 			}
+			nextState.getGateIdReverseRemapping().emplace(gateId, junctionId);
 			if (junction) nextState.removeGate(junctionId);
 		}
 
