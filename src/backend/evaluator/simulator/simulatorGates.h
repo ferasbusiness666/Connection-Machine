@@ -14,6 +14,7 @@ public:
 	virtual void addInput(simulator_gate_id_t inputId, connection_end_id_t portId) = 0;
 	virtual void removeInput(simulator_gate_id_t inputId, connection_end_id_t portId) = 0;
 	virtual void removeIdRefs(simulator_gate_id_t otherId) = 0;
+	virtual BlockData::ConnectionData::PortType getPortType(connection_end_id_t portId) const { assert(false); }
 	virtual simulator_gate_id_t getIdOfOutputPort(connection_end_id_t portId) const = 0;
 	virtual void resetState(bool realistic, IdVector<simulator_gate_id_t, logic_state_t>& states) = 0;
 	virtual std::vector<simulator_gate_id_t> getOutputSimIds() const = 0;
@@ -169,6 +170,11 @@ struct ANDLikeGate : public MultiInputGate {
 		MultiInputGate::removeIdRefs(otherId);
 	}
 
+	BlockData::ConnectionData::PortType getPortType(connection_end_id_t portId) const override {
+		if (portId == 1) return BlockData::ConnectionData::PortType::OUTPUT;
+		return BlockData::ConnectionData::PortType::INPUT;
+	}
+
 	nlohmann::json dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 		nlohmann::json stateJson = nlohmann::json::object();
 		stateJson["id"] = id.get();
@@ -214,6 +220,11 @@ struct XORLikeGate : public MultiInputGate {
 	inline void realisticTick(const IdVector<simulator_gate_id_t, logic_state_t>& statesA, IdVector<simulator_gate_id_t, logic_state_t>& statesB) noexcept {
 		logic_state_t targetState = calculate(statesA);
 		applyRealisticTick(targetState, statesA, statesB);
+	}
+
+	BlockData::ConnectionData::PortType getPortType(connection_end_id_t portId) const override {
+		if (portId == 1) return BlockData::ConnectionData::PortType::OUTPUT;
+		return BlockData::ConnectionData::PortType::INPUT;
 	}
 
 	nlohmann::json dumpState() const /* GCOVR_EXCL_FUNCTION */ {
@@ -281,6 +292,10 @@ struct JunctionGate : public SimulatorGate {
 		inputs.erase(std::remove(inputs.begin(), inputs.end(), otherId), inputs.end());
 	}
 
+	BlockData::ConnectionData::PortType getPortType(connection_end_id_t portId) const override {
+		return BlockData::ConnectionData::PortType::BIDIRECTIONAL;
+	}
+
 	void resetState(bool realistic, IdVector<simulator_gate_id_t, logic_state_t>& states) override {
 		states[id] = logic_state_t::FLOATING;
 	}
@@ -304,7 +319,6 @@ struct JunctionGate : public SimulatorGate {
 		return stateJson;
 	}
 };
-
 
 class BufferGateBase : public SingleInputGate {
 public:
@@ -349,6 +363,11 @@ struct SingleBufferGate : public BufferGateBase {
 			return logic_state_t::UNDEFINED;
 		}
 		return outputInverted ? (state == logic_state_t::HIGH ? logic_state_t::LOW : logic_state_t::HIGH) : state;
+	}
+
+	BlockData::ConnectionData::PortType getPortType(connection_end_id_t portId) const override {
+		if (portId == 1) return BlockData::ConnectionData::PortType::OUTPUT;
+		return BlockData::ConnectionData::PortType::INPUT;
 	}
 
 	inline void tick(const IdVector<simulator_gate_id_t, logic_state_t>& statesA, IdVector<simulator_gate_id_t, logic_state_t>& statesB) noexcept {
@@ -439,6 +458,11 @@ struct TristateBufferGate : public SimulatorGate {
 		applyRealisticTick(targetState, statesA, statesB);
 	}
 
+	BlockData::ConnectionData::PortType getPortType(connection_end_id_t portId) const override {
+		if (portId == 2) return BlockData::ConnectionData::PortType::OUTPUT;
+		return BlockData::ConnectionData::PortType::INPUT;
+	}
+
 	simulator_gate_id_t getIdOfOutputPort(connection_end_id_t portId) const override {
 		return id;
 	}
@@ -473,6 +497,10 @@ public:
 	}
 
 	void removeIdRefs(simulator_gate_id_t otherId) override {}
+
+	BlockData::ConnectionData::PortType getPortType(connection_end_id_t portId) const override {
+		return BlockData::ConnectionData::PortType::OUTPUT;
+	}
 
 	simulator_gate_id_t getIdOfOutputPort(connection_end_id_t portId) const override {
 		return id;
@@ -530,6 +558,10 @@ struct CopySelfOutputGate : public LogicGate {
 
 	inline void tick(const IdVector<simulator_gate_id_t, logic_state_t>& statesA, IdVector<simulator_gate_id_t, logic_state_t>& statesB) noexcept {
 		statesB[id] = calculate(statesA);
+	}
+
+	BlockData::ConnectionData::PortType getPortType(connection_end_id_t portId) const override {
+		return BlockData::ConnectionData::PortType::OUTPUT;
 	}
 
 	simulator_gate_id_t getIdOfOutputPort(connection_end_id_t portId) const override {
@@ -608,6 +640,9 @@ struct PortsToIntGate : public SimulatorGate {
 	}
 	std::vector<simulator_gate_id_t> getOutputSimIds() const override {
 		return {id};
+	}
+	BlockData::ConnectionData::PortType getPortType(connection_end_id_t portId) const override {
+		return BlockData::ConnectionData::PortType::INPUT;
 	}
 
 	nlohmann::json dumpState() const /* GCOVR_EXCL_FUNCTION */ {

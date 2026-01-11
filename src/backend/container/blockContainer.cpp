@@ -243,13 +243,25 @@ void BlockContainer::resizeBlockType(BlockType blockType, Size newSize, Differen
 bool BlockContainer::connectionExists(Position outputPosition, Position inputPosition) const {
 	const Block* input = getBlock(inputPosition);
 	if (!input) return false;
-	std::optional<connection_end_id_t> inputConnectionId = input->getInputConnectionId(inputPosition);
-	if (!inputConnectionId) return false;
+	const BlockData* inputBlockData = blockDataManager.getBlockData(input->type());
+	std::optional<connection_end_id_t> inputConnectionId = inputBlockData->getInputConnectionId(inputPosition - input->getPosition(), input->getOrientation());
+	if (!inputConnectionId) {
+		if (outputPosition == inputPosition) return false; // bidirectional ports cant self connect
+		inputConnectionId = inputBlockData->getBidirectionalConnectionId(inputPosition - input->getPosition(), input->getOrientation());
+		if (!inputConnectionId) return false;
+	}
 	const Block* output = getBlock(outputPosition);
 	if (!output) return false;
-	std::optional<connection_end_id_t> outputConnectionId = output->getOutputConnectionId(outputPosition);
-	if (!outputConnectionId) return false;
-	return input->getConnectionContainer().hasConnection(inputConnectionId.value(), ConnectionEnd(output->id(), outputConnectionId.value()));
+	const BlockData* outputBlockData = blockDataManager.getBlockData(output->type());
+	std::optional<connection_end_id_t> outputConnectionId = outputBlockData->getOutputConnectionId(outputPosition - output->getPosition(), output->getOrientation());
+	if (!outputConnectionId) {
+		outputConnectionId = outputBlockData->getBidirectionalConnectionId(outputPosition - output->getPosition(), output->getOrientation());
+		if (!outputConnectionId) return false;
+	}
+	return input->getConnectionContainer().hasConnection(
+		inputConnectionId.value(),
+		ConnectionEnd(output->id(), outputConnectionId.value())
+	);
 }
 
 bool BlockContainer::connectionExists(ConnectionEnd connectionEndA, ConnectionEnd connectionEndB) const {

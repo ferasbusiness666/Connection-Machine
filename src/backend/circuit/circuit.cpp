@@ -343,6 +343,11 @@ bool Circuit::tryInsertCopiedBlocks(const SharedCopiedBlocks& copiedBlocks, Posi
 			difference.get()
 		)) {
 			logError("Failed to create connection while inserting block.");
+			blockContainer.tryCreateConnection(
+				position + transformAmount * (conn.second - copiedBlocks->getMinPosition()),
+				position + transformAmount * (conn.first - copiedBlocks->getMinPosition()),
+				difference.get()
+			);
 		}
 	}
 	sendDifference(std::move(difference));

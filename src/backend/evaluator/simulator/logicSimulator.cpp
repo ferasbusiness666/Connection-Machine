@@ -557,6 +557,13 @@ void LogicSimulator::makeConnection(simulator_gate_id_t sourceId, connection_end
 }
 
 void LogicSimulator::removeConnection(simulator_gate_id_t sourceId, connection_end_id_t sourcePort, simulator_gate_id_t destinationId, connection_end_id_t destinationPort) {
+	if (getPortType(sourceId, sourcePort) == BlockData::ConnectionData::PortType::OUTPUT) {
+		std::swap(sourceId, destinationId);
+		std::swap(sourcePort, destinationPort);
+	} else if (getPortType(destinationId, destinationPort) == BlockData::ConnectionData::PortType::INPUT) {
+		std::swap(sourceId, destinationId);
+		std::swap(sourcePort, destinationPort);
+	}
 	invalidateReplay();
 	std::optional<simulator_gate_id_t> actualSourceId = getOutputPortId(sourceId, sourcePort);
 	if (!actualSourceId.has_value()) {
@@ -569,6 +576,68 @@ void LogicSimulator::removeConnection(simulator_gate_id_t sourceId, connection_e
 void LogicSimulator::endEdit() {
 	for (auto& gate : junctions) gate.doubleTick(statesA, statesB);
 	regenerateJobs();
+}
+
+BlockData::ConnectionData::PortType LogicSimulator::getPortType(simulator_gate_id_t simId, connection_end_id_t portId) const {
+	auto locationIt = gateLocations.find(simId);
+	if (locationIt != gateLocations.end()) {
+		SimGateType gateType = locationIt->second.gateType;
+		size_t gateIndex = locationIt->second.gateIndex;
+		switch (gateType) {
+		case SimGateType::AND:
+			if (gateIndex < andGates.size()) {
+				return andGates[gateIndex].getPortType(portId);
+			}
+			break;
+		case SimGateType::XOR:
+			if (gateIndex < xorGates.size()) {
+				return xorGates[gateIndex].getPortType(portId);
+			}
+			break;
+		case SimGateType::JUNCTION:
+			if (gateIndex < junctions.size()) {
+				return junctions[gateIndex].getPortType(portId);
+			}
+			break;
+		case SimGateType::BUFFER:
+			if (gateIndex < buffers.size()) {
+				return buffers[gateIndex].getPortType(portId);
+			}
+			break;
+		case SimGateType::SINGLE_BUFFER:
+			if (gateIndex < singleBuffers.size()) {
+				return singleBuffers[gateIndex].getPortType(portId);
+			}
+			break;
+		case SimGateType::TRISTATE_BUFFER:
+			if (gateIndex < tristateBuffers.size()) {
+				return tristateBuffers[gateIndex].getPortType(portId);
+			}
+			break;
+		case SimGateType::CONSTANT:
+			if (gateIndex < constantGates.size()) {
+				return constantGates[gateIndex].getPortType(portId);
+			}
+			break;
+		case SimGateType::CONSTANT_RESET:
+			if (gateIndex < constantResetGates.size()) {
+				return constantResetGates[gateIndex].getPortType(portId);
+			}
+			break;
+		case SimGateType::COPY_SELF_OUTPUT:
+			if (gateIndex < copySelfOutputGates.size()) {
+				return copySelfOutputGates[gateIndex].getPortType(portId);
+			}
+			break;
+		case SimGateType::PORTS_TO_INT:
+			if (gateIndex < portsToIntGates.size()) {
+				assert(false); // im going to say this gate needs to be killed
+				// return portsToIntGates[gateIndex].getPortType(portId);
+			}
+			break;
+		}
+	}
+	return BlockData::ConnectionData::PortType::NONE;
 }
 
 std::optional<simulator_gate_id_t> LogicSimulator::getOutputPortId(simulator_gate_id_t simId, connection_end_id_t portId) const {
