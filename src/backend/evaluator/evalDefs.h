@@ -52,14 +52,19 @@ struct std::hash<EvalConnectionPoint> {
 
 struct EvalConnection {
 	EvalConnection(eval_gate_id gateAId, connection_end_id_t gateAConnectionId, eval_gate_id gateBId, connection_end_id_t gateBConnectionId) :
-		connectionPointA(gateAId, gateAConnectionId), connectionPointB(gateBId, gateBConnectionId) { }
+		EvalConnection(EvalConnectionPoint(gateAId, gateAConnectionId), EvalConnectionPoint(gateBId, gateBConnectionId)) { }
 	EvalConnection(EvalConnectionPoint connectionPointA, EvalConnectionPoint connectionPointB) :
 		connectionPointA(connectionPointA), connectionPointB(connectionPointB) { }
 
 	EvalConnectionPoint connectionPointA;
 	EvalConnectionPoint connectionPointB;
 
-	bool operator==(const EvalConnection other) const { return connectionPointA == other.connectionPointA && connectionPointB == other.connectionPointB; }
+	bool operator==(const EvalConnection other) const {
+		return (
+			(connectionPointA == other.connectionPointA && connectionPointB == other.connectionPointB) ||
+			(connectionPointA == other.connectionPointB && connectionPointB == other.connectionPointA)
+		);
+	}
 };
 
 template <>
@@ -67,6 +72,7 @@ struct std::hash<EvalConnection> {
 	inline std::size_t operator()(EvalConnection evalConnection) const noexcept {
 		std::size_t h1 = std::hash<EvalConnectionPoint>{}(evalConnection.connectionPointA);
 		std::size_t h2 = std::hash<EvalConnectionPoint>{}(evalConnection.connectionPointB);
+		if (h1 > h2) std::swap(h1, h2);
 		std::size_t seed = h1 + 0x9e3779b9;
 		return h2 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 	}

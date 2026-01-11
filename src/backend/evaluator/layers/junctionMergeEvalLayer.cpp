@@ -66,6 +66,7 @@ void JunctionMergeEvalLayer::run(const EvalLayerState& currentState, EvalLayerSt
 			junctionsToScan.insert(evalConnection.connectionPointA.gateId);
 		} else {
 			nextState.passAddConnection(evalConnection);
+			// logInfo("added connetion {}, {}, {}, {}", "", evalConnection.connectionPointA.gateId, evalConnection.connectionPointA.connectionEndId, evalConnection.connectionPointB.gateId, evalConnection.connectionPointB.connectionEndId);
 		}
 	}
 	while (!junctionsToScan.empty()) {
@@ -81,6 +82,7 @@ void JunctionMergeEvalLayer::run(const EvalLayerState& currentState, EvalLayerSt
 			if (!junction->connections.empty()) {
 				const std::unordered_set<EvalConnectionPoint>& connections = junction->connections.at(0);
 				do {
+					// logInfo("removed connetion {}, {}, {}, {}", "", junctionId, 0, connections.begin()->gateId, connections.begin()->connectionEndId);
 					nextState.removeConnection(EvalConnection(EvalConnectionPoint(junctionId, 0), *(connections.begin())));
 				} while ((!junction->connections.empty()));
 			}

@@ -84,6 +84,7 @@ public:
 		auto gateAIterBoolPair = gates.find(evalConnection.connectionPointA.gateId);
 		assert(gateAIterBoolPair != gates.end());
 		auto gateAConnectionIter = gateAIterBoolPair->second.connections.find(evalConnection.connectionPointA.connectionEndId);
+		assert(gateAConnectionIter->second.contains(evalConnection.connectionPointB));
 		if (gateAConnectionIter->second.size() == 1) gateAIterBoolPair->second.connections.erase(gateAConnectionIter);
 		else {
 			bool suc = gateAConnectionIter->second.erase(evalConnection.connectionPointB);
@@ -93,6 +94,7 @@ public:
 		auto gateBIterBoolPair = gates.find(evalConnection.connectionPointB.gateId);
 		assert(gateBIterBoolPair != gates.end());
 		auto gateBConnectionIter = gateBIterBoolPair->second.connections.find(evalConnection.connectionPointB.connectionEndId);
+		assert(gateBConnectionIter->second.contains(evalConnection.connectionPointA));
 		if (gateBConnectionIter->second.size() == 1) gateBIterBoolPair->second.connections.erase(gateBConnectionIter);
 		else gateBConnectionIter->second.erase(evalConnection.connectionPointA);
 		if (addedConnections.erase(evalConnection) == 0) {
