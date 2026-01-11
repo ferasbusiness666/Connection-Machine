@@ -545,6 +545,13 @@ void LogicSimulator::removeGate(simulator_gate_id_t simulatorId) {
 }
 
 void LogicSimulator::makeConnection(simulator_gate_id_t sourceId, connection_end_id_t sourcePort, simulator_gate_id_t destinationId, connection_end_id_t destinationPort) {
+	if (getPortType(sourceId, sourcePort) == BlockData::ConnectionData::PortType::INPUT) {
+		std::swap(sourceId, destinationId);
+		std::swap(sourcePort, destinationPort);
+	} else if (getPortType(destinationId, destinationPort) == BlockData::ConnectionData::PortType::OUTPUT) {
+		std::swap(sourceId, destinationId);
+		std::swap(sourcePort, destinationPort);
+	}
 	invalidateReplay();
 	std::optional<simulator_gate_id_t> actualSourceId = getOutputPortId(sourceId, sourcePort);
 
@@ -557,10 +564,10 @@ void LogicSimulator::makeConnection(simulator_gate_id_t sourceId, connection_end
 }
 
 void LogicSimulator::removeConnection(simulator_gate_id_t sourceId, connection_end_id_t sourcePort, simulator_gate_id_t destinationId, connection_end_id_t destinationPort) {
-	if (getPortType(sourceId, sourcePort) == BlockData::ConnectionData::PortType::OUTPUT) {
+	if (getPortType(sourceId, sourcePort) == BlockData::ConnectionData::PortType::INPUT) {
 		std::swap(sourceId, destinationId);
 		std::swap(sourcePort, destinationPort);
-	} else if (getPortType(destinationId, destinationPort) == BlockData::ConnectionData::PortType::INPUT) {
+	} else if (getPortType(destinationId, destinationPort) == BlockData::ConnectionData::PortType::OUTPUT) {
 		std::swap(sourceId, destinationId);
 		std::swap(sourcePort, destinationPort);
 	}

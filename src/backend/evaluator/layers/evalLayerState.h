@@ -24,8 +24,8 @@ public:
 		const EvalGate* evalGate = lastLayerState->getGate(gateId);
 		const BlockData* blockData = blockDataManager.getBlockData(getBlockType(evalGate->type));
 		assert(blockData);
-		evalGateIdRemapping.emplace(gateId, gateId);
-		evalGateIdReverseRemapping.emplace(gateId, gateId);
+		gateIdRemapping.emplace(gateId, gateId);
+		gateIdReverseRemapping.emplace(gateId, gateId);
 		addGate(gateId, evalGate->type);
 	}
 	void passRemoveGate(eval_gate_id gateId) {
@@ -33,9 +33,9 @@ public:
 		const EvalGate* evalGate = getGate(gateId);
 		const BlockData* blockData = blockDataManager.getBlockData(getBlockType(evalGate->type));
 		assert(blockData);
-		auto iterPair = evalGateIdReverseRemapping.equal_range(gateId);
-		for (auto iter = iterPair.first; iter != iterPair.second; iter++) evalGateIdRemapping.erase(iter->second);
-		evalGateIdReverseRemapping.erase(iterPair.first, iterPair.second);
+		auto iterPair = gateIdReverseRemapping.equal_range(gateId);
+		for (auto iter = iterPair.first; iter != iterPair.second; iter++) gateIdRemapping.erase(iter->second);
+		gateIdReverseRemapping.erase(iterPair.first, iterPair.second);
 		removeGate(gateId);
 	}
 	void passAddConnection(const EvalConnection& evalConnection) {
@@ -142,10 +142,10 @@ public:
 	const EvalLayerState* getLastLayerState() const {
 		return lastLayerState;
 	}
-	std::unordered_map<eval_gate_id, eval_gate_id>& getEvalGateIdRemapping() { return evalGateIdRemapping; }
-	const std::unordered_map<eval_gate_id, eval_gate_id>& getEvalGateIdRemapping() const { return evalGateIdRemapping; }
-	std::unordered_multimap<eval_gate_id, eval_gate_id>& getEvalGateIdReverseRemapping() { return evalGateIdReverseRemapping; }
-	const std::unordered_multimap<eval_gate_id, eval_gate_id>& getEvalGateIdReverseRemapping() const { return evalGateIdReverseRemapping; }
+	std::unordered_map<eval_gate_id, eval_gate_id>& getGateIdRemapping() { return gateIdRemapping; }
+	const std::unordered_map<eval_gate_id, eval_gate_id>& getGateIdRemapping() const { return gateIdRemapping; }
+	std::unordered_multimap<eval_gate_id, eval_gate_id>& getGateIdReverseRemapping() { return gateIdReverseRemapping; }
+	const std::unordered_multimap<eval_gate_id, eval_gate_id>& getGateIdReverseRemapping() const { return gateIdReverseRemapping; }
 	std::unordered_map<EvalConnectionPoint, EvalConnectionPoint>& getConnectionPointRemapping() { return connectionPointRemapping; }
 	const std::unordered_map<EvalConnectionPoint, EvalConnectionPoint>& getConnectionPointRemapping() const { return connectionPointRemapping; }
 	std::unordered_multimap<EvalConnectionPoint, EvalConnectionPoint>& getConnectionPointReverseRemapping() { return connectionPointReverseRemapping; }
@@ -155,6 +155,42 @@ public:
 		eval_gate_id id = std::numeric_limits<eval_gate_id::rep>::max() - 1000; // -1 in case of math errors with this high number
 		while (gates.contains(id)) id = id.get() - 1;
 		return id;
+	}
+
+	void visualize() const {
+		logInfo("Eval Layer State {}", "", (unsigned long long) this);
+		logInfo("Last: {}   Next: {}", "", (unsigned long long)lastLayerState, (unsigned long long)nextLayerState.get());
+		logInfo("{} Gates", "", gates.size());
+		for (auto gatePair : gates) {
+			logInfo("Gate Id {}, Type: {}", "", gatePair.second.gateId, gatePair.second.type);
+			for (auto connPair : gatePair.second.connections) {
+				std::stringstream ss;
+				for (EvalConnectionPoint connectionPoint: connPair.second) {
+					ss << "(" << connectionPoint.gateId.get() << ", " << connectionPoint.connectionEndId.get() << ") ";
+				}
+				logInfo("End Id {}: {}", "", connPair.first.get(), ss.str());
+			}
+		}
+		logInfo("{} Gate Remapping", "", gateIdRemapping.size());
+		for (auto pair : gateIdRemapping) {
+			logInfo("{} -> {}", "", pair.first, pair.second);
+		}
+		logInfo("{} Gate Reverse Remapping", "", gateIdReverseRemapping.size());
+		for (auto pair : gateIdReverseRemapping) {
+			logInfo("{} -> {}", "", pair.first, pair.second);
+		}
+		// logInfo("{} Port Remapping", "", connectionPointRemapping.size());
+		// for (auto pair : connectionPointRemapping) {
+		// 	logInfo("({}, {}) -> ({}, {})", "", pair.first.gateId, pair.first.connectionEndId, pair.second.gateId, pair.second.connectionEndId);
+		// }
+		// logInfo("{} Port Reverse Remapping", "", connectionPointReverseRemapping.size());
+		// for (auto pair : connectionPointReverseRemapping) {
+		// 	logInfo("({}, {}) -> ({}, {})", "", pair.first.gateId, pair.first.connectionEndId, pair.second.gateId, pair.second.connectionEndId);
+		// }
+		logInfo("{} addedGates", "", addedGates.size());
+		logInfo("{} removedGates", "", removedGates.size());
+		logInfo("{} addedConnections", "", addedConnections.size());
+		logInfo("{} removedConnections", "", removedConnections.size());
 	}
 
 private:
@@ -168,8 +204,8 @@ private:
 	std::unordered_map<eval_gate_id, EvalGate> gates;
 
 	// all remappings will be eval_gate_id or EvalConnectionPoint
-	std::unordered_map<eval_gate_id, eval_gate_id> evalGateIdRemapping;
-	std::unordered_multimap<eval_gate_id, eval_gate_id> evalGateIdReverseRemapping;
+	std::unordered_map<eval_gate_id, eval_gate_id> gateIdRemapping;
+	std::unordered_multimap<eval_gate_id, eval_gate_id> gateIdReverseRemapping;
 	std::unordered_map<EvalConnectionPoint, EvalConnectionPoint> connectionPointRemapping;
 	std::unordered_multimap<EvalConnectionPoint, EvalConnectionPoint> connectionPointReverseRemapping;
 

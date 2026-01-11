@@ -6,16 +6,16 @@ void JunctionMergeEvalLayer::run(const EvalLayerState& currentState, EvalLayerSt
 	for (auto iter = currentState.getRemovedConnectionsBegin(); iter != currentState.getRemovedConnectionsEnd(); ++iter) {
 		EvalConnection connection = *iter;
 		if (connection.connectionPointA.connectionEndId == 0) {
-			auto remappingIter = nextState.getEvalGateIdRemapping().find(connection.connectionPointA.gateId);
-			if (remappingIter == nextState.getEvalGateIdRemapping().end()) {
+			auto remappingIter = nextState.getGateIdRemapping().find(connection.connectionPointA.gateId);
+			if (remappingIter == nextState.getGateIdRemapping().end()) {
 				logError("Failled to find junction gate remapping for gate id {}.", "JunctionMergeEvalLayer::run", connection.connectionPointA.gateId);
 				continue;
 			}
 			connection.connectionPointA.gateId = remappingIter->second;
 		}
 		if (connection.connectionPointB.connectionEndId == 0) {
-			auto remappingIter = nextState.getEvalGateIdRemapping().find(connection.connectionPointB.gateId);
-			if (remappingIter == nextState.getEvalGateIdRemapping().end()) {
+			auto remappingIter = nextState.getGateIdRemapping().find(connection.connectionPointB.gateId);
+			if (remappingIter == nextState.getGateIdRemapping().end()) {
 				logError("Failled to find junction gate remapping for gate id {}.", "JunctionMergeEvalLayer::run", connection.connectionPointB.gateId);
 				continue;
 			}
@@ -34,8 +34,8 @@ void JunctionMergeEvalLayer::run(const EvalLayerState& currentState, EvalLayerSt
 	for (auto iter = currentState.getRemovedGatesBegin(); iter != currentState.getRemovedGatesEnd(); ++iter) {
 		const EvalGate* junction = nextState.getGate(*iter);
 		if (!junction) {
-			auto remappingIter = nextState.getEvalGateIdRemapping().find(*iter);
-			if (remappingIter == nextState.getEvalGateIdRemapping().end()) {
+			auto remappingIter = nextState.getGateIdRemapping().find(*iter);
+			if (remappingIter == nextState.getGateIdRemapping().end()) {
 				logError("Failled to find junction gate remapping for gate id {}.", "JunctionMergeEvalLayer::run", *iter);
 				continue;
 			}
@@ -60,16 +60,16 @@ void JunctionMergeEvalLayer::run(const EvalLayerState& currentState, EvalLayerSt
 	for (auto iter = currentState.getAddedConnectionsBegin(); iter != currentState.getAddedConnectionsEnd(); ++iter) {
 		EvalConnection connection = *iter;
 		if (connection.connectionPointA.connectionEndId == 0) {
-			auto remappingIter = nextState.getEvalGateIdRemapping().find(connection.connectionPointA.gateId);
-			if (remappingIter == nextState.getEvalGateIdRemapping().end()) {
+			auto remappingIter = nextState.getGateIdRemapping().find(connection.connectionPointA.gateId);
+			if (remappingIter == nextState.getGateIdRemapping().end()) {
 				logError("Failled to find junction gate remapping for gate id {}.", "JunctionMergeEvalLayer::run", connection.connectionPointA.gateId);
 				continue;
 			}
 			connection.connectionPointA.gateId = remappingIter->second;
 		}
 		if (connection.connectionPointB.connectionEndId == 0) {
-			auto remappingIter = nextState.getEvalGateIdRemapping().find(connection.connectionPointB.gateId);
-			if (remappingIter == nextState.getEvalGateIdRemapping().end()) {
+			auto remappingIter = nextState.getGateIdRemapping().find(connection.connectionPointB.gateId);
+			if (remappingIter == nextState.getGateIdRemapping().end()) {
 				logError("Failled to find junction gate remapping for gate id {}.", "JunctionMergeEvalLayer::run", connection.connectionPointB.gateId);
 				continue;
 			}
@@ -104,16 +104,16 @@ void JunctionMergeEvalLayer::run(const EvalLayerState& currentState, EvalLayerSt
 					} while ((!junction->connections.empty()));
 				}
 			}
-			auto pair = nextState.getEvalGateIdRemapping().emplace(junctionId, gateId);
+			auto pair = nextState.getGateIdRemapping().emplace(junctionId, gateId);
 			if (!pair.second) {
-				auto iterPair = nextState.getEvalGateIdReverseRemapping().equal_range(pair.first->second);
+				auto iterPair = nextState.getGateIdReverseRemapping().equal_range(pair.first->second);
 				for (auto iter = iterPair.first; iter != iterPair.second; iter++) {
 					if (iter->second == junctionId) {
-						nextState.getEvalGateIdReverseRemapping().erase(iter);
+						nextState.getGateIdReverseRemapping().erase(iter);
 						break;
 					}
 				}
-				nextState.getEvalGateIdReverseRemapping().emplace(gateId, junctionId);
+				nextState.getGateIdReverseRemapping().emplace(gateId, junctionId);
 				pair.first->second = gateId;
 			}
 			if (junction) nextState.removeGate(junctionId);

@@ -19,17 +19,15 @@ LayerRunner::~LayerRunner() = default;
 void LayerRunner::runAll() {
 	// logInfo("----------------");
 	EvalLayerState* last = evalTopLayerState.get();
+	// last->visualize();
 	for (unsigned int i = 0; i < layers.size(); i++) {
+		// logInfo("----");
 		EvalLayerState& next = last->getOrMakeNextLayerState();
 		next.resetEdits();
-		// logInfo("Running layer with {}, {}, {}, {}", "",
-		// 	std::distance(last->getRemovedConnectionsBegin(), last->getRemovedConnectionsEnd()),
-		// 	std::distance(last->getRemovedGatesBegin(), last->getRemovedGatesEnd()),
-		// 	std::distance(last->getAddedGatesBegin(), last->getAddedGatesEnd()),
-		// 	std::distance(last->getAddedConnectionsBegin(), last->getAddedConnectionsEnd())
-		// );
+		// next.visualize();
 		layers[i]->run(*last, next);
 		last = &next;
+		// last->visualize();
 	}
 }
 
@@ -55,8 +53,8 @@ EvalConnectionPoint LayerRunner::getMappedEvalConnectionPoint(EvalConnectionPoin
 	for (unsigned int i = 1; true; i++) {
 		auto connectionPointIter = layerState->getConnectionPointRemapping().find(evalConnectionPoint);
 		if (connectionPointIter == layerState->getConnectionPointRemapping().end()) {
-			auto evalGateIdIter = layerState->getEvalGateIdRemapping().find(evalConnectionPoint.gateId);
-			if (evalGateIdIter == layerState->getEvalGateIdRemapping().end()) {
+			auto evalGateIdIter = layerState->getGateIdRemapping().find(evalConnectionPoint.gateId);
+			if (evalGateIdIter == layerState->getGateIdRemapping().end()) {
 				logError("Could not find mapping for evalConnectionPoint.", "LayerRunner::getMappedEvalConnectionPoint");
 				return EvalConnectionPoint(0, 0);
 			}
@@ -83,7 +81,7 @@ std::vector<EvalConnectionPoint> LayerRunner::getReversedMappedEvalConnectionPoi
 			for (auto iter = connectionPointIterPair.first; iter != connectionPointIterPair.second; iter++) {
 				evalConnectionPoints.push_back(iter->second);
 			}
-			auto evalGateIdIterPair = layerState->getEvalGateIdReverseRemapping().equal_range(point.gateId);
+			auto evalGateIdIterPair = layerState->getGateIdReverseRemapping().equal_range(point.gateId);
 			for (auto iter = evalGateIdIterPair.first; iter != evalGateIdIterPair.second; iter++) {
 				evalConnectionPoints.emplace_back(iter->second, evalConnectionPoint.connectionEndId);
 			}
