@@ -33,14 +33,9 @@ public:
 		const EvalGate* evalGate = getGate(gateId);
 		const BlockData* blockData = blockDataManager.getBlockData(getBlockType(evalGate->type));
 		assert(blockData);
-		evalGateIdRemapping.erase(gateId);
 		auto iterPair = evalGateIdReverseRemapping.equal_range(gateId);
-		for (auto iter = iterPair.first; iter != iterPair.second; iter++) {
-			if (iter->second == gateId) {
-				evalGateIdReverseRemapping.erase(iter);
-				break;
-			}
-		}
+		for (auto iter = iterPair.first; iter != iterPair.second; iter++) evalGateIdRemapping.erase(iter->second);
+		evalGateIdReverseRemapping.erase(iterPair.first, iterPair.second);
 		removeGate(gateId);
 	}
 	void passAddConnection(const EvalConnection& evalConnection) {
@@ -155,6 +150,12 @@ public:
 	const std::unordered_map<EvalConnectionPoint, EvalConnectionPoint>& getConnectionPointRemapping() const { return connectionPointRemapping; }
 	std::unordered_multimap<EvalConnectionPoint, EvalConnectionPoint>& getConnectionPointReverseRemapping() { return connectionPointReverseRemapping; }
 	const std::unordered_multimap<EvalConnectionPoint, EvalConnectionPoint>& getConnectionPointReverseRemapping() const { return connectionPointReverseRemapping; }
+
+	eval_gate_id getUnsedEvalGateId() const {
+		eval_gate_id id = std::numeric_limits<eval_gate_id::rep>::max() - 1000; // -1 in case of math errors with this high number
+		while (gates.contains(id)) id = id.get() - 1;
+		return id;
+	}
 
 private:
 	void setLastLayer(const EvalLayerState* lastLayerState) { this->lastLayerState = lastLayerState; }

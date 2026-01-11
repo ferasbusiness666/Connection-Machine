@@ -149,7 +149,6 @@ void BlockRenderDataFeeder::blockDataTextureVirtualConnectionUpdate(const DataUp
 		logError("Failed to find RenderData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
 		return;
 	}
-	logInfo("blockDataTextureVirtualConnectionUpdate: {}, {}, {}, {}", "", (int)BlockType::TRISTATE_BUFFER, (int)data->get().first, iter->second.blockRenderDataId, data->get().second->get());
 	MainRenderer::get().setTextureVirtualConnection(iter->second.blockRenderDataId, data->get().second);
 }
 
