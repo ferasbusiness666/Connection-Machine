@@ -16,7 +16,12 @@ class Logger {
 public:
 	Logger(const std::filesystem::path& outputFile);
 
-	void log(LogType type, const std::string& message, const std::string& subcategory = "");
+	void log(
+		LogType type,
+		const std::string& message,
+		const std::string& subcategory = "",
+		bool emitToStdErr = true,
+		const std::function<void(const std::string&)>& outputCallback = {});
 	std::string getLogContents() const;
 
 private:
