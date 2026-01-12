@@ -176,9 +176,18 @@ public:
 			logInfo("{} -> {}", "", pair.first, pair.second);
 		}
 		logInfo("{} Gate Reverse Remapping", "", gateIdReverseRemapping.size());
+		eval_gate_id curKey = 0;
+		std::string tmpBuf;
 		for (auto pair : gateIdReverseRemapping) {
-			logInfo("{} -> {}", "", pair.first, pair.second);
+			if (curKey != pair.first) {
+				if (curKey != 0) logInfo("{} -> [{}]", "", curKey, tmpBuf);
+				tmpBuf.clear();
+				curKey = pair.first;
+			}
+			if (tmpBuf.size() != 0) tmpBuf += ", ";
+			tmpBuf += std::to_string(pair.second);
 		}
+		if (curKey != 0) logInfo("{} -> [{}]", "", curKey, tmpBuf);
 		// logInfo("{} Port Remapping", "", connectionPointRemapping.size());
 		// for (auto pair : connectionPointRemapping) {
 		// 	logInfo("({}, {}) -> ({}, {})", "", pair.first.gateId, pair.first.connectionEndId, pair.second.gateId, pair.second.connectionEndId);
