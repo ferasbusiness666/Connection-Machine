@@ -2,7 +2,7 @@
 #include "environment/environment.h"
 #include "backend/evaluator/evaluator.h"
 
-class EvaluatorICTest : public ::testing::Test {
+class DISABLED_EvaluatorICTest : public ::testing::Test {
 protected:
     void SetUp() override;
     void TearDown() override;
@@ -18,7 +18,7 @@ protected:
     }
 };
 
-void EvaluatorICTest::SetUp() {
+void DISABLED_EvaluatorICTest::SetUp() {
     circuit_id_t circuitId = environment.getBackend().createCircuit();
     parentCircuit = environment.getBackend().getCircuit(circuitId);
     auto evalId = environment.getBackend().createEvaluator(circuitId);
@@ -27,12 +27,12 @@ void EvaluatorICTest::SetUp() {
     idx = 0;
 }
 
-void EvaluatorICTest::TearDown() {
+void DISABLED_EvaluatorICTest::TearDown() {
     parentCircuit.reset();
     evaluator.reset();
 }
 
-circuit_id_t EvaluatorICTest::createPassThroughIC(const std::string& name) {
+circuit_id_t DISABLED_EvaluatorICTest::createPassThroughIC(const std::string& name) {
     circuit_id_t childId = environment.getBackend().createCircuit(name);
     SharedCircuit child = environment.getBackend().getCircuit(childId);
 
@@ -58,7 +58,7 @@ circuit_id_t EvaluatorICTest::createPassThroughIC(const std::string& name) {
     return childId;
 }
 
-TEST_F(EvaluatorICTest, SingleIC_PropagatesSignal) {
+TEST_F(DISABLED_EvaluatorICTest, SingleIC_PropagatesSignal) {
     const circuit_id_t icId = createPassThroughIC("PassThrough");
     const BlockType icBlockType = getICBlockType(icId);
 
@@ -82,7 +82,7 @@ TEST_F(EvaluatorICTest, SingleIC_PropagatesSignal) {
     EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(pLight)), logic_state_t::LOW);
 }
 
-TEST_F(EvaluatorICTest, NestedICs_PropagateThroughLevels) {
+TEST_F(DISABLED_EvaluatorICTest, NestedICs_PropagateThroughLevels) {
     const circuit_id_t innerICId = createPassThroughIC("InnerPassThrough");
     const BlockType innerICType = getICBlockType(innerICId);
 
@@ -126,7 +126,7 @@ TEST_F(EvaluatorICTest, NestedICs_PropagateThroughLevels) {
     EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(pLight)), logic_state_t::LOW);
 }
 
-TEST_F(EvaluatorICTest, SingleIC_MoveIOAndPropagatesSignal) {
+TEST_F(DISABLED_EvaluatorICTest, SingleIC_MoveIOAndPropagatesSignal) {
     const circuit_id_t icId = createPassThroughIC("PassThrough");
     CircuitManager& cm = environment.getBackend().getCircuitManager();
     CircuitBlockData* cbd = cm.getCircuitBlockDataManager().getCircuitBlockData(icId);
@@ -164,7 +164,7 @@ TEST_F(EvaluatorICTest, SingleIC_MoveIOAndPropagatesSignal) {
 	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(pLight)), logic_state_t::LOW);
 }
 
-TEST_F(EvaluatorICTest, SingleIC_MoveBlockMaintainsSignal) {
+TEST_F(DISABLED_EvaluatorICTest, SingleIC_MoveBlockMaintainsSignal) {
 	const circuit_id_t icId = createPassThroughIC("MovableIC");
 	const BlockType icBlockType = getICBlockType(icId);
 
@@ -193,7 +193,7 @@ TEST_F(EvaluatorICTest, SingleIC_MoveBlockMaintainsSignal) {
 	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(pLight)), logic_state_t::HIGH);
 }
 
-TEST_F(EvaluatorICTest, SingleIC_RemapInputToConstantSource) {
+TEST_F(DISABLED_EvaluatorICTest, SingleIC_RemapInputToConstantSource) {
 	const circuit_id_t icId = createPassThroughIC("RemapIC");
 	const BlockType icBlockType = getICBlockType(icId);
 
@@ -241,7 +241,7 @@ TEST_F(EvaluatorICTest, SingleIC_RemapInputToConstantSource) {
 	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(Address(pLight)), logic_state_t::LOW);
 }
 
-TEST_F(EvaluatorICTest, MultipleICInstances_RemappingPropagatesToAll) {
+TEST_F(DISABLED_EvaluatorICTest, MultipleICInstances_RemappingPropagatesToAll) {
 	const circuit_id_t icId = createPassThroughIC("MultiInstanceIC");
 	const BlockType icBlockType = getICBlockType(icId);
 

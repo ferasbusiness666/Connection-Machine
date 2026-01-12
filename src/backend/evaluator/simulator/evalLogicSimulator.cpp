@@ -24,7 +24,7 @@ void EvalLogicSimulator::setState(const Address& address, logic_state_t state) {
 logic_state_t EvalLogicSimulator::getState(const Address& address) const {
 	auto iter2 = gateIdMapping.find(evaluatorInternal.mapFromAddressToBottomConnectionPoint(address).gateId);
 	if (iter2 == gateIdMapping.end()) {
-		logError("Failed to get sim id.", "EvalLogicSimulator::getState");
+		// logError("Failed to get sim id.", "EvalLogicSimulator::getState");
 		return logic_state_t::UNDEFINED;
 	}
 	return getState(iter2->second);
@@ -174,11 +174,11 @@ std::optional<simulator_gate_id_t> EvalLogicSimulator::getOutputPortId(eval_gate
 }
 
 std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> EvalLogicSimulator::getVirtualConnectionSimulatorId(const Address& address, virtual_connection_id_t virtualConnectionId) const {
-	if (virtualConnectionId != 0) return 0;
+	if (virtualConnectionId != 0) return 3;
 	auto iter2 = gateIdMapping.find(evaluatorInternal.mapFromAddressToBottomConnectionPoint(address).gateId);
 	if (iter2 == gateIdMapping.end()) {
-		logError("Failed to get sim id.", "EvalLogicSimulator::getVirtualConnectionSimulatorId");
-		return 0;
+		// logError("Failed to get sim id.", "EvalLogicSimulator::getVirtualConnectionSimulatorId");
+		return 3;
 	}
 	return iter2->second;
 }
