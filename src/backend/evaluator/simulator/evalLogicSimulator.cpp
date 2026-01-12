@@ -234,7 +234,6 @@ std::vector<std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>>>
 
 void EvalLogicSimulator::processEdits() {
 	const EvalLayerState& evalLayerState = evaluatorInternal.getLayerRunner().getOutputLayer();
-	evalLayerState.visualize();
 	{
 		SimPauseGuard simPauseGuard(logicSimulator);
 		for (auto iter = evalLayerState.getRemovedConnectionsBegin(); iter != evalLayerState.getRemovedConnectionsEnd(); ++iter) {

@@ -109,7 +109,7 @@ void JunctionMergeEvalLayer::run(const EvalLayerState& currentState, EvalLayerSt
 			// logInfo("added connetion {}, {}, {}, {}", "", evalConnection.connectionPointA.gateId, evalConnection.connectionPointA.connectionEndId, evalConnection.connectionPointB.gateId, evalConnection.connectionPointB.connectionEndId);
 		}
 	}
-	logInfo(junctionsToScan.size());
+	// logInfo(junctionsToScan.size());
 	while (!junctionsToScan.empty()) {
 		eval_gate_id gateId = *junctionsToScan.begin();
 		junctionsToScan.erase(junctionsToScan.begin());
@@ -117,11 +117,11 @@ void JunctionMergeEvalLayer::run(const EvalLayerState& currentState, EvalLayerSt
 		if (currentState.getGate(gateId)->type != gateType) {
 			gateId = nextState.getUnsedEvalGateId();
 		}
-		logInfo("Merging group of {} gates. Final ID: {}", "", junctions.size(), gateId);
+		// logInfo("Merging group of {} gates. Final ID: {}", "", junctions.size(), gateId);
 		bool foundPullDown = false;
 		bool foundPullUp = false;
 		for (eval_gate_id junctionId : junctions) {
-			logInfo("includes: {}", "", junctionId);
+			// logInfo("includes: {}", "", junctionId);
 			junctionsToScan.erase(junctionId);
 			const EvalGate* junction = nextState.getGate(junctionId);
 			if (junction) {
