@@ -14,7 +14,10 @@ public:
 	virtual void addInput(simulator_gate_id_t inputId, connection_end_id_t portId) = 0;
 	virtual void removeInput(simulator_gate_id_t inputId, connection_end_id_t portId) = 0;
 	virtual void removeIdRefs(simulator_gate_id_t otherId) = 0;
-	virtual BlockData::ConnectionData::PortType getPortType(connection_end_id_t portId) const { assert(false); }
+	virtual BlockData::ConnectionData::PortType getPortType(connection_end_id_t portId) const {
+		assert(false);
+		return BlockData::ConnectionData::PortType::NONE;
+	}
 	virtual simulator_gate_id_t getIdOfOutputPort(connection_end_id_t portId) const = 0;
 	virtual void resetState(bool realistic, IdVector<simulator_gate_id_t, logic_state_t>& states) = 0;
 	virtual std::vector<simulator_gate_id_t> getOutputSimIds() const = 0;

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "environment/environment.h"
 #include "backend/evaluator/evaluator.h"
+#include "loggingTestSetup.h"
 
 class SwitchAndLightEvaluatorTest : public ::testing::Test {
 protected:
@@ -41,6 +42,7 @@ TEST_F(SwitchAndLightEvaluatorTest, SingleSwitch) {
 TEST_F(SwitchAndLightEvaluatorTest, InteractFail) {
 	Position nothingPos(10, 10);
 	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(nothingPos), X);
+	logging_test::setExpectedLogCounts(1, 0);
 	evaluator->getEvalLogicSimulator().setState(nothingPos, H); // should log an error
 	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(nothingPos), X);
 }
