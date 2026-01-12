@@ -120,6 +120,7 @@ public:
 	bool removeEditContainsConnection(EvalConnection evalConnection) const { return removedConnections.contains(evalConnection); }
 
 	void resetEdits() {
+		// lastUnsedEvalGateId = std::numeric_limits<eval_gate_id::rep>::max() - 1; // -1 in case of math errors with this high number
 		addedGates.clear();
 		removedGates.clear();
 		addedConnections.clear();
@@ -151,9 +152,10 @@ public:
 	std::unordered_multimap<EvalConnectionPoint, EvalConnectionPoint>& getConnectionPointReverseRemapping() { return connectionPointReverseRemapping; }
 	const std::unordered_multimap<EvalConnectionPoint, EvalConnectionPoint>& getConnectionPointReverseRemapping() const { return connectionPointReverseRemapping; }
 
-	eval_gate_id getUnsedEvalGateId() const {
-		eval_gate_id id = std::numeric_limits<eval_gate_id::rep>::max() - 1000; // -1 in case of math errors with this high number
+	eval_gate_id getUnsedEvalGateId() {
+		eval_gate_id id = lastUnsedEvalGateId;
 		while (gates.contains(id)) id = id.get() - 1;
+		lastUnsedEvalGateId = id.get() - 1;
 		return id;
 	}
 
@@ -203,6 +205,8 @@ public:
 	}
 
 private:
+	eval_gate_id lastUnsedEvalGateId = std::numeric_limits<eval_gate_id::rep>::max() - 1; // -1 in case of math errors with this high number
+
 	void setLastLayer(const EvalLayerState* lastLayerState) { this->lastLayerState = lastLayerState; }
 
 	std::unique_ptr<EvalLayerState> nextLayerState;
