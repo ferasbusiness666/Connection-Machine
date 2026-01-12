@@ -62,10 +62,17 @@ void JunctionAddEvalLayer::run(const EvalLayerState& currentState, EvalLayerStat
 		if (junctionBToRemove != 0) nextState.removeGate(junctionBToRemove);
 	}
 	for (auto iter = currentState.getRemovedGatesBegin(); iter != currentState.getRemovedGatesEnd(); ++iter) {
-		nextState.passRemoveGate(*iter);
+		const EvalGate* evalGate = currentState.getGate(*iter);
+		auto iterPair = nextState.getGateIdReverseRemapping().equal_range(*iter);
+		for (auto iter = iterPair.first; iter != iterPair.second; iter++) nextState.getGateIdRemapping().erase(iter->second);
+		nextState.getGateIdReverseRemapping().erase(iterPair.first, iterPair.second);
+		nextState.removeGate(*iter);
 	}
 	for (auto iter = currentState.getAddedGatesBegin(); iter != currentState.getAddedGatesEnd(); ++iter) {
-		nextState.passAddGate(*iter);
+		const EvalGate* evalGate = currentState.getGate(*iter);
+		nextState.getGateIdRemapping().emplace(*iter, *iter);
+		nextState.getGateIdReverseRemapping().emplace(*iter, *iter);
+		nextState.addGate(*iter, evalGate->type);
 	}
 	for (auto iter = currentState.getAddedConnectionsBegin(); iter != currentState.getAddedConnectionsEnd(); ++iter) {
 		EvalConnection connection = *iter;

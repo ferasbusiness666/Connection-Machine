@@ -21,34 +21,6 @@ public:
 		blockDataManager(blockDataManager), layerIndex(layerIndex),
 		lastUnsedEvalGateId(std::numeric_limits<eval_gate_id::rep>::max() - 1 - layerIndex * 10000000) {}
 
-	void passAddGate(eval_gate_id gateId) {
-		assert(lastLayerState);
-		const EvalGate* evalGate = lastLayerState->getGate(gateId);
-		const BlockData* blockData = blockDataManager.getBlockData(getBlockType(evalGate->type));
-		assert(blockData);
-		gateIdRemapping.emplace(gateId, gateId);
-		gateIdReverseRemapping.emplace(gateId, gateId);
-		addGate(gateId, evalGate->type);
-	}
-	void passRemoveGate(eval_gate_id gateId) {
-		assert(lastLayerState);
-		const EvalGate* evalGate = getGate(gateId);
-		assert(evalGate);
-		const BlockData* blockData = blockDataManager.getBlockData(getBlockType(evalGate->type));
-		assert(blockData);
-		auto iterPair = gateIdReverseRemapping.equal_range(gateId);
-		for (auto iter = iterPair.first; iter != iterPair.second; iter++) gateIdRemapping.erase(iter->second);
-		gateIdReverseRemapping.erase(iterPair.first, iterPair.second);
-		removeGate(gateId);
-	}
-	void passAddConnection(const EvalConnection& evalConnection) {
-		assert(lastLayerState);
-		addConnection(evalConnection);
-	}
-	void passRemoveConnection(const EvalConnection& evalConnection) {
-		assert(lastLayerState);
-		removeConnection(evalConnection);
-	}
 	void addGate(eval_gate_id gateId, EvalGateType type) { // TODO: add transparent junction merging
 		bool suc = gates.try_emplace(gateId, type, gateId).second;
 		assert(suc);
@@ -136,6 +108,33 @@ public:
 	std::unordered_set<EvalConnection>::const_iterator getRemovedConnectionsBegin() const { return removedConnections.begin(); }
 	std::unordered_set<EvalConnection>::const_iterator getRemovedConnectionsEnd() const { return removedConnections.end(); }
 	bool removeEditContainsConnection(EvalConnection evalConnection) const { return removedConnections.contains(evalConnection); }
+
+	// unsigned int getConnectionWeight(EvalConnection connection) const {
+	// 	auto iter = connectionWeights.find(connection);
+	// 	if (iter == connectionWeights.end()) return 1;
+	// 	return iter->second;
+	// }
+	// void setConnectionWeight(EvalConnection connection, unsigned int weight) {
+	// 	assert(weight > 1);
+	// 	connectionWeights.insert_or_assign(connection, weight);
+	// }
+	// void addConnectionWeight(EvalConnection connection, int weightChange) {
+	// 	assert(weightChange != 0); // just dont
+	// 	auto iter = connectionWeights.find(connection);
+	// 	if (iter == connectionWeights.end()) {
+	// 		if (weightChange == 1) return;
+	// 		connectionWeights.emplace(connection, weightChange);
+	// 	}
+	// 	iter->second += weightChange;
+	// 	if (iter->second == 1) {
+	// 		connectionWeights.erase(iter);
+	// 	}
+	// 	assert(iter->second != 0);
+	// }
+	// void removeConnectionWeight(EvalConnection connection) {
+	// 	unsigned int deletedCount = connectionWeights.erase(connection);
+	// 	assert(deletedCount == 1);
+	// }
 
 	void resetEdits() {
 		// lastUnsedEvalGateId = std::numeric_limits<eval_gate_id::rep>::max() - 1; // -1 in case of math errors with this high number
@@ -233,6 +232,7 @@ private:
 	const BlockDataManager& blockDataManager;
 
 	std::unordered_map<eval_gate_id, EvalGate> gates;
+	// std::unordered_map<EvalConnection, unsigned int> connectionWeights;
 
 	// all remappings will be eval_gate_id or EvalConnectionPoint
 	std::unordered_map<eval_gate_id, eval_gate_id> gateIdRemapping;

@@ -85,7 +85,10 @@ void JunctionMergeEvalLayer::run(const EvalLayerState& currentState, EvalLayerSt
 		nextState.removeGate(*iter);
 	}
 	for (auto iter = currentState.getAddedGatesBegin(); iter != currentState.getAddedGatesEnd(); ++iter) {
-		nextState.passAddGate(*iter);
+		const EvalGate* evalGate = currentState.getGate(*iter);
+		nextState.getGateIdRemapping().emplace(*iter, *iter);
+		nextState.getGateIdReverseRemapping().emplace(*iter, *iter);
+		nextState.addGate(*iter, evalGate->type);
 	}
 	for (auto iter = currentState.getAddedConnectionsBegin(); iter != currentState.getAddedConnectionsEnd(); ++iter) {
 		EvalConnection connection = *iter;

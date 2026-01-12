@@ -1,15 +1,12 @@
 #include "layerRunner.h"
 
 #include "evalLayerState.h"
-// #include "passThroughEvalLayer.h"
 #include "junctionAddEvalLayer.h"
 #include "junctionMergeEvalLayer.h"
 
 LayerRunner::LayerRunner(const BlockDataManager& blockDataManager) : blockDataManager(blockDataManager) {
-	// layers.emplace_back(std::make_unique<PassThroughEvalLayer>());
 	layers.emplace_back(std::make_unique<JunctionAddEvalLayer>());
 	layers.emplace_back(std::make_unique<JunctionMergeEvalLayer>());
-	// layers.emplace_back(std::make_unique<PassThroughEvalLayer>());
 	evalTopLayerState = std::make_unique<EvalLayerState>(blockDataManager);
 	assert(evalTopLayerState);
 }
