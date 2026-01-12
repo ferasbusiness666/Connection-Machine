@@ -25,12 +25,19 @@ void JunctionMergeEvalLayer::run(const EvalLayerState& currentState, EvalLayerSt
 			const EvalGate* nextLayerJunction = nextState.getGate(connection.connectionPointA.gateId);
 			assert(nextLayerJunction);
 			assert(isJunctionType(nextLayerJunction->type));
-			assert(currentState.getGate(iter->connectionPointA.gateId));
-			junctionsToScan.insert(iter->connectionPointA.gateId);
-			assert(currentState.getGate(iter->connectionPointB.gateId));
-			junctionsToScan.insert(iter->connectionPointB.gateId);
+			if (currentState.getGate(iter->connectionPointA.gateId)) junctionsToScan.insert(iter->connectionPointA.gateId);
+			if (currentState.getGate(iter->connectionPointB.gateId)) junctionsToScan.insert(iter->connectionPointB.gateId);
 		} else {
-			nextState.removeConnection(connection);
+			const EvalGate* gateA = nextState.getGate(connection.connectionPointA.gateId);
+			auto gateAConnectionIter = gateA->connections.find(connection.connectionPointA.connectionEndId);
+			if (gateAConnectionIter != gateA->connections.end() && gateAConnectionIter->second.contains(connection.connectionPointB)) {
+				if (isJunctionType(gateA->type)) junctionsToScan.insert(gateA->gateId);
+				else if (connection.connectionPointA.gateId != connection.connectionPointB.gateId) {
+					const EvalGate* gateB = nextState.getGate(connection.connectionPointB.gateId);
+					if (isJunctionType(gateB->type)) junctionsToScan.insert(gateB->gateId);
+				}
+				nextState.removeConnection(connection);
+			}
 		}
 	}
 	for (auto iter = currentState.getRemovedGatesBegin(); iter != currentState.getRemovedGatesEnd(); ++iter) {
@@ -75,7 +82,7 @@ void JunctionMergeEvalLayer::run(const EvalLayerState& currentState, EvalLayerSt
 				junctionsToScan.insert(reverseRemappingIter->second);
 			}
 		}
-		nextState.passRemoveGate(*iter);
+		nextState.removeGate(*iter);
 	}
 	for (auto iter = currentState.getAddedGatesBegin(); iter != currentState.getAddedGatesEnd(); ++iter) {
 		nextState.passAddGate(*iter);
@@ -105,6 +112,10 @@ void JunctionMergeEvalLayer::run(const EvalLayerState& currentState, EvalLayerSt
 			assert(currentState.getGate(iter->connectionPointA.gateId));
 			junctionsToScan.insert(iter->connectionPointA.gateId);
 		} else {
+			if (isJunctionType(gateA->type) || isJunctionType(gateB->type)) {
+				auto connectionIter = gateA->connections.find(connection.connectionPointA.connectionEndId);
+				if (connectionIter != gateA->connections.end() && connectionIter->second.contains(connection.connectionPointB)) continue;
+			}
 			nextState.addConnection(connection);
 			// logInfo("added connetion {}, {}, {}, {}", "", evalConnection.connectionPointA.gateId, evalConnection.connectionPointA.connectionEndId, evalConnection.connectionPointB.gateId, evalConnection.connectionPointB.connectionEndId);
 		}

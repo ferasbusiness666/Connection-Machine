@@ -2,12 +2,12 @@
 
 #include "evalLayerState.h"
 // #include "passThroughEvalLayer.h"
-// #include "junctionAddEvalLayer.h"
+#include "junctionAddEvalLayer.h"
 #include "junctionMergeEvalLayer.h"
 
 LayerRunner::LayerRunner(const BlockDataManager& blockDataManager) : blockDataManager(blockDataManager) {
 	// layers.emplace_back(std::make_unique<PassThroughEvalLayer>());
-	// layers.emplace_back(std::make_unique<JunctionAddEvalLayer>());
+	layers.emplace_back(std::make_unique<JunctionAddEvalLayer>());
 	layers.emplace_back(std::make_unique<JunctionMergeEvalLayer>());
 	// layers.emplace_back(std::make_unique<PassThroughEvalLayer>());
 	evalTopLayerState = std::make_unique<EvalLayerState>(blockDataManager);
@@ -17,7 +17,7 @@ LayerRunner::LayerRunner(const BlockDataManager& blockDataManager) : blockDataMa
 LayerRunner::~LayerRunner() = default;
 
 void LayerRunner::runAll() {
-	// logInfo("----------------");
+	// logInfo("------------------------------------------------");
 	EvalLayerState* last = evalTopLayerState.get();
 	// last->visualize();
 	for (unsigned int i = 0; i < layers.size(); i++) {

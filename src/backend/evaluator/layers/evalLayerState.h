@@ -17,7 +17,9 @@ class BlockDataManager;
 
 class EvalLayerState {
 public:
-	EvalLayerState(const BlockDataManager& blockDataManager) : blockDataManager(blockDataManager) {}
+	EvalLayerState(const BlockDataManager& blockDataManager, unsigned int layerIndex = 0) :
+		blockDataManager(blockDataManager), layerIndex(layerIndex),
+		lastUnsedEvalGateId(std::numeric_limits<eval_gate_id::rep>::max() - 1 - layerIndex * 10000000) {}
 
 	void passAddGate(eval_gate_id gateId) {
 		assert(lastLayerState);
@@ -31,6 +33,7 @@ public:
 	void passRemoveGate(eval_gate_id gateId) {
 		assert(lastLayerState);
 		const EvalGate* evalGate = getGate(gateId);
+		assert(evalGate);
 		const BlockData* blockData = blockDataManager.getBlockData(getBlockType(evalGate->type));
 		assert(blockData);
 		auto iterPair = gateIdReverseRemapping.equal_range(gateId);
@@ -56,7 +59,21 @@ public:
 	void removeGate(eval_gate_id gateId) { // TODO: add transparent junction splitting
 		auto iter = gates.find(gateId);
 		assert(iter != gates.end());
-		assert(iter->second.connections.empty());
+		for (auto connectionsIter : iter->second.connections) {
+			for (EvalConnectionPoint connectionPoint : connectionsIter.second) {
+				auto gateBIterBoolPair = gates.find(connectionPoint.gateId);
+				assert(gateBIterBoolPair != gates.end());
+				auto gateBConnectionIter = gateBIterBoolPair->second.connections.find(connectionPoint.connectionEndId);
+				assert(gateBConnectionIter->second.contains(EvalConnectionPoint(gateId, connectionsIter.first)));
+				if (gateBConnectionIter->second.size() == 1) gateBIterBoolPair->second.connections.erase(gateBConnectionIter);
+				else gateBConnectionIter->second.erase(EvalConnectionPoint(gateId, connectionsIter.first));
+				if (addedConnections.erase(EvalConnection(EvalConnectionPoint(gateId, connectionsIter.first), connectionPoint)) == 0) {
+					removedConnections.insert(EvalConnection(EvalConnectionPoint(gateId, connectionsIter.first), connectionPoint));
+				}
+			}
+			// auto gateAConnectionIter = gateAIterBoolPair->second.connections.find(evalConnection.connectionPointA.connectionEndId);
+		}
+		// assert(gateAConnectionIter->second.contains(evalConnection.connectionPointB));
 		gates.erase(iter);
 		if (addedGates.erase(gateId) == 0) {
 			removedGates.insert(gateId);
@@ -79,6 +96,7 @@ public:
 		auto gateAIterBoolPair = gates.find(evalConnection.connectionPointA.gateId);
 		assert(gateAIterBoolPair != gates.end());
 		auto gateAConnectionIter = gateAIterBoolPair->second.connections.find(evalConnection.connectionPointA.connectionEndId);
+		assert(gateAConnectionIter != gateAIterBoolPair->second.connections.end());
 		assert(gateAConnectionIter->second.contains(evalConnection.connectionPointB));
 		if (gateAConnectionIter->second.size() == 1) gateAIterBoolPair->second.connections.erase(gateAConnectionIter);
 		else {
@@ -129,7 +147,7 @@ public:
 
 	EvalLayerState& getOrMakeNextLayerState() {
 		if (!nextLayerState) {
-			nextLayerState = std::make_unique<EvalLayerState>(blockDataManager);
+			nextLayerState = std::make_unique<EvalLayerState>(blockDataManager, layerIndex + 1);
 			nextLayerState->setLastLayer(this);
 		}
 		return *nextLayerState;
@@ -153,10 +171,9 @@ public:
 	const std::unordered_multimap<EvalConnectionPoint, EvalConnectionPoint>& getConnectionPointReverseRemapping() const { return connectionPointReverseRemapping; }
 
 	eval_gate_id getUnsedEvalGateId() {
-		eval_gate_id id = lastUnsedEvalGateId;
-		while (gates.contains(id)) id = id.get() - 1;
-		lastUnsedEvalGateId = id.get() - 1;
-		return id;
+		do lastUnsedEvalGateId = lastUnsedEvalGateId.get() -1;
+		while (gates.contains(lastUnsedEvalGateId));
+		return lastUnsedEvalGateId;
 	}
 
 	void visualize() const {
@@ -205,12 +222,13 @@ public:
 	}
 
 private:
-	eval_gate_id lastUnsedEvalGateId = std::numeric_limits<eval_gate_id::rep>::max() - 1; // -1 in case of math errors with this high number
+	eval_gate_id lastUnsedEvalGateId; // -1 in case of math errors with this high number
 
 	void setLastLayer(const EvalLayerState* lastLayerState) { this->lastLayerState = lastLayerState; }
 
 	std::unique_ptr<EvalLayerState> nextLayerState;
 	const EvalLayerState* lastLayerState;
+	unsigned int layerIndex;
 
 	const BlockDataManager& blockDataManager;
 
