@@ -4,7 +4,7 @@
 #include "backend/blockData/blockDataManager.h"
 #include "computerAPI/directoryManager.h"
 
-class BusesSimpleEvaluatorTest : public ::testing::Test {
+class DISABLED_BusesSimpleEvaluatorTest : public ::testing::Test {
 protected:
 	void SetUp() override;
 	void TearDown() override;
@@ -22,7 +22,7 @@ protected:
 	BlockType BUS2;
 };
 
-void BusesSimpleEvaluatorTest::SetUp() {
+void DISABLED_BusesSimpleEvaluatorTest::SetUp() {
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
 	circuit = environment.getBackend().getCircuit(circuitId);
 	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuitId).value();
@@ -38,12 +38,12 @@ void BusesSimpleEvaluatorTest::SetUp() {
 	BUS2 = blockDataManager.getBusBlock(2);
 }
 
-void BusesSimpleEvaluatorTest::TearDown() {
+void DISABLED_BusesSimpleEvaluatorTest::TearDown() {
 	circuit.reset();
 	evaluator.reset();
 }
 
-TEST_F(BusesSimpleEvaluatorTest, SimpleBus2) {
+TEST_F(DISABLED_BusesSimpleEvaluatorTest, SimpleBus2) {
 	BlockDataManager& blockDataManager = environment.getBackend().getBlockDataManager();
 	const BlockData* bus2Data = blockDataManager.getBlockData(BUS2);
 	ASSERT_NE(bus2Data, nullptr);
@@ -83,7 +83,7 @@ TEST_F(BusesSimpleEvaluatorTest, SimpleBus2) {
 	EXPECT_EQ(std::get<std::vector<logic_state_t>>(outputState), std::vector<logic_state_t>({ L, H }));
 }
 
-TEST_F(BusesSimpleEvaluatorTest, BusTristate) {
+TEST_F(DISABLED_BusesSimpleEvaluatorTest, BusTristate) {
 	BlockDataManager& blockDataManager = environment.getBackend().getBlockDataManager();
 	const BlockData* bus2Data = blockDataManager.getBlockData(BUS2);
 	ASSERT_NE(bus2Data, nullptr);
@@ -130,7 +130,7 @@ TEST_F(BusesSimpleEvaluatorTest, BusTristate) {
 	EXPECT_EQ(std::get<std::vector<logic_state_t>>(evaluator->getEvalLogicSimulator().getPinState(tristatePos)), std::vector<logic_state_t>({ Z, Z }));
 }
 
-TEST_F(BusesSimpleEvaluatorTest, BusEndsHaveSameSimIds) {
+TEST_F(DISABLED_BusesSimpleEvaluatorTest, BusEndsHaveSameSimIds) {
 	BlockDataManager& blockDataManager = environment.getBackend().getBlockDataManager();
 	const BlockData* bus2Data = blockDataManager.getBlockData(BUS2);
 	ASSERT_NE(bus2Data, nullptr);

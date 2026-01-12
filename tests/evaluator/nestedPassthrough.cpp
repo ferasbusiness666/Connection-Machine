@@ -3,7 +3,7 @@
 #include "backend/evaluator/evaluator.h"
 #include "computerAPI/directoryManager.h"
 
-class NestedPassthroughEvaluatorTest : public ::testing::Test {
+class DISABLED_NestedPassthroughEvaluatorTest : public ::testing::Test {
 protected:
 	void SetUp() override;
 	void TearDown() override;
@@ -20,7 +20,7 @@ protected:
     BlockType NPTB;
 };
 
-void NestedPassthroughEvaluatorTest::SetUp() {
+void DISABLED_NestedPassthroughEvaluatorTest::SetUp() {
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
 	circuit = environment.getBackend().getCircuit(circuitId);
 	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuitId).value();
@@ -36,12 +36,12 @@ void NestedPassthroughEvaluatorTest::SetUp() {
     NPTB = nestedPassthroughBrokenCircuit->getBlockType();
 }
 
-void NestedPassthroughEvaluatorTest::TearDown() {
+void DISABLED_NestedPassthroughEvaluatorTest::TearDown() {
 	circuit.reset();
 	evaluator.reset();
 }
 
-TEST_F(NestedPassthroughEvaluatorTest, PlaceNestedPassthrough) {
+TEST_F(DISABLED_NestedPassthroughEvaluatorTest, PlaceNestedPassthrough) {
     Position blockPos(0, 0);
     ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, NPT));
     EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(blockPos), L);

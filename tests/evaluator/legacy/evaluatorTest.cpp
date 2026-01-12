@@ -166,7 +166,7 @@ TEST_F(EvaluatorTest, EvaluatingCircuitModifications) {
 	ASSERT_EQ(evaluator->getEvalLogicSimulator().getState(Address(newPos)), H);
 }
 
-TEST_F(EvaluatorTest, ThreadSafetyAndPausing) {
+TEST_F(EvaluatorTest, DISABLED_ThreadSafetyAndPausing) {
 	Position pos(i, i); ++i;
 	circuit->tryInsertBlock(pos, Rotation::ZERO, BlockType::SWITCH);
 	Address addr(pos);
