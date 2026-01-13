@@ -14,17 +14,17 @@ LayerRunner::LayerRunner(const BlockDataManager& blockDataManager) : blockDataMa
 LayerRunner::~LayerRunner() = default;
 
 void LayerRunner::runAll() {
-	// logInfo("------------------------------------------------");
+	logInfo("------------------------------------------------");
 	EvalLayerState* last = evalTopLayerState.get();
-	// last->visualize();
+	last->visualize();
 	for (unsigned int i = 0; i < layers.size(); i++) {
-		// logInfo("----");
+		logInfo("----");
 		EvalLayerState& next = last->getOrMakeNextLayerState();
 		next.resetEdits();
-		// next.visualize();
+		next.visualize();
 		layers[i]->run(*last, next);
 		last = &next;
-		// last->visualize();
+		last->visualize();
 	}
 }
 

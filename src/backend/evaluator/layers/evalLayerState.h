@@ -21,71 +21,10 @@ public:
 		blockDataManager(blockDataManager), layerIndex(layerIndex),
 		lastUnsedEvalGateId(std::numeric_limits<eval_gate_id::rep>::max() - 1 - layerIndex * 10000000) {}
 
-	void addGate(eval_gate_id gateId, EvalGateType type) { // TODO: add transparent junction merging
-		bool suc = gates.try_emplace(gateId, type, gateId).second;
-		assert(suc);
-		if (removedGates.erase(gateId) == 0) {
-			addedGates.insert(gateId);
-		}
-	}
-	void removeGate(eval_gate_id gateId) { // TODO: add transparent junction splitting
-		auto iter = gates.find(gateId);
-		assert(iter != gates.end());
-		for (auto connectionsIter : iter->second.connections) {
-			for (EvalConnectionPoint connectionPoint : connectionsIter.second) {
-				auto gateBIterBoolPair = gates.find(connectionPoint.gateId);
-				assert(gateBIterBoolPair != gates.end());
-				auto gateBConnectionIter = gateBIterBoolPair->second.connections.find(connectionPoint.connectionEndId);
-				assert(gateBConnectionIter->second.contains(EvalConnectionPoint(gateId, connectionsIter.first)));
-				if (gateBConnectionIter->second.size() == 1) gateBIterBoolPair->second.connections.erase(gateBConnectionIter);
-				else gateBConnectionIter->second.erase(EvalConnectionPoint(gateId, connectionsIter.first));
-				if (addedConnections.erase(EvalConnection(EvalConnectionPoint(gateId, connectionsIter.first), connectionPoint)) == 0) {
-					removedConnections.insert(EvalConnection(EvalConnectionPoint(gateId, connectionsIter.first), connectionPoint));
-				}
-			}
-			// auto gateAConnectionIter = gateAIterBoolPair->second.connections.find(evalConnection.connectionPointA.connectionEndId);
-		}
-		// assert(gateAConnectionIter->second.contains(evalConnection.connectionPointB));
-		gates.erase(iter);
-		if (addedGates.erase(gateId) == 0) {
-			removedGates.insert(gateId);
-		}
-	}
-	void addConnection(const EvalConnection& evalConnection) { // TODO: add transparent junction merging
-		auto gateAIterBoolPair = gates.find(evalConnection.connectionPointA.gateId);
-		assert(gateAIterBoolPair != gates.end());
-		bool suc = gateAIterBoolPair->second.connections[evalConnection.connectionPointA.connectionEndId].insert(evalConnection.connectionPointB).second;
-		assert(suc);
-
-		auto gateBIterBoolPair = gates.find(evalConnection.connectionPointB.gateId);
-		assert(gateBIterBoolPair != gates.end());
-		gateBIterBoolPair->second.connections[evalConnection.connectionPointB.connectionEndId].insert(evalConnection.connectionPointA);
-		if (removedConnections.erase(evalConnection) == 0) {
-			addedConnections.insert(evalConnection);
-		}
-	}
-	void removeConnection(const EvalConnection& evalConnection) { // TODO: add transparent junction splitting
-		auto gateAIterBoolPair = gates.find(evalConnection.connectionPointA.gateId);
-		assert(gateAIterBoolPair != gates.end());
-		auto gateAConnectionIter = gateAIterBoolPair->second.connections.find(evalConnection.connectionPointA.connectionEndId);
-		assert(gateAConnectionIter != gateAIterBoolPair->second.connections.end());
-		assert(gateAConnectionIter->second.contains(evalConnection.connectionPointB));
-		if (gateAConnectionIter->second.size() == 1) gateAIterBoolPair->second.connections.erase(gateAConnectionIter);
-		else {
-			bool suc = gateAConnectionIter->second.erase(evalConnection.connectionPointB);
-			assert(suc);
-		}
-
-		auto gateBIterBoolPair = gates.find(evalConnection.connectionPointB.gateId);
-		assert(gateBIterBoolPair != gates.end());
-		auto gateBConnectionIter = gateBIterBoolPair->second.connections.find(evalConnection.connectionPointB.connectionEndId);
-		assert(gateBConnectionIter->second.contains(evalConnection.connectionPointA));
-		if (gateBConnectionIter->second.size() == 1) gateBIterBoolPair->second.connections.erase(gateBConnectionIter);
-		else gateBConnectionIter->second.erase(evalConnection.connectionPointA);
-		if (addedConnections.erase(evalConnection) == 0) {
-			removedConnections.insert(evalConnection);
-		}
-	}
+	void addGate(eval_gate_id gateId, EvalGateType type);
+	void removeGate(eval_gate_id gateId);
+	void addConnection(const EvalConnection& evalConnection, unsigned int weight = 1);
+	void removeConnection(const EvalConnection& evalConnection, unsigned int weight = 1);
 
  	const EvalGate* getGate(eval_gate_id gateId) const {
 		auto iter = gates.find(gateId);
@@ -101,40 +40,40 @@ public:
 	std::unordered_set<eval_gate_id>::const_iterator getRemovedGatesEnd() const { return removedGates.end(); }
 	bool removeEditContainsGate(eval_gate_id evalGateId) const { return removedGates.contains(evalGateId); }
 
-	std::unordered_set<EvalConnection>::const_iterator getAddedConnectionsBegin() const { return addedConnections.begin(); }
-	std::unordered_set<EvalConnection>::const_iterator getAddedConnectionsEnd() const { return addedConnections.end(); }
+	std::unordered_map<EvalConnection, unsigned int>::const_iterator getAddedConnectionsBegin() const { return addedConnections.begin(); }
+	std::unordered_map<EvalConnection, unsigned int>::const_iterator getAddedConnectionsEnd() const { return addedConnections.end(); }
 	bool addEditContainsConnection(EvalConnection evalConnection) const { return addedConnections.contains(evalConnection); }
 
-	std::unordered_set<EvalConnection>::const_iterator getRemovedConnectionsBegin() const { return removedConnections.begin(); }
-	std::unordered_set<EvalConnection>::const_iterator getRemovedConnectionsEnd() const { return removedConnections.end(); }
+	std::unordered_map<EvalConnection, unsigned int>::const_iterator getRemovedConnectionsBegin() const { return removedConnections.begin(); }
+	std::unordered_map<EvalConnection, unsigned int>::const_iterator getRemovedConnectionsEnd() const { return removedConnections.end(); }
 	bool removeEditContainsConnection(EvalConnection evalConnection) const { return removedConnections.contains(evalConnection); }
 
-	// unsigned int getConnectionWeight(EvalConnection connection) const {
-	// 	auto iter = connectionWeights.find(connection);
-	// 	if (iter == connectionWeights.end()) return 1;
-	// 	return iter->second;
-	// }
-	// void setConnectionWeight(EvalConnection connection, unsigned int weight) {
-	// 	assert(weight > 1);
-	// 	connectionWeights.insert_or_assign(connection, weight);
-	// }
-	// void addConnectionWeight(EvalConnection connection, int weightChange) {
-	// 	assert(weightChange != 0); // just dont
-	// 	auto iter = connectionWeights.find(connection);
-	// 	if (iter == connectionWeights.end()) {
-	// 		if (weightChange == 1) return;
-	// 		connectionWeights.emplace(connection, weightChange);
-	// 	}
-	// 	iter->second += weightChange;
-	// 	if (iter->second == 1) {
-	// 		connectionWeights.erase(iter);
-	// 	}
-	// 	assert(iter->second != 0);
-	// }
-	// void removeConnectionWeight(EvalConnection connection) {
-	// 	unsigned int deletedCount = connectionWeights.erase(connection);
-	// 	assert(deletedCount == 1);
-	// }
+	unsigned int getConnectionWeight(EvalConnection connection) const {
+		auto iter = connectionWeights.find(connection);
+		if (iter == connectionWeights.end()) return 1;
+		return iter->second;
+	}
+	void setConnectionWeight(EvalConnection connection, unsigned int weight) {
+		assert(weight > 1);
+		connectionWeights.insert_or_assign(connection, weight);
+	}
+	void addConnectionWeight(EvalConnection connection, int weightChange) {
+		assert(weightChange != 0); // just dont
+		auto iter = connectionWeights.find(connection);
+		if (iter == connectionWeights.end()) {
+			if (weightChange == 1) return;
+			connectionWeights.emplace(connection, weightChange);
+		}
+		iter->second += weightChange;
+		if (iter->second == 1) {
+			connectionWeights.erase(iter);
+		}
+		assert(iter->second != 0);
+	}
+	void removeConnectionWeight(EvalConnection connection) {
+		unsigned int deletedCount = connectionWeights.erase(connection);
+		assert(deletedCount == 1);
+	}
 
 	void resetEdits() {
 		// lastUnsedEvalGateId = std::numeric_limits<eval_gate_id::rep>::max() - 1; // -1 in case of math errors with this high number
@@ -175,50 +114,7 @@ public:
 		return lastUnsedEvalGateId;
 	}
 
-	void visualize() const {
-		logInfo("Eval Layer State {}", "", (unsigned long long) this);
-		logInfo("Last: {}   Next: {}", "", (unsigned long long)lastLayerState, (unsigned long long)nextLayerState.get());
-		logInfo("{} Gates", "", gates.size());
-		for (auto gatePair : gates) {
-			logInfo("Gate Id {}, Type: {}", "", gatePair.second.gateId, gatePair.second.type);
-			for (auto connPair : gatePair.second.connections) {
-				std::stringstream ss;
-				for (EvalConnectionPoint connectionPoint: connPair.second) {
-					ss << "(" << connectionPoint.gateId.get() << ", " << connectionPoint.connectionEndId.get() << ") ";
-				}
-				logInfo("End Id {}: {}", "", connPair.first.get(), ss.str());
-			}
-		}
-		logInfo("{} Gate Remapping", "", gateIdRemapping.size());
-		for (auto pair : gateIdRemapping) {
-			logInfo("{} -> {}", "", pair.first, pair.second);
-		}
-		logInfo("{} Gate Reverse Remapping", "", gateIdReverseRemapping.size());
-		eval_gate_id curKey = 0;
-		std::string tmpBuf;
-		for (auto pair : gateIdReverseRemapping) {
-			if (curKey != pair.first) {
-				if (curKey != 0) logInfo("{} -> [{}]", "", curKey, tmpBuf);
-				tmpBuf.clear();
-				curKey = pair.first;
-			}
-			if (tmpBuf.size() != 0) tmpBuf += ", ";
-			tmpBuf += std::to_string(pair.second);
-		}
-		if (curKey != 0) logInfo("{} -> [{}]", "", curKey, tmpBuf);
-		// logInfo("{} Port Remapping", "", connectionPointRemapping.size());
-		// for (auto pair : connectionPointRemapping) {
-		// 	logInfo("({}, {}) -> ({}, {})", "", pair.first.gateId, pair.first.connectionEndId, pair.second.gateId, pair.second.connectionEndId);
-		// }
-		// logInfo("{} Port Reverse Remapping", "", connectionPointReverseRemapping.size());
-		// for (auto pair : connectionPointReverseRemapping) {
-		// 	logInfo("({}, {}) -> ({}, {})", "", pair.first.gateId, pair.first.connectionEndId, pair.second.gateId, pair.second.connectionEndId);
-		// }
-		logInfo("{} addedGates", "", addedGates.size());
-		logInfo("{} removedGates", "", removedGates.size());
-		logInfo("{} addedConnections", "", addedConnections.size());
-		logInfo("{} removedConnections", "", removedConnections.size());
-	}
+	void visualize() const;
 
 private:
 	eval_gate_id lastUnsedEvalGateId; // -1 in case of math errors with this high number
@@ -232,7 +128,7 @@ private:
 	const BlockDataManager& blockDataManager;
 
 	std::unordered_map<eval_gate_id, EvalGate> gates;
-	// std::unordered_map<EvalConnection, unsigned int> connectionWeights;
+	std::unordered_map<EvalConnection, unsigned int> connectionWeights;
 
 	// all remappings will be eval_gate_id or EvalConnectionPoint
 	std::unordered_map<eval_gate_id, eval_gate_id> gateIdRemapping;
@@ -242,8 +138,8 @@ private:
 
 	std::unordered_set<eval_gate_id> addedGates;
 	std::unordered_set<eval_gate_id> removedGates;
-	std::unordered_set<EvalConnection> addedConnections;
-	std::unordered_set<EvalConnection> removedConnections;
+	std::unordered_map<EvalConnection, unsigned int> addedConnections;
+	std::unordered_map<EvalConnection, unsigned int> removedConnections;
 };
 
 #endif /* evalLayerState_h */

@@ -50,6 +50,16 @@ struct std::hash<EvalConnectionPoint> {
 	}
 };
 
+template <>
+struct fmt::formatter<EvalConnectionPoint> : fmt::formatter<std::string> {
+	auto format(EvalConnectionPoint connectionPoint, format_context& ctx) const /* GCOVR_EXCL_FUNCTION */ {
+		return formatter<std::string>::format(
+			"(" + fmt::to_string(connectionPoint.gateId) + ", " + fmt::to_string(connectionPoint.connectionEndId) + ")",
+			ctx
+		);
+	}
+};
+
 struct EvalConnection {
 	EvalConnection(eval_gate_id gateAId, connection_end_id_t gateAConnectionId, eval_gate_id gateBId, connection_end_id_t gateBConnectionId) :
 		EvalConnection(EvalConnectionPoint(gateAId, gateAConnectionId), EvalConnectionPoint(gateBId, gateBConnectionId)) { }
@@ -75,6 +85,16 @@ struct std::hash<EvalConnection> {
 		if (h1 > h2) std::swap(h1, h2);
 		std::size_t seed = h1 + 0x9e3779b9;
 		return h2 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+	}
+};
+
+template <>
+struct fmt::formatter<EvalConnection> : fmt::formatter<std::string> {
+	auto format(EvalConnection evalConnection, format_context& ctx) const /* GCOVR_EXCL_FUNCTION */ {
+		return formatter<std::string>::format(
+			"(" + fmt::to_string(evalConnection.connectionPointA) + ", " + fmt::to_string(evalConnection.connectionPointB) + ")",
+			ctx
+		);
 	}
 };
 

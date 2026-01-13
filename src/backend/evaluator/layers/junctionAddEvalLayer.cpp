@@ -28,7 +28,7 @@ bool isConnectionEndIdSinglePin(EvalGateType gateType, connection_end_id_t conne
 
 void JunctionAddEvalLayer::run(const EvalLayerState& currentState, EvalLayerState& nextState) {
 	for (auto iter = currentState.getRemovedConnectionsBegin(); iter != currentState.getRemovedConnectionsEnd(); ++iter) {
-		EvalConnection connection = *iter;
+		EvalConnection connection = iter->first;
 		const EvalGate* gateA = nextState.getGate(connection.connectionPointA.gateId);
 		assert(gateA);
 		const EvalGate* gateB = nextState.getGate(connection.connectionPointB.gateId);
@@ -41,7 +41,7 @@ void JunctionAddEvalLayer::run(const EvalLayerState& currentState, EvalLayerStat
 			eval_gate_id junctionId = connectionsIter->second.begin()->gateId;
 			const EvalGate* junction = nextState.getGate(junctionId);
 			if (junction->connections.at(0).size() == 2) {
-				nextState.removeConnection(EvalConnection(connection.connectionPointA, EvalConnectionPoint(junctionId, 0)));
+				nextState.removeConnection(EvalConnection(connection.connectionPointA, EvalConnectionPoint(junctionId, 0)), iter->second);
 				junctionAToRemove = junctionId;
 			}
 			connection.connectionPointA = EvalConnectionPoint(junctionId, 0);
@@ -52,12 +52,12 @@ void JunctionAddEvalLayer::run(const EvalLayerState& currentState, EvalLayerStat
 			eval_gate_id junctionId = connectionsIter->second.begin()->gateId;
 			const EvalGate* junction = nextState.getGate(junctionId);
 			if (junction->connections.at(0).size() == 2) {
-				nextState.removeConnection(EvalConnection(connection.connectionPointB, EvalConnectionPoint(junctionId, 0)));
+				nextState.removeConnection(EvalConnection(connection.connectionPointB, EvalConnectionPoint(junctionId, 0)), iter->second);
 				junctionBToRemove = junctionId;
 			}
 			connection.connectionPointB = EvalConnectionPoint(junctionId, 0);
 		}
-		nextState.removeConnection(connection);
+		nextState.removeConnection(connection, iter->second);
 		if (junctionAToRemove != 0) nextState.removeGate(junctionAToRemove);
 		if (junctionBToRemove != 0) nextState.removeGate(junctionBToRemove);
 	}
@@ -75,7 +75,7 @@ void JunctionAddEvalLayer::run(const EvalLayerState& currentState, EvalLayerStat
 		nextState.addGate(*iter, evalGate->type);
 	}
 	for (auto iter = currentState.getAddedConnectionsBegin(); iter != currentState.getAddedConnectionsEnd(); ++iter) {
-		EvalConnection connection = *iter;
+		EvalConnection connection = iter->first;
 		const EvalGate* gateA = nextState.getGate(connection.connectionPointA.gateId);
 		assert(gateA);
 		const EvalGate* gateB = nextState.getGate(connection.connectionPointB.gateId);

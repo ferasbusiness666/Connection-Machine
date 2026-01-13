@@ -9,7 +9,7 @@ public:
 	void run(const EvalLayerState& currentState, EvalLayerState& nextState) override final;
 
 private:
-	std::tuple<std::vector<eval_gate_id>, std::unordered_set<EvalConnectionPoint>, EvalGateType> gatherJunctionGroup(eval_gate_id gateId, const EvalLayerState& evalLayerState) const;
+	std::tuple<std::vector<eval_gate_id>, std::unordered_map<EvalConnectionPoint, unsigned int>, EvalGateType> gatherJunctionGroup(eval_gate_id gateId, const EvalLayerState& evalLayerState) const;
 };
 
 #endif /* junctionMergeEvalLayer_h */

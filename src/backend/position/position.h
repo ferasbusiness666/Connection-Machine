@@ -585,10 +585,10 @@ template <>
 struct fmt::formatter<Rotation> : fmt::formatter<std::string> {
 	auto format(Rotation v, format_context& ctx) const /* GCOVR_EXCL_FUNCTION */ {
 		switch (v) {
-		case Rotation::TWO_SEVENTY: return "TWO_SEVENTY";
-		case Rotation::ONE_EIGHTY: return "ONE_EIGHTY";
-		case Rotation::NINETY: return "NINETY";
-		default: return "ZERO";
+		case Rotation::TWO_SEVENTY: return  formatter<std::string>::format("TWO_SEVENTY", ctx);
+		case Rotation::ONE_EIGHTY: return  formatter<std::string>::format("ONE_EIGHTY", ctx);
+		case Rotation::NINETY: return  formatter<std::string>::format("NINETY", ctx);
+		default: return  formatter<std::string>::format("ZERO", ctx);
 		}
 	}
 };
