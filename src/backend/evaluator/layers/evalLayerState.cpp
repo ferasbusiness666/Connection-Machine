@@ -35,10 +35,8 @@ void EvalLayerState::removeGate(eval_gate_id gateId) { // TODO: add transparent 
 				assert(addedConnectionIter->second > weight);
 				addedConnectionIter->second -= weight;
 			}
-			// }
 		}
 	}
-	// assert(gateAConnectionIter->second.contains(evalConnection.connectionPointB));
 	gates.erase(iter);
 	if (addedGates.erase(gateId) == 0) {
 		removedGates.insert(gateId);

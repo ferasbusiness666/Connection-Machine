@@ -486,15 +486,15 @@ void VulkanChunker::updateSimulatorIds(const std::vector<SimulatorMappingUpdate>
 					continue;
 				}
 				if (simulatorMappingUpdate.virtualConnectionId == MainRenderer::get().getBlockRenderDataManager().getBlockRenderData(blockIter->second.blockRenderDataId)->textureVirtualConnection) {
-				auto iter = vulkanLogicAllocation.value()->getBlockStateIndex().find(simulatorMappingUpdate.position);
-				if (iter == vulkanLogicAllocation.value()->getBlockStateIndex().end()) continue;
-				if (std::holds_alternative<std::vector<simulator_gate_id_t>>(simIds)) {
-					vulkanLogicAllocation.value()->getStateSimulatorIds()[iter->second] = 0;
-				} else {
-					vulkanLogicAllocation.value()->getStateSimulatorIds()[iter->second] = std::get<simulator_gate_id_t>(simIds);
+					auto iter = vulkanLogicAllocation.value()->getBlockStateIndex().find(simulatorMappingUpdate.position);
+					if (iter == vulkanLogicAllocation.value()->getBlockStateIndex().end()) continue;
+					if (std::holds_alternative<std::vector<simulator_gate_id_t>>(simIds)) {
+						vulkanLogicAllocation.value()->getStateSimulatorIds()[iter->second] = 0;
+					} else {
+						vulkanLogicAllocation.value()->getStateSimulatorIds()[iter->second] = std::get<simulator_gate_id_t>(simIds);
+					}
+					break;
 				}
-				break;
-			}
 			}
 		} else {
 			for (LogicGroup* logicGroup : groupsAtChunkIter->second) {

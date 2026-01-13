@@ -288,7 +288,9 @@ void EvalLogicSimulator::processEdits() {
 	std::vector<SimulatorMappingUpdate> simulatorMappingUpdates;
 	for (auto mappingPair : gateIdMapping) {
 		const EvalGate* evalGate = evalLayerState.getGate(mappingPair.first);
+		assert(evalGate);
 		const BlockData* blockData = blockDataManager.getBlockData(getBlockType(evalGate->type));
+		assert(blockData);
 		for (auto pair : blockData->getConnectionsSafe()) {
 			if (pair.second.portType == BlockData::ConnectionData::PortType::INPUT) continue;
 			std::optional<simulator_gate_id_t> stateIndex = logicSimulator.getOutputPortId(mappingPair.second, pair.first);
@@ -309,17 +311,21 @@ void EvalLogicSimulator::processEdits() {
 					pinSimId = gateIdMapping.at(otherEvalGate->gateId);
 				}
 			}
-			std::vector<EvalConnectionPoint> evalConnectionPoints = evaluatorInternal.getLayerRunner().getReversedMappedEvalConnectionPoint(EvalConnectionPoint(evalGate->gateId, pair.first));
-			for (EvalConnectionPoint evalConnectionPoint : evalConnectionPoints) {
-				evaluatorInternal.mapFromTopConnectionPointToAddress(evalConnectionPoint);
-				auto iter = evaluatorInternal.getPositionReverseRemapping().find(evalConnectionPoint.gateId);
-				if (iter == evaluatorInternal.getPositionReverseRemapping().end()) {
-					logError("Could not find pos of gate wth eval id {}", "EvalLogicSimulator::makeEdit", evalConnectionPoint.gateId);
-					continue;
-				}
-				Position portPos = iter->second.first + iter->second.second.transformVectorWithArea(pair.second.positionOnBlock, blockData->getSize());
-				simulatorMappingUpdates.emplace_back(portPos, pinSimId);
-				simulatorMappingUpdates.emplace_back(iter->second.first, 0, stateIndex.value());
+			std::vector<EvalConnectionPoint> connectionPoints = evaluatorInternal.mapFromBottomConnectionPointToTopConnectionPoint(
+				EvalConnectionPoint(evalGate->gateId, pair.first)
+			);
+			for (const EvalConnectionPoint& connectionPoint : connectionPoints) {
+				std::optional<std::pair<Address, Address>> addressesPair = evaluatorInternal.mapFromTopConnectionPointToPointAndBlockAddress(connectionPoint);
+				assert(addressesPair.has_value());
+				assert(addressesPair->first.size() == 1 && "eval does not support ICs yet");
+				assert(addressesPair->first.size() == addressesPair->second.size());
+
+				simulatorMappingUpdates.emplace_back(addressesPair->first.getPosition(0), pinSimId);
+				// logInfo(
+				// 	"SimulatorMappingUpdate: block: {} port: {}, eval id: {}, sim id: {}", "",
+				// 	addressesPair->second.getPosition(0), addressesPair->first.getPosition(0), mappingPair.first, pinSimId
+				// );
+				simulatorMappingUpdates.emplace_back(addressesPair->second.getPosition(0), 0, stateIndex.value());
 			}
 		}
 	}

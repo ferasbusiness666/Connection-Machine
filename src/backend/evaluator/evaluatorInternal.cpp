@@ -91,7 +91,7 @@ void EvaluatorInternal::removeConnection(Position outputBlockPosition, Position 
 EvalConnectionPoint EvaluatorInternal::mapFromTopConnectionPointToBottomConnectionPoint(EvalConnectionPoint topConnectionPoint) const {
 	return layerRunner.getMappedEvalConnectionPoint(topConnectionPoint);
 }
-std::optional<std::vector<EvalConnectionPoint>> EvaluatorInternal::mapFromBottomConnectionPointToTopConnectionPoint(EvalConnectionPoint bottomConnectionPoint) const {
+std::vector<EvalConnectionPoint> EvaluatorInternal::mapFromBottomConnectionPointToTopConnectionPoint(EvalConnectionPoint bottomConnectionPoint) const {
 	return layerRunner.getReversedMappedEvalConnectionPoint(bottomConnectionPoint);
 }
 std::optional<Address> EvaluatorInternal::mapFromTopConnectionPointToAddress(EvalConnectionPoint topConnectionPoint) const {
@@ -104,15 +104,38 @@ std::optional<Address> EvaluatorInternal::mapFromTopConnectionPointToAddress(Eva
 		topConnectionPoint.connectionEndId
 	).value();
 }
-std::optional<std::vector<Address>> EvaluatorInternal::mapFromBottomConnectionPointToAddress(EvalConnectionPoint bottomConnectionPoint) const {
-	if (bottomConnectionPoint.gateId == 0) return std::nullopt;
-	std::optional<std::vector<EvalConnectionPoint>> topConnectionPoints = mapFromBottomConnectionPointToTopConnectionPoint(bottomConnectionPoint);
-	if (!topConnectionPoints) return std::nullopt;
+std::optional<std::pair<Address, Address>> EvaluatorInternal::mapFromTopConnectionPointToPointAndBlockAddress(EvalConnectionPoint topConnectionPoint) const {
+	if (topConnectionPoint.gateId == 0) return std::nullopt;
+	auto iter = positionReverseRemapping.find(topConnectionPoint.gateId);
+	if (iter == positionReverseRemapping.end()) return std::nullopt;
+	return std::make_pair(
+		iter->second.first + circuitManager.getBlockDataManager().getConnectionVector(
+			getBlockType(layerRunner.getInputLayer().getGate(topConnectionPoint.gateId)->type),
+			iter->second.second,
+			topConnectionPoint.connectionEndId
+		).value(),
+		iter->second.first
+	);
+}
+std::vector<Address> EvaluatorInternal::mapFromBottomConnectionPointToAddress(EvalConnectionPoint bottomConnectionPoint) const {
+	std::vector<EvalConnectionPoint> topConnectionPoints = mapFromBottomConnectionPointToTopConnectionPoint(bottomConnectionPoint);
 	std::vector<Address> addresses;
-	for (const EvalConnectionPoint& topConnectionPoint : topConnectionPoints.value()) {
-		addresses.push_back(mapFromTopConnectionPointToAddress(topConnectionPoint).value());
+	for (const EvalConnectionPoint& topConnectionPoint : topConnectionPoints) {
+		std::optional<Address> address = mapFromTopConnectionPointToAddress(topConnectionPoint);
+		assert(address.has_value());
+		addresses.push_back(address.value());
 	}
 	return addresses;
+}
+std::vector<std::pair<Address, Address>> EvaluatorInternal::mapFromBottomConnectionPointToAddressAndBlockAddress(EvalConnectionPoint bottomConnectionPoint) const {
+	std::vector<EvalConnectionPoint> topConnectionPoints = mapFromBottomConnectionPointToTopConnectionPoint(bottomConnectionPoint);
+	std::vector<std::pair<Address, Address>> addressesPairs;
+	for (const EvalConnectionPoint& topConnectionPoint : topConnectionPoints) {
+		std::optional<std::pair<Address, Address>> pair = mapFromTopConnectionPointToPointAndBlockAddress(topConnectionPoint);
+		assert(pair.has_value());
+		addressesPairs.push_back(pair.value());
+	}
+	return addressesPairs;
 }
 EvalConnectionPoint EvaluatorInternal::mapFromAddressToTopConnectionPoint(const Address& address) const {
 	if (address.size() != 1) return EvalConnectionPoint::null();

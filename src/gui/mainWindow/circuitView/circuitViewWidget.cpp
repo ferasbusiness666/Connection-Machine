@@ -183,6 +183,7 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 	keybindHandler.addListener("Keybinds/Editing/Tools/Cycle Mode", [this]() { this->mainWindow.getToolManagerManager().cycleActiveToolMode(); });
 	keybindHandler.addListener("Keybinds/Editing/Tools/Cycle Mode Back", [this]() { this->mainWindow.getToolManagerManager().cycleActiveToolMode(-1); });
 	keybindHandler.addListener("Keybinds/File/New", [this]() { newCircuit(); });
+	keybindHandler.addListener(Rml::Input::KeyIdentifier::KI_P, 0, [this]() { this->mainWindow.log(circuitView->getViewManager().getPointerPosition().snap().toString()); });
 	// keybindHandler.addListener("Keybinds/Tutorial/Start", [this]() { circuitView->getTutorialManager().StartTutorial(); });
 	// keybindHandler.addListener("Keybinds/Tutorial/Stop", [this]() { circuitView->getTutorialManager().Stop(); });
 

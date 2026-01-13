@@ -82,6 +82,9 @@ void JunctionMergeEvalLayer::run(const EvalLayerState& currentState, EvalLayerSt
 				junctionsToScan.insert(reverseRemappingIter->second);
 			}
 		}
+		auto iterPair = nextState.getGateIdReverseRemapping().equal_range(*iter);
+		for (auto iter = iterPair.first; iter != iterPair.second; iter++) nextState.getGateIdRemapping().erase(iter->second);
+		nextState.getGateIdReverseRemapping().erase(iterPair.first, iterPair.second);
 		nextState.removeGate(*iter);
 	}
 	for (auto iter = currentState.getAddedGatesBegin(); iter != currentState.getAddedGatesEnd(); ++iter) {
@@ -120,6 +123,12 @@ void JunctionMergeEvalLayer::run(const EvalLayerState& currentState, EvalLayerSt
 		}
 	}
 	// logInfo(junctionsToScan.size());
+	// for (eval_gate_id junctionId : junctionsToScan) {
+	// 	auto iter = nextState.getGateIdRemapping().find(junctionId);
+	// 	if (iter == nextState.getGateIdRemapping().end()) continue;
+	// 	currentState.getGate(iter->first.connectionPointA.gateId)
+	// }
+	std::set<eval_gate_id> gatesTokeep;
 	while (!junctionsToScan.empty()) {
 		eval_gate_id gateId = *junctionsToScan.begin();
 		junctionsToScan.erase(junctionsToScan.begin());
@@ -131,19 +140,12 @@ void JunctionMergeEvalLayer::run(const EvalLayerState& currentState, EvalLayerSt
 		bool foundPullDown = false;
 		bool foundPullUp = false;
 		for (eval_gate_id junctionId : junctions) {
-			// logInfo("includes: {}", "", junctionId);
 			junctionsToScan.erase(junctionId);
-			// if (junction) {
-			// 	if (!junction->connections.empty()) {
-			// 		const std::unordered_set<EvalConnectionPoint>& connections = junction->connections.at(0);
-			// 		do {
-			// 			// logInfo("removed connetion {}, {}, {}, {}", "", junctionId, 0, connections.begin()->gateId, connections.begin()->connectionEndId);
-			// 			nextState.removeConnection(EvalConnection(EvalConnectionPoint(junctionId, 0), *(connections.begin())));
-			// 		} while ((!junction->connections.empty()));
-			// 	}
-			// }
 			auto pair = nextState.getGateIdRemapping().emplace(junctionId, gateId);
 			if (!pair.second) {
+				if (junctionId != pair.first->second && (!gatesTokeep.contains(pair.first->second)) && nextState.getGate(pair.first->second)) {
+					nextState.removeGate(pair.first->second);
+				}
 				auto iterPair = nextState.getGateIdReverseRemapping().equal_range(pair.first->second);
 				for (auto iter = iterPair.first; iter != iterPair.second; iter++) {
 					if (iter->second == junctionId) {
@@ -154,13 +156,12 @@ void JunctionMergeEvalLayer::run(const EvalLayerState& currentState, EvalLayerSt
 				pair.first->second = gateId;
 			}
 			nextState.getGateIdReverseRemapping().emplace(gateId, junctionId);
-			const EvalGate* junction = nextState.getGate(junctionId);
-			if (junction) nextState.removeGate(junctionId);
+			if (nextState.getGate(junctionId)) nextState.removeGate(junctionId);
 		}
-
+		gatesTokeep.insert(gateId);
 		nextState.addGate(gateId, gateType);
 		for (std::pair<EvalConnectionPoint, unsigned int> pair : otherConnectionPoints) {
-			logInfo("merger addConnection: {}, {}", "", EvalConnection(EvalConnectionPoint(gateId, 0), pair.first), pair.second);
+			// logInfo("merger addConnection: {}, {}", "", EvalConnection(EvalConnectionPoint(gateId, 0), pair.first), pair.second);
 			nextState.addConnection(EvalConnection(EvalConnectionPoint(gateId, 0), pair.first), pair.second);
 		}
 	}

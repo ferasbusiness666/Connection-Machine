@@ -62,7 +62,6 @@ void JunctionAddEvalLayer::run(const EvalLayerState& currentState, EvalLayerStat
 		if (junctionBToRemove != 0) nextState.removeGate(junctionBToRemove);
 	}
 	for (auto iter = currentState.getRemovedGatesBegin(); iter != currentState.getRemovedGatesEnd(); ++iter) {
-		const EvalGate* evalGate = currentState.getGate(*iter);
 		auto iterPair = nextState.getGateIdReverseRemapping().equal_range(*iter);
 		for (auto iter = iterPair.first; iter != iterPair.second; iter++) nextState.getGateIdRemapping().erase(iter->second);
 		nextState.getGateIdReverseRemapping().erase(iterPair.first, iterPair.second);
