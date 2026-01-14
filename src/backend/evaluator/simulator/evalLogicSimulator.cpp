@@ -176,10 +176,7 @@ std::optional<simulator_gate_id_t> EvalLogicSimulator::getOutputPortId(eval_gate
 std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> EvalLogicSimulator::getVirtualConnectionSimulatorId(const Address& address, virtual_connection_id_t virtualConnectionId) const {
 	if (virtualConnectionId != 0) return 3;
 	auto iter2 = gateIdMapping.find(evaluatorInternal.mapFromAddressToBottomConnectionPoint(address).gateId);
-	if (iter2 == gateIdMapping.end()) {
-		// logError("Failed to get sim id.", "EvalLogicSimulator::getVirtualConnectionSimulatorId");
-		return 3;
-	}
+	if (iter2 == gateIdMapping.end()) return 3;
 	return iter2->second;
 }
 
