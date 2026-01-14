@@ -2,7 +2,7 @@
 #include "environment/environment.h"
 #include "backend/evaluator/evaluator.h"
 
-class DISABLED_PrimitivesEvaluatorTest : public ::testing::Test {
+class PrimitivesEvaluatorTest : public ::testing::Test {
 protected:
 	void SetUp() override;
 	void TearDown() override;
@@ -11,14 +11,14 @@ protected:
 	SharedCircuit circuit = nullptr;
 };
 
-void DISABLED_PrimitivesEvaluatorTest::SetUp() {
+void PrimitivesEvaluatorTest::SetUp() {
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
 	circuit = environment.getBackend().getCircuit(circuitId);
 	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuitId).value();
 	evaluator = environment.getBackend().getEvaluator(evalId);
 }
 
-void DISABLED_PrimitivesEvaluatorTest::TearDown() {
+void PrimitivesEvaluatorTest::TearDown() {
 	circuit.reset();
 	evaluator.reset();
 }
@@ -175,7 +175,7 @@ namespace {
 	}
 }
 
-TEST_F(DISABLED_PrimitivesEvaluatorTest, AllBasicGatesBehavior) {
+TEST_F(PrimitivesEvaluatorTest, AllBasicGatesBehavior) {
 	struct Testcase {
 		BlockType blockType;
 		std::vector<logic_state_t> inputStates;
@@ -258,7 +258,7 @@ TEST_F(DISABLED_PrimitivesEvaluatorTest, AllBasicGatesBehavior) {
 	}
 }
 
-TEST_F(DISABLED_PrimitivesEvaluatorTest, TristateBufferBehavior) {
+TEST_F(PrimitivesEvaluatorTest, TristateBufferBehavior) {
 	struct Testcase {
 		std::vector<logic_state_t> enableStates;
 		std::vector<logic_state_t> dataStates;

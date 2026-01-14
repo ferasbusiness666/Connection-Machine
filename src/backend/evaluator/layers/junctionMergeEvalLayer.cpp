@@ -45,7 +45,6 @@ void JunctionMergeEvalLayer::run(const EvalLayerState& currentState, EvalLayerSt
 		if (gate == nullptr) {
 			auto remappingIter = nextState.getGateIdRemapping().find(*iter);
 			if (remappingIter == nextState.getGateIdRemapping().end()) {
-				logError("Failled to find junction gate remapping for gate id {}.", "JunctionMergeEvalLayer::run", *iter);
 				continue;
 			}
 			if (currentState.getGate(remappingIter->second) == nullptr) continue;
