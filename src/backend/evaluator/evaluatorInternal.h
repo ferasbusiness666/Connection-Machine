@@ -9,6 +9,14 @@
 class CircuitManager;
 
 class EvaluatorInternal {
+	struct InternalPointData {
+		InternalPointData(std::optional<EvalConnectionPoint> connectionPoint, BlockData::ConnectionData::PortType portType, unsigned int bitWith) :
+			connectionPoint(connectionPoint), portType(portType), bitWith(bitWith) {}
+		InternalPointData(BlockData::ConnectionData::PortType portType, unsigned int bitWith) : portType(portType), bitWith(bitWith) {}
+		std::optional<EvalConnectionPoint> connectionPoint;
+		BlockData::ConnectionData::PortType portType;
+		unsigned int bitWith;
+	};
 public:
 	EvaluatorInternal(const Circuit& circuit, const CircuitManager& circuitManager, DataUpdateEventManager::DataUpdateEventReceiver& receiver);
 	void startEdit();
@@ -36,6 +44,7 @@ private:
 	IdProvider<eval_gate_id> evalGateIdProvider;
 	std::unordered_map<Position, std::pair<eval_gate_id, Orientation>> positionRemapping;
 	std::unordered_map<eval_gate_id, std::pair<Position, Orientation>> positionReverseRemapping;
+	std::unordered_map<connection_end_id_t, InternalPointData> portToInternalPointMapping;
 	LayerRunner layerRunner;
 	const CircuitManager& circuitManager;
 	const Circuit& circuit;

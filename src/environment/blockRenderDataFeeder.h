@@ -23,18 +23,18 @@ public:
 	void doBlockTextureUpdates();
 
 private:
-	void newBlockTypeUpdate(const DataUpdateEventManager::EventData& event);
-	void postBlockSizeChangeUpdate(const DataUpdateEventManager::EventData& event);
-	void blockNameChangeUpdate(const DataUpdateEventManager::EventData& event);
+	void newBlockTypeUpdate(const DataUpdateEventManager::EventData* event);
+	void postBlockSizeChangeUpdate(const DataUpdateEventManager::EventData* event);
+	void blockNameChangeUpdate(const DataUpdateEventManager::EventData* event);
 
-	void blockDataSetConnectionUpdate(const DataUpdateEventManager::EventData& event);
-	void blockDataRemoveConnectionUpdate(const DataUpdateEventManager::EventData& event);
-	void blockDataConnectionNameSetUpdate(const DataUpdateEventManager::EventData& event);
-	void blockDataTextureChangeUpdate(const DataUpdateEventManager::EventData& event);
-	void blockDataTextureVirtualConnectionUpdate(const DataUpdateEventManager::EventData& event);
-	void blockDataUsesTileMapTextureChangeUpdate(const DataUpdateEventManager::EventData& event);
-	void blockDataTextureTileChangeUpdate(const DataUpdateEventManager::EventData& event);
-	void updateImageIfNotSpecified(const DataUpdateEventManager::EventData& event);
+	void blockDataSetConnectionUpdate(const DataUpdateEventManager::EventData* event);
+	void blockDataRemoveConnectionUpdate(const DataUpdateEventManager::EventData* event);
+	void blockDataConnectionNameSetUpdate(const DataUpdateEventManager::EventData* event);
+	void blockDataTextureChangeUpdate(const DataUpdateEventManager::EventData* event);
+	void blockDataTextureVirtualConnectionUpdate(const DataUpdateEventManager::EventData* event);
+	void blockDataUsesTileMapTextureChangeUpdate(const DataUpdateEventManager::EventData* event);
+	void blockDataTextureTileChangeUpdate(const DataUpdateEventManager::EventData* event);
+	void updateImageIfNotSpecified(const DataUpdateEventManager::EventData* event);
 
 	struct RenderData {
 		RenderData(BlockRenderDataId blockRenderDataId) : blockRenderDataId(blockRenderDataId) {}

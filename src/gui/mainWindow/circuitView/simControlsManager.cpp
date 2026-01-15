@@ -36,8 +36,8 @@ SimControlsManager::SimControlsManager(
 	}, [dataUpdateEventManager = &dataUpdateEventManager, circuitViewWidget](std::function<void(double)> func) {
 		std::shared_ptr<DataUpdateEventManager::DataUpdateEventReceiver> DUER =
 			std::make_shared<DataUpdateEventManager::DataUpdateEventReceiver>(*dataUpdateEventManager);
-		DUER->linkFunction("simulatorTargetTickrateSet", [circuitViewWidget, func](const DataUpdateEventManager::EventData& event) {
-			auto data = event.cast<std::pair<simulator_id_t, double>>();
+		DUER->linkFunction("simulatorTargetTickrateSet", [circuitViewWidget, func](const DataUpdateEventManager::EventData* event) {
+			auto data = event->cast<std::pair<simulator_id_t, double>>();
 			EvalLogicSimulator* simulator = circuitViewWidget->getCircuitView()->getSimulator();
 			if (!simulator) return;
 			if (data->get().first == simulator->getSimulatorId()) func(data->get().second);

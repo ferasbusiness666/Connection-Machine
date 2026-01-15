@@ -577,8 +577,8 @@ void Circuit::redo() {
 	}
 }
 
-void Circuit::blockSizeChange(const DataUpdateEventManager::EventData& event) {
-	auto data = event.cast<std::pair<BlockType, Size>>();
+void Circuit::blockSizeChange(const DataUpdateEventManager::EventData* event) {
+	auto data = event->cast<std::pair<BlockType, Size>>();
 	if (!data) {
 		logError("Could not get std::pair<BlockType, Size> from eventData", "Circuit");
 		undoSystem.addBlocker(); // cant undo after changing block size!
@@ -627,8 +627,8 @@ void Circuit::setBlockType(BlockType blockType) {
 	blockContainer.getBlockDataManager().getBlockData(blockType)->setName(getCircuitNameNumber());
 }
 
-void Circuit::addConnectionPort(const DataUpdateEventManager::EventData& event) {
-	auto data = event.cast<std::tuple<BlockType, connection_end_id_t, BlockData::ConnectionData::PortType>>();
+void Circuit::addConnectionPort(const DataUpdateEventManager::EventData* event) {
+	auto data = event->cast<std::tuple<BlockType, connection_end_id_t, BlockData::ConnectionData::PortType>>();
 	if (!data) {
 		logError("Could not get std::pair<BlockType, connection_end_id_t> from eventData", "Circuit");
 		return;
@@ -638,8 +638,8 @@ void Circuit::addConnectionPort(const DataUpdateEventManager::EventData& event) 
 	sendDifference(std::move(difference));
 }
 
-void Circuit::setConnectionPortBitwidth(const DataUpdateEventManager::EventData& event) {
-	auto data = event.cast<std::tuple<BlockType, connection_end_id_t, unsigned int>>();
+void Circuit::setConnectionPortBitwidth(const DataUpdateEventManager::EventData* event) {
+	auto data = event->cast<std::tuple<BlockType, connection_end_id_t, unsigned int>>();
 	if (!data) {
 		logError("Could not get std::tuple<BlockType, connection_end_id_t, unsigned int> from eventData", "Circuit");
 		return;
@@ -649,8 +649,8 @@ void Circuit::setConnectionPortBitwidth(const DataUpdateEventManager::EventData&
 	sendDifference(std::move(difference));
 }
 
-void Circuit::removeConnectionPort(const DataUpdateEventManager::EventData& event) {
-	auto data = event.cast<std::pair<BlockType, connection_end_id_t>>();
+void Circuit::removeConnectionPort(const DataUpdateEventManager::EventData* event) {
+	auto data = event->cast<std::pair<BlockType, connection_end_id_t>>();
 	if (!data) {
 		logError("Could not get std::pair<BlockType, connection_end_id_t> from eventData", "Circuit");
 		return;

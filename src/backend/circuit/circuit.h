@@ -107,10 +107,10 @@ private:
 	void popOffStack(Position position, Orientation transformAmount, bool resetRotation, Difference * difference, MoveType moveType = MoveType::MULTI_FINAL);
 
 	void setBlockType(BlockType blockType);
-	void blockSizeChange(const DataUpdateEventManager::EventData& event);
-	void addConnectionPort(const DataUpdateEventManager::EventData& event);
-	void setConnectionPortBitwidth(const DataUpdateEventManager::EventData& event);
-	void removeConnectionPort(const DataUpdateEventManager::EventData& event);
+	void blockSizeChange(const DataUpdateEventManager::EventData* event);
+	void addConnectionPort(const DataUpdateEventManager::EventData* event);
+	void setConnectionPortBitwidth(const DataUpdateEventManager::EventData* event);
+	void removeConnectionPort(const DataUpdateEventManager::EventData* event);
 
 	// helpers
 	void setType(const SharedSelection& selection, BlockType type, Difference* difference);

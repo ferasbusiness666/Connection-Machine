@@ -20,17 +20,13 @@ void SubcircuitEvalLayer::run(const EvalLayerState& currentState, EvalLayerState
 	}
 	for (auto iter = currentState.getAddedConnectionsBegin(); iter != currentState.getAddedConnectionsEnd(); ++iter) {
 		EvalConnection connection = iter->first;
-		auto subcircuitDataAIter = subcircuits.find(connection.connectionPointA.gateId);
-		if (subcircuitDataAIter != subcircuits.end()) {
-			const EvalGate* gate = currentState.getGate(connection.connectionPointA.gateId);
-			assert(gate);
-			const BlockData* blockData = circuitManager.getBlockDataManager().getBlockData(getBlockType(gate->type));
-			assert(blockData);
-			circuit_id_t circuitId = circuitManager.getCircuitBlockDataManager().getCircuitId(getBlockType(gate->type));
-			const CircuitBlockData* circuitBlockData = circuitManager.getCircuitBlockDataManager().getCircuitBlockData(circuitId);
-			assert(circuitBlockData);
-		}
-		auto subcircuitDataBIter = subcircuits.find(connection.connectionPointB.gateId);
+		// auto subcircuitDataAIter = subcircuits.find(connection.connectionPointA.gateId);
+		// if (subcircuitDataAIter != subcircuits.end()) {
+		// 	const EvalGate* gate = currentState.getGate(connection.connectionPointA.gateId);
+		// 	assert(gate);
+		// 	circuit_id_t circuitId = circuitManager.getCircuitBlockDataManager().getCircuitId(getBlockType(gate->type));
+		// }
+		// auto subcircuitDataBIter = subcircuits.find(connection.connectionPointB.gateId);
 
 		nextState.addConnection(connection, iter->second);
 	}

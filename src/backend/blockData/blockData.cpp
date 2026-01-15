@@ -159,17 +159,18 @@ void BlockData::setConnectionBitConfiguration(connection_end_id_t connectionId, 
 	}
 	auto iter = connections.find(connectionId);
 	if (iter == connections.end()) return;
+	unsigned int bitWidth = std::holds_alternative<unsigned int>(bitConfiguration) ? std::get<unsigned int>(bitConfiguration)
+							: std::get<std::vector<unsigned int>>(bitConfiguration).size();
 	dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, unsigned int>>(
 		"preBlockDataPortBitConfigurationSet",
 		{
 			blockType,
 			connectionId,
-			std::holds_alternative<unsigned int>(bitConfiguration) ? std::get<unsigned int>(bitConfiguration)
-																   : std::get<std::vector<unsigned int>>(bitConfiguration).size() // get bitwidth
+			bitWidth
 		}
 	);
 	iter->second.bitConfiguration = bitConfiguration;
-	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataPortBitConfigurationSet", { blockType, connectionId });
+	dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, unsigned int>>("blockDataPortBitConfigurationSet", { blockType, connectionId, bitWidth });
 }
 
 nlohmann::json BlockData::dumpState() const /* GCOVR_EXCL_FUNCTION */ {

@@ -17,17 +17,17 @@ SelectorWindow::SelectorWindow(
 	menuTree->setListener(std::bind(&SelectorWindow::updateSelected, this, std::placeholders::_1));
 	// In Blocks/Tools tree, prevent selecting category dropdown parents ("Blocks" / "Tools")
 	menuTree->disallowParentSelection(true);
-	dataUpdateEventReceiver.linkFunction("blockDataUpdate", [this](const DataUpdateEventManager::EventData& event) { refreshSidebar(true); });
-	dataUpdateEventReceiver.linkFunction("proceduralCircuitPathUpdate", [this](const DataUpdateEventManager::EventData& event) { refreshSidebar(true); });
+	dataUpdateEventReceiver.linkFunction("blockDataUpdate", [this](const DataUpdateEventManager::EventData* event) { refreshSidebar(true); });
+	dataUpdateEventReceiver.linkFunction("proceduralCircuitPathUpdate", [this](const DataUpdateEventManager::EventData* event) { refreshSidebar(true); });
 
 	Rml::Element* modeTreeParent = document->GetElementById("mode-selection-tree");
 	modeList.emplace(document, modeTreeParent, [this](const std::string& item, Rml::Element* element) {
 		element->AppendChild(std::move(this->document->CreateTextNode(item)));
 	});
 	modeList->addEventListener(Rml::EventId::Click, std::bind(&SelectorWindow::updateSelectedMode, this, std::placeholders::_1));
-	dataUpdateEventReceiver.linkFunction("setToolModeUpdate", [this](const DataUpdateEventManager::EventData& event) { updateToolModeOptions(); });
+	dataUpdateEventReceiver.linkFunction("setToolModeUpdate", [this](const DataUpdateEventManager::EventData* event) { updateToolModeOptions(); });
 
-	dataUpdateEventReceiver.linkFunction("setToolUpdate", [this](const DataUpdateEventManager::EventData& event) { refreshSidebar(false); });
+	dataUpdateEventReceiver.linkFunction("setToolUpdate", [this](const DataUpdateEventManager::EventData* event) { refreshSidebar(false); });
 
 	parameterMenu = document->GetElementById("parameter-menu");
 	parameterMenu->GetElementById("reset-parameters")->AddEventListener(Rml::EventId::Click, new EventPasser([this](Rml::Event& event) { setupParameterMenu(); }));
