@@ -5,8 +5,37 @@
 
 extern std::thread::id mainThreadId;
 
-EvaluatorInternal::EvaluatorInternal(circuit_id_t circuitId, const CircuitManager& circuitManager) :
-	evalGateIdProvider(1), circuitManager(circuitManager), circuitId(circuitId), layerRunner(circuitManager.getBlockDataManager()) { }
+EvaluatorInternal::EvaluatorInternal(circuit_id_t circuitId, const CircuitManager& circuitManager, DataUpdateEventManager::DataUpdateEventReceiver& receiver) :
+	evalGateIdProvider(1), circuitManager(circuitManager), circuitId(circuitId), layerRunner(circuitManager.getBlockDataManager()) {
+	receiver.linkFunction("circuitBlockDataConnectionPositionRemove", [&](const DataUpdateEventManager::EventData& event) {
+		const auto* data = event.cast<std::tuple<BlockType, connection_end_id_t, Position>>();
+		if (!data) return;
+		BlockType blockType = std::get<0>(data->get());
+		const Circuit* circuit = circuitManager.getCircuit(circuitId).get();
+		if (circuit == nullptr || blockType != circuit->getBlockType()) return;
+		connection_end_id_t connectionEndId = std::get<1>(data->get());
+		Position blockPosition = std::get<2>(data->get());
+	});
+	receiver.linkFunction("circuitBlockDataConnectionPositionSet", [&](const DataUpdateEventManager::EventData& event) {
+		const auto* data = event.cast<std::tuple<BlockType, connection_end_id_t, Position>>();
+		if (!data) return;
+		BlockType blockType = std::get<0>(data->get());
+		const Circuit* circuit = circuitManager.getCircuit(circuitId).get();
+		if (circuit == nullptr || blockType != circuit->getBlockType()) return;
+		connection_end_id_t connectionEndId = std::get<1>(data->get());
+		Position blockPosition = std::get<2>(data->get());
+
+	});
+	receiver.linkFunction("blockDataPortBitConfigurationSet", [&](const DataUpdateEventManager::EventData& event) {
+		const auto* data = event.cast<std::tuple<BlockType, connection_end_id_t, unsigned int>>();
+		if (!data) return;
+		BlockType blockType = std::get<0>(data->get());
+		const Circuit* circuit = circuitManager.getCircuit(circuitId).get();
+		if (circuit == nullptr || blockType != circuit->getBlockType()) return;
+		connection_end_id_t connectionEndId = std::get<1>(data->get());
+		unsigned int bitWidth = std::get<2>(data->get());
+	});
+}
 
 void EvaluatorInternal::startEdit() {
 	layerRunner.getInputLayer().resetEdits();

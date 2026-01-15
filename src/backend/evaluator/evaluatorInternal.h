@@ -10,7 +10,7 @@ class CircuitManager;
 
 class EvaluatorInternal {
 public:
-	EvaluatorInternal(circuit_id_t circuitId, const CircuitManager& circuitManager);
+	EvaluatorInternal(circuit_id_t circuitId, const CircuitManager& circuitManager, DataUpdateEventManager::DataUpdateEventReceiver& receiver);
 	void startEdit();
 	void endEdit();
 	void addBlock(Position position, Orientation orientation, BlockType blockType);

@@ -2,8 +2,8 @@
 
 ProceduralCircuitManager::ProceduralCircuitManager(CircuitManager& circuitManager, DataUpdateEventManager& dataUpdateEventManager, CircuitFileManager& fileManager) :
 	circuitManager(circuitManager), dataUpdateEventManager(dataUpdateEventManager), dataUpdateEventReceiver(dataUpdateEventManager), fileManager(fileManager) {
-	dataUpdateEventReceiver.linkFunction("proceduralCircuitPathUpdate", [this](const DataUpdateEventManager::EventData* eventData) {
-		auto data = eventData->cast<std::string>();
+	dataUpdateEventReceiver.linkFunction("proceduralCircuitPathUpdate", [this](const DataUpdateEventManager::EventData& event) {
+		auto data = event.cast<std::string>();
 		if (data) {
 			SharedProceduralCircuit proceduralCircuit = getProceduralCircuit(data->get());
 			for (auto iter = pathToUUID.begin(); iter != pathToUUID.end(); ++iter) {

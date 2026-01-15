@@ -16,7 +16,7 @@ Evaluator::Evaluator(
 	dataUpdateEventManager(dataUpdateEventManager),
 	receiver(dataUpdateEventManager),
 	circuitId(circuitId),
-	evaluatorInternal(std::make_unique<EvaluatorInternal>(circuitId, circuitManager)),
+	evaluatorInternal(std::make_unique<EvaluatorInternal>(circuitId, circuitManager, receiver)),
 	evalLogicSimulator(evaluatorId.get(), circuitManager.getBlockDataManager(), *evaluatorInternal, dataUpdateEventManager)
 {
 	const Circuit* circuit = circuitManager.getCircuit(circuitId).get();
@@ -25,9 +25,6 @@ Evaluator::Evaluator(
 	logInfo("Creating Evaluator with ID {} for Circuit ID {}", "Evaluator", evaluatorId, circuitId);
 	const BlockContainer& blockContainer = circuit->getBlockContainer();
 	const Difference difference = blockContainer.getCreationDifference();
-	// receiver.linkFunction("circuitBlockDataConnectionPositionRemove", std::bind(&Evaluator::removeCircuitIO, this, std::placeholders::_1));
-	// receiver.linkFunction("circuitBlockDataConnectionPositionSet", std::bind(&Evaluator::setCircuitIO, this, std::placeholders::_1, false));
-	// receiver.linkFunction("blockDataPortBitConfigurationSet", std::bind(&Evaluator::setCircuitIO, this, std::placeholders::_1, true)); // TODO: this only works for ICs, needs to work for all blocks
 
 	makeEdit(std::make_shared<Difference>(difference), circuitId);
 }

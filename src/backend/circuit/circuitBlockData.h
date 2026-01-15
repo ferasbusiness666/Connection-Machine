@@ -1,11 +1,11 @@
 #ifndef circuitBlockData_h
 #define circuitBlockData_h
 
+#include "backend/circuit/circuitDefs.h"
 #include "backend/container/block/connectionEnd.h"
 #include "util/bidirectionalMultiSecondKeyMap.h"
 #include "backend/dataUpdateEventManager.h"
 #include "backend/position/position.h"
-#include "circuit.h"
 
 class CircuitBlockData {
 public:
@@ -24,18 +24,18 @@ public:
 	inline void removeConnectionIdPosition(connection_end_id_t endId) {
 		const Position* posPtr = connectionIdPosition.get(endId);
 		if (!posPtr) return;
-		Position pos = *posPtr;
+		Position position = *posPtr;
 		connectionIdPosition.remove(endId);
 		dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, Position>>(
 			"circuitBlockDataConnectionPositionRemove",
-			{ blockType, endId, pos }
+			{ blockType, endId, position }
 		);
 	}
 	inline void setConnectionIdPosition(connection_end_id_t endId, Position position) {
 		connectionIdPosition.set(endId, position);
-		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>(
+		dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, Position>>(
 			"circuitBlockDataConnectionPositionSet",
-			{ blockType, endId }
+			{ blockType, endId, position }
 		);
 	}
 	inline const Position* getConnectionIdToPosition(connection_end_id_t endId) const {

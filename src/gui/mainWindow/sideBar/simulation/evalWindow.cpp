@@ -18,11 +18,11 @@ EvalWindow::EvalWindow(
 ) :
 	menuTree(document, parent, true, false), dataUpdateEventReceiver(dataUpdateEventManager), evaluatorManager(evaluatorManager), circuitManager(circuitManager),
 	mainWindow(mainWindow) {
-	dataUpdateEventReceiver.linkFunction("addressTreeMakeBranch", [this](const DataUpdateEventManager::EventData*) { refreshSidebar(true); });
-	dataUpdateEventReceiver.linkFunction("blockDataUpdate", [this](const DataUpdateEventManager::EventData*) { refreshSidebar(true); });
-	dataUpdateEventReceiver.linkFunction("circuitViewChangeEvaluator", [this](const DataUpdateEventManager::EventData*) { refreshSidebar(false); });
+	dataUpdateEventReceiver.linkFunction("addressTreeMakeBranch", [this](const DataUpdateEventManager::EventData& event) { refreshSidebar(true); });
+	dataUpdateEventReceiver.linkFunction("blockDataUpdate", [this](const DataUpdateEventManager::EventData& event) { refreshSidebar(true); });
+	dataUpdateEventReceiver.linkFunction("circuitViewChangeEvaluator", [this](const DataUpdateEventManager::EventData& event) { refreshSidebar(false); });
 	// When the viewed circuit changes (due to navigating into/out of ICs), re-apply highlight.
-	dataUpdateEventReceiver.linkFunction("circuitViewChangeCircuit", [this](const DataUpdateEventManager::EventData*) { refreshSidebar(false); });
+	dataUpdateEventReceiver.linkFunction("circuitViewChangeCircuit", [this](const DataUpdateEventManager::EventData& event) { refreshSidebar(false); });
 	dataUpdateEventReceiver.linkFunction("circuitCreatedSelect", std::bind(&EvalWindow::onCircuitCreatedSelect, this, std::placeholders::_1));
 	menuTree.setListener(std::bind(&EvalWindow::updateSelected, this, std::placeholders::_1));
 	refreshSidebar(true);
@@ -205,4 +205,4 @@ void EvalWindow::selectEvaluatorForCircuit(circuit_id_t circuitId) {
 	}
 }
 
-void EvalWindow::onCircuitCreatedSelect(const DataUpdateEventManager::EventData* eventData) { refreshSidebar(true); }
+void EvalWindow::onCircuitCreatedSelect(const DataUpdateEventManager::EventData& event) { refreshSidebar(true); }

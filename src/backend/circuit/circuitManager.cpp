@@ -31,17 +31,17 @@ circuit_id_t CircuitManager::createNewCircuit(const std::string& name, const std
 CircuitManager::CircuitManager(DataUpdateEventManager& dataUpdateEventManager, EvaluatorManager& evaluatorManager, CircuitFileManager& fileManager) :
 	blockDataManager(dataUpdateEventManager), circuitBlockDataManager(dataUpdateEventManager), proceduralCircuitManager(*this, dataUpdateEventManager, fileManager),
 	dataUpdateEventManager(dataUpdateEventManager), dataUpdateEventReceiver(dataUpdateEventManager), evaluatorManager(evaluatorManager) {
-	dataUpdateEventReceiver.linkFunction("postBlockSizeChange", [this](const DataUpdateEventManager::EventData* eventData) {
-		linkedFunctionForUpdates<Vector>(eventData);
+	dataUpdateEventReceiver.linkFunction("postBlockSizeChange", [this](const DataUpdateEventManager::EventData& event) {
+		linkedFunctionForUpdates<Vector>(event);
 	});
-	dataUpdateEventReceiver.linkFunction("blockDataRemoveConnection", [this](const DataUpdateEventManager::EventData* eventData) {
-		linkedFunctionForUpdates<connection_end_id_t>(eventData);
+	dataUpdateEventReceiver.linkFunction("blockDataRemoveConnection", [this](const DataUpdateEventManager::EventData& event) {
+		linkedFunctionForUpdates<connection_end_id_t>(event);
 	});
-	dataUpdateEventReceiver.linkFunction("blockDataSetConnection", [this](const DataUpdateEventManager::EventData* eventData) {
-		linkedFunctionForUpdates<connection_end_id_t>(eventData);
+	dataUpdateEventReceiver.linkFunction("blockDataSetConnection", [this](const DataUpdateEventManager::EventData& event) {
+		linkedFunctionForUpdates<connection_end_id_t>(event);
 	});
-	dataUpdateEventReceiver.linkFunction("blockDataConnectionNameSet", [this](const DataUpdateEventManager::EventData* eventData) {
-		linkedFunctionForUpdates<connection_end_id_t>(eventData);
+	dataUpdateEventReceiver.linkFunction("blockDataConnectionNameSet", [this](const DataUpdateEventManager::EventData& event) {
+		linkedFunctionForUpdates<connection_end_id_t>(event);
 	});
 }
 

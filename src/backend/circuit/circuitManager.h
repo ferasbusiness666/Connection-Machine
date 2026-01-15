@@ -146,8 +146,8 @@ public:
 	}
 
 	template<class T>
-	void linkedFunctionForUpdates(const DataUpdateEventManager::EventData* eventData) {
-		auto eventWithData = eventData->cast<std::pair<BlockType, T>>();
+	void linkedFunctionForUpdates(const DataUpdateEventManager::EventData& event) {
+		auto eventWithData = event.cast<std::pair<BlockType, T>>();
 		if (!eventWithData) return;
 		SharedCircuit circuit = getCircuit(circuitBlockDataManager.getCircuitId(eventWithData->get().first));
 		if (!circuit) return;
