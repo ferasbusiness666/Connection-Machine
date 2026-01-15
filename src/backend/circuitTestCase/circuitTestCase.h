@@ -43,8 +43,8 @@ private:
     };
 
     void generateTestCircuit();
-    void runSetStatesCommand(TestCommand testCommand, Evaluator& evaluator, NamePositionMap& nameToConnectedBlockPosition);
-    bool runCheckStatesCommand(TestCommand testCommand, Evaluator& evaluator, NamePositionMap& nameToConnectedBlockPosition);
+    void runSetStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition);
+    bool runCheckStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition);
 
     std::unordered_map<std::string, std::vector<TestCommand>> testCommandGroups;
 };

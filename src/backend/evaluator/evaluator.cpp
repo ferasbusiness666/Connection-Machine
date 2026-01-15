@@ -2,48 +2,33 @@
 
 #include "backend/circuit/circuitManager.h"
 #include "evaluatorInternal.h"
+#include "simulatorManager.h"
 
 Evaluator::~Evaluator() = default;
 
 Evaluator::Evaluator(
-	evaluator_id_t evaluatorId,
 	CircuitManager& circuitManager,
-	circuit_id_t circuitId,
+	const Circuit& circuit,
 	DataUpdateEventManager& dataUpdateEventManager
 ) :
-	evaluatorId(evaluatorId),
 	circuitManager(circuitManager),
 	dataUpdateEventManager(dataUpdateEventManager),
 	receiver(dataUpdateEventManager),
-	circuitId(circuitId),
-	evaluatorInternal(std::make_unique<EvaluatorInternal>(circuitId, circuitManager, receiver)),
-	evalLogicSimulator(evaluatorId.get(), circuitManager.getBlockDataManager(), *evaluatorInternal, dataUpdateEventManager)
+	circuit(circuit),
+	evaluatorInternal(std::make_unique<EvaluatorInternal>(circuit, circuitManager,  receiver))
 {
-	const Circuit* circuit = circuitManager.getCircuit(circuitId).get();
-	assert(circuit);
-
-	logInfo("Creating Evaluator with ID {} for Circuit ID {}", "Evaluator", evaluatorId, circuitId);
-	const BlockContainer& blockContainer = circuit->getBlockContainer();
+	logInfo("Creating Evaluator for Circuit ID {}", "Evaluator", circuit.getCircuitId());
+	const BlockContainer& blockContainer = circuit.getBlockContainer();
 	const Difference difference = blockContainer.getCreationDifference();
 
-	makeEdit(std::make_shared<Difference>(difference), circuitId);
+	makeEdit(std::make_shared<Difference>(difference));
 }
 
-std::string Evaluator::getEvaluatorName() const {
-	std::optional<circuit_id_t> circuitId = this->circuitId;
-	if (!circuitId.has_value()) {
-		logError("EvalCircuit with id {} has no circuitId", "Evaluator::getEvaluatorName", eval_circuit_id_t(0));
-		return "Eval " + std::to_string(evaluatorId) + " (No Circuit)";
-	}
-	auto circuit = circuitManager.getCircuit(circuitId.value());
-	if (!circuit) {
-		logError("Circuit with id {} not found", "Evaluator::getEvaluatorName", circuitId.value());
-		return "Eval " + std::to_string(evaluatorId) + " (Invalid Circuit)";
-	}
-	return "Eval " + std::to_string(evaluatorId) + " (" + circuit->getCircuitNameNumber() + ")";
+std::string Evaluator::getSimulatorName() const {
+	return "Eval " + circuit.getCircuitNameNumber();
 }
 
-void Evaluator::makeEdit(DifferenceSharedPtr difference, circuit_id_t circuitId) {
+void Evaluator::makeEdit(DifferenceSharedPtr difference) {
 	evaluatorInternal->startEdit();
 	for (const Difference::Modification& modification : difference->getModifications()) {
 		const auto& [modificationType, modificationData] = modification;
@@ -76,12 +61,20 @@ void Evaluator::makeEdit(DifferenceSharedPtr difference, circuit_id_t circuitId)
 		}
 	}
 	evaluatorInternal->endEdit();
-	evalLogicSimulator.processEdits();
+	for (EvalLogicSimulator* simulator : simulatorsUsingThisEvaluator) simulator->processEdits();
+}
+
+circuit_id_t Evaluator::getCircuitId() const {
+	return circuit.getCircuitId();
+}
+
+circuit_id_t Evaluator::getCircuitId(const Address& address) const {
+	if (address.size() == 0) return circuit.getCircuitId(); return 0;
 }
 
 nlohmann::json Evaluator::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
-	stateJson["evaluatorId"] = evaluatorId.get();
+	stateJson["circuitId"] = circuit.getCircuitId();
 	stateJson["interCircuitConnections"] = nlohmann::json::array();
 	stateJson["dirtySimulatorIds"] = nlohmann::json::array();
 	stateJson["dirtyMiddleIds"] = nlohmann::json::array();

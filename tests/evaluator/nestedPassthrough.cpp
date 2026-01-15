@@ -8,7 +8,7 @@ protected:
 	void SetUp() override;
 	void TearDown() override;
 	Environment environment {false};
-	Evaluator* evaluator = nullptr;
+	EvalLogicSimulator* simulator = nullptr;
 	SharedCircuit circuit = nullptr;
 	logic_state_t L = logic_state_t::LOW;
 	logic_state_t H = logic_state_t::HIGH;
@@ -23,9 +23,9 @@ protected:
 void DISABLED_NestedPassthroughEvaluatorTest::SetUp() {
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
 	circuit = environment.getBackend().getCircuit(circuitId);
-	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuitId).value();
-	evaluator = environment.getBackend().getEvaluator(evalId);
-	ASSERT_TRUE(evaluator->getEvalLogicSimulator().isPause());
+	simulator_id_t simulatorId = environment.getBackend().createSimulator(circuitId).value();
+	simulator = environment.getBackend().getSimulator(simulatorId);
+	ASSERT_TRUE(simulator->isPause());
 
 	CircuitFileManager& circuitFileManager = environment.getCircuitFileManager();
 	circuit_id_t nestedPassthroughCircuitId = circuitFileManager.loadFromFile((DirectoryManager::getResourceDirectory() / "circuits" / "evaluator" / "passthrough.cir").string()).at(0);
@@ -38,11 +38,11 @@ void DISABLED_NestedPassthroughEvaluatorTest::SetUp() {
 
 void DISABLED_NestedPassthroughEvaluatorTest::TearDown() {
 	circuit.reset();
-	evaluator = nullptr;
+	simulator = nullptr;
 }
 
 TEST_F(DISABLED_NestedPassthroughEvaluatorTest, PlaceNestedPassthrough) {
     Position blockPos(0, 0);
     ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, NPT));
-    EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(blockPos), L);
+    EXPECT_EQ(simulator->getState(blockPos), L);
 }

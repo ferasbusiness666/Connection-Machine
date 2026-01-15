@@ -3,18 +3,38 @@
 #include "backend/circuit/circuitManager.h"
 #include "evaluator.h"
 
-evaluator_id_t SimulatorManager::createNewSimulator(CircuitManager& circuitManager, circuit_id_t circuitId) {
+SimulatorManager::SimulatorManager(CircuitManager& circuitManager, DataUpdateEventManager& dataUpdateEventManager) :
+	circuitManager(circuitManager), dataUpdateEventManager(dataUpdateEventManager), simulatorIdProvider(1) { }
+SimulatorManager::~SimulatorManager() = default;
+
+EvalLogicSimulator* SimulatorManager::getSimulator(simulator_id_t id) {
+	auto iter = simulators.find(id);
+	if (iter == simulators.end()) return nullptr;
+	return &iter->second;
+}
+const EvalLogicSimulator* SimulatorManager::getSimulator(simulator_id_t id) const {
+	auto iter = simulators.find(id);
+	if (iter == simulators.end()) return nullptr;
+	return &iter->second;
+}
+
+simulator_id_t SimulatorManager::createNewSimulator(circuit_id_t circuitId) {
 	if (!circuitManager.getCircuit(circuitId)) {
 		logError("Could not make simulator because circuit {} was not found", "SimulatorManager::createNewSimulator", circuitId);
 		return 0;
 	}
-	evaluator_id_t id = evaluatorIdProvider.getNewId();
-	simulators.try_emplace(
-		id
-		// id, circuitManager, circuitId, dataUpdateEventManager
-	);
+	simulator_id_t id = simulatorIdProvider.getNewId();
+	simulators.try_emplace(id, id, circuitManager, circuitId, dataUpdateEventManager);
 	dataUpdateEventManager.sendEvent("addressTreeMakeBranch");
 	return id;
+}
+
+void SimulatorManager::destroySimulator(simulator_id_t id) {
+	auto iter = simulators.find(id);
+	if (iter != simulators.end()) {
+		simulatorIdProvider.releaseId(id);
+		simulators.erase(iter);
+	}
 }
 
 void SimulatorManager::applyDiff(DifferenceSharedPtr difference, circuit_id_t circuitId) {
@@ -25,7 +45,7 @@ void SimulatorManager::applyDiff(DifferenceSharedPtr difference, circuit_id_t ci
 
 nlohmann::json SimulatorManager::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
-	for (const auto& [evaluatorId, evaluator] : simulators) {
+	for (const auto& [simulatorId, evaluator] : simulators) {
 		// stateJson.push_back(evaluator->dumpState());
 	}
 	return stateJson;

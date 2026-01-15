@@ -3,24 +3,24 @@
 #include "backend/address.h"
 #include "backend/circuit/circuitManager.h"
 #include "backend/dataUpdateEventManager.h"
-#include "backend/evaluator/evaluatorManager.h"
+#include "backend/evaluator/simulatorManager.h"
 
 #include "gui/mainWindow/circuitView/circuitViewWidget.h"
 #include "gui/mainWindow/mainWindow.h"
 
 EvalWindow::EvalWindow(
-	EvaluatorManager& evaluatorManager,
+	SimulatorManager& simulatorManager,
 	CircuitManager& circuitManager,
 	MainWindow& mainWindow,
 	DataUpdateEventManager& dataUpdateEventManager,
 	Rml::ElementDocument* document,
 	Rml::Element* parent
 ) :
-	menuTree(document, parent, true, false), dataUpdateEventReceiver(dataUpdateEventManager), evaluatorManager(evaluatorManager), circuitManager(circuitManager),
+	menuTree(document, parent, true, false), dataUpdateEventReceiver(dataUpdateEventManager), simulatorManager(simulatorManager), circuitManager(circuitManager),
 	mainWindow(mainWindow) {
 	dataUpdateEventReceiver.linkFunction("addressTreeMakeBranch", [this](const DataUpdateEventManager::EventData& event) { refreshSidebar(true); });
 	dataUpdateEventReceiver.linkFunction("blockDataUpdate", [this](const DataUpdateEventManager::EventData& event) { refreshSidebar(true); });
-	dataUpdateEventReceiver.linkFunction("circuitViewChangeEvaluator", [this](const DataUpdateEventManager::EventData& event) { refreshSidebar(false); });
+	dataUpdateEventReceiver.linkFunction("circuitViewChangeSimulator", [this](const DataUpdateEventManager::EventData& event) { refreshSidebar(false); });
 	// When the viewed circuit changes (due to navigating into/out of ICs), re-apply highlight.
 	dataUpdateEventReceiver.linkFunction("circuitViewChangeCircuit", [this](const DataUpdateEventManager::EventData& event) { refreshSidebar(false); });
 	dataUpdateEventReceiver.linkFunction("circuitCreatedSelect", std::bind(&EvalWindow::onCircuitCreatedSelect, this, std::placeholders::_1));
@@ -30,8 +30,8 @@ EvalWindow::EvalWindow(
 
 void EvalWindow::updateList() {
 	std::vector<std::vector<std::string>> paths;
-	for (const auto& pair : this->evaluatorManager.getEvaluators()) {
-		std::vector<std::string> path({ pair.second.getEvaluatorName() });
+	for (const auto& pair : this->simulatorManager.getSimulators()) {
+		std::vector<std::string> path({ pair.second.getSimulatorName() });
 		makePaths(paths, path);// pair.second->buildAddressTree()
 	}
 	menuTree.setPaths(paths);
@@ -41,9 +41,9 @@ void EvalWindow::refreshSidebar(bool rebuildItems) {
 	if (rebuildItems) updateList();
 	CircuitView* view = mainWindow.getActiveCircuitViewWidget() ? mainWindow.getActiveCircuitViewWidget()->getCircuitView() : nullptr;
 	if (!view) return;
-	Evaluator* activeEval = view->getEvaluator();
+	EvalLogicSimulator* activeEval = view->getSimulator();
 	if (!activeEval) return;
-	const evaluator_id_t activeId = activeEval->getEvaluatorId();
+	const simulator_id_t activeId = activeEval->getSimulatorId();
 	const Address& address = view->getAddress();
 	Rml::Element* root = menuTree.getRootElement();
 	if (!root) return;
@@ -51,8 +51,8 @@ void EvalWindow::refreshSidebar(bool rebuildItems) {
 	root->GetElementsByTagName(rows, "li");
 	for (auto* r : rows) r->SetClass("selected", false);
 
-	// Find the top-level evaluator row matching the active evaluator id
-	Rml::Element* evaluatorRow = nullptr;
+	// Find the top-level simulator row matching the active simulator id
+	Rml::Element* simulatorRow = nullptr;
 	for (auto* r : rows) {
 		std::string idAttr = r->GetId();
 		if (idAttr.find('/') != std::string::npos) continue; // only top-level
@@ -70,16 +70,16 @@ void EvalWindow::refreshSidebar(bool rebuildItems) {
 		unsigned int idParsed = 0;
 		ss >> word >> idParsed;
 		if (ss.fail() || word != "Eval") continue;
-		if (evaluator_id_t(idParsed) == activeId) {
-			evaluatorRow = r;
+		if (simulator_id_t(idParsed) == activeId) {
+			simulatorRow = r;
 			break;
 		}
 	}
-	if (!evaluatorRow) return;
+	if (!simulatorRow) return;
 
 	// Descend according to the current address, matching by Position extracted from child labels "<Name>(x, y)"
-	Rml::Element* selectedRow = evaluatorRow; // default to evaluator row if no deeper match
-	Rml::Element* cur = evaluatorRow;
+	Rml::Element* selectedRow = simulatorRow; // default to simulator row if no deeper match
+	Rml::Element* cur = simulatorRow;
 	for (int i = 0; i < address.size(); ++i) {
 		Position wanted = address.getPosition(i);
 		// Find UL under current LI
@@ -146,8 +146,8 @@ void EvalWindow::updateSelected(std::string string) {
 	std::vector<std::string> parts = stringSplit(string, '/');
 	std::stringstream evalName(parts.front());
 	std::string str;
-	unsigned int evalId;
-	evalName >> str >> evalId;
+	unsigned int simulatorId;
+	evalName >> str >> simulatorId;
 	Address address;
 	for (unsigned int i = 1; i < parts.size(); i++) {
 		const std::string& part = parts[i];
@@ -164,21 +164,21 @@ void EvalWindow::updateSelected(std::string string) {
 	}
 
 	CircuitView* circuitView = mainWindow.getActiveCircuitViewWidget()->getCircuitView();
-	circuitView->setEvaluator(evaluator_id_t(evalId), address);
+	circuitView->setSimulatoruator(simulator_id_t(simulatorId), address);
 	refreshSidebar(false);
 }
 
-void EvalWindow::selectEvaluatorForCircuit(circuit_id_t circuitId) {
-	for (auto& pair : evaluatorManager.getEvaluators()) {
+void EvalWindow::selectSimulatoruatorForCircuit(circuit_id_t circuitId) {
+	for (auto& pair : simulatorManager.getSimulators()) {
 		if (pair.second.getCircuitId() == circuitId) {
-			evaluator_id_t wantedId = pair.first;
+			simulator_id_t wantedId = pair.first;
 			Rml::Element* root = menuTree.getRootElement();
 			if (!root) return;
 			Rml::ElementList rows;
 			root->GetElementsByTagName(rows, "li");
 			for (auto* r : rows) {
 				std::string idAttr = r->GetId();
-				if (idAttr.find('/') != std::string::npos) continue; // only top-level evaluators
+				if (idAttr.find('/') != std::string::npos) continue; // only top-level simulators
 				Rml::Element* labelDiv = nullptr;
 				for (unsigned int i = 0; i < r->GetNumChildren(); ++i) {
 					if (r->GetChild(i)->GetTagName() == "div") {
@@ -193,7 +193,7 @@ void EvalWindow::selectEvaluatorForCircuit(circuit_id_t circuitId) {
 				unsigned int idParsed = 0;
 				ss >> word >> idParsed;
 				if (ss.fail() || word != "Eval") continue;
-				if (evaluator_id_t(idParsed) != wantedId) continue;
+				if (simulator_id_t(idParsed) != wantedId) continue;
 				Rml::ElementList all;
 				root->GetElementsByTagName(all, "li");
 				for (auto* a : all) a->SetClass("selected", false);

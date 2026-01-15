@@ -1,11 +1,13 @@
 #ifndef backend_h
 #define backend_h
 
-#include "evaluator/evaluatorManager.h"
+#include "backend/evaluator/simulatorManager.h"
+#include "evaluator/simulator/simulatorDefs.h"
 #include "dataUpdateEventManager.h"
 #include "circuit/circuitManager.h"
 #include "container/copiedBlocks.h"
 #include "util/uuid.h"
+
 
 class Backend {
 public:
@@ -16,21 +18,21 @@ public:
 	// Creates a new Circuit. Returns circuit_id_t.
 	circuit_id_t createCircuit() { return circuitManager.createNewCircuit(); }
 	circuit_id_t createCircuit(const std::string& name, const std::string& uuid = generate_uuid_v4());
-	// Attempts to create a Evaluator for a Circuit. Returns evaluator_id_t if successful.
-	std::optional<evaluator_id_t> createEvaluator(circuit_id_t circuitId);
+	// Attempts to create a Simulator for a Circuit. Returns simulator_id_t if successful.
+	std::optional<simulator_id_t> createSimulator(circuit_id_t circuitId);
 
 	inline BlockDataManager& getBlockDataManager() { return getCircuitManager().getBlockDataManager(); }
 
 	inline CircuitManager& getCircuitManager() { return circuitManager; }
 	inline const CircuitManager& getCircuitManager() const { return circuitManager; }
 
-	inline EvaluatorManager& getEvaluatorManager() { return evaluatorManager; }
-	inline const EvaluatorManager& getEvaluatorManager() const { return evaluatorManager; }
+	inline SimulatorManager& getSimulatorManager() { return simulatorManager; }
+	inline const SimulatorManager& getSimulatorManager() const { return simulatorManager; }
 
 	inline DataUpdateEventManager& getDataUpdateEventManager() { return dataUpdateEventManager; }
 
 	SharedCircuit getCircuit(circuit_id_t circuitId);
-	Evaluator* getEvaluator(evaluator_id_t evaluatorId);
+	EvalLogicSimulator* getSimulator(simulator_id_t simulatorId);
 
 	const SharedCopiedBlocks getClipboard() const { return clipboard; }
 	unsigned long long getClipboardEditCounter() const { return clipboardEditCounter; }
@@ -44,7 +46,7 @@ private:
 
 	DataUpdateEventManager dataUpdateEventManager; // this needs to be constructed first
 	CircuitManager circuitManager;
-	EvaluatorManager evaluatorManager;
+	SimulatorManager simulatorManager;
 };
 
 #endif /* backend_h */

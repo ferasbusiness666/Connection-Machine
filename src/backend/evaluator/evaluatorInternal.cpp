@@ -5,14 +5,13 @@
 
 extern std::thread::id mainThreadId;
 
-EvaluatorInternal::EvaluatorInternal(circuit_id_t circuitId, const CircuitManager& circuitManager, DataUpdateEventManager::DataUpdateEventReceiver& receiver) :
-	evalGateIdProvider(1), circuitManager(circuitManager), circuitId(circuitId), layerRunner(circuitManager) {
+EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, const CircuitManager& circuitManager, DataUpdateEventManager::DataUpdateEventReceiver& receiver) :
+	evalGateIdProvider(1), circuitManager(circuitManager), circuit(circuit), layerRunner(circuitManager) {
 	receiver.linkFunction("circuitBlockDataConnectionPositionRemove", [&](const DataUpdateEventManager::EventData& event) {
 		const auto* data = event.cast<std::tuple<BlockType, connection_end_id_t, Position>>();
 		if (!data) return;
 		BlockType blockType = std::get<0>(data->get());
-		const Circuit* circuit = circuitManager.getCircuit(circuitId).get();
-		if (circuit == nullptr || blockType != circuit->getBlockType()) return;
+		if (blockType != circuit.getBlockType()) return;
 		connection_end_id_t connectionEndId = std::get<1>(data->get());
 		Position blockPosition = std::get<2>(data->get());
 	});
@@ -20,8 +19,7 @@ EvaluatorInternal::EvaluatorInternal(circuit_id_t circuitId, const CircuitManage
 		const auto* data = event.cast<std::tuple<BlockType, connection_end_id_t, Position>>();
 		if (!data) return;
 		BlockType blockType = std::get<0>(data->get());
-		const Circuit* circuit = circuitManager.getCircuit(circuitId).get();
-		if (circuit == nullptr || blockType != circuit->getBlockType()) return;
+		if (blockType != circuit.getBlockType()) return;
 		connection_end_id_t connectionEndId = std::get<1>(data->get());
 		Position blockPosition = std::get<2>(data->get());
 
@@ -30,8 +28,7 @@ EvaluatorInternal::EvaluatorInternal(circuit_id_t circuitId, const CircuitManage
 		const auto* data = event.cast<std::tuple<BlockType, connection_end_id_t, unsigned int>>();
 		if (!data) return;
 		BlockType blockType = std::get<0>(data->get());
-		const Circuit* circuit = circuitManager.getCircuit(circuitId).get();
-		if (circuit == nullptr || blockType != circuit->getBlockType()) return;
+		if (blockType != circuit.getBlockType()) return;
 		connection_end_id_t connectionEndId = std::get<1>(data->get());
 		unsigned int bitWidth = std::get<2>(data->get());
 	});
@@ -46,13 +43,13 @@ void EvaluatorInternal::endEdit() {
 }
 
 void EvaluatorInternal::addBlock(Position position, Orientation orientation, BlockType blockType) {
-	eval_gate_id evalId = evalGateIdProvider.getNewId();
-	positionRemapping.try_emplace(position, evalId, orientation);
-	positionReverseRemapping.try_emplace(evalId, position, orientation);
+	eval_gate_id simulatorId = evalGateIdProvider.getNewId();
+	positionRemapping.try_emplace(position, simulatorId, orientation);
+	positionReverseRemapping.try_emplace(simulatorId, position, orientation);
 	if (blockType == BlockType::LIGHT) {
 		blockType = BlockType::JUNCTION;
 	}
-	layerRunner.getInputLayer().addGate(evalId, getEvalGateType(blockType));
+	layerRunner.getInputLayer().addGate(simulatorId, getSimulatorGateType(blockType));
 }
 
 void EvaluatorInternal::removeBlock(Position position, Orientation orientation, BlockType blockType) {
@@ -71,10 +68,10 @@ void EvaluatorInternal::moveBlock(Position curPosition, Orientation curOrientati
 		logError("Could not find placed gate at {} when moving gate.", "evaluatorInternal", curPosition);
 		return;
 	}
-	eval_gate_id evalId = remappingIter->second.first;
+	eval_gate_id simulatorId = remappingIter->second.first;
 	positionRemapping.erase(remappingIter);
-	positionRemapping.try_emplace(newPosition, evalId, newOrientation);
-	positionReverseRemapping.at(evalId) = {newPosition, newOrientation};
+	positionRemapping.try_emplace(newPosition, simulatorId, newOrientation);
+	positionReverseRemapping.at(simulatorId) = {newPosition, newOrientation};
 }
 
 void EvaluatorInternal::createConnection(Position outputBlockPosition, Position outputPosition, Position inputBlockPosition, Position inputPosition) {
@@ -169,8 +166,7 @@ std::vector<std::pair<Address, Address>> EvaluatorInternal::mapFromBottomConnect
 EvalConnectionPoint EvaluatorInternal::mapFromAddressToTopConnectionPoint(const Address& address) const {
 	if (address.size() != 1) return EvalConnectionPoint::null();
 	assert(mainThreadId == std::this_thread::get_id());
-	const Circuit* circuit = circuitManager.getCircuit(circuitId).get();
-	const Block* block = circuit->getBlockContainer().getBlock(address.getPosition(0));
+	const Block* block = circuit.getBlockContainer().getBlock(address.getPosition(0));
 	if (block == nullptr) return EvalConnectionPoint::null();
 	auto iter = positionRemapping.find(block->getPosition());
 	if (iter == positionRemapping.end()) return EvalConnectionPoint::null();

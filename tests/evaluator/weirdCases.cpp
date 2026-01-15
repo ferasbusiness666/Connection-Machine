@@ -8,7 +8,7 @@ protected:
 	void SetUp() override;
 	void TearDown() override;
 	Environment environment { false };
-	Evaluator* evaluator = nullptr;
+	EvalLogicSimulator* simulator = nullptr;
 	SharedCircuit circuit = nullptr;
 	BlockType loadCircuit(const std::filesystem::path& path);
 	const BlockData* getBlockData(BlockType type);
@@ -29,13 +29,13 @@ const BlockData* WeirdCasesEvaluatorTest::getBlockData(BlockType type) {
 void WeirdCasesEvaluatorTest::SetUp() {
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
 	circuit = environment.getBackend().getCircuit(circuitId);
-	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuitId).value();
-	evaluator = environment.getBackend().getEvaluator(evalId);
+	simulator_id_t simulatorId = environment.getBackend().createSimulator(circuitId).value();
+	simulator = environment.getBackend().getSimulator(simulatorId);
 }
 
 void WeirdCasesEvaluatorTest::TearDown() {
 	circuit.reset();
-	evaluator = nullptr;
+	simulator = nullptr;
 }
 
 TEST_F(WeirdCasesEvaluatorTest, ConstJunctionAnd) {
@@ -50,21 +50,21 @@ TEST_F(WeirdCasesEvaluatorTest, ConstJunctionAnd) {
 	ASSERT_TRUE(circuit->tryCreateConnection(junctionPosition, andPosition));
 	ASSERT_TRUE(circuit->tryCreateConnection(constPosition, andPosition));
 
-	evaluator->getEvalLogicSimulator().tickStep(2);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(constPosition), logic_state_t::HIGH);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(junctionPosition), logic_state_t::HIGH);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(andPosition), logic_state_t::HIGH);
+	simulator->tickStep(2);
+	EXPECT_EQ(simulator->getState(constPosition), logic_state_t::HIGH);
+	EXPECT_EQ(simulator->getState(junctionPosition), logic_state_t::HIGH);
+	EXPECT_EQ(simulator->getState(andPosition), logic_state_t::HIGH);
 
 	ASSERT_TRUE(circuit->tryRemoveBlock(junctionPosition));
 
-	evaluator->getEvalLogicSimulator().tickStep(2);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(constPosition), logic_state_t::HIGH);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(andPosition), logic_state_t::HIGH);
+	simulator->tickStep(2);
+	EXPECT_EQ(simulator->getState(constPosition), logic_state_t::HIGH);
+	EXPECT_EQ(simulator->getState(andPosition), logic_state_t::HIGH);
 
 	ASSERT_TRUE(circuit->tryRemoveBlock(constPosition));
 
-	evaluator->getEvalLogicSimulator().tickStep(2);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(andPosition), logic_state_t::LOW);
+	simulator->tickStep(2);
+	EXPECT_EQ(simulator->getState(andPosition), logic_state_t::LOW);
 }
 
 TEST_F(WeirdCasesEvaluatorTest, ButtonBuffer) {
@@ -74,29 +74,29 @@ TEST_F(WeirdCasesEvaluatorTest, ButtonBuffer) {
 	ASSERT_TRUE(circuit->tryInsertBlock(buttonPos, Rotation::ZERO, BlockType::BUTTON));
 	ASSERT_TRUE(circuit->tryInsertBlock(bufferPos, Rotation::ZERO, BlockType::BUFFER));
 
-	evaluator->getEvalLogicSimulator().tickStep();
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(buttonPos), logic_state_t::LOW);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(bufferPos), logic_state_t::UNDEFINED);
+	simulator->tickStep();
+	EXPECT_EQ(simulator->getState(buttonPos), logic_state_t::LOW);
+	EXPECT_EQ(simulator->getState(bufferPos), logic_state_t::UNDEFINED);
 
 	ASSERT_TRUE(circuit->tryCreateConnection(buttonPos, bufferPos));
-	evaluator->getEvalLogicSimulator().tickStep();
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(buttonPos), logic_state_t::LOW);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(bufferPos), logic_state_t::LOW);
+	simulator->tickStep();
+	EXPECT_EQ(simulator->getState(buttonPos), logic_state_t::LOW);
+	EXPECT_EQ(simulator->getState(bufferPos), logic_state_t::LOW);
 
-	evaluator->getEvalLogicSimulator().setState(buttonPos, logic_state_t::HIGH);
-	evaluator->getEvalLogicSimulator().tickStep();
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(buttonPos), logic_state_t::HIGH);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(bufferPos), logic_state_t::HIGH);
+	simulator->setState(buttonPos, logic_state_t::HIGH);
+	simulator->tickStep();
+	EXPECT_EQ(simulator->getState(buttonPos), logic_state_t::HIGH);
+	EXPECT_EQ(simulator->getState(bufferPos), logic_state_t::HIGH);
 
-	evaluator->getEvalLogicSimulator().setState(buttonPos, logic_state_t::LOW);
-	evaluator->getEvalLogicSimulator().tickStep();
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(buttonPos), logic_state_t::LOW);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(bufferPos), logic_state_t::LOW);
+	simulator->setState(buttonPos, logic_state_t::LOW);
+	simulator->tickStep();
+	EXPECT_EQ(simulator->getState(buttonPos), logic_state_t::LOW);
+	EXPECT_EQ(simulator->getState(bufferPos), logic_state_t::LOW);
 
 	ASSERT_TRUE(circuit->tryRemoveConnection(buttonPos, bufferPos));
-	evaluator->getEvalLogicSimulator().tickStep();
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(buttonPos), logic_state_t::LOW);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(bufferPos), logic_state_t::UNDEFINED);
+	simulator->tickStep();
+	EXPECT_EQ(simulator->getState(buttonPos), logic_state_t::LOW);
+	EXPECT_EQ(simulator->getState(bufferPos), logic_state_t::UNDEFINED);
 }
 
 TEST_F(WeirdCasesEvaluatorTest, DISABLED_InitializationBehaviorWithICs) {
@@ -111,25 +111,25 @@ TEST_F(WeirdCasesEvaluatorTest, DISABLED_InitializationBehaviorWithICs) {
 	ASSERT_TRUE(circuit->tryCreateConnection(andPos, andPos));
 	ASSERT_TRUE(circuit->tryCreateConnection(andPos, icPos));
 
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(andPos), logic_state_t::LOW);
-	evaluator->getEvalLogicSimulator().tickStep(1);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(xnorPos), logic_state_t::HIGH);
+	EXPECT_EQ(simulator->getState(andPos), logic_state_t::LOW);
+	simulator->tickStep(1);
+	EXPECT_EQ(simulator->getState(xnorPos), logic_state_t::HIGH);
 
-	evaluator->getEvalLogicSimulator().setState(andPos, logic_state_t::HIGH);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(andPos), logic_state_t::HIGH);
-	evaluator->getEvalLogicSimulator().tickStep(1);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(xnorPos), logic_state_t::LOW);
+	simulator->setState(andPos, logic_state_t::HIGH);
+	EXPECT_EQ(simulator->getState(andPos), logic_state_t::HIGH);
+	simulator->tickStep(1);
+	EXPECT_EQ(simulator->getState(xnorPos), logic_state_t::LOW);
 
-	evaluator_id_t evalId2 = environment.getBackend().createEvaluator(circuit->getCircuitId()).value();
-	Evaluator* evaluator2 = environment.getBackend().getEvaluator(evalId2);
-	EXPECT_EQ(evaluator2->getEvalLogicSimulator().getState(andPos), logic_state_t::LOW);
-	evaluator2->getEvalLogicSimulator().tickStep(1);
-	EXPECT_EQ(evaluator2->getEvalLogicSimulator().getState(xnorPos), logic_state_t::HIGH);
+	simulator_id_t simulatorId2 = environment.getBackend().createSimulator(circuit->getCircuitId()).value();
+	EvalLogicSimulator* simulator2 = environment.getBackend().getSimulator(simulatorId2);
+	EXPECT_EQ(simulator2->getState(andPos), logic_state_t::LOW);
+	simulator2->tickStep(1);
+	EXPECT_EQ(simulator2->getState(xnorPos), logic_state_t::HIGH);
 
-	evaluator2->getEvalLogicSimulator().setState(andPos, logic_state_t::HIGH);
-	EXPECT_EQ(evaluator2->getEvalLogicSimulator().getState(andPos), logic_state_t::HIGH);
-	evaluator2->getEvalLogicSimulator().tickStep(1);
-	EXPECT_EQ(evaluator2->getEvalLogicSimulator().getState(xnorPos), logic_state_t::LOW);
+	simulator2->setState(andPos, logic_state_t::HIGH);
+	EXPECT_EQ(simulator2->getState(andPos), logic_state_t::HIGH);
+	simulator2->tickStep(1);
+	EXPECT_EQ(simulator2->getState(xnorPos), logic_state_t::LOW);
 }
 
 TEST_F(WeirdCasesEvaluatorTest, PullUpPullDownButWithDifferentConnectionMethod) {
@@ -141,8 +141,8 @@ TEST_F(WeirdCasesEvaluatorTest, PullUpPullDownButWithDifferentConnectionMethod) 
 	ASSERT_TRUE(circuit->tryInsertBlock(pullUpPos, Rotation::ZERO, BlockType::JUNCTION_H));
 	ASSERT_TRUE(circuit->tryInsertBlock(pullDownPos, Rotation::ZERO, BlockType::JUNCTION_L));
 
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(pullUpPos), logic_state_t::HIGH);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(pullDownPos), logic_state_t::LOW);
+	EXPECT_EQ(simulator->getState(pullUpPos), logic_state_t::HIGH);
+	EXPECT_EQ(simulator->getState(pullDownPos), logic_state_t::LOW);
 
 	const Block* pullUpBlock = circuit->getBlockContainer().getBlock(pullUpPos);
 	const Block* pullDownBlock = circuit->getBlockContainer().getBlock(pullDownPos);
@@ -152,12 +152,12 @@ TEST_F(WeirdCasesEvaluatorTest, PullUpPullDownButWithDifferentConnectionMethod) 
 	logInfo("Creating connection between pull-up and pull-down junctions", "WeirdCasesEvaluatorTest::PullUpPullDownButWithDifferentConnectionMethod");
 
 	ASSERT_TRUE(circuit->tryCreateConnection({ pullUpBlock->id(), connection_end_id_t(0) }, { pullDownBlock->id(), connection_end_id_t(0) }));
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(pullUpPos), logic_state_t::UNDEFINED);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(pullDownPos), logic_state_t::UNDEFINED);
+	EXPECT_EQ(simulator->getState(pullUpPos), logic_state_t::UNDEFINED);
+	EXPECT_EQ(simulator->getState(pullDownPos), logic_state_t::UNDEFINED);
 
 	logInfo("Removing connection between pull-up and pull-down junctions", "WeirdCasesEvaluatorTest::PullUpPullDownButWithDifferentConnectionMethod");
 
 	ASSERT_TRUE(circuit->tryRemoveConnection({ pullDownBlock->id(), connection_end_id_t(0) }, { pullUpBlock->id(), connection_end_id_t(0) }));
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(pullUpPos), logic_state_t::HIGH);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(pullDownPos), logic_state_t::LOW);
+	EXPECT_EQ(simulator->getState(pullUpPos), logic_state_t::HIGH);
+	EXPECT_EQ(simulator->getState(pullDownPos), logic_state_t::LOW);
 }

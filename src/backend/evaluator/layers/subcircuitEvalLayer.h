@@ -7,7 +7,7 @@ class CircuitManager;
 
 class SubcircuitEvalLayer : public BaseEvalLayer {
 	struct SubcircuitData {
-		std::unordered_map<eval_gate_id, eval_gate_id> otherEvalToThisEvalIdMapping;
+		std::unordered_map<eval_gate_id, eval_gate_id> otherSimulatorToThissimulatorIdMapping;
 	};
 public:
 	SubcircuitEvalLayer(const CircuitManager& circuitManager) : circuitManager(circuitManager) {}

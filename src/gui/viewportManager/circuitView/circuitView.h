@@ -6,10 +6,11 @@
 #include "tools/toolManager.h"
 #include "tutorial.h"
 #include "viewManager/viewManager.h"
+#include "backend/address.h"
 
 #include "gpu/mainRendererDefs.h"
 
-class Evaluator;
+class EvalLogicSimulator;
 class Circuit;
 class Backend;
 
@@ -23,8 +24,8 @@ public:
 	Circuit* getCircuit();
 	const Circuit* getCircuit() const;
 
-	Evaluator* getEvaluator();
-	const Evaluator* getEvaluator() const;
+	EvalLogicSimulator* getSimulator();
+	const EvalLogicSimulator* getSimulator() const;
 
 	EventRegister& getEventRegister() { return eventRegister; }
 	const EventRegister& getEventRegister() const { return eventRegister; }
@@ -46,8 +47,8 @@ public:
 	const Address& getAddress() const { return address; }
 
 	// void setBackend(Backend* backend);
-	void setEvaluator(evaluator_id_t evaluatorId, const Address& address = Address());
-	void setEvaluator(const Evaluator* evaluator, const Address& address = Address());
+	void setSimulatoruator(simulator_id_t simulatorId, const Address& address = Address());
+	void setSimulatoruator(const EvalLogicSimulator* simulator, const Address& address = Address());
 	void setCircuit(std::shared_ptr<Circuit> circuit);
 	void setCircuit(circuit_id_t circuitId);
 
@@ -58,7 +59,7 @@ private:
 
 	ViewportId viewportId;
 	circuit_id_t circuitId;
-	evaluator_id_t evaluatorId;
+	simulator_id_t simulatorId;
 	Address address;
 
 	DataUpdateEventManager& dataUpdateEventManager;

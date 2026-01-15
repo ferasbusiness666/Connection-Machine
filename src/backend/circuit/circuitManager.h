@@ -7,13 +7,13 @@
 #include "util/uuid.h"
 #include "circuit.h"
 
-class EvaluatorManager;
+class SimulatorManager;
 class GeneratedCircuit;
 class ParsedCircuit;
 
 class CircuitManager {
 public:
-	CircuitManager(DataUpdateEventManager& dataUpdateEventManager, EvaluatorManager& evaluatorManager, CircuitFileManager& fileManager);
+	CircuitManager(DataUpdateEventManager& dataUpdateEventManager, SimulatorManager& simulatorManager, CircuitFileManager& fileManager);
 	CircuitManager(const CircuitManager&) = delete;
     CircuitManager& operator=(const CircuitManager&) = delete;
 
@@ -164,7 +164,7 @@ private:
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 	ProceduralCircuitManager proceduralCircuitManager;
 	DataUpdateEventManager& dataUpdateEventManager;
-	EvaluatorManager& evaluatorManager;
+	SimulatorManager& simulatorManager;
 
 	circuit_id_t lastId = 0;
 	std::map<circuit_id_t, SharedCircuit> circuits;

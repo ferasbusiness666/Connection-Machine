@@ -1,45 +1,30 @@
-#ifndef evaluatorManager_h
-#define evaluatorManager_h
+#ifndef simulatorManager_h
+#define simulatorManager_h
 
 #include "backend/circuit/circuit.h"
-#include "evalDefs.h"
+#include "simulator/simulatorDefs.h"
 
 class CircuitManager;
 class DataUpdateEventManager;
-class Simulator {
-
-};
+class EvalLogicSimulator;
 
 class SimulatorManager {
 public:
-	SimulatorManager(DataUpdateEventManager& dataUpdateEventManager) : dataUpdateEventManager(dataUpdateEventManager), evaluatorIdProvider(1) {}
+	SimulatorManager(CircuitManager& circuitManager, DataUpdateEventManager& dataUpdateEventManager);
 	SimulatorManager(const SimulatorManager&) = delete;
     SimulatorManager& operator=(const SimulatorManager&) = delete;
+	~SimulatorManager();
 
-	inline const std::map<evaluator_id_t, Simulator>& getSimulator() const { return simulators; }
+	inline const std::map<simulator_id_t, EvalLogicSimulator>& getSimulators() const { return simulators; }
 
-	inline Simulator* getSimulator(evaluator_id_t id) {
-		auto iter = simulators.find(id);
-		if (iter == simulators.end()) return nullptr;
-		return &iter->second;
-	}
-	inline const Simulator* getSimulator(evaluator_id_t id) const {
-		auto iter = simulators.find(id);
-		if (iter == simulators.end()) return nullptr;
-		return &iter->second;
-	}
+	EvalLogicSimulator* getSimulator(simulator_id_t id);
+	const EvalLogicSimulator* getSimulator(simulator_id_t id) const;
 
-	evaluator_id_t createNewSimulator(CircuitManager& circuitManager, circuit_id_t circuitId);
-	inline void destroySimulator(evaluator_id_t id) {
-		auto iter = simulators.find(id);
-		if (iter != simulators.end()) {
-			evaluatorIdProvider.releaseId(id);
-			simulators.erase(iter);
-		}
-	}
+	simulator_id_t createNewSimulator(circuit_id_t circuitId);
+	void destroySimulator(simulator_id_t id);
 
-	typedef std::map<evaluator_id_t, Simulator>::iterator iterator;
-	typedef std::map<evaluator_id_t, Simulator>::const_iterator const_iterator;
+	typedef std::map<simulator_id_t, EvalLogicSimulator>::iterator iterator;
+	typedef std::map<simulator_id_t, EvalLogicSimulator>::const_iterator const_iterator;
 
 	inline iterator begin() { return simulators.begin(); }
 	inline iterator end() { return simulators.end(); }
@@ -51,11 +36,12 @@ public:
 	nlohmann::json dumpState() const;
 
 private:
-	IdProvider<evaluator_id_t> evaluatorIdProvider;
+	IdProvider<simulator_id_t> simulatorIdProvider;
 
 	DataUpdateEventManager& dataUpdateEventManager;
+	CircuitManager& circuitManager;
 
-	std::map<evaluator_id_t, Simulator> simulators;
+	std::map<simulator_id_t, EvalLogicSimulator> simulators;
 };
 
-#endif /* evaluatorManager_h */
+#endif /* simulatorManager_h */

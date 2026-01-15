@@ -480,7 +480,7 @@ void LogicSimulator::removeGate(simulator_gate_id_t simulatorId) {
 		return;
 	}
 
-	std::optional<std::vector<simulator_gate_id_t>> outputIdsOpt = getOutputSimIdsFromGate(simulatorId);
+	std::optional<std::vector<simulator_gate_id_t>> outputIdsOpt = getOutputSimulatorIdsFromGate(simulatorId);
 	if (!outputIdsOpt.has_value()) {
 		logError("Cannot remove gate: no output IDs found for simulator_gate_id_t " + std::to_string(simulatorId), "LogicSimulator::removeGate");
 		return;
@@ -585,8 +585,8 @@ void LogicSimulator::endEdit() {
 	regenerateJobs();
 }
 
-BlockData::ConnectionData::PortType LogicSimulator::getPortType(simulator_gate_id_t simId, connection_end_id_t portId) const {
-	auto locationIt = gateLocations.find(simId);
+BlockData::ConnectionData::PortType LogicSimulator::getPortType(simulator_gate_id_t simulatorId, connection_end_id_t portId) const {
+	auto locationIt = gateLocations.find(simulatorId);
 	if (locationIt != gateLocations.end()) {
 		SimGateType gateType = locationIt->second.gateType;
 		size_t gateIndex = locationIt->second.gateIndex;
@@ -647,8 +647,8 @@ BlockData::ConnectionData::PortType LogicSimulator::getPortType(simulator_gate_i
 	return BlockData::ConnectionData::PortType::NONE;
 }
 
-std::optional<simulator_gate_id_t> LogicSimulator::getOutputPortId(simulator_gate_id_t simId, connection_end_id_t portId) const {
-	auto locationIt = gateLocations.find(simId);
+std::optional<simulator_gate_id_t> LogicSimulator::getOutputPortId(simulator_gate_id_t simulatorId, connection_end_id_t portId) const {
+	auto locationIt = gateLocations.find(simulatorId);
 	if (locationIt != gateLocations.end()) {
 		SimGateType gateType = locationIt->second.gateType;
 		size_t gateIndex = locationIt->second.gateIndex;
@@ -710,9 +710,9 @@ std::optional<simulator_gate_id_t> LogicSimulator::getOutputPortId(simulator_gat
 	return std::nullopt;
 }
 
-void LogicSimulator::addInputToGate(simulator_gate_id_t simId, simulator_gate_id_t inputId, connection_end_id_t portId) {
+void LogicSimulator::addInputToGate(simulator_gate_id_t simulatorId, simulator_gate_id_t inputId, connection_end_id_t portId) {
 	dirtySimulatorIds.push_back(inputId);
-	auto locationIt = gateLocations.find(simId);
+	auto locationIt = gateLocations.find(simulatorId);
 	if (locationIt != gateLocations.end()) {
 		SimGateType gateType = locationIt->second.gateType;
 		size_t gateIndex = locationIt->second.gateIndex;
@@ -721,61 +721,61 @@ void LogicSimulator::addInputToGate(simulator_gate_id_t simId, simulator_gate_id
 		case SimGateType::AND:
 			if (gateIndex < andGates.size()) {
 				andGates[gateIndex].addInput(inputId, portId);
-				addOutputDependency(inputId, simId);
+				addOutputDependency(inputId, simulatorId);
 			}
 			break;
 		case SimGateType::XOR:
 			if (gateIndex < xorGates.size()) {
 				xorGates[gateIndex].addInput(inputId, portId);
-				addOutputDependency(inputId, simId);
+				addOutputDependency(inputId, simulatorId);
 			}
 			break;
 		case SimGateType::JUNCTION:
 			if (gateIndex < junctions.size()) {
 				junctions[gateIndex].addInput(inputId, portId);
-				addOutputDependency(inputId, simId);
+				addOutputDependency(inputId, simulatorId);
 			}
 			break;
 		case SimGateType::BUFFER:
 			if (gateIndex < buffers.size()) {
 				buffers[gateIndex].addInput(inputId, portId);
-				addOutputDependency(inputId, simId);
+				addOutputDependency(inputId, simulatorId);
 			}
 			break;
 		case SimGateType::SINGLE_BUFFER:
 			if (gateIndex < singleBuffers.size()) {
 				singleBuffers[gateIndex].addInput(inputId, portId);
-				addOutputDependency(inputId, simId);
+				addOutputDependency(inputId, simulatorId);
 			}
 			break;
 		case SimGateType::TRISTATE_BUFFER:
 			if (gateIndex < tristateBuffers.size()) {
 				tristateBuffers[gateIndex].addInput(inputId, portId);
-				addOutputDependency(inputId, simId);
+				addOutputDependency(inputId, simulatorId);
 			}
 			break;
 		case SimGateType::CONSTANT:
 			if (gateIndex < constantGates.size()) {
 				constantGates[gateIndex].addInput(inputId, portId);
-				addOutputDependency(inputId, simId);
+				addOutputDependency(inputId, simulatorId);
 			}
 			break;
 		case SimGateType::CONSTANT_RESET:
 			if (gateIndex < constantResetGates.size()) {
 				constantResetGates[gateIndex].addInput(inputId, portId);
-				addOutputDependency(inputId, simId);
+				addOutputDependency(inputId, simulatorId);
 			}
 			break;
 		case SimGateType::COPY_SELF_OUTPUT:
 			if (gateIndex < copySelfOutputGates.size()) {
 				copySelfOutputGates[gateIndex].addInput(inputId, portId);
-				addOutputDependency(inputId, simId);
+				addOutputDependency(inputId, simulatorId);
 			}
 			break;
 		case SimGateType::PORTS_TO_INT:
 			if (gateIndex < portsToIntGates.size()) {
 				portsToIntGates[gateIndex].addInput(inputId, portId);
-				addOutputDependency(inputId, simId);
+				addOutputDependency(inputId, simulatorId);
 			}
 			break;
 		}
@@ -785,9 +785,9 @@ void LogicSimulator::addInputToGate(simulator_gate_id_t simId, simulator_gate_id
 	logError("Gate not found for addInputToGate", "LogicSimulator::addInputToGate");
 }
 
-void LogicSimulator::removeInputFromGate(simulator_gate_id_t simId, simulator_gate_id_t inputId, connection_end_id_t portId) {
+void LogicSimulator::removeInputFromGate(simulator_gate_id_t simulatorId, simulator_gate_id_t inputId, connection_end_id_t portId) {
 	dirtySimulatorIds.push_back(inputId);
-	auto locationIt = gateLocations.find(simId);
+	auto locationIt = gateLocations.find(simulatorId);
 	if (locationIt != gateLocations.end()) {
 		SimGateType gateType = locationIt->second.gateType;
 		size_t gateIndex = locationIt->second.gateIndex;
@@ -796,61 +796,61 @@ void LogicSimulator::removeInputFromGate(simulator_gate_id_t simId, simulator_ga
 		case SimGateType::AND:
 			if (gateIndex < andGates.size()) {
 				andGates[gateIndex].removeInput(inputId, portId);
-				removeOutputDependency(inputId, simId);
+				removeOutputDependency(inputId, simulatorId);
 			}
 			break;
 		case SimGateType::XOR:
 			if (gateIndex < xorGates.size()) {
 				xorGates[gateIndex].removeInput(inputId, portId);
-				removeOutputDependency(inputId, simId);
+				removeOutputDependency(inputId, simulatorId);
 			}
 			break;
 		case SimGateType::JUNCTION:
 			if (gateIndex < junctions.size()) {
 				junctions[gateIndex].removeInput(inputId, portId);
-				removeOutputDependency(inputId, simId);
+				removeOutputDependency(inputId, simulatorId);
 			}
 			break;
 		case SimGateType::BUFFER:
 			if (gateIndex < buffers.size()) {
 				buffers[gateIndex].removeInput(inputId, portId);
-				removeOutputDependency(inputId, simId);
+				removeOutputDependency(inputId, simulatorId);
 			}
 			break;
 		case SimGateType::SINGLE_BUFFER:
 			if (gateIndex < singleBuffers.size()) {
 				singleBuffers[gateIndex].removeInput(inputId, portId);
-				removeOutputDependency(inputId, simId);
+				removeOutputDependency(inputId, simulatorId);
 			}
 			break;
 		case SimGateType::TRISTATE_BUFFER:
 			if (gateIndex < tristateBuffers.size()) {
 				tristateBuffers[gateIndex].removeInput(inputId, portId);
-				removeOutputDependency(inputId, simId);
+				removeOutputDependency(inputId, simulatorId);
 			}
 			break;
 		case SimGateType::CONSTANT:
 			if (gateIndex < constantGates.size()) {
 				constantGates[gateIndex].removeInput(inputId, portId);
-				removeOutputDependency(inputId, simId);
+				removeOutputDependency(inputId, simulatorId);
 			}
 			break;
 		case SimGateType::CONSTANT_RESET:
 			if (gateIndex < constantResetGates.size()) {
 				constantResetGates[gateIndex].removeInput(inputId, portId);
-				removeOutputDependency(inputId, simId);
+				removeOutputDependency(inputId, simulatorId);
 			}
 			break;
 		case SimGateType::COPY_SELF_OUTPUT:
 			if (gateIndex < copySelfOutputGates.size()) {
 				copySelfOutputGates[gateIndex].removeInput(inputId, portId);
-				removeOutputDependency(inputId, simId);
+				removeOutputDependency(inputId, simulatorId);
 			}
 			break;
 		case SimGateType::PORTS_TO_INT:
 			if (gateIndex < portsToIntGates.size()) {
 				portsToIntGates[gateIndex].removeInput(inputId, portId);
-				removeOutputDependency(inputId, simId);
+				removeOutputDependency(inputId, simulatorId);
 			}
 			break;
 		}
@@ -860,8 +860,8 @@ void LogicSimulator::removeInputFromGate(simulator_gate_id_t simId, simulator_ga
 	logError("Gate not found for removeInputFromGate", "LogicSimulator::removeInputFromGate");
 }
 
-std::optional<std::vector<simulator_gate_id_t>> LogicSimulator::getOutputSimIdsFromGate(simulator_gate_id_t simId) const {
-	auto locationIt = gateLocations.find(simId);
+std::optional<std::vector<simulator_gate_id_t>> LogicSimulator::getOutputSimulatorIdsFromGate(simulator_gate_id_t simulatorId) const {
+	auto locationIt = gateLocations.find(simulatorId);
 	if (locationIt == gateLocations.end()) return std::nullopt;
 
 	SimGateType gateType = locationIt->second.gateType;
@@ -869,34 +869,34 @@ std::optional<std::vector<simulator_gate_id_t>> LogicSimulator::getOutputSimIdsF
 
 	switch (gateType) {
 	case SimGateType::AND:
-		if (gateIndex < andGates.size()) return andGates[gateIndex].getOutputSimIds();
+		if (gateIndex < andGates.size()) return andGates[gateIndex].getOutputSimulatorIds();
 		break;
 	case SimGateType::XOR:
-		if (gateIndex < xorGates.size()) return xorGates[gateIndex].getOutputSimIds();
+		if (gateIndex < xorGates.size()) return xorGates[gateIndex].getOutputSimulatorIds();
 		break;
 	case SimGateType::JUNCTION:
-		if (gateIndex < junctions.size()) return junctions[gateIndex].getOutputSimIds();
+		if (gateIndex < junctions.size()) return junctions[gateIndex].getOutputSimulatorIds();
 		break;
 	case SimGateType::BUFFER:
-		if (gateIndex < buffers.size()) return buffers[gateIndex].getOutputSimIds();
+		if (gateIndex < buffers.size()) return buffers[gateIndex].getOutputSimulatorIds();
 		break;
 	case SimGateType::SINGLE_BUFFER:
-		if (gateIndex < singleBuffers.size()) return singleBuffers[gateIndex].getOutputSimIds();
+		if (gateIndex < singleBuffers.size()) return singleBuffers[gateIndex].getOutputSimulatorIds();
 		break;
 	case SimGateType::TRISTATE_BUFFER:
-		if (gateIndex < tristateBuffers.size()) return tristateBuffers[gateIndex].getOutputSimIds();
+		if (gateIndex < tristateBuffers.size()) return tristateBuffers[gateIndex].getOutputSimulatorIds();
 		break;
 	case SimGateType::CONSTANT:
-		if (gateIndex < constantGates.size()) return constantGates[gateIndex].getOutputSimIds();
+		if (gateIndex < constantGates.size()) return constantGates[gateIndex].getOutputSimulatorIds();
 		break;
 	case SimGateType::CONSTANT_RESET:
-		if (gateIndex < constantResetGates.size()) return constantResetGates[gateIndex].getOutputSimIds();
+		if (gateIndex < constantResetGates.size()) return constantResetGates[gateIndex].getOutputSimulatorIds();
 		break;
 	case SimGateType::COPY_SELF_OUTPUT:
-		if (gateIndex < copySelfOutputGates.size()) return copySelfOutputGates[gateIndex].getOutputSimIds();
+		if (gateIndex < copySelfOutputGates.size()) return copySelfOutputGates[gateIndex].getOutputSimulatorIds();
 		break;
 	case SimGateType::PORTS_TO_INT:
-		if (gateIndex < portsToIntGates.size()) return portsToIntGates[gateIndex].getOutputSimIds();
+		if (gateIndex < portsToIntGates.size()) return portsToIntGates[gateIndex].getOutputSimulatorIds();
 		break;
 	}
 	return std::nullopt;

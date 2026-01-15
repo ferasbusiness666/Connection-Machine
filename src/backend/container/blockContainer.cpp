@@ -5,6 +5,9 @@
 #include "block/block.h"
 #include "backend/blockData/blockDataManager.h"
 
+BlockContainer::BlockContainer(CircuitManager& circuitManager) : circuitManager(circuitManager), blockDataManager(circuitManager.getBlockDataManager()) { }
+
+
 void BlockContainer::clear(Difference* difference) {
 	difference->setIsClear();
 	for (const std::pair<const unsigned int, Block>& block : blocks) {

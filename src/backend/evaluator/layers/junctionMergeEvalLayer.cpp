@@ -178,9 +178,9 @@ std::tuple<
 	for (unsigned int i = 0; i < junctions.size(); i++) {
 		const EvalGate* evalGate = evalLayerState.getGate(junctions[i]);
 		if (isJunctionType(evalGate->type)) {
-			if (evalGate->type == getEvalGateType(BlockType::JUNCTION_L)) foundPullDown = true;
-			if (evalGate->type == getEvalGateType(BlockType::JUNCTION_H)) foundPullUp = true;
-			if (evalGate->type == getEvalGateType(BlockType::JUNCTION_X)) foundPullDown = foundPullUp = true;
+			if (evalGate->type == getSimulatorGateType(BlockType::JUNCTION_L)) foundPullDown = true;
+			if (evalGate->type == getSimulatorGateType(BlockType::JUNCTION_H)) foundPullUp = true;
+			if (evalGate->type == getSimulatorGateType(BlockType::JUNCTION_X)) foundPullDown = foundPullUp = true;
 			if (!evalGate->connections.empty()) {
 				for (EvalConnectionPoint connection : evalGate->connections.at(0)) {
 					// if (connection.connectionEndId != 0) {
@@ -210,12 +210,12 @@ std::tuple<
 		const EvalGate* evalGate = evalLayerState.getGate(junction);
 		assert(isJunctionType(evalGate->type));
 	}
-	EvalGateType gateType = getEvalGateType(BlockType::JUNCTION);
+	EvalGateType gateType = getSimulatorGateType(BlockType::JUNCTION);
 	if (foundPullDown) {
-		if (foundPullUp) gateType = getEvalGateType(BlockType::JUNCTION_X);
-		else gateType = getEvalGateType(BlockType::JUNCTION_L);
+		if (foundPullUp) gateType = getSimulatorGateType(BlockType::JUNCTION_X);
+		else gateType = getSimulatorGateType(BlockType::JUNCTION_L);
 	} else if (foundPullUp) {
-		gateType = getEvalGateType(BlockType::JUNCTION_H);
+		gateType = getSimulatorGateType(BlockType::JUNCTION_H);
 	}
 	return { junctions, visted, gateType };
 }

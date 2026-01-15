@@ -3,14 +3,14 @@
 
 #include "backend/blockData/blockData.h"
 
-DECLARE_ID_TYPE(evaluator_id_t, unsigned int);
+DECLARE_ID_TYPE(simulator_id_t, unsigned int);
 DECLARE_ID_TYPE(eval_circuit_id_t, unsigned int);
 DECLARE_ID_TYPE(eval_gate_id, unsigned int);
 DECLARE_ID_TYPE(simulator_gate_id_t, unsigned int);
 
 typedef unsigned int EvalGateType;
 
-inline EvalGateType getEvalGateType(BlockType blockType) { return (EvalGateType)blockType; }
+inline EvalGateType getSimulatorGateType(BlockType blockType) { return (EvalGateType)blockType; }
 inline BlockType getBlockType(EvalGateType evalGateType) { return (BlockType)evalGateType; }
 
 struct SimulatorMappingUpdate {

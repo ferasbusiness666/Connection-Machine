@@ -11,6 +11,7 @@
 class EvaluatorInternal;
 class DataUpdateEventManager;
 class CircuitManager;
+class SimulatorManager;
 class Difference;
 typedef std::shared_ptr<Difference> DifferenceSharedPtr;
 
@@ -20,36 +21,35 @@ public:
 	typedef std::pair<BlockType, connection_end_id_t> SetCircuitIOData;
 
 	Evaluator(
-		evaluator_id_t evaluatorId,
 		CircuitManager& circuitManager,
-		circuit_id_t circuitId,
+		const Circuit& circuit,
 		DataUpdateEventManager& dataUpdateEventManager
 	);
 	Evaluator(const Evaluator&) = delete;
     Evaluator& operator=(const Evaluator&) = delete;
 	~Evaluator();
 
-	inline evaluator_id_t getEvaluatorId() const { return evaluatorId; }
-	std::string getEvaluatorName() const;
+	EvaluatorInternal& getSimulatorInternal() { return *evaluatorInternal; }
+	const EvaluatorInternal& getSimulatorInternal() const { return *evaluatorInternal; }
+	std::string getSimulatorName() const;
 
-	void makeEdit(DifferenceSharedPtr difference, circuit_id_t circuitId);
+	void makeEdit(DifferenceSharedPtr difference);
 
-	circuit_id_t getCircuitId() const { return circuitId; }
-	circuit_id_t getCircuitId(const Address& address) const { if (address.size() == 0) return circuitId; return 0; }
+	circuit_id_t getCircuitId() const;
+	circuit_id_t getCircuitId(const Address& address) const;
 
 	nlohmann::json dumpState() const;
 
-	EvalLogicSimulator& getEvalLogicSimulator() { return evalLogicSimulator; }
-	const EvalLogicSimulator& getEvalLogicSimulator() const { return evalLogicSimulator; }
+	void addSimulator(EvalLogicSimulator& simulator) { simulatorsUsingThisEvaluator.insert(&simulator); }
+	void removeSimulator(EvalLogicSimulator& simulator) { simulatorsUsingThisEvaluator.erase(&simulator); }
 
 private:
-	circuit_id_t circuitId;
-	evaluator_id_t evaluatorId;
+	const Circuit& circuit;
 	CircuitManager& circuitManager;
 	DataUpdateEventManager& dataUpdateEventManager;
 	DataUpdateEventManager::DataUpdateEventReceiver receiver;
 	std::unique_ptr<EvaluatorInternal> evaluatorInternal;
-	EvalLogicSimulator evalLogicSimulator;
+	std::unordered_set<EvalLogicSimulator*> simulatorsUsingThisEvaluator;
 };
 
 #endif /* evaluator_h */

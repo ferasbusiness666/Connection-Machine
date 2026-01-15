@@ -1,14 +1,14 @@
-#ifndef createEvaluatorCommand_h
-#define createEvaluatorCommand_h
+#ifndef createSimulatorCommand_h
+#define createSimulatorCommand_h
 
 #include "../command.h"
 
-class CreateEvaluatorCommand : public Command {
+class CreateSimulatorCommand : public Command {
 public:
-	CreateEvaluatorCommand() : Command("create_evaluator") {}
+	CreateSimulatorCommand() : Command("create_evaluator") {}
 
 	void run(const std::vector<std::string>& args, Environment& environment) override final;
 	const std::string getHelpString() const override final { return "Creates an evaluator for the specified circuit."; }
 };
 
-#endif /* createEvaluatorCommand_h */
+#endif /* createSimulatorCommand_h */

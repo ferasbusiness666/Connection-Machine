@@ -7,7 +7,7 @@
 
 #include <parallel_hashmap/phmap.h>
 
-#include "backend/evaluator/evaluator.h"
+#include "backend/evaluator/simulator/evalLogicSimulator.h"
 #include "gpu/abstractions/vulkanBuffer.h"
 #include "gpu/blockRenderDataManager.h"
 #include "gpu/helper/nBuffer.h"
@@ -151,7 +151,7 @@ struct PortStateRange {
 // TODO - maybe these should just be split into two different types
 class VulkanLogicAllocation {
 public:
-	VulkanLogicAllocation(VulkanDevice* device, const RenderedBlocks& blocks, const RenderedWires& wires, const Evaluator* evaluator, const Address& address);
+	VulkanLogicAllocation(VulkanDevice* device, const RenderedBlocks& blocks, const RenderedWires& wires, const EvalLogicSimulator* simulator, const Address& address);
 	~VulkanLogicAllocation();
 
 	inline const std::optional<AllocatedBuffer>& getBlockBuffer() const { return blockBuffer; }
@@ -189,7 +189,7 @@ class LogicGroup {
 public:
 	inline RenderedBlocks& getRenderedBlocks() { return blocks; }
 	inline RenderedWires& getRenderedWires() { return wires; }
-	void rebuildAllocation(VulkanDevice* device, const Evaluator* evaluator, const Address& address);
+	void rebuildAllocation(VulkanDevice* device, const EvalLogicSimulator* simulator, const Address& address);
 
 	std::optional<std::shared_ptr<VulkanLogicAllocation>> getAllocation();
 
@@ -229,7 +229,7 @@ public:
 	void regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDataId);
 
 	void updateSimulatorIds(const std::vector<SimulatorMappingUpdate>& simulatorMappingUpdates);
-	void setEvaluator(const Evaluator* evaluator, const Address& address);
+	void setSimulatoruator(const EvalLogicSimulator* simulator, const Address& address);
 
 	std::vector<std::shared_ptr<VulkanLogicAllocation>> getAllocations(Position min, Position max);
 
@@ -247,7 +247,7 @@ private:
 	std::unordered_set<LogicGroup*> logicGroupsToUpdate;
 
 	VulkanDevice* device = nullptr;
-	const Evaluator* evaluator = nullptr;
+	const EvalLogicSimulator* simulator = nullptr;
 	Address address;
 };
 

@@ -29,11 +29,11 @@ void LoadCallback(void* userData, const char* const* filePaths, int filter) {
 		circuit_id_t id = ids.back();
 		bool doSetCir = true;
 		// circuitViewWidget->getCircuitView()->getBackend()->linkCircuitViewWithCircuit(circuitViewWidget->getCircuitView(), id);
-		for (auto& iter : circuitViewWidget->getCircuitView()->getBackend().getEvaluatorManager().getEvaluators()) {
+		for (auto& iter : circuitViewWidget->getCircuitView()->getBackend().getSimulatorManager().getSimulators()) {
 			if (iter.second.getCircuitId(Address()) == id) {
 				doSetCir = false;
-				circuitViewWidget->getCircuitView()->setEvaluator(iter.first);
-				// circuitViewWidget->getCircuitView()->getBackend()->linkCircuitViewWithEvaluator(circuitViewWidget->getCircuitView(), iter.first, Address());
+				circuitViewWidget->getCircuitView()->setSimulatoruator(iter.first);
+				// circuitViewWidget->getCircuitView()->getBackend()->linkCircuitViewWithSimulator(circuitViewWidget->getCircuitView(), iter.first, Address());
 				return;
 			}
 		}
@@ -80,51 +80,51 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 	keybindHandler.addListener("Keybinds/File/Save As", [this]() { asSave(); });
 	keybindHandler.addListener("Keybinds/File/Open", [this]() { load(); });
 	keybindHandler.addListener("Keybinds/Simulation/Start Stop", [this]() {
-		if (!circuitView->getEvaluator()) {
+		if (!circuitView->getSimulator()) {
 			this->mainWindow.logError("Cant start simulation when there is none");
 			return;
 		}
-		circuitView->getEvaluator()->getEvalLogicSimulator().setPause(!circuitView->getEvaluator()->getEvalLogicSimulator().isPause());
+		circuitView->getSimulator()->setPause(!circuitView->getSimulator()->isPause());
 		this->mainWindow.getSimControlsManager()->update();
 	});
 	keybindHandler.addListener("Keybinds/Simulation/Step Forward", [this]() {
-		if (!circuitView->getEvaluator()) {
+		if (!circuitView->getSimulator()) {
 			this->mainWindow.logError("Cant step simulation when there is none");
 			return;
 		}
-		circuitView->getEvaluator()->getEvalLogicSimulator().stepForward();
+		circuitView->getSimulator()->stepForward();
 		this->mainWindow.getSimControlsManager()->update();
 	});
 	keybindHandler.addListener("Keybinds/Simulation/Step Back", [this]() {
-		if (!circuitView->getEvaluator()) {
+		if (!circuitView->getSimulator()) {
 			this->mainWindow.logError("Cant back step simulation when there is none");
 			return;
 		}
-		if (circuitView->getEvaluator()->getEvalLogicSimulator().stepBack()) {
+		if (circuitView->getSimulator()->stepBack()) {
 			this->mainWindow.getSimControlsManager()->update();
 		} else {
 			this->mainWindow.logError("Cant back step simulation with no simulation data");
 		}
 	});
 	keybindHandler.addListener("Keybinds/Simulation/Increase Speed", [this]() {
-		if (!circuitView->getEvaluator()) {
+		if (!circuitView->getSimulator()) {
 			this->mainWindow.logError("Cant change simulation speed when there is none");
 			return;
 		}
-		circuitView->getEvaluator()->getEvalLogicSimulator().increaseTickrateSeq();
+		circuitView->getSimulator()->increaseTickrateSeq();
 		this->mainWindow.getSimControlsManager()->update();
 	});
 	keybindHandler.addListener("Keybinds/Simulation/Decrease Speed", [this]() {
-		if (!circuitView->getEvaluator()) {
+		if (!circuitView->getSimulator()) {
 			this->mainWindow.logError("Cant change simulation speed when there is none");
 			return;
 		}
-		circuitView->getEvaluator()->getEvalLogicSimulator().decreaseTickrateSeq();
+		circuitView->getSimulator()->decreaseTickrateSeq();
 		this->mainWindow.getSimControlsManager()->update();
 	});
 	keybindHandler.addListener("Keybinds/Simulation/Skip Forward", [this]() {
-		if (circuitView->getEvaluator()) {
-			if (circuitView->getEvaluator()->getEvalLogicSimulator().skipForward()) {
+		if (circuitView->getSimulator()) {
+			if (circuitView->getSimulator()->skipForward()) {
 				this->mainWindow.getSimControlsManager()->update();
 			} else {
 				this->mainWindow.logError("Cant skip forward simulation with no simulation data");
@@ -135,8 +135,8 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 		}
 	});
 	keybindHandler.addListener("Keybinds/Simulation/Skip Back", [this]() {
-		if (circuitView->getEvaluator()) {
-			if (circuitView->getEvaluator()->getEvalLogicSimulator().skipBack()) {
+		if (circuitView->getSimulator()) {
+			if (circuitView->getSimulator()->skipBack()) {
 				this->mainWindow.getSimControlsManager()->update();
 			} else {
 				this->mainWindow.logError("Cant skip back simulation with no simulation data");
@@ -146,22 +146,22 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 		}
 	});
 	keybindHandler.addListener("Keybinds/Simulation/Reset Simulation", [this]() {
-		if (!circuitView->getEvaluator()) {
+		if (!circuitView->getSimulator()) {
 			this->mainWindow.logError("Cant reset simulation when there is none");
 			return;
 		}
 		bool showConfirm = *Settings::get<SettingType::BOOL>("Preferences/Simulation/Show Confirmation for Reset Simulation");
 		if (showConfirm) {
-			evaluator_id_t evaluatorId = circuitView->getEvaluator()->getEvaluatorId();
-			Evaluator* evaluator = circuitView->getBackend().getEvaluator(evaluatorId);
+			simulator_id_t simulatorId = circuitView->getSimulator()->getSimulatorId();
+			EvalLogicSimulator* simulator = circuitView->getBackend().getSimulator(simulatorId);
 
 			this->mainWindow.getPopUpManager().addOptionsPopUp(
 				"Reset Simulation States?",
 				{
 					{
 						"Reset",
-						[this, evaluator]() {
-							evaluator->getEvalLogicSimulator().resetStates();
+						[this, simulator]() {
+							simulator->resetStates();
 						}
 					},
 					{
@@ -171,7 +171,7 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 				}
 			);
 		} else {
-			circuitView->getEvaluator()->getEvalLogicSimulator().resetStates();
+			circuitView->getSimulator()->resetStates();
 		}
 	});
 	keybindHandler.addListener("Keybinds/Editing/Copy", [this]() { circuitView->getEventRegister().doEvent(Event("Copy")); });
@@ -316,9 +316,9 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 				this->mainWindow.logError("Failed to load circuit.");
 			} else {
 				circuitView->setCircuit(id);
-				for (auto& iter : circuitView->getBackend().getEvaluatorManager().getEvaluators()) {
+				for (auto& iter : circuitView->getBackend().getSimulatorManager().getSimulators()) {
 					if (iter.second.getCircuitId(Address()) == id) {
-						circuitView->setEvaluator(iter.first);
+						circuitView->setSimulatoruator(iter.first);
 					}
 				}
 			}
@@ -327,10 +327,10 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 }
 
 void CircuitViewWidget::updateTps() {
-	Evaluator* evaluator = circuitView->getEvaluator();
+	EvalLogicSimulator* simulator = circuitView->getSimulator();
 	std::string tpsText = "Real tps: N/A";
-	if (evaluator) {
-		double tps = evaluator->getEvalLogicSimulator().getRealTickrate();
+	if (simulator) {
+		double tps = simulator->getRealTickrate();
 		if (tps < 5.235) tpsText = "Real tps: " + fmt::format("{:.2f}", tps);
 		else if (tps < 100) tpsText = "Real tps: " + fmt::format("{:.1f}", tps);
 		else tpsText = "Real tps: " + fmt::format("{:.0f}", tps);
@@ -347,15 +347,15 @@ void CircuitViewWidget::updateTps() {
 }
 
 void CircuitViewWidget::setSimState(bool state) {
-	if (circuitView->getEvaluator()) circuitView->getEvaluator()->getEvalLogicSimulator().setPause(!state);
+	if (circuitView->getSimulator()) circuitView->getSimulator()->setPause(!state);
 }
 
 void CircuitViewWidget::simUseSpeed(bool state) {
-	if (circuitView->getEvaluator()) circuitView->getEvaluator()->getEvalLogicSimulator().setUseTickrate(state);
+	if (circuitView->getSimulator()) circuitView->getSimulator()->setUseTickrate(state);
 }
 
 void CircuitViewWidget::setSimSpeed(double speed) {
-	if (circuitView->getEvaluator()) circuitView->getEvaluator()->getEvalLogicSimulator().setTickrate(speed);
+	if (circuitView->getSimulator()) circuitView->getSimulator()->setTickrate(speed);
 }
 
 void CircuitViewWidget::newCircuit() {
@@ -364,10 +364,10 @@ void CircuitViewWidget::newCircuit() {
 	logInfo("Created new circuit {}", "CircuitViewWidget::newCircuit", id);
 	circuitView->setCircuit(id);
 	// tmp get eval with this circuit id because circuit manager makes a eval for loaded circuits
-	for (auto& iter : circuitView->getBackend().getEvaluatorManager().getEvaluators()) {
+	for (auto& iter : circuitView->getBackend().getSimulatorManager().getSimulators()) {
 		if (iter.second.getCircuitId(Address()) == id) {
-			circuitView->setEvaluator(&iter.second);
-			// circuitView->getBackend()->linkCircuitViewWithEvaluator(circuitView.get(), iter.first, Address());
+			circuitView->setSimulatoruator(&iter.second);
+			// circuitView->getBackend()->linkCircuitViewWithSimulator(circuitView.get(), iter.first, Address());
 			return;
 		}
 	}

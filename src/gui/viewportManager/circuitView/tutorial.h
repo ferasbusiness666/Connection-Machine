@@ -65,7 +65,7 @@ private:
 	CircuitView* circuitView;
 	ElementCreator elementCreator;
 	Environment& environment;
-	Evaluator* evaluator;
+	EvalLogicSimulator* simulator;
 	SharedCircuit curentCircuit;
 	ViewManager viewManager;
 

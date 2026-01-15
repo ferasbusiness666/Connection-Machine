@@ -8,7 +8,7 @@ protected:
 	void SetUp() override;
 	void TearDown() override;
 	Environment environment {false};
-	Evaluator* evaluator = nullptr;
+	EvalLogicSimulator* simulator = nullptr;
 	SharedCircuit circuit = nullptr;
 	logic_state_t L = logic_state_t::LOW;
 	logic_state_t H = logic_state_t::HIGH;
@@ -21,9 +21,9 @@ protected:
 void DISABLED_PassthroughEvaluatorTest::SetUp() {
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
 	circuit = environment.getBackend().getCircuit(circuitId);
-	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuitId).value();
-	evaluator = environment.getBackend().getEvaluator(evalId);
-	ASSERT_TRUE(evaluator->getEvalLogicSimulator().isPause());
+	simulator_id_t simulatorId = environment.getBackend().createSimulator(circuitId).value();
+	simulator = environment.getBackend().getSimulator(simulatorId);
+	ASSERT_TRUE(simulator->isPause());
 
 	CircuitFileManager& circuitFileManager = environment.getCircuitFileManager();
 	circuit_id_t passthroughCircuitId = circuitFileManager.loadFromFile((DirectoryManager::getResourceDirectory() / "circuits" / "evaluator" / "passthrough.cir").string()).at(0);
@@ -33,13 +33,13 @@ void DISABLED_PassthroughEvaluatorTest::SetUp() {
 
 void DISABLED_PassthroughEvaluatorTest::TearDown() {
 	circuit.reset();
-	evaluator = nullptr;
+	simulator = nullptr;
 }
 
 TEST_F(DISABLED_PassthroughEvaluatorTest, PlacePassthrough) {
 	Position blockPos(0, 0);
 	ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, PT));
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(blockPos), L);
+	EXPECT_EQ(simulator->getState(blockPos), L);
 }
 
 TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughLogic) {
@@ -50,21 +50,21 @@ TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughLogic) {
 	Position lightPos(1, 0);
 	ASSERT_TRUE(circuit->tryInsertBlock(lightPos, 0, BlockType::LIGHT));
 
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), Z);
-	evaluator->getEvalLogicSimulator().setState(switchPos, H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), Z);
-	evaluator->getEvalLogicSimulator().setState(switchPos, L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), Z);
+	EXPECT_EQ(simulator->getState(lightPos), Z);
+	simulator->setState(switchPos, H);
+	EXPECT_EQ(simulator->getState(lightPos), Z);
+	simulator->setState(switchPos, L);
+	EXPECT_EQ(simulator->getState(lightPos), Z);
 
 	// connect
 	ASSERT_TRUE(circuit->tryCreateConnection(switchPos, blockPos));
 	ASSERT_TRUE(circuit->tryCreateConnection(blockPos, lightPos));
 
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
-	evaluator->getEvalLogicSimulator().setState(switchPos, H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), H);
-	evaluator->getEvalLogicSimulator().setState(switchPos, L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
+	EXPECT_EQ(simulator->getState(lightPos), L);
+	simulator->setState(switchPos, H);
+	EXPECT_EQ(simulator->getState(lightPos), H);
+	simulator->setState(switchPos, L);
+	EXPECT_EQ(simulator->getState(lightPos), L);
 }
 
 TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughDelete) {
@@ -79,17 +79,17 @@ TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughDelete) {
 	ASSERT_TRUE(circuit->tryCreateConnection(switchPos, blockPos));
 	ASSERT_TRUE(circuit->tryCreateConnection(blockPos, lightPos));
 
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
-	evaluator->getEvalLogicSimulator().setState(switchPos, H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), H);
+	EXPECT_EQ(simulator->getState(lightPos), L);
+	simulator->setState(switchPos, H);
+	EXPECT_EQ(simulator->getState(lightPos), H);
 
 	// delete passthrough
 	ASSERT_TRUE(circuit->tryRemoveBlock(blockPos));
 
 	// states should no longer propagate
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), Z);
-	evaluator->getEvalLogicSimulator().setState(switchPos, L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), Z);
+	EXPECT_EQ(simulator->getState(lightPos), Z);
+	simulator->setState(switchPos, L);
+	EXPECT_EQ(simulator->getState(lightPos), Z);
 }
 
 TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughDisconnectSwitch) {
@@ -104,16 +104,16 @@ TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughDisconnectSwitch) {
 	ASSERT_TRUE(circuit->tryCreateConnection(switchPos, blockPos));
 	ASSERT_TRUE(circuit->tryCreateConnection(blockPos, lightPos));
 
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
-	evaluator->getEvalLogicSimulator().setState(switchPos, H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), H);
+	EXPECT_EQ(simulator->getState(lightPos), L);
+	simulator->setState(switchPos, H);
+	EXPECT_EQ(simulator->getState(lightPos), H);
 
 	// disconnect switch
 	ASSERT_TRUE(circuit->tryRemoveConnection(switchPos, blockPos));
 
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
-	evaluator->getEvalLogicSimulator().setState(switchPos, L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
+	EXPECT_EQ(simulator->getState(lightPos), L);
+	simulator->setState(switchPos, L);
+	EXPECT_EQ(simulator->getState(lightPos), L);
 }
 
 TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughDisconnectLight) {
@@ -128,16 +128,16 @@ TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughDisconnectLight) {
 	ASSERT_TRUE(circuit->tryCreateConnection(switchPos, blockPos));
 	ASSERT_TRUE(circuit->tryCreateConnection(blockPos, lightPos));
 
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
-	evaluator->getEvalLogicSimulator().setState(switchPos, H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), H);
+	EXPECT_EQ(simulator->getState(lightPos), L);
+	simulator->setState(switchPos, H);
+	EXPECT_EQ(simulator->getState(lightPos), H);
 
 	// disconnect light
 	ASSERT_TRUE(circuit->tryRemoveConnection(blockPos, lightPos));
 
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), Z);
-	evaluator->getEvalLogicSimulator().setState(switchPos, L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), Z);
+	EXPECT_EQ(simulator->getState(lightPos), Z);
+	simulator->setState(switchPos, L);
+	EXPECT_EQ(simulator->getState(lightPos), Z);
 }
 
 TEST_F(DISABLED_PassthroughEvaluatorTest, DoublePassthrough) {
@@ -155,11 +155,11 @@ TEST_F(DISABLED_PassthroughEvaluatorTest, DoublePassthrough) {
 	ASSERT_TRUE(circuit->tryCreateConnection(block1Pos, block2Pos));
 	ASSERT_TRUE(circuit->tryCreateConnection(block2Pos, lightPos));
 
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
-	evaluator->getEvalLogicSimulator().setState(switchPos, H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), H);
-	evaluator->getEvalLogicSimulator().setState(switchPos, L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
+	EXPECT_EQ(simulator->getState(lightPos), L);
+	simulator->setState(switchPos, H);
+	EXPECT_EQ(simulator->getState(lightPos), H);
+	simulator->setState(switchPos, L);
+	EXPECT_EQ(simulator->getState(lightPos), L);
 }
 
 TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughLoop) {
@@ -178,11 +178,11 @@ TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughLoop) {
 	ASSERT_TRUE(circuit->tryCreateConnection(block2Pos, block1Pos));
 	ASSERT_TRUE(circuit->tryCreateConnection(block2Pos, lightPos));
 
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
-	evaluator->getEvalLogicSimulator().setState(switchPos, H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), H);
-	evaluator->getEvalLogicSimulator().setState(switchPos, L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
+	EXPECT_EQ(simulator->getState(lightPos), L);
+	simulator->setState(switchPos, H);
+	EXPECT_EQ(simulator->getState(lightPos), H);
+	simulator->setState(switchPos, L);
+	EXPECT_EQ(simulator->getState(lightPos), L);
 }
 
 TEST_F(DISABLED_PassthroughEvaluatorTest, DeleteSwitch) {
@@ -197,17 +197,17 @@ TEST_F(DISABLED_PassthroughEvaluatorTest, DeleteSwitch) {
 	ASSERT_TRUE(circuit->tryCreateConnection(switchPos, blockPos));
 	ASSERT_TRUE(circuit->tryCreateConnection(blockPos, lightPos));
 
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
-	evaluator->getEvalLogicSimulator().setState(switchPos, H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), H);
+	EXPECT_EQ(simulator->getState(lightPos), L);
+	simulator->setState(switchPos, H);
+	EXPECT_EQ(simulator->getState(lightPos), H);
 
 	// delete switch
 	ASSERT_TRUE(circuit->tryRemoveBlock(switchPos));
 
 	// states should no longer propagate
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L); // pulls state from switch inside passthrough
-	evaluator->getEvalLogicSimulator().setState(switchPos, L); // does nothing since switch is deleted
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
+	EXPECT_EQ(simulator->getState(lightPos), L); // pulls state from switch inside passthrough
+	simulator->setState(switchPos, L); // does nothing since switch is deleted
+	EXPECT_EQ(simulator->getState(lightPos), L);
 }
 
 TEST_F(DISABLED_PassthroughEvaluatorTest, DeleteLight) {
@@ -222,17 +222,17 @@ TEST_F(DISABLED_PassthroughEvaluatorTest, DeleteLight) {
 	ASSERT_TRUE(circuit->tryCreateConnection(switchPos, blockPos));
 	ASSERT_TRUE(circuit->tryCreateConnection(blockPos, lightPos));
 
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
-	evaluator->getEvalLogicSimulator().setState(switchPos, H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), H);
+	EXPECT_EQ(simulator->getState(lightPos), L);
+	simulator->setState(switchPos, H);
+	EXPECT_EQ(simulator->getState(lightPos), H);
 
 	// delete light
 	ASSERT_TRUE(circuit->tryRemoveBlock(lightPos));
 
 	// states should no longer propagate
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), X);
-	evaluator->getEvalLogicSimulator().setState(switchPos, L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), X);
+	EXPECT_EQ(simulator->getState(lightPos), X);
+	simulator->setState(switchPos, L);
+	EXPECT_EQ(simulator->getState(lightPos), X);
 }
 
 TEST_F(DISABLED_PassthroughEvaluatorTest, MultipleSwitches) {
@@ -250,19 +250,19 @@ TEST_F(DISABLED_PassthroughEvaluatorTest, MultipleSwitches) {
 	ASSERT_TRUE(circuit->tryCreateConnection(switch2Pos, blockPos));
 	ASSERT_TRUE(circuit->tryCreateConnection(blockPos, lightPos));
 
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
-	evaluator->getEvalLogicSimulator().setState(switch1Pos, H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), X); // contention
-	evaluator->getEvalLogicSimulator().setState(switch1Pos, L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
-	evaluator->getEvalLogicSimulator().setState(switch2Pos, H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), X); // contention
-	evaluator->getEvalLogicSimulator().setState(switch1Pos, H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), H);
-	evaluator->getEvalLogicSimulator().setState(switch2Pos, L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), X); // contention
-	evaluator->getEvalLogicSimulator().setState(switch1Pos, L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
+	EXPECT_EQ(simulator->getState(lightPos), L);
+	simulator->setState(switch1Pos, H);
+	EXPECT_EQ(simulator->getState(lightPos), X); // contention
+	simulator->setState(switch1Pos, L);
+	EXPECT_EQ(simulator->getState(lightPos), L);
+	simulator->setState(switch2Pos, H);
+	EXPECT_EQ(simulator->getState(lightPos), X); // contention
+	simulator->setState(switch1Pos, H);
+	EXPECT_EQ(simulator->getState(lightPos), H);
+	simulator->setState(switch2Pos, L);
+	EXPECT_EQ(simulator->getState(lightPos), X); // contention
+	simulator->setState(switch1Pos, L);
+	EXPECT_EQ(simulator->getState(lightPos), L);
 }
 
 TEST_F(DISABLED_PassthroughEvaluatorTest, MultipleSwitchesDeleteOne) {
@@ -280,15 +280,15 @@ TEST_F(DISABLED_PassthroughEvaluatorTest, MultipleSwitchesDeleteOne) {
 	ASSERT_TRUE(circuit->tryCreateConnection(switch2Pos, blockPos));
 	ASSERT_TRUE(circuit->tryCreateConnection(blockPos, lightPos));
 
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
-	evaluator->getEvalLogicSimulator().setState(switch1Pos, H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), X); // contention
+	EXPECT_EQ(simulator->getState(lightPos), L);
+	simulator->setState(switch1Pos, H);
+	EXPECT_EQ(simulator->getState(lightPos), X); // contention
 
 	// delete one switch
 	ASSERT_TRUE(circuit->tryRemoveBlock(switch2Pos));
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), H);
-	evaluator->getEvalLogicSimulator().setState(switch1Pos, L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
+	EXPECT_EQ(simulator->getState(lightPos), H);
+	simulator->setState(switch1Pos, L);
+	EXPECT_EQ(simulator->getState(lightPos), L);
 }
 
 TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughMoveSwitch) {
@@ -303,21 +303,21 @@ TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughMoveSwitch) {
 	ASSERT_TRUE(circuit->tryCreateConnection(switchPos, blockPos));
 	ASSERT_TRUE(circuit->tryCreateConnection(blockPos, lightPos));
 
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
-	evaluator->getEvalLogicSimulator().setState(switchPos, H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), H);
+	EXPECT_EQ(simulator->getState(lightPos), L);
+	simulator->setState(switchPos, H);
+	EXPECT_EQ(simulator->getState(lightPos), H);
 
 	// move switch
 	ASSERT_TRUE(passthroughCircuit->tryMoveBlock(Position(-2, -2), Position(-2, -3), Orientation()));
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L); // pulls state from switch inside passthrough
-	evaluator->getEvalLogicSimulator().setState(switchPos, L); // does nothing since switch is moved
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
+	EXPECT_EQ(simulator->getState(lightPos), L); // pulls state from switch inside passthrough
+	simulator->setState(switchPos, L); // does nothing since switch is moved
+	EXPECT_EQ(simulator->getState(lightPos), L);
 
 	// move back
 	ASSERT_TRUE(passthroughCircuit->tryMoveBlock(Position(-2, -3), Position(-2, -2), Orientation()));
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
-	evaluator->getEvalLogicSimulator().setState(switchPos, H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), H);
+	EXPECT_EQ(simulator->getState(lightPos), L);
+	simulator->setState(switchPos, H);
+	EXPECT_EQ(simulator->getState(lightPos), H);
 }
 
 TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughMoveLight) {
@@ -332,19 +332,19 @@ TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughMoveLight) {
 	ASSERT_TRUE(circuit->tryCreateConnection(switchPos, blockPos));
 	ASSERT_TRUE(circuit->tryCreateConnection(blockPos, lightPos));
 
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
-	evaluator->getEvalLogicSimulator().setState(switchPos, H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), H);
+	EXPECT_EQ(simulator->getState(lightPos), L);
+	simulator->setState(switchPos, H);
+	EXPECT_EQ(simulator->getState(lightPos), H);
 
 	// move light
 	ASSERT_TRUE(passthroughCircuit->tryMoveBlock(Position(2, -2), Position(2, -3), Orientation()));
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), Z); // light is moved, so no input
-	evaluator->getEvalLogicSimulator().setState(switchPos, L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), Z);
+	EXPECT_EQ(simulator->getState(lightPos), Z); // light is moved, so no input
+	simulator->setState(switchPos, L);
+	EXPECT_EQ(simulator->getState(lightPos), Z);
 
 	// move back
 	ASSERT_TRUE(passthroughCircuit->tryMoveBlock(Position(2, -3), Position(2, -2), Orientation()));
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
-	evaluator->getEvalLogicSimulator().setState(switchPos, H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), H);
+	EXPECT_EQ(simulator->getState(lightPos), L);
+	simulator->setState(switchPos, H);
+	EXPECT_EQ(simulator->getState(lightPos), H);
 }

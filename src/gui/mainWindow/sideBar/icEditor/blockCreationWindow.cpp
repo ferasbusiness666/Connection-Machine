@@ -677,8 +677,8 @@ void BlockCreationWindow::updateSelected(std::string string) {
 	std::vector<std::string> parts = stringSplit(string, '/');
 	std::stringstream evalName(parts.front());
 	std::string str;
-	unsigned int evalId;
-	evalName >> str >> evalId;
+	unsigned int simulatorId;
+	evalName >> str >> simulatorId;
 	Address address;
 	for (unsigned int i = 1; i < parts.size(); i++) {
 		std::string part = parts[i];
@@ -693,5 +693,5 @@ void BlockCreationWindow::updateSelected(std::string string) {
 	}
 
 	CircuitView* circuitView = mainWindow.getActiveCircuitViewWidget()->getCircuitView();
-	circuitView->setEvaluator(evaluator_id_t(evalId), address);
+	circuitView->setSimulatoruator(simulator_id_t(simulatorId), address);
 }

@@ -5,7 +5,7 @@
 #include <RmlUi/Core/Vertex.h>
 #include <glm/ext/vector_float2.hpp>
 
-#include "backend/evaluator/evaluator.h"
+#include "backend/evaluator/simulator/evalLogicSimulator.h"
 #include "gui/sdl/sdlWindow.h"
 
 #include "renderer/windowRenderer.h"
@@ -77,7 +77,7 @@ public:
 	ViewportId registerViewport(WindowId windowId, glm::vec2 origin, glm::vec2 size);
 	void moveViewport(ViewportId viewportId, WindowId windowId, glm::vec2 origin, glm::vec2 size);
 	void moveViewportView(ViewportId viewportId, FPosition topLeft, FPosition bottomRight);
-	void setViewportEvaluator(ViewportId viewportId, const Evaluator* evaluator, Address address); // tmp circuit
+	void setViewportSimulatoruator(ViewportId viewportId, const EvalLogicSimulator* simulator, Address address); // tmp circuit
 	void resetViewport(ViewportId viewportId);
 	void deregisterViewport(ViewportId viewportId);
 

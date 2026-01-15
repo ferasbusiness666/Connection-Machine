@@ -3,12 +3,12 @@
 #include "backend/evaluator/evaluator.h"
 #include "loggingTestSetup.h"
 
-class SwitchAndLightEvaluatorTest : public ::testing::Test {
+class SwitchAndLightSimulatoruatorTest : public ::testing::Test {
 protected:
 	void SetUp() override;
 	void TearDown() override;
 	Environment environment {false};
-	Evaluator* evaluator = nullptr;
+	EvalLogicSimulator* simulator = nullptr;
 	SharedCircuit circuit = nullptr;
 	logic_state_t L = logic_state_t::LOW;
 	logic_state_t H = logic_state_t::HIGH;
@@ -16,78 +16,78 @@ protected:
 	logic_state_t X = logic_state_t::UNDEFINED;
 };
 
-void SwitchAndLightEvaluatorTest::SetUp() {
+void SwitchAndLightSimulatoruatorTest::SetUp() {
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
 	circuit = environment.getBackend().getCircuit(circuitId);
-	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuitId).value();
-	evaluator = environment.getBackend().getEvaluator(evalId);
-	ASSERT_TRUE(evaluator->getEvalLogicSimulator().isPause());
+	simulator_id_t simulatorId = environment.getBackend().createSimulator(circuitId).value();
+	simulator = environment.getBackend().getSimulator(simulatorId);
+	ASSERT_TRUE(simulator->isPause());
 }
 
-void SwitchAndLightEvaluatorTest::TearDown() {
+void SwitchAndLightSimulatoruatorTest::TearDown() {
 	circuit.reset();
-	evaluator = nullptr;
+	simulator = nullptr;
 }
 
-TEST_F(SwitchAndLightEvaluatorTest, SingleSwitch) {
+TEST_F(SwitchAndLightSimulatoruatorTest, SingleSwitch) {
 	Position switchPos(0, 0);
 	ASSERT_TRUE(circuit->tryInsertBlock(switchPos, 0, BlockType::SWITCH));
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(switchPos), L);
-	evaluator->getEvalLogicSimulator().setState(switchPos, H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(switchPos), H);
-	evaluator->getEvalLogicSimulator().setState(switchPos, L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(switchPos), L);
+	EXPECT_EQ(simulator->getState(switchPos), L);
+	simulator->setState(switchPos, H);
+	EXPECT_EQ(simulator->getState(switchPos), H);
+	simulator->setState(switchPos, L);
+	EXPECT_EQ(simulator->getState(switchPos), L);
 }
 
-TEST_F(SwitchAndLightEvaluatorTest, InteractFail) {
+TEST_F(SwitchAndLightSimulatoruatorTest, InteractFail) {
 	Position nothingPos(10, 10);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(nothingPos), X);
+	EXPECT_EQ(simulator->getState(nothingPos), X);
 	logging_test::setExpectedLogCounts(1, 0);
-	evaluator->getEvalLogicSimulator().setState(nothingPos, H); // should log an error
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(nothingPos), X);
+	simulator->setState(nothingPos, H); // should log an error
+	EXPECT_EQ(simulator->getState(nothingPos), X);
 }
 
-TEST_F(SwitchAndLightEvaluatorTest, SwitchAndLight) {
+TEST_F(SwitchAndLightSimulatoruatorTest, SwitchAndLight) {
 	Position switchPos(0, 0);
 	Position lightPos(1, 0);
 	ASSERT_TRUE(circuit->tryInsertBlock(switchPos, 0, BlockType::SWITCH));
 	ASSERT_TRUE(circuit->tryInsertBlock(lightPos, 0, BlockType::LIGHT));
 
 	// switch and light not connected yet
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(switchPos), L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), Z);
-	evaluator->getEvalLogicSimulator().setState(switchPos, H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(switchPos), H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), Z);
-	evaluator->getEvalLogicSimulator().setState(switchPos, L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(switchPos), L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), Z);
+	EXPECT_EQ(simulator->getState(switchPos), L);
+	EXPECT_EQ(simulator->getState(lightPos), Z);
+	simulator->setState(switchPos, H);
+	EXPECT_EQ(simulator->getState(switchPos), H);
+	EXPECT_EQ(simulator->getState(lightPos), Z);
+	simulator->setState(switchPos, L);
+	EXPECT_EQ(simulator->getState(switchPos), L);
+	EXPECT_EQ(simulator->getState(lightPos), Z);
 
 	// connect switch to light
 	ASSERT_TRUE(circuit->tryCreateConnection(switchPos, lightPos));
 
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(switchPos), L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
-	evaluator->getEvalLogicSimulator().setState(switchPos, H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(switchPos), H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), H);
-	evaluator->getEvalLogicSimulator().setState(switchPos, L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(switchPos), L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
+	EXPECT_EQ(simulator->getState(switchPos), L);
+	EXPECT_EQ(simulator->getState(lightPos), L);
+	simulator->setState(switchPos, H);
+	EXPECT_EQ(simulator->getState(switchPos), H);
+	EXPECT_EQ(simulator->getState(lightPos), H);
+	simulator->setState(switchPos, L);
+	EXPECT_EQ(simulator->getState(switchPos), L);
+	EXPECT_EQ(simulator->getState(lightPos), L);
 
 	// disconnect switch from light
 	ASSERT_TRUE(circuit->tryRemoveConnection(switchPos, lightPos));
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(switchPos), L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), Z);
-	evaluator->getEvalLogicSimulator().setState(switchPos, H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(switchPos), H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), Z);
-	evaluator->getEvalLogicSimulator().setState(switchPos, L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(switchPos), L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), Z);
+	EXPECT_EQ(simulator->getState(switchPos), L);
+	EXPECT_EQ(simulator->getState(lightPos), Z);
+	simulator->setState(switchPos, H);
+	EXPECT_EQ(simulator->getState(switchPos), H);
+	EXPECT_EQ(simulator->getState(lightPos), Z);
+	simulator->setState(switchPos, L);
+	EXPECT_EQ(simulator->getState(switchPos), L);
+	EXPECT_EQ(simulator->getState(lightPos), Z);
 }
 
-TEST_F(SwitchAndLightEvaluatorTest, TwoSwitchesAndLight) {
+TEST_F(SwitchAndLightSimulatoruatorTest, TwoSwitchesAndLight) {
 	Position switch1Pos(0, 0);
 	Position switch2Pos(1, 0);
 	Position lightPos(2, 0);
@@ -95,35 +95,35 @@ TEST_F(SwitchAndLightEvaluatorTest, TwoSwitchesAndLight) {
 	ASSERT_TRUE(circuit->tryInsertBlock(switch2Pos, 0, BlockType::SWITCH));
 	ASSERT_TRUE(circuit->tryInsertBlock(lightPos, 0, BlockType::LIGHT));
 
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(switch1Pos), L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(switch2Pos), L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), Z);
+	EXPECT_EQ(simulator->getState(switch1Pos), L);
+	EXPECT_EQ(simulator->getState(switch2Pos), L);
+	EXPECT_EQ(simulator->getState(lightPos), Z);
 
 	// connect switches to light
 	ASSERT_TRUE(circuit->tryCreateConnection(switch1Pos, lightPos));
 	ASSERT_TRUE(circuit->tryCreateConnection(switch2Pos, lightPos));
 
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(switch1Pos), L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(switch2Pos), L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
+	EXPECT_EQ(simulator->getState(switch1Pos), L);
+	EXPECT_EQ(simulator->getState(switch2Pos), L);
+	EXPECT_EQ(simulator->getState(lightPos), L);
 
-	evaluator->getEvalLogicSimulator().setState(switch1Pos, H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(switch1Pos), H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(switch2Pos), L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), X); // contention
+	simulator->setState(switch1Pos, H);
+	EXPECT_EQ(simulator->getState(switch1Pos), H);
+	EXPECT_EQ(simulator->getState(switch2Pos), L);
+	EXPECT_EQ(simulator->getState(lightPos), X); // contention
 
-	evaluator->getEvalLogicSimulator().setState(switch2Pos, H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(switch1Pos), H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(switch2Pos), H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), H);
+	simulator->setState(switch2Pos, H);
+	EXPECT_EQ(simulator->getState(switch1Pos), H);
+	EXPECT_EQ(simulator->getState(switch2Pos), H);
+	EXPECT_EQ(simulator->getState(lightPos), H);
 
-	evaluator->getEvalLogicSimulator().setState(switch1Pos, L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(switch1Pos), L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(switch2Pos), H);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), X); // contention
+	simulator->setState(switch1Pos, L);
+	EXPECT_EQ(simulator->getState(switch1Pos), L);
+	EXPECT_EQ(simulator->getState(switch2Pos), H);
+	EXPECT_EQ(simulator->getState(lightPos), X); // contention
 
-	evaluator->getEvalLogicSimulator().setState(switch2Pos, L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(switch1Pos), L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(switch2Pos), L);
-	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(lightPos), L);
+	simulator->setState(switch2Pos, L);
+	EXPECT_EQ(simulator->getState(switch1Pos), L);
+	EXPECT_EQ(simulator->getState(switch2Pos), L);
+	EXPECT_EQ(simulator->getState(lightPos), L);
 }

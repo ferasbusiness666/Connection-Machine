@@ -72,12 +72,12 @@ EvalConnectionPoint LayerRunner::getMappedEvalConnectionPoint(EvalConnectionPoin
 
 std::vector<EvalConnectionPoint> LayerRunner::getReversedMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint) const {
 	std::vector<EvalConnectionPoint> evalConnectionPoints = { evalConnectionPoint };
-	std::vector<EvalConnectionPoint> lastEvalConnectionPoints;
+	std::vector<EvalConnectionPoint> lastSimulatorConnectionPoints;
 	const EvalLayerState* layerState = &getOutputLayer();
 	for (unsigned int i = 1; true; i++) {
-		lastEvalConnectionPoints = std::move(evalConnectionPoints);
+		lastSimulatorConnectionPoints = std::move(evalConnectionPoints);
 		evalConnectionPoints.clear();
-		for (EvalConnectionPoint point : lastEvalConnectionPoints) {
+		for (EvalConnectionPoint point : lastSimulatorConnectionPoints) {
 			auto connectionPointIterPair = layerState->getConnectionPointReverseRemapping().equal_range(point);
 			for (auto iter = connectionPointIterPair.first; iter != connectionPointIterPair.second; iter++) {
 				evalConnectionPoints.push_back(iter->second);

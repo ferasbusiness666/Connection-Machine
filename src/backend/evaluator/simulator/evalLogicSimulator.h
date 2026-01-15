@@ -1,20 +1,28 @@
 #ifndef evalLogicSimulator_h
 #define evalLogicSimulator_h
 
+#include "backend/circuit/circuitDefs.h"
+#include "backend/address.h"
 #include "logicSimulator.h"
 #include "simulatorDefs.h"
 
 class EvaluatorInternal;
 class BlockDataManager;
+class CircuitManager;
 class Address;
 
 class EvalLogicSimulator {
 public:
 	static constexpr double MIN_TICKRATE_DECREASABLE = 0.1;
 
-	EvalLogicSimulator(simulator_id_t simulatorId, const BlockDataManager& blockDataManager, const EvaluatorInternal& evaluatorInternal, DataUpdateEventManager& dataUpdateEventManager);
+	EvalLogicSimulator(simulator_id_t simulatorId, const CircuitManager& circuitManager, circuit_id_t circuitId, DataUpdateEventManager& dataUpdateEventManager);
+	~EvalLogicSimulator();
 
+	std::string getSimulatorName() const;
 	simulator_id_t getSimulatorId() const { return simulatorId; }
+	circuit_id_t getCircuitId() const { return circuitId; }
+
+	circuit_id_t getCircuitId(const Address& address) const;
 
 	// --------------- Controls ---------------
 
@@ -72,9 +80,10 @@ public:
 private:
 	std::vector<simulator_gate_id_t> dirtySimulatorIds;
 	LogicSimulator logicSimulator;
-	const BlockDataManager& blockDataManager;
+	const CircuitManager& circuitManager;
 	const EvaluatorInternal& evaluatorInternal;
 	simulator_id_t simulatorId;
+	circuit_id_t circuitId;
 
 	std::unordered_map<eval_gate_id, simulator_gate_id_t> gateIdMapping;
 	mutable std::map<void*, SimulatorMappingUpdateListener> simulatorMappingUpdateListeners;

@@ -4,14 +4,14 @@
 #include "backend/circuit/circuit.h"
 #include "gui/helper/menuTree.h"
 
-class EvaluatorManager;
+class SimulatorManager;
 class CircuitManager;
 class MainWindow;
 
 class EvalWindow {
 public:
 	EvalWindow(
-		EvaluatorManager& evaluatorManager,
+		SimulatorManager& simulatorManager,
 		CircuitManager& circuitManager,
 		MainWindow& mainWindow,
 		DataUpdateEventManager& dataUpdateEventManager,
@@ -25,13 +25,13 @@ public:
 private:
 	void updateSelected(std::string string);
 	void makePaths(std::vector<std::vector<std::string>>& paths, std::vector<std::string>& path/*, const EvalAddressTree& addressTree*/);
-	void selectEvaluatorForCircuit(circuit_id_t circuitId);
+	void selectSimulatoruatorForCircuit(circuit_id_t circuitId);
 	void onCircuitCreatedSelect(const DataUpdateEventManager::EventData& event);
 
 	MenuTree menuTree;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 	MainWindow& mainWindow;
-	EvaluatorManager& evaluatorManager;
+	SimulatorManager& simulatorManager;
 	CircuitManager& circuitManager;
 };
 

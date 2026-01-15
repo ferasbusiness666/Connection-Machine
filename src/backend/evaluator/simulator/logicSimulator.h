@@ -49,8 +49,8 @@ public:
 
 	logic_state_t getState(simulator_gate_id_t id) const;
 	std::vector<logic_state_t> getStates(const std::vector<simulator_gate_id_t>& ids) const;
-	std::optional<simulator_gate_id_t> getOutputPortId(simulator_gate_id_t simId, connection_end_id_t portId) const;
-	BlockData::ConnectionData::PortType getPortType(simulator_gate_id_t simId, connection_end_id_t portId) const;
+	std::optional<simulator_gate_id_t> getOutputPortId(simulator_gate_id_t simulatorId, connection_end_id_t portId) const;
+	BlockData::ConnectionData::PortType getPortType(simulator_gate_id_t simulatorId, connection_end_id_t portId) const;
 
 	simulator_gate_id_t addGate(const BlockType blockType);
 	void removeGate(simulator_gate_id_t gateId);
@@ -229,9 +229,9 @@ private:
 
 	inline void updateEmaTickrate(const std::chrono::steady_clock::time_point& currentTime, std::chrono::steady_clock::time_point& lastTickTime, bool& isFirstTick);
 
-	void addInputToGate(simulator_gate_id_t simId, simulator_gate_id_t inputId, connection_end_id_t portId);
-	void removeInputFromGate(simulator_gate_id_t simId, simulator_gate_id_t inputId, connection_end_id_t portId);
-	std::optional<std::vector<simulator_gate_id_t>> getOutputSimIdsFromGate(simulator_gate_id_t simId) const;
+	void addInputToGate(simulator_gate_id_t simulatorId, simulator_gate_id_t inputId, connection_end_id_t portId);
+	void removeInputFromGate(simulator_gate_id_t simulatorId, simulator_gate_id_t inputId, connection_end_id_t portId);
+	std::optional<std::vector<simulator_gate_id_t>> getOutputSimulatorIdsFromGate(simulator_gate_id_t simulatorId) const;
 
 	void updateGateLocation(simulator_gate_id_t gateId, SimGateType gateType, size_t gateIndex);
 	void removeGateLocation(simulator_gate_id_t gateId);

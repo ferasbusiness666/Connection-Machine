@@ -10,7 +10,7 @@ class CircuitManager;
 
 class EvaluatorInternal {
 public:
-	EvaluatorInternal(circuit_id_t circuitId, const CircuitManager& circuitManager, DataUpdateEventManager::DataUpdateEventReceiver& receiver);
+	EvaluatorInternal(const Circuit& circuit, const CircuitManager& circuitManager, DataUpdateEventManager::DataUpdateEventReceiver& receiver);
 	void startEdit();
 	void endEdit();
 	void addBlock(Position position, Orientation orientation, BlockType blockType);
@@ -38,7 +38,7 @@ private:
 	std::unordered_map<eval_gate_id, std::pair<Position, Orientation>> positionReverseRemapping;
 	LayerRunner layerRunner;
 	const CircuitManager& circuitManager;
-	const circuit_id_t circuitId;
+	const Circuit& circuit;
 };
 
 #endif /* evaluatorInternal_h */

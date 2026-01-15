@@ -13,15 +13,17 @@
 class CircuitManager;
 class GeneratedCircuit;
 class ParsedCircuit;
+class Evaluator;
 
 typedef std::function<void(DifferenceSharedPtr, circuit_id_t)> CircuitDiffListenerFunction;
 
 class Circuit {
 	friend class CircuitManager;
 public:
-	Circuit(circuit_id_t circuitId, CircuitManager& circuitManager, BlockDataManager& blockDataManager, DataUpdateEventManager& dataUpdateEventManager, const std::string& name, const std::string& uuid);
+	Circuit(circuit_id_t circuitId, CircuitManager& circuitManager, DataUpdateEventManager& dataUpdateEventManager, const std::string& name, const std::string& uuid);
 	Circuit(const Circuit&) = delete;
     Circuit& operator=(const Circuit&) = delete;
+	~Circuit();
 
 	void clear(bool clearUndoTree = false);
 
@@ -31,6 +33,9 @@ public:
 	inline std::string getCircuitNameNumber() const { return circuitName + " : " + std::to_string(circuitId); }
 	inline const std::string& getCircuitName() const { return circuitName; }
 	void setCircuitName(const std::string& name);
+
+	Evaluator& getEvaluator() { return *evaluator; }
+	const Evaluator& getEvaluator() const { return *evaluator; }
 
 	inline unsigned long long getEditCount() const { return editCount; }
 	void addEdit() { editCount++; }
@@ -116,12 +121,7 @@ private:
 	void startUndo() { midUndo = true; }
 	void endUndo() { midUndo = false; }
 
-	void sendDifference(DifferenceSharedPtr difference) {
-		if (difference->empty()) return;
-		editCount++;
-		if (!midUndo) undoSystem.addDifference(difference);
-		for (const CircuitDiffListenerData& circuitDiffListenerData : listenerFunctions) circuitDiffListenerData.circuitDiffListenerFunction(difference, circuitId);
-	}
+	void sendDifference(DifferenceSharedPtr difference);
 
 	const Position stackBottom = Position(10000000, -10000000);
 	Position stackTop = stackBottom;
@@ -145,6 +145,8 @@ private:
 	bool editable = true;
 
 	unsigned long long editCount = 0;
+
+	std::unique_ptr<Evaluator> evaluator;
 };
 
 #endif /* circuit_h */

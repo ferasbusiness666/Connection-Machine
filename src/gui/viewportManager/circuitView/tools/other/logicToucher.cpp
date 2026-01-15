@@ -13,8 +13,8 @@ void LogicToucher::activate() {
 
 bool LogicToucher::press(const Event* event) {
 	if (!circuitView || !circuit) return false;
-	Evaluator* evaluator = circuitView->getEvaluator();
-	if (!evaluator) return false;
+	EvalLogicSimulator* simulator = circuitView->getSimulator();
+	if (!simulator) return false;
 
 	const PositionEvent* positionEvent = event->cast<PositionEvent>();
 	if (!positionEvent) return false;
@@ -45,9 +45,9 @@ bool LogicToucher::press(const Event* event) {
 			default:
 				Address address = circuitView->getAddress();
 				address.addBlockId(clickPosition);
-				logic_state_t state = evaluator->getEvalLogicSimulator().getState(address);
+				logic_state_t state = simulator->getState(address);
 				state = (state == logic_state_t::HIGH) ? logic_state_t::LOW : logic_state_t::HIGH;
-				evaluator->getEvalLogicSimulator().setState(address, state);
+				simulator->setState(address, state);
 				sendEventToCircuitView(StateSetEvent("CircuitStateSet", clickPosition, state));
 			}
 		}
@@ -58,15 +58,15 @@ bool LogicToucher::press(const Event* event) {
 
 bool LogicToucher::unpress(const Event* event) {
 	if (!circuitView || !circuit) return false;
-	Evaluator* evaluator = circuitView->getEvaluator();
-	if (!evaluator) return false;
+	EvalLogicSimulator* simulator = circuitView->getSimulator();
+	if (!simulator) return false;
 
 	if (clicked) {
 		const Block* block = circuit->getBlockContainer().getBlock(clickPosition);
 		if (block && block->type() == BlockType::BUTTON) {
 			Address address = circuitView->getAddress();
 			address.addBlockId(clickPosition);
-			evaluator->getEvalLogicSimulator().setState(address, logic_state_t::LOW);
+			simulator->setState(address, logic_state_t::LOW);
 			sendEventToCircuitView(StateSetEvent("CircuitStateSet", clickPosition, logic_state_t::LOW));
 		}
 		clicked = false;
@@ -77,15 +77,15 @@ bool LogicToucher::unpress(const Event* event) {
 
 bool LogicToucher::pointerMove(const Event* event) {
 	if (!circuitView || !circuit) return false;
-	Evaluator* evaluator = circuitView->getEvaluator();
-	if (!evaluator) return false;
+	EvalLogicSimulator* simulator = circuitView->getSimulator();
+	if (!simulator) return false;
 
 	if (clicked && lastPointerPosition != clickPosition) {
 		const Block* block = circuit->getBlockContainer().getBlock(clickPosition);
 		if (block && block->type() == BlockType::BUTTON) {
 			Address address = circuitView->getAddress();
 			address.addBlockId(clickPosition);
-			evaluator->getEvalLogicSimulator().setState(address, logic_state_t::LOW);
+			simulator->setState(address, logic_state_t::LOW);
 		}
 		clickPosition = lastPointerPosition;
 		block = circuit->getBlockContainer().getBlock(clickPosition);
@@ -110,9 +110,9 @@ bool LogicToucher::pointerMove(const Event* event) {
 			default:
 				Address address = circuitView->getAddress();
 				address.addBlockId(clickPosition);
-				logic_state_t state = evaluator->getEvalLogicSimulator().getState(address);
+				logic_state_t state = simulator->getState(address);
 				state = (state == logic_state_t::HIGH) ? logic_state_t::LOW : logic_state_t::HIGH;
-				evaluator->getEvalLogicSimulator().setState(address, state);
+				simulator->setState(address, state);
 				sendEventToCircuitView(StateSetEvent("CircuitStateSet", clickPosition, state));
 			}
 		}

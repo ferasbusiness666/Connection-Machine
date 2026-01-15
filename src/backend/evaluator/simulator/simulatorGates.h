@@ -20,7 +20,7 @@ public:
 	}
 	virtual simulator_gate_id_t getIdOfOutputPort(connection_end_id_t portId) const = 0;
 	virtual void resetState(bool realistic, IdVector<simulator_gate_id_t, logic_state_t>& states) = 0;
-	virtual std::vector<simulator_gate_id_t> getOutputSimIds() const = 0;
+	virtual std::vector<simulator_gate_id_t> getOutputSimulatorIds() const = 0;
 
 	simulator_gate_id_t getId() const { return id; }
 
@@ -55,7 +55,7 @@ public:
 		return id;
 	}
 
-	std::vector<simulator_gate_id_t> getOutputSimIds() const override {
+	std::vector<simulator_gate_id_t> getOutputSimulatorIds() const override {
 		return {id};
 	}
 };
@@ -307,7 +307,7 @@ struct JunctionGate : public SimulatorGate {
 		return id;
 	}
 
-	std::vector<simulator_gate_id_t> getOutputSimIds() const override {
+	std::vector<simulator_gate_id_t> getOutputSimulatorIds() const override {
 		return {id};
 	}
 
@@ -470,7 +470,7 @@ struct TristateBufferGate : public SimulatorGate {
 		return id;
 	}
 
-	std::vector<simulator_gate_id_t> getOutputSimIds() const override {
+	std::vector<simulator_gate_id_t> getOutputSimulatorIds() const override {
 		return {id};
 	}
 
@@ -509,7 +509,7 @@ public:
 		return id;
 	}
 
-	std::vector<simulator_gate_id_t> getOutputSimIds() const override {
+	std::vector<simulator_gate_id_t> getOutputSimulatorIds() const override {
 		return {id};
 	}
 };
@@ -641,7 +641,7 @@ struct PortsToIntGate : public SimulatorGate {
 	simulator_gate_id_t getIdOfOutputPort(connection_end_id_t portId) const override {
 		return id;
 	}
-	std::vector<simulator_gate_id_t> getOutputSimIds() const override {
+	std::vector<simulator_gate_id_t> getOutputSimulatorIds() const override {
 		return {id};
 	}
 	BlockData::ConnectionData::PortType getPortType(connection_end_id_t portId) const override {

@@ -7,14 +7,27 @@
 #include "backend/proceduralCircuits/generatedCircuit.h"
 #include "logging/logging.h"
 #include "parsedCircuit.h"
+#include "backend/evaluator/evaluator.h"
+#include "backend/circuit/circuitManager.h"
 
-Circuit::Circuit(circuit_id_t circuitId, CircuitManager& circuitManager, BlockDataManager& blockDataManager, DataUpdateEventManager& dataUpdateEventManager, const std::string& name, const std::string& uuid) :
-	circuitId(circuitId), blockContainer(circuitManager, blockDataManager), circuitUUID(uuid), circuitName(name), dataUpdateEventManager(dataUpdateEventManager), dataUpdateEventReceiver(dataUpdateEventManager) {
+Circuit::Circuit(
+	circuit_id_t circuitId,
+	CircuitManager& circuitManager,
+	DataUpdateEventManager& dataUpdateEventManager,
+	const std::string& name,
+	const std::string& uuid
+) :
+	circuitId(circuitId), blockContainer(circuitManager), circuitUUID(uuid), circuitName(name),
+	dataUpdateEventManager(dataUpdateEventManager), dataUpdateEventReceiver(dataUpdateEventManager),
+	evaluator(std::make_unique<Evaluator>(circuitManager, *this, dataUpdateEventManager))
+{
 	dataUpdateEventReceiver.linkFunction("preBlockSizeChange", std::bind(&Circuit::blockSizeChange, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("preBlockDataSetConnection", std::bind(&Circuit::addConnectionPort, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("preBlockDataPortBitConfigurationSet", std::bind(&Circuit::setConnectionPortBitwidth, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("preBlockDataRemoveConnection", std::bind(&Circuit::removeConnectionPort, this, std::placeholders::_1));
 }
+
+Circuit::~Circuit() = default;
 
 void Circuit::clear(bool clearUndoTree) {
 	DifferenceSharedPtr difference = std::make_shared<Difference>();
@@ -667,4 +680,12 @@ nlohmann::json Circuit::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	stateJson["editable"] = editable;
 	stateJson["editCount"] = editCount;
 	return stateJson;
+}
+
+void Circuit::sendDifference(DifferenceSharedPtr difference) {
+	if (difference->empty()) return;
+	editCount++;
+	if (!midUndo) undoSystem.addDifference(difference);
+	evaluator->makeEdit(difference);
+	for (const CircuitDiffListenerData& circuitDiffListenerData : listenerFunctions) circuitDiffListenerData.circuitDiffListenerFunction(difference, circuitId);
 }
