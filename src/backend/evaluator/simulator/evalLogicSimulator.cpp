@@ -12,7 +12,7 @@ EvalLogicSimulator::EvalLogicSimulator(
 	circuit_id_t circuitId,
 	DataUpdateEventManager& dataUpdateEventManager
 ) : logicSimulator(simulatorId, dirtySimulatorIds, dataUpdateEventManager), circuitManager(circuitManager), circuitId(circuitId),
-	evaluatorInternal(circuitManager.getCircuit(circuitId)->getEvaluator().getSimulatorInternal()), simulatorId(simulatorId) {
+	evaluatorInternal(circuitManager.getCircuit(circuitId)->getEvaluator().getEvaluatorInternal()), simulatorId(simulatorId) {
 		circuitManager.getCircuit(circuitId)->getEvaluator().addSimulator(*this);
 	}
 

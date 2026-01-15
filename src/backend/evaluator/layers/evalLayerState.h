@@ -32,6 +32,8 @@ public:
 		return &iter->second;
 	}
 
+	const std::unordered_map<eval_gate_id, EvalGate>& getGates() const { return gates; }
+
 	std::unordered_set<eval_gate_id>::const_iterator getAddedGatesBegin() const { return addedGates.begin(); }
 	std::unordered_set<eval_gate_id>::const_iterator getAddedGatesEnd() const { return addedGates.end(); }
 	bool addEditContainsGate(eval_gate_id evalGateId) const { return addedGates.contains(evalGateId); }

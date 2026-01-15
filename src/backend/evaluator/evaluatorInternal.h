@@ -38,6 +38,7 @@ public:
 	EvalConnectionPoint mapFromAddressToBottomConnectionPoint(const Address& address) const;
 	const std::unordered_map<Position, std::pair<eval_gate_id, Orientation>>& getPositionRemapping() const { return positionRemapping; }
 	const std::unordered_map<eval_gate_id, std::pair<Position, Orientation>>& getPositionReverseRemapping() const { return positionReverseRemapping; }
+	const std::unordered_map<connection_end_id_t, InternalPointData>& getPortToInternalPointMapping() const { return portToInternalPointMapping; }
 
 private:
 	// std::set<Position> positionsTo; nothing to do

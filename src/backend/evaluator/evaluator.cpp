@@ -1,6 +1,7 @@
 #include "evaluator.h"
 
 #include "backend/circuit/circuitManager.h"
+#include "layers/subcircuitEvalLayer.h"
 #include "evaluatorInternal.h"
 #include "simulatorManager.h"
 
@@ -22,10 +23,6 @@ Evaluator::Evaluator(
 	const Difference difference = blockContainer.getCreationDifference();
 
 	makeEdit(std::make_shared<Difference>(difference));
-}
-
-std::string Evaluator::getSimulatorName() const {
-	return "Eval " + circuit.getCircuitNameNumber();
 }
 
 void Evaluator::makeEdit(DifferenceSharedPtr difference) {
@@ -61,6 +58,7 @@ void Evaluator::makeEdit(DifferenceSharedPtr difference) {
 		}
 	}
 	evaluatorInternal->endEdit();
+	for (std::pair<SubcircuitEvalLayer*, unsigned int> evaluator : evaluatorsUsingThisEvaluator) evaluator.first->processEdits();
 	for (EvalLogicSimulator* simulator : simulatorsUsingThisEvaluator) simulator->processEdits();
 }
 

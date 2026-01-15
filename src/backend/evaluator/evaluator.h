@@ -12,6 +12,8 @@ class EvaluatorInternal;
 class DataUpdateEventManager;
 class CircuitManager;
 class SimulatorManager;
+class EvalLogicSimulator;
+class SubcircuitEvalLayer;
 class Difference;
 typedef std::shared_ptr<Difference> DifferenceSharedPtr;
 
@@ -29,9 +31,8 @@ public:
     Evaluator& operator=(const Evaluator&) = delete;
 	~Evaluator();
 
-	EvaluatorInternal& getSimulatorInternal() { return *evaluatorInternal; }
-	const EvaluatorInternal& getSimulatorInternal() const { return *evaluatorInternal; }
-	std::string getSimulatorName() const;
+	EvaluatorInternal& getEvaluatorInternal() { return *evaluatorInternal; }
+	const EvaluatorInternal& getEvaluatorInternal() const { return *evaluatorInternal; }
 
 	void makeEdit(DifferenceSharedPtr difference);
 
@@ -40,8 +41,15 @@ public:
 
 	nlohmann::json dumpState() const;
 
-	void addSimulator(EvalLogicSimulator& simulator) { simulatorsUsingThisEvaluator.insert(&simulator); }
-	void removeSimulator(EvalLogicSimulator& simulator) { simulatorsUsingThisEvaluator.erase(&simulator); }
+	void addSimulator(EvalLogicSimulator& simulator) const { simulatorsUsingThisEvaluator.insert(&simulator); }
+	void removeSimulator(EvalLogicSimulator& simulator) const { simulatorsUsingThisEvaluator.erase(&simulator); }
+	void addEvaluator(SubcircuitEvalLayer& evaluator) const { evaluatorsUsingThisEvaluator[&evaluator] += 1; }
+	void removeEvaluator(SubcircuitEvalLayer& evaluator) const {
+		auto iter = evaluatorsUsingThisEvaluator.find(&evaluator);
+		assert(iter != evaluatorsUsingThisEvaluator.end());
+		if (iter->second == 1) evaluatorsUsingThisEvaluator.erase(iter);
+		else iter->second -= 1;
+	}
 
 private:
 	const Circuit& circuit;
@@ -49,7 +57,8 @@ private:
 	DataUpdateEventManager& dataUpdateEventManager;
 	DataUpdateEventManager::DataUpdateEventReceiver receiver;
 	std::unique_ptr<EvaluatorInternal> evaluatorInternal;
-	std::unordered_set<EvalLogicSimulator*> simulatorsUsingThisEvaluator;
+	mutable std::unordered_set<EvalLogicSimulator*> simulatorsUsingThisEvaluator;
+	mutable std::unordered_map<SubcircuitEvalLayer*, unsigned int> evaluatorsUsingThisEvaluator;
 };
 
 #endif /* evaluator_h */
