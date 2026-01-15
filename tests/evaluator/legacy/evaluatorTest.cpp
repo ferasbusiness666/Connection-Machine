@@ -13,7 +13,7 @@ protected:
 	void SetUp() override;
 	void TearDown() override;
 	Environment environment {false};
-	SharedEvaluator evaluator = nullptr;
+	Evaluator* evaluator = nullptr;
 	SharedCircuit circuit = nullptr;
 	int i;
 	logic_state_t L = logic_state_t::LOW;
@@ -34,7 +34,7 @@ void EvaluatorTest::SetUp() {
 void EvaluatorTest::TearDown() {
 	// remove ptr references
 	circuit.reset();
-	evaluator.reset();
+	evaluator = nullptr;
 }
 
 TEST_F(EvaluatorTest, InitTest) {

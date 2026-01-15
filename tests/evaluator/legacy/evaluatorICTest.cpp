@@ -8,7 +8,7 @@ protected:
     void TearDown() override;
 	Environment environment {false};
 	SharedCircuit parentCircuit = nullptr;
-	SharedEvaluator evaluator = nullptr;
+	Evaluator* evaluator = nullptr;
     int idx;
 
     circuit_id_t createPassThroughIC(const std::string& name);
@@ -29,7 +29,7 @@ void DISABLED_EvaluatorICTest::SetUp() {
 
 void DISABLED_EvaluatorICTest::TearDown() {
     parentCircuit.reset();
-    evaluator.reset();
+    evaluator = nullptr;
 }
 
 circuit_id_t DISABLED_EvaluatorICTest::createPassThroughIC(const std::string& name) {

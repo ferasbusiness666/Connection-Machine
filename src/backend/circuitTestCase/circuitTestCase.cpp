@@ -158,20 +158,20 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
     return true;
 }
 
-void CircuitTestCase::runSetStatesCommand(TestCommand testCommand, const SharedEvaluator eval, NamePositionMap& nameToConnectedBlockPosition) {
+void CircuitTestCase::runSetStatesCommand(TestCommand testCommand, Evaluator& evaluator, NamePositionMap& nameToConnectedBlockPosition) {
     for (auto statesIter = testCommand.states.begin(); statesIter != testCommand.states.end(); statesIter++) {
         auto blockPosIter = nameToConnectedBlockPosition.find(statesIter->first);
-        eval->getEvalLogicSimulator().setState((Address(blockPosIter->second)), statesIter->second);
+        evaluator.getEvalLogicSimulator().setState((Address(blockPosIter->second)), statesIter->second);
         logInfo("Set port '{}' to state '{}'", "CircuitTestCase - SET_STATES", statesIter->first, statesIter->second);
     }
 }
 
-bool CircuitTestCase::runCheckStatesCommand(TestCommand testCommand, const SharedEvaluator eval, NamePositionMap& nameToConnectedBlockPosition) {
+bool CircuitTestCase::runCheckStatesCommand(TestCommand testCommand, Evaluator& evaluator, NamePositionMap& nameToConnectedBlockPosition) {
 // probably needs to return the state of every single block tested instead of whether just one of them fails
     bool testSucceeded = true;
     for (auto statesIter = testCommand.states.begin(); statesIter != testCommand.states.end(); statesIter++) {
         auto blockPosIter = nameToConnectedBlockPosition.find(statesIter->first);
-        logic_state_t actualState = eval->getEvalLogicSimulator().getState((Address(blockPosIter->second)));
+        logic_state_t actualState = evaluator.getEvalLogicSimulator().getState((Address(blockPosIter->second)));
         if (actualState != statesIter->second) {
             testSucceeded = false;
             logError("Inner test case failed: Expected port '{}' to have output '{}', got '{}'", "CircuitTestCase - CHECK_STATES", statesIter->first, statesIter->second, actualState);

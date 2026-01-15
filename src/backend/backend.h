@@ -24,12 +24,13 @@ public:
 	inline CircuitManager& getCircuitManager() { return circuitManager; }
 	inline const CircuitManager& getCircuitManager() const { return circuitManager; }
 
+	inline EvaluatorManager& getEvaluatorManager() { return evaluatorManager; }
 	inline const EvaluatorManager& getEvaluatorManager() const { return evaluatorManager; }
 
 	inline DataUpdateEventManager& getDataUpdateEventManager() { return dataUpdateEventManager; }
 
 	SharedCircuit getCircuit(circuit_id_t circuitId);
-	SharedEvaluator getEvaluator(evaluator_id_t evaluatorId);
+	Evaluator* getEvaluator(evaluator_id_t evaluatorId);
 
 	const SharedCopiedBlocks getClipboard() const { return clipboard; }
 	unsigned long long getClipboardEditCounter() const { return clipboardEditCounter; }

@@ -30,7 +30,7 @@ void LoadCallback(void* userData, const char* const* filePaths, int filter) {
 		bool doSetCir = true;
 		// circuitViewWidget->getCircuitView()->getBackend()->linkCircuitViewWithCircuit(circuitViewWidget->getCircuitView(), id);
 		for (auto& iter : circuitViewWidget->getCircuitView()->getBackend().getEvaluatorManager().getEvaluators()) {
-			if (iter.second->getCircuitId(Address()) == id) {
+			if (iter.second.getCircuitId(Address()) == id) {
 				doSetCir = false;
 				circuitViewWidget->getCircuitView()->setEvaluator(iter.first);
 				// circuitViewWidget->getCircuitView()->getBackend()->linkCircuitViewWithEvaluator(circuitViewWidget->getCircuitView(), iter.first, Address());
@@ -153,7 +153,7 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 		bool showConfirm = *Settings::get<SettingType::BOOL>("Preferences/Simulation/Show Confirmation for Reset Simulation");
 		if (showConfirm) {
 			evaluator_id_t evaluatorId = circuitView->getEvaluator()->getEvaluatorId();
-			SharedEvaluator evaluator = circuitView->getBackend().getEvaluator(evaluatorId);
+			Evaluator* evaluator = circuitView->getBackend().getEvaluator(evaluatorId);
 
 			this->mainWindow.getPopUpManager().addOptionsPopUp(
 				"Reset Simulation States?",
@@ -317,7 +317,7 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 			} else {
 				circuitView->setCircuit(id);
 				for (auto& iter : circuitView->getBackend().getEvaluatorManager().getEvaluators()) {
-					if (iter.second->getCircuitId(Address()) == id) {
+					if (iter.second.getCircuitId(Address()) == id) {
 						circuitView->setEvaluator(iter.first);
 					}
 				}
@@ -365,8 +365,8 @@ void CircuitViewWidget::newCircuit() {
 	circuitView->setCircuit(id);
 	// tmp get eval with this circuit id because circuit manager makes a eval for loaded circuits
 	for (auto& iter : circuitView->getBackend().getEvaluatorManager().getEvaluators()) {
-		if (iter.second->getCircuitId(Address()) == id) {
-			circuitView->setEvaluator(iter.second);
+		if (iter.second.getCircuitId(Address()) == id) {
+			circuitView->setEvaluator(&iter.second);
 			// circuitView->getBackend()->linkCircuitViewWithEvaluator(circuitView.get(), iter.first, Address());
 			return;
 		}

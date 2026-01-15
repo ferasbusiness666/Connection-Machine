@@ -18,7 +18,7 @@ public:
 	void init(VulkanDevice* device, VkRenderPass& renderPass);
 	void cleanup();
 
-	void render(Frame& frame, const glm::mat4& viewMatrix, float viewScale, Evaluator* evaluator);
+	void render(Frame& frame, const glm::mat4& viewMatrix, float viewScale, const Evaluator* evaluator);
 
 private:
 	Pipeline pipeline;

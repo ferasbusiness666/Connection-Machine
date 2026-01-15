@@ -11,8 +11,8 @@ class MainWindow;
 class EvalWindow {
 public:
 	EvalWindow(
-		const EvaluatorManager& evaluatorManager,
-		const CircuitManager& circuitManager,
+		EvaluatorManager& evaluatorManager,
+		CircuitManager& circuitManager,
 		MainWindow& mainWindow,
 		DataUpdateEventManager& dataUpdateEventManager,
 		Rml::ElementDocument* document,
@@ -31,8 +31,8 @@ private:
 	MenuTree menuTree;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 	MainWindow& mainWindow;
-	const EvaluatorManager& evaluatorManager;
-	const CircuitManager& circuitManager;
+	EvaluatorManager& evaluatorManager;
+	CircuitManager& circuitManager;
 };
 
 #endif /* evalWindow_h */

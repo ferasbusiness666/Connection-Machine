@@ -28,7 +28,7 @@ SharedCircuit Backend::getCircuit(circuit_id_t circuitId) {
 	return circuitManager.getCircuit(circuitId);
 }
 
-SharedEvaluator Backend::getEvaluator(evaluator_id_t evaluatorId) {
+Evaluator* Backend::getEvaluator(evaluator_id_t evaluatorId) {
 	return evaluatorManager.getEvaluator(evaluatorId);
 }
 

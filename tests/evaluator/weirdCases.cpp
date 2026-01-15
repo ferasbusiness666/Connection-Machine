@@ -8,7 +8,7 @@ protected:
 	void SetUp() override;
 	void TearDown() override;
 	Environment environment { false };
-	SharedEvaluator evaluator = nullptr;
+	Evaluator* evaluator = nullptr;
 	SharedCircuit circuit = nullptr;
 	BlockType loadCircuit(const std::filesystem::path& path);
 	const BlockData* getBlockData(BlockType type);
@@ -35,7 +35,7 @@ void WeirdCasesEvaluatorTest::SetUp() {
 
 void WeirdCasesEvaluatorTest::TearDown() {
 	circuit.reset();
-	evaluator.reset();
+	evaluator = nullptr;
 }
 
 TEST_F(WeirdCasesEvaluatorTest, ConstJunctionAnd) {
@@ -121,7 +121,7 @@ TEST_F(WeirdCasesEvaluatorTest, DISABLED_InitializationBehaviorWithICs) {
 	EXPECT_EQ(evaluator->getEvalLogicSimulator().getState(xnorPos), logic_state_t::LOW);
 
 	evaluator_id_t evalId2 = environment.getBackend().createEvaluator(circuit->getCircuitId()).value();
-	SharedEvaluator evaluator2 = environment.getBackend().getEvaluator(evalId2);
+	Evaluator* evaluator2 = environment.getBackend().getEvaluator(evalId2);
 	EXPECT_EQ(evaluator2->getEvalLogicSimulator().getState(andPos), logic_state_t::LOW);
 	evaluator2->getEvalLogicSimulator().tickStep(1);
 	EXPECT_EQ(evaluator2->getEvalLogicSimulator().getState(xnorPos), logic_state_t::HIGH);

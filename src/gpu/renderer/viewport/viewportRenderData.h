@@ -20,7 +20,7 @@ public:
 
 	ViewportViewData getViewData();
 	inline VulkanChunker& getChunker() { return chunker; }
-	inline Evaluator* getEvaluator() {
+	inline const Evaluator* getEvaluator() {
 		std::lock_guard<std::mutex> lock(evaluatorMux);
 		return evaluator;
 	}
@@ -35,7 +35,7 @@ public:
 	std::vector<ArrowRenderData> getArrows();
 
 	// main flow
-	void setEvaluator(Evaluator* evaluator, const Address& address);
+	void setEvaluator(const Evaluator* evaluator, const Address& address);
 
 	void updateViewFrame(glm::vec2 origin, glm::vec2 size);
 	void updateView(FPosition topLeft, FPosition bottomRight);
@@ -56,7 +56,7 @@ public:
 	void removeHalfConnectionPreview(ElementId halfConnectionPreview);
 
 private:
-	Evaluator* evaluator = nullptr;
+	const Evaluator* evaluator = nullptr;
 	std::mutex evaluatorMux;
 	Address address;
 	std::mutex addressMux;

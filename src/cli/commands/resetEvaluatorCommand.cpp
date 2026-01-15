@@ -20,7 +20,7 @@ void ResetEvaluatorCommand::run(const std::vector<std::string>& args, Environmen
         logError("Exception occured. Check your arguments, they should be reasonably-sized integers.", "ResetEvaluatorCommand");
         return;
     }
-    SharedEvaluator eval = environment.getBackend().getEvaluatorManager().getEvaluator(evalID);
+    const Evaluator* eval = environment.getBackend().getEvaluatorManager().getEvaluator(evalID);
     if (eval == nullptr) {
         logError("Unrecognized evaluator ID. Available evaluators can be found with the 'list_evaluators' command.", "ResetEvaluatorCommand");
         return;

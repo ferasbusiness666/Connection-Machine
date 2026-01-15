@@ -64,8 +64,8 @@ public:
 
 	void processEdits();
 
-	void connectListener(void* object, const Address& address, SimulatorMappingUpdateListenerFunction func);
-	void disconnectListener(void* object);
+	void connectListener(void* object, const Address& address, SimulatorMappingUpdateListenerFunction func) const;
+	void disconnectListener(void* object) const;
 
 	nlohmann::json dumpState() const { return logicSimulator.dumpState(); }
 
@@ -77,7 +77,7 @@ private:
 	simulator_id_t simulatorId;
 
 	std::unordered_map<eval_gate_id, simulator_gate_id_t> gateIdMapping;
-	std::map<void*, SimulatorMappingUpdateListener> simulatorMappingUpdateListeners;
+	mutable std::map<void*, SimulatorMappingUpdateListener> simulatorMappingUpdateListeners;
 };
 
 #endif /* evalLogicSimulator_h */

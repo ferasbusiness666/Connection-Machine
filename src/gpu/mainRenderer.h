@@ -77,7 +77,7 @@ public:
 	ViewportId registerViewport(WindowId windowId, glm::vec2 origin, glm::vec2 size);
 	void moveViewport(ViewportId viewportId, WindowId windowId, glm::vec2 origin, glm::vec2 size);
 	void moveViewportView(ViewportId viewportId, FPosition topLeft, FPosition bottomRight);
-	void setViewportEvaluator(ViewportId viewportId, Evaluator* evaluator, Address address); // tmp circuit
+	void setViewportEvaluator(ViewportId viewportId, const Evaluator* evaluator, Address address); // tmp circuit
 	void resetViewport(ViewportId viewportId);
 	void deregisterViewport(ViewportId viewportId);
 

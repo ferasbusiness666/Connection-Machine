@@ -7,7 +7,7 @@ protected:
 	void SetUp() override;
 	void TearDown() override;
 	Environment environment {false};
-	SharedEvaluator evaluator = nullptr;
+	Evaluator* evaluator = nullptr;
 	SharedCircuit circuit = nullptr;
 };
 
@@ -20,7 +20,7 @@ void TickrateIncDecEvaluatorTest::SetUp() {
 
 void TickrateIncDecEvaluatorTest::TearDown() {
 	circuit.reset();
-	evaluator.reset();
+	evaluator = nullptr;
 }
 
 TEST_P(TickrateIncDecEvaluatorTest, IncreaseTickrate) {

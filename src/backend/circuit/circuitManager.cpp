@@ -19,7 +19,7 @@ circuit_id_t CircuitManager::createNewCircuit(const std::string& name, const std
 
 	if (createEval) {
 		auto evaluatorId = evaluatorManager.createNewEvaluator(*this, id);
-		SharedEvaluator eval = evaluatorManager.getEvaluator(evaluatorId);
+		Evaluator* eval = evaluatorManager.getEvaluator(evaluatorId);
 		eval->getEvalLogicSimulator().setPause(false);
 		eval->getEvalLogicSimulator().setUseTickrate(true);
 		eval->getEvalLogicSimulator().setTickrate(40);

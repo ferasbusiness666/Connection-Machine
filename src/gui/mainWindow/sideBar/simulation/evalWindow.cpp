@@ -9,8 +9,8 @@
 #include "gui/mainWindow/mainWindow.h"
 
 EvalWindow::EvalWindow(
-	const EvaluatorManager& evaluatorManager,
-	const CircuitManager& circuitManager,
+	EvaluatorManager& evaluatorManager,
+	CircuitManager& circuitManager,
 	MainWindow& mainWindow,
 	DataUpdateEventManager& dataUpdateEventManager,
 	Rml::ElementDocument* document,
@@ -31,7 +31,7 @@ EvalWindow::EvalWindow(
 void EvalWindow::updateList() {
 	std::vector<std::vector<std::string>> paths;
 	for (const auto& pair : this->evaluatorManager.getEvaluators()) {
-		std::vector<std::string> path({ pair.second->getEvaluatorName() });
+		std::vector<std::string> path({ pair.second.getEvaluatorName() });
 		makePaths(paths, path);// pair.second->buildAddressTree()
 	}
 	menuTree.setPaths(paths);
@@ -170,7 +170,7 @@ void EvalWindow::updateSelected(std::string string) {
 
 void EvalWindow::selectEvaluatorForCircuit(circuit_id_t circuitId) {
 	for (auto& pair : evaluatorManager.getEvaluators()) {
-		if (pair.second->getCircuitId() == circuitId) {
+		if (pair.second.getCircuitId() == circuitId) {
 			evaluator_id_t wantedId = pair.first;
 			Rml::Element* root = menuTree.getRootElement();
 			if (!root) return;

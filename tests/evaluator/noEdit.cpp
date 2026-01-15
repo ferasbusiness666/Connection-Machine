@@ -7,7 +7,7 @@ protected:
 	void SetUp() override;
 	void TearDown() override;
 	Environment environment {false};
-	SharedEvaluator evaluator = nullptr;
+	Evaluator* evaluator = nullptr;
 	SharedCircuit circuit = nullptr;
 };
 
@@ -20,7 +20,7 @@ void NoEditEvaluatorTest::SetUp() {
 
 void NoEditEvaluatorTest::TearDown() {
 	circuit.reset();
-	evaluator.reset();
+	evaluator = nullptr;
 }
 
 TEST_F(NoEditEvaluatorTest, PauseUnpause) {

@@ -255,7 +255,7 @@ void MainRenderer::moveViewportView(ViewportId viewportId, FPosition topLeft, FP
 	iter->second.updateView(topLeft, bottomRight);
 }
 
-void MainRenderer::setViewportEvaluator(ViewportId viewportId, Evaluator* evaluator, Address address) {
+void MainRenderer::setViewportEvaluator(ViewportId viewportId, const Evaluator* evaluator, Address address) {
 	auto iter = viewportRenderers.find(viewportId);
 	if (iter == viewportRenderers.end()) {
 		logError("Failed to call setViewportEvaluator on non existent viewport {}", "MainRenderer", viewportId);

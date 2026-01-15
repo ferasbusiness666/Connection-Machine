@@ -51,7 +51,7 @@ TEST_F(GetNonExistingObjects, Evaluator) {
 	ASSERT_NE(circuit, nullptr);
 	std::optional<evaluator_id_t> evaluatorId = environment.getBackend().createEvaluator(circuitId);
 	ASSERT_NE(evaluatorId, std::nullopt);
-	SharedEvaluator evaluator = environment.getBackend().getEvaluator(*evaluatorId);
+	Evaluator* evaluator = environment.getBackend().getEvaluator(*evaluatorId);
 	ASSERT_NE(evaluator, nullptr);
 	ASSERT_EQ(evaluator->getEvalLogicSimulator().getVirtualConnectionSimulatorId(Address(Position(10, 29)), 0), (std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>>)3);
 	std::vector<std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>>> XstateVec = { 3 };

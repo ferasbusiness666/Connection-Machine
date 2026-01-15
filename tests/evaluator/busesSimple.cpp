@@ -9,7 +9,7 @@ protected:
 	void SetUp() override;
 	void TearDown() override;
 	Environment environment { false };
-	SharedEvaluator evaluator = nullptr;
+	Evaluator* evaluator = nullptr;
 	SharedCircuit circuit = nullptr;
 	logic_state_t L = logic_state_t::LOW;
 	logic_state_t H = logic_state_t::HIGH;
@@ -40,7 +40,7 @@ void DISABLED_BusesSimpleEvaluatorTest::SetUp() {
 
 void DISABLED_BusesSimpleEvaluatorTest::TearDown() {
 	circuit.reset();
-	evaluator.reset();
+	evaluator = nullptr;
 }
 
 TEST_F(DISABLED_BusesSimpleEvaluatorTest, SimpleBus2) {

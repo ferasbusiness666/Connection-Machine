@@ -17,7 +17,7 @@ ViewportViewData ViewportRenderData::getViewData() {
 
 // ====================================== INTERFACE ==========================================
 
-void ViewportRenderData::setEvaluator(Evaluator* evaluator, const Address& address) {
+void ViewportRenderData::setEvaluator(const Evaluator* evaluator, const Address& address) {
 	std::lock_guard<std::mutex> lock1(evaluatorMux);
 	std::lock_guard<std::mutex> lock2(addressMux);
 	this->evaluator = evaluator;

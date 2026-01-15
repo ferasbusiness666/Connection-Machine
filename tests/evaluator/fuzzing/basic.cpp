@@ -125,8 +125,8 @@ protected:
 	std::mt19937_64 gen;
 	Environment environment {false};
 	SharedCircuit circuit = nullptr;
-	SharedEvaluator tEval = nullptr; // testing evaluator
-	SharedEvaluator rEval = nullptr; // reference evaluator
+	Evaluator* tEval = nullptr; // testing evaluator
+	Evaluator* rEval = nullptr; // reference evaluator
 	BlockType loadCircuit(const std::filesystem::path& path);
 };
 
@@ -147,8 +147,8 @@ void BasicFuzzingEvaluatorTest::SetUp() {
 
 void BasicFuzzingEvaluatorTest::TearDown() {
 	circuit.reset();
-	tEval.reset();
-	rEval.reset();
+	tEval = nullptr;
+	rEval = nullptr;
 }
 
 std::optional<connection_end_id_t> getRandomConnectionEnd(const BlockData* blockData, std::mt19937_64& gen, bool wantInput) {

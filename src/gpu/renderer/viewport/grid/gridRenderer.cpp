@@ -32,7 +32,7 @@ void GridRenderer::cleanup() {
 constexpr float gridFadeOutDistance = 160.0f;
 constexpr float gridFadeOutWidth = 60.0f;
 
-void GridRenderer::render(Frame& frame, const glm::mat4& viewMatrix, float viewScale, Evaluator* evaluator) {
+void GridRenderer::render(Frame& frame, const glm::mat4& viewMatrix, float viewScale, const Evaluator* evaluator) {
 	// calculate grid fade num
 	float gridFade = std::clamp(1.0f - ((viewScale - gridFadeOutDistance) * (1.0f / gridFadeOutWidth)), 0.0f, 1.0f);
 	// invert the view matrix to get the right coordinates for the grid in the shader

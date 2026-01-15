@@ -229,7 +229,7 @@ public:
 	void regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDataId);
 
 	void updateSimulatorIds(const std::vector<SimulatorMappingUpdate>& simulatorMappingUpdates);
-	void setEvaluator(Evaluator* evaluator, const Address& address);
+	void setEvaluator(const Evaluator* evaluator, const Address& address);
 
 	std::vector<std::shared_ptr<VulkanLogicAllocation>> getAllocations(Position min, Position max);
 
@@ -247,7 +247,7 @@ private:
 	std::unordered_set<LogicGroup*> logicGroupsToUpdate;
 
 	VulkanDevice* device = nullptr;
-	Evaluator* evaluator = nullptr;
+	const Evaluator* evaluator = nullptr;
 	Address address;
 };
 

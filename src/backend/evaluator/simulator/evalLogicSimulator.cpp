@@ -331,7 +331,7 @@ void EvalLogicSimulator::processEdits() {
 	}
 }
 
-void EvalLogicSimulator::connectListener(void* object, const Address& address, SimulatorMappingUpdateListenerFunction func) {
+void EvalLogicSimulator::connectListener(void* object, const Address& address, SimulatorMappingUpdateListenerFunction func) const {
 	simulatorMappingUpdateListeners.try_emplace(object, 0, func);
 	// std::optional<eval_circuit_id_t> evalCircuitId = evalCircuitContainer.traverseToTopLevelIC(address);
 	// if (!evalCircuitId) {
@@ -350,7 +350,7 @@ void EvalLogicSimulator::connectListener(void* object, const Address& address, S
 }
 
 
-void EvalLogicSimulator::disconnectListener(void* object) {
+void EvalLogicSimulator::disconnectListener(void* object) const {
 	auto iter = simulatorMappingUpdateListeners.find(object);
 	if (iter != simulatorMappingUpdateListeners.end()) {
 		simulatorMappingUpdateListeners.erase(iter);

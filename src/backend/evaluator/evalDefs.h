@@ -99,6 +99,5 @@ struct fmt::formatter<EvalConnection> : fmt::formatter<std::string> {
 };
 
 class Evaluator;
-typedef std::shared_ptr<class Evaluator> SharedEvaluator;
 
 #endif /* evalDefs_h */

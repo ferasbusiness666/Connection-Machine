@@ -47,7 +47,7 @@ public:
 
 	// void setBackend(Backend* backend);
 	void setEvaluator(evaluator_id_t evaluatorId, const Address& address = Address());
-	void setEvaluator(std::shared_ptr<Evaluator> evaluator, const Address& address = Address());
+	void setEvaluator(const Evaluator* evaluator, const Address& address = Address());
 	void setCircuit(std::shared_ptr<Circuit> circuit);
 	void setCircuit(circuit_id_t circuitId);
 

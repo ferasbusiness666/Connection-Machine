@@ -1,6 +1,7 @@
 #include "tutorial.h"
 
 #include "circuitView.h"
+#include "computerAPI/tutorialLoader.h"
 #include "environment/environment.h"
 #include "events/customEvents.h"
 

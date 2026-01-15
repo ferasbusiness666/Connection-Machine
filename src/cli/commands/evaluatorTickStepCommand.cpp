@@ -25,11 +25,11 @@ void EvaluatorTickStepCommand::run(const std::vector<std::string>& args, Environ
         logError("Exception occured. Check your arguments, they should be reasonably-sized integers.", "EvaluatorTickStepCommand");
         return;
     }
-    SharedEvaluator eval = environment.getBackend().getEvaluatorManager().getEvaluator(evaluator_id_t(evalID));
-    if (eval == nullptr) {
+    Evaluator* evaluator = environment.getBackend().getEvaluatorManager().getEvaluator(evaluator_id_t(evalID));
+    if (evaluator == nullptr) {
         logError("Unrecognized evaluator ID. Available evaluators can be found with the 'list_evaluators' command.", "EvaluatorTickStepCommand");
         return;
     }
-    eval->getEvalLogicSimulator().tickStep(ticks);
+    evaluator->getEvalLogicSimulator().tickStep(ticks);
     logInfo("Stepped evaluator with ID of {} forward by {} tick(s)", "EvaluatorTickStepCommand", evalID, ticks);
 }
