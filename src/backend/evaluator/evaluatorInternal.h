@@ -32,6 +32,7 @@ public:
 	const std::unordered_map<eval_gate_id, std::pair<Position, Orientation>>& getPositionReverseRemapping() const { return positionReverseRemapping; }
 
 private:
+	// std::set<Position> positionsTo; nothing to do
 	IdProvider<eval_gate_id> evalGateIdProvider;
 	std::unordered_map<Position, std::pair<eval_gate_id, Orientation>> positionRemapping;
 	std::unordered_map<eval_gate_id, std::pair<Position, Orientation>> positionReverseRemapping;

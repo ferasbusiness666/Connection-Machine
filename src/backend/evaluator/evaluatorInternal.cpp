@@ -6,7 +6,7 @@
 extern std::thread::id mainThreadId;
 
 EvaluatorInternal::EvaluatorInternal(circuit_id_t circuitId, const CircuitManager& circuitManager, DataUpdateEventManager::DataUpdateEventReceiver& receiver) :
-	evalGateIdProvider(1), circuitManager(circuitManager), circuitId(circuitId), layerRunner(circuitManager.getBlockDataManager()) {
+	evalGateIdProvider(1), circuitManager(circuitManager), circuitId(circuitId), layerRunner(circuitManager) {
 	receiver.linkFunction("circuitBlockDataConnectionPositionRemove", [&](const DataUpdateEventManager::EventData& event) {
 		const auto* data = event.cast<std::tuple<BlockType, connection_end_id_t, Position>>();
 		if (!data) return;

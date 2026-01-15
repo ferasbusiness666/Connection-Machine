@@ -3,13 +3,14 @@
 
 #include "../evalDefs.h"
 
+class CircuitManager;
 class BlockDataManager;
 class EvalLayerState;
 class BaseEvalLayer;
 
 class LayerRunner {
 public:
-	LayerRunner(const BlockDataManager& blockDataManager);
+	LayerRunner(const CircuitManager& circuitManager);
 	~LayerRunner();
 	void runAll();
 	EvalLayerState& getInputLayer();

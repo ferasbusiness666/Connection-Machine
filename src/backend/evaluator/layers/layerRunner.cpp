@@ -3,8 +3,12 @@
 #include "evalLayerState.h"
 #include "junctionAddEvalLayer.h"
 #include "junctionMergeEvalLayer.h"
+#include "subcircuitEvalLayer.h"
+#include "backend/circuit/circuitManager.h"
 
-LayerRunner::LayerRunner(const BlockDataManager& blockDataManager) : blockDataManager(blockDataManager) {
+
+LayerRunner::LayerRunner(const CircuitManager& circuitManager) : blockDataManager(circuitManager.getBlockDataManager()) {
+	// layers.emplace_back(std::make_unique<SubcircuitEvalLayer>(circuitManager));
 	layers.emplace_back(std::make_unique<JunctionAddEvalLayer>());
 	layers.emplace_back(std::make_unique<JunctionMergeEvalLayer>());
 	evalTopLayerState = std::make_unique<EvalLayerState>(blockDataManager);
