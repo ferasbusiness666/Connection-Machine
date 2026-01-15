@@ -101,12 +101,12 @@ VulkanLogicAllocation::VulkanLogicAllocation(
 		}
 
 		if (simulator) {
-			std::vector<std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>>> simulatorIds = simulator->getVirtualConnectionSimulatorIds(address, virtualConnections);
-			for (size_t i = 0; i < simulatorIds.size(); i++) {
-				if (std::holds_alternative<std::vector<simulator_gate_id_t>>(simulatorIds[i])) {
+			std::vector<std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>>> blockSimulatorIds = simulator->getVirtualConnectionSimulatorIds(address, virtualConnections);
+			for (size_t i = 0; i < blockSimulatorIds.size(); i++) {
+				if (std::holds_alternative<std::vector<simulator_gate_id_t>>(blockSimulatorIds[i])) {
 					simulatorIds[indices[i]] = 0;
 				} else {
-					simulatorIds[indices[i]] = std::get<simulator_gate_id_t>(simulatorIds[i]);
+					simulatorIds[indices[i]] = std::get<simulator_gate_id_t>(blockSimulatorIds[i]);
 				}
 			}
 		}
