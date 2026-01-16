@@ -3,10 +3,10 @@
 
 #include "backend/circuit/circuit.h"
 #include "simulator/simulatorDefs.h"
+#include "simulator/evalLogicSimulator.h"
 
 class CircuitManager;
 class DataUpdateEventManager;
-class EvalLogicSimulator;
 
 class SimulatorManager {
 public:
