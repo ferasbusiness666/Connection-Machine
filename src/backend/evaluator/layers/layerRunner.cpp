@@ -4,14 +4,14 @@
 #include "junctionAddEvalLayer.h"
 #include "junctionMergeEvalLayer.h"
 #include "subcircuitEvalLayer.h"
-#include "backend/circuit/circuitManager.h"
+#include "switchReplacerEvalLayer.h"
 
-
-LayerRunner::LayerRunner(const CircuitManager& circuitManager) : blockDataManager(circuitManager.getBlockDataManager()) {
-	// layers.emplace_back(std::make_unique<SubcircuitEvalLayer>(circuitManager));
+LayerRunner::LayerRunner(const CircuitManager& circuitManager) {
+	layers.emplace_back(std::make_unique<SubcircuitEvalLayer>(circuitManager));
+	layers.emplace_back(std::make_unique<SwitchReplacerEvalLayer>());
 	layers.emplace_back(std::make_unique<JunctionAddEvalLayer>());
 	layers.emplace_back(std::make_unique<JunctionMergeEvalLayer>());
-	evalTopLayerState = std::make_unique<EvalLayerState>(blockDataManager);
+	evalTopLayerState = std::make_unique<EvalLayerState>();
 	assert(evalTopLayerState);
 }
 
@@ -32,13 +32,9 @@ void LayerRunner::runAll() {
 	}
 }
 
-EvalLayerState& LayerRunner::getInputLayer() {
-	return *evalTopLayerState;
-}
+EvalLayerState& LayerRunner::getInputLayer() { return *evalTopLayerState; }
 
-const EvalLayerState& LayerRunner::getInputLayer() const {
-	return *evalTopLayerState;
-}
+const EvalLayerState& LayerRunner::getInputLayer() const { return *evalTopLayerState; }
 
 const EvalLayerState& LayerRunner::getOutputLayer() const {
 	const EvalLayerState* last = evalTopLayerState.get();

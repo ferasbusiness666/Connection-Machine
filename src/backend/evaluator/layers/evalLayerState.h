@@ -2,7 +2,6 @@
 #define evalLayerState_h
 
 #include "../evalDefs.h"
-#include "backend/blockData/blockDataManager.h"
 
 struct EvalGate {
 	EvalGate(EvalGateType type, eval_gate_id gateId) : type(type), gateId(gateId) { }
@@ -13,12 +12,9 @@ struct EvalGate {
 	std::unordered_map<connection_end_id_t, std::unordered_set<EvalConnectionPoint>> connections;
 };
 
-class BlockDataManager;
-
 class EvalLayerState {
 public:
-	EvalLayerState(const BlockDataManager& blockDataManager, unsigned int layerIndex = 0) :
-		blockDataManager(blockDataManager), layerIndex(layerIndex),
+	EvalLayerState(unsigned int layerIndex = 0) : layerIndex(layerIndex),
 		lastUnsedEvalGateId(std::numeric_limits<eval_gate_id::rep>::max() - 1 - layerIndex * 10000000) {}
 
 	void addGate(eval_gate_id gateId, EvalGateType type);
@@ -83,7 +79,7 @@ public:
 
 	EvalLayerState& getOrMakeNextLayerState() {
 		if (!nextLayerState) {
-			nextLayerState = std::make_unique<EvalLayerState>(blockDataManager, layerIndex + 1);
+			nextLayerState = std::make_unique<EvalLayerState>(layerIndex + 1);
 			nextLayerState->setLastLayer(this);
 		}
 		return *nextLayerState;
@@ -122,8 +118,6 @@ private:
 	std::unique_ptr<EvalLayerState> nextLayerState;
 	const EvalLayerState* lastLayerState;
 	unsigned int layerIndex;
-
-	const BlockDataManager& blockDataManager;
 
 	std::unordered_map<eval_gate_id, EvalGate> gates;
 	std::unordered_map<EvalConnection, unsigned int> connectionWeights;

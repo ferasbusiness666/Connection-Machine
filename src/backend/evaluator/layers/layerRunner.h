@@ -19,7 +19,6 @@ public:
 	EvalConnectionPoint getMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint) const;
 	std::vector<EvalConnectionPoint> getReversedMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint) const;
 private:
-	const BlockDataManager& blockDataManager;
 	std::unique_ptr<EvalLayerState> evalTopLayerState;
 	std::vector<std::unique_ptr<BaseEvalLayer>> layers;
 };

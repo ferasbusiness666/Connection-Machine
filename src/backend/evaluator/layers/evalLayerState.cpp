@@ -73,16 +73,21 @@ void EvalLayerState::addConnection(const EvalConnection& evalConnection, unsigne
 	assert(gateBIterBoolPair != gates.end());
 	gateBIterBoolPair->second.connections[evalConnection.connectionPointB.connectionEndId].insert(evalConnection.connectionPointA);
 
-	auto removedConnectionIter = removedConnections.find(evalConnection);
-	if (removedConnectionIter == removedConnections.end()) {
+	if (addedGates.contains(evalConnection.connectionPointA.gateId) || addedGates.contains(evalConnection.connectionPointB.gateId)) {
 		addedConnections[evalConnection] += weight;
-	} else if (removedConnectionIter->second < weight) {
-		addedConnections.emplace(evalConnection, weight - removedConnectionIter->second);
-		removedConnections.erase(removedConnectionIter);
-	} else if (removedConnectionIter->second == weight) {
-		removedConnections.erase(removedConnectionIter);
 	} else {
-		removedConnectionIter->second -= weight;
+		auto removedConnectionIter = removedConnections.find(evalConnection);
+		if (removedConnectionIter == removedConnections.end()) {
+			addedConnections[evalConnection] += weight;
+		} else if (removedConnectionIter->second < weight) {
+			addedConnections.emplace(evalConnection, weight - removedConnectionIter->second);
+			removedConnections.erase(removedConnectionIter);
+		} else if (removedConnectionIter->second == weight) {
+			removedConnections.erase(removedConnectionIter);
+		} else {
+			assert(removedConnectionIter->second > weight);
+			removedConnectionIter->second -= weight;
+		}
 	}
 }
 
