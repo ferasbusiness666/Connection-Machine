@@ -35,6 +35,7 @@ public:
 	const EvaluatorInternal& getEvaluatorInternal() const { return *evaluatorInternal; }
 
 	void makeEdit(DifferenceSharedPtr difference);
+	void doLayersUpdate(bool doStartEdit = true);
 
 	circuit_id_t getCircuitId() const;
 	circuit_id_t getCircuitId(const Address& address) const;

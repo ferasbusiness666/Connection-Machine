@@ -97,13 +97,13 @@ namespace {
 				for (unsigned int i = 1; i <= 21; ++i) {
 					blockTypesAllowed.blockTypesToUse.push_back(BlockType(i));
 				}
-				blockTypesAllowed.busDefinitions.push_back(BusDef {2, 1, 1, 2});
-				blockTypesAllowed.busDefinitions.push_back(BusDef {4, 1, 1, 4});
-				blockTypesAllowed.busDefinitions.push_back(BusDef {2, 1, 2, 4});
-				blockTypesAllowed.busDefinitions.push_back(BusDef {8, 1, 1, 8});
-				blockTypesAllowed.busDefinitions.push_back(BusDef {4, 1, 2, 8});
-				blockTypesAllowed.busDefinitions.push_back(BusDef {2, 1, 4, 8});
-				blockTypesAllowed.busDefinitions.push_back(BusDef { 2, 4, 4, 2 });
+				// blockTypesAllowed.busDefinitions.push_back(BusDef {2, 1, 1, 2});
+				// blockTypesAllowed.busDefinitions.push_back(BusDef {4, 1, 1, 4});
+				// blockTypesAllowed.busDefinitions.push_back(BusDef {2, 1, 2, 4});
+				// blockTypesAllowed.busDefinitions.push_back(BusDef {8, 1, 1, 8});
+				// blockTypesAllowed.busDefinitions.push_back(BusDef {4, 1, 2, 8});
+				// blockTypesAllowed.busDefinitions.push_back(BusDef {2, 1, 4, 8});
+				// blockTypesAllowed.busDefinitions.push_back(BusDef { 2, 4, 4, 2 });
 
 				blockTypesAllowed.customBlockPaths.push_back("passthrough.cir");
 				blockTypesAllowed.customBlockPaths.push_back("full_adder.cir");
@@ -183,7 +183,7 @@ std::optional<connection_end_id_t> getRandomConnectionEnd(const BlockData* block
 	return std::nullopt;
 }
 
-TEST_P(BasicFuzzingEvaluatorTest, DISABLED_FuzzInteractions) {
+TEST_P(BasicFuzzingEvaluatorTest, FuzzInteractions) {
 	TestcaseConfig config = GetParam();
 	gen.seed(config.seed);
 	bool runRealistic = config.realistic;

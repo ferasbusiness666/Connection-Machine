@@ -3,7 +3,7 @@
 #include "backend/evaluator/evaluator.h"
 #include "computerAPI/directoryManager.h"
 
-class DISABLED_PassthroughEvaluatorTest : public ::testing::Test {
+class PassthroughEvaluatorTest : public ::testing::Test {
 protected:
 	void SetUp() override;
 	void TearDown() override;
@@ -18,7 +18,7 @@ protected:
 	BlockType PT;
 };
 
-void DISABLED_PassthroughEvaluatorTest::SetUp() {
+void PassthroughEvaluatorTest::SetUp() {
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
 	circuit = environment.getBackend().getCircuit(circuitId);
 	simulator_id_t simulatorId = environment.getBackend().createSimulator(circuitId).value();
@@ -31,18 +31,18 @@ void DISABLED_PassthroughEvaluatorTest::SetUp() {
 	PT = passthroughCircuit->getBlockType();
 }
 
-void DISABLED_PassthroughEvaluatorTest::TearDown() {
+void PassthroughEvaluatorTest::TearDown() {
 	circuit.reset();
 	simulator = nullptr;
 }
 
-TEST_F(DISABLED_PassthroughEvaluatorTest, PlacePassthrough) {
+TEST_F(PassthroughEvaluatorTest, PlacePassthrough) {
 	Position blockPos(0, 0);
 	ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, PT));
 	EXPECT_EQ(simulator->getState(blockPos), L);
 }
 
-TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughLogic) {
+TEST_F(PassthroughEvaluatorTest, PassthroughLogic) {
 	Position blockPos(0, 0);
 	ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, PT));
 	Position switchPos(-1, 0);
@@ -67,7 +67,7 @@ TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughLogic) {
 	EXPECT_EQ(simulator->getState(lightPos), L);
 }
 
-TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughDelete) {
+TEST_F(PassthroughEvaluatorTest, PassthroughDelete) {
 	Position blockPos(0, 0);
 	ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, PT));
 	Position switchPos(-1, 0);
@@ -92,7 +92,7 @@ TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughDelete) {
 	EXPECT_EQ(simulator->getState(lightPos), Z);
 }
 
-TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughDisconnectSwitch) {
+TEST_F(PassthroughEvaluatorTest, PassthroughDisconnectSwitch) {
 	Position blockPos(0, 0);
 	ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, PT));
 	Position switchPos(-1, 0);
@@ -116,7 +116,7 @@ TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughDisconnectSwitch) {
 	EXPECT_EQ(simulator->getState(lightPos), L);
 }
 
-TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughDisconnectLight) {
+TEST_F(PassthroughEvaluatorTest, PassthroughDisconnectLight) {
 	Position blockPos(0, 0);
 	ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, PT));
 	Position switchPos(-1, 0);
@@ -140,7 +140,7 @@ TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughDisconnectLight) {
 	EXPECT_EQ(simulator->getState(lightPos), Z);
 }
 
-TEST_F(DISABLED_PassthroughEvaluatorTest, DoublePassthrough) {
+TEST_F(PassthroughEvaluatorTest, DoublePassthrough) {
 	Position block1Pos(0, 0);
 	ASSERT_TRUE(circuit->tryInsertBlock(block1Pos, 0, PT));
 	Position block2Pos(1, 0);
@@ -162,7 +162,7 @@ TEST_F(DISABLED_PassthroughEvaluatorTest, DoublePassthrough) {
 	EXPECT_EQ(simulator->getState(lightPos), L);
 }
 
-TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughLoop) {
+TEST_F(PassthroughEvaluatorTest, PassthroughLoop) {
 	Position block1Pos(0, 0);
 	ASSERT_TRUE(circuit->tryInsertBlock(block1Pos, 0, PT));
 	Position block2Pos(1, 0);
@@ -185,7 +185,7 @@ TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughLoop) {
 	EXPECT_EQ(simulator->getState(lightPos), L);
 }
 
-TEST_F(DISABLED_PassthroughEvaluatorTest, DeleteSwitch) {
+TEST_F(PassthroughEvaluatorTest, DeleteSwitch) {
 	Position blockPos(0, 0);
 	ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, PT));
 	Position switchPos(-1, 0);
@@ -210,7 +210,7 @@ TEST_F(DISABLED_PassthroughEvaluatorTest, DeleteSwitch) {
 	EXPECT_EQ(simulator->getState(lightPos), L);
 }
 
-TEST_F(DISABLED_PassthroughEvaluatorTest, DeleteLight) {
+TEST_F(PassthroughEvaluatorTest, DeleteLight) {
 	Position blockPos(0, 0);
 	ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, PT));
 	Position switchPos(-1, 0);
@@ -235,7 +235,7 @@ TEST_F(DISABLED_PassthroughEvaluatorTest, DeleteLight) {
 	EXPECT_EQ(simulator->getState(lightPos), X);
 }
 
-TEST_F(DISABLED_PassthroughEvaluatorTest, MultipleSwitches) {
+TEST_F(PassthroughEvaluatorTest, MultipleSwitches) {
 	Position blockPos(0, 0);
 	ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, PT));
 	Position switch1Pos(-1, -1);
@@ -265,7 +265,7 @@ TEST_F(DISABLED_PassthroughEvaluatorTest, MultipleSwitches) {
 	EXPECT_EQ(simulator->getState(lightPos), L);
 }
 
-TEST_F(DISABLED_PassthroughEvaluatorTest, MultipleSwitchesDeleteOne) {
+TEST_F(PassthroughEvaluatorTest, MultipleSwitchesDeleteOne) {
 	Position blockPos(0, 0);
 	ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, PT));
 	Position switch1Pos(-1, -1);
@@ -291,7 +291,7 @@ TEST_F(DISABLED_PassthroughEvaluatorTest, MultipleSwitchesDeleteOne) {
 	EXPECT_EQ(simulator->getState(lightPos), L);
 }
 
-TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughMoveSwitch) {
+TEST_F(PassthroughEvaluatorTest, PassthroughMoveSwitch) {
 	Position blockPos(0, 0);
 	ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, PT));
 	Position switchPos(-1, 0);
@@ -320,7 +320,7 @@ TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughMoveSwitch) {
 	EXPECT_EQ(simulator->getState(lightPos), H);
 }
 
-TEST_F(DISABLED_PassthroughEvaluatorTest, PassthroughMoveLight) {
+TEST_F(PassthroughEvaluatorTest, PassthroughMoveLight) {
 	Position blockPos(0, 0);
 	ASSERT_TRUE(circuit->tryInsertBlock(blockPos, 0, PT));
 	Position switchPos(-1, 0);

@@ -99,7 +99,7 @@ TEST_F(WeirdCasesEvaluatorTest, ButtonBuffer) {
 	EXPECT_EQ(simulator->getState(bufferPos), logic_state_t::UNDEFINED);
 }
 
-TEST_F(WeirdCasesEvaluatorTest, DISABLED_InitializationBehaviorWithICs) {
+TEST_F(WeirdCasesEvaluatorTest, InitializationBehaviorWithICs) {
 	BlockType passthrough = loadCircuit((DirectoryManager::getResourceDirectory() / "circuits" / "evaluator" / "passthrough.cir").string());
 	Position xnorPos(0, 0);
 	Position icPos(1, 0);

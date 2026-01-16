@@ -57,6 +57,11 @@ void Evaluator::makeEdit(DifferenceSharedPtr difference) {
 		}
 		}
 	}
+	doLayersUpdate(false);
+}
+
+void Evaluator::doLayersUpdate(bool doStartEdit) {
+	if (doStartEdit) evaluatorInternal->startEdit();
 	evaluatorInternal->endEdit();
 	for (std::pair<SubcircuitEvalLayer*, unsigned int> evaluator : evaluatorsUsingThisEvaluator) evaluator.first->processEdits();
 	for (EvalLogicSimulator* simulator : simulatorsUsingThisEvaluator) simulator->processEdits();

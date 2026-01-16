@@ -4,7 +4,7 @@
 #include "computerAPI/directoryManager.h"
 #include "backend/blockData/blockDataManager.h"
 
-class DISABLED_CompleteCircuitsEvaluatorTest : public ::testing::Test {
+class CompleteCircuitsEvaluatorTest : public ::testing::Test {
 protected:
 	void SetUp() override;
 	void TearDown() override;
@@ -19,19 +19,19 @@ protected:
 	const BlockData* getBlockData(BlockType type);
 };
 
-BlockType DISABLED_CompleteCircuitsEvaluatorTest::loadCircuit(const std::filesystem::path& path) {
+BlockType CompleteCircuitsEvaluatorTest::loadCircuit(const std::filesystem::path& path) {
 	CircuitFileManager& circuitFileManager = environment.getCircuitFileManager();
 	circuit_id_t circuitId = circuitFileManager.loadFromFile(path.string()).at(0);
 	SharedCircuit circuit = environment.getBackend().getCircuitManager().getCircuit(circuitId);
 	return circuit->getBlockType();
 }
 
-const BlockData* DISABLED_CompleteCircuitsEvaluatorTest::getBlockData(BlockType type) {
+const BlockData* CompleteCircuitsEvaluatorTest::getBlockData(BlockType type) {
 	const BlockData* blockData = environment.getBackend().getBlockDataManager().getBlockData(type);
 	return blockData;
 }
 
-void DISABLED_CompleteCircuitsEvaluatorTest::SetUp() {
+void CompleteCircuitsEvaluatorTest::SetUp() {
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
 	circuit = environment.getBackend().getCircuit(circuitId);
 	simulator_id_t simulatorId = environment.getBackend().createSimulator(circuitId).value();
@@ -39,12 +39,12 @@ void DISABLED_CompleteCircuitsEvaluatorTest::SetUp() {
 	ASSERT_TRUE(simulator->isPause());
 }
 
-void DISABLED_CompleteCircuitsEvaluatorTest::TearDown() {
+void CompleteCircuitsEvaluatorTest::TearDown() {
 	circuit.reset();
 	simulator = nullptr;
 }
 
-TEST_F(DISABLED_CompleteCircuitsEvaluatorTest, FullAdder) {
+TEST_F(CompleteCircuitsEvaluatorTest, FullAdder) {
 	BlockType FA = loadCircuit(DirectoryManager::getResourceDirectory() / "circuits" / "evaluator" / "full_adder.cir");
 	Position aPos(0, 0);
 	Position bPos(0, 1);
