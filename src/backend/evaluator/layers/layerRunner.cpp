@@ -7,10 +7,10 @@
 #include "switchReplacerEvalLayer.h"
 
 LayerRunner::LayerRunner(const CircuitManager& circuitManager) {
-	layers.emplace_back(std::make_unique<SubcircuitEvalLayer>(circuitManager));
-	layers.emplace_back(std::make_unique<SwitchReplacerEvalLayer>());
-	layers.emplace_back(std::make_unique<JunctionAddEvalLayer>());
-	layers.emplace_back(std::make_unique<JunctionMergeEvalLayer>());
+	// layers.emplace_back(std::make_unique<SubcircuitEvalLayer>(circuitManager));
+	// layers.emplace_back(std::make_unique<SwitchReplacerEvalLayer>());
+	// layers.emplace_back(std::make_unique<JunctionAddEvalLayer>());
+	// layers.emplace_back(std::make_unique<JunctionMergeEvalLayer>());
 	evalTopLayerState = std::make_unique<EvalLayerState>();
 	assert(evalTopLayerState);
 }
@@ -47,7 +47,7 @@ const EvalLayerState& LayerRunner::getOutputLayer() const {
 
 EvalConnectionPoint LayerRunner::getMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint) const {
 	const EvalLayerState* layerState = evalTopLayerState.get()->getNextLayerState();
-	for (unsigned int i = 1; true; i++) {
+	for (unsigned int i = 1; i <= layers.size(); i++) {
 		auto connectionPointIter = layerState->getConnectionPointRemapping().find(evalConnectionPoint);
 		if (connectionPointIter == layerState->getConnectionPointRemapping().end()) {
 			auto evalGateIdIter = layerState->getGateIdRemapping().find(evalConnectionPoint.gateId);
@@ -70,7 +70,7 @@ std::vector<EvalConnectionPoint> LayerRunner::getReversedMappedEvalConnectionPoi
 	std::vector<EvalConnectionPoint> evalConnectionPoints = { evalConnectionPoint };
 	std::vector<EvalConnectionPoint> lastSimulatorConnectionPoints;
 	const EvalLayerState* layerState = &getOutputLayer();
-	for (unsigned int i = 1; true; i++) {
+	for (unsigned int i = 1; i <= layers.size(); i++) {
 		lastSimulatorConnectionPoints = std::move(evalConnectionPoints);
 		evalConnectionPoints.clear();
 		for (EvalConnectionPoint point : lastSimulatorConnectionPoints) {

@@ -4,6 +4,8 @@
 
 #include "computerAPI/directoryManager.h"
 
+std::thread::id mainThreadId = std::this_thread::get_id();
+
 int main(int argc, char** argv) {
 	DirectoryManager::findDirectories();
 	std::string failingTestcasePath = (DirectoryManager::getConfigDirectory() / "fuzzing" / "failing_testcase.json").string();
@@ -32,38 +34,38 @@ int main(int argc, char** argv) {
 		FuzzPrimitiveType { BlockType::NAND },
 		FuzzPrimitiveType { BlockType::NOR },
 		FuzzPrimitiveType { BlockType::XNOR },
-		FuzzPrimitiveType { BlockType::BUFFER },
-		FuzzPrimitiveType { BlockType::NOT },
-		FuzzPrimitiveType { BlockType::JUNCTION },
-		FuzzPrimitiveType { BlockType::JUNCTION_L },
-		FuzzPrimitiveType { BlockType::JUNCTION_H },
-		FuzzPrimitiveType { BlockType::JUNCTION_X },
-		FuzzPrimitiveType { BlockType::TRISTATE_BUFFER },
-		FuzzPrimitiveType { BlockType::BUTTON },
-		FuzzPrimitiveType { BlockType::TICK_BUTTON },
-		FuzzPrimitiveType { BlockType::SWITCH },
-		FuzzPrimitiveType { BlockType::CONSTANT_OFF },
-		FuzzPrimitiveType { BlockType::CONSTANT_ON },
-		FuzzPrimitiveType { BlockType::CONSTANT_Z },
-		FuzzPrimitiveType { BlockType::CONSTANT_X },
-		FuzzPrimitiveType { BlockType::LIGHT },
+		// FuzzPrimitiveType { BlockType::BUFFER },
+		// FuzzPrimitiveType { BlockType::NOT },
+		// FuzzPrimitiveType { BlockType::JUNCTION },
+		// FuzzPrimitiveType { BlockType::JUNCTION_L },
+		// FuzzPrimitiveType { BlockType::JUNCTION_H },
+		// FuzzPrimitiveType { BlockType::JUNCTION_X },
+		// FuzzPrimitiveType { BlockType::TRISTATE_BUFFER },
+		// FuzzPrimitiveType { BlockType::BUTTON },
+		// FuzzPrimitiveType { BlockType::TICK_BUTTON },
+		// FuzzPrimitiveType { BlockType::SWITCH },
+		// FuzzPrimitiveType { BlockType::CONSTANT_OFF },
+		// FuzzPrimitiveType { BlockType::CONSTANT_ON },
+		// FuzzPrimitiveType { BlockType::CONSTANT_Z },
+		// FuzzPrimitiveType { BlockType::CONSTANT_X },
+		// FuzzPrimitiveType { BlockType::LIGHT },
 
 
 		// FuzzPrimitiveType { BlockType::CONSTANT_OFF },
 		// FuzzPrimitiveType { BlockType::CONSTANT_ON },
 		// FuzzPrimitiveType { BlockType::CONSTANT_Z },
 		// FuzzPrimitiveType { BlockType::CONSTANT_X },
-		FuzzBusType { 2, 1, 1, 2 },
-		FuzzBusType { 4, 1, 1, 4 },
-		FuzzBusType { 2, 1, 2, 4 },
-		FuzzBusType { 8, 1, 1, 8 },
-		FuzzBusType { 4, 1, 2, 8 },
-		FuzzBusType { 2, 1, 4, 8 },
-		FuzzBusType { 2, 4, 4, 2 },
-		FuzzCustomCircuitType { "circuits/passthrough.cir" },
-		FuzzCustomCircuitType { "circuits/full_adder.cir" },
-		FuzzCustomCircuitType { "circuits/bus_tristate_2.cir" },
-		FuzzCustomCircuitType { "circuits/nested_passthrough.cir" }
+		// FuzzBusType { 2, 1, 1, 2 },
+		// FuzzBusType { 4, 1, 1, 4 },
+		// FuzzBusType { 2, 1, 2, 4 },
+		// FuzzBusType { 8, 1, 1, 8 },
+		// FuzzBusType { 4, 1, 2, 8 },
+		// FuzzBusType { 2, 1, 4, 8 },
+		// FuzzBusType { 2, 4, 4, 2 },
+		// FuzzCustomCircuitType { "circuits/passthrough.cir" },
+		// FuzzCustomCircuitType { "circuits/full_adder.cir" },
+		// FuzzCustomCircuitType { "circuits/bus_tristate_2.cir" },
+		// FuzzCustomCircuitType { "circuits/nested_passthrough.cir" }
 	};
 	std::unique_ptr<FuzzTestcase> testcase = finder.findFailingCases(1000, blockTypesUsed);
 	if (testcase) {

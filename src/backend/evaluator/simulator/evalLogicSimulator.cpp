@@ -29,7 +29,7 @@ circuit_id_t EvalLogicSimulator::getCircuitId(const Address& address) const {
 void EvalLogicSimulator::setState(const Address& address, logic_state_t state) {
 	auto iter2 = gateIdMapping.find(evaluatorInternal.mapFromAddressToBottomConnectionPoint(address).gateId);
 	if (iter2 == gateIdMapping.end()) {
-		logError("Failed to get sim id", "EvalLogicSimulator::setState");
+		logError("Failed to set sim id", "EvalLogicSimulator::setState");
 		return;
 	}
 	setState(iter2->second, state);
