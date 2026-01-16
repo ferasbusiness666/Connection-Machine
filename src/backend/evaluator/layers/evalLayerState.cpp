@@ -133,6 +133,51 @@ void EvalLayerState::removeConnection(const EvalConnection& evalConnection, unsi
 	}
 }
 
+void EvalLayerState::changeGateType(eval_gate_id gateId, EvalGateType newType) {
+	auto gatesIter = gates.find(gateId);
+	if (gatesIter->second.type == newType) return;
+	gatesIter->second.type = newType;
+	auto addedGatesPair = addedGates.insert_or_assign(gateId, newType);
+	if (!addedGatesPair.second) return;
+	for (const std::pair<connection_end_id_t, std::unordered_set<EvalConnectionPoint>>& connectionsPair : gatesIter->second.connections) {
+		for (const EvalConnectionPoint& otherConnectionPoint : connectionsPair.second) {
+			EvalConnection evalConnection(EvalConnectionPoint(gateId, connectionsPair.first), otherConnectionPoint);
+			auto weightIter = connectionWeights.find(evalConnection);
+			if (weightIter == connectionWeights.end()) {
+				auto addedConnectionIter = addedConnections.find(evalConnection);
+				if (addedConnectionIter != addedConnections.end()) {
+					removedConnections.emplace(evalConnection, 1);
+					addedConnectionIter->second += 1;
+					continue;
+				}
+				auto removedConnectionIter = removedConnections.find(evalConnection);
+				if (removedConnectionIter != removedConnections.end()) {
+					removedConnectionIter->second += 1;
+					addedConnections.emplace(evalConnection, 1);
+					continue;
+				}
+				removedConnections.emplace(evalConnection, 1);
+				addedConnections.emplace(evalConnection, 1);
+			} else {
+				auto addedConnectionIter = addedConnections.find(evalConnection);
+				if (addedConnectionIter != addedConnections.end()) {
+					removedConnections.emplace(evalConnection, weightIter->second);
+					addedConnectionIter->second += weightIter->second;
+					continue;
+				}
+				auto removedConnectionIter = removedConnections.find(evalConnection);
+				if (removedConnectionIter != removedConnections.end()) {
+					removedConnectionIter->second += weightIter->second;
+					addedConnections.emplace(evalConnection, weightIter->second);
+					continue;
+				}
+				removedConnections.emplace(evalConnection, weightIter->second);
+				addedConnections.emplace(evalConnection, weightIter->second);
+			}
+		}
+	}
+}
+
 void EvalLayerState::visualize() const {
 	logInfo("Eval Layer State {}", "", (unsigned long long)this);
 	logInfo("Last: {}   Next: {}", "", (unsigned long long)lastLayerState, (unsigned long long)nextLayerState.get());

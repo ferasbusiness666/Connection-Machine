@@ -21,6 +21,7 @@ public:
 	void removeGate(eval_gate_id gateId);
 	void addConnection(const EvalConnection& evalConnection, unsigned int weight = 1);
 	void removeConnection(const EvalConnection& evalConnection, unsigned int weight = 1);
+	void changeGateType(eval_gate_id gateId, EvalGateType newType);
 
  	const EvalGate* getGate(eval_gate_id gateId) const {
 		auto iter = gates.find(gateId);
