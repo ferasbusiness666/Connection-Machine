@@ -41,7 +41,7 @@ void EvalLayerState::removeGate(eval_gate_id gateId) { // TODO: add transparent 
 		}
 	}
 	auto addedGatessIter = addedGates.find(gateId);
-	if (addedGatessIter == removedGates.end()) {
+	if (addedGatessIter == addedGates.end()) {
 		removedGates.emplace(gateId, iter->second.type);
 	} else {
 		assert(addedGatessIter->second == iter->second.type);
