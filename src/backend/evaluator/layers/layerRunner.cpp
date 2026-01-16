@@ -7,10 +7,10 @@
 #include "switchReplacerEvalLayer.h"
 
 LayerRunner::LayerRunner(const CircuitManager& circuitManager) {
-	// layers.emplace_back(std::make_unique<SubcircuitEvalLayer>(circuitManager));
-	// layers.emplace_back(std::make_unique<SwitchReplacerEvalLayer>());
-	// layers.emplace_back(std::make_unique<JunctionAddEvalLayer>());
-	// layers.emplace_back(std::make_unique<JunctionMergeEvalLayer>());
+	layers.emplace_back(std::make_unique<SubcircuitEvalLayer>(circuitManager));
+	layers.emplace_back(std::make_unique<SwitchReplacerEvalLayer>());
+	layers.emplace_back(std::make_unique<JunctionAddEvalLayer>());
+	layers.emplace_back(std::make_unique<JunctionMergeEvalLayer>());
 	evalTopLayerState = std::make_unique<EvalLayerState>();
 	assert(evalTopLayerState);
 }

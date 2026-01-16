@@ -116,10 +116,14 @@ void SubcircuitEvalLayer::run(const EvalLayerState& currentState, EvalLayerState
 						(otherConnectionPoint.gateId == pair.second.gateId && otherConnectionPoint.connectionEndId.get() > connectionsPair.first.get())
 					) {
 						eval_gate_id otherGateId = subcircuitsPair.first->second.otherSimulatorToThisSimulatorIdMapping.at(otherConnectionPoint.gateId);
+						unsigned int weight = evalLayerState.getConnectionWeight(EvalConnection(
+							EvalConnectionPoint(pair.first, connectionsPair.first),
+							otherConnectionPoint
+						));
 						nextState.addConnection(EvalConnection(
 							EvalConnectionPoint(thisGateId, connectionsPair.first),
 							EvalConnectionPoint(otherGateId, otherConnectionPoint.connectionEndId)
-						));
+						), weight);
 					}
 				}
 			}
