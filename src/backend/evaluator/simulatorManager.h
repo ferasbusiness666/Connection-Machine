@@ -3,10 +3,10 @@
 
 #include "backend/circuit/circuit.h"
 #include "simulator/simulatorDefs.h"
-#include "simulator/evalLogicSimulator.h"
 
 class CircuitManager;
 class DataUpdateEventManager;
+class EvalLogicSimulator;
 
 class SimulatorManager {
 public:
@@ -15,7 +15,7 @@ public:
     SimulatorManager& operator=(const SimulatorManager&) = delete;
 	~SimulatorManager();
 
-	inline const std::map<simulator_id_t, EvalLogicSimulator>& getSimulators() const { return simulators; }
+	inline const std::map<simulator_id_t, std::unique_ptr<EvalLogicSimulator>>& getSimulators() const { return simulators; }
 
 	EvalLogicSimulator* getSimulator(simulator_id_t id);
 	const EvalLogicSimulator* getSimulator(simulator_id_t id) const;
@@ -23,8 +23,8 @@ public:
 	simulator_id_t createNewSimulator(circuit_id_t circuitId);
 	void destroySimulator(simulator_id_t id);
 
-	typedef std::map<simulator_id_t, EvalLogicSimulator>::iterator iterator;
-	typedef std::map<simulator_id_t, EvalLogicSimulator>::const_iterator const_iterator;
+	typedef std::map<simulator_id_t, std::unique_ptr<EvalLogicSimulator>>::iterator iterator;
+	typedef std::map<simulator_id_t, std::unique_ptr<EvalLogicSimulator>>::const_iterator const_iterator;
 
 	inline iterator begin() { return simulators.begin(); }
 	inline iterator end() { return simulators.end(); }
@@ -41,7 +41,7 @@ private:
 	DataUpdateEventManager& dataUpdateEventManager;
 	CircuitManager& circuitManager;
 
-	std::map<simulator_id_t, EvalLogicSimulator> simulators;
+	std::map<simulator_id_t, std::unique_ptr<EvalLogicSimulator>> simulators;
 };
 
 #endif /* simulatorManager_h */

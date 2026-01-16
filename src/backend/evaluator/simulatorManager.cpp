@@ -10,12 +10,12 @@ SimulatorManager::~SimulatorManager() = default;
 EvalLogicSimulator* SimulatorManager::getSimulator(simulator_id_t id) {
 	auto iter = simulators.find(id);
 	if (iter == simulators.end()) return nullptr;
-	return &iter->second;
+	return iter->second.get();
 }
 const EvalLogicSimulator* SimulatorManager::getSimulator(simulator_id_t id) const {
 	auto iter = simulators.find(id);
 	if (iter == simulators.end()) return nullptr;
-	return &iter->second;
+	return iter->second.get();
 }
 
 simulator_id_t SimulatorManager::createNewSimulator(circuit_id_t circuitId) {
@@ -24,7 +24,7 @@ simulator_id_t SimulatorManager::createNewSimulator(circuit_id_t circuitId) {
 		return 0;
 	}
 	simulator_id_t id = simulatorIdProvider.getNewId();
-	simulators.try_emplace(id, id, circuitManager, circuitId, dataUpdateEventManager);
+	simulators.try_emplace(id, std::make_unique<EvalLogicSimulator>(id, circuitManager, circuitId, dataUpdateEventManager));
 	dataUpdateEventManager.sendEvent("addressTreeMakeBranch");
 	return id;
 }

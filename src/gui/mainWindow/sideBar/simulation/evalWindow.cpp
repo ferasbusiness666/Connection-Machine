@@ -31,7 +31,7 @@ EvalWindow::EvalWindow(
 void EvalWindow::updateList() {
 	std::vector<std::vector<std::string>> paths;
 	for (const auto& pair : this->simulatorManager.getSimulators()) {
-		std::vector<std::string> path({ pair.second.getSimulatorName() });
+		std::vector<std::string> path({ pair.second->getSimulatorName() });
 		makePaths(paths, path);// pair.second->buildAddressTree()
 	}
 	menuTree.setPaths(paths);
@@ -170,7 +170,7 @@ void EvalWindow::updateSelected(std::string string) {
 
 void EvalWindow::selectSimulatoruatorForCircuit(circuit_id_t circuitId) {
 	for (auto& pair : simulatorManager.getSimulators()) {
-		if (pair.second.getCircuitId() == circuitId) {
+		if (pair.second->getCircuitId() == circuitId) {
 			simulator_id_t wantedId = pair.first;
 			Rml::Element* root = menuTree.getRootElement();
 			if (!root) return;

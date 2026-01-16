@@ -56,7 +56,10 @@ void EvalLayerState::addConnection(const EvalConnection& evalConnection, unsigne
 	assert(gateAIterBoolPair != gates.end());
 	auto connectionsIter = gateAIterBoolPair->second.connections.find(evalConnection.connectionPointA.connectionEndId);
 	if (connectionsIter == gateAIterBoolPair->second.connections.end()) { // connection id does not have connections
-		gateAIterBoolPair->second.connections.emplace(evalConnection.connectionPointA.connectionEndId, std::unordered_set<EvalConnectionPoint>({evalConnection.connectionPointB}));
+		gateAIterBoolPair->second.connections.emplace(
+			evalConnection.connectionPointA.connectionEndId,
+			std::unordered_set<EvalConnectionPoint>({evalConnection.connectionPointB})
+		);
 		if (weight != 1) connectionWeights.emplace(evalConnection, weight);
 	} else { // connection id has connections
 		auto connectionIter = connectionsIter->second.find(evalConnection.connectionPointB);

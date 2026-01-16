@@ -11,7 +11,7 @@ void ListSimulatorsCommand::run(const std::vector<std::string>& args, Environmen
 //    std::string simulatorDetails = "";
 	for (auto iter = environment.getBackend().getSimulatorManager().begin(); iter != environment.getBackend().getSimulatorManager().end(); iter++) {
 //        simulatorDetails = simulatorDetails + iter->second->getSimulatorName() + ", Paused: " + + "\n";
-        logInfo("{}, Paused: {}", "ListSimulatorsCommand", iter->second.getSimulatorName(), iter->second.isPause());
+        logInfo("{}, Paused: {}", "ListSimulatorsCommand", iter->second->getSimulatorName(), iter->second->isPause());
     }
 //    std::cout << simulatorDetails << std::flush;
 }
