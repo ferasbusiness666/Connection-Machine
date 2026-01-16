@@ -26,9 +26,9 @@ EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, const CircuitManage
 		const BlockData* blockData = circuitManager.getBlockDataManager().getBlockData(blockType);
 		BlockData::ConnectionData::PortType portType = blockData->getConnectionPortType(connectionEndId);
 		if (portType == BlockData::ConnectionData::PortType::NONE) return;
+		assert(portType != BlockData::ConnectionData::PortType::BIDIRECTIONAL); // can not happen and if it does some things are undefined
 		unsigned int bitWidth = blockData->getConnectionBitWidth(connectionEndId);
 		assert(bitWidth != 0);
-		assert(portType != BlockData::ConnectionData::PortType::BIDIRECTIONAL); // can not happen and if it does some things are undefined
 		Position internalPortPosition = std::get<2>(data->get());
 		const Block* block = circuit.getBlockContainer().getBlock(internalPortPosition);
 		if (!block) {
@@ -40,27 +40,42 @@ EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, const CircuitManage
 			logError("Could not find positionRemapping while doing \"circuitBlockDataConnectionPositionSet\", not sure why this would happen.", "EvaluatorInternal");
 			return;
 		}
-		const BlockData* internalBlockData = circuitManager.getBlockDataManager().getBlockData(block->type());
-		assert(internalBlockData);
-		std::optional<connection_end_id_t> internalConnectionEndId;
-		if (portType == BlockData::ConnectionData::PortType::INPUT) {
-			internalConnectionEndId = internalBlockData->getInputOrBidirectionalConnectionId(
-				internalPortPosition - block->getPosition(), block->getOrientation()
-			);
-		} else {
-			internalConnectionEndId = internalBlockData->getOutputOrBidirectionalConnectionId(
-				internalPortPosition - block->getPosition(), block->getOrientation()
-			);
+		connection_end_id_t internalConnectionEndId;
+		switch (block->type()) {
+		case BlockType::SWITCH:
+		case BlockType::BUTTON:
+		case BlockType::TICK_BUTTON: {
+			if (bitWidth != 1) return;
+			internalConnectionEndId = (portType == BlockData::ConnectionData::PortType::INPUT);
+		} break;
+		case BlockType::LIGHT: {
+			// if (bitWidth != 1) return;
+			internalConnectionEndId = 0;
+		} break;
+		default: {
+			const BlockData* internalBlockData = circuitManager.getBlockDataManager().getBlockData(block->type());
+			assert(internalBlockData);
+			std::optional<connection_end_id_t> optInternalConnectionEndId;
+			if (portType == BlockData::ConnectionData::PortType::INPUT) {
+				optInternalConnectionEndId = internalBlockData->getInputOrBidirectionalConnectionId(
+					internalPortPosition - block->getPosition(), block->getOrientation()
+				);
+			} else {
+				optInternalConnectionEndId = internalBlockData->getOutputOrBidirectionalConnectionId(
+					internalPortPosition - block->getPosition(), block->getOrientation()
+				);
+			}
+			if (!optInternalConnectionEndId.has_value() || bitWidth != internalBlockData->getConnectionBitWidth(optInternalConnectionEndId.value())) {
+				portToInternalPointMapping.insert_or_assign(connectionEndId, InternalPointData(portType, bitWidth));
+				return;
+			}
+			internalConnectionEndId = optInternalConnectionEndId.value();
 		}
-		if (!internalConnectionEndId.has_value() || bitWidth != internalBlockData->getConnectionBitWidth(internalConnectionEndId.value())) {
-			portToInternalPointMapping.insert_or_assign(connectionEndId, InternalPointData(portType, bitWidth));
-			return;
-			return;
 		}
 
 		portToInternalPointMapping.insert_or_assign(
 			connectionEndId,
-			InternalPointData(EvalConnectionPoint(positionRemappingIter->second.first, internalConnectionEndId.value()), portType, bitWidth)
+			InternalPointData(EvalConnectionPoint(positionRemappingIter->second.first, internalConnectionEndId), portType, bitWidth)
 		);
 	});
 	receiver.linkFunction("blockDataPortBitConfigurationSet", [&](const DataUpdateEventManager::EventData* event) {
@@ -83,41 +98,8 @@ EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, const CircuitManage
 		BlockData::ConnectionData::PortType portType = blockData->getConnectionPortType(connectionEndId);
 		if (portType == BlockData::ConnectionData::PortType::NONE) return;
 		assert(portType != BlockData::ConnectionData::PortType::BIDIRECTIONAL); // can not happen and if it does some things are undefined
-		// const CircuitBlockData* circuitBlockData = circuitManager.getCircuitBlockDataManager().getCircuitBlockData(circuit.getCircuitId());
-		// assert(circuitBlockData);
-		// const Position* internalPortPosition = circuitBlockData->getConnectionIdToPosition(connectionEndId);
-		// if (internalPortPosition == nullptr) return;
-		// const Block* block = circuit.getBlockContainer().getBlock(*internalPortPosition);
-		// if (!block) {
-			portToInternalPointMapping.insert_or_assign(connectionEndId, InternalPointData(portType, bitWidth));
-			return;
-		// }
-		// auto positionRemappingIter = positionRemapping.find(block->getPosition());
-		// if (positionRemappingIter == positionRemapping.end()) {
-		// 	logError("Could not find positionRemapping while doing \"circuitBlockDataConnectionPositionSet\", not sure why this would happen.", "EvaluatorInternal");
-		// 	return;
-		// }
-		// const BlockData* internalBlockData = circuitManager.getBlockDataManager().getBlockData(block->type());
-		// assert(internalBlockData);
-		// std::optional<connection_end_id_t> internalConnectionEndId;
-		// if (portType == BlockData::ConnectionData::PortType::INPUT) {
-		// 	internalConnectionEndId = internalBlockData->getInputOrBidirectionalConnectionId(
-		// 		*internalPortPosition - block->getPosition(), block->getOrientation()
-		// 	);
-		// } else {
-		// 	internalConnectionEndId = internalBlockData->getOutputOrBidirectionalConnectionId(
-		// 		*internalPortPosition - block->getPosition(), block->getOrientation()
-		// 	);
-		// }
-		// if (!internalConnectionEndId.has_value() || bitWidth != internalBlockData->getConnectionBitWidth(internalConnectionEndId.value())) {
-		// 	portToInternalPointMapping.insert_or_assign(connectionEndId, InternalPointData(portType, bitWidth));
-		// 	return;
-		// }
-
-		// portToInternalPointMapping.insert_or_assign(
-		// 	connectionEndId,
-		// 	InternalPointData(EvalConnectionPoint(positionRemappingIter->second.first, internalConnectionEndId.value()), portType, bitWidth)
-		// );
+		portToInternalPointMapping.try_emplace(connectionEndId, portType, bitWidth);
+		return;
 	});
 	const CircuitBlockData* circuitBlockData = circuitManager.getCircuitBlockDataManager().getCircuitBlockData(circuit.getCircuitId());
 	if (circuitBlockData == nullptr) return;
@@ -140,26 +122,41 @@ EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, const CircuitManage
 			logError("Could not find positionRemapping while doing \"circuitBlockDataConnectionPositionSet\", not sure why this would happen.", "EvaluatorInternal");
 			continue;
 		}
-		const BlockData* internalBlockData = circuitManager.getBlockDataManager().getBlockData(block->type());
-		assert(internalBlockData);
-		std::optional<connection_end_id_t> internalConnectionEndId;
-		if (portType == BlockData::ConnectionData::PortType::INPUT) {
-			internalConnectionEndId = internalBlockData->getInputOrBidirectionalConnectionId(
-				*internalPortPosition - block->getPosition(), block->getOrientation()
-			);
-		} else {
-			internalConnectionEndId = internalBlockData->getOutputOrBidirectionalConnectionId(
-				*internalPortPosition - block->getPosition(), block->getOrientation()
-			);
+		connection_end_id_t internalConnectionEndId;
+		switch (block->type()) {
+		case BlockType::SWITCH:
+		case BlockType::BUTTON:
+		case BlockType::TICK_BUTTON: {
+			if (bitWidth != 1) continue;
+			internalConnectionEndId = (portType == BlockData::ConnectionData::PortType::INPUT);
+		} break;
+		case BlockType::LIGHT: {
+			if (bitWidth != 1) continue;
+			internalConnectionEndId = 0;
+		} break;
+		default: {
+			const BlockData* internalBlockData = circuitManager.getBlockDataManager().getBlockData(block->type());
+			assert(internalBlockData);
+			std::optional<connection_end_id_t> optInternalConnectionEndId;
+			if (portType == BlockData::ConnectionData::PortType::INPUT) {
+				optInternalConnectionEndId = internalBlockData->getInputOrBidirectionalConnectionId(
+					*internalPortPosition - block->getPosition(), block->getOrientation()
+				);
+			} else {
+				optInternalConnectionEndId = internalBlockData->getOutputOrBidirectionalConnectionId(
+					*internalPortPosition - block->getPosition(), block->getOrientation()
+				);
+			}
+			if (!optInternalConnectionEndId.has_value() || bitWidth != internalBlockData->getConnectionBitWidth(optInternalConnectionEndId.value())) {
+				portToInternalPointMapping.try_emplace(connectionEndId, portType, bitWidth);
+				continue;
+			}
+			internalConnectionEndId = optInternalConnectionEndId.value();
 		}
-		if (!internalConnectionEndId.has_value() || bitWidth != internalBlockData->getConnectionBitWidth(internalConnectionEndId.value())) {
-			portToInternalPointMapping.try_emplace(connectionEndId, portType, bitWidth);
-			continue;
 		}
-
 		portToInternalPointMapping.try_emplace(
 			connectionEndId,
-			EvalConnectionPoint(positionRemappingIter->second.first, internalConnectionEndId.value()),
+			EvalConnectionPoint(positionRemappingIter->second.first, internalConnectionEndId),
 			portType,
 			bitWidth
 		);

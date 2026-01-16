@@ -15,13 +15,16 @@ void SubcircuitEvalLayer::run(const EvalLayerState& currentState, EvalLayerState
 			auto internalPointMappingIter = evaluatorInternalval.getPortToInternalPointMapping().find(connection.connectionPointA.connectionEndId);
 			assert(internalPointMappingIter != evaluatorInternalval.getPortToInternalPointMapping().end());
 			if (!internalPointMappingIter->second.connectionPoint.has_value()) continue;
+			EvalConnectionPoint internalBottomPoint = evaluatorInternalval.mapFromTopConnectionPointToBottomConnectionPoint(
+				internalPointMappingIter->second.connectionPoint.value()
+			);
 			auto otherSimulatorToThisSimulatorIdMappingIter = subcircuitDataAIter->second.otherSimulatorToThisSimulatorIdMapping.find(
-				internalPointMappingIter->second.connectionPoint.value().gateId
+				internalBottomPoint.gateId
 			);
 			assert(otherSimulatorToThisSimulatorIdMappingIter != subcircuitDataAIter->second.otherSimulatorToThisSimulatorIdMapping.end());
 			connection.connectionPointA = EvalConnectionPoint(
 				otherSimulatorToThisSimulatorIdMappingIter->second,
-				internalPointMappingIter->second.connectionPoint.value().connectionEndId
+				internalBottomPoint.connectionEndId
 			);
 		}
 		auto subcircuitDataBIter = subcircuits.find(connection.connectionPointB.gateId);
@@ -32,13 +35,16 @@ void SubcircuitEvalLayer::run(const EvalLayerState& currentState, EvalLayerState
 			auto internalPointMappingIter = evaluatorInternalval.getPortToInternalPointMapping().find(connection.connectionPointA.connectionEndId);
 			assert(internalPointMappingIter != evaluatorInternalval.getPortToInternalPointMapping().end());
 			if (!internalPointMappingIter->second.connectionPoint.has_value()) continue;
-			auto otherSimulatorToThisSimulatorIdMappingIter = subcircuitDataAIter->second.otherSimulatorToThisSimulatorIdMapping.find(
-				internalPointMappingIter->second.connectionPoint.value().gateId
+			EvalConnectionPoint internalBottomPoint = evaluatorInternalval.mapFromTopConnectionPointToBottomConnectionPoint(
+				internalPointMappingIter->second.connectionPoint.value()
 			);
-			assert(otherSimulatorToThisSimulatorIdMappingIter != subcircuitDataAIter->second.otherSimulatorToThisSimulatorIdMapping.end());
+			auto otherSimulatorToThisSimulatorIdMappingIter = subcircuitDataBIter->second.otherSimulatorToThisSimulatorIdMapping.find(
+				internalBottomPoint.gateId
+			);
+			assert(otherSimulatorToThisSimulatorIdMappingIter != subcircuitDataBIter->second.otherSimulatorToThisSimulatorIdMapping.end());
 			connection.connectionPointB = EvalConnectionPoint(
 				otherSimulatorToThisSimulatorIdMappingIter->second,
-				internalPointMappingIter->second.connectionPoint.value().connectionEndId
+				internalBottomPoint.connectionEndId
 			);
 		}
 		nextState.removeConnection(connection, iter->second);
@@ -97,6 +103,7 @@ void SubcircuitEvalLayer::run(const EvalLayerState& currentState, EvalLayerState
 		for (std::pair<eval_gate_id, EvalGate> pair : evalLayerState.getGates()) {
 			eval_gate_id gateId = nextState.getUnsedEvalGateId();
 			subcircuitsPair.first->second.otherSimulatorToThisSimulatorIdMapping.emplace(pair.second.gateId, gateId);
+			subcircuitsPair.first->second.otherSimulatorToThisSimulatorIdMapping.emplace(gateId, pair.second.gateId);
 			nextState.addGate(gateId, pair.second.type);
 		}
 		for (std::pair<eval_gate_id, EvalGate> pair : evalLayerState.getGates()) {
@@ -128,13 +135,16 @@ void SubcircuitEvalLayer::run(const EvalLayerState& currentState, EvalLayerState
 			auto internalPointMappingIter = evaluatorInternalval.getPortToInternalPointMapping().find(connection.connectionPointA.connectionEndId);
 			assert(internalPointMappingIter != evaluatorInternalval.getPortToInternalPointMapping().end());
 			if (!internalPointMappingIter->second.connectionPoint.has_value()) continue;
+			EvalConnectionPoint internalBottomPoint = evaluatorInternalval.mapFromTopConnectionPointToBottomConnectionPoint(
+				internalPointMappingIter->second.connectionPoint.value()
+			);
 			auto otherSimulatorToThisSimulatorIdMappingIter = subcircuitDataAIter->second.otherSimulatorToThisSimulatorIdMapping.find(
-				internalPointMappingIter->second.connectionPoint.value().gateId
+				internalBottomPoint.gateId
 			);
 			assert(otherSimulatorToThisSimulatorIdMappingIter != subcircuitDataAIter->second.otherSimulatorToThisSimulatorIdMapping.end());
 			connection.connectionPointA = EvalConnectionPoint(
 				otherSimulatorToThisSimulatorIdMappingIter->second,
-				internalPointMappingIter->second.connectionPoint.value().connectionEndId
+				internalBottomPoint.connectionEndId
 			);
 		}
 		auto subcircuitDataBIter = subcircuits.find(connection.connectionPointB.gateId);
@@ -145,13 +155,16 @@ void SubcircuitEvalLayer::run(const EvalLayerState& currentState, EvalLayerState
 			auto internalPointMappingIter = evaluatorInternalval.getPortToInternalPointMapping().find(connection.connectionPointA.connectionEndId);
 			assert(internalPointMappingIter != evaluatorInternalval.getPortToInternalPointMapping().end());
 			if (!internalPointMappingIter->second.connectionPoint.has_value()) continue;
-			auto otherSimulatorToThisSimulatorIdMappingIter = subcircuitDataAIter->second.otherSimulatorToThisSimulatorIdMapping.find(
-				internalPointMappingIter->second.connectionPoint.value().gateId
+			EvalConnectionPoint internalBottomPoint = evaluatorInternalval.mapFromTopConnectionPointToBottomConnectionPoint(
+				internalPointMappingIter->second.connectionPoint.value()
 			);
-			assert(otherSimulatorToThisSimulatorIdMappingIter != subcircuitDataAIter->second.otherSimulatorToThisSimulatorIdMapping.end());
+			auto otherSimulatorToThisSimulatorIdMappingIter = subcircuitDataBIter->second.otherSimulatorToThisSimulatorIdMapping.find(
+				internalBottomPoint.gateId
+			);
+			assert(otherSimulatorToThisSimulatorIdMappingIter != subcircuitDataBIter->second.otherSimulatorToThisSimulatorIdMapping.end());
 			connection.connectionPointB = EvalConnectionPoint(
 				otherSimulatorToThisSimulatorIdMappingIter->second,
-				internalPointMappingIter->second.connectionPoint.value().connectionEndId
+				internalBottomPoint.connectionEndId
 			);
 		}
 		nextState.addConnection(connection, iter->second);

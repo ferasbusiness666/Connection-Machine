@@ -13,6 +13,7 @@ class SubcircuitEvalLayer : public BaseEvalLayer {
 		circuit_id_t circuitId;
 		const EvalLayerState& outputEvalLayer;
 		std::unordered_map<eval_gate_id, eval_gate_id> otherSimulatorToThisSimulatorIdMapping;
+		std::unordered_map<eval_gate_id, eval_gate_id> thisSimulatorIdMappingToOtherSimulator;
 	};
 public:
 	SubcircuitEvalLayer(const CircuitManager& circuitManager) : circuitManager(circuitManager) {}
