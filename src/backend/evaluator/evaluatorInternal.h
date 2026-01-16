@@ -9,6 +9,7 @@
 class CircuitManager;
 
 class EvaluatorInternal {
+public:
 	struct InternalPointData {
 		InternalPointData(std::optional<EvalConnectionPoint> connectionPoint, BlockData::ConnectionData::PortType portType, unsigned int bitWith) :
 			connectionPoint(connectionPoint), portType(portType), bitWith(bitWith) {}
@@ -17,7 +18,6 @@ class EvaluatorInternal {
 		BlockData::ConnectionData::PortType portType;
 		unsigned int bitWith;
 	};
-public:
 	EvaluatorInternal(const Circuit& circuit, const CircuitManager& circuitManager, DataUpdateEventManager::DataUpdateEventReceiver& receiver);
 	void startEdit();
 	void endEdit();

@@ -104,7 +104,6 @@ void JunctionAddEvalLayer::run(const EvalLayerState& currentState, EvalLayerStat
 				connection.connectionPointB = *(connectionsIter->second.begin());
 			}
 		}
-		// if (connection.connectionPointA == connection.connectionPointB) continue; // wont happen
 		nextState.addConnection(connection, iter->second);
 	}
 }

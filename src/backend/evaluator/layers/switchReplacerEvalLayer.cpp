@@ -50,8 +50,8 @@ void SwitchReplacerEvalLayer::run(const EvalLayerState& currentState, EvalLayerS
 			) {
 				if (nextState.getGate(connection.connectionPointA.gateId)->type == gate->type) {
 					nextState.changeGateType(connection.connectionPointA.gateId, getEvalGateType(BlockType::JUNCTION));
-					connection.connectionPointA.connectionEndId = 0;
 				}
+				connection.connectionPointA.connectionEndId = 0;
 			}
 		}
 		if (connection.connectionPointB.connectionEndId == 1) {
@@ -63,8 +63,8 @@ void SwitchReplacerEvalLayer::run(const EvalLayerState& currentState, EvalLayerS
 			) {
 				if (nextState.getGate(connection.connectionPointB.gateId)->type == gate->type) {;
 					nextState.changeGateType(connection.connectionPointB.gateId, getEvalGateType(BlockType::JUNCTION));
-					connection.connectionPointB.connectionEndId = 0;
 				}
+				connection.connectionPointB.connectionEndId = 0;
 			}
 		}
 		nextState.addConnection(connection, iter->second);

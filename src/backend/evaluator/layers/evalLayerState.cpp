@@ -138,10 +138,12 @@ void EvalLayerState::removeConnection(const EvalConnection& evalConnection, unsi
 
 void EvalLayerState::changeGateType(eval_gate_id gateId, EvalGateType newType) {
 	auto gatesIter = gates.find(gateId);
-	if (gatesIter->second.type == newType) return;
+	EvalGateType oldType = gatesIter->second.type;
+	if (oldType == newType) return;
 	gatesIter->second.type = newType;
 	auto addedGatesPair = addedGates.insert_or_assign(gateId, newType);
 	if (!addedGatesPair.second) return;
+	removedGates.emplace(gateId, oldType);
 	for (const std::pair<connection_end_id_t, std::unordered_set<EvalConnectionPoint>>& connectionsPair : gatesIter->second.connections) {
 		for (const EvalConnectionPoint& otherConnectionPoint : connectionsPair.second) {
 			EvalConnection evalConnection(EvalConnectionPoint(gateId, connectionsPair.first), otherConnectionPoint);
