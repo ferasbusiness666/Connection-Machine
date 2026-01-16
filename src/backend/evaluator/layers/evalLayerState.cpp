@@ -41,6 +41,7 @@ void EvalLayerState::removeGate(eval_gate_id gateId) { // TODO: add transparent 
 	if (addedGates.erase(gateId) == 0) {
 		removedGates.insert(gateId);
 	}
+	typeChanges.erase(gateId);
 }
 
 void EvalLayerState::addConnection(const EvalConnection& evalConnection, unsigned int weight) { // TODO: add transparent junction merging
@@ -119,6 +120,11 @@ void EvalLayerState::removeConnection(const EvalConnection& evalConnection, unsi
 		assert(addedConnectionIter->second > weight);
 		addedConnectionIter->second -= weight;
 	}
+}
+
+void EvalLayerState::changeGateType(eval_gate_id gateId, EvalGateType newType) {
+	if (gates.at(gateId).type == newType || addedGates.contains(gateId)) return;
+	typeChanges.insert(gateId);
 }
 
 void EvalLayerState::visualize() const {

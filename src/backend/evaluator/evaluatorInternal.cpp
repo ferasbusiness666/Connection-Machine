@@ -179,7 +179,7 @@ void EvaluatorInternal::addBlock(Position position, Orientation orientation, Blo
 	if (blockType == BlockType::LIGHT) {
 		blockType = BlockType::JUNCTION;
 	}
-	layerRunner.getInputLayer().addGate(simulatorId, getSimulatorGateType(blockType));
+	layerRunner.getInputLayer().addGate(simulatorId, getEvalGateType(blockType));
 }
 
 void EvaluatorInternal::removeBlock(Position position, Orientation orientation, BlockType blockType) {

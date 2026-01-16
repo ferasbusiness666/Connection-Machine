@@ -25,6 +25,7 @@ public:
 	void removeGate(eval_gate_id gateId);
 	void addConnection(const EvalConnection& evalConnection, unsigned int weight = 1);
 	void removeConnection(const EvalConnection& evalConnection, unsigned int weight = 1);
+	void changeGateType(const eval_gate_id gateId, EvalGateType newType);
 
  	const EvalGate* getGate(eval_gate_id gateId) const {
 		auto iter = gates.find(gateId);
@@ -40,15 +41,15 @@ public:
 
 	std::unordered_set<eval_gate_id>::const_iterator getRemovedGatesBegin() const { return removedGates.begin(); }
 	std::unordered_set<eval_gate_id>::const_iterator getRemovedGatesEnd() const { return removedGates.end(); }
-	bool removeEditContainsGate(eval_gate_id evalGateId) const { return removedGates.contains(evalGateId); }
+
+	std::unordered_set<eval_gate_id>::const_iterator getTypeChangesBegin() const { return typeChanges.begin(); }
+	std::unordered_set<eval_gate_id>::const_iterator getTypeChangesEnd() const { return typeChanges.end(); }
 
 	std::unordered_map<EvalConnection, unsigned int>::const_iterator getAddedConnectionsBegin() const { return addedConnections.begin(); }
 	std::unordered_map<EvalConnection, unsigned int>::const_iterator getAddedConnectionsEnd() const { return addedConnections.end(); }
-	bool addEditContainsConnection(EvalConnection evalConnection) const { return addedConnections.contains(evalConnection); }
 
 	std::unordered_map<EvalConnection, unsigned int>::const_iterator getRemovedConnectionsBegin() const { return removedConnections.begin(); }
 	std::unordered_map<EvalConnection, unsigned int>::const_iterator getRemovedConnectionsEnd() const { return removedConnections.end(); }
-	bool removeEditContainsConnection(EvalConnection evalConnection) const { return removedConnections.contains(evalConnection); }
 
 	unsigned int getConnectionWeight(EvalConnection connection) const {
 		auto iter = connectionWeights.find(connection);
@@ -140,6 +141,7 @@ private:
 
 	std::unordered_set<eval_gate_id> addedGates;
 	std::unordered_set<eval_gate_id> removedGates;
+	std::unordered_set<eval_gate_id> typeChanges;
 	std::unordered_map<EvalConnection, unsigned int> addedConnections;
 	std::unordered_map<EvalConnection, unsigned int> removedConnections;
 };

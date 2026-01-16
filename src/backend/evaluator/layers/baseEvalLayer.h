@@ -13,8 +13,8 @@ public:
 protected:
 	inline bool isJunctionType(EvalGateType gateType) const {
 		return (
-			gateType == getSimulatorGateType(BlockType::JUNCTION) || gateType == getSimulatorGateType(BlockType::JUNCTION_L) || gateType == getSimulatorGateType(BlockType::JUNCTION_H) ||
-			gateType == getSimulatorGateType(BlockType::JUNCTION_X)
+			gateType == getEvalGateType(BlockType::JUNCTION) || gateType == getEvalGateType(BlockType::JUNCTION_L) ||
+			gateType == getEvalGateType(BlockType::JUNCTION_H) || gateType == getEvalGateType(BlockType::JUNCTION_X)
 		);
 	}
 };

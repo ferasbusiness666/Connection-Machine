@@ -92,6 +92,26 @@ void JunctionMergeEvalLayer::run(const EvalLayerState& currentState, EvalLayerSt
 		nextState.getGateIdReverseRemapping().emplace(*iter, *iter);
 		nextState.addGate(*iter, evalGate->type);
 	}
+	for (auto iter = currentState.getTypeChangesBegin(); iter != currentState.getTypeChangesEnd(); ++iter) {
+		const EvalGate* curGate = nextState.getGate(*iter);
+		const EvalGate* nextGate = nextState.getGate(*iter);
+		if (isJunctionType(curGate->type)) {
+			junctionsToScan.insert(*iter);
+			continue;
+		} else if (nextGate == nullptr) {
+			for (const EvalConnectionPoint& otherConnectionPoint : nextGate->connections.at(0)) {
+
+			}
+		} else if (isJunctionType(nextGate->type)) {
+			junctionsToScan.erase(*iter);
+			for (const EvalConnectionPoint& otherConnectionPoint : nextGate->connections.at(0)) {
+
+			}
+			nextState.changeGateType(*iter, curGate->type);
+		} else {
+			nextState.changeGateType(*iter, curGate->type);
+		}
+	}
 	for (auto iter = currentState.getAddedConnectionsBegin(); iter != currentState.getAddedConnectionsEnd(); ++iter) {
 		EvalConnection connection = iter->first;
 		if (connection.connectionPointA.connectionEndId == 0) {
@@ -132,9 +152,10 @@ void JunctionMergeEvalLayer::run(const EvalLayerState& currentState, EvalLayerSt
 		eval_gate_id gateId = *junctionsToScan.begin();
 		junctionsToScan.erase(junctionsToScan.begin());
 		auto [junctions, otherConnectionPoints, gateType] = gatherJunctionGroup(gateId, currentState);
-		if (currentState.getGate(gateId)->type != gateType) {
-			gateId = nextState.getUnsedEvalGateId();
-		}
+		EvalGateType oldType = currentState.getGate(gateId)->type;
+		// if (currentState.getGate(gateId)->type != gateType) {
+		// 	gateId = nextState.getUnsedEvalGateId();
+		// }
 		// logInfo("Merging group of {} gates. Final ID: {}", "", junctions.size(), gateId);
 		bool foundPullDown = false;
 		bool foundPullUp = false;
@@ -158,7 +179,8 @@ void JunctionMergeEvalLayer::run(const EvalLayerState& currentState, EvalLayerSt
 			if (nextState.getGate(junctionId)) nextState.removeGate(junctionId);
 		}
 		gatesTokeep.insert(gateId);
-		nextState.addGate(gateId, gateType);
+		nextState.addGate(gateId, oldType);
+		if (oldType != gateType) nextState.changeGateType(gateId, gateType);
 		for (std::pair<EvalConnectionPoint, unsigned int> pair : otherConnectionPoints) {
 			// logInfo("merger addConnection: {}, {}", "", EvalConnection(EvalConnectionPoint(gateId, 0), pair.first), pair.second);
 			nextState.addConnection(EvalConnection(EvalConnectionPoint(gateId, 0), pair.first), pair.second);
@@ -178,9 +200,9 @@ std::tuple<
 	for (unsigned int i = 0; i < junctions.size(); i++) {
 		const EvalGate* evalGate = evalLayerState.getGate(junctions[i]);
 		if (isJunctionType(evalGate->type)) {
-			if (evalGate->type == getSimulatorGateType(BlockType::JUNCTION_L)) foundPullDown = true;
-			if (evalGate->type == getSimulatorGateType(BlockType::JUNCTION_H)) foundPullUp = true;
-			if (evalGate->type == getSimulatorGateType(BlockType::JUNCTION_X)) foundPullDown = foundPullUp = true;
+			if (evalGate->type == getEvalGateType(BlockType::JUNCTION_L)) foundPullDown = true;
+			if (evalGate->type == getEvalGateType(BlockType::JUNCTION_H)) foundPullUp = true;
+			if (evalGate->type == getEvalGateType(BlockType::JUNCTION_X)) foundPullDown = foundPullUp = true;
 			if (!evalGate->connections.empty()) {
 				for (EvalConnectionPoint connection : evalGate->connections.at(0)) {
 					// if (connection.connectionEndId != 0) {
@@ -210,12 +232,12 @@ std::tuple<
 		const EvalGate* evalGate = evalLayerState.getGate(junction);
 		assert(isJunctionType(evalGate->type));
 	}
-	EvalGateType gateType = getSimulatorGateType(BlockType::JUNCTION);
+	EvalGateType gateType = getEvalGateType(BlockType::JUNCTION);
 	if (foundPullDown) {
-		if (foundPullUp) gateType = getSimulatorGateType(BlockType::JUNCTION_X);
-		else gateType = getSimulatorGateType(BlockType::JUNCTION_L);
+		if (foundPullUp) gateType = getEvalGateType(BlockType::JUNCTION_X);
+		else gateType = getEvalGateType(BlockType::JUNCTION_L);
 	} else if (foundPullUp) {
-		gateType = getSimulatorGateType(BlockType::JUNCTION_H);
+		gateType = getEvalGateType(BlockType::JUNCTION_H);
 	}
 	return { junctions, visted, gateType };
 }

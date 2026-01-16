@@ -10,7 +10,7 @@ DECLARE_ID_TYPE(simulator_gate_id_t, unsigned int);
 
 typedef unsigned int EvalGateType;
 
-inline EvalGateType getSimulatorGateType(BlockType blockType) { return (EvalGateType)blockType; }
+inline EvalGateType getEvalGateType(BlockType blockType) { return (EvalGateType)blockType; }
 inline BlockType getBlockType(EvalGateType evalGateType) { return (BlockType)evalGateType; }
 
 struct SimulatorMappingUpdate {

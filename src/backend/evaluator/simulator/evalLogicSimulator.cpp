@@ -207,10 +207,10 @@ std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> EvalLogicSim
 	if (connectionsIter != evalGate->connections.end() && connectionsIter->second.size() == 1) {
 		const EvalGate* otherSimulatorGate = evalLayerState.getGate(connectionsIter->second.begin()->gateId);
 		if (
-			otherSimulatorGate->type == getSimulatorGateType(BlockType::JUNCTION) ||
-			otherSimulatorGate->type == getSimulatorGateType(BlockType::JUNCTION_L) ||
-			otherSimulatorGate->type == getSimulatorGateType(BlockType::JUNCTION_H) ||
-			otherSimulatorGate->type == getSimulatorGateType(BlockType::JUNCTION_X)
+			otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION) ||
+			otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION_L) ||
+			otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION_H) ||
+			otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION_X)
 		) {
 			evalGateIdToReadState = otherSimulatorGate->gateId;
 		}
@@ -314,10 +314,10 @@ void EvalLogicSimulator::processEdits() {
 			if (connectionsIter != evalGate->connections.end() && connectionsIter->second.size() == 1) {
 				const EvalGate* otherSimulatorGate = evalLayerState.getGate(connectionsIter->second.begin()->gateId);
 				if (
-					otherSimulatorGate->type == getSimulatorGateType(BlockType::JUNCTION) ||
-					otherSimulatorGate->type == getSimulatorGateType(BlockType::JUNCTION_L) ||
-					otherSimulatorGate->type == getSimulatorGateType(BlockType::JUNCTION_H) ||
-					otherSimulatorGate->type == getSimulatorGateType(BlockType::JUNCTION_X)
+					otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION) ||
+					otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION_L) ||
+					otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION_H) ||
+					otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION_X)
 				) {
 					pinSimulatorId = gateIdMapping.at(otherSimulatorGate->gateId);
 				}
