@@ -8,7 +8,7 @@
 
 
 LayerRunner::LayerRunner(const CircuitManager& circuitManager) : blockDataManager(circuitManager.getBlockDataManager()) {
-	layers.emplace_back(std::make_unique<SubcircuitEvalLayer>(circuitManager));
+	// layers.emplace_back(std::make_unique<SubcircuitEvalLayer>(circuitManager));
 	layers.emplace_back(std::make_unique<JunctionAddEvalLayer>());
 	layers.emplace_back(std::make_unique<JunctionMergeEvalLayer>());
 	evalTopLayerState = std::make_unique<EvalLayerState>(blockDataManager);
@@ -18,17 +18,17 @@ LayerRunner::LayerRunner(const CircuitManager& circuitManager) : blockDataManage
 LayerRunner::~LayerRunner() = default;
 
 void LayerRunner::runAll() {
-	logInfo("------------------------------------------------");
+	// logInfo("------------------------------------------------");
 	EvalLayerState* last = evalTopLayerState.get();
-	last->visualize();
+	// last->visualize();
 	for (unsigned int i = 0; i < layers.size(); i++) {
-		logInfo("----");
+		// logInfo("----");
 		EvalLayerState& next = last->getOrMakeNextLayerState();
 		next.resetEdits();
-		next.visualize();
+		// next.visualize();
 		layers[i]->run(*last, next);
 		last = &next;
-		last->visualize();
+		// last->visualize();
 	}
 }
 

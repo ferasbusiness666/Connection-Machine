@@ -3,8 +3,11 @@
 void EvalLayerState::addGate(eval_gate_id gateId, EvalGateType type) { // TODO: add transparent junction merging
 	bool suc = gates.try_emplace(gateId, type, gateId).second;
 	assert(suc);
-	if (removedGates.erase(gateId) == 0) {
-		addedGates.insert(gateId);
+	auto removedGatesIter = removedGates.find(gateId);
+	if (removedGatesIter == removedGates.end() || removedGatesIter->second != type) {
+		addedGates.emplace(gateId, type);
+	} else {
+		removedGates.erase(removedGatesIter);
 	}
 }
 
@@ -37,11 +40,14 @@ void EvalLayerState::removeGate(eval_gate_id gateId) { // TODO: add transparent 
 			}
 		}
 	}
-	gates.erase(iter);
-	if (addedGates.erase(gateId) == 0) {
-		removedGates.insert(gateId);
+	auto addedGatessIter = addedGates.find(gateId);
+	if (addedGatessIter == removedGates.end()) {
+		removedGates.emplace(gateId, iter->second.type);
+	} else {
+		assert(addedGatessIter->second == iter->second.type);
+		addedGates.erase(addedGatessIter);
 	}
-	typeChanges.erase(gateId);
+	gates.erase(iter);
 }
 
 void EvalLayerState::addConnection(const EvalConnection& evalConnection, unsigned int weight) { // TODO: add transparent junction merging
@@ -122,11 +128,6 @@ void EvalLayerState::removeConnection(const EvalConnection& evalConnection, unsi
 	}
 }
 
-void EvalLayerState::changeGateType(eval_gate_id gateId, EvalGateType newType) {
-	if (gates.at(gateId).type == newType || addedGates.contains(gateId)) return;
-	typeChanges.insert(gateId);
-}
-
 void EvalLayerState::visualize() const {
 	logInfo("Eval Layer State {}", "", (unsigned long long)this);
 	logInfo("Last: {}   Next: {}", "", (unsigned long long)lastLayerState, (unsigned long long)nextLayerState.get());
@@ -173,27 +174,27 @@ void EvalLayerState::visualize() const {
 	// 	logInfo("({}, {}) -> ({}, {})", "", pair.first.gateId, pair.first.connectionEndId, pair.second.gateId, pair.second.connectionEndId);
 	// }
 	tmpBuf.clear();
-	for (eval_gate_id id : addedGates) {
+	for (std::pair<eval_gate_id, EvalGateType> pair : addedGates) {
 		if (tmpBuf.size() != 0) tmpBuf += ", ";
-		tmpBuf += std::to_string(id);
+		tmpBuf += "[" + fmt::to_string(pair.first) + " " + fmt::to_string((unsigned int)pair.second) + "]";
 	}
 	logInfo("{} addedGates: {}", "", addedGates.size(), tmpBuf);
 	tmpBuf.clear();
-	for (eval_gate_id id : removedGates) {
+	for (std::pair<eval_gate_id, EvalGateType> pair : removedGates) {
 		if (tmpBuf.size() != 0) tmpBuf += ", ";
-		tmpBuf += std::to_string(id);
+		tmpBuf += "[" + fmt::to_string(pair.first) + " " + fmt::to_string((unsigned int)pair.second) + "]";
 	}
 	logInfo("{} removedGates: {}", "", removedGates.size(), tmpBuf);
 	tmpBuf.clear();
 	for (std::pair<EvalConnection, unsigned int> pair : addedConnections) {
 		if (tmpBuf.size() != 0) tmpBuf += ", ";
-		tmpBuf += "[" + fmt::to_string(pair.first) + " " + std::to_string(pair.second) + "]";
+		tmpBuf += "[" + fmt::to_string(pair.first) + " " + fmt::to_string(pair.second) + "]";
 	}
 	logInfo("{} addedConnections: {}", "", addedConnections.size(), tmpBuf);
 	tmpBuf.clear();
 	for (std::pair<EvalConnection, unsigned int> pair : removedConnections) {
 		if (tmpBuf.size() != 0) tmpBuf += ", ";
-		tmpBuf += "[" + fmt::to_string(pair.first) + " " + std::to_string(pair.second) + "]";
+		tmpBuf += "[" + fmt::to_string(pair.first) + " " + fmt::to_string(pair.second) + "]";
 	}
 	logInfo("{} removedConnections: {}", "", removedConnections.size(), tmpBuf);
 }

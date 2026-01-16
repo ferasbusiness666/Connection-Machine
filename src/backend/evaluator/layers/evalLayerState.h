@@ -25,7 +25,6 @@ public:
 	void removeGate(eval_gate_id gateId);
 	void addConnection(const EvalConnection& evalConnection, unsigned int weight = 1);
 	void removeConnection(const EvalConnection& evalConnection, unsigned int weight = 1);
-	void changeGateType(const eval_gate_id gateId, EvalGateType newType);
 
  	const EvalGate* getGate(eval_gate_id gateId) const {
 		auto iter = gates.find(gateId);
@@ -35,15 +34,11 @@ public:
 
 	const std::unordered_map<eval_gate_id, EvalGate>& getGates() const { return gates; }
 
-	std::unordered_set<eval_gate_id>::const_iterator getAddedGatesBegin() const { return addedGates.begin(); }
-	std::unordered_set<eval_gate_id>::const_iterator getAddedGatesEnd() const { return addedGates.end(); }
-	bool addEditContainsGate(eval_gate_id evalGateId) const { return addedGates.contains(evalGateId); }
+	std::unordered_map<eval_gate_id, EvalGateType>::const_iterator getAddedGatesBegin() const { return addedGates.begin(); }
+	std::unordered_map<eval_gate_id, EvalGateType>::const_iterator getAddedGatesEnd() const { return addedGates.end(); }
 
-	std::unordered_set<eval_gate_id>::const_iterator getRemovedGatesBegin() const { return removedGates.begin(); }
-	std::unordered_set<eval_gate_id>::const_iterator getRemovedGatesEnd() const { return removedGates.end(); }
-
-	std::unordered_set<eval_gate_id>::const_iterator getTypeChangesBegin() const { return typeChanges.begin(); }
-	std::unordered_set<eval_gate_id>::const_iterator getTypeChangesEnd() const { return typeChanges.end(); }
+	std::unordered_map<eval_gate_id, EvalGateType>::const_iterator getRemovedGatesBegin() const { return removedGates.begin(); }
+	std::unordered_map<eval_gate_id, EvalGateType>::const_iterator getRemovedGatesEnd() const { return removedGates.end(); }
 
 	std::unordered_map<EvalConnection, unsigned int>::const_iterator getAddedConnectionsBegin() const { return addedConnections.begin(); }
 	std::unordered_map<EvalConnection, unsigned int>::const_iterator getAddedConnectionsEnd() const { return addedConnections.end(); }
@@ -139,9 +134,8 @@ private:
 	std::unordered_map<EvalConnectionPoint, EvalConnectionPoint> connectionPointRemapping;
 	std::unordered_multimap<EvalConnectionPoint, EvalConnectionPoint> connectionPointReverseRemapping;
 
-	std::unordered_set<eval_gate_id> addedGates;
-	std::unordered_set<eval_gate_id> removedGates;
-	std::unordered_set<eval_gate_id> typeChanges;
+	std::unordered_map<eval_gate_id, EvalGateType> addedGates;
+	std::unordered_map<eval_gate_id, EvalGateType> removedGates;
 	std::unordered_map<EvalConnection, unsigned int> addedConnections;
 	std::unordered_map<EvalConnection, unsigned int> removedConnections;
 };

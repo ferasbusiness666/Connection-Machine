@@ -263,19 +263,17 @@ void EvalLogicSimulator::processEdits() {
 			}
 		}
 		for (auto iter = evalLayerState.getRemovedGatesBegin(); iter != evalLayerState.getRemovedGatesEnd(); ++iter) {
-			auto gateIdIter = gateIdMapping.find(iter->get());
+			auto gateIdIter = gateIdMapping.find(iter->first);
 			if (gateIdIter == gateIdMapping.end()) {
-				logError("makeEdit remove gate gateIdMapping.find(iter->connectionPointA.gateId) failed. Gate id: {}", "EvalLogicSimulator::makeEdit", iter->get());
+				logError("makeEdit remove gate gateIdMapping.find(iter->connectionPointA.gateId) failed. Gate id: {}", "EvalLogicSimulator::makeEdit", iter->first);
 				continue;
 			}
 			logicSimulator.removeGate(gateIdIter->second);
 			gateIdMapping.erase(gateIdIter);
 		}
 		for (auto iter = evalLayerState.getAddedGatesBegin(); iter != evalLayerState.getAddedGatesEnd(); ++iter) {
-			const EvalGate* evalGate = evalLayerState.getGate(iter->get());
-			assert(evalGate);
-			simulator_gate_id_t simulatorId = logicSimulator.addGate(getBlockType(evalGate->type));
-			gateIdMapping.try_emplace(evalGate->gateId, simulatorId);
+			simulator_gate_id_t simulatorId = logicSimulator.addGate(getBlockType(iter->second));
+			gateIdMapping.try_emplace(iter->first, simulatorId);
 		}
 		for (auto iter = evalLayerState.getAddedConnectionsBegin(); iter != evalLayerState.getAddedConnectionsEnd(); ++iter) {
 			auto gateAIdIter = gateIdMapping.find(iter->first.connectionPointA.gateId);

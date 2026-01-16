@@ -50,12 +50,12 @@ void SubcircuitEvalLayer::run(const EvalLayerState& currentState, EvalLayerState
 		nextState.removeConnection(connection, iter->second);
 	}
 	for (auto iter = currentState.getRemovedGatesBegin(); iter != currentState.getRemovedGatesEnd(); ++iter) {
-		auto subcircuitDataIter = subcircuits.find(*iter);
+		auto subcircuitDataIter = subcircuits.find(iter->first);
 		if (subcircuitDataIter == subcircuits.end()) {
-			auto iterPair = nextState.getGateIdReverseRemapping().equal_range(*iter);
+			auto iterPair = nextState.getGateIdReverseRemapping().equal_range(iter->first);
 			for (auto iter = iterPair.first; iter != iterPair.second; iter++) nextState.getGateIdRemapping().erase(iter->second);
 			nextState.getGateIdReverseRemapping().erase(iterPair.first, iterPair.second);
-			nextState.removeGate(*iter);
+			nextState.removeGate(iter->first);
 			continue;
 		}
 		const Circuit* circuit = circuitManager.getCircuit(subcircuitDataIter->second.circuitId).get();
@@ -87,19 +87,19 @@ void SubcircuitEvalLayer::run(const EvalLayerState& currentState, EvalLayerState
 		subcircuits.erase(subcircuitDataIter);
 	}
 	for (auto iter = currentState.getAddedGatesBegin(); iter != currentState.getAddedGatesEnd(); ++iter) {
-		const EvalGate* evalGate = currentState.getGate(*iter);
-		circuit_id_t circuitId = circuitManager.getCircuitBlockDataManager().getCircuitId(getBlockType(evalGate->type));
+		// const EvalGate* evalGate = currentState.getGate(*iter);
+		circuit_id_t circuitId = circuitManager.getCircuitBlockDataManager().getCircuitId(getBlockType(iter->second));
 		if (circuitId == 0) {
-			nextState.getGateIdRemapping().emplace(*iter, *iter);
-			nextState.getGateIdReverseRemapping().emplace(*iter, *iter);
-			nextState.addGate(*iter, evalGate->type);
+			nextState.getGateIdRemapping().emplace(iter->first, iter->first);
+			nextState.getGateIdReverseRemapping().emplace(iter->first, iter->first);
+			nextState.addGate(iter->first, iter->second);
 			continue;
 		}
 		const Circuit* circuit = circuitManager.getCircuit(circuitId).get();
 		assert(circuit);
 		circuit->getEvaluator().addEvaluator(*this);
 		const EvalLayerState& evalLayerState = circuit->getEvaluator().getEvaluatorInternal().getLayerRunner().getOutputLayer();
-		auto subcircuitsPair = subcircuits.try_emplace(*iter, circuitId, evalLayerState);
+		auto subcircuitsPair = subcircuits.try_emplace(iter->first, circuitId, evalLayerState);
 		for (std::pair<eval_gate_id, EvalGate> pair : evalLayerState.getGates()) {
 			eval_gate_id gateId = nextState.getUnsedEvalGateId();
 			subcircuitsPair.first->second.otherSimulatorToThisSimulatorIdMapping.emplace(pair.second.gateId, gateId);
