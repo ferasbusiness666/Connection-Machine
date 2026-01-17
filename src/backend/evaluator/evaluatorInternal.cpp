@@ -42,11 +42,6 @@ EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, Evaluator& evaluato
 			}
 			return;
 		}
-		auto positionRemappingIter = positionRemapping.find(block->getPosition());
-		if (positionRemappingIter == positionRemapping.end()) {
-			logError("Could not find positionRemapping while doing \"circuitBlockDataConnectionPositionSet\", not sure why this would happen.", "EvaluatorInternal");
-			return;
-		}
 		connection_end_id_t internalConnectionEndId;
 		switch (block->type()) {
 		case BlockType::SWITCH:
@@ -56,7 +51,7 @@ EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, Evaluator& evaluato
 			internalConnectionEndId = (portType == BlockData::ConnectionData::PortType::INPUT);
 		} break;
 		case BlockType::LIGHT: {
-			// if (bitWidth != 1) return;
+			if (bitWidth != 1) return;
 			internalConnectionEndId = 0;
 		} break;
 		default: {
@@ -78,6 +73,11 @@ EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, Evaluator& evaluato
 			}
 			internalConnectionEndId = optInternalConnectionEndId.value();
 		}
+		}
+		auto positionRemappingIter = positionRemapping.find(block->getPosition());
+		if (positionRemappingIter == positionRemapping.end()) {
+			logError("Could not find positionRemapping while doing \"circuitBlockDataConnectionPositionSet\", not sure why this would happen.", "EvaluatorInternal");
+			return;
 		}
 		portToInternalPointMapping.insert_or_assign(
 			connectionEndId,
@@ -191,11 +191,72 @@ void EvaluatorInternal::startEdit() {
 
 void EvaluatorInternal::endEdit() {
 	layerRunner.runAll();
+	const BlockData* blockData = circuitManager.getBlockDataManager().getBlockData(circuit.getBlockType());
+	if (!blockData) return;
+	const CircuitBlockData* circuitBlockData = circuitManager.getCircuitBlockDataManager().getCircuitBlockData(circuit.getCircuitId());
+	assert(circuitBlockData);
+	assert(!blockData->isDefaultData());
+	std::vector<connection_end_id_t> connectionEndIdsToUpdata;
+	for (const std::pair<connection_end_id_t, BlockData::ConnectionData>& connectionData : blockData->getConnections()) {
+		const Position* internalPortPosition = circuitBlockData->getConnectionIdToPosition(connectionData.first);
+		if (!internalPortPosition) continue;
+		const Block* block = circuit.getBlockContainer().getBlock(*internalPortPosition);
+		unsigned int bitWidth = connectionData.second.getBitWidth();
+		if (!block) {
+			portToInternalPointMapping.insert_or_assign(connectionData.first, InternalPointData(connectionData.second.portType, bitWidth));
+			connectionEndIdsToUpdata.push_back(connectionData.first);
+			continue;
+		}
+		connection_end_id_t internalConnectionEndId;
+		switch (block->type()) {
+		case BlockType::SWITCH:
+		case BlockType::BUTTON:
+		case BlockType::TICK_BUTTON: {
+			if (bitWidth != 1) continue;
+			internalConnectionEndId = (connectionData.second.portType == BlockData::ConnectionData::PortType::INPUT);
+		} break;
+		case BlockType::LIGHT: {
+			if (bitWidth != 1) continue;
+			internalConnectionEndId = 0;
+		} break;
+		default: {
+			const BlockData* internalBlockData = circuitManager.getBlockDataManager().getBlockData(block->type());
+			assert(internalBlockData);
+			std::optional<connection_end_id_t> optInternalConnectionEndId;
+			if (connectionData.second.portType == BlockData::ConnectionData::PortType::INPUT) {
+				optInternalConnectionEndId = internalBlockData->getInputOrBidirectionalConnectionId(*internalPortPosition - block->getPosition(), block->getOrientation());
+			} else {
+				optInternalConnectionEndId =
+					internalBlockData->getOutputOrBidirectionalConnectionId(*internalPortPosition - block->getPosition(), block->getOrientation());
+			}
+			if (!optInternalConnectionEndId.has_value() || bitWidth != internalBlockData->getConnectionBitWidth(optInternalConnectionEndId.value())) {
+				portToInternalPointMapping.insert_or_assign(connectionData.first, InternalPointData(connectionData.second.portType, bitWidth));
+				connectionEndIdsToUpdata.push_back(connectionData.first);
+				continue;
+			}
+			internalConnectionEndId = optInternalConnectionEndId.value();
+		}
+		}
+		auto positionRemappingIter = positionRemapping.find(block->getPosition());
+		if (positionRemappingIter == positionRemapping.end()) {
+			logError("Could not find positionRemapping while doing \"circuitBlockDataConnectionPositionSet\", not sure why this would happen.", "EvaluatorInternal");
+			continue;
+		}
+		portToInternalPointMapping.insert_or_assign(
+			connectionData.first,
+			InternalPointData(EvalConnectionPoint(positionRemappingIter->second.first, internalConnectionEndId), connectionData.second.portType, bitWidth)
+		);
+		connectionEndIdsToUpdata.push_back(connectionData.first);
+	}
+
 	// addedGateCount += layerRunner.getOutputLayer().getAddedGates().size();
 	// removedGateCount += layerRunner.getOutputLayer().getRemovedGates().size();
 	// addedConnectionCount += layerRunner.getOutputLayer().getAddedConnections().size();
 	// removedConnectionCount += layerRunner.getOutputLayer().getRemovedConnections().size();
-	for (std::pair<SubcircuitEvalLayer*, unsigned int> evaluator : evaluatorsUsingThisEvaluator) evaluator.first->processICEdits(circuit.getCircuitId(), {});
+	for (std::pair<SubcircuitEvalLayer*, unsigned int> evaluator : evaluatorsUsingThisEvaluator) evaluator.first->processICEdits(
+		circuit.getCircuitId(),
+		connectionEndIdsToUpdata
+	);
 }
 
 void EvaluatorInternal::addBlock(Position position, Orientation orientation, BlockType blockType) {

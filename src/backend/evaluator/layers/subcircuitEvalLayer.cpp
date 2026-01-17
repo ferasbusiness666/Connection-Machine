@@ -226,39 +226,17 @@ void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vect
 						}
 					}
 					nextState.getConnectionPointRemapping().erase(connectionPointRemappingIter);
-				} else if (portMappingIter->second.connectionPoint) {
-					const EvalConnectionPoint& bottomConnectionPoint = evaluatorInternal.mapFromTopConnectionPointToBottomConnectionPoint(
-						portMappingIter->second.connectionPoint.value()
-					);
-					eval_gate_id thisGateId = subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.at(bottomConnectionPoint.gateId);
-					nextState.getConnectionPointRemapping().emplace(
-						EvalConnectionPoint(subcircuitsPair.first, connectionEndId),
-						EvalConnectionPoint(thisGateId, portMappingIter->second.connectionPoint->connectionEndId)
-					);
-					nextState.getConnectionPointReverseRemapping().emplace(
-						EvalConnectionPoint(thisGateId, portMappingIter->second.connectionPoint->connectionEndId),
-						EvalConnectionPoint(subcircuitsPair.first, connectionEndId)
-					);
-					const EvalGate* evalGate = currentState.getGate(subcircuitsPair.first);
-					auto connectionsIter = evalGate->connections.find(connectionEndId);
-					if (connectionsIter != evalGate->connections.end()) {
-						for (EvalConnectionPoint otherConnectionPoint : connectionsIter->second) {
-							nextState.addConnection(EvalConnection(
-								EvalConnectionPoint(thisGateId, portMappingIter->second.connectionPoint->connectionEndId),
-								otherConnectionPoint
-							));
-						}
-					}
-				} else {
+				} else if (!portMappingIter->second.connectionPoint) {
 					auto connectionPointRemappingIter = nextState.getConnectionPointRemapping().find(EvalConnectionPoint(subcircuitsPair.first, connectionEndId));
 					if (connectionPointRemappingIter == nextState.getConnectionPointRemapping().end()) continue;
-					const EvalGate* evalGate = currentState.getGate(connectionPointRemappingIter->second.gateId);
+					const EvalGate* evalGate = nextState.getGate(connectionPointRemappingIter->second.gateId);
 					auto connectionsIter = evalGate->connections.find(connectionPointRemappingIter->second.connectionEndId);
 					if (connectionsIter != evalGate->connections.end()) {
-						for (EvalConnectionPoint otherConnectionPoint : connectionsIter->second) {
+						std::unordered_set<EvalConnectionPoint> otherConnectionPoints = connectionsIter->second;
+						for (const EvalConnectionPoint& otherConnectionPoint : otherConnectionPoints) {
 							if (!subcircuitsPair.second.thisSimulatorIdMappingToOtherSimulator.contains(otherConnectionPoint.gateId)) {
 								nextState.removeConnection(EvalConnection(
-									EvalConnectionPoint(connectionPointRemappingIter->second.gateId, portMappingIter->second.connectionPoint->connectionEndId),
+									EvalConnectionPoint(connectionPointRemappingIter->second.gateId, connectionPointRemappingIter->second.connectionEndId),
 									otherConnectionPoint
 								));
 							}
@@ -272,6 +250,116 @@ void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vect
 						}
 					}
 					nextState.getConnectionPointRemapping().erase(connectionPointRemappingIter);
+				}
+			}
+
+			// internal updates
+			for (auto iter : subcircuitsPair.second.outputEvalLayer.getRemovedConnections()) {
+				eval_gate_id gateIdA = subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.at(iter.first.connectionPointA.gateId);
+				eval_gate_id gateIdB = subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.at(iter.first.connectionPointB.gateId);
+				nextState.removeConnection(EvalConnection(
+					EvalConnectionPoint(gateIdA, iter.first.connectionPointA.connectionEndId),
+					EvalConnectionPoint(gateIdB, iter.first.connectionPointB.connectionEndId)
+				), iter.second);
+			}
+			for (auto iter : subcircuitsPair.second.outputEvalLayer.getRemovedGates()) {
+				auto otherSimulatorToThisSimulatorIdMappingIter = subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.find(iter.first);
+				subcircuitsPair.second.thisSimulatorIdMappingToOtherSimulator.erase(otherSimulatorToThisSimulatorIdMappingIter->second);
+				subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.erase(otherSimulatorToThisSimulatorIdMappingIter);
+				nextState.removeGate(otherSimulatorToThisSimulatorIdMappingIter->second);
+				nextState.releaseUnusedEvalGateId(otherSimulatorToThisSimulatorIdMappingIter->second);
+			}
+			for (auto iter : subcircuitsPair.second.outputEvalLayer.getAddedGates()) {
+				eval_gate_id gateId = nextState.getUnusedEvalGateId();
+				subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.emplace(iter.first, gateId);
+				subcircuitsPair.second.thisSimulatorIdMappingToOtherSimulator.emplace(gateId, iter.first);
+				nextState.addGate(gateId, iter.second);
+			}
+			for (auto iter : subcircuitsPair.second.outputEvalLayer.getAddedConnections()) {
+				eval_gate_id gateIdA = subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.at(iter.first.connectionPointA.gateId);
+				eval_gate_id gateIdB = subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.at(iter.first.connectionPointB.gateId);
+				nextState.addConnection(EvalConnection(
+					EvalConnectionPoint(gateIdA, iter.first.connectionPointA.connectionEndId),
+					EvalConnectionPoint(gateIdB, iter.first.connectionPointB.connectionEndId)
+				), iter.second);
+			}
+
+			// post port updates
+			for (connection_end_id_t connectionEndId : updatedPortIds) {
+				auto portMappingIter = evaluatorInternal.getPortToInternalPointMapping().find(connectionEndId);
+				if (portMappingIter == evaluatorInternal.getPortToInternalPointMapping().end()) continue;
+				if (!portMappingIter->second.connectionPoint) continue;
+				const EvalConnectionPoint& bottomConnectionPoint = evaluatorInternal.mapFromTopConnectionPointToBottomConnectionPoint(
+					portMappingIter->second.connectionPoint.value()
+				);
+				eval_gate_id thisGateId = subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.at(bottomConnectionPoint.gateId);
+				EvalConnectionPoint connectionPoint(thisGateId, portMappingIter->second.connectionPoint->connectionEndId);
+				auto emplaceResult = nextState.getConnectionPointRemapping().emplace(
+					EvalConnectionPoint(subcircuitsPair.first, connectionEndId),
+					connectionPoint
+				);
+				if (emplaceResult.second) {
+					nextState.getConnectionPointReverseRemapping().emplace(
+						connectionPoint,
+						EvalConnectionPoint(subcircuitsPair.first, connectionEndId)
+					);
+					const EvalGate* evalGate = currentState.getGate(subcircuitsPair.first);
+					auto connectionsIter = evalGate->connections.find(connectionEndId);
+					if (connectionsIter != evalGate->connections.end()) {
+						for (EvalConnectionPoint otherConnectionPoint : connectionsIter->second) {
+							nextState.addConnection(EvalConnection(
+								EvalConnectionPoint(thisGateId, portMappingIter->second.connectionPoint->connectionEndId),
+								otherConnectionPoint
+							));
+						}
+					}
+				} else if (emplaceResult.first->second != connectionPoint) {
+					auto iterPair = nextState.getConnectionPointReverseRemapping().equal_range(emplaceResult.first->second);
+					for (auto iter = iterPair.first; iter != iterPair.second; iter++) {
+						if (iter->second == EvalConnectionPoint(subcircuitsPair.first, connectionEndId)) {
+							nextState.getConnectionPointReverseRemapping().erase(iter);
+							break;
+						}
+					}
+					nextState.getConnectionPointReverseRemapping().emplace(
+						connectionPoint,
+						EvalConnectionPoint(subcircuitsPair.first, connectionEndId)
+					);
+					const EvalGate* evalGate = currentState.getGate(subcircuitsPair.first);
+					auto connectionsIter = evalGate->connections.find(connectionEndId);
+					if (connectionsIter != evalGate->connections.end()) {
+						for (EvalConnectionPoint otherConnectionPoint : connectionsIter->second) {
+							auto subcircuitDataAIter = subcircuits.find(otherConnectionPoint.gateId);
+							if (subcircuitDataAIter != subcircuits.end()) {
+								const Circuit* circuit = circuitManager.getCircuit(subcircuitDataAIter->second.circuitId).get();
+								assert(circuit);
+								const EvaluatorInternal& evaluatorInternalval = circuit->getEvaluator().getEvaluatorInternal();
+								auto internalPointMappingIter = evaluatorInternalval.getPortToInternalPointMapping().find(otherConnectionPoint.connectionEndId);
+								assert(internalPointMappingIter != evaluatorInternalval.getPortToInternalPointMapping().end());
+								if (!internalPointMappingIter->second.connectionPoint.has_value()) continue;
+								EvalConnectionPoint internalBottomPoint = evaluatorInternalval.mapFromTopConnectionPointToBottomConnectionPoint(
+									internalPointMappingIter->second.connectionPoint.value()
+								);
+								auto otherSimulatorToThisSimulatorIdMappingIter = subcircuitDataAIter->second.otherSimulatorToThisSimulatorIdMapping.find(
+									internalBottomPoint.gateId
+								);
+								assert(otherSimulatorToThisSimulatorIdMappingIter != subcircuitDataAIter->second.otherSimulatorToThisSimulatorIdMapping.end());
+								otherConnectionPoint = EvalConnectionPoint(
+									otherSimulatorToThisSimulatorIdMappingIter->second,
+									internalBottomPoint.connectionEndId
+								);
+							}
+							nextState.removeConnection(EvalConnection(
+								emplaceResult.first->second,
+								otherConnectionPoint
+							));
+							nextState.addConnection(EvalConnection(
+								connectionPoint,
+								otherConnectionPoint
+							));
+						}
+					}
+					emplaceResult.first->second = connectionPoint;
 				}
 			}
 		}
