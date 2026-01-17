@@ -10,7 +10,7 @@ class BaseEvalLayer;
 
 class LayerRunner {
 public:
-	LayerRunner(Evaluator& evaluator, const CircuitManager& circuitManager);
+	LayerRunner(IdProvider<eval_gate_id>& evalGateIdProvider, Evaluator& evaluator, const CircuitManager& circuitManager);
 	~LayerRunner();
 	void runAll();
 	void resetEdits();

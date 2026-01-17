@@ -85,6 +85,7 @@ void SubcircuitEvalLayer::run() {
 		for (std::pair<eval_gate_id, EvalGate> pair : evalLayerState.getGates()) {
 			eval_gate_id thisGateId = subcircuitDataIter->second.otherSimulatorToThisSimulatorIdMapping.at(pair.second.gateId);
 			nextState.removeGate(thisGateId);
+			nextState.releaseUnusedEvalGateId(thisGateId);
 		}
 		for (std::pair<connection_end_id_t, EvaluatorInternal::InternalPointData> pair : circuit->getEvaluator().getEvaluatorInternal().getPortToInternalPointMapping()) {
 			auto connectionPointRemappingIter = nextState.getConnectionPointRemapping().find(EvalConnectionPoint(iter.first, pair.first));

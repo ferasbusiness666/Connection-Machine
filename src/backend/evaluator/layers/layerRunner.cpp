@@ -6,8 +6,8 @@
 #include "subcircuitEvalLayer.h"
 #include "switchReplacerEvalLayer.h"
 
-LayerRunner::LayerRunner(Evaluator& evaluator, const CircuitManager& circuitManager) {
-	evalTopLayerState = std::make_unique<EvalLayerState>();
+LayerRunner::LayerRunner(IdProvider<eval_gate_id>& evalGateIdProvider, Evaluator& evaluator, const CircuitManager& circuitManager) {
+	evalTopLayerState = std::make_unique<EvalLayerState>(evalGateIdProvider);
 	layers.emplace_back(std::make_unique<SubcircuitEvalLayer>(*evalTopLayerState, evaluator, circuitManager));
 	layers.emplace_back(std::make_unique<SwitchReplacerEvalLayer>(layers.back()->getNextState()));
 	layers.emplace_back(std::make_unique<JunctionAddEvalLayer>(layers.back()->getNextState()));

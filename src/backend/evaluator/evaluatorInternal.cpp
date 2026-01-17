@@ -7,7 +7,7 @@
 extern std::thread::id mainThreadId;
 
 EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, Evaluator& evaluator, const CircuitManager& circuitManager, DataUpdateEventManager::DataUpdateEventReceiver& receiver) :
-	evalGateIdProvider(1), circuitManager(circuitManager), circuit(circuit), layerRunner(evaluator, circuitManager) {
+	evalGateIdProvider(1), circuitManager(circuitManager), circuit(circuit), layerRunner(evalGateIdProvider, evaluator, circuitManager) {
 	receiver.linkFunction("circuitBlockDataConnectionPositionRemove", [&](const DataUpdateEventManager::EventData* event) {
 		const auto* data = event->cast<std::tuple<BlockType, connection_end_id_t, Position>>();
 		if (!data) return;
@@ -199,6 +199,7 @@ void EvaluatorInternal::removeBlock(Position position, Orientation orientation, 
 		return;
 	}
 	layerRunner.getInputLayer().removeGate(remappingIter->second.first);
+	evalGateIdProvider.releaseId(remappingIter->second.first);
 	positionRemapping.erase(remappingIter);
 }
 

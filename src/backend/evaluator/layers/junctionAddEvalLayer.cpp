@@ -58,8 +58,14 @@ void JunctionAddEvalLayer::run() {
 			connection.connectionPointB = EvalConnectionPoint(junctionId, 0);
 		}
 		nextState.removeConnection(connection, iter.second);
-		if (junctionAToRemove != 0) nextState.removeGate(junctionAToRemove);
-		if (junctionBToRemove != 0) nextState.removeGate(junctionBToRemove);
+		if (junctionAToRemove != 0) {
+			nextState.removeGate(junctionAToRemove);
+			nextState.releaseUnusedEvalGateId(junctionAToRemove);
+		}
+		if (junctionBToRemove != 0) {
+			nextState.removeGate(junctionBToRemove);
+			nextState.releaseUnusedEvalGateId(junctionAToRemove);
+		}
 	}
 	for (auto iter : currentState.getRemovedGates()) {
 		auto iterPair = nextState.getGateIdReverseRemapping().equal_range(iter.first);
