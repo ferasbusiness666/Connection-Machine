@@ -11,13 +11,13 @@
 class EvaluatorInternal;
 class DataUpdateEventManager;
 class CircuitManager;
-class SimulatorManager;
 class EvalLogicSimulator;
 class SubcircuitEvalLayer;
 class Difference;
 typedef std::shared_ptr<Difference> DifferenceSharedPtr;
 
 class Evaluator {
+	friend SubcircuitEvalLayer;
 public:
 	typedef std::tuple<BlockType, connection_end_id_t, Position> RemoveCircuitIOData; // I hate tuples, but this is how I get the data
 	typedef std::pair<BlockType, connection_end_id_t> SetCircuitIOData;
@@ -44,22 +44,17 @@ public:
 
 	void addSimulator(EvalLogicSimulator& simulator) const { simulatorsUsingThisEvaluator.insert(&simulator); }
 	void removeSimulator(EvalLogicSimulator& simulator) const { simulatorsUsingThisEvaluator.erase(&simulator); }
-	void addEvaluator(SubcircuitEvalLayer& evaluator) const { evaluatorsUsingThisEvaluator[&evaluator] += 1; }
-	void removeEvaluator(SubcircuitEvalLayer& evaluator) const {
-		auto iter = evaluatorsUsingThisEvaluator.find(&evaluator);
-		assert(iter != evaluatorsUsingThisEvaluator.end());
-		if (iter->second == 1) evaluatorsUsingThisEvaluator.erase(iter);
-		else iter->second -= 1;
-	}
 
 private:
+	void startEdit();
+	void endEdit();
+
 	const Circuit& circuit;
 	CircuitManager& circuitManager;
 	DataUpdateEventManager& dataUpdateEventManager;
 	DataUpdateEventManager::DataUpdateEventReceiver receiver;
 	std::unique_ptr<EvaluatorInternal> evaluatorInternal;
 	mutable std::unordered_set<EvalLogicSimulator*> simulatorsUsingThisEvaluator;
-	mutable std::unordered_map<SubcircuitEvalLayer*, unsigned int> evaluatorsUsingThisEvaluator;
 };
 
 #endif /* evaluator_h */

@@ -293,48 +293,48 @@ void EvalLogicSimulator::processEdits() {
 	const EvalLayerState& evalLayerState = evaluatorInternal.getLayerRunner().getOutputLayer();
 	{
 		SimPauseGuard simPauseGuard(logicSimulator);
-		for (auto iter = evalLayerState.getRemovedConnectionsBegin(); iter != evalLayerState.getRemovedConnectionsEnd(); ++iter) {
-			auto gateAIdIter = gateIdMapping.find(iter->first.connectionPointA.gateId);
+		for (auto iter : evalLayerState.getRemovedConnections()) {
+			auto gateAIdIter = gateIdMapping.find(iter.first.connectionPointA.gateId);
 			if (gateAIdIter == gateIdMapping.end()) {
-				logError("makeEdit remove connections gateIdMapping.find(iter->connectionPointA.gateId) failed. Gate id: {}", "EvalLogicSimulator::makeEdit", iter->first.connectionPointA.gateId);
+				logError("makeEdit remove connections gateIdMapping.find(iter->connectionPointA.gateId) failed. Gate id: {}", "EvalLogicSimulator::makeEdit", iter.first.connectionPointA.gateId);
 				continue;
 			}
-			auto gateBIdIter = gateIdMapping.find(iter->first.connectionPointB.gateId);
+			auto gateBIdIter = gateIdMapping.find(iter.first.connectionPointB.gateId);
 			if (gateBIdIter == gateIdMapping.end()) {
-				logError("makeEdit remove connections gateIdMapping.find(iter->connectionPointB.gateId) failed. Gate id: {}", "EvalLogicSimulator::makeEdit", iter->first.connectionPointB.gateId);
+				logError("makeEdit remove connections gateIdMapping.find(iter->connectionPointB.gateId) failed. Gate id: {}", "EvalLogicSimulator::makeEdit", iter.first.connectionPointB.gateId);
 				continue;
 			}
-			for (unsigned int i = 0; i < iter->second; i++) {
-				logicSimulator.removeConnection(gateAIdIter->second, iter->first.connectionPointA.connectionEndId, gateBIdIter->second, iter->first.connectionPointB.connectionEndId);
+			for (unsigned int i = 0; i < iter.second; i++) {
+				logicSimulator.removeConnection(gateAIdIter->second, iter.first.connectionPointA.connectionEndId, gateBIdIter->second, iter.first.connectionPointB.connectionEndId);
 			}
 		}
-		for (auto iter = evalLayerState.getRemovedGatesBegin(); iter != evalLayerState.getRemovedGatesEnd(); ++iter) {
-			auto gateIdIter = gateIdMapping.find(iter->first);
+		for (auto iter : evalLayerState.getRemovedGates()) {
+			auto gateIdIter = gateIdMapping.find(iter.first);
 			if (gateIdIter == gateIdMapping.end()) {
-				logError("makeEdit remove gate gateIdMapping.find(iter->connectionPointA.gateId) failed. Gate id: {}", "EvalLogicSimulator::makeEdit", iter->first);
+				logError("makeEdit remove gate gateIdMapping.find(iter->connectionPointA.gateId) failed. Gate id: {}", "EvalLogicSimulator::makeEdit", iter.first);
 				continue;
 			}
 			logicSimulator.removeGate(gateIdIter->second);
 			gateIdMapping.erase(gateIdIter);
 		}
-		for (auto iter = evalLayerState.getAddedGatesBegin(); iter != evalLayerState.getAddedGatesEnd(); ++iter) {
-			simulator_gate_id_t simulatorId = logicSimulator.addGate(getBlockType(iter->second));
-			gateIdMapping.try_emplace(iter->first, simulatorId);
+		for (auto iter : evalLayerState.getAddedGates()) {
+			simulator_gate_id_t simulatorId = logicSimulator.addGate(getBlockType(iter.second));
+			gateIdMapping.try_emplace(iter.first, simulatorId);
 		}
-		for (auto iter = evalLayerState.getAddedConnectionsBegin(); iter != evalLayerState.getAddedConnectionsEnd(); ++iter) {
-			auto gateAIdIter = gateIdMapping.find(iter->first.connectionPointA.gateId);
+		for (auto iter : evalLayerState.getAddedConnections()) {
+			auto gateAIdIter = gateIdMapping.find(iter.first.connectionPointA.gateId);
 			if (gateAIdIter == gateIdMapping.end()) {
-				logError("makeEdit add connections gateIdMapping.find(iter->connectionPointA.gateId) failed. Gate id: {}", "EvalLogicSimulator::makeEdit", iter->first.connectionPointA.gateId);
+				logError("makeEdit add connections gateIdMapping.find(iter->connectionPointA.gateId) failed. Gate id: {}", "EvalLogicSimulator::makeEdit", iter.first.connectionPointA.gateId);
 				continue;
 			}
-			auto gateBIdIter = gateIdMapping.find(iter->first.connectionPointB.gateId);
+			auto gateBIdIter = gateIdMapping.find(iter.first.connectionPointB.gateId);
 			if (gateBIdIter == gateIdMapping.end()) {
-				logError("makeEdit add connections gateIdMapping.find(iter->connectionPointB.gateId) failed. Gate id: {}", "EvalLogicSimulator::makeEdit", iter->first.connectionPointB.gateId);
+				logError("makeEdit add connections gateIdMapping.find(iter->connectionPointB.gateId) failed. Gate id: {}", "EvalLogicSimulator::makeEdit", iter.first.connectionPointB.gateId);
 				continue;
 			}
 			// tmp need to repeat the inputs for logicSimulator
-			for (unsigned int i = 0; i < iter->second; i++) {
-				logicSimulator.makeConnection(gateAIdIter->second, iter->first.connectionPointA.connectionEndId, gateBIdIter->second, iter->first.connectionPointB.connectionEndId);
+			for (unsigned int i = 0; i < iter.second; i++) {
+				logicSimulator.makeConnection(gateAIdIter->second, iter.first.connectionPointA.connectionEndId, gateBIdIter->second, iter.first.connectionPointB.connectionEndId);
 			}
 		}
 		logicSimulator.endEdit();

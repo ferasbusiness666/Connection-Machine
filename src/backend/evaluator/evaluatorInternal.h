@@ -7,6 +7,7 @@
 #include "backend/circuit/circuitDefs.h"
 
 class CircuitManager;
+class SubcircuitEvalLayer;
 
 class EvaluatorInternal {
 public:
@@ -18,7 +19,7 @@ public:
 		BlockData::ConnectionData::PortType portType;
 		unsigned int bitWith;
 	};
-	EvaluatorInternal(const Circuit& circuit, const CircuitManager& circuitManager, DataUpdateEventManager::DataUpdateEventReceiver& receiver);
+	EvaluatorInternal(const Circuit& circuit, Evaluator& evaluator, const CircuitManager& circuitManager, DataUpdateEventManager::DataUpdateEventReceiver& receiver);
 	void startEdit();
 	void endEdit();
 	void addBlock(Position position, Orientation orientation, BlockType blockType);
@@ -40,12 +41,21 @@ public:
 	const std::unordered_map<eval_gate_id, std::pair<Position, Orientation>>& getPositionReverseRemapping() const { return positionReverseRemapping; }
 	const std::unordered_map<connection_end_id_t, InternalPointData>& getPortToInternalPointMapping() const { return portToInternalPointMapping; }
 
+	void addEvaluator(SubcircuitEvalLayer& evaluator) const { evaluatorsUsingThisEvaluator[&evaluator] += 1; }
+	void removeEvaluator(SubcircuitEvalLayer& evaluator) const {
+		auto iter = evaluatorsUsingThisEvaluator.find(&evaluator);
+		assert(iter != evaluatorsUsingThisEvaluator.end());
+		if (iter->second == 1) evaluatorsUsingThisEvaluator.erase(iter);
+		else iter->second -= 1;
+	}
+
 private:
 	// std::set<Position> positionsTo; nothing to do
 	IdProvider<eval_gate_id> evalGateIdProvider;
 	std::unordered_map<Position, std::pair<eval_gate_id, Orientation>> positionRemapping;
 	std::unordered_map<eval_gate_id, std::pair<Position, Orientation>> positionReverseRemapping;
 	std::unordered_map<connection_end_id_t, InternalPointData> portToInternalPointMapping;
+	mutable std::unordered_map<SubcircuitEvalLayer*, unsigned int> evaluatorsUsingThisEvaluator;
 	LayerRunner layerRunner;
 	const CircuitManager& circuitManager;
 	const Circuit& circuit;

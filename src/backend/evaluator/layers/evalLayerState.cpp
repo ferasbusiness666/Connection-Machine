@@ -220,14 +220,14 @@ void EvalLayerState::visualize() const {
 		tmpBuf += std::to_string(pair.second);
 	}
 	if (curKey != 0) logInfo("{} -> [{}]", "", curKey, tmpBuf);
-	// logInfo("{} Port Remapping", "", connectionPointRemapping.size());
-	// for (auto pair : connectionPointRemapping) {
-	// 	logInfo("({}, {}) -> ({}, {})", "", pair.first.gateId, pair.first.connectionEndId, pair.second.gateId, pair.second.connectionEndId);
-	// }
-	// logInfo("{} Port Reverse Remapping", "", connectionPointReverseRemapping.size());
-	// for (auto pair : connectionPointReverseRemapping) {
-	// 	logInfo("({}, {}) -> ({}, {})", "", pair.first.gateId, pair.first.connectionEndId, pair.second.gateId, pair.second.connectionEndId);
-	// }
+	logInfo("{} Port Remapping", "", connectionPointRemapping.size());
+	for (auto pair : connectionPointRemapping) {
+		logInfo("({}, {}) -> ({}, {})", "", pair.first.gateId, pair.first.connectionEndId, pair.second.gateId, pair.second.connectionEndId);
+	}
+	logInfo("{} Port Reverse Remapping", "", connectionPointReverseRemapping.size());
+	for (auto pair : connectionPointReverseRemapping) {
+		logInfo("({}, {}) -> ({}, {})", "", pair.first.gateId, pair.first.connectionEndId, pair.second.gateId, pair.second.connectionEndId);
+	}
 	tmpBuf.clear();
 	for (std::pair<eval_gate_id, EvalGateType> pair : addedGates) {
 		if (tmpBuf.size() != 0) tmpBuf += ", ";

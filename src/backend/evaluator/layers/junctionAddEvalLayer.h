@@ -5,7 +5,8 @@
 
 class JunctionAddEvalLayer : public BaseEvalLayer {
 public:
-	void run(const EvalLayerState& currentState, EvalLayerState& nextState) override final;
+	JunctionAddEvalLayer(EvalLayerState& currentState) : BaseEvalLayer(currentState) {}
+	void run() override final;
 };
 
 #endif /* junctionAddEvalLayer_h */

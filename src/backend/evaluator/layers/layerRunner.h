@@ -10,9 +10,10 @@ class BaseEvalLayer;
 
 class LayerRunner {
 public:
-	LayerRunner(const CircuitManager& circuitManager);
+	LayerRunner(Evaluator& evaluator, const CircuitManager& circuitManager);
 	~LayerRunner();
 	void runAll();
+	void resetEdits();
 	EvalLayerState& getInputLayer();
 	const EvalLayerState& getInputLayer() const;
 	const EvalLayerState& getOutputLayer() const;

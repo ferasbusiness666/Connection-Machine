@@ -6,12 +6,12 @@
 #include "subcircuitEvalLayer.h"
 #include "switchReplacerEvalLayer.h"
 
-LayerRunner::LayerRunner(const CircuitManager& circuitManager) {
-	layers.emplace_back(std::make_unique<SubcircuitEvalLayer>(circuitManager));
-	layers.emplace_back(std::make_unique<SwitchReplacerEvalLayer>());
-	layers.emplace_back(std::make_unique<JunctionAddEvalLayer>());
-	layers.emplace_back(std::make_unique<JunctionMergeEvalLayer>());
+LayerRunner::LayerRunner(Evaluator& evaluator, const CircuitManager& circuitManager) {
 	evalTopLayerState = std::make_unique<EvalLayerState>();
+	layers.emplace_back(std::make_unique<SubcircuitEvalLayer>(*evalTopLayerState, evaluator, circuitManager));
+	layers.emplace_back(std::make_unique<SwitchReplacerEvalLayer>(layers.back()->getNextState()));
+	layers.emplace_back(std::make_unique<JunctionAddEvalLayer>(layers.back()->getNextState()));
+	layers.emplace_back(std::make_unique<JunctionMergeEvalLayer>(layers.back()->getNextState()));
 	assert(evalTopLayerState);
 }
 
@@ -19,16 +19,19 @@ LayerRunner::~LayerRunner() = default;
 
 void LayerRunner::runAll() {
 	// logInfo("------------------------------------------------");
-	EvalLayerState* last = evalTopLayerState.get();
-	// last->visualize();
-	for (unsigned int i = 0; i < layers.size(); i++) {
+	// evalTopLayerState->visualize();
+	for (std::unique_ptr<BaseEvalLayer>& layer : layers) {
 		// logInfo("----");
-		EvalLayerState& next = last->getOrMakeNextLayerState();
-		next.resetEdits();
-		// next.visualize();
-		layers[i]->run(*last, next);
-		last = &next;
-		// last->visualize();
+		// layer->getNextState().visualize();
+		layer->run();
+		// layer->getNextState().visualize();
+	}
+}
+
+void LayerRunner::resetEdits() {
+	evalTopLayerState->resetEdits();
+	for (std::unique_ptr<BaseEvalLayer>& layer : layers) {
+		layer->getNextState().resetEdits();
 	}
 }
 
@@ -36,14 +39,7 @@ EvalLayerState& LayerRunner::getInputLayer() { return *evalTopLayerState; }
 
 const EvalLayerState& LayerRunner::getInputLayer() const { return *evalTopLayerState; }
 
-const EvalLayerState& LayerRunner::getOutputLayer() const {
-	const EvalLayerState* last = evalTopLayerState.get();
-	for (unsigned int i = 0; i < layers.size(); i++) {
-		last = last->getNextLayerState();
-		assert(last);
-	}
-	return *last;
-}
+const EvalLayerState& LayerRunner::getOutputLayer() const { return layers.back()->getNextState(); }
 
 EvalConnectionPoint LayerRunner::getMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint) const {
 	const EvalLayerState* layerState = evalTopLayerState.get()->getNextLayerState();

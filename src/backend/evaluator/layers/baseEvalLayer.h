@@ -7,8 +7,12 @@ class EvalLayerState;
 
 class BaseEvalLayer {
 public:
+	BaseEvalLayer(EvalLayerState& currentState);
 	virtual ~BaseEvalLayer() = default;
-	virtual void run(const EvalLayerState& currentState, EvalLayerState& nextState) = 0;
+	virtual void run() = 0;
+
+	const EvalLayerState& getCurrentState() const { return currentState; };
+	EvalLayerState& getNextState() { return nextState; };
 
 protected:
 	inline bool isJunctionType(EvalGateType gateType) const {
@@ -17,6 +21,9 @@ protected:
 			gateType == getEvalGateType(BlockType::JUNCTION_H) || gateType == getEvalGateType(BlockType::JUNCTION_X)
 		);
 	}
+
+	const EvalLayerState& currentState;
+	EvalLayerState& nextState;
 };
 
 #endif /* baseEvalLayer_h */

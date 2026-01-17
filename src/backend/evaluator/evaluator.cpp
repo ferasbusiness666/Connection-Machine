@@ -16,7 +16,7 @@ Evaluator::Evaluator(
 	dataUpdateEventManager(dataUpdateEventManager),
 	receiver(dataUpdateEventManager),
 	circuit(circuit),
-	evaluatorInternal(std::make_unique<EvaluatorInternal>(circuit, circuitManager,  receiver))
+	evaluatorInternal(std::make_unique<EvaluatorInternal>(circuit, *this, circuitManager,  receiver))
 {
 	logInfo("Creating Evaluator for Circuit ID {}", "Evaluator", circuit.getCircuitId());
 	const BlockContainer& blockContainer = circuit.getBlockContainer();
@@ -26,7 +26,7 @@ Evaluator::Evaluator(
 }
 
 void Evaluator::makeEdit(DifferenceSharedPtr difference) {
-	evaluatorInternal->startEdit();
+	startEdit();
 	for (const Difference::Modification& modification : difference->getModifications()) {
 		const auto& [modificationType, modificationData] = modification;
 		switch (modificationType) {
@@ -57,14 +57,7 @@ void Evaluator::makeEdit(DifferenceSharedPtr difference) {
 		}
 		}
 	}
-	doLayersUpdate(false);
-}
-
-void Evaluator::doLayersUpdate(bool doStartEdit) {
-	if (doStartEdit) evaluatorInternal->startEdit();
-	evaluatorInternal->endEdit();
-	for (std::pair<SubcircuitEvalLayer*, unsigned int> evaluator : evaluatorsUsingThisEvaluator) evaluator.first->processEdits();
-	for (EvalLogicSimulator* simulator : simulatorsUsingThisEvaluator) simulator->processEdits();
+	endEdit();
 }
 
 circuit_id_t Evaluator::getCircuitId() const {
@@ -86,4 +79,13 @@ nlohmann::json Evaluator::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	stateJson["circuitNodeToBlockTypeMap"] = nlohmann::json::object();
 
 	return stateJson;
+}
+
+void Evaluator::startEdit() {
+	evaluatorInternal->startEdit();
+}
+
+void Evaluator::endEdit() {
+	evaluatorInternal->endEdit();
+	for (EvalLogicSimulator* simulator : simulatorsUsingThisEvaluator) simulator->processEdits();
 }

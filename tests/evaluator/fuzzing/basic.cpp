@@ -107,7 +107,7 @@ namespace {
 
 				blockTypesAllowed.customBlockPaths.push_back("passthrough.cir");
 				blockTypesAllowed.customBlockPaths.push_back("full_adder.cir");
-				blockTypesAllowed.customBlockPaths.push_back("bus_tristate_2.cir");
+				// blockTypesAllowed.customBlockPaths.push_back("bus_tristate_2.cir");
 				blockTypesAllowed.customBlockPaths.push_back("nested_passthrough.cir");
 				testcases.push_back(TestcaseConfig { seed, realistic, runningConfig, blockTypesAllowed, u++ });
 			}

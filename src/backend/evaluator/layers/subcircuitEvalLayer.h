@@ -16,15 +16,15 @@ class SubcircuitEvalLayer : public BaseEvalLayer {
 		std::unordered_map<eval_gate_id, eval_gate_id> thisSimulatorIdMappingToOtherSimulator;
 	};
 public:
-	SubcircuitEvalLayer(const CircuitManager& circuitManager) : circuitManager(circuitManager) {}
+	SubcircuitEvalLayer(EvalLayerState& currentState, Evaluator& evaluator, const CircuitManager& circuitManager) :
+		BaseEvalLayer(currentState), evaluator(evaluator), circuitManager(circuitManager) {}
+	void run() override final;
 
-	void run(const EvalLayerState& currentState, EvalLayerState& nextState) override final;
-
-	// Only called by Evaluator
-	void processEdits();
-
+	// Only called by EvaluatorInternal
+	void processICEdits(circuit_id_t circuitId, const std::vector<connection_end_id_t>& updatedPortIds);
 private:
 	std::unordered_map<eval_gate_id, SubcircuitData> subcircuits;
+	Evaluator& evaluator;
 	const CircuitManager& circuitManager;
 };
 

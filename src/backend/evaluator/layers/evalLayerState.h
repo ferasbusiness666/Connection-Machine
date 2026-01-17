@@ -31,17 +31,13 @@ public:
 
 	const std::unordered_map<eval_gate_id, EvalGate>& getGates() const { return gates; }
 
-	std::unordered_map<eval_gate_id, EvalGateType>::const_iterator getAddedGatesBegin() const { return addedGates.begin(); }
-	std::unordered_map<eval_gate_id, EvalGateType>::const_iterator getAddedGatesEnd() const { return addedGates.end(); }
+	const std::unordered_map<eval_gate_id, EvalGateType>& getAddedGates() const { return addedGates; }
 
-	std::unordered_map<eval_gate_id, EvalGateType>::const_iterator getRemovedGatesBegin() const { return removedGates.begin(); }
-	std::unordered_map<eval_gate_id, EvalGateType>::const_iterator getRemovedGatesEnd() const { return removedGates.end(); }
+	const std::unordered_map<eval_gate_id, EvalGateType>& getRemovedGates() const { return removedGates; }
 
-	std::unordered_map<EvalConnection, unsigned int>::const_iterator getAddedConnectionsBegin() const { return addedConnections.begin(); }
-	std::unordered_map<EvalConnection, unsigned int>::const_iterator getAddedConnectionsEnd() const { return addedConnections.end(); }
+	const std::unordered_map<EvalConnection, unsigned int>& getAddedConnections() const { return addedConnections; }
 
-	std::unordered_map<EvalConnection, unsigned int>::const_iterator getRemovedConnectionsBegin() const { return removedConnections.begin(); }
-	std::unordered_map<EvalConnection, unsigned int>::const_iterator getRemovedConnectionsEnd() const { return removedConnections.end(); }
+	const std::unordered_map<EvalConnection, unsigned int>& getRemovedConnections() const { return removedConnections; }
 
 	unsigned int getConnectionWeight(EvalConnection connection) const {
 		auto iter = connectionWeights.find(connection);
