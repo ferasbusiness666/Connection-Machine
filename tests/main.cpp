@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+// #include "backend/evaluator/evaluatorInternal.h"
 #include "computerAPI/directoryManager.h"
 #include "loggingTestSetup.h"
 
@@ -110,5 +111,6 @@ int main(int argc, char **argv) {
 	}
     DirectoryManager::findDirectories();
     int exitCode = RUN_ALL_TESTS();
+	// printCounts();
 	return exitCode;
 }
