@@ -206,10 +206,11 @@ TEST_F(PassthroughEvaluatorTest, DeleteSwitch) {
 	ASSERT_TRUE(circuit->tryRemoveBlock(switchPos));
 
 	// states should no longer propagate
-	logging_test::setExpectedLogCounts(1, 0);
 	EXPECT_EQ(simulator->getState(lightPos), L); // pulls state from switch inside passthrough
 
+	logging_test::setExpectedLogCounts(1, 0);
 	simulator->setState(switchPos, L); // does nothing since switch is deleted
+
 	EXPECT_EQ(simulator->getState(lightPos), L);
 }
 
