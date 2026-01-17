@@ -81,7 +81,7 @@ void JunctionAddEvalLayer::run() {
 		if (isConnectionEndIdSinglePin(gateA->type, connection.connectionPointA.connectionEndId)) {
 			auto connectionsIter = gateA->connections.find(connection.connectionPointA.connectionEndId);
 			if (connectionsIter == gateA->connections.end()) {
-				eval_gate_id junctionId = nextState.getUnsedEvalGateId();
+				eval_gate_id junctionId = nextState.getUnusedEvalGateId();
 				nextState.addGate(junctionId, getEvalGateType(BlockType::JUNCTION));
 				nextState.addConnection(EvalConnection(connection.connectionPointA, EvalConnectionPoint(junctionId, 0)));
 				connection.connectionPointA = EvalConnectionPoint(junctionId, 0);
@@ -94,7 +94,7 @@ void JunctionAddEvalLayer::run() {
 		if (isConnectionEndIdSinglePin(gateB->type, connection.connectionPointB.connectionEndId)) {
 			auto connectionsIter = gateB->connections.find(connection.connectionPointB.connectionEndId);
 			if (connectionsIter == gateB->connections.end()) {
-				eval_gate_id junctionId = nextState.getUnsedEvalGateId();
+				eval_gate_id junctionId = nextState.getUnusedEvalGateId();
 				nextState.addGate(junctionId, getEvalGateType(BlockType::JUNCTION));
 				nextState.addConnection(EvalConnection(connection.connectionPointB, EvalConnectionPoint(junctionId, 0)));
 				connection.connectionPointB = EvalConnectionPoint(junctionId, 0);

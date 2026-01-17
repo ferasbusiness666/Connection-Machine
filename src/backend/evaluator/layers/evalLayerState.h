@@ -15,7 +15,7 @@ struct EvalGate {
 class EvalLayerState {
 public:
 	EvalLayerState(unsigned int layerIndex = 0) : layerIndex(layerIndex),
-		lastUnsedEvalGateId(std::numeric_limits<eval_gate_id::rep>::max() - 1 - layerIndex * 10000000) {}
+		lastUnusedEvalGateId(std::numeric_limits<eval_gate_id::rep>::max() - 1 - layerIndex * 10000000) {}
 
 	void addGate(eval_gate_id gateId, EvalGateType type);
 	void removeGate(eval_gate_id gateId);
@@ -67,7 +67,7 @@ public:
 	}
 
 	void resetEdits() {
-		// lastUnsedEvalGateId = std::numeric_limits<eval_gate_id::rep>::max() - 1; // -1 in case of math errors with this high number
+		// lastUnusedEvalGateId = std::numeric_limits<eval_gate_id::rep>::max() - 1; // -1 in case of math errors with this high number
 		addedGates.clear();
 		removedGates.clear();
 		addedConnections.clear();
@@ -99,16 +99,16 @@ public:
 	std::unordered_multimap<EvalConnectionPoint, EvalConnectionPoint>& getConnectionPointReverseRemapping() { return connectionPointReverseRemapping; }
 	const std::unordered_multimap<EvalConnectionPoint, EvalConnectionPoint>& getConnectionPointReverseRemapping() const { return connectionPointReverseRemapping; }
 
-	eval_gate_id getUnsedEvalGateId() {
-		do lastUnsedEvalGateId = lastUnsedEvalGateId.get() -1;
-		while (gates.contains(lastUnsedEvalGateId));
-		return lastUnsedEvalGateId;
+	eval_gate_id getUnusedEvalGateId() {
+		do lastUnusedEvalGateId = lastUnusedEvalGateId.get() -1;
+		while (gates.contains(lastUnusedEvalGateId));
+		return lastUnusedEvalGateId;
 	}
 
 	void visualize() const;
 
 private:
-	eval_gate_id lastUnsedEvalGateId; // -1 in case of math errors with this high number
+	eval_gate_id lastUnusedEvalGateId; // -1 in case of math errors with this high number
 
 	void setLastLayer(const EvalLayerState* lastLayerState) { this->lastLayerState = lastLayerState; }
 

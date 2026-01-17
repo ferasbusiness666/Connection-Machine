@@ -115,7 +115,7 @@ void SubcircuitEvalLayer::run() {
 		const EvalLayerState& evalLayerState = evaluatorInternal.getLayerRunner().getOutputLayer();
 		auto subcircuitsPair = subcircuits.try_emplace(iter.first, circuitId, evalLayerState);
 		for (std::pair<eval_gate_id, EvalGate> pair : evalLayerState.getGates()) {
-			eval_gate_id gateId = nextState.getUnsedEvalGateId();
+			eval_gate_id gateId = nextState.getUnusedEvalGateId();
 			subcircuitsPair.first->second.otherSimulatorToThisSimulatorIdMapping.emplace(pair.second.gateId, gateId);
 			subcircuitsPair.first->second.thisSimulatorIdMappingToOtherSimulator.emplace(gateId, pair.second.gateId);
 			nextState.addGate(gateId, pair.second.type);

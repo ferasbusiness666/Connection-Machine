@@ -162,7 +162,6 @@ EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, Evaluator& evaluato
 			subcircuitEvalLayer.first->processICEdits(circuit.getCircuitId(), { connectionEndId });
 		}
 	}
-	logInfo(portToInternalPointMapping.size());
 }
 
 void EvaluatorInternal::startEdit() {
