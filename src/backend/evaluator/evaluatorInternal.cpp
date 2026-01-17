@@ -37,6 +37,9 @@ EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, Evaluator& evaluato
 		const Block* block = circuit.getBlockContainer().getBlock(internalPortPosition);
 		if (!block) {
 			portToInternalPointMapping.insert_or_assign(connectionEndId, InternalPointData(portType, bitWidth));
+			for (const std::pair<SubcircuitEvalLayer*, unsigned int>& subcircuitEvalLayer : evaluatorsUsingThisEvaluator) {
+				subcircuitEvalLayer.first->processICEdits(circuit.getCircuitId(), { connectionEndId });
+			}
 			return;
 		}
 		auto positionRemappingIter = positionRemapping.find(block->getPosition());
@@ -68,6 +71,9 @@ EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, Evaluator& evaluato
 			}
 			if (!optInternalConnectionEndId.has_value() || bitWidth != internalBlockData->getConnectionBitWidth(optInternalConnectionEndId.value())) {
 				portToInternalPointMapping.insert_or_assign(connectionEndId, InternalPointData(portType, bitWidth));
+				for (const std::pair<SubcircuitEvalLayer*, unsigned int>& subcircuitEvalLayer : evaluatorsUsingThisEvaluator) {
+					subcircuitEvalLayer.first->processICEdits(circuit.getCircuitId(), { connectionEndId });
+				}
 				return;
 			}
 			internalConnectionEndId = optInternalConnectionEndId.value();
@@ -93,6 +99,9 @@ EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, Evaluator& evaluato
 			if (portToInternalPointMappingIter->second.bitWith != bitWidth) {
 				portToInternalPointMappingIter->second.bitWith = bitWidth;
 				portToInternalPointMappingIter->second.connectionPoint = std::nullopt;
+				for (const std::pair<SubcircuitEvalLayer*, unsigned int>& subcircuitEvalLayer : evaluatorsUsingThisEvaluator) {
+					subcircuitEvalLayer.first->processICEdits(circuit.getCircuitId(), { connectionEndId });
+				}
 			}
 			return;
 		}
