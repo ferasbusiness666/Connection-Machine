@@ -118,9 +118,31 @@ void JunctionMergeEvalLayer::run() {
 		eval_gate_id gateId = *junctionsToScan.begin();
 		junctionsToScan.erase(junctionsToScan.begin());
 		auto [junctions, otherConnectionPoints, gateType] = gatherJunctionGroup(gateId, currentState);
-		EvalGateType oldType = currentState.getGate(gateId)->type;
-		bool foundPullDown = false;
-		bool foundPullUp = false;
+		// We do sorting to see which gate would be the best to place down.
+		// pre
+		// addedGateCount:         33973
+		// removedGateCount:       24817
+		// addedConnectionCount:   37326
+		// removedConnectionCount: 27160
+		// post
+		// addedGateCount:         31549
+		// removedGateCount:       22393
+		// addedConnectionCount:   36546
+		// removedConnectionCount: 26431
+		gateId = std::numeric_limits<eval_gate_id>::max();
+		bool typeMatches = false;
+		for (eval_gate_id junctionId : junctions) {
+			if (junctionId < gateId) {
+				if (currentState.getGate(junctionId)->type == gateType) {
+					typeMatches = true;
+					gateId = junctionId;
+				} else if (!typeMatches) {
+					gateId = junctionId;
+				}
+			} else if (!typeMatches && currentState.getGate(junctionId)->type == gateType) {
+				gateId = junctionId;
+			}
+		}
 		for (eval_gate_id junctionId : junctions) {
 			junctionsToScan.erase(junctionId);
 			auto pair = nextState.getGateIdRemapping().emplace(junctionId, gateId);

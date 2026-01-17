@@ -61,4 +61,6 @@ private:
 	const Circuit& circuit;
 };
 
+// void printCounts();
+
 #endif /* evaluatorInternal_h */

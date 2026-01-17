@@ -177,8 +177,24 @@ void EvaluatorInternal::startEdit() {
 	layerRunner.resetEdits();
 }
 
+// unsigned long long addedGateCount = 0;
+// unsigned long long removedGateCount = 0;
+// unsigned long long addedConnectionCount = 0;
+// unsigned long long removedConnectionCount = 0;
+
+// void printCounts() {
+// 	std::cout << "addedGateCount:         " << addedGateCount << "\n";
+// 	std::cout << "removedGateCount:       " << removedGateCount << "\n";
+// 	std::cout << "addedConnectionCount:   " << addedConnectionCount << "\n";
+// 	std::cout << "removedConnectionCount: " << removedConnectionCount << std::endl;
+// }
+
 void EvaluatorInternal::endEdit() {
 	layerRunner.runAll();
+	// addedGateCount += layerRunner.getOutputLayer().getAddedGates().size();
+	// removedGateCount += layerRunner.getOutputLayer().getRemovedGates().size();
+	// addedConnectionCount += layerRunner.getOutputLayer().getAddedConnections().size();
+	// removedConnectionCount += layerRunner.getOutputLayer().getRemovedConnections().size();
 	for (std::pair<SubcircuitEvalLayer*, unsigned int> evaluator : evaluatorsUsingThisEvaluator) evaluator.first->processICEdits(circuit.getCircuitId(), {});
 }
 
