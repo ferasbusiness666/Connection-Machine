@@ -216,13 +216,11 @@ std::vector<std::pair<eval_gate_id, circuit_id_t>> SubcircuitEvalLayer::getSubci
 
 EvalConnectionPoint SubcircuitEvalLayer::getMappedAddress(eval_gate_id gateId, const Address& address) const {
 	auto subcircuitIter = subcircuits.find(gateId);
-	if (subcircuitIter == subcircuits.end())
-		return EvalConnectionPoint::null();
+	if (subcircuitIter == subcircuits.end()) return EvalConnectionPoint::null();
 	const Circuit* circuit = circuitManager.getCircuit(subcircuitIter->second.circuitId).get();
 	assert(circuit);
 	EvalConnectionPoint internalBottomPoint = circuit->getEvaluator().getEvaluatorInternal().mapFromAddressToBottomConnectionPoint(address);
-	if (internalBottomPoint.isNull())
-		return EvalConnectionPoint::null();
+	if (internalBottomPoint.isNull()) return EvalConnectionPoint::null();
 	auto otherSimulatorToThisSimulatorIdMappingIter = subcircuitIter->second.otherSimulatorToThisSimulatorIdMapping.find(internalBottomPoint.gateId);
 	assert(otherSimulatorToThisSimulatorIdMappingIter != subcircuitIter->second.otherSimulatorToThisSimulatorIdMapping.end());
 	return EvalConnectionPoint(
