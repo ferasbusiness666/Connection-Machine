@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
+#include "backend/evaluator/simulator/evalLogicSimulator.h"
 #include "environment/environment.h"
-#include "backend/evaluator/evaluator.h"
 
 class EvaluatorICTest : public ::testing::Test {
 protected:

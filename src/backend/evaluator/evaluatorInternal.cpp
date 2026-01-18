@@ -422,3 +422,12 @@ std::vector<EvalConnectionPoint> EvaluatorInternal::mapFromBottomConnectionPoint
 	if (iter == positionRemapping.end()) return { };
 	return layerRunner.getReversedMappedConnectionPointsWithAddressMixed(bottomConnectionPoints, iter->second.first, address.popTopPosition());
 }
+
+std::vector<std::pair<Position, circuit_id_t>> EvaluatorInternal::getSubcircuits() const {
+	std::vector<std::pair<Position, circuit_id_t>> subcircuits;
+	for (const std::pair<eval_gate_id, circuit_id_t>& pair : layerRunner.getSubcircuits()) {
+		subcircuits.emplace_back(positionReverseRemapping.at(pair.first).first, pair.second);
+	}
+	return subcircuits;
+}
+

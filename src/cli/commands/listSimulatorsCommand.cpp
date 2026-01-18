@@ -1,6 +1,6 @@
 #include "listSimulatorsCommand.h"
 
-#include "backend/evaluator/evaluator.h"
+#include "backend/evaluator/simulator/evalLogicSimulator.h"
 #include "environment/environment.h"
 #include "util/runAtStartup.h"
 #include "../commandManager.h"

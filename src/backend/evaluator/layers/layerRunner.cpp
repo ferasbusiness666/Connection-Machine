@@ -1,9 +1,9 @@
 #include "layerRunner.h"
 
 #include "evalLayerState.h"
+#include "subcircuitEvalLayer.h"
 #include "junctionAddEvalLayer.h"
 #include "junctionMergeEvalLayer.h"
-#include "subcircuitEvalLayer.h"
 #include "switchReplacerEvalLayer.h"
 
 LayerRunner::LayerRunner(IdProvider<eval_gate_id>& evalGateIdProvider, Evaluator& evaluator, const CircuitManager& circuitManager) {
@@ -40,6 +40,10 @@ EvalLayerState& LayerRunner::getInputLayer() { return *evalTopLayerState; }
 const EvalLayerState& LayerRunner::getInputLayer() const { return *evalTopLayerState; }
 
 const EvalLayerState& LayerRunner::getOutputLayer() const { return layers.back()->getNextState(); }
+
+std::vector<std::pair<eval_gate_id, circuit_id_t>> LayerRunner::getSubcircuits() const {
+	return dynamic_cast<SubcircuitEvalLayer*>(layers[1].get())->getSubcircuits();
+}
 
 EvalConnectionPoint LayerRunner::getMappedAddress(eval_gate_id gateId, const Address& address) const {
 	EvalConnectionPoint evalConnectionPoint = dynamic_cast<SubcircuitEvalLayer*>(layers[1].get())->getMappedAddress(gateId, address);

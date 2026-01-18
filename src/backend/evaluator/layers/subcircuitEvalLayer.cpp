@@ -206,6 +206,14 @@ void SubcircuitEvalLayer::run() {
 	}
 }
 
+std::vector<std::pair<eval_gate_id, circuit_id_t>> SubcircuitEvalLayer::getSubcircuits() const {
+	std::vector<std::pair<eval_gate_id, circuit_id_t>> subcircuitPairs;
+	for (const std::pair<eval_gate_id, SubcircuitData>& subcircuit : subcircuits) {
+		subcircuitPairs.emplace_back(subcircuit.first, subcircuit.second.circuitId);
+	}
+	return subcircuitPairs;
+}
+
 EvalConnectionPoint SubcircuitEvalLayer::getMappedAddress(eval_gate_id gateId, const Address& address) const {
 	auto subcircuitIter = subcircuits.find(gateId);
 	if (subcircuitIter == subcircuits.end()) return EvalConnectionPoint::null();

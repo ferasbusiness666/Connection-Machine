@@ -1,11 +1,11 @@
 #ifndef evaluator_h
 #define evaluator_h
 
-// #include "backend/blockData/blockData.h"
-// #include "util/evalConfig.h"
-// #include "simulator/logicState.h"
 #include "backend/circuit/circuitDefs.h"
-#include "simulator/evalLogicSimulator.h"
+#include "backend/container/block/blockDefs.h"
+#include "backend/container/block/connectionEnd.h"
+#include "backend/dataUpdateEventManager.h"
+#include "backend/position/position.h"
 
 class EvaluatorInternal;
 class DataUpdateEventManager;
@@ -37,6 +37,8 @@ public:
 	void doLayersUpdate(bool doStartEdit = true);
 
 	circuit_id_t getCircuitId() const;
+
+	std::vector<std::pair<Position, circuit_id_t>> getSubcircuits() const;
 
 	nlohmann::json dumpState() const;
 

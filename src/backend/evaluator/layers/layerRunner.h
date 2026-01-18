@@ -1,6 +1,7 @@
 #ifndef layerRunner_h
 #define layerRunner_h
 
+#include "backend/circuit/circuitDefs.h"
 #include "../evalDefs.h"
 
 class CircuitManager;
@@ -18,6 +19,9 @@ public:
 	EvalLayerState& getInputLayer();
 	const EvalLayerState& getInputLayer() const;
 	const EvalLayerState& getOutputLayer() const;
+
+	std::vector<std::pair<eval_gate_id, circuit_id_t>> getSubcircuits() const;
+
 	EvalConnectionPoint getMappedAddress(eval_gate_id gateId, const Address& address) const;
 	std::vector<EvalConnectionPoint> getReversedMappedConnectionPointWithAddress(EvalConnectionPoint evalConnectionPoint, eval_gate_id gateId, const Address& address) const;
 	std::vector<std::vector<EvalConnectionPoint>> getReversedMappedConnectionPointsWithAddress(const std::vector<EvalConnectionPoint>& evalConnectionPoints, eval_gate_id gateId, const Address& address) const;

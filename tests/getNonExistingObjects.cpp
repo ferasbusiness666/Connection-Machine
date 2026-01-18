@@ -1,6 +1,6 @@
 #include "getNonExistingObjects.h"
 
-#include "backend/evaluator/evaluator.h"
+#include "backend/evaluator/simulator/evalLogicSimulator.h"
 #include "environment/environment.h"
 
 TEST_F(GetNonExistingObjects, BlockContainer) {

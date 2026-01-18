@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include "environment/environment.h"
-#include "backend/evaluator/evaluator.h"
+#include "backend/evaluator/simulator/evalLogicSimulator.h"
 #include "backend/blockData/blockDataManager.h"
 
 class JunctionEvaluatorTest : public ::testing::Test {

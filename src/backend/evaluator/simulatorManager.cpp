@@ -1,7 +1,7 @@
 #include "simulatorManager.h"
 
 #include "backend/circuit/circuitManager.h"
-#include "evaluator.h"
+#include "simulator/evalLogicSimulator.h"
 
 SimulatorManager::SimulatorManager(CircuitManager& circuitManager, DataUpdateEventManager& dataUpdateEventManager) :
 	circuitManager(circuitManager), dataUpdateEventManager(dataUpdateEventManager), simulatorIdProvider(1) { }

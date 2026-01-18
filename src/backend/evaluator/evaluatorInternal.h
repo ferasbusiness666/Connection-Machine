@@ -43,10 +43,11 @@ public:
 	// get all the top connection points from bottom connections points for a certain eval at address with the outputs all mixed together
 	std::vector<EvalConnectionPoint> mapFromBottomConnectionPointsToTopConnectionPointsMixed(std::vector<EvalConnectionPoint> bottomConnectionPoint, Address address) const;
 
-
 	const std::unordered_map<Position, std::pair<eval_gate_id, Orientation>>& getPositionRemapping() const { return positionRemapping; }
 	const std::unordered_map<eval_gate_id, std::pair<Position, Orientation>>& getPositionReverseRemapping() const { return positionReverseRemapping; }
 	const std::unordered_map<connection_end_id_t, InternalPointData>& getPortToInternalPointMapping() const { return portToInternalPointMapping; }
+
+	std::vector<std::pair<Position, circuit_id_t>> getSubcircuits() const;
 
 	void addEvaluator(SubcircuitEvalLayer& evaluator) const { evaluatorsUsingThisEvaluator[&evaluator] += 1; }
 	void removeEvaluator(SubcircuitEvalLayer& evaluator) const {

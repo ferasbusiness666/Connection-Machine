@@ -1,7 +1,7 @@
 #include "evaluator.h"
 
 #include "backend/circuit/circuitManager.h"
-#include "layers/subcircuitEvalLayer.h"
+#include "backend/evaluator/simulator/evalLogicSimulator.h"
 #include "evaluatorInternal.h"
 #include "simulatorManager.h"
 
@@ -60,9 +60,9 @@ void Evaluator::makeEdit(DifferenceSharedPtr difference) {
 	endEdit();
 }
 
-circuit_id_t Evaluator::getCircuitId() const {
-	return circuit.getCircuitId();
-}
+circuit_id_t Evaluator::getCircuitId() const { return circuit.getCircuitId(); }
+
+std::vector<std::pair<Position, circuit_id_t>> Evaluator::getSubcircuits() const { return evaluatorInternal->getSubcircuits(); }
 
 nlohmann::json Evaluator::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
