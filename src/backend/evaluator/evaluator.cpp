@@ -84,4 +84,5 @@ void Evaluator::startEdit() {
 void Evaluator::endEdit() {
 	evaluatorInternal->endEdit();
 	for (EvalLogicSimulator* simulator : simulatorsUsingThisEvaluator) simulator->processEdits();
+	dataUpdateEventManager.sendEvent("evalUpdate");
 }

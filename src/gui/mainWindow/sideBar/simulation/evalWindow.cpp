@@ -4,6 +4,7 @@
 #include "backend/circuit/circuitManager.h"
 #include "backend/dataUpdateEventManager.h"
 #include "backend/evaluator/simulatorManager.h"
+#include "backend/evaluator/evaluator.h"
 
 #include "gui/mainWindow/circuitView/circuitViewWidget.h"
 #include "gui/mainWindow/mainWindow.h"
@@ -18,7 +19,7 @@ EvalWindow::EvalWindow(
 ) :
 	menuTree(document, parent, true, false), dataUpdateEventReceiver(dataUpdateEventManager), simulatorManager(simulatorManager), circuitManager(circuitManager),
 	mainWindow(mainWindow) {
-	dataUpdateEventReceiver.linkFunction("addressTreeMakeBranch", [this](const DataUpdateEventManager::EventData* event) { refreshSidebar(true); });
+	dataUpdateEventReceiver.linkFunction("evalUpdate", [this](const DataUpdateEventManager::EventData* event) { refreshSidebar(true); });
 	dataUpdateEventReceiver.linkFunction("blockDataUpdate", [this](const DataUpdateEventManager::EventData* event) { refreshSidebar(true); });
 	dataUpdateEventReceiver.linkFunction("circuitViewChangeSimulator", [this](const DataUpdateEventManager::EventData* event) { refreshSidebar(false); });
 	// When the viewed circuit changes (due to navigating into/out of ICs), re-apply highlight.
@@ -32,7 +33,7 @@ void EvalWindow::updateList() {
 	std::vector<std::vector<std::string>> paths;
 	for (const auto& pair : this->simulatorManager.getSimulators()) {
 		std::vector<std::string> path({ pair.second->getSimulatorName() });
-		makePaths(paths, path);// pair.second->buildAddressTree()
+		makePaths(paths, path, pair.second->getCircuitId());
 	}
 	menuTree.setPaths(paths);
 }
@@ -129,17 +130,18 @@ void EvalWindow::refreshSidebar(bool rebuildItems) {
 	}
 }
 
-void EvalWindow::makePaths(std::vector<std::vector<std::string>>& paths, std::vector<std::string>& path/*, const EvalAddressTree& addressTree*/) {
+void EvalWindow::makePaths(std::vector<std::vector<std::string>>& paths, std::vector<std::string>& path, circuit_id_t circuitId) {
 	paths.push_back(path);
-	// auto& branches = addressTree.getBranches();
-	// if (branches.empty()) {
-	// } else {
-	// 	for (auto& pair : branches) {
-	// 		path.push_back(circuitManager.getCircuit(pair.second.getContainerId())->getCircuitName() + pair.first.toString());
-	// 		makePaths(paths, path, pair.second);
-	// 		path.pop_back();
-	// 	}
-	// }
+	const Circuit* circuit = circuitManager.getCircuit(circuitId).get();
+	if (!circuit) {
+		logError("Failed to get circuit from circuit id {}.", "EvalWindow::makePaths", circuit->getCircuitId());
+		return;
+	}
+	for (std::pair<Position, circuit_id_t> pair : circuit->getEvaluator().getSubcircuits()) {
+		path.push_back(circuitManager.getCircuit(pair.second)->getCircuitName() + pair.first.toString());
+		makePaths(paths, path, pair.second);
+		path.pop_back();
+	}
 }
 
 void EvalWindow::updateSelected(std::string string) {

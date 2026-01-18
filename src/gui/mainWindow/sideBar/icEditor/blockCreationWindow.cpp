@@ -660,19 +660,6 @@ void BlockCreationWindow::addListItem(
 	rowInRow->AppendChild(std::move(remove));
 }
 
-void BlockCreationWindow::makePaths(std::vector<std::vector<std::string>>& paths, std::vector<std::string>& path/*, const EvalAddressTree& addressTree*/) {
-	// auto& branches = addressTree.getBranches();
-	// if (branches.empty()) {
-		paths.push_back(path);
-	// } else {
-	// 	for (auto& pair : branches) {
-	// 		path.push_back(circuitManager.getCircuit(pair.second.getContainerId())->getCircuitName() + pair.first.toString());
-	// 		makePaths(paths, path, pair.second);
-	// 		path.pop_back();
-	// 	}
-	// }
-}
-
 void BlockCreationWindow::updateSelected(std::string string) {
 	std::vector<std::string> parts = stringSplit(string, '/');
 	std::stringstream evalName(parts.front());

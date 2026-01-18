@@ -48,7 +48,7 @@ circuit_id_t Circuit::getCircuitId(const Address& address) const {
 		const Circuit* circuit = circuitManager.getCircuit(id).get();
 		block = circuit->getBlockContainer().getBlock(address.getPosition(i));
 		if (!block) return 0;
-		circuit_id_t id = circuitManager.getCircuitBlockDataManager().getCircuitId(block->type());
+		id = circuitManager.getCircuitBlockDataManager().getCircuitId(block->type());
 	}
 	return id;
 }

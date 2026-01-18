@@ -43,7 +43,7 @@ void CircuitView::setSimulatoruator(simulator_id_t simulatorId, const Address& a
 			}
 			this->simulatorId = simulatorId;
 			this->address = address;
-			this->circuitId = circuit->getCircuitId();
+			this->circuitId = circuitId;
 			circuitRenderManager.reset();
 			MainRenderer::get().setViewportSimulatoruator(viewportId, simulator, address);
 			circuitRenderManager.emplace(backend, this->circuitId, viewportId);

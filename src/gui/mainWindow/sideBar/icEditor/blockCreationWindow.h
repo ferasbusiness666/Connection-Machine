@@ -34,7 +34,6 @@ private:
 		unsigned int bitWidthValue = 1
 	);
 	void updateSelected(std::string string);
-	void makePaths(std::vector<std::vector<std::string>>& paths, std::vector<std::string>& path/*, const EvalAddressTree& addressTree*/);
 
 	std::optional<ElementCreator> elementCreator;
 	Rml::ElementDocument* document;

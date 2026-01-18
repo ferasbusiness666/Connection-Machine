@@ -24,7 +24,7 @@ public:
 
 private:
 	void updateSelected(std::string string);
-	void makePaths(std::vector<std::vector<std::string>>& paths, std::vector<std::string>& path/*, const EvalAddressTree& addressTree*/);
+	void makePaths(std::vector<std::vector<std::string>>& paths, std::vector<std::string>& path, circuit_id_t circuitId);
 	void selectSimulatoruatorForCircuit(circuit_id_t circuitId);
 	void onCircuitCreatedSelect(const DataUpdateEventManager::EventData* event);
 
