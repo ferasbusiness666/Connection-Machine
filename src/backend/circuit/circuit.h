@@ -3,6 +3,7 @@
 
 #include <assert.h>
 
+#include "backend/address.h"
 #include "backend/container/blockContainer.h"
 #include "backend/container/copiedBlocks.h"
 #include "backend/selection.h"
@@ -30,6 +31,7 @@ public:
 	inline BlockType getBlockType() const { return blockContainer.getBlockType(); }
 	inline const std::string& getUUID() const { return circuitUUID; }
 	inline circuit_id_t getCircuitId() const { return circuitId; }
+	circuit_id_t getCircuitId(const Address& address) const;
 	inline std::string getCircuitNameNumber() const { return circuitName + " : " + std::to_string(circuitId); }
 	inline const std::string& getCircuitName() const { return circuitName; }
 	void setCircuitName(const std::string& name);
@@ -129,6 +131,7 @@ private:
 	std::string circuitUUID;
 	circuit_id_t circuitId;
 	BlockContainer blockContainer;
+	CircuitManager& circuitManager;
 	DataUpdateEventManager& dataUpdateEventManager;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 

@@ -30,7 +30,7 @@ void LoadCallback(void* userData, const char* const* filePaths, int filter) {
 		bool doSetCir = true;
 		// circuitViewWidget->getCircuitView()->getBackend()->linkCircuitViewWithCircuit(circuitViewWidget->getCircuitView(), id);
 		for (auto& iter : circuitViewWidget->getCircuitView()->getBackend().getSimulatorManager().getSimulators()) {
-			if (iter.second->getCircuitId(Address()) == id) {
+			if (iter.second->getCircuitId() == id) {
 				doSetCir = false;
 				circuitViewWidget->getCircuitView()->setSimulatoruator(iter.first);
 				// circuitViewWidget->getCircuitView()->getBackend()->linkCircuitViewWithSimulator(circuitViewWidget->getCircuitView(), iter.first, Address());
@@ -317,7 +317,7 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 			} else {
 				circuitView->setCircuit(id);
 				for (auto& iter : circuitView->getBackend().getSimulatorManager().getSimulators()) {
-					if (iter.second->getCircuitId(Address()) == id) {
+					if (iter.second->getCircuitId() == id) {
 						circuitView->setSimulatoruator(iter.first);
 					}
 				}
@@ -365,7 +365,7 @@ void CircuitViewWidget::newCircuit() {
 	circuitView->setCircuit(id);
 	// tmp get eval with this circuit id because circuit manager makes a eval for loaded circuits
 	for (auto& iter : circuitView->getBackend().getSimulatorManager().getSimulators()) {
-		if (iter.second->getCircuitId(Address()) == id) {
+		if (iter.second->getCircuitId() == id) {
 			circuitView->setSimulatoruator(iter.second.get());
 			// circuitView->getBackend()->linkCircuitViewWithSimulator(circuitView.get(), iter.first, Address());
 			return;

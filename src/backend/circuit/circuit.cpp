@@ -17,7 +17,7 @@ Circuit::Circuit(
 	const std::string& name,
 	const std::string& uuid
 ) :
-	circuitId(circuitId), blockContainer(circuitManager), circuitUUID(uuid), circuitName(name),
+	circuitId(circuitId), blockContainer(circuitManager), circuitUUID(uuid), circuitName(name), circuitManager(circuitManager),
 	dataUpdateEventManager(dataUpdateEventManager), dataUpdateEventReceiver(dataUpdateEventManager),
 	evaluator(std::make_unique<Evaluator>(circuitManager, *this, dataUpdateEventManager))
 {
@@ -36,6 +36,21 @@ void Circuit::clear(bool clearUndoTree) {
 	if (clearUndoTree) {
 		undoSystem.clear();
 	}
+}
+
+circuit_id_t Circuit::getCircuitId(const Address& address) const {
+	if (address.size() == 0) return circuitId;
+	const Block* block = blockContainer.getBlock(address.getPosition(0));
+	if (!block) return 0;
+	circuit_id_t id = circuitManager.getCircuitBlockDataManager().getCircuitId(block->type());
+	for (unsigned int i = 1; i < address.size(); i++) {
+		if (id == 0) return 0;
+		const Circuit* circuit = circuitManager.getCircuit(id).get();
+		block = circuit->getBlockContainer().getBlock(address.getPosition(i));
+		if (!block) return 0;
+		circuit_id_t id = circuitManager.getCircuitBlockDataManager().getCircuitId(block->type());
+	}
+	return id;
 }
 
 void Circuit::connectListener(void* object, CircuitDiffListenerFunction func, unsigned int priority) {

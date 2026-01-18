@@ -4,7 +4,6 @@
 // #include "backend/blockData/blockData.h"
 // #include "util/evalConfig.h"
 // #include "simulator/logicState.h"
-#include "backend/address.h"
 #include "backend/circuit/circuitDefs.h"
 #include "simulator/evalLogicSimulator.h"
 
@@ -38,7 +37,6 @@ public:
 	void doLayersUpdate(bool doStartEdit = true);
 
 	circuit_id_t getCircuitId() const;
-	circuit_id_t getCircuitId(const Address& address) const;
 
 	nlohmann::json dumpState() const;
 

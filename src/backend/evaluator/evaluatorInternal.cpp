@@ -336,22 +336,6 @@ void EvaluatorInternal::removeConnection(Position outputBlockPosition, Position 
 	layerRunner.getInputLayer().removeConnection(EvalConnection(outputGate->gateId, *outputConnectionEndId, inputGate->gateId, *inputConnectionEndId));
 }
 
-EvalConnectionPoint EvaluatorInternal::mapFromTopConnectionPointToBottomConnectionPoint(EvalConnectionPoint topConnectionPoint) const {
-	return layerRunner.getMappedEvalConnectionPoint(topConnectionPoint);
-}
-std::vector<EvalConnectionPoint> EvaluatorInternal::mapFromBottomConnectionPointToTopConnectionPoint(EvalConnectionPoint bottomConnectionPoint) const {
-	return layerRunner.getReversedMappedEvalConnectionPoint(bottomConnectionPoint);
-}
-std::optional<Address> EvaluatorInternal::mapFromTopConnectionPointToAddress(EvalConnectionPoint topConnectionPoint) const {
-	if (topConnectionPoint.gateId == 0) return std::nullopt;
-	auto iter = positionReverseRemapping.find(topConnectionPoint.gateId);
-	if (iter == positionReverseRemapping.end()) return std::nullopt;
-	return iter->second.first + circuitManager.getBlockDataManager().getConnectionVector(
-		getBlockType(layerRunner.getInputLayer().getGate(topConnectionPoint.gateId)->type),
-		iter->second.second,
-		topConnectionPoint.connectionEndId
-	).value();
-}
 std::optional<std::pair<Address, Address>> EvaluatorInternal::mapFromTopConnectionPointToPointAndBlockAddress(EvalConnectionPoint topConnectionPoint) const {
 	if (topConnectionPoint.gateId == 0) return std::nullopt;
 	auto iter = positionReverseRemapping.find(topConnectionPoint.gateId);
@@ -362,30 +346,9 @@ std::optional<std::pair<Address, Address>> EvaluatorInternal::mapFromTopConnecti
 		topConnectionPoint.connectionEndId
 	).value(), iter->second.first);
 }
-std::vector<Address> EvaluatorInternal::mapFromBottomConnectionPointToAddress(EvalConnectionPoint bottomConnectionPoint) const {
-	std::vector<EvalConnectionPoint> topConnectionPoints = mapFromBottomConnectionPointToTopConnectionPoint(bottomConnectionPoint);
-	std::vector<Address> addresses;
-	for (const EvalConnectionPoint& topConnectionPoint : topConnectionPoints) {
-		std::optional<Address> address = mapFromTopConnectionPointToAddress(topConnectionPoint);
-		assert(address.has_value());
-		addresses.push_back(address.value());
-	}
-	return addresses;
-}
-std::vector<std::pair<Address, Address>> EvaluatorInternal::mapFromBottomConnectionPointToAddressAndBlockAddress(EvalConnectionPoint bottomConnectionPoint) const {
-	std::vector<EvalConnectionPoint> topConnectionPoints = mapFromBottomConnectionPointToTopConnectionPoint(bottomConnectionPoint);
-	std::vector<std::pair<Address, Address>> addressesPairs;
-	for (const EvalConnectionPoint& topConnectionPoint : topConnectionPoints) {
-		std::optional<std::pair<Address, Address>> pair = mapFromTopConnectionPointToPointAndBlockAddress(topConnectionPoint);
-		assert(pair.has_value());
-		addressesPairs.push_back(pair.value());
-	}
-	return addressesPairs;
-}
-EvalConnectionPoint EvaluatorInternal::mapFromAddressToTopConnectionPoint(const Address& address) const {
-	if (address.size() != 1) return EvalConnectionPoint::null();
+EvalConnectionPoint EvaluatorInternal::mapFromPositionToTopConnectionPoint(Position position) const {
 	assert(mainThreadId == std::this_thread::get_id());
-	const Block* block = circuit.getBlockContainer().getBlock(address.getPosition(0));
+	const Block* block = circuit.getBlockContainer().getBlock(position);
 	if (block == nullptr) return EvalConnectionPoint::null();
 	auto iter = positionRemapping.find(block->getPosition());
 	if (iter == positionRemapping.end()) return EvalConnectionPoint::null();
@@ -394,13 +357,68 @@ EvalConnectionPoint EvaluatorInternal::mapFromAddressToTopConnectionPoint(const 
 		return EvalConnectionPoint(iter->second.first, 0);
 	}
 	if (block->type() == BlockType::TRISTATE_BUFFER) return EvalConnectionPoint(iter->second.first, 2);
-	// other blocks are 1x1 and have a output so you just need to get what connection end id is the output
-	std::optional<connection_end_id_t> connectionEndId = block->getOutputOrBidirectionalConnectionId(address.getPosition(0));
+	// other blocks are 1x1 and have an output so you just need to get what connection end id is the output
+	std::optional<connection_end_id_t> connectionEndId = block->getOutputOrBidirectionalConnectionId(position);
 	if (!connectionEndId) return EvalConnectionPoint::null();
 	return EvalConnectionPoint(iter->second.first, connectionEndId.value());
 }
 EvalConnectionPoint EvaluatorInternal::mapFromAddressToBottomConnectionPoint(const Address& address) const {
-	EvalConnectionPoint topConnectionPoint = mapFromAddressToTopConnectionPoint(address);
-	if (topConnectionPoint.isNull()) return EvalConnectionPoint::null();
-	return mapFromTopConnectionPointToBottomConnectionPoint(topConnectionPoint);
+	if (address.size() == 1) {
+		EvalConnectionPoint topConnectionPoint = mapFromPositionToTopConnectionPoint(address.getPosition(0));
+		if (topConnectionPoint.isNull()) return EvalConnectionPoint::null();
+		return layerRunner.getMappedEvalConnectionPoint(topConnectionPoint);
+	}
+	if (address.size() == 0) return EvalConnectionPoint::null();
+	auto iter = positionRemapping.find(address.getPosition(0));
+	if (iter == positionRemapping.end()) return EvalConnectionPoint::null();
+	return layerRunner.getMappedAddress(iter->second.first, address.popTopPosition());
+}
+EvalConnectionPoint EvaluatorInternal::mapFromTopConnectionPointToBottomConnectionPoint(EvalConnectionPoint topConnectionPoint) const {
+	return layerRunner.getMappedEvalConnectionPoint(topConnectionPoint);
+}
+std::vector<EvalConnectionPoint> EvaluatorInternal::mapFromBottomConnectionPointToTopConnectionPoints(EvalConnectionPoint bottomConnectionPoint, const Address& address) const {
+	if (address.size() == 0) return layerRunner.getReversedMappedEvalConnectionPoint(bottomConnectionPoint);
+	auto iter = positionRemapping.find(address.getPosition(0));
+	if (iter == positionRemapping.end()) return { };
+	return layerRunner.getReversedMappedConnectionPointWithAddress(bottomConnectionPoint, iter->second.first, address.popTopPosition());
+}
+std::vector<std::vector<EvalConnectionPoint>> EvaluatorInternal::mapFromBottomConnectionPointsToTopConnectionPoints(std::vector<EvalConnectionPoint> bottomConnectionPoints, Address address) const {
+	if (address.size() == 0) {
+		std::vector<std::vector<EvalConnectionPoint>> outputConnectionPoints;
+		for (EvalConnectionPoint connectionPoint : bottomConnectionPoints) {
+			outputConnectionPoints.push_back({ });
+			layerRunner.getReversedMappedEvalConnectionPoint(connectionPoint, outputConnectionPoints.back());
+		}
+		return outputConnectionPoints;
+	}
+	auto iter = positionRemapping.find(address.getPosition(0));
+	if (iter == positionRemapping.end()) return { };
+	return layerRunner.getReversedMappedConnectionPointsWithAddress(bottomConnectionPoints, iter->second.first, address.popTopPosition());
+}
+std::vector<std::vector<EvalConnectionPoint>> EvaluatorInternal::mapFromBottomConnectionPointGroupsToTopConnectionPoints(std::vector<std::vector<EvalConnectionPoint>> bottomConnectionPoints, Address address) const {
+	if (address.size() == 0) {
+		std::vector<std::vector<EvalConnectionPoint>> outputConnectionPoints;
+		for (std::vector<EvalConnectionPoint> connectionPoints : bottomConnectionPoints) {
+			outputConnectionPoints.push_back({ });
+			for (EvalConnectionPoint connectionPoint : connectionPoints) {
+				layerRunner.getReversedMappedEvalConnectionPoint(connectionPoint, outputConnectionPoints.back());
+			}
+		}
+		return outputConnectionPoints;
+	}
+	auto iter = positionRemapping.find(address.getPosition(0));
+	if (iter == positionRemapping.end()) return { };
+	return layerRunner.getReversedMappedConnectionPointGroupsWithAddress(bottomConnectionPoints, iter->second.first, address.popTopPosition());
+}
+std::vector<EvalConnectionPoint> EvaluatorInternal::mapFromBottomConnectionPointsToTopConnectionPointsMixed(std::vector<EvalConnectionPoint> bottomConnectionPoints, Address address) const {
+	if (address.size() == 0) {
+		std::vector<EvalConnectionPoint> outputConnectionPoints;
+		for (EvalConnectionPoint connectionPoint : bottomConnectionPoints) {
+			layerRunner.getReversedMappedEvalConnectionPoint(connectionPoint, outputConnectionPoints);
+		}
+		return outputConnectionPoints;
+	}
+	auto iter = positionRemapping.find(address.getPosition(0));
+	if (iter == positionRemapping.end()) return { };
+	return layerRunner.getReversedMappedConnectionPointsWithAddressMixed(bottomConnectionPoints, iter->second.first, address.popTopPosition());
 }

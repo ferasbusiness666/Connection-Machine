@@ -64,10 +64,6 @@ circuit_id_t Evaluator::getCircuitId() const {
 	return circuit.getCircuitId();
 }
 
-circuit_id_t Evaluator::getCircuitId(const Address& address) const {
-	if (address.size() == 0) return circuit.getCircuitId(); return 0;
-}
-
 nlohmann::json Evaluator::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
 	stateJson["circuitId"] = circuit.getCircuitId();

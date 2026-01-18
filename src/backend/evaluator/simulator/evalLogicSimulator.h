@@ -21,7 +21,6 @@ public:
 	std::string getSimulatorName() const;
 	simulator_id_t getSimulatorId() const { return simulatorId; }
 	circuit_id_t getCircuitId() const { return circuitId; }
-
 	circuit_id_t getCircuitId(const Address& address) const;
 
 	// --------------- Controls ---------------

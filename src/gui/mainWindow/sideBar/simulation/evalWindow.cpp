@@ -160,7 +160,7 @@ void EvalWindow::updateSelected(std::string string) {
 		if (!(posString >> position.x)) continue;
 		if (!(posString >> sep)) continue;
 		if (!(posString >> position.y)) continue;
-		address.addBlockId(position);
+		address.appendPosition(position);
 	}
 
 	CircuitView* circuitView = mainWindow.getActiveCircuitViewWidget()->getCircuitView();

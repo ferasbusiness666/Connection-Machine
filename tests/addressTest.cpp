@@ -19,15 +19,15 @@ TEST(AddressTest, ConstructionWithPosition) {
 	EXPECT_EQ(address.toString(), "(3, -4)");
 }
 
-TEST(AddressTest, AddAndNestPositions) {
+TEST(AddressTest, AddAndprependPositions) {
 	Address address(Position(0, 0));
-	address.addBlockId(Position(1, 1));
+	address.appendPosition(Position(1, 1));
 
 	ASSERT_EQ(address.size(), 2);
 	EXPECT_EQ(address.getPosition(0), Position(0, 0));
 	EXPECT_EQ(address.getPosition(1), Position(1, 1));
 
-	address.nestPosition(Position(-5, 6));
+	address.prependPosition(Position(-5, 6));
 
 	ASSERT_EQ(address.size(), 3);
 	EXPECT_EQ(address.getPosition(0), Position(-5, 6));

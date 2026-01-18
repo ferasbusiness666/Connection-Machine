@@ -689,7 +689,7 @@ void BlockCreationWindow::updateSelected(std::string string) {
 		char c;
 		posString >> position.x >> c >> position.y;
 		logInfo(position.toString());
-		address.addBlockId(position);
+		address.appendPosition(position);
 	}
 
 	CircuitView* circuitView = mainWindow.getActiveCircuitViewWidget()->getCircuitView();

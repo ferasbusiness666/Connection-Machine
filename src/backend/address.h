@@ -10,8 +10,14 @@ public:
 	inline int size() const { return addresses.size(); }
 	inline Position getPosition(int index) const { return addresses[index]; }
 
-	inline void addBlockId(Position position) { addresses.push_back(position); }
-	inline void nestPosition(Position position) { addresses.insert(addresses.begin(), position); }
+	inline void appendPosition(Position position) { addresses.push_back(position); }
+	inline void prependPosition(Position position) { addresses.insert(addresses.begin(), position); }
+
+	Address popTopPosition() const {
+		Address newAddress;
+		newAddress.addresses = std::vector<Position>(addresses.begin() + 1, addresses.end());
+		return newAddress;
+	}
 
 	std::string toString() const {
 		std::string result;

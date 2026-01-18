@@ -44,7 +44,7 @@ bool LogicToucher::press(const Event* event) {
 			} break;
 			default:
 				Address address = circuitView->getAddress();
-				address.addBlockId(clickPosition);
+				address.appendPosition(clickPosition);
 				logic_state_t state = simulator->getState(address);
 				state = (state == logic_state_t::HIGH) ? logic_state_t::LOW : logic_state_t::HIGH;
 				simulator->setState(address, state);
@@ -65,7 +65,7 @@ bool LogicToucher::unpress(const Event* event) {
 		const Block* block = circuit->getBlockContainer().getBlock(clickPosition);
 		if (block && block->type() == BlockType::BUTTON) {
 			Address address = circuitView->getAddress();
-			address.addBlockId(clickPosition);
+			address.appendPosition(clickPosition);
 			simulator->setState(address, logic_state_t::LOW);
 			sendEventToCircuitView(StateSetEvent("CircuitStateSet", clickPosition, logic_state_t::LOW));
 		}
@@ -84,7 +84,7 @@ bool LogicToucher::pointerMove(const Event* event) {
 		const Block* block = circuit->getBlockContainer().getBlock(clickPosition);
 		if (block && block->type() == BlockType::BUTTON) {
 			Address address = circuitView->getAddress();
-			address.addBlockId(clickPosition);
+			address.appendPosition(clickPosition);
 			simulator->setState(address, logic_state_t::LOW);
 		}
 		clickPosition = lastPointerPosition;
@@ -109,7 +109,7 @@ bool LogicToucher::pointerMove(const Event* event) {
 			} break;
 			default:
 				Address address = circuitView->getAddress();
-				address.addBlockId(clickPosition);
+				address.appendPosition(clickPosition);
 				logic_state_t state = simulator->getState(address);
 				state = (state == logic_state_t::HIGH) ? logic_state_t::LOW : logic_state_t::HIGH;
 				simulator->setState(address, state);

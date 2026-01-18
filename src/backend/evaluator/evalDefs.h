@@ -1,10 +1,10 @@
 #ifndef evalDefs_h
 #define evalDefs_h
 
+#include "backend/address.h"
 #include "backend/blockData/blockData.h"
 
 DECLARE_ID_TYPE(simulator_id_t, unsigned int);
-DECLARE_ID_TYPE(eval_circuit_id_t, unsigned int);
 DECLARE_ID_TYPE(eval_gate_id, unsigned int);
 DECLARE_ID_TYPE(simulator_gate_id_t, unsigned int);
 
@@ -25,7 +25,7 @@ struct SimulatorMappingUpdate {
 typedef std::function<void(const std::vector<SimulatorMappingUpdate>&)> SimulatorMappingUpdateListenerFunction;
 
 struct SimulatorMappingUpdateListener {
-	eval_circuit_id_t evalCircuitId;
+	Address address;
 	std::function<void(const std::vector<SimulatorMappingUpdate>&)> callback;
 };
 

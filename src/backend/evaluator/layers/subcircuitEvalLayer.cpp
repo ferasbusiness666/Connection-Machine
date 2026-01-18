@@ -206,6 +206,56 @@ void SubcircuitEvalLayer::run() {
 	}
 }
 
+EvalConnectionPoint SubcircuitEvalLayer::getMappedAddress(eval_gate_id gateId, const Address& address) const {
+	auto subcircuitIter = subcircuits.find(gateId);
+	if (subcircuitIter == subcircuits.end()) return EvalConnectionPoint::null();
+	const Circuit* circuit = circuitManager.getCircuit(subcircuitIter->second.circuitId).get();
+	assert(circuit);
+	EvalConnectionPoint internalBottomPoint = circuit->getEvaluator().getEvaluatorInternal().mapFromAddressToBottomConnectionPoint(address.popTopPosition());
+	if (internalBottomPoint.isNull()) return EvalConnectionPoint::null();
+	auto otherSimulatorToThisSimulatorIdMappingIter = subcircuitIter->second.otherSimulatorToThisSimulatorIdMapping.find(internalBottomPoint.gateId);
+	assert(otherSimulatorToThisSimulatorIdMappingIter != subcircuitIter->second.otherSimulatorToThisSimulatorIdMapping.end());
+	return EvalConnectionPoint(
+		otherSimulatorToThisSimulatorIdMappingIter->second,
+		internalBottomPoint.connectionEndId
+	);
+}
+std::vector<EvalConnectionPoint> SubcircuitEvalLayer::getReversedMappedConnectionPointsWithAddressMixed(const std::vector<EvalConnectionPoint>& connectionPoints, eval_gate_id gateId, const Address& address) const {
+	auto subcircuitIter = subcircuits.find(gateId);
+	if (subcircuitIter == subcircuits.end()) {
+		if (address.size() == 0)
+		return { };
+	}
+	std::vector<EvalConnectionPoint> subcircuitConnectionPoints;
+	for (EvalConnectionPoint connectionPoint : connectionPoints) {
+		auto iter = subcircuitIter->second.thisSimulatorIdMappingToOtherSimulator.find(connectionPoint.gateId);
+		if (iter == subcircuitIter->second.thisSimulatorIdMappingToOtherSimulator.end()) continue;
+		subcircuitConnectionPoints.push_back(EvalConnectionPoint(iter->second, connectionPoint.connectionEndId));
+	}
+	const Circuit* circuit = circuitManager.getCircuit(subcircuitIter->second.circuitId).get();
+	assert(circuit);
+	return circuit->getEvaluator().getEvaluatorInternal().mapFromBottomConnectionPointsToTopConnectionPointsMixed(subcircuitConnectionPoints, address);
+}
+std::vector<std::vector<EvalConnectionPoint>> SubcircuitEvalLayer::getReversedMappedConnectionPointGroupsWithAddress(const std::vector<std::vector<EvalConnectionPoint>>& connectionPoints, eval_gate_id gateId, const Address& address) const {
+	auto subcircuitIter = subcircuits.find(gateId);
+	if (subcircuitIter == subcircuits.end()) {
+		if (address.size() == 0)
+		return { };
+	}
+	std::vector<std::vector<EvalConnectionPoint>> subcircuitConnectionPoints;
+	for (const std::vector<EvalConnectionPoint>& connectionPointVec : connectionPoints) {
+		subcircuitConnectionPoints.push_back({});
+		for (EvalConnectionPoint connectionPoint : connectionPointVec) {
+			auto iter = subcircuitIter->second.thisSimulatorIdMappingToOtherSimulator.find(connectionPoint.gateId);
+			if (iter == subcircuitIter->second.thisSimulatorIdMappingToOtherSimulator.end()) continue;
+			subcircuitConnectionPoints.back().push_back(EvalConnectionPoint(iter->second, connectionPoint.connectionEndId));
+		}
+	}
+	const Circuit* circuit = circuitManager.getCircuit(subcircuitIter->second.circuitId).get();
+	assert(circuit);
+	return circuit->getEvaluator().getEvaluatorInternal().mapFromBottomConnectionPointGroupsToTopConnectionPoints(subcircuitConnectionPoints, address);
+}
+
 void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vector<connection_end_id_t>& updatedPortIds) {
 	evaluator.startEdit();
 	const Circuit* circuit = circuitManager.getCircuit(circuitId).get();

@@ -29,14 +29,21 @@ public:
 	void createConnection(Position outputBlockPosition, Position outputPosition, Position inputBlockPosition, Position inputPosition);
 
 	const LayerRunner& getLayerRunner() const { return layerRunner; }
-	EvalConnectionPoint mapFromTopConnectionPointToBottomConnectionPoint(EvalConnectionPoint topConnectionPoint) const;
-	std::vector<EvalConnectionPoint> mapFromBottomConnectionPointToTopConnectionPoint(EvalConnectionPoint bottomConnectionPoint) const;
-	std::optional<Address> mapFromTopConnectionPointToAddress(EvalConnectionPoint topConnectionPoint) const;
+
 	std::optional<std::pair<Address, Address>> mapFromTopConnectionPointToPointAndBlockAddress(EvalConnectionPoint bottomConnectionPoint) const;
-	std::vector<Address> mapFromBottomConnectionPointToAddress(EvalConnectionPoint bottomConnectionPoint) const;
-	std::vector<std::pair<Address, Address>> mapFromBottomConnectionPointToAddressAndBlockAddress(EvalConnectionPoint bottomConnectionPoint) const;
-	EvalConnectionPoint mapFromAddressToTopConnectionPoint(const Address& address) const;
+	EvalConnectionPoint mapFromPositionToTopConnectionPoint(Position blockPosition) const;
 	EvalConnectionPoint mapFromAddressToBottomConnectionPoint(const Address& address) const;
+	EvalConnectionPoint mapFromTopConnectionPointToBottomConnectionPoint(EvalConnectionPoint topConnectionPoint) const;
+	// get all the top connection points from the bottom connection point for a certain eval at address
+	std::vector<EvalConnectionPoint> mapFromBottomConnectionPointToTopConnectionPoints(EvalConnectionPoint bottomConnectionPoint, const Address& address) const;
+	// get all the top connection points from bottom connections points for a certain eval at address with the output containing the mappings
+	std::vector<std::vector<EvalConnectionPoint>> mapFromBottomConnectionPointsToTopConnectionPoints(std::vector<EvalConnectionPoint> bottomConnectionPoint, Address address) const;
+	// get all the top connection points from bottom connections points for a certain eval at address with the output containing the mappings
+	std::vector<std::vector<EvalConnectionPoint>> mapFromBottomConnectionPointGroupsToTopConnectionPoints(std::vector<std::vector<EvalConnectionPoint>> bottomConnectionPoint, Address address) const;
+	// get all the top connection points from bottom connections points for a certain eval at address with the outputs all mixed together
+	std::vector<EvalConnectionPoint> mapFromBottomConnectionPointsToTopConnectionPointsMixed(std::vector<EvalConnectionPoint> bottomConnectionPoint, Address address) const;
+
+
 	const std::unordered_map<Position, std::pair<eval_gate_id, Orientation>>& getPositionRemapping() const { return positionRemapping; }
 	const std::unordered_map<eval_gate_id, std::pair<Position, Orientation>>& getPositionReverseRemapping() const { return positionReverseRemapping; }
 	const std::unordered_map<connection_end_id_t, InternalPointData>& getPortToInternalPointMapping() const { return portToInternalPointMapping; }

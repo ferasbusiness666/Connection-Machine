@@ -70,7 +70,7 @@ std::string EvalLogicSimulator::getSimulatorName() const {
 }
 
 circuit_id_t EvalLogicSimulator::getCircuitId(const Address& address) const {
-	return circuitManager.getCircuit(circuitId)->getEvaluator().getCircuitId(address);
+	return circuitManager.getCircuit(circuitId)->getCircuitId(address);
 }
 
 void EvalLogicSimulator::setState(const Address& address, logic_state_t state) {
@@ -274,7 +274,7 @@ std::vector<std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>>>
 	std::vector<std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>>> output;
 	for (std::pair<Position, virtual_connection_id_t> virtualConnection : virtualConnections) {
 		Address address = addressOrigin;
-		address.addBlockId(virtualConnection.first);
+		address.appendPosition(virtualConnection.first);
 		output.push_back(getVirtualConnectionSimulatorId(address, virtualConnection.second));
 	}
 	return output;
@@ -284,7 +284,7 @@ std::vector<std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>>>
 	std::vector<std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>>> output;
 	for (Position position : positions) {
 		Address address = addressOrigin;
-		address.addBlockId(position);
+		address.appendPosition(position);
 		output.push_back(getPinSimulatorId(address));
 	}
 	return output;
@@ -341,71 +341,65 @@ void EvalLogicSimulator::processEdits() {
 		logicSimulator.endEdit();
 	}
 
-	std::vector<SimulatorMappingUpdate> simulatorMappingUpdates;
-	for (auto mappingPair : gateIdMapping) {
-		const EvalGate* evalGate = evalLayerState.getGate(mappingPair.first);
-		assert(evalGate);
-		const BlockData* blockData = circuitManager.getBlockDataManager().getBlockData(getBlockType(evalGate->type));
-		assert(blockData);
-		for (auto pair : blockData->getConnectionsSafe()) {
-			if (pair.second.portType == BlockData::ConnectionData::PortType::INPUT) continue;
-			std::optional<simulator_gate_id_t> stateIndex = logicSimulator.getOutputPortId(mappingPair.second, pair.first);
-			if (!stateIndex) {
-				logError("std::optional<simulator_gate_id_t> stateIndex = logicSimulator.getOutputPortId(mappingPair.second, pair.first); Failed", "EvalLogicSimulator::makeEdit");
-				continue;
-			}
-			simulator_gate_id_t pinSimulatorId = mappingPair.second;
-			auto connectionsIter = evalGate->connections.find(pair.first);
-			if (connectionsIter != evalGate->connections.end() && connectionsIter->second.size() == 1) {
-				const EvalGate* otherSimulatorGate = evalLayerState.getGate(connectionsIter->second.begin()->gateId);
-				if (
-					otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION) ||
-					otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION_L) ||
-					otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION_H) ||
-					otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION_X)
-				) {
-					pinSimulatorId = gateIdMapping.at(otherSimulatorGate->gateId);
+	for (auto iter : simulatorMappingUpdateListeners) {
+		std::vector<SimulatorMappingUpdate> simulatorMappingUpdates;
+		std::vector<EvalConnectionPoint> bottomConnectionPoints;
+		for (auto mappingPair : gateIdMapping) {
+			const EvalGate* evalGate = evalLayerState.getGate(mappingPair.first);
+			assert(evalGate);
+			const BlockData* blockData = circuitManager.getBlockDataManager().getBlockData(getBlockType(evalGate->type));
+			assert(blockData);
+			for (auto pair : blockData->getConnectionsSafe()) bottomConnectionPoints.emplace_back(evalGate->gateId, pair.first);
+		}
+		std::vector<std::vector<EvalConnectionPoint>> topConnectionPoints = evaluatorInternal.mapFromBottomConnectionPointsToTopConnectionPoints(
+			bottomConnectionPoints,
+			iter.second.address
+		);
+		unsigned int index = 0;
+		for (auto mappingPair : gateIdMapping) {
+			const EvalGate* evalGate = evalLayerState.getGate(mappingPair.first);
+			assert(evalGate);
+			const BlockData* blockData = circuitManager.getBlockDataManager().getBlockData(getBlockType(evalGate->type));
+			assert(blockData);
+			for (auto pair : blockData->getConnectionsSafe()) {
+				if (!topConnectionPoints[index].empty()) {
+					if (pair.second.portType == BlockData::ConnectionData::PortType::INPUT) continue;
+					std::optional<simulator_gate_id_t> stateIndex = logicSimulator.getOutputPortId(mappingPair.second, pair.first);
+					if (!stateIndex) {
+						logError("std::optional<simulator_gate_id_t> stateIndex = logicSimulator.getOutputPortId(mappingPair.second, pair.first); Failed", "EvalLogicSimulator::makeEdit");
+						continue;
+					}
+					simulator_gate_id_t pinSimulatorId = mappingPair.second;
+					auto connectionsIter = evalGate->connections.find(pair.first);
+					if (connectionsIter != evalGate->connections.end() && connectionsIter->second.size() == 1) {
+						const EvalGate* otherSimulatorGate = evalLayerState.getGate(connectionsIter->second.begin()->gateId);
+						if (
+							otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION) ||
+							otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION_L) ||
+							otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION_H) ||
+							otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION_X)
+						) {
+							pinSimulatorId = gateIdMapping.at(otherSimulatorGate->gateId);
+						}
+					}
+					for (EvalConnectionPoint connectionPoint : topConnectionPoints[index]) {
+						std::optional<std::pair<Address, Address>> addressesPair = evaluatorInternal.mapFromTopConnectionPointToPointAndBlockAddress(connectionPoint);
+						assert(addressesPair.has_value());
+						assert(addressesPair->first.size() == 1 && "eval does not support ICs yet");
+						assert(addressesPair->first.size() == addressesPair->second.size());
+						simulatorMappingUpdates.emplace_back(addressesPair->first.getPosition(0), pinSimulatorId);
+						simulatorMappingUpdates.emplace_back(addressesPair->second.getPosition(0), 0, stateIndex.value());
+					}
 				}
-			}
-			std::vector<EvalConnectionPoint> connectionPoints = evaluatorInternal.mapFromBottomConnectionPointToTopConnectionPoint(
-				EvalConnectionPoint(evalGate->gateId, pair.first)
-			);
-			for (const EvalConnectionPoint& connectionPoint : connectionPoints) {
-				std::optional<std::pair<Address, Address>> addressesPair = evaluatorInternal.mapFromTopConnectionPointToPointAndBlockAddress(connectionPoint);
-				assert(addressesPair.has_value());
-				assert(addressesPair->first.size() == 1 && "eval does not support ICs yet");
-				assert(addressesPair->first.size() == addressesPair->second.size());
-
-				simulatorMappingUpdates.emplace_back(addressesPair->first.getPosition(0), pinSimulatorId);
-				// logInfo(
-				// 	"SimulatorMappingUpdate: block: {} port: {}, eval id: {}, sim id: {}", "",
-				// 	addressesPair->second.getPosition(0), addressesPair->first.getPosition(0), mappingPair.first, pinSimulatorId
-				// );
-				simulatorMappingUpdates.emplace_back(addressesPair->second.getPosition(0), 0, stateIndex.value());
+				index ++;
 			}
 		}
-	}
-	for (auto iter : simulatorMappingUpdateListeners) {
 		iter.second.callback(simulatorMappingUpdates);
 	}
 }
 
 void EvalLogicSimulator::connectListener(void* object, const Address& address, SimulatorMappingUpdateListenerFunction func) const {
-	simulatorMappingUpdateListeners.try_emplace(object, 0, func);
-	// std::optional<eval_circuit_id_t> evalCircuitId = evalCircuitContainer.traverseToTopLevelIC(address);
-	// if (!evalCircuitId) {
-	// 	logError("Failed to connect listener for address {}: No top-level IC found", "EvalLogicSimulator::connectListener", address.toString());
-	// 	return;
-	// }
-	// listeners[object] = { evalCircuitId.value(), func };
-	// std::unordered_map<eval_circuit_id_t, std::vector<SimulatorMappingUpdate>> simulatorMappingUpdates;
-	// auto evalCircuit = evalCircuitContainer.getCircuit(evalCircuitId.value());
-	// if (!evalCircuit) {
-	// 	logError("Failed to get eval circuit for ID {}", "EvalLogicSimulator::connectListener", evalCircuitId.value());
-	// 	return;
-	// }
-	// evalCircuit->forEachNode([this, evalCircuitId](Position pos, const CircuitNode& node) { this->dirtyBlockAt(pos, evalCircuitId.value()); });
-	// processDirtyNodes();
+	simulatorMappingUpdateListeners.try_emplace(object, address, func);
 }
 
 
