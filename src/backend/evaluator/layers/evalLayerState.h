@@ -71,6 +71,8 @@ public:
 		removedGates.clear();
 		addedConnections.clear();
 		removedConnections.clear();
+		gateIdRemappingsUpdated.clear();
+		connectionPointRemappingsUpdated.clear();
 	}
 
 	EvalLayerState& getOrMakeNextLayerState() {
@@ -98,6 +100,11 @@ public:
 	std::unordered_multimap<EvalConnectionPoint, EvalConnectionPoint>& getConnectionPointReverseRemapping() { return connectionPointReverseRemapping; }
 	const std::unordered_multimap<EvalConnectionPoint, EvalConnectionPoint>& getConnectionPointReverseRemapping() const { return connectionPointReverseRemapping; }
 
+	void addGateIdRemappingsUpdated(eval_gate_id gateId) { gateIdRemappingsUpdated.insert(gateId); }
+	void addConnectionPointRemappingsUpdated(EvalConnectionPoint evalConnectionPoint) { connectionPointRemappingsUpdated.insert(evalConnectionPoint); }
+	const std::unordered_set<eval_gate_id>& getGateIdRemappingsUpdateds() const { return gateIdRemappingsUpdated; }
+	const std::unordered_set<EvalConnectionPoint>& getConnectionPointRemappingsUpdated() const { return connectionPointRemappingsUpdated; }
+
 	eval_gate_id getUnusedEvalGateId() { return evalGateIdProvider.getNewId(); }
 	void releaseUnusedEvalGateId(eval_gate_id evalGateId) { return evalGateIdProvider.releaseId(evalGateId); }
 
@@ -124,6 +131,9 @@ private:
 	std::unordered_map<eval_gate_id, EvalGateType> removedGates;
 	std::unordered_map<EvalConnection, unsigned int> addedConnections;
 	std::unordered_map<EvalConnection, unsigned int> removedConnections;
+
+	std::unordered_set<eval_gate_id> gateIdRemappingsUpdated;
+	std::unordered_set<EvalConnectionPoint> connectionPointRemappingsUpdated;
 };
 
 #endif /* evalLayerState_h */

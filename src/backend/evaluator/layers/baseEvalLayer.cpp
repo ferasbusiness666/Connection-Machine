@@ -3,3 +3,40 @@
 #include "evalLayerState.h"
 
 BaseEvalLayer::BaseEvalLayer(EvalLayerState& currentState) : currentState(currentState), nextState(currentState.getOrMakeNextLayerState()) {}
+
+EvalConnectionPoint BaseEvalLayer::getMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint) const {
+	auto connectionPointIter = nextState.getConnectionPointRemapping().find(evalConnectionPoint);
+	if (connectionPointIter != nextState.getConnectionPointRemapping().end()) {
+		return connectionPointIter->second;
+	}
+	auto evalGateIdIter = nextState.getGateIdRemapping().find(evalConnectionPoint.gateId);
+	if (evalGateIdIter == nextState.getGateIdRemapping().end()) {
+		logError("Could not find mapping for evalConnectionPoint.", "BaseEvalLayer::getMappedEvalConnectionPoint");
+		return EvalConnectionPoint(0, 0);
+	}
+	return EvalConnectionPoint(evalGateIdIter->second, evalConnectionPoint.connectionEndId);
+}
+
+std::vector<EvalConnectionPoint> BaseEvalLayer::getReversedMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint) const {
+	std::vector<EvalConnectionPoint> evalConnectionPoints;
+	auto connectionPointIterPair = nextState.getConnectionPointReverseRemapping().equal_range(evalConnectionPoint);
+	for (auto iter = connectionPointIterPair.first; iter != connectionPointIterPair.second; iter++) {
+		evalConnectionPoints.push_back(iter->second);
+	}
+	auto evalGateIdIterPair = nextState.getGateIdReverseRemapping().equal_range(evalConnectionPoint.gateId);
+	for (auto iter = evalGateIdIterPair.first; iter != evalGateIdIterPair.second; iter++) {
+		evalConnectionPoints.emplace_back(iter->second, evalConnectionPoint.connectionEndId);
+	}
+	return evalConnectionPoints;
+}
+
+void BaseEvalLayer::getReversedMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint, std::vector<EvalConnectionPoint>& evalConnectionPoints) const {
+	auto connectionPointIterPair = nextState.getConnectionPointReverseRemapping().equal_range(evalConnectionPoint);
+	for (auto iter = connectionPointIterPair.first; iter != connectionPointIterPair.second; iter++) {
+		evalConnectionPoints.push_back(iter->second);
+	}
+	auto evalGateIdIterPair = nextState.getGateIdReverseRemapping().equal_range(evalConnectionPoint.gateId);
+	for (auto iter = evalGateIdIterPair.first; iter != evalGateIdIterPair.second; iter++) {
+		evalConnectionPoints.emplace_back(iter->second, evalConnectionPoint.connectionEndId);
+	}
+}

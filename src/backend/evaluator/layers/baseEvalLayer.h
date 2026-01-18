@@ -14,6 +14,10 @@ public:
 	const EvalLayerState& getCurrentState() const { return currentState; };
 	EvalLayerState& getNextState() { return nextState; };
 
+	virtual EvalConnectionPoint getMappedEvalConnectionPoint(EvalConnectionPoint connectionPoint) const;
+	virtual std::vector<EvalConnectionPoint> getReversedMappedEvalConnectionPoint(EvalConnectionPoint connectionPoint) const;
+	virtual void getReversedMappedEvalConnectionPoint(EvalConnectionPoint connectionPoint, std::vector<EvalConnectionPoint>& evalConnectionPoints) const;
+
 protected:
 	inline bool isJunctionType(EvalGateType gateType) const {
 		return (
