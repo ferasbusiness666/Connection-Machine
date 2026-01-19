@@ -12,8 +12,18 @@ void SwitchReplacerEvalLayer::run() {
 				type == getEvalGateType(BlockType::BUTTON) ||
 				type == getEvalGateType(BlockType::TICK_BUTTON)
 			) {
+				if (gate && !gate->connections.contains(1)) {
+					nextState.getConnectionPointRemapping().erase(connection.connectionPointA);
+					auto iterPair = nextState.getConnectionPointReverseRemapping().equal_range(EvalConnectionPoint(connection.connectionPointA.gateId, 0));
+					for (auto reverseRemappingIter = iterPair.first; reverseRemappingIter != iterPair.second; reverseRemappingIter++) {
+						if (reverseRemappingIter->second == connection.connectionPointA) {
+							nextState.getConnectionPointReverseRemapping().erase(reverseRemappingIter);
+						}
+						break;
+					}
+					nextState.changeGateType(connection.connectionPointA.gateId, type);
+				}
 				connection.connectionPointA.connectionEndId = 0;
-				if (gate && !gate->connections.contains(1)) nextState.changeGateType(connection.connectionPointA.gateId, type);
 			}
 		}
 		if (connection.connectionPointB.connectionEndId == 1) {
@@ -24,8 +34,18 @@ void SwitchReplacerEvalLayer::run() {
 				type == getEvalGateType(BlockType::BUTTON) ||
 				type == getEvalGateType(BlockType::TICK_BUTTON)
 			) {
+				if (gate && !gate->connections.contains(1)) {
+					nextState.getConnectionPointRemapping().erase(connection.connectionPointB);
+					auto iterPair = nextState.getConnectionPointReverseRemapping().equal_range(EvalConnectionPoint(connection.connectionPointB.gateId, 0));
+					for (auto reverseRemappingIter = iterPair.first; reverseRemappingIter != iterPair.second; reverseRemappingIter++) {
+						if (reverseRemappingIter->second == connection.connectionPointB) {
+							nextState.getConnectionPointReverseRemapping().erase(reverseRemappingIter);
+						}
+						break;
+					}
+					nextState.changeGateType(connection.connectionPointB.gateId, type);
+				}
 				connection.connectionPointB.connectionEndId = 0;
-				if (gate && !gate->connections.contains(1)) nextState.changeGateType(connection.connectionPointB.gateId, type);
 			}
 		}
 		nextState.removeConnection(connection, iter.second);
@@ -51,6 +71,8 @@ void SwitchReplacerEvalLayer::run() {
 				gate->type == getEvalGateType(BlockType::TICK_BUTTON)
 			) {
 				if (nextState.getGate(connection.connectionPointA.gateId)->type == gate->type) {
+					nextState.getConnectionPointRemapping().emplace(connection.connectionPointA, EvalConnectionPoint(connection.connectionPointA.gateId, 0));
+					nextState.getConnectionPointReverseRemapping().emplace(EvalConnectionPoint(connection.connectionPointA.gateId, 0), connection.connectionPointA);
 					nextState.changeGateType(connection.connectionPointA.gateId, getEvalGateType(BlockType::JUNCTION));
 				}
 				connection.connectionPointA.connectionEndId = 0;
@@ -63,7 +85,9 @@ void SwitchReplacerEvalLayer::run() {
 				gate->type == getEvalGateType(BlockType::BUTTON) ||
 				gate->type == getEvalGateType(BlockType::TICK_BUTTON)
 			) {
-				if (nextState.getGate(connection.connectionPointB.gateId)->type == gate->type) {;
+				if (nextState.getGate(connection.connectionPointB.gateId)->type == gate->type) {
+					nextState.getConnectionPointRemapping().emplace(connection.connectionPointB, EvalConnectionPoint(connection.connectionPointB.gateId, 0));
+					nextState.getConnectionPointReverseRemapping().emplace(EvalConnectionPoint(connection.connectionPointB.gateId, 0), connection.connectionPointB);
 					nextState.changeGateType(connection.connectionPointB.gateId, getEvalGateType(BlockType::JUNCTION));
 				}
 				connection.connectionPointB.connectionEndId = 0;

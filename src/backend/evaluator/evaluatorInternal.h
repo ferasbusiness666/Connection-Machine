@@ -30,7 +30,7 @@ public:
 
 	const LayerRunner& getLayerRunner() const { return layerRunner; }
 
-	std::optional<std::pair<Address, Address>> mapFromTopConnectionPointToPointAndBlockAddress(EvalConnectionPoint bottomConnectionPoint) const;
+	std::optional<std::pair<Position, Position>> mapFromTopConnectionPointToPointAndBlockPosition(EvalConnectionPoint bottomConnectionPoint) const;
 	EvalConnectionPoint mapFromPositionToTopConnectionPoint(Position blockPosition) const;
 	EvalConnectionPoint mapFromAddressToBottomConnectionPoint(const Address& address) const;
 	EvalConnectionPoint mapFromTopConnectionPointToBottomConnectionPoint(EvalConnectionPoint topConnectionPoint) const;

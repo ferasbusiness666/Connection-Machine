@@ -228,7 +228,11 @@ EvalConnectionPoint SubcircuitEvalLayer::getMappedAddress(eval_gate_id gateId, c
 		internalBottomPoint.connectionEndId
 	);
 }
-std::vector<EvalConnectionPoint> SubcircuitEvalLayer::getReversedMappedConnectionPointsWithAddressMixed(const std::vector<EvalConnectionPoint>& connectionPoints, eval_gate_id gateId, const Address& address) const {
+std::vector<EvalConnectionPoint> SubcircuitEvalLayer::getReversedMappedConnectionPointsWithAddressMixed(
+	const std::vector<EvalConnectionPoint>& connectionPoints,
+	eval_gate_id gateId,
+	const Address& address
+) const {
 	auto subcircuitIter = subcircuits.find(gateId);
 	if (subcircuitIter == subcircuits.end()) {
 		if (address.size() == 0)
@@ -244,7 +248,11 @@ std::vector<EvalConnectionPoint> SubcircuitEvalLayer::getReversedMappedConnectio
 	assert(circuit);
 	return circuit->getEvaluator().getEvaluatorInternal().mapFromBottomConnectionPointsToTopConnectionPointsMixed(subcircuitConnectionPoints, address);
 }
-std::vector<std::vector<EvalConnectionPoint>> SubcircuitEvalLayer::getReversedMappedConnectionPointGroupsWithAddress(const std::vector<std::vector<EvalConnectionPoint>>& connectionPoints, eval_gate_id gateId, const Address& address) const {
+std::vector<std::vector<EvalConnectionPoint>> SubcircuitEvalLayer::getReversedMappedConnectionPointGroupsWithAddress(
+	const std::vector<std::vector<EvalConnectionPoint>>& connectionPoints,
+	eval_gate_id gateId,
+	const Address& address
+) const {
 	auto subcircuitIter = subcircuits.find(gateId);
 	if (subcircuitIter == subcircuits.end()) {
 		if (address.size() == 0)
@@ -323,9 +331,9 @@ void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vect
 			for (auto iter : subcircuitsPair.second.outputEvalLayer.getRemovedGates()) {
 				auto otherSimulatorToThisSimulatorIdMappingIter = subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.find(iter.first);
 				subcircuitsPair.second.thisSimulatorIdMappingToOtherSimulator.erase(otherSimulatorToThisSimulatorIdMappingIter->second);
-				subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.erase(otherSimulatorToThisSimulatorIdMappingIter);
 				nextState.removeGate(otherSimulatorToThisSimulatorIdMappingIter->second);
 				nextState.releaseUnusedEvalGateId(otherSimulatorToThisSimulatorIdMappingIter->second);
+				subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.erase(otherSimulatorToThisSimulatorIdMappingIter);
 			}
 			for (auto iter : subcircuitsPair.second.outputEvalLayer.getAddedGates()) {
 				eval_gate_id gateId = nextState.getUnusedEvalGateId();

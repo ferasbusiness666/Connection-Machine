@@ -341,7 +341,15 @@ void EvalLogicSimulator::processEdits() {
 		logicSimulator.endEdit();
 	}
 
+	const Circuit* circuit = circuitManager.getCircuit(circuitId).get();
 	for (auto iter : simulatorMappingUpdateListeners) {
+		circuit_id_t otherCircuitId = circuit->getCircuitId(iter.second.address);
+		const Circuit* otherCircuit = circuitManager.getCircuit(otherCircuitId).get();
+		if (!otherCircuit) {
+			logError("Could not find circuit with id {}.", "EvalLogicSimulator::processEdits", otherCircuitId);
+			continue;
+		}
+		const EvaluatorInternal& otherEvaluatorInternal = otherCircuit->getEvaluator().getEvaluatorInternal();
 		std::vector<SimulatorMappingUpdate> simulatorMappingUpdates;
 		std::vector<EvalConnectionPoint> bottomConnectionPoints;
 		for (auto mappingPair : gateIdMapping) {
@@ -383,12 +391,10 @@ void EvalLogicSimulator::processEdits() {
 						}
 					}
 					for (EvalConnectionPoint connectionPoint : topConnectionPoints[index]) {
-						std::optional<std::pair<Address, Address>> addressesPair = evaluatorInternal.mapFromTopConnectionPointToPointAndBlockAddress(connectionPoint);
+						std::optional<std::pair<Position, Position>> addressesPair = otherEvaluatorInternal.mapFromTopConnectionPointToPointAndBlockPosition(connectionPoint);
 						assert(addressesPair.has_value());
-						assert(addressesPair->first.size() == 1 && "eval does not support ICs yet");
-						assert(addressesPair->first.size() == addressesPair->second.size());
-						simulatorMappingUpdates.emplace_back(addressesPair->first.getPosition(0), pinSimulatorId);
-						simulatorMappingUpdates.emplace_back(addressesPair->second.getPosition(0), 0, stateIndex.value());
+						simulatorMappingUpdates.emplace_back(addressesPair->first, pinSimulatorId);
+						simulatorMappingUpdates.emplace_back(addressesPair->second, 0, stateIndex.value());
 					}
 				}
 				index ++;

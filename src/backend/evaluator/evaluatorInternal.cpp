@@ -277,6 +277,7 @@ void EvaluatorInternal::removeBlock(Position position, Orientation orientation, 
 	}
 	layerRunner.getInputLayer().removeGate(remappingIter->second.first);
 	evalGateIdProvider.releaseId(remappingIter->second.first);
+	positionReverseRemapping.erase(remappingIter->second.first);
 	positionRemapping.erase(remappingIter);
 }
 
@@ -336,7 +337,7 @@ void EvaluatorInternal::removeConnection(Position outputBlockPosition, Position 
 	layerRunner.getInputLayer().removeConnection(EvalConnection(outputGate->gateId, *outputConnectionEndId, inputGate->gateId, *inputConnectionEndId));
 }
 
-std::optional<std::pair<Address, Address>> EvaluatorInternal::mapFromTopConnectionPointToPointAndBlockAddress(EvalConnectionPoint topConnectionPoint) const {
+std::optional<std::pair<Position, Position>> EvaluatorInternal::mapFromTopConnectionPointToPointAndBlockPosition(EvalConnectionPoint topConnectionPoint) const {
 	if (topConnectionPoint.gateId == 0) return std::nullopt;
 	auto iter = positionReverseRemapping.find(topConnectionPoint.gateId);
 	if (iter == positionReverseRemapping.end()) return std::nullopt;

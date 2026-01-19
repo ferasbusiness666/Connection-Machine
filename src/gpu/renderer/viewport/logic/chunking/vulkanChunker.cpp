@@ -470,7 +470,6 @@ void VulkanChunker::regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDa
 void VulkanChunker::updateSimulatorIds(const std::vector<SimulatorMappingUpdate>& simulatorMappingUpdates) {
 	for (const SimulatorMappingUpdate& simulatorMappingUpdate : simulatorMappingUpdates) {
 		const std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>>& simulatorIds = simulatorMappingUpdate.simulatorIds;
-
 		Position chunkPos = getChunk(simulatorMappingUpdate.position);
 		auto groupsAtChunkIter = chunkToGroups.find(chunkPos);
 		if (groupsAtChunkIter == chunkToGroups.end()) {
