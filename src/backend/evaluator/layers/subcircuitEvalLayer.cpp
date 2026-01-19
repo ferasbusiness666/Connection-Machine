@@ -113,7 +113,7 @@ void SubcircuitEvalLayer::run() {
 		assert(circuit);
 		circuit->getEvaluator().getEvaluatorInternal().addEvaluator(*this);
 		const EvaluatorInternal& evaluatorInternal = circuit->getEvaluator().getEvaluatorInternal();
-		const EvalLayerState& evalLayerState = evaluatorInternal.getLayerRunner().getOutputLayer();
+		const EvalLayerState& evalLayerState = evaluatorInternal.getLayerRunner().getOutputLayerForEval();
 		auto subcircuitsPair = subcircuits.try_emplace(iter.first, circuitId, evalLayerState);
 		for (std::pair<eval_gate_id, EvalGate> pair : evalLayerState.getGates()) {
 			eval_gate_id gateId = nextState.getUnusedEvalGateId();

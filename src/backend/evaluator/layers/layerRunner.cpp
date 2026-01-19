@@ -5,12 +5,15 @@
 #include "junctionAddEvalLayer.h"
 #include "junctionMergeEvalLayer.h"
 #include "switchReplacerEvalLayer.h"
+#include "busReplacerEvalLayer.h"
 
 LayerRunner::LayerRunner(IdProvider<eval_gate_id>& evalGateIdProvider, Evaluator& evaluator, const CircuitManager& circuitManager) {
 	evalTopLayerState = std::make_unique<EvalLayerState>(evalGateIdProvider);
 	layers.emplace_back(std::make_unique<SubcircuitEvalLayer>(*evalTopLayerState, evaluator, circuitManager));
 	layers.emplace_back(std::make_unique<SwitchReplacerEvalLayer>(layers.back()->getNextState()));
 	layers.emplace_back(std::make_unique<JunctionAddEvalLayer>(layers.back()->getNextState()));
+	layers.emplace_back(std::make_unique<JunctionMergeEvalLayer>(layers.back()->getNextState()));
+	layers.emplace_back(std::make_unique<BusReplacerEvalLayer>(layers.back()->getNextState()));
 	layers.emplace_back(std::make_unique<JunctionMergeEvalLayer>(layers.back()->getNextState()));
 	assert(evalTopLayerState);
 }
@@ -40,6 +43,7 @@ EvalLayerState& LayerRunner::getInputLayer() { return *evalTopLayerState; }
 const EvalLayerState& LayerRunner::getInputLayer() const { return *evalTopLayerState; }
 
 const EvalLayerState& LayerRunner::getOutputLayer() const { return layers.back()->getNextState(); }
+const EvalLayerState& LayerRunner::getOutputLayerForEval() const { return layers[layers.size() - 3]->getNextState(); }
 
 std::vector<std::pair<eval_gate_id, circuit_id_t>> LayerRunner::getSubcircuits() const {
 	return dynamic_cast<SubcircuitEvalLayer*>(layers[0].get())->getSubcircuits();

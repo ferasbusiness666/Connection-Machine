@@ -19,6 +19,7 @@ public:
 	EvalLayerState& getInputLayer();
 	const EvalLayerState& getInputLayer() const;
 	const EvalLayerState& getOutputLayer() const;
+	const EvalLayerState& getOutputLayerForEval() const;
 
 	std::vector<std::pair<eval_gate_id, circuit_id_t>> getSubcircuits() const;
 
