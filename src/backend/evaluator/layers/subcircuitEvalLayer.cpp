@@ -204,6 +204,12 @@ void SubcircuitEvalLayer::run() {
 		}
 		nextState.addConnection(connection, iter.second);
 	}
+	for (eval_gate_id gateId : currentState.getGateIdRemappingsUpdateds()) {
+		nextState.addGateIdRemappingsUpdated(gateId);
+	}
+	for (EvalConnectionPoint connectionPoint : currentState.getConnectionPointRemappingsUpdated()) {
+		nextState.addConnectionPointRemappingsUpdated(connectionPoint);
+	}
 }
 
 std::vector<std::pair<eval_gate_id, circuit_id_t>> SubcircuitEvalLayer::getSubcircuits() const {
@@ -364,6 +370,7 @@ void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vect
 					EvalConnectionPoint(subcircuitsPair.first, connectionEndId),
 					connectionPoint
 				);
+				nextState.addConnectionPointRemappingsUpdated(connectionPoint);
 				if (emplaceResult.second) {
 					nextState.getConnectionPointReverseRemapping().emplace(
 						connectionPoint,
@@ -373,8 +380,28 @@ void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vect
 					auto connectionsIter = evalGate->connections.find(connectionEndId);
 					if (connectionsIter != evalGate->connections.end()) {
 						for (EvalConnectionPoint otherConnectionPoint : connectionsIter->second) {
+							auto subcircuitDataAIter = subcircuits.find(otherConnectionPoint.gateId);
+							if (subcircuitDataAIter != subcircuits.end()) {
+								const Circuit* circuit = circuitManager.getCircuit(subcircuitDataAIter->second.circuitId).get();
+								assert(circuit);
+								const EvaluatorInternal& evaluatorInternalval = circuit->getEvaluator().getEvaluatorInternal();
+								auto internalPointMappingIter = evaluatorInternalval.getPortToInternalPointMapping().find(otherConnectionPoint.connectionEndId);
+								assert(internalPointMappingIter != evaluatorInternalval.getPortToInternalPointMapping().end());
+								if (!internalPointMappingIter->second.connectionPoint.has_value()) continue;
+								EvalConnectionPoint internalBottomPoint = evaluatorInternalval.mapFromTopConnectionPointToBottomConnectionPoint(
+									internalPointMappingIter->second.connectionPoint.value()
+								);
+								auto otherSimulatorToThisSimulatorIdMappingIter = subcircuitDataAIter->second.otherSimulatorToThisSimulatorIdMapping.find(
+									internalBottomPoint.gateId
+								);
+								assert(otherSimulatorToThisSimulatorIdMappingIter != subcircuitDataAIter->second.otherSimulatorToThisSimulatorIdMapping.end());
+								otherConnectionPoint = EvalConnectionPoint(
+									otherSimulatorToThisSimulatorIdMappingIter->second,
+									internalBottomPoint.connectionEndId
+								);
+							}
 							nextState.addConnection(EvalConnection(
-								EvalConnectionPoint(thisGateId, portMappingIter->second.connectionPoint->connectionEndId),
+								connectionPoint,
 								otherConnectionPoint
 							));
 						}
@@ -427,6 +454,22 @@ void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vect
 					}
 					emplaceResult.first->second = connectionPoint;
 				}
+			}
+			for (eval_gate_id gateId : subcircuitsPair.second.outputEvalLayer.getGateIdRemappingsUpdateds()) {
+				auto iter = subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.find(gateId);
+				if (iter == subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.end()) {
+					logError("could not find eval id while proagating id {} update from IC.", "SubcircuitEvalLayer::processICEdits", gateId);
+					continue;
+				}
+				nextState.addGateIdRemappingsUpdated(iter->second);
+			}
+			for (EvalConnectionPoint connectionPoint : subcircuitsPair.second.outputEvalLayer.getConnectionPointRemappingsUpdated()) {
+				auto iter = subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.find(connectionPoint.gateId);
+				if (iter == subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.end()) {
+					logError("could not find eval id while proagating connectionPoint {} update from IC.", "SubcircuitEvalLayer::processICEdits", connectionPoint);
+					continue;
+				}
+				nextState.addConnectionPointRemappingsUpdated(EvalConnectionPoint(iter->second, connectionPoint.connectionEndId));
 			}
 		}
 	}

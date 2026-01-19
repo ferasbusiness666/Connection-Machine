@@ -112,4 +112,10 @@ void JunctionAddEvalLayer::run() {
 		}
 		nextState.addConnection(connection, iter.second);
 	}
+	for (eval_gate_id gateId : currentState.getGateIdRemappingsUpdateds()) {
+		nextState.addGateIdRemappingsUpdated(gateId);
+	}
+	for (EvalConnectionPoint connectionPoint : currentState.getConnectionPointRemappingsUpdated()) {
+		nextState.addConnectionPointRemappingsUpdated(connectionPoint);
+	}
 }
