@@ -2,8 +2,6 @@
 #define evaluator_h
 
 #include "backend/circuit/circuitDefs.h"
-#include "backend/container/block/blockDefs.h"
-#include "backend/container/block/connectionEnd.h"
 #include "backend/dataUpdateEventManager.h"
 #include "backend/position/position.h"
 
@@ -18,9 +16,6 @@ typedef std::shared_ptr<Difference> DifferenceSharedPtr;
 class Evaluator {
 	friend SubcircuitEvalLayer;
 public:
-	typedef std::tuple<BlockType, connection_end_id_t, Position> RemoveCircuitIOData; // I hate tuples, but this is how I get the data
-	typedef std::pair<BlockType, connection_end_id_t> SetCircuitIOData;
-
 	Evaluator(
 		CircuitManager& circuitManager,
 		const Circuit& circuit,
