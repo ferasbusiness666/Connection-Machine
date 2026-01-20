@@ -1,7 +1,8 @@
 #include "junctionAddEvalLayer.h"
 #include "evalLayerState.h"
+#include "backend/circuit/circuitManager.h"
 
-bool isConnectionEndIdSinglePin(EvalGateType gateType, connection_end_id_t connectionEndId) {
+bool isConnectionEndIdSinglePin(EvalGateType gateType, connection_end_id_t connectionEndId, const CircuitManager& circuitManager) {
 	// ignore lights, junctions, busses, custom blocks
 	switch (getBlockType(gateType)) {
 	case BlockType::SWITCH:
@@ -22,7 +23,11 @@ bool isConnectionEndIdSinglePin(EvalGateType gateType, connection_end_id_t conne
 	case BlockType::NOR:
 	case BlockType::XNOR:
 		return connectionEndId == 1;
-	default: return false;
+	default: {
+		const BlockData* blockData = circuitManager.getBlockDataManager().getBlockData(getBlockType(gateType));
+		assert(blockData);
+		return blockData->isBus();
+	}
 	}
 }
 
@@ -35,7 +40,7 @@ void JunctionAddEvalLayer::run() {
 		assert(gateB);
 		eval_gate_id junctionAToRemove = 0;
 		eval_gate_id junctionBToRemove = 0;
-		if (isConnectionEndIdSinglePin(gateA->type, connection.connectionPointA.connectionEndId)) {
+		if (isConnectionEndIdSinglePin(gateA->type, connection.connectionPointA.connectionEndId, circuitManager)) {
 			auto connectionsIter = gateA->connections.find(connection.connectionPointA.connectionEndId);
 			assert(connectionsIter != gateA->connections.end());
 			eval_gate_id junctionId = connectionsIter->second.begin()->gateId;
@@ -46,7 +51,7 @@ void JunctionAddEvalLayer::run() {
 			}
 			connection.connectionPointA = EvalConnectionPoint(junctionId, 0);
 		}
-		if (isConnectionEndIdSinglePin(gateB->type, connection.connectionPointB.connectionEndId)) {
+		if (isConnectionEndIdSinglePin(gateB->type, connection.connectionPointB.connectionEndId, circuitManager)) {
 			auto connectionsIter = gateB->connections.find(connection.connectionPointB.connectionEndId);
 			assert(connectionsIter != gateB->connections.end());
 			eval_gate_id junctionId = connectionsIter->second.begin()->gateId;
@@ -83,7 +88,7 @@ void JunctionAddEvalLayer::run() {
 		assert(gateA);
 		const EvalGate* gateB = nextState.getGate(connection.connectionPointB.gateId);
 		assert(gateB);
-		if (isConnectionEndIdSinglePin(gateA->type, connection.connectionPointA.connectionEndId)) {
+		if (isConnectionEndIdSinglePin(gateA->type, connection.connectionPointA.connectionEndId, circuitManager)) {
 			auto connectionsIter = gateA->connections.find(connection.connectionPointA.connectionEndId);
 			if (connectionsIter == gateA->connections.end()) {
 				eval_gate_id junctionId = nextState.getUnusedEvalGateId();
@@ -96,7 +101,7 @@ void JunctionAddEvalLayer::run() {
 				connection.connectionPointA = *(connectionsIter->second.begin());
 			}
 		}
-		if (isConnectionEndIdSinglePin(gateB->type, connection.connectionPointB.connectionEndId)) {
+		if (isConnectionEndIdSinglePin(gateB->type, connection.connectionPointB.connectionEndId, circuitManager)) {
 			auto connectionsIter = gateB->connections.find(connection.connectionPointB.connectionEndId);
 			if (connectionsIter == gateB->connections.end()) {
 				eval_gate_id junctionId = nextState.getUnusedEvalGateId();
