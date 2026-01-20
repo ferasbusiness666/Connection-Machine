@@ -18,8 +18,8 @@ EvalConnectionPoint BaseEvalLayer::getMappedEvalConnectionPoint(EvalConnectionPo
 	return EvalConnectionPoint(evalGateIdIter->second, evalConnectionPoint.connectionEndId);
 }
 
-std::vector<EvalConnectionPoint> BaseEvalLayer::getReversedMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint) const {
-	std::vector<EvalConnectionPoint> evalConnectionPoints;
+VecEvalConnectionPoint BaseEvalLayer::getReversedMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint) const {
+	VecEvalConnectionPoint evalConnectionPoints;
 	auto connectionPointIterPair = nextState.getConnectionPointReverseRemapping().equal_range(evalConnectionPoint);
 	for (auto iter = connectionPointIterPair.first; iter != connectionPointIterPair.second; iter++) {
 		evalConnectionPoints.push_back(iter->second);
@@ -31,7 +31,7 @@ std::vector<EvalConnectionPoint> BaseEvalLayer::getReversedMappedEvalConnectionP
 	return evalConnectionPoints;
 }
 
-void BaseEvalLayer::getReversedMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint, std::vector<EvalConnectionPoint>& evalConnectionPoints) const {
+void BaseEvalLayer::getReversedMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint, VecEvalConnectionPoint& evalConnectionPoints) const {
 	auto connectionPointIterPair = nextState.getConnectionPointReverseRemapping().equal_range(evalConnectionPoint);
 	for (auto iter = connectionPointIterPair.first; iter != connectionPointIterPair.second; iter++) {
 		evalConnectionPoints.push_back(iter->second);

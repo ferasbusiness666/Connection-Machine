@@ -6,6 +6,8 @@
 class EvalLayerState;
 class CircuitManager;
 
+typedef std::vector<EvalConnectionPoint> VecEvalConnectionPoint;
+
 class BaseEvalLayer {
 public:
 	BaseEvalLayer(EvalLayerState& currentState, const CircuitManager& circuitManager);
@@ -16,8 +18,8 @@ public:
 	EvalLayerState& getNextState() { return nextState; };
 
 	EvalConnectionPoint getMappedEvalConnectionPoint(EvalConnectionPoint connectionPoint) const;
-	std::vector<EvalConnectionPoint> getReversedMappedEvalConnectionPoint(EvalConnectionPoint connectionPoint) const;
-	void getReversedMappedEvalConnectionPoint(EvalConnectionPoint connectionPoint, std::vector<EvalConnectionPoint>& evalConnectionPoints) const;
+	VecEvalConnectionPoint getReversedMappedEvalConnectionPoint(EvalConnectionPoint connectionPoint) const;
+	void getReversedMappedEvalConnectionPoint(EvalConnectionPoint connectionPoint, VecEvalConnectionPoint& evalConnectionPoints) const;
 
 protected:
 	inline bool isJunctionType(EvalGateType gateType) const {

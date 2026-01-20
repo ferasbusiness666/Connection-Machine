@@ -8,6 +8,9 @@ class CircuitManager;
 class EvalLayerState;
 class Address;
 
+typedef std::vector<std::vector<EvalConnectionPoint>> VecVecEvalConnectionPoint;
+typedef std::vector<EvalConnectionPoint> VecEvalConnectionPoint;
+
 class SubcircuitEvalLayer : public BaseEvalLayer {
 public:
 	struct SubcircuitData {
@@ -24,13 +27,13 @@ public:
 	std::vector<std::pair<eval_gate_id, circuit_id_t>> getSubcircuits() const;
 
 	EvalConnectionPoint getMappedAddress(eval_gate_id gateId, const Address& address) const;
-	std::vector<EvalConnectionPoint> getReversedMappedConnectionPointsWithAddressMixed(
-		const std::vector<EvalConnectionPoint>& connectionPoints,
+	VecEvalConnectionPoint getReversedMappedConnectionPointsWithAddressMixed(
+		const VecEvalConnectionPoint& connectionPoints,
 		eval_gate_id gateId,
 		const Address& address
 	) const;
-	std::vector<std::vector<EvalConnectionPoint>> getReversedMappedConnectionPointGroupsWithAddress(
-		const std::vector<std::vector<EvalConnectionPoint>>& connectionPoints,
+	VecVecEvalConnectionPoint getReversedMappedConnectionPointGroupsWithAddress(
+		const VecVecEvalConnectionPoint& connectionPoints,
 		eval_gate_id gateId,
 		const Address& address
 	) const;

@@ -15,7 +15,7 @@ void SubcircuitEvalLayer::run() {
 			auto internalPointMappingIter = evaluatorInternalval.getPortToInternalPointMapping().find(connection.connectionPointA.connectionEndId);
 			assert(internalPointMappingIter != evaluatorInternalval.getPortToInternalPointMapping().end());
 			if (!internalPointMappingIter->second.connectionPoint.has_value()) continue;
-			EvalConnectionPoint internalBottomPoint = evaluatorInternalval.mapFromTopConnectionPointToBottomConnectionPoint(
+			EvalConnectionPoint internalBottomPoint = evaluatorInternalval.mapFromTopConnectionPointToBottomConnectionPointForOtherEvals(
 				internalPointMappingIter->second.connectionPoint.value()
 			);
 			auto otherSimulatorToThisSimulatorIdMappingIter = subcircuitDataAIter->second.otherSimulatorToThisSimulatorIdMapping.find(
@@ -35,7 +35,7 @@ void SubcircuitEvalLayer::run() {
 			auto internalPointMappingIter = evaluatorInternalval.getPortToInternalPointMapping().find(connection.connectionPointB.connectionEndId);
 			assert(internalPointMappingIter != evaluatorInternalval.getPortToInternalPointMapping().end());
 			if (!internalPointMappingIter->second.connectionPoint.has_value()) continue;
-			EvalConnectionPoint internalBottomPoint = evaluatorInternalval.mapFromTopConnectionPointToBottomConnectionPoint(
+			EvalConnectionPoint internalBottomPoint = evaluatorInternalval.mapFromTopConnectionPointToBottomConnectionPointForOtherEvals(
 				internalPointMappingIter->second.connectionPoint.value()
 			);
 			auto otherSimulatorToThisSimulatorIdMappingIter = subcircuitDataBIter->second.otherSimulatorToThisSimulatorIdMapping.find(
@@ -110,7 +110,7 @@ void SubcircuitEvalLayer::run() {
 		assert(circuit);
 		circuit->getEvaluator().getEvaluatorInternal().addEvaluator(*this);
 		const EvaluatorInternal& evaluatorInternal = circuit->getEvaluator().getEvaluatorInternal();
-		const EvalLayerState& evalLayerState = evaluatorInternal.getLayerRunner().getOutputLayerForEval();
+		const EvalLayerState& evalLayerState = evaluatorInternal.getLayerRunner().getOutputLayerForOtherEvals();
 		auto subcircuitsPair = subcircuits.try_emplace(iter.first, circuitId, evalLayerState);
 		for (std::pair<eval_gate_id, EvalGate> pair : evalLayerState.getGates()) {
 			eval_gate_id gateId = nextState.getUnusedEvalGateId();
@@ -142,7 +142,7 @@ void SubcircuitEvalLayer::run() {
 		}
 		for (const std::pair<connection_end_id_t, EvaluatorInternal::InternalPointData>& pair : evaluatorInternal.getPortToInternalPointMapping()) {
 			if (pair.second.connectionPoint) {
-				const EvalConnectionPoint& bottomConnectionPoint = evaluatorInternal.mapFromTopConnectionPointToBottomConnectionPoint(
+				const EvalConnectionPoint& bottomConnectionPoint = evaluatorInternal.mapFromTopConnectionPointToBottomConnectionPointForOtherEvals(
 					pair.second.connectionPoint.value()
 				);
 				eval_gate_id thisGateId = subcircuitsPair.first->second.otherSimulatorToThisSimulatorIdMapping.at(bottomConnectionPoint.gateId);
@@ -167,7 +167,7 @@ void SubcircuitEvalLayer::run() {
 			auto internalPointMappingIter = evaluatorInternalval.getPortToInternalPointMapping().find(connection.connectionPointA.connectionEndId);
 			assert(internalPointMappingIter != evaluatorInternalval.getPortToInternalPointMapping().end());
 			if (!internalPointMappingIter->second.connectionPoint.has_value()) continue;
-			EvalConnectionPoint internalBottomPoint = evaluatorInternalval.mapFromTopConnectionPointToBottomConnectionPoint(
+			EvalConnectionPoint internalBottomPoint = evaluatorInternalval.mapFromTopConnectionPointToBottomConnectionPointForOtherEvals(
 				internalPointMappingIter->second.connectionPoint.value()
 			);
 			auto otherSimulatorToThisSimulatorIdMappingIter = subcircuitDataAIter->second.otherSimulatorToThisSimulatorIdMapping.find(
@@ -187,7 +187,7 @@ void SubcircuitEvalLayer::run() {
 			auto internalPointMappingIter = evaluatorInternalval.getPortToInternalPointMapping().find(connection.connectionPointB.connectionEndId);
 			assert(internalPointMappingIter != evaluatorInternalval.getPortToInternalPointMapping().end());
 			if (!internalPointMappingIter->second.connectionPoint.has_value()) continue;
-			EvalConnectionPoint internalBottomPoint = evaluatorInternalval.mapFromTopConnectionPointToBottomConnectionPoint(
+			EvalConnectionPoint internalBottomPoint = evaluatorInternalval.mapFromTopConnectionPointToBottomConnectionPointForOtherEvals(
 				internalPointMappingIter->second.connectionPoint.value()
 			);
 			auto otherSimulatorToThisSimulatorIdMappingIter = subcircuitDataBIter->second.otherSimulatorToThisSimulatorIdMapping.find(
@@ -222,7 +222,7 @@ EvalConnectionPoint SubcircuitEvalLayer::getMappedAddress(eval_gate_id gateId, c
 	if (subcircuitIter == subcircuits.end()) return EvalConnectionPoint::null();
 	const Circuit* circuit = circuitManager.getCircuit(subcircuitIter->second.circuitId).get();
 	assert(circuit);
-	EvalConnectionPoint internalBottomPoint = circuit->getEvaluator().getEvaluatorInternal().mapFromAddressToBottomConnectionPoint(address);
+	EvalConnectionPoint internalBottomPoint = circuit->getEvaluator().getEvaluatorInternal().mapFromAddressToBottomConnectionPointForOtherEvals(address);
 	if (internalBottomPoint.isNull()) return EvalConnectionPoint::null();
 	auto otherSimulatorToThisSimulatorIdMappingIter = subcircuitIter->second.otherSimulatorToThisSimulatorIdMapping.find(internalBottomPoint.gateId);
 	assert(otherSimulatorToThisSimulatorIdMappingIter != subcircuitIter->second.otherSimulatorToThisSimulatorIdMapping.end());
@@ -231,8 +231,8 @@ EvalConnectionPoint SubcircuitEvalLayer::getMappedAddress(eval_gate_id gateId, c
 		internalBottomPoint.connectionEndId
 	);
 }
-std::vector<EvalConnectionPoint> SubcircuitEvalLayer::getReversedMappedConnectionPointsWithAddressMixed(
-	const std::vector<EvalConnectionPoint>& connectionPoints,
+VecEvalConnectionPoint SubcircuitEvalLayer::getReversedMappedConnectionPointsWithAddressMixed(
+	const VecEvalConnectionPoint& connectionPoints,
 	eval_gate_id gateId,
 	const Address& address
 ) const {
@@ -241,7 +241,7 @@ std::vector<EvalConnectionPoint> SubcircuitEvalLayer::getReversedMappedConnectio
 		if (address.size() == 0)
 		return { };
 	}
-	std::vector<EvalConnectionPoint> subcircuitConnectionPoints;
+	VecEvalConnectionPoint subcircuitConnectionPoints;
 	for (EvalConnectionPoint connectionPoint : connectionPoints) {
 		auto iter = subcircuitIter->second.thisSimulatorIdMappingToOtherSimulator.find(connectionPoint.gateId);
 		if (iter == subcircuitIter->second.thisSimulatorIdMappingToOtherSimulator.end()) continue;
@@ -249,10 +249,10 @@ std::vector<EvalConnectionPoint> SubcircuitEvalLayer::getReversedMappedConnectio
 	}
 	const Circuit* circuit = circuitManager.getCircuit(subcircuitIter->second.circuitId).get();
 	assert(circuit);
-	return circuit->getEvaluator().getEvaluatorInternal().mapFromBottomConnectionPointsToTopConnectionPointsMixed(subcircuitConnectionPoints, address);
+	return circuit->getEvaluator().getEvaluatorInternal().mapFromBottomConnectionPointsToTopConnectionPointsMixedForOtherEvals(subcircuitConnectionPoints, address);
 }
-std::vector<std::vector<EvalConnectionPoint>> SubcircuitEvalLayer::getReversedMappedConnectionPointGroupsWithAddress(
-	const std::vector<std::vector<EvalConnectionPoint>>& connectionPoints,
+VecVecEvalConnectionPoint SubcircuitEvalLayer::getReversedMappedConnectionPointGroupsWithAddress(
+	const VecVecEvalConnectionPoint& connectionPoints,
 	eval_gate_id gateId,
 	const Address& address
 ) const {
@@ -261,8 +261,8 @@ std::vector<std::vector<EvalConnectionPoint>> SubcircuitEvalLayer::getReversedMa
 		if (address.size() == 0)
 		return { };
 	}
-	std::vector<std::vector<EvalConnectionPoint>> subcircuitConnectionPoints;
-	for (const std::vector<EvalConnectionPoint>& connectionPointVec : connectionPoints) {
+	VecVecEvalConnectionPoint subcircuitConnectionPoints;
+	for (const VecEvalConnectionPoint& connectionPointVec : connectionPoints) {
 		subcircuitConnectionPoints.push_back({});
 		for (EvalConnectionPoint connectionPoint : connectionPointVec) {
 			auto iter = subcircuitIter->second.thisSimulatorIdMappingToOtherSimulator.find(connectionPoint.gateId);
@@ -272,7 +272,7 @@ std::vector<std::vector<EvalConnectionPoint>> SubcircuitEvalLayer::getReversedMa
 	}
 	const Circuit* circuit = circuitManager.getCircuit(subcircuitIter->second.circuitId).get();
 	assert(circuit);
-	return circuit->getEvaluator().getEvaluatorInternal().mapFromBottomConnectionPointGroupsToTopConnectionPoints(subcircuitConnectionPoints, address);
+	return circuit->getEvaluator().getEvaluatorInternal().mapFromBottomConnectionPointGroupsToTopConnectionPointsForOtherEvals(subcircuitConnectionPoints, address);
 }
 
 void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vector<connection_end_id_t>& updatedPortIds) {
@@ -358,7 +358,7 @@ void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vect
 				auto portMappingIter = evaluatorInternal.getPortToInternalPointMapping().find(connectionEndId);
 				if (portMappingIter == evaluatorInternal.getPortToInternalPointMapping().end()) continue;
 				if (!portMappingIter->second.connectionPoint) continue;
-				const EvalConnectionPoint& bottomConnectionPoint = evaluatorInternal.mapFromTopConnectionPointToBottomConnectionPoint(
+				const EvalConnectionPoint& bottomConnectionPoint = evaluatorInternal.mapFromTopConnectionPointToBottomConnectionPointForOtherEvals(
 					portMappingIter->second.connectionPoint.value()
 				);
 				eval_gate_id thisGateId = subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.at(bottomConnectionPoint.gateId);
@@ -385,7 +385,7 @@ void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vect
 								auto internalPointMappingIter = evaluatorInternalval.getPortToInternalPointMapping().find(otherConnectionPoint.connectionEndId);
 								assert(internalPointMappingIter != evaluatorInternalval.getPortToInternalPointMapping().end());
 								if (!internalPointMappingIter->second.connectionPoint.has_value()) continue;
-								EvalConnectionPoint internalBottomPoint = evaluatorInternalval.mapFromTopConnectionPointToBottomConnectionPoint(
+								EvalConnectionPoint internalBottomPoint = evaluatorInternalval.mapFromTopConnectionPointToBottomConnectionPointForOtherEvals(
 									internalPointMappingIter->second.connectionPoint.value()
 								);
 								auto otherSimulatorToThisSimulatorIdMappingIter = subcircuitDataAIter->second.otherSimulatorToThisSimulatorIdMapping.find(
@@ -427,7 +427,7 @@ void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vect
 								auto internalPointMappingIter = evaluatorInternalval.getPortToInternalPointMapping().find(otherConnectionPoint.connectionEndId);
 								assert(internalPointMappingIter != evaluatorInternalval.getPortToInternalPointMapping().end());
 								if (!internalPointMappingIter->second.connectionPoint.has_value()) continue;
-								EvalConnectionPoint internalBottomPoint = evaluatorInternalval.mapFromTopConnectionPointToBottomConnectionPoint(
+								EvalConnectionPoint internalBottomPoint = evaluatorInternalval.mapFromTopConnectionPointToBottomConnectionPointForOtherEvals(
 									internalPointMappingIter->second.connectionPoint.value()
 								);
 								auto otherSimulatorToThisSimulatorIdMappingIter = subcircuitDataAIter->second.otherSimulatorToThisSimulatorIdMapping.find(

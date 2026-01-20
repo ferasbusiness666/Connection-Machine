@@ -137,12 +137,12 @@ void BusReplacerEvalLayer::run() {
 					iter.first.connectionPointA
 				), iter.second);
 			} else {
-				auto busJunctionsIterPair = busJunctions.try_emplace(iter.first.connectionPointB.gateId);
-				if (!busJunctionsIterPair.second) {
-					const EvalGate* gateB = currentState.getGate(iter.first.connectionPointB.gateId);
+				auto busJunctionsIterPair = busJunctions.try_emplace(iter.first.connectionPointA.gateId);
+				if (busJunctionsIterPair.second) {
+					const EvalGate* gateB = currentState.getGate(iter.first.connectionPointA.gateId);
 					assert(isJunctionType(gateB->type)); // nothing else thats not a bus of junction takes and non 1 bitwidth
-					assert(gateB->connections.empty()); // junctions should be merged it has no connections
-					busJunctionsIterPair.first->second.push_back(iter.first.connectionPointB.gateId);
+					// assert(gateB->connections.empty()); // junctions should be merged it has no connections
+					busJunctionsIterPair.first->second.push_back(iter.first.connectionPointA.gateId);
 					for (unsigned int i = 1; i < busConnectionEndIdIterB->second.size(); i++) {
 						eval_gate_id junctionId = nextState.getUnusedEvalGateId();
 						busJunctionsIterPair.first->second.push_back(junctionId);

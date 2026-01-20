@@ -366,7 +366,7 @@ void EvalLogicSimulator::processEdits() {
 			assert(blockData);
 			for (auto pair : blockData->getConnectionsSafe()) bottomConnectionPoints.emplace_back(evalGate->gateId, pair.first);
 		}
-		std::vector<std::vector<EvalConnectionPoint>> topConnectionPoints = evaluatorInternal.mapFromBottomConnectionPointsToTopConnectionPoints(
+		VecVecEvalConnectionPoint topConnectionPoints = evaluatorInternal.mapFromBottomConnectionPointsToTopConnectionPoints(
 			bottomConnectionPoints,
 			iter.second.address
 		);

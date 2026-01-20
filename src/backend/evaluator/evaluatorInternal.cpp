@@ -374,18 +374,29 @@ EvalConnectionPoint EvaluatorInternal::mapFromAddressToBottomConnectionPoint(con
 	if (iter == positionRemapping.end()) return EvalConnectionPoint::null();
 	return layerRunner.getMappedAddress(iter->second.first, address.popTopPosition());
 }
-EvalConnectionPoint EvaluatorInternal::mapFromTopConnectionPointToBottomConnectionPoint(EvalConnectionPoint topConnectionPoint) const {
-	return layerRunner.getMappedEvalConnectionPoint(topConnectionPoint);
+EvalConnectionPoint EvaluatorInternal::mapFromAddressToBottomConnectionPointForOtherEvals(const Address& address) const {
+	if (address.size() == 1) {
+		EvalConnectionPoint topConnectionPoint = mapFromPositionToTopConnectionPoint(address.getPosition(0));
+		if (topConnectionPoint.isNull()) return EvalConnectionPoint::null();
+		return layerRunner.getMappedEvalConnectionPointForOtherEvals(topConnectionPoint);
+	}
+	if (address.size() == 0) return EvalConnectionPoint::null();
+	auto iter = positionRemapping.find(address.getPosition(0));
+	if (iter == positionRemapping.end()) return EvalConnectionPoint::null();
+	return layerRunner.getMappedAddressForOtherEvals(iter->second.first, address.popTopPosition());
 }
-std::vector<EvalConnectionPoint> EvaluatorInternal::mapFromBottomConnectionPointToTopConnectionPoints(EvalConnectionPoint bottomConnectionPoint, const Address& address) const {
+EvalConnectionPoint EvaluatorInternal::mapFromTopConnectionPointToBottomConnectionPointForOtherEvals(EvalConnectionPoint topConnectionPoint) const {
+	return layerRunner.getMappedEvalConnectionPointForOtherEvals(topConnectionPoint);
+}
+VecEvalConnectionPoint EvaluatorInternal::mapFromBottomConnectionPointToTopConnectionPoints(EvalConnectionPoint bottomConnectionPoint, const Address& address) const {
 	if (address.size() == 0) return layerRunner.getReversedMappedEvalConnectionPoint(bottomConnectionPoint);
 	auto iter = positionRemapping.find(address.getPosition(0));
 	if (iter == positionRemapping.end()) return { };
 	return layerRunner.getReversedMappedConnectionPointWithAddress(bottomConnectionPoint, iter->second.first, address.popTopPosition());
 }
-std::vector<std::vector<EvalConnectionPoint>> EvaluatorInternal::mapFromBottomConnectionPointsToTopConnectionPoints(std::vector<EvalConnectionPoint> bottomConnectionPoints, Address address) const {
+VecVecEvalConnectionPoint EvaluatorInternal::mapFromBottomConnectionPointsToTopConnectionPoints(VecEvalConnectionPoint bottomConnectionPoints, Address address) const {
 	if (address.size() == 0) {
-		std::vector<std::vector<EvalConnectionPoint>> outputConnectionPoints;
+		VecVecEvalConnectionPoint outputConnectionPoints;
 		for (EvalConnectionPoint connectionPoint : bottomConnectionPoints) {
 			outputConnectionPoints.push_back({ });
 			layerRunner.getReversedMappedEvalConnectionPoint(connectionPoint, outputConnectionPoints.back());
@@ -396,24 +407,24 @@ std::vector<std::vector<EvalConnectionPoint>> EvaluatorInternal::mapFromBottomCo
 	if (iter == positionRemapping.end()) return { };
 	return layerRunner.getReversedMappedConnectionPointsWithAddress(bottomConnectionPoints, iter->second.first, address.popTopPosition());
 }
-std::vector<std::vector<EvalConnectionPoint>> EvaluatorInternal::mapFromBottomConnectionPointGroupsToTopConnectionPoints(std::vector<std::vector<EvalConnectionPoint>> bottomConnectionPoints, Address address) const {
+VecVecEvalConnectionPoint EvaluatorInternal::mapFromBottomConnectionPointGroupsToTopConnectionPointsForOtherEvals(VecVecEvalConnectionPoint bottomConnectionPoints, Address address) const {
 	if (address.size() == 0) {
-		std::vector<std::vector<EvalConnectionPoint>> outputConnectionPoints;
-		for (std::vector<EvalConnectionPoint> connectionPoints : bottomConnectionPoints) {
+		VecVecEvalConnectionPoint outputConnectionPoints;
+		for (VecEvalConnectionPoint connectionPoints : bottomConnectionPoints) {
 			outputConnectionPoints.push_back({ });
 			for (EvalConnectionPoint connectionPoint : connectionPoints) {
-				layerRunner.getReversedMappedEvalConnectionPoint(connectionPoint, outputConnectionPoints.back());
+				layerRunner.getReversedMappedEvalConnectionPointForOtherEvals(connectionPoint, outputConnectionPoints.back());
 			}
 		}
 		return outputConnectionPoints;
 	}
 	auto iter = positionRemapping.find(address.getPosition(0));
 	if (iter == positionRemapping.end()) return { };
-	return layerRunner.getReversedMappedConnectionPointGroupsWithAddress(bottomConnectionPoints, iter->second.first, address.popTopPosition());
+	return layerRunner.getReversedMappedConnectionPointGroupsWithAddressForOtherEvals(bottomConnectionPoints, iter->second.first, address.popTopPosition());
 }
-std::vector<EvalConnectionPoint> EvaluatorInternal::mapFromBottomConnectionPointsToTopConnectionPointsMixed(std::vector<EvalConnectionPoint> bottomConnectionPoints, Address address) const {
+VecEvalConnectionPoint EvaluatorInternal::mapFromBottomConnectionPointsToTopConnectionPointsMixedForOtherEvals(VecEvalConnectionPoint bottomConnectionPoints, Address address) const {
 	if (address.size() == 0) {
-		std::vector<EvalConnectionPoint> outputConnectionPoints;
+		VecEvalConnectionPoint outputConnectionPoints;
 		for (EvalConnectionPoint connectionPoint : bottomConnectionPoints) {
 			layerRunner.getReversedMappedEvalConnectionPoint(connectionPoint, outputConnectionPoints);
 		}
@@ -421,7 +432,7 @@ std::vector<EvalConnectionPoint> EvaluatorInternal::mapFromBottomConnectionPoint
 	}
 	auto iter = positionRemapping.find(address.getPosition(0));
 	if (iter == positionRemapping.end()) return { };
-	return layerRunner.getReversedMappedConnectionPointsWithAddressMixed(bottomConnectionPoints, iter->second.first, address.popTopPosition());
+	return layerRunner.getReversedMappedConnectionPointsWithAddressMixedForOtherEvals(bottomConnectionPoints, iter->second.first, address.popTopPosition());
 }
 
 std::vector<std::pair<Position, circuit_id_t>> EvaluatorInternal::getSubcircuits() const {
