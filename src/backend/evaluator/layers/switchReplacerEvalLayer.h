@@ -5,7 +5,7 @@
 
 class SwitchReplacerEvalLayer : public BaseEvalLayer {
 public:
-	SwitchReplacerEvalLayer(EvalLayerState& currentState) : BaseEvalLayer(currentState) {}
+	SwitchReplacerEvalLayer(EvalLayerState& currentState, const CircuitManager& circuitManager) : BaseEvalLayer(currentState, circuitManager) {}
 	void run() override final;
 };
 

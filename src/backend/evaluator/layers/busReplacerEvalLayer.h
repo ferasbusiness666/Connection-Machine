@@ -5,7 +5,7 @@
 
 class BusReplacerEvalLayer : public BaseEvalLayer {
 public:
-	BusReplacerEvalLayer(EvalLayerState& currentState) : BaseEvalLayer(currentState) {}
+	BusReplacerEvalLayer(EvalLayerState& currentState, const CircuitManager& circuitManager) : BaseEvalLayer(currentState, circuitManager) {}
 	void run() override final;
 };
 

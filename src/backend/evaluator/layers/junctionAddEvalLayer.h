@@ -5,7 +5,7 @@
 
 class JunctionAddEvalLayer : public BaseEvalLayer {
 public:
-	JunctionAddEvalLayer(EvalLayerState& currentState) : BaseEvalLayer(currentState) {}
+	JunctionAddEvalLayer(EvalLayerState& currentState, const CircuitManager& circuitManager) : BaseEvalLayer(currentState, circuitManager) {}
 	void run() override final;
 };
 

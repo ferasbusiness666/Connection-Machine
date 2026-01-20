@@ -50,8 +50,8 @@ void JunctionMergeEvalLayer::run() {
 				}
 			}
 			assert(reverseRemappingIterToErase != iterPair.second);
-			nextState.getGateIdReverseRemapping().erase(reverseRemappingIterToErase);
 			nextState.getGateIdRemapping().erase(remappingIter);
+			nextState.getGateIdReverseRemapping().erase(reverseRemappingIterToErase);
 			continue;
 		}
 		if (isJunctionType(iter.second)) {
@@ -119,7 +119,6 @@ void JunctionMergeEvalLayer::run() {
 		junctionsToScan.erase(junctionsToScan.begin());
 		auto [junctions, otherConnectionPoints, gateType] = gatherJunctionGroup(gateId, currentState);
 		// We do sorting to see which gate would be the best to place down.
-		auto junctions2 = junctions;
 		gateId = std::numeric_limits<eval_gate_id::rep>::max();
 		bool typeMatches = false;
 		for (eval_gate_id junctionId : junctions) {

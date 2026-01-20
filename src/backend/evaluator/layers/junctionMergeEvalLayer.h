@@ -6,7 +6,7 @@
 
 class JunctionMergeEvalLayer : public BaseEvalLayer {
 public:
-	JunctionMergeEvalLayer(EvalLayerState& currentState) : BaseEvalLayer(currentState) {}
+	JunctionMergeEvalLayer(EvalLayerState& currentState, const CircuitManager& circuitManager) : BaseEvalLayer(currentState, circuitManager) {}
 	void run() override final;
 
 private:

@@ -18,7 +18,7 @@ public:
 		std::unordered_map<eval_gate_id, eval_gate_id> thisSimulatorIdMappingToOtherSimulator;
 	};
 	SubcircuitEvalLayer(EvalLayerState& currentState, Evaluator& evaluator, const CircuitManager& circuitManager) :
-		BaseEvalLayer(currentState), evaluator(evaluator), circuitManager(circuitManager) { }
+		BaseEvalLayer(currentState, circuitManager), evaluator(evaluator) { }
 	void run() override final;
 
 	std::vector<std::pair<eval_gate_id, circuit_id_t>> getSubcircuits() const;
@@ -40,7 +40,6 @@ public:
 private:
 	std::unordered_map<eval_gate_id, SubcircuitData> subcircuits;
 	Evaluator& evaluator;
-	const CircuitManager& circuitManager;
 };
 
 #endif /* subcircuitEvalLayer_h */

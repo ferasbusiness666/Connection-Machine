@@ -2,7 +2,8 @@
 
 #include "evalLayerState.h"
 
-BaseEvalLayer::BaseEvalLayer(EvalLayerState& currentState) : currentState(currentState), nextState(currentState.getOrMakeNextLayerState()) {}
+BaseEvalLayer::BaseEvalLayer(EvalLayerState& currentState, const CircuitManager& circuitManager) :
+	currentState(currentState), nextState(currentState.getOrMakeNextLayerState()), circuitManager(circuitManager) {}
 
 EvalConnectionPoint BaseEvalLayer::getMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint) const {
 	auto connectionPointIter = nextState.getConnectionPointRemapping().find(evalConnectionPoint);

@@ -52,11 +52,8 @@ void SubcircuitEvalLayer::run() {
 	for (auto iter : currentState.getRemovedGates()) {
 		auto subcircuitDataIter = subcircuits.find(iter.first);
 		if (subcircuitDataIter == subcircuits.end()) {
-			auto iterPair = nextState.getGateIdReverseRemapping().equal_range(iter.first);
-			for (auto reverseRemappingiter = iterPair.first; reverseRemappingiter != iterPair.second; reverseRemappingiter++) {
-				nextState.getGateIdRemapping().erase(reverseRemappingiter->second);
-			}
-			nextState.getGateIdReverseRemapping().erase(iterPair.first, iterPair.second);
+			nextState.getGateIdRemapping().erase(iter.first);
+			nextState.getGateIdReverseRemapping().erase(iter.first);
 			nextState.removeGate(iter.first);
 			continue;
 		}

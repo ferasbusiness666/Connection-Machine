@@ -4,10 +4,11 @@
 #include "backend/evaluator/evalDefs.h"
 
 class EvalLayerState;
+class CircuitManager;
 
 class BaseEvalLayer {
 public:
-	BaseEvalLayer(EvalLayerState& currentState);
+	BaseEvalLayer(EvalLayerState& currentState, const CircuitManager& circuitManager);
 	virtual ~BaseEvalLayer() = default;
 	virtual void run() = 0;
 
@@ -28,6 +29,7 @@ protected:
 
 	const EvalLayerState& currentState;
 	EvalLayerState& nextState;
+	const CircuitManager& circuitManager;
 };
 
 #endif /* baseEvalLayer_h */
