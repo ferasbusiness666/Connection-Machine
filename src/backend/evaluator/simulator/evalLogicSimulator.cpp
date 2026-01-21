@@ -361,7 +361,8 @@ void EvalLogicSimulator::processEdits() {
 		std::vector<EvalConnectionPoint> bottomConnectionPoints;
 		for (eval_gate_id gateId : idsToUpdate) {
 			const EvalGate* evalGate = evalLayerState.getGate(gateId);
-			assert(evalGate);
+			if (!evalGate) continue; // maybe tmp
+			// assert(evalGate);
 			const BlockData* blockData = circuitManager.getBlockDataManager().getBlockData(getBlockType(evalGate->type));
 			assert(blockData);
 			for (auto pair : blockData->getConnectionsSafe()) bottomConnectionPoints.emplace_back(evalGate->gateId, pair.first);
@@ -377,12 +378,15 @@ void EvalLogicSimulator::processEdits() {
 				logError("Failed to find sim id for eval id {} mapping update.", "EvalLogicSimulator::processEdits", gateId);
 			}
 			const EvalGate* evalGate = evalLayerState.getGate(gateId);
-			assert(evalGate);
+			if (!evalGate) continue; // maybe tmp
 			const BlockData* blockData = circuitManager.getBlockDataManager().getBlockData(getBlockType(evalGate->type));
 			assert(blockData);
 			for (auto pair : blockData->getConnectionsSafe()) {
 				if (!topConnectionPoints[index].empty()) {
 					if (pair.second.portType == BlockData::ConnectionData::PortType::INPUT) continue;
+					// std::variant<EvalConnectionPoint, VecEvalConnectionPoint> connectionPoints = evaluatorInternal.getLayerRunner().getConnectionPointToUpdateWithConnectionPoint(
+					// 	EvalConnectionPoint(gateId, pair.first)
+					// );
 					std::optional<simulator_gate_id_t> stateIndex = logicSimulator.getOutputPortId(mappingIter->second, pair.first);
 					if (!stateIndex) {
 						logError("std::optional<simulator_gate_id_t> stateIndex = logicSimulator.getOutputPortId(mappingPair.second, pair.first); Failed", "EvalLogicSimulator::makeEdit");

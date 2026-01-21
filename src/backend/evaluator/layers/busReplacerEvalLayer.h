@@ -11,6 +11,7 @@ class BusReplacerEvalLayer : public BaseEvalLayer {
 public:
 	BusReplacerEvalLayer(EvalLayerState& currentState, const CircuitManager& circuitManager) : BaseEvalLayer(currentState, circuitManager) {}
 	void run() override final;
+	// std::variant<EvalConnectionPoint, VecEvalConnectionPoint> getEvalIdsForConnectionPoint(EvalConnectionPoint connectionPoint) const;
 
 private:
 	std::unordered_map<eval_gate_id, BusData> busses;

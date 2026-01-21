@@ -338,7 +338,7 @@ void EvaluatorInternal::removeConnection(Position outputBlockPosition, Position 
 }
 
 std::optional<std::pair<Position, Position>> EvaluatorInternal::mapFromTopConnectionPointToPointAndBlockPosition(EvalConnectionPoint topConnectionPoint) const {
-	if (topConnectionPoint.gateId == 0) return std::nullopt;
+	if (topConnectionPoint.isNull()) return std::nullopt;
 	auto iter = positionReverseRemapping.find(topConnectionPoint.gateId);
 	if (iter == positionReverseRemapping.end()) return std::nullopt;
 	return std::make_pair(iter->second.first + circuitManager.getBlockDataManager().getConnectionVector(
