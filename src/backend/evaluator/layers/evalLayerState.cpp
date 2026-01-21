@@ -184,7 +184,7 @@ void EvalLayerState::changeGateType(eval_gate_id gateId, EvalGateType newType) {
 }
 
 void EvalLayerState::visualize() const {
-	logInfo("Eval Layer State {}", "", (unsigned long long)this);
+	logInfo("=== Eval Layer State {} ===", "", (unsigned long long)this);
 	logInfo("Last: {}   Next: {}", "", (unsigned long long)lastLayerState, (unsigned long long)nextLayerState.get());
 	logInfo("{} Gates", "", gates.size());
 	for (auto gatePair : gates) {

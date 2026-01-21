@@ -48,7 +48,7 @@ void BusReplacerEvalLayer::run() {
 				assert(nextGate);
 				if (nextGate->connections.empty()) {
 					const EvalGate* gateB = currentState.getGate(iter.first.connectionPointB.gateId);
-					if (gateB && gateB->connections.empty()) {
+					if (!gateB || gateB->connections.empty()) {
 						for (unsigned int i = 1; i < busJunctionsIter->second.size(); i++) {
 							nextState.removeGate(busJunctionsIter->second[i]);
 							nextState.getGateIdReverseRemapping().erase(busJunctionsIter->second[i]);
@@ -83,7 +83,7 @@ void BusReplacerEvalLayer::run() {
 				assert(nextGate);
 				if (nextGate->connections.empty()) {
 					const EvalGate* gateA = currentState.getGate(iter.first.connectionPointA.gateId);
-					if (gateA && gateA->connections.empty()) {
+					if (!gateA || gateA->connections.empty()) {
 						for (unsigned int i = 1; i < busJunctionsIter->second.size(); i++) {
 							nextState.removeGate(busJunctionsIter->second[i]);
 							nextState.getGateIdReverseRemapping().erase(busJunctionsIter->second[i]);
