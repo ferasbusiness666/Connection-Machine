@@ -341,8 +341,10 @@ std::optional<std::pair<Position, Position>> EvaluatorInternal::mapFromTopConnec
 	if (topConnectionPoint.isNull()) return std::nullopt;
 	auto iter = positionReverseRemapping.find(topConnectionPoint.gateId);
 	if (iter == positionReverseRemapping.end()) return std::nullopt;
+	BlockType blockType = getBlockType(layerRunner.getInputLayer().getGate(topConnectionPoint.gateId)->type);
+	if (blockType == BlockType::SWITCH || blockType == BlockType::BUTTON || blockType == BlockType::TICK_BUTTON) return std::make_pair(iter->second.first, iter->second.first);
 	return std::make_pair(iter->second.first + circuitManager.getBlockDataManager().getConnectionVector(
-		getBlockType(layerRunner.getInputLayer().getGate(topConnectionPoint.gateId)->type),
+		blockType,
 		iter->second.second,
 		topConnectionPoint.connectionEndId
 	).value(), iter->second.first);

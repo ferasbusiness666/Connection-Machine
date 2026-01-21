@@ -47,8 +47,8 @@ void BusReplacerEvalLayer::run() {
 				const EvalGate* nextGate = nextState.getGate(busJunctionsIter->second[0]);
 				assert(nextGate);
 				if (nextGate->connections.empty()) {
-					const EvalGate* gate = currentState.getGate(iter.first.connectionPointB.gateId);
-					if (gate && gate->connections.empty()) {
+					const EvalGate* gateB = currentState.getGate(iter.first.connectionPointB.gateId);
+					if (gateB && gateB->connections.empty()) {
 						for (unsigned int i = 1; i < busJunctionsIter->second.size(); i++) {
 							nextState.removeGate(busJunctionsIter->second[i]);
 							nextState.getGateIdReverseRemapping().erase(busJunctionsIter->second[i]);
@@ -82,9 +82,8 @@ void BusReplacerEvalLayer::run() {
 				const EvalGate* nextGate = nextState.getGate(busJunctionsIter->second[0]);
 				assert(nextGate);
 				if (nextGate->connections.empty()) {
-					const EvalGate* gate = currentState.getGate(iter.first.connectionPointA.gateId);
-					assert(gate);
-					if (gate->connections.empty()) {
+					const EvalGate* gateA = currentState.getGate(iter.first.connectionPointA.gateId);
+					if (gateA && gateA->connections.empty()) {
 						for (unsigned int i = 1; i < busJunctionsIter->second.size(); i++) {
 							nextState.removeGate(busJunctionsIter->second[i]);
 							nextState.getGateIdReverseRemapping().erase(busJunctionsIter->second[i]);
@@ -227,15 +226,16 @@ void BusReplacerEvalLayer::run() {
 				), iter.second);
 			} else {
 				auto busJunctionsIterPair = busJunctions.try_emplace(iter.first.connectionPointB.gateId);
-				if (!busJunctionsIterPair.second) {
+				if (busJunctionsIterPair.second) {
 					const EvalGate* gateB = currentState.getGate(iter.first.connectionPointB.gateId);
 					assert(isJunctionType(gateB->type)); // nothing else thats not a bus of junction takes and non 1 bitwidth
-					assert(gateB->connections.empty()); // junctions should be merged it has no connections
+					// assert(gateB->connections.empty()); // junctions should be merged it has no connections
 					busJunctionsIterPair.first->second.push_back(iter.first.connectionPointB.gateId);
 					for (unsigned int i = 1; i < busConnectionEndIdIterA->second.size(); i++) {
 						eval_gate_id junctionId = nextState.getUnusedEvalGateId();
 						busJunctionsIterPair.first->second.push_back(junctionId);
 						nextState.addGate(junctionId, gateB->type);
+						assert(currentState.getGate(iter.first.connectionPointA.gateId));
 						nextState.getGateIdReverseRemapping().emplace(junctionId, iter.first.connectionPointB.gateId);
 					}
 				}
@@ -262,14 +262,15 @@ void BusReplacerEvalLayer::run() {
 			} else {
 				auto busJunctionsIterPair = busJunctions.try_emplace(iter.first.connectionPointA.gateId);
 				if (busJunctionsIterPair.second) {
-					const EvalGate* gateB = currentState.getGate(iter.first.connectionPointA.gateId);
-					assert(isJunctionType(gateB->type)); // nothing else thats not a bus of junction takes and non 1 bitwidth
+					const EvalGate* gateA = currentState.getGate(iter.first.connectionPointA.gateId);
+					assert(isJunctionType(gateA->type)); // nothing else thats not a bus of junction takes and non 1 bitwidth
 					// assert(gateB->connections.empty()); // junctions should be merged it has no connections
 					busJunctionsIterPair.first->second.push_back(iter.first.connectionPointA.gateId);
 					for (unsigned int i = 1; i < busConnectionEndIdIterB->second.size(); i++) {
 						eval_gate_id junctionId = nextState.getUnusedEvalGateId();
 						busJunctionsIterPair.first->second.push_back(junctionId);
-						nextState.addGate(junctionId, gateB->type);
+						nextState.addGate(junctionId, gateA->type);
+						assert(currentState.getGate(iter.first.connectionPointA.gateId));
 						nextState.getGateIdReverseRemapping().emplace(junctionId, iter.first.connectionPointA.gateId);
 					}
 				}
@@ -288,32 +289,34 @@ void BusReplacerEvalLayer::run() {
 	}
 	for (eval_gate_id gateId : currentState.getGateIdRemappingsUpdateds()) {
 		auto bussesIter = busses.find(gateId);
-		if (bussesIter == busses.end()) {
+		if (bussesIter != busses.end()) {
 			continue;
 		}
 		auto busJunctionsIter = busJunctions.find(gateId);
-		if (busJunctionsIter == busJunctions.end()) {
+		if (busJunctionsIter != busJunctions.end()) {
 			for (auto otherGateId : busJunctionsIter->second) {
 				nextState.addGateIdRemappingsUpdated(otherGateId);
 			}
 			continue;
 		}
+		assert(nextState.getGate(gateId));
 		nextState.addGateIdRemappingsUpdated(gateId);
 	}
 	for (EvalConnectionPoint connectionPoint : currentState.getConnectionPointRemappingsUpdated()) {
 		auto bussesIter = busses.find(connectionPoint.gateId);
-		if (bussesIter == busses.end()) {
+		if (bussesIter != busses.end()) {
 			continue;
 		}
 		if (connectionPoint.connectionEndId == 0) {
 			auto busJunctionsIter = busJunctions.find(connectionPoint.gateId);
-			if (busJunctionsIter == busJunctions.end()) {
+			if (busJunctionsIter != busJunctions.end()) {
 				for (auto otherGateId : busJunctionsIter->second) {
 					nextState.addGateIdRemappingsUpdated(otherGateId);
 				}
 				continue;
 			}
 		}
+		assert(nextState.getGate(connectionPoint.gateId));
 		nextState.addConnectionPointRemappingsUpdated(connectionPoint);
 	}
 }

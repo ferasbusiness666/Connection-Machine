@@ -100,6 +100,13 @@ void SwitchReplacerEvalLayer::run() {
 		nextState.addGateIdRemappingsUpdated(gateId);
 	}
 	for (EvalConnectionPoint connectionPoint : currentState.getConnectionPointRemappingsUpdated()) {
+		if (connectionPoint.connectionEndId == 1) {
+			const EvalGate* gate = nextState.getGate(connectionPoint.gateId);
+			assert(gate);
+			if (isJunctionType(gate->type)) {
+				connectionPoint.connectionEndId = 0;
+			}
+		}
 		nextState.addConnectionPointRemappingsUpdated(connectionPoint);
 	}
 }

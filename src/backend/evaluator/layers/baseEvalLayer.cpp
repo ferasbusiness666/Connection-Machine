@@ -28,6 +28,8 @@ VecEvalConnectionPoint BaseEvalLayer::getReversedMappedEvalConnectionPoint(EvalC
 	for (auto iter = evalGateIdIterPair.first; iter != evalGateIdIterPair.second; iter++) {
 		evalConnectionPoints.emplace_back(iter->second, evalConnectionPoint.connectionEndId);
 	}
+	assert(nextState.getGate(evalConnectionPoint.gateId));
+	for (EvalConnectionPoint gateId : evalConnectionPoints) assert(currentState.getGate(gateId.gateId));
 	return evalConnectionPoints;
 }
 
@@ -40,4 +42,6 @@ void BaseEvalLayer::getReversedMappedEvalConnectionPoint(EvalConnectionPoint eva
 	for (auto iter = evalGateIdIterPair.first; iter != evalGateIdIterPair.second; iter++) {
 		evalConnectionPoints.emplace_back(iter->second, evalConnectionPoint.connectionEndId);
 	}
+	assert(nextState.getGate(evalConnectionPoint.gateId));
+	for (EvalConnectionPoint gateId : evalConnectionPoints) assert(currentState.getGate(gateId.gateId));
 }

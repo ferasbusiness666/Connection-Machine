@@ -361,8 +361,8 @@ void EvalLogicSimulator::processEdits() {
 		std::vector<EvalConnectionPoint> bottomConnectionPoints;
 		for (eval_gate_id gateId : idsToUpdate) {
 			const EvalGate* evalGate = evalLayerState.getGate(gateId);
-			if (!evalGate) continue; // maybe tmp
-			// assert(evalGate);
+			// if (!evalGate) continue; // maybe tmp
+			assert(evalGate);
 			const BlockData* blockData = circuitManager.getBlockDataManager().getBlockData(getBlockType(evalGate->type));
 			assert(blockData);
 			for (auto pair : blockData->getConnectionsSafe()) bottomConnectionPoints.emplace_back(evalGate->gateId, pair.first);
@@ -378,7 +378,8 @@ void EvalLogicSimulator::processEdits() {
 				logError("Failed to find sim id for eval id {} mapping update.", "EvalLogicSimulator::processEdits", gateId);
 			}
 			const EvalGate* evalGate = evalLayerState.getGate(gateId);
-			if (!evalGate) continue; // maybe tmp
+			// if (!evalGate) continue; // maybe tmp
+			assert(evalGate);
 			const BlockData* blockData = circuitManager.getBlockDataManager().getBlockData(getBlockType(evalGate->type));
 			assert(blockData);
 			for (auto pair : blockData->getConnectionsSafe()) {

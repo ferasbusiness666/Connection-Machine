@@ -166,6 +166,7 @@ void JunctionMergeEvalLayer::run() {
 			logError("could not find eval id while proagating id {} update from IC.", "JunctionMergeEvalLayer::run", gateId);
 			continue;
 		}
+		assert(nextState.getGate(iter->second));
 		nextState.addGateIdRemappingsUpdated(iter->second);
 	}
 	for (EvalConnectionPoint connectionPoint : currentState.getConnectionPointRemappingsUpdated()) {
@@ -177,6 +178,9 @@ void JunctionMergeEvalLayer::run() {
 			}
 			connectionPoint.gateId = iter->second;
 		}
+		auto iter = nextState.getGateIdRemapping().find(connectionPoint.gateId);
+		const EvalGate* g = currentState.getGate(connectionPoint.gateId);
+		assert(nextState.getGate(connectionPoint.gateId));
 		nextState.addConnectionPointRemappingsUpdated(connectionPoint);
 	}
 }
