@@ -137,6 +137,17 @@ EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, Evaluator& evaluato
 					}
 					return;
 				}
+				auto positionRemappingIter = positionRemapping.find(block->getPosition());
+				if (positionRemappingIter == positionRemapping.end()) {
+					logError("Could not find positionRemapping while doing \"blockDataPortBitConfigurationSet\", not sure why this would happen.", "EvaluatorInternal");
+					if (portToInternalPointMappingIter->second.connectionPoint.has_value()) {
+						portToInternalPointMappingIter->second.connectionPoint = std::nullopt;
+						for (const std::pair<SubcircuitEvalLayer*, unsigned int>& subcircuitEvalLayer : evaluatorsUsingThisEvaluator) {
+							subcircuitEvalLayer.first->processICEdits(circuit.getCircuitId(), { connectionEndId });
+						}
+					}
+					return;
+				}
 				const BlockData* blockData = circuitManager.getBlockDataManager().getBlockData(blockType);
 				BlockData::ConnectionData::PortType portType = blockData->getConnectionPortType(connectionEndId);
 				assert(portType != BlockData::ConnectionData::PortType::NONE);
@@ -199,17 +210,6 @@ EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, Evaluator& evaluato
 					}
 					internalConnectionEndId = optInternalConnectionEndId.value();
 				}
-				}
-				auto positionRemappingIter = positionRemapping.find(block->getPosition());
-				if (positionRemappingIter == positionRemapping.end()) {
-					logError("Could not find positionRemapping while doing \"circuitBlockDataConnectionPositionSet\", not sure why this would happen.", "EvaluatorInternal");
-					if (portToInternalPointMappingIter->second.connectionPoint.has_value()) {
-						portToInternalPointMappingIter->second.connectionPoint = std::nullopt;
-						for (const std::pair<SubcircuitEvalLayer*, unsigned int>& subcircuitEvalLayer : evaluatorsUsingThisEvaluator) {
-							subcircuitEvalLayer.first->processICEdits(circuit.getCircuitId(), { connectionEndId });
-						}
-					}
-					return;
 				}
 				portToInternalPointMappingIter->second.connectionPoint = EvalConnectionPoint(positionRemappingIter->second.first, internalConnectionEndId);
 			}

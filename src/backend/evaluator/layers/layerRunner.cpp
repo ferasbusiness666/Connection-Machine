@@ -50,13 +50,24 @@ std::vector<std::pair<eval_gate_id, circuit_id_t>> LayerRunner::getSubcircuits()
 	return dynamic_cast<SubcircuitEvalLayer*>(layers[0].get())->getSubcircuits();
 }
 
-EvalConnectionPoint LayerRunner::getMappedAddress(eval_gate_id gateId, const Address& address) const {
+std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>> LayerRunner::getMappedAddress(eval_gate_id gateId, const Address& address) const {
 	EvalConnectionPoint evalConnectionPoint = dynamic_cast<SubcircuitEvalLayer*>(layers[0].get())->getMappedAddress(gateId, address);
 	if (evalConnectionPoint.isNull()) return EvalConnectionPoint::null();
-	for (unsigned int i = 1; i < layers.size(); i++) {
+	for (unsigned int i = 1; i < busLayerIndex; i++) {
 		evalConnectionPoint = layers[i]->getMappedEvalConnectionPoint(evalConnectionPoint);
 	}
-	return evalConnectionPoint;
+	const BusReplacerEvalLayer* busReplacerEvalLayer = dynamic_cast<const BusReplacerEvalLayer*>(layers[busLayerIndex].get());
+	assert(busReplacerEvalLayer);
+	std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>> evalConnectionPointVariant = busReplacerEvalLayer->getEvalConnectionPointsForConnectionPoint(evalConnectionPoint);
+	if (std::holds_alternative<EvalConnectionPoint>(evalConnectionPointVariant)) {
+		return layers.back()->getMappedEvalConnectionPoint(std::get<EvalConnectionPoint>(evalConnectionPointVariant));
+	} else {
+		std::vector<EvalConnectionPoint> vec;
+		for (EvalConnectionPoint connectionPoint : std::get<std::vector<EvalConnectionPoint>>(evalConnectionPointVariant)) {
+			vec.push_back(layers.back()->getMappedEvalConnectionPoint(connectionPoint));
+		}
+		return vec;
+	}
 }
 
 EvalConnectionPoint LayerRunner::getMappedAddressForOtherEvals(eval_gate_id gateId, const Address& address) const {
@@ -70,9 +81,9 @@ EvalConnectionPoint LayerRunner::getMappedAddressForOtherEvals(eval_gate_id gate
 
 std::vector<std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>>> LayerRunner::getMappedConnectionPointsFromBusLayer(const VecEvalConnectionPoint& evalConnectionPoints) const {
 	std::vector<std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>>> evalConnectionPointsTmp;
+	const BusReplacerEvalLayer* busReplacerEvalLayer = dynamic_cast<const BusReplacerEvalLayer*>(layers[busLayerIndex].get());
+	assert(busReplacerEvalLayer);
 	for (EvalConnectionPoint connectionPoint : evalConnectionPoints) {
-		const BusReplacerEvalLayer* busReplacerEvalLayer = dynamic_cast<const BusReplacerEvalLayer*>(layers[busLayerIndex].get());
-		assert(busReplacerEvalLayer);
 		evalConnectionPointsTmp.push_back(busReplacerEvalLayer->getEvalConnectionPointsForConnectionPoint(connectionPoint));
 	}
 	std::vector<std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>>> outputConnectionPoints;

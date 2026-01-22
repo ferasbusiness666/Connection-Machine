@@ -28,7 +28,7 @@ public:
 
 	// std::variant<EvalConnectionPoint, VecEvalConnectionPoint> getConnectionPointToUpdateWithConnectionPoint(EvalConnectionPoint bottomConnectionPoint) const;
 
-	EvalConnectionPoint getMappedAddress(eval_gate_id gateId, const Address& address) const;
+	std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>> getMappedAddress(eval_gate_id gateId, const Address& address) const;
 	EvalConnectionPoint getMappedAddressForOtherEvals(eval_gate_id gateId, const Address& address) const;
 	std::vector<std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>>> getMappedConnectionPointsFromBusLayer(const VecEvalConnectionPoint& evalConnectionPoints) const;
 	VecVecEvalConnectionPoint getReversedMappedConnectionPointsWithAddressForOtherEvals(const VecEvalConnectionPoint& evalConnectionPoints, eval_gate_id gateId, const Address& address) const;
