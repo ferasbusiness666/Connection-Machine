@@ -27,11 +27,6 @@ public:
 	std::vector<std::pair<eval_gate_id, circuit_id_t>> getSubcircuits() const;
 
 	EvalConnectionPoint getMappedAddress(eval_gate_id gateId, const Address& address) const;
-	VecEvalConnectionPoint getReversedMappedConnectionPointsWithAddressMixed(
-		const VecEvalConnectionPoint& connectionPoints,
-		eval_gate_id gateId,
-		const Address& address
-	) const;
 	VecVecEvalConnectionPoint getReversedMappedConnectionPointGroupsWithAddress(
 		const VecVecEvalConnectionPoint& connectionPoints,
 		eval_gate_id gateId,

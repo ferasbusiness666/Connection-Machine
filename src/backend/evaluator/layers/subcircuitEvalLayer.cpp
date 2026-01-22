@@ -231,26 +231,6 @@ EvalConnectionPoint SubcircuitEvalLayer::getMappedAddress(eval_gate_id gateId, c
 		internalBottomPoint.connectionEndId
 	);
 }
-VecEvalConnectionPoint SubcircuitEvalLayer::getReversedMappedConnectionPointsWithAddressMixed(
-	const VecEvalConnectionPoint& connectionPoints,
-	eval_gate_id gateId,
-	const Address& address
-) const {
-	auto subcircuitIter = subcircuits.find(gateId);
-	if (subcircuitIter == subcircuits.end()) {
-		if (address.size() == 0)
-		return { };
-	}
-	VecEvalConnectionPoint subcircuitConnectionPoints;
-	for (EvalConnectionPoint connectionPoint : connectionPoints) {
-		auto iter = subcircuitIter->second.thisSimulatorIdMappingToOtherSimulator.find(connectionPoint.gateId);
-		if (iter == subcircuitIter->second.thisSimulatorIdMappingToOtherSimulator.end()) continue;
-		subcircuitConnectionPoints.push_back(EvalConnectionPoint(iter->second, connectionPoint.connectionEndId));
-	}
-	const Circuit* circuit = circuitManager.getCircuit(subcircuitIter->second.circuitId).get();
-	assert(circuit);
-	return circuit->getEvaluator().getEvaluatorInternal().mapFromBottomConnectionPointsToTopConnectionPointsMixedForOtherEvals(subcircuitConnectionPoints, address);
-}
 VecVecEvalConnectionPoint SubcircuitEvalLayer::getReversedMappedConnectionPointGroupsWithAddress(
 	const VecVecEvalConnectionPoint& connectionPoints,
 	eval_gate_id gateId,

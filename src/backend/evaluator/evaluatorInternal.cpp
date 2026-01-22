@@ -536,18 +536,6 @@ VecVecEvalConnectionPoint EvaluatorInternal::mapFromBottomConnectionPointGroupsT
 	if (iter == positionRemapping.end()) return { };
 	return layerRunner.getReversedMappedConnectionPointGroupsWithAddressForOtherEvals(bottomConnectionPoints, iter->second.first, address.popTopPosition());
 }
-VecEvalConnectionPoint EvaluatorInternal::mapFromBottomConnectionPointsToTopConnectionPointsMixedForOtherEvals(VecEvalConnectionPoint bottomConnectionPoints, Address address) const {
-	if (address.size() == 0) {
-		VecEvalConnectionPoint outputConnectionPoints;
-		for (EvalConnectionPoint connectionPoint : bottomConnectionPoints) {
-			layerRunner.getReversedMappedEvalConnectionPoint(connectionPoint, outputConnectionPoints);
-		}
-		return outputConnectionPoints;
-	}
-	auto iter = positionRemapping.find(address.getPosition(0));
-	if (iter == positionRemapping.end()) return { };
-	return layerRunner.getReversedMappedConnectionPointsWithAddressMixedForOtherEvals(bottomConnectionPoints, iter->second.first, address.popTopPosition());
-}
 
 std::vector<std::pair<Position, circuit_id_t>> EvaluatorInternal::getSubcircuits() const {
 	std::vector<std::pair<Position, circuit_id_t>> subcircuits;
