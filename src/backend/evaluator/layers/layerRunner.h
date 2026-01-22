@@ -36,7 +36,6 @@ public:
 	VecVecEvalConnectionPoint getReversedMappedConnectionPointGroupsWithAddressForOtherEvals(VecVecEvalConnectionPoint evalConnectionPoints, eval_gate_id gateId, const Address& address) const;
 	std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>> getMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint) const;
 	EvalConnectionPoint getMappedEvalConnectionPointForOtherEvals(EvalConnectionPoint evalConnectionPoint) const;
-	void getReversedMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint, VecEvalConnectionPoint& outputVector) const;
 	void getReversedMappedEvalConnectionPointForOtherEvals(EvalConnectionPoint evalConnectionPoint, VecEvalConnectionPoint& outputVector) const;
 private:
 	unsigned int busLayerIndex;
