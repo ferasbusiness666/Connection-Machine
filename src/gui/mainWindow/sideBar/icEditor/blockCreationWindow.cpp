@@ -221,6 +221,9 @@ void BlockCreationWindow::updateFromMenu() {
 	circuit_id_t id = circuit->getCircuitId();
 	CircuitBlockData* circuitBlockData = circuitManager.getCircuitBlockDataManager().getCircuitBlockData(id);
 	BlockData* blockData = circuitManager.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
+	if (!blockData) {
+		logError("Failed to find BlockData onj for block type {}.", "BlockCreationWindow::updateFromMenu", circuitBlockData->getBlockType());
+	}
 	std::string name;
 	Size size;
 	std::vector<std::tuple<connection_end_id_t, std::string, bool, Vector, FVector, Position, unsigned int>> portsData;

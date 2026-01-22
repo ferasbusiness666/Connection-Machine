@@ -2,7 +2,7 @@
 
 BlockData::BlockData(BlockType blockType, DataUpdateEventManager& dataUpdateEventManager) : blockType(blockType), dataUpdateEventManager(dataUpdateEventManager) { }
 
-void BlockData::setDefaultData(bool defaultData) noexcept {
+void BlockData::setDefaultData(bool defaultData) {
 	if (defaultData == this->defaultData) return;
 	bool sentPre = false;
 	if (defaultData) {
@@ -45,17 +45,17 @@ void BlockData::setDefaultData(bool defaultData) noexcept {
 	sendBlockDataUpdate();
 }
 
-void BlockData::setPrimitive(bool primitive) noexcept {
+void BlockData::setPrimitive(bool primitive) {
 	this->primitive = primitive;
 	sendBlockDataUpdate();
 }
 
-void BlockData::setIsBus(bool bus) noexcept {
+void BlockData::setIsBus(bool bus) {
 	this->bus = bus;
 	sendBlockDataUpdate();
 }
 
-void BlockData::setSize(Size size) noexcept {
+void BlockData::setSize(Size size) {
 	if (getSize() == size) return;
 	dataUpdateEventManager.sendEvent<std::pair<BlockType, Size>>("preBlockSizeChange", { blockType, size });
 	blockSize = size;
@@ -63,23 +63,23 @@ void BlockData::setSize(Size size) noexcept {
 	sendBlockDataUpdate();
 }
 
-void BlockData::setIsPlaceable(bool placeable) noexcept {
+void BlockData::setIsPlaceable(bool placeable) {
 	this->placeable = placeable;
 	sendBlockDataUpdate();
 }
 
-void BlockData::setName(const std::string& name) noexcept {
+void BlockData::setName(const std::string& name) {
 	this->name = name;
 	dataUpdateEventManager.sendEvent<std::pair<BlockType, std::string>>("blockNameChange", { blockType, name });
 	sendBlockDataUpdate();
 }
 
-void BlockData::setPath(const std::string& path) noexcept {
+void BlockData::setPath(const std::string& path) {
 	this->path = path;
 	sendBlockDataUpdate();
 }
 
-void BlockData::removeConnection(connection_end_id_t connectionId) noexcept {
+void BlockData::removeConnection(connection_end_id_t connectionId) {
 	auto iter = connections.find(connectionId);
 	if (iter == connections.end()) return;
 	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataRemoveConnection", { blockType, connectionId });
@@ -93,7 +93,7 @@ void BlockData::removeConnection(connection_end_id_t connectionId) noexcept {
 	sendBlockDataUpdate();
 }
 
-void BlockData::setConnectionInput(Vector positionOnBlock, connection_end_id_t connectionId) noexcept {
+void BlockData::setConnectionInput(Vector positionOnBlock, connection_end_id_t connectionId) {
 	dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, ConnectionData::PortType>>(
 		"preBlockDataSetConnection",
 		{ blockType, connectionId, ConnectionData::PortType::INPUT }
@@ -104,7 +104,7 @@ void BlockData::setConnectionInput(Vector positionOnBlock, connection_end_id_t c
 	sendBlockDataUpdate();
 }
 
-void BlockData::setConnectionOutput(Vector positionOnBlock, connection_end_id_t connectionId) noexcept {
+void BlockData::setConnectionOutput(Vector positionOnBlock, connection_end_id_t connectionId) {
 	dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, ConnectionData::PortType>>(
 		"preBlockDataSetConnection",
 		{ blockType, connectionId, ConnectionData::PortType::OUTPUT }
@@ -115,7 +115,7 @@ void BlockData::setConnectionOutput(Vector positionOnBlock, connection_end_id_t 
 	sendBlockDataUpdate();
 }
 
-void BlockData::setConnectionBidirectional(Vector positionOnBlock, connection_end_id_t connectionId) noexcept {
+void BlockData::setConnectionBidirectional(Vector positionOnBlock, connection_end_id_t connectionId) {
 	dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, ConnectionData::PortType>>(
 		"preBlockDataSetConnection",
 		{ blockType, connectionId, ConnectionData::PortType::BIDIRECTIONAL }
@@ -151,7 +151,7 @@ void BlockData::setConnectionPortOffset(connection_end_id_t connectionId, FVecto
 	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connectionId });
 }
 
-void BlockData::setConnectionBitConfiguration(connection_end_id_t connectionId, std::variant<unsigned int, std::vector<unsigned int>> bitConfiguration) noexcept {
+void BlockData::setConnectionBitConfiguration(connection_end_id_t connectionId, std::variant<unsigned int, std::vector<unsigned int>> bitConfiguration) {
 	if (std::holds_alternative<std::vector<unsigned int>>(bitConfiguration) && std::get<std::vector<unsigned int>>(bitConfiguration).empty()) {
 		logError("Cant set the bit configuration of a connection to be empty", "BlockData");
 	} else if (std::holds_alternative<unsigned int>(bitConfiguration) && std::get<unsigned int>(bitConfiguration) == 0) {
@@ -246,49 +246,49 @@ void BlockData::removeVirtualConnection(virtual_connection_id_t virtualConnectio
 
 // ------------------------------- Render Block Data -------------------------------
 
-void BlockData::setTexturePath(const std::string& texturePath) noexcept {
+void BlockData::setTexturePath(const std::string& texturePath) {
 	if (this->texturePath == texturePath) return; // what is this going to do...
 	this->texturePath = texturePath;
 	dataUpdateEventManager.sendEvent<std::pair<BlockType, std::string>>("blockDataTextureChange", { blockType, texturePath });
 	sendBlockDataUpdate();
 }
 
-void BlockData::setTextureVirtualConnection(std::optional<virtual_connection_id_t> textureVirtualConnection) noexcept {
+void BlockData::setTextureVirtualConnection(std::optional<virtual_connection_id_t> textureVirtualConnection) {
 	if (this->textureVirtualConnection == textureVirtualConnection) return;
 	this->textureVirtualConnection = textureVirtualConnection;
 	dataUpdateEventManager.sendEvent<std::pair<BlockType, std::optional<virtual_connection_id_t>>>("blockDataTextureVirtualConnectionChange", { blockType, textureVirtualConnection });
 	sendBlockDataUpdate();
 }
 
-void BlockData::setUsesTileMapTexture(bool usesTileMapTexture) noexcept {
+void BlockData::setUsesTileMapTexture(bool usesTileMapTexture) {
 	if (this->usesTileMapTexture == usesTileMapTexture) return;
 	this->usesTileMapTexture = usesTileMapTexture;
 	dataUpdateEventManager.sendEvent<std::pair<BlockType, bool>>("blockDataUsesTileMapTextureChange", { blockType, usesTileMapTexture });
 	sendBlockDataUpdate();
 }
 
-void BlockData::setTextureTileSize(Vec2Int tileSize) noexcept {
+void BlockData::setTextureTileSize(Vec2Int tileSize) {
 	if (this->textureTileSize == tileSize) return;
 	this->textureTileSize = tileSize;
 	dataUpdateEventManager.sendEvent<std::pair<BlockType, Vec2Int>>("blockDataTextureTileSizeChange", { blockType, tileSize });
 	sendBlockDataUpdate();
 }
 
-void BlockData::setTextureSmallestCordTile(Vec2Int smallestCordTile) noexcept {
+void BlockData::setTextureSmallestCordTile(Vec2Int smallestCordTile) {
 	if (this->textureSmallestCordTile == smallestCordTile) return;
 	this->textureSmallestCordTile = smallestCordTile;
 	dataUpdateEventManager.sendEvent<std::pair<BlockType, Vec2Int>>("blockDataTextureSmallestCordTileChange", { blockType, smallestCordTile });
 	sendBlockDataUpdate();
 }
 
-void BlockData::setTextureBlockTileSize(Vec2Int blockSizeInTiles) noexcept {
+void BlockData::setTextureBlockTileSize(Vec2Int blockSizeInTiles) {
 	if (this->textureBlockTileSize == blockSizeInTiles) return;
 	this->textureBlockTileSize = blockSizeInTiles;
 	dataUpdateEventManager.sendEvent<std::pair<BlockType, Vec2Int>>("blockDataTextureBlockTileSizeChange", { blockType, blockSizeInTiles });
 	sendBlockDataUpdate();
 }
 
-void BlockData::setTextureBlockStateOffset(Vec2Int textureBlockStateOffset) noexcept {
+void BlockData::setTextureBlockStateOffset(Vec2Int textureBlockStateOffset) {
 	if (this->textureBlockStateOffset == textureBlockStateOffset) return;
 	this->textureBlockStateOffset = textureBlockStateOffset;
 	dataUpdateEventManager.sendEvent<std::pair<BlockType, Vec2Int>>("blockDataTextureBlockStateOffsetChange", { blockType, textureBlockStateOffset });

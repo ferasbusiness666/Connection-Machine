@@ -48,36 +48,36 @@ public:
 
 	inline void sendBlockDataUpdate() { dataUpdateEventManager.sendEvent("blockDataUpdate"); }
 
-	void setDefaultData(bool defaultData) noexcept;
+	void setDefaultData(bool defaultData);
 	inline bool isDefaultData() const noexcept { return defaultData; }
 
-	void setPrimitive(bool primitive) noexcept;
+	void setPrimitive(bool primitive);
 	inline bool isPrimitive() const noexcept { return primitive; }
 
-	void setIsBus(bool bus) noexcept;
+	void setIsBus(bool bus);
 	inline bool isBus() const noexcept { return bus; }
 
-	void setSize(Size size) noexcept;
+	void setSize(Size size);
 	inline Size getSize() const noexcept { return blockSize; }
 	inline Size getSize(Orientation orientation) const noexcept { return orientation * blockSize; }
 
 	inline BlockType getBlockType() const { return blockType; }
 
-	void setIsPlaceable(bool placeable) noexcept;
+	void setIsPlaceable(bool placeable);
 	inline bool isPlaceable() const noexcept { return placeable; }
 
-	void setName(const std::string& name) noexcept;
+	void setName(const std::string& name);
 	inline const std::string& getName() const noexcept { return name; }
-	void setPath(const std::string& path) noexcept;
+	void setPath(const std::string& path);
 	inline const std::string& getPath() const noexcept { return path; }
 
-	void removeConnection(connection_end_id_t connectionId) noexcept;
+	void removeConnection(connection_end_id_t connectionId);
 	// trys to set a input connection in the block.
-	void setConnectionInput(Vector positionOnBlock, connection_end_id_t connectionId) noexcept;
+	void setConnectionInput(Vector positionOnBlock, connection_end_id_t connectionId);
 	// trys to set a output connection in the block.
-	void setConnectionOutput(Vector positionOnBlock, connection_end_id_t connectionId) noexcept;
+	void setConnectionOutput(Vector positionOnBlock, connection_end_id_t connectionId);
 	// trys to set a bidirectional connection in the block.
-	void setConnectionBidirectional(Vector positionOnBlock, connection_end_id_t connectionId) noexcept;
+	void setConnectionBidirectional(Vector positionOnBlock, connection_end_id_t connectionId);
 
 	inline std::optional<connection_end_id_t> getInputConnectionId(Vector positionOnBlock) const noexcept;
 	inline std::optional<connection_end_id_t> getOutputConnectionId(Vector positionOnBlock) const noexcept;
@@ -109,7 +109,7 @@ public:
 	inline std::optional<FVector> getConnectionPortOffset(connection_end_id_t connectionId) const noexcept;
 	inline std::optional<FVector> getConnectionPortOffset(connection_end_id_t connectionId, Orientation orientation) const noexcept;
 	inline unsigned int getConnectionBitWidth(connection_end_id_t connectionId) const noexcept;
-	void setConnectionBitConfiguration(connection_end_id_t connectionId, std::variant<unsigned int, std::vector<unsigned int>> bitConfiguration) noexcept;
+	void setConnectionBitConfiguration(connection_end_id_t connectionId, std::variant<unsigned int, std::vector<unsigned int>> bitConfiguration);
 	inline const std::variant<unsigned int, std::vector<unsigned int>>* getConnectionBitConfiguration(connection_end_id_t connectionId) const noexcept;
 	inline const std::vector<connection_end_id_t> getPortsWithLaneId(unsigned int laneId) const noexcept;
 	inline unsigned int getLaneCount() const noexcept;
@@ -125,19 +125,19 @@ public:
 	inline unsigned int getVirtualConnectionBitWidth(virtual_connection_id_t virtualConnectionId) const noexcept;
 
 	// Render Block Data
-	void setTexturePath(const std::string& texturePath) noexcept;
+	void setTexturePath(const std::string& texturePath);
 	inline const std::string& getTexturePath() const noexcept { return texturePath; }
-	void setTextureVirtualConnection(std::optional<virtual_connection_id_t> textureVirtualConnection) noexcept;
+	void setTextureVirtualConnection(std::optional<virtual_connection_id_t> textureVirtualConnection);
 	inline std::optional<virtual_connection_id_t> getTextureVirtualConnection() const noexcept { return textureVirtualConnection; }
-	void setUsesTileMapTexture(bool usesTileMapTexture) noexcept;
+	void setUsesTileMapTexture(bool usesTileMapTexture);
 	inline bool getUsesTileMapTexture() const noexcept { return usesTileMapTexture; }
-	void setTextureTileSize(Vec2Int tileSize) noexcept;
+	void setTextureTileSize(Vec2Int tileSize);
 	inline Vec2Int getTextureTileSize() const noexcept { return textureTileSize; }
-	void setTextureSmallestCordTile(Vec2Int smallestCordTile) noexcept;
+	void setTextureSmallestCordTile(Vec2Int smallestCordTile);
 	inline Vec2Int getTextureSmallestCordTile() const noexcept { return textureSmallestCordTile; }
-	void setTextureBlockTileSize(Vec2Int blockSizeInTiles) noexcept;
+	void setTextureBlockTileSize(Vec2Int blockSizeInTiles);
 	inline Vec2Int getTextureBlockTileSize() const noexcept { return textureBlockTileSize; }
-	void setTextureBlockStateOffset(Vec2Int textureBlockStateOffset) noexcept;
+	void setTextureBlockStateOffset(Vec2Int textureBlockStateOffset);
 	inline Vec2Int getTextureBlockStateOffset() const noexcept { return textureBlockStateOffset; }
 
 
