@@ -35,13 +35,11 @@ public:
 
 	std::optional<std::pair<Position, Position>> mapFromTopConnectionPointToPointAndBlockPosition(EvalConnectionPoint bottomConnectionPoint) const;
 	EvalConnectionPoint mapFromPositionToTopConnectionPoint(Position blockPosition) const;
-	EvalConnectionPoint mapFromAddressToBottomConnectionPoint(const Address& address) const;
+	std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>> mapFromAddressToBottomConnectionPoints(const Address& address) const;
 	EvalConnectionPoint mapFromAddressToBottomConnectionPointForOtherEvals(const Address& address) const;
 	EvalConnectionPoint mapFromTopConnectionPointToBottomConnectionPointForOtherEvals(EvalConnectionPoint topConnectionPoint) const;
-	// get all the top connection points from the bottom connection point for a certain eval at address
-	VecEvalConnectionPoint mapFromBottomConnectionPointToTopConnectionPoints(EvalConnectionPoint bottomConnectionPoint, const Address& address) const;
 	// get all the top connection points from bottom connections points for a certain eval at address with the output containing the mappings
-	VecVecEvalConnectionPoint mapFromBottomConnectionPointsToTopConnectionPoints(VecEvalConnectionPoint bottomConnectionPoint, Address address) const;
+	VecVecEvalConnectionPoint mapFromBottomConnectionPointsToTopConnectionPointsForOtherEvals(VecEvalConnectionPoint bottomConnectionPoint, Address address) const;
 	// get all the top connection points from bottom connections points for a certain eval at address with the output containing the mappings
 	VecVecEvalConnectionPoint mapFromBottomConnectionPointGroupsToTopConnectionPointsForOtherEvals(VecVecEvalConnectionPoint bottomConnectionPoint, Address address) const;
 	// get all the top connection points from bottom connections points for a certain eval at address with the outputs all mixed together

@@ -321,32 +321,32 @@ void BusReplacerEvalLayer::run() {
 	}
 }
 
-// std::variant<EvalConnectionPoint, VecEvalConnectionPoint> BusReplacerEvalLayer::getEvalIdsForConnectionPoint(EvalConnectionPoint connectionPoint) const {
-// 	if (connectionPoint.isNull()) return EvalConnectionPoint::null();
-// 	auto bussesIter = busses.find(connectionPoint.gateId);
-// 	if (bussesIter != busses.end()) {
-// 		auto connectionEndsIter = bussesIter->second.connectionEnds.find(connectionPoint.connectionEndId);
-// 		if (connectionEndsIter == bussesIter->second.connectionEnds.end()) {
-// 			return EvalConnectionPoint::null();
-// 		}
-// 		if (connectionEndsIter->second.size() == 1) {
-// 			return EvalConnectionPoint(bussesIter->second.junctions.at(connectionEndsIter->second.front()), 0);
-// 		}
-// 		VecEvalConnectionPoint connectionPoints;
-// 		for (unsigned int lane : connectionEndsIter->second) {
-// 			connectionPoints.push_back(EvalConnectionPoint(bussesIter->second.junctions.at(lane), 0));
-// 		}
-// 		return connectionPoints;
-// 	}
-// 	if (connectionPoint.connectionEndId == 0) {
-// 		auto busJunctionIter = busJunctions.find(connectionPoint.gateId);
-// 		if (busJunctionIter != busJunctions.end()) {
-// 			VecEvalConnectionPoint connectionPoints;
-// 			for (eval_gate_id junctionId : busJunctionIter->second) {
-// 				connectionPoints.push_back(EvalConnectionPoint(junctionId, 0));
-// 			}
-// 			return connectionPoints;
-// 		}
-// 	}
-// 	return connectionPoint;
-// }
+std::variant<EvalConnectionPoint, VecEvalConnectionPoint> BusReplacerEvalLayer::getEvalConnectionPointsForConnectionPoint(EvalConnectionPoint connectionPoint) const {
+	if (connectionPoint.isNull()) return EvalConnectionPoint::null();
+	auto bussesIter = busses.find(connectionPoint.gateId);
+	if (bussesIter != busses.end()) {
+		auto connectionEndsIter = bussesIter->second.connectionEnds.find(connectionPoint.connectionEndId);
+		if (connectionEndsIter == bussesIter->second.connectionEnds.end()) {
+			return EvalConnectionPoint::null();
+		}
+		if (connectionEndsIter->second.size() == 1) {
+			return EvalConnectionPoint(bussesIter->second.junctions.at(connectionEndsIter->second.front()), 0);
+		}
+		VecEvalConnectionPoint connectionPoints;
+		for (unsigned int lane : connectionEndsIter->second) {
+			connectionPoints.push_back(EvalConnectionPoint(bussesIter->second.junctions.at(lane), 0));
+		}
+		return connectionPoints;
+	}
+	if (connectionPoint.connectionEndId == 0) {
+		auto busJunctionIter = busJunctions.find(connectionPoint.gateId);
+		if (busJunctionIter != busJunctions.end()) {
+			VecEvalConnectionPoint connectionPoints;
+			for (eval_gate_id junctionId : busJunctionIter->second) {
+				connectionPoints.push_back(EvalConnectionPoint(junctionId, 0));
+			}
+			return connectionPoints;
+		}
+	}
+	return connectionPoint;
+}

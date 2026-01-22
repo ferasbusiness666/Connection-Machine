@@ -13,6 +13,7 @@ LayerRunner::LayerRunner(IdProvider<eval_gate_id>& evalGateIdProvider, Evaluator
 	layers.emplace_back(std::make_unique<SwitchReplacerEvalLayer>(layers.back()->getNextState(), circuitManager));
 	layers.emplace_back(std::make_unique<JunctionAddEvalLayer>(layers.back()->getNextState(), circuitManager));
 	layers.emplace_back(std::make_unique<JunctionMergeEvalLayer>(layers.back()->getNextState(), circuitManager));
+	busLayerIndex = layers.size();
 	layers.emplace_back(std::make_unique<BusReplacerEvalLayer>(layers.back()->getNextState(), circuitManager));
 	layers.emplace_back(std::make_unique<JunctionMergeEvalLayer>(layers.back()->getNextState(), circuitManager));
 	assert(evalTopLayerState);
@@ -81,10 +82,32 @@ EvalConnectionPoint LayerRunner::getMappedAddress(eval_gate_id gateId, const Add
 EvalConnectionPoint LayerRunner::getMappedAddressForOtherEvals(eval_gate_id gateId, const Address& address) const {
 	EvalConnectionPoint evalConnectionPoint = dynamic_cast<SubcircuitEvalLayer*>(layers[0].get())->getMappedAddress(gateId, address);
 	if (evalConnectionPoint.isNull()) return EvalConnectionPoint::null();
-	for (unsigned int i = 1; i < layers.size() - 2; i++) { // skip bus stuff
+	for (unsigned int i = 1; i < busLayerIndex; i++) { // skip bus stuff
 		evalConnectionPoint = layers[i]->getMappedEvalConnectionPoint(evalConnectionPoint);
 	}
 	return evalConnectionPoint;
+}
+
+std::vector<std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>>> LayerRunner::getMappedConnectionPointsFromBusLayer(const VecEvalConnectionPoint& evalConnectionPoints) const {
+	std::vector<std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>>> evalConnectionPointsTmp;
+	for (EvalConnectionPoint connectionPoint : evalConnectionPoints) {
+		const BusReplacerEvalLayer* busReplacerEvalLayer = dynamic_cast<const BusReplacerEvalLayer*>(layers[busLayerIndex].get());
+		assert(busReplacerEvalLayer);
+		evalConnectionPointsTmp.push_back(busReplacerEvalLayer->getEvalConnectionPointsForConnectionPoint(connectionPoint));
+	}
+	std::vector<std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>>> outputConnectionPoints;
+	for (std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>> connectionPointVariant : evalConnectionPointsTmp) {
+		if (std::holds_alternative<EvalConnectionPoint>(connectionPointVariant)) {
+			outputConnectionPoints.push_back(layers.back()->getMappedEvalConnectionPoint(std::get<EvalConnectionPoint>(connectionPointVariant)));
+		} else {
+			outputConnectionPoints.push_back(std::vector<EvalConnectionPoint>());
+			std::vector<EvalConnectionPoint>& vec = std::get<std::vector<EvalConnectionPoint>>(outputConnectionPoints.back());
+			for (EvalConnectionPoint connectionPoint : std::get<std::vector<EvalConnectionPoint>>(connectionPointVariant)) {
+				vec.push_back(layers.back()->getMappedEvalConnectionPoint(connectionPoint));
+			}
+		}
+	}
+	return outputConnectionPoints;
 }
 
 VecEvalConnectionPoint LayerRunner::getReversedMappedConnectionPointWithAddress(EvalConnectionPoint evalConnectionPoint, eval_gate_id gateId, const Address& address) const {
@@ -100,15 +123,14 @@ VecEvalConnectionPoint LayerRunner::getReversedMappedConnectionPointWithAddress(
 	return dynamic_cast<SubcircuitEvalLayer*>(layers[0].get())->getReversedMappedConnectionPointsWithAddressMixed(evalConnectionPoints, gateId, address);
 }
 
-VecVecEvalConnectionPoint LayerRunner::getReversedMappedConnectionPointsWithAddress(const VecEvalConnectionPoint& evalConnectionPoints, eval_gate_id gateId, const Address& address) const {
+VecVecEvalConnectionPoint LayerRunner::getReversedMappedConnectionPointsWithAddressForOtherEvals(const VecEvalConnectionPoint& evalConnectionPoints, eval_gate_id gateId, const Address& address) const {
 	VecVecEvalConnectionPoint evalConnectionPointVecs;
-	evalConnectionPointVecs.clear();
 	for (EvalConnectionPoint connectionPoint : evalConnectionPoints) {
 		evalConnectionPointVecs.push_back({});
-		layers.back()->getReversedMappedEvalConnectionPoint(connectionPoint, evalConnectionPointVecs.back());
+		layers[busLayerIndex - 1]->getReversedMappedEvalConnectionPoint(connectionPoint, evalConnectionPointVecs.back());
 	}
 	VecVecEvalConnectionPoint lastSimulatorConnectionPointVecs;
-	for (unsigned int i = layers.size() - 2; i >= 1; i--) {
+	for (unsigned int i = busLayerIndex - 2; i >= 1; i--) {
 		lastSimulatorConnectionPointVecs = std::move(evalConnectionPointVecs);
 		evalConnectionPointVecs.clear();
 		for (VecEvalConnectionPoint vec : lastSimulatorConnectionPointVecs) {
@@ -120,10 +142,21 @@ VecVecEvalConnectionPoint LayerRunner::getReversedMappedConnectionPointsWithAddr
 	}
 	return dynamic_cast<SubcircuitEvalLayer*>(layers[0].get())->getReversedMappedConnectionPointGroupsWithAddress(evalConnectionPointVecs, gateId, address);
 }
+VecEvalConnectionPoint LayerRunner::getReversedMappedConnectionPointsAboveBusLayer(const VecEvalConnectionPoint& evalConnectionPoints) const {
+	VecEvalConnectionPoint evalConnectionPointsTmp;
+	for (EvalConnectionPoint connectionPoint : evalConnectionPoints) {
+		layers.back()->getReversedMappedEvalConnectionPoint(connectionPoint, evalConnectionPointsTmp);
+	}
+	VecEvalConnectionPoint outputConnectionPoints;
+	for (EvalConnectionPoint connectionPoint : evalConnectionPointsTmp) {
+		layers[busLayerIndex]->getReversedMappedEvalConnectionPoint(connectionPoint, outputConnectionPoints);
+	}
+	return outputConnectionPoints;
+}
 VecEvalConnectionPoint LayerRunner::getReversedMappedConnectionPointsWithAddressMixedForOtherEvals(VecEvalConnectionPoint evalConnectionPoints, eval_gate_id gateId, const Address& address) const {
 	// VecEvalConnectionPoint evalConnectionPoints;
 	VecEvalConnectionPoint lastSimulatorConnectionPoints;
-	for (unsigned int i = layers.size() - 3; i >= 1; i--) { // skip bus stuff
+	for (unsigned int i = busLayerIndex - 1; i >= 1; i--) { // skip bus stuff
 		lastSimulatorConnectionPoints = std::move(evalConnectionPoints);
 		evalConnectionPoints.clear();
 		for (EvalConnectionPoint connectionPoint : lastSimulatorConnectionPoints) {
@@ -148,7 +181,7 @@ VecVecEvalConnectionPoint LayerRunner::getReversedMappedConnectionPointGroupsWit
 }
 VecVecEvalConnectionPoint LayerRunner::getReversedMappedConnectionPointGroupsWithAddressForOtherEvals(VecVecEvalConnectionPoint evalConnectionPoints, eval_gate_id gateId, const Address& address) const {
 	VecVecEvalConnectionPoint lastSimulatorConnectionPoints;
-	for (unsigned int i = layers.size() - 3; i >= 1; i--) {
+	for (unsigned int i = busLayerIndex - 1; i >= 1; i--) {
 		lastSimulatorConnectionPoints = std::move(evalConnectionPoints);
 		evalConnectionPoints.clear();
 		for (VecEvalConnectionPoint vec : lastSimulatorConnectionPoints) {
@@ -161,31 +194,28 @@ VecVecEvalConnectionPoint LayerRunner::getReversedMappedConnectionPointGroupsWit
 	return dynamic_cast<SubcircuitEvalLayer*>(layers[0].get())->getReversedMappedConnectionPointGroupsWithAddress(evalConnectionPoints, gateId, address);
 }
 
-EvalConnectionPoint LayerRunner::getMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint) const {
-	for (unsigned int i = 0; i < layers.size(); i++) {
+std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>> LayerRunner::getMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint) const {
+	for (unsigned int i = 0; i < busLayerIndex; i++) {
 		evalConnectionPoint = layers[i]->getMappedEvalConnectionPoint(evalConnectionPoint);
 	}
-	return evalConnectionPoint;
+	const BusReplacerEvalLayer* busReplacerEvalLayer = dynamic_cast<const BusReplacerEvalLayer*>(layers[busLayerIndex].get());
+	assert(busReplacerEvalLayer);
+	std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>> evalConnectionPoints = busReplacerEvalLayer->getEvalConnectionPointsForConnectionPoint(evalConnectionPoint);
+	if (std::holds_alternative<EvalConnectionPoint>(evalConnectionPoints)) {
+		return layers.back()->getMappedEvalConnectionPoint(std::get<EvalConnectionPoint>(evalConnectionPoints));
+	}
+	std::vector<EvalConnectionPoint> evalConnectionPointsMapped;
+	for (EvalConnectionPoint connectionPoint : std::get<std::vector<EvalConnectionPoint>>(std::move(evalConnectionPoints))) {
+		evalConnectionPointsMapped.push_back(layers.back()->getMappedEvalConnectionPoint(connectionPoint));
+	}
+	return evalConnectionPointsMapped;
 }
 
 EvalConnectionPoint LayerRunner::getMappedEvalConnectionPointForOtherEvals(EvalConnectionPoint evalConnectionPoint) const {
-	for (unsigned int i = 0; i < layers.size() - 2; i++) {
+	for (unsigned int i = 0; i < busLayerIndex; i++) {
 		evalConnectionPoint = layers[i]->getMappedEvalConnectionPoint(evalConnectionPoint);
 	}
 	return evalConnectionPoint;
-}
-
-VecEvalConnectionPoint LayerRunner::getReversedMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint) const {
-	VecEvalConnectionPoint evalConnectionPoints = { evalConnectionPoint };
-	VecEvalConnectionPoint lastSimulatorConnectionPoints;
-	for (int i = layers.size() - 1; i >= 0; i--) {
-		lastSimulatorConnectionPoints = std::move(evalConnectionPoints);
-		evalConnectionPoints.clear();
-		for (EvalConnectionPoint point : lastSimulatorConnectionPoints) {
-			layers[i]->getReversedMappedEvalConnectionPoint(point, evalConnectionPoints);
-		}
-	}
-	return evalConnectionPoints;
 }
 
 void LayerRunner::getReversedMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint, VecEvalConnectionPoint& outputVector) const {
@@ -206,7 +236,7 @@ void LayerRunner::getReversedMappedEvalConnectionPoint(EvalConnectionPoint evalC
 void LayerRunner::getReversedMappedEvalConnectionPointForOtherEvals(EvalConnectionPoint evalConnectionPoint, VecEvalConnectionPoint& outputVector) const {
 	VecEvalConnectionPoint evalConnectionPoints = { evalConnectionPoint };
 	VecEvalConnectionPoint lastSimulatorConnectionPoints;
-	for (unsigned int i = layers.size() - 3; i >= 1; i--) {
+	for (unsigned int i = busLayerIndex - 1; i >= 1; i--) {
 		lastSimulatorConnectionPoints = std::move(evalConnectionPoints);
 		evalConnectionPoints.clear();
 		for (EvalConnectionPoint point : lastSimulatorConnectionPoints) {

@@ -64,10 +64,11 @@ public:
 
 	std::optional<simulator_gate_id_t> getOutputPortId(eval_gate_id gateId, connection_end_id_t portId) const;
 
-	std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> getVirtualConnectionSimulatorId(const Address& address, virtual_connection_id_t virtualConnectionId) const;
-	std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> getPinSimulatorId(const Address& address) const;
-	std::vector<std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>>> getVirtualConnectionSimulatorIds(const Address& addressOrigin, const std::vector<std::pair<Position, virtual_connection_id_t>>& virtualConnections) const;
-	std::vector<std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>>> getPinSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const;
+	SimulatorStateIndexVecVariant getVirtualConnectionSimulatorId(const Address& address, virtual_connection_id_t virtualConnectionId) const;
+	SimulatorStateIndexVecVariant getPinSimulatorId(const Address& address) const;
+	std::pair<SimulatorStateIndexVecVariant, SimulatorStateIndexVecVariant> getPinAndNotPinSimulatorId(std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>> connectionPoints) const;
+	std::vector<SimulatorStateIndexVecVariant> getVirtualConnectionSimulatorIds(const Address& addressOrigin, const std::vector<std::pair<Position, virtual_connection_id_t>>& virtualConnections) const;
+	std::vector<SimulatorStateIndexVecVariant> getPinSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const;
 
 	void processEdits();
 

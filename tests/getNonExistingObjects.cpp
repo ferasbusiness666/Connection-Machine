@@ -53,8 +53,8 @@ TEST_F(GetNonExistingObjects, Evaluator) {
 	ASSERT_NE(simulatorId, std::nullopt);
 	EvalLogicSimulator* simulator = environment.getBackend().getSimulator(*simulatorId);
 	ASSERT_NE(simulator, nullptr);
-	ASSERT_EQ(simulator->getVirtualConnectionSimulatorId(Address(Position(10, 29)), 0), (std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>>)3);
-	std::vector<std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>>> XstateVec = { 3 };
+	ASSERT_EQ(simulator->getVirtualConnectionSimulatorId(Address(Position(10, 29)), 0), (SimulatorStateIndexVecVariant)3);
+	std::vector<SimulatorStateIndexVecVariant> XstateVec = { 3 };
 	ASSERT_EQ(
 		simulator->getVirtualConnectionSimulatorIds(Address(Position(29, -86)), {{Position(-21, 18), 0}}),
 		XstateVec

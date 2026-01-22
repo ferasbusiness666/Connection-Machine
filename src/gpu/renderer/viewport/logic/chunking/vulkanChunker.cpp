@@ -101,7 +101,7 @@ VulkanLogicAllocation::VulkanLogicAllocation(
 		}
 
 		if (simulator) {
-			std::vector<std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>>> blockSimulatorIds = simulator->getVirtualConnectionSimulatorIds(address, virtualConnections);
+			std::vector<SimulatorStateIndexVecVariant> blockSimulatorIds = simulator->getVirtualConnectionSimulatorIds(address, virtualConnections);
 			for (size_t i = 0; i < blockSimulatorIds.size(); i++) {
 				if (std::holds_alternative<std::vector<simulator_gate_id_t>>(blockSimulatorIds[i])) {
 					simulatorIds[indices[i]] = 0;
@@ -149,7 +149,7 @@ VulkanLogicAllocation::VulkanLogicAllocation(
 			}
 		}
 
-		std::vector<std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>>> pinSimulatorIds;
+		std::vector<SimulatorStateIndexVecVariant> pinSimulatorIds;
 		if (simulator) {
 			pinSimulatorIds = simulator->getPinSimulatorIds(address, positions);
 		}
@@ -469,7 +469,7 @@ void VulkanChunker::regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDa
 
 void VulkanChunker::updateSimulatorIds(const std::vector<SimulatorMappingUpdate>& simulatorMappingUpdates) {
 	for (const SimulatorMappingUpdate& simulatorMappingUpdate : simulatorMappingUpdates) {
-		const std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>>& simulatorIds = simulatorMappingUpdate.simulatorIds;
+		const SimulatorStateIndexVecVariant& simulatorIds = simulatorMappingUpdate.simulatorIds;
 		Position chunkPos = getChunk(simulatorMappingUpdate.position);
 		auto groupsAtChunkIter = chunkToGroups.find(chunkPos);
 		if (groupsAtChunkIter == chunkToGroups.end()) {

@@ -30,17 +30,19 @@ public:
 
 	EvalConnectionPoint getMappedAddress(eval_gate_id gateId, const Address& address) const;
 	EvalConnectionPoint getMappedAddressForOtherEvals(eval_gate_id gateId, const Address& address) const;
+	std::vector<std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>>> getMappedConnectionPointsFromBusLayer(const VecEvalConnectionPoint& evalConnectionPoints) const;
 	VecEvalConnectionPoint getReversedMappedConnectionPointWithAddress(EvalConnectionPoint evalConnectionPoint, eval_gate_id gateId, const Address& address) const;
-	VecVecEvalConnectionPoint getReversedMappedConnectionPointsWithAddress(const VecEvalConnectionPoint& evalConnectionPoints, eval_gate_id gateId, const Address& address) const;
+	VecVecEvalConnectionPoint getReversedMappedConnectionPointsWithAddressForOtherEvals(const VecEvalConnectionPoint& evalConnectionPoints, eval_gate_id gateId, const Address& address) const;
+	VecEvalConnectionPoint getReversedMappedConnectionPointsAboveBusLayer(const VecEvalConnectionPoint& evalConnectionPoints) const;
 	VecEvalConnectionPoint getReversedMappedConnectionPointsWithAddressMixedForOtherEvals(VecEvalConnectionPoint evalConnectionPoints, eval_gate_id gateId, const Address& address) const;
 	VecVecEvalConnectionPoint getReversedMappedConnectionPointGroupsWithAddress(VecVecEvalConnectionPoint evalConnectionPoints, eval_gate_id gateId, const Address& address) const;
 	VecVecEvalConnectionPoint getReversedMappedConnectionPointGroupsWithAddressForOtherEvals(VecVecEvalConnectionPoint evalConnectionPoints, eval_gate_id gateId, const Address& address) const;
-	EvalConnectionPoint getMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint) const;
+	std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>> getMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint) const;
 	EvalConnectionPoint getMappedEvalConnectionPointForOtherEvals(EvalConnectionPoint evalConnectionPoint) const;
-	VecEvalConnectionPoint getReversedMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint) const;
 	void getReversedMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint, VecEvalConnectionPoint& outputVector) const;
 	void getReversedMappedEvalConnectionPointForOtherEvals(EvalConnectionPoint evalConnectionPoint, VecEvalConnectionPoint& outputVector) const;
 private:
+	unsigned int busLayerIndex;
 	std::unique_ptr<EvalLayerState> evalTopLayerState;
 	std::vector<std::unique_ptr<BaseEvalLayer>> layers;
 };

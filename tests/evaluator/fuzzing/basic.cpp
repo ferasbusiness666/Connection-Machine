@@ -309,8 +309,8 @@ TEST_P(BasicFuzzingEvaluatorTest, FuzzInteractions) {
 		const BlockData* blockData = blockDataManager.getBlockData(block->type());
 		ASSERT_NE(blockData, nullptr);
 		if (blockData->isDefaultData()) {
-			std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> simulatorIdTest = tSimulator->getPinSimulatorId(pos);
-			std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> simulatorIdRef = rSimulator->getPinSimulatorId(pos);
+			SimulatorStateIndexVecVariant simulatorIdTest = tSimulator->getPinSimulatorId(pos);
+			SimulatorStateIndexVecVariant simulatorIdRef = rSimulator->getPinSimulatorId(pos);
 			if (std::holds_alternative<simulator_gate_id_t>(simulatorIdTest) && std::holds_alternative<simulator_gate_id_t>(simulatorIdRef)) {
 				simulatorIdsTest.push_back(std::get<simulator_gate_id_t>(simulatorIdTest));
 				simulatorIdsRef.push_back(std::get<simulator_gate_id_t>(simulatorIdRef));
@@ -335,8 +335,8 @@ TEST_P(BasicFuzzingEvaluatorTest, FuzzInteractions) {
 				std::optional<Position> portPositionOpt = block->getConnectionPosition(connectionId);
 				ASSERT_TRUE(portPositionOpt.has_value());
 				Position portPosition = portPositionOpt.value();
-				std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> simulatorIdTest = tSimulator->getPinSimulatorId(portPosition);
-				std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> simulatorIdRef = rSimulator->getPinSimulatorId(portPosition);
+				SimulatorStateIndexVecVariant simulatorIdTest = tSimulator->getPinSimulatorId(portPosition);
+				SimulatorStateIndexVecVariant simulatorIdRef = rSimulator->getPinSimulatorId(portPosition);
 				if (std::holds_alternative<simulator_gate_id_t>(simulatorIdTest) && std::holds_alternative<simulator_gate_id_t>(simulatorIdRef)) {
 					simulatorIdsTest.push_back(std::get<simulator_gate_id_t>(simulatorIdTest));
 					simulatorIdsRef.push_back(std::get<simulator_gate_id_t>(simulatorIdRef));

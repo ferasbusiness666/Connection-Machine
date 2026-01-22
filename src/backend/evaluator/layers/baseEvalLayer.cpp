@@ -13,7 +13,7 @@ EvalConnectionPoint BaseEvalLayer::getMappedEvalConnectionPoint(EvalConnectionPo
 	auto evalGateIdIter = nextState.getGateIdRemapping().find(evalConnectionPoint.gateId);
 	if (evalGateIdIter == nextState.getGateIdRemapping().end()) {
 		logError("Could not find mapping for evalConnectionPoint.", "BaseEvalLayer::getMappedEvalConnectionPoint");
-		return EvalConnectionPoint(0, 0);
+		return EvalConnectionPoint::null();
 	}
 	return EvalConnectionPoint(evalGateIdIter->second, evalConnectionPoint.connectionEndId);
 }

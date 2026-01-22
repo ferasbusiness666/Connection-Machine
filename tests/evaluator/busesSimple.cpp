@@ -151,9 +151,9 @@ TEST_F(BusesSimpleEvaluatorTest, BusEndsHaveSameSimulatorIds) {
 	ASSERT_TRUE(circuit->tryCreateConnection(bus1Pos + *bus2Data->getConnectionVector(2), bus2Pos + *bus2Data->getConnectionVector(2)));
 	ASSERT_TRUE(circuit->tryCreateConnection(bus2Pos + *bus2Data->getConnectionVector(2), bus3Pos + *bus2Data->getConnectionVector(2)));
 
-	std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> bus1OutputSimulatorId = simulator->getPinSimulatorId(bus1Pos + *(bus2Data->getConnectionVector(2)));
-	std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> bus2OutputSimulatorId = simulator->getPinSimulatorId(bus2Pos + *(bus2Data->getConnectionVector(2)));
-	std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> bus3OutputSimulatorId = simulator->getPinSimulatorId(bus3Pos + *(bus2Data->getConnectionVector(2)));
+	SimulatorStateIndexVecVariant bus1OutputSimulatorId = simulator->getPinSimulatorId(bus1Pos + *(bus2Data->getConnectionVector(2)));
+	SimulatorStateIndexVecVariant bus2OutputSimulatorId = simulator->getPinSimulatorId(bus2Pos + *(bus2Data->getConnectionVector(2)));
+	SimulatorStateIndexVecVariant bus3OutputSimulatorId = simulator->getPinSimulatorId(bus3Pos + *(bus2Data->getConnectionVector(2)));
 
 	ASSERT_TRUE(std::holds_alternative<std::vector<simulator_gate_id_t>>(bus1OutputSimulatorId));
 	ASSERT_TRUE(std::holds_alternative<std::vector<simulator_gate_id_t>>(bus2OutputSimulatorId));
