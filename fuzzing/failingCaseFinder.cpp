@@ -1,6 +1,7 @@
 #include "failingCaseFinder.h"
 #include "environment/environment.h"
 #include "backend/evaluator/evaluator.h"
+#include "backend/evaluator/simulator/evalLogicSimulator.h"
 #include "backend/container/block/blockDefs.h"
 
 std::unique_ptr<FuzzTestcase> FailingCaseFinder::findFailingCases(unsigned int maxAttempts, const std::vector<FuzzBlockType>& blockTypesUsed) {

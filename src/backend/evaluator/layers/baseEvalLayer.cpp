@@ -43,5 +43,4 @@ void BaseEvalLayer::getReversedMappedEvalConnectionPoint(EvalConnectionPoint eva
 		evalConnectionPoints.emplace_back(iter->second, evalConnectionPoint.connectionEndId);
 	}
 	assert(nextState.getGate(evalConnectionPoint.gateId));
-	for (EvalConnectionPoint gateId : evalConnectionPoints) assert(currentState.getGate(gateId.gateId));
 }

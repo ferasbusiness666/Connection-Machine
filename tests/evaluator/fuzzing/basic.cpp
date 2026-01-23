@@ -97,17 +97,17 @@ namespace {
 				for (unsigned int i = 1; i <= 21; ++i) {
 					blockTypesAllowed.blockTypesToUse.push_back(BlockType(i));
 				}
-				// blockTypesAllowed.busDefinitions.push_back(BusDef {2, 1, 1, 2});
-				// blockTypesAllowed.busDefinitions.push_back(BusDef {4, 1, 1, 4});
-				// blockTypesAllowed.busDefinitions.push_back(BusDef {2, 1, 2, 4});
-				// blockTypesAllowed.busDefinitions.push_back(BusDef {8, 1, 1, 8});
-				// blockTypesAllowed.busDefinitions.push_back(BusDef {4, 1, 2, 8});
-				// blockTypesAllowed.busDefinitions.push_back(BusDef {2, 1, 4, 8});
-				// blockTypesAllowed.busDefinitions.push_back(BusDef { 2, 4, 4, 2 });
+				blockTypesAllowed.busDefinitions.push_back(BusDef {2, 1, 1, 2});
+				blockTypesAllowed.busDefinitions.push_back(BusDef {4, 1, 1, 4});
+				blockTypesAllowed.busDefinitions.push_back(BusDef {2, 1, 2, 4});
+				blockTypesAllowed.busDefinitions.push_back(BusDef {8, 1, 1, 8});
+				blockTypesAllowed.busDefinitions.push_back(BusDef {4, 1, 2, 8});
+				blockTypesAllowed.busDefinitions.push_back(BusDef {2, 1, 4, 8});
+				blockTypesAllowed.busDefinitions.push_back(BusDef { 2, 4, 4, 2 });
 
 				blockTypesAllowed.customBlockPaths.push_back("passthrough.cir");
 				blockTypesAllowed.customBlockPaths.push_back("full_adder.cir");
-				// blockTypesAllowed.customBlockPaths.push_back("bus_tristate_2.cir");
+				blockTypesAllowed.customBlockPaths.push_back("bus_tristate_2.cir");
 				blockTypesAllowed.customBlockPaths.push_back("nested_passthrough.cir");
 				testcases.push_back(TestcaseConfig { seed, realistic, runningConfig, blockTypesAllowed, u++ });
 			}

@@ -324,6 +324,9 @@ void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vect
 				subcircuitsPair.second.thisSimulatorIdMappingToOtherSimulator.emplace(gateId, iter.first);
 				nextState.addGate(gateId, iter.second);
 			}
+			for (std::pair<eval_gate_id, EvalGate> pair : subcircuitsPair.second.outputEvalLayer.getGates()) {
+				assert(subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.contains(pair.first));
+			}
 			for (auto iter : subcircuitsPair.second.outputEvalLayer.getAddedConnections()) {
 				eval_gate_id gateIdA = subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.at(iter.first.connectionPointA.gateId);
 				eval_gate_id gateIdB = subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.at(iter.first.connectionPointB.gateId);

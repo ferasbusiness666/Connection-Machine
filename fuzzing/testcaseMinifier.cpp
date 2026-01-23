@@ -2,6 +2,7 @@
 #include "testcaseMinifier.h"
 #include "environment/environment.h"
 #include "backend/evaluator/evaluator.h"
+#include "backend/evaluator/simulator/evalLogicSimulator.h"
 #include "backend/container/block/blockDefs.h"
 
 FuzzTestcase TestcaseMinifier::minifyTestcase(const FuzzTestcase& originalTestcase) {
