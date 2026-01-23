@@ -59,6 +59,8 @@ public:
 	}
 
 private:
+	void sendPortUpdate(connection_end_id_t connectionEndId, EvalConnectionPoint preConnectionPoint, EvalConnectionPoint postConnectionPoint) const;
+
 	// std::set<Position> positionsTo; nothing to do
 	IdProvider<eval_gate_id> evalGateIdProvider;
 	std::unordered_map<Position, std::pair<eval_gate_id, Orientation>> positionRemapping;

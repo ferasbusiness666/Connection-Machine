@@ -34,7 +34,7 @@ public:
 	) const;
 
 	// Only called by EvaluatorInternal
-	void processICEdits(circuit_id_t circuitId, const std::vector<connection_end_id_t>& updatedPortIds);
+	void processICEdits(circuit_id_t circuitId, const std::vector<std::tuple<connection_end_id_t, EvalConnectionPoint, EvalConnectionPoint>>& updatedPortIds);
 private:
 	std::unordered_map<eval_gate_id, SubcircuitData> subcircuits;
 	Evaluator& evaluator;
