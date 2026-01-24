@@ -338,11 +338,11 @@ void EvaluatorInternal::endEdit() {
 		if (!internalPortPosition) continue;
 		const Block* block = circuit.getBlockContainer().getBlock(*internalPortPosition);
 		unsigned int bitWidth = connectionData.second.getBitWidth();
+		assert(portToInternalPointMapping.contains(connectionData.first));
 		auto portToInternalPointMappingIter = portToInternalPointMapping.find(connectionData.first);
+		assert(portToInternalPointMappingIter != portToInternalPointMapping.end());
 		if (!block) {
-			if (portToInternalPointMappingIter == portToInternalPointMapping.end()) {
-				portToInternalPointMapping.emplace(connectionData.first, InternalPointData(connectionData.second.portType, bitWidth));
-			} else if (portToInternalPointMappingIter->second.connectionPoint.has_value()) {
+			if (portToInternalPointMappingIter->second.connectionPoint.has_value()) {
 				EvalConnectionPoint connectionPoint = portToInternalPointMappingIter->second.connectionPoint.value();
 				portToInternalPointMappingIter->second.connectionPoint = std::nullopt;
 				connectionEndIdsToUpdate.emplace_back(connectionData.first, connectionPoint, EvalConnectionPoint::null());
@@ -371,9 +371,7 @@ void EvaluatorInternal::endEdit() {
 				optInternalConnectionEndId = internalBlockData->getOutputOrBidirectionalConnectionId(*internalPortPosition - block->getPosition(), block->getOrientation());
 			}
 			if (!optInternalConnectionEndId.has_value() || bitWidth != internalBlockData->getConnectionBitWidth(optInternalConnectionEndId.value())) {
-				if (portToInternalPointMappingIter == portToInternalPointMapping.end()) {
-					portToInternalPointMapping.emplace(connectionData.first, InternalPointData(connectionData.second.portType, bitWidth));
-				} else if (portToInternalPointMappingIter->second.connectionPoint.has_value()) {
+				if (portToInternalPointMappingIter->second.connectionPoint.has_value()) {
 					EvalConnectionPoint connectionPoint = portToInternalPointMappingIter->second.connectionPoint.value();
 					portToInternalPointMappingIter->second.connectionPoint = std::nullopt;
 					connectionEndIdsToUpdate.emplace_back(connectionData.first, connectionPoint, EvalConnectionPoint::null());
@@ -388,13 +386,7 @@ void EvaluatorInternal::endEdit() {
 			logError("Could not find positionRemapping while doing \"circuitBlockDataConnectionPositionSet\", not sure why this would happen.", "EvaluatorInternal");
 			continue;
 		}
-		portToInternalPointMapping.insert_or_assign(
-			connectionData.first,
-			InternalPointData(EvalConnectionPoint(positionRemappingIter->second.first, internalConnectionEndId), connectionData.second.portType, bitWidth)
-		);
-		if (portToInternalPointMappingIter == portToInternalPointMapping.end()) {
-			portToInternalPointMapping.emplace(connectionData.first, InternalPointData(connectionData.second.portType, bitWidth));
-		} else if (portToInternalPointMappingIter->second.connectionPoint != EvalConnectionPoint(positionRemappingIter->second.first, internalConnectionEndId)) {
+		if (portToInternalPointMappingIter->second.connectionPoint != EvalConnectionPoint(positionRemappingIter->second.first, internalConnectionEndId)) {
 			EvalConnectionPoint connectionPoint = portToInternalPointMappingIter->second.connectionPoint.value_or(EvalConnectionPoint::null());
 			portToInternalPointMappingIter->second.connectionPoint = EvalConnectionPoint(positionRemappingIter->second.first, internalConnectionEndId);
 			connectionEndIdsToUpdate.emplace_back(connectionData.first, connectionPoint, portToInternalPointMappingIter->second.connectionPoint.value());

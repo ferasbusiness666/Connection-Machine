@@ -11,11 +11,12 @@ EvalConnectionPoint BaseEvalLayer::getMappedEvalConnectionPoint(EvalConnectionPo
 		return connectionPointIter->second;
 	}
 	auto evalGateIdIter = nextState.getGateIdRemapping().find(evalConnectionPoint.gateId);
-	if (evalGateIdIter == nextState.getGateIdRemapping().end()) {
-		logError("Could not find mapping for evalConnectionPoint.", "BaseEvalLayer::getMappedEvalConnectionPoint");
-		return EvalConnectionPoint::null();
+	if (evalGateIdIter != nextState.getGateIdRemapping().end()) {
+		return EvalConnectionPoint(evalGateIdIter->second, evalConnectionPoint.connectionEndId);
 	}
-	return EvalConnectionPoint(evalGateIdIter->second, evalConnectionPoint.connectionEndId);
+	auto toNothingIter = nextState.getConnectionPointRemappingToNothing().find(evalConnectionPoint);
+	if (toNothingIter == nextState.getConnectionPointRemappingToNothing().end()) logError("Could not find mapping for evalConnectionPoint.", "BaseEvalLayer::getMappedEvalConnectionPoint");
+	return EvalConnectionPoint::null();
 }
 
 VecEvalConnectionPoint BaseEvalLayer::getReversedMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint) const {
