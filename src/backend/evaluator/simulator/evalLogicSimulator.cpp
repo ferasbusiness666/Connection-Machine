@@ -491,7 +491,7 @@ void EvalLogicSimulator::processEdits() {
 	std::vector<std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>>> aboveBusLayerConnectionPointsToUpdateMappedDown = (
 		evaluatorInternal.getLayerRunner().getMappedConnectionPointsFromBusLayer(aboveBusLayerConnectionPointsToUpdate)
 	);
-			assert(aboveBusLayerConnectionPointsToUpdateMappedDown.size() == aboveBusLayerConnectionPointsToUpdate.size());
+	assert(aboveBusLayerConnectionPointsToUpdateMappedDown.size() == aboveBusLayerConnectionPointsToUpdate.size());
 
 
 	const Circuit* circuit = circuitManager.getCircuit(circuitId).get();
@@ -503,13 +503,12 @@ void EvalLogicSimulator::processEdits() {
 			continue;
 		}
 		const EvaluatorInternal& otherEvaluatorInternal = otherCircuit->getEvaluator().getEvaluatorInternal();
-		std::vector<SimulatorMappingUpdate> simulatorMappingUpdates;
-		std::vector<EvalConnectionPoint> bottomConnectionPoints;
 		VecVecEvalConnectionPoint topConnectionPoints = evaluatorInternal.mapFromBottomConnectionPointsToTopConnectionPointsForOtherEvals(
 			aboveBusLayerConnectionPointsToUpdate,
 			iter.second.address
 		);
 		assert(topConnectionPoints.size() == aboveBusLayerConnectionPointsToUpdateMappedDown.size());
+		std::vector<SimulatorMappingUpdate> simulatorMappingUpdates;
 		for (unsigned int i = 0; i < topConnectionPoints.size(); i++) {
 			if (topConnectionPoints[i].empty()) continue;;
 			std::pair<SimulatorStateIndexVecVariant, SimulatorStateIndexVecVariant> simulatorIndexes = getPinAndNotPinSimulatorId(aboveBusLayerConnectionPointsToUpdateMappedDown[i]);

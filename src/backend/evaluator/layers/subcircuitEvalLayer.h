@@ -32,6 +32,7 @@ public:
 		eval_gate_id gateId,
 		const Address& address
 	) const;
+	void getReversedMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint, VecEvalConnectionPoint& evalConnectionPoints) const;
 
 	// Only called by EvaluatorInternal
 	void processICEdits(circuit_id_t circuitId, const std::vector<std::tuple<connection_end_id_t, EvalConnectionPoint, EvalConnectionPoint>>& updatedPortIds);

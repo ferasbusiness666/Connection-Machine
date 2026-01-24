@@ -18,8 +18,8 @@ public:
 
 	void addGate(eval_gate_id gateId, EvalGateType type);
 	void removeGate(eval_gate_id gateId);
-	void addConnection(const EvalConnection& evalConnection, unsigned int weight = 1);
-	void removeConnection(const EvalConnection& evalConnection, unsigned int weight = 1);
+	void addConnection(const EvalConnection& evalConnection, unsigned int weight);
+	void removeConnection(const EvalConnection& evalConnection, unsigned int weight);
 	void changeGateType(eval_gate_id gateId, EvalGateType newType);
 
  	const EvalGate* getGate(eval_gate_id gateId) const {

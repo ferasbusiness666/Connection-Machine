@@ -43,10 +43,14 @@ void SubcircuitEvalLayer::run() {
 						(otherConnectionPoint.gateId == pair.second.gateId && otherConnectionPoint.connectionEndId.get() > connectionsPair.first.get())
 					) {
 						eval_gate_id otherGateId = subcircuitDataIter->second.otherSimulatorToThisSimulatorIdMapping.at(otherConnectionPoint.gateId);
-						nextState.removeConnection(EvalConnection(
+						unsigned int weight = nextState.getConnectionWeight(EvalConnection(
 							EvalConnectionPoint(thisGateId, connectionsPair.first),
 							EvalConnectionPoint(otherGateId, otherConnectionPoint.connectionEndId)
 						));
+						nextState.removeConnection(EvalConnection(
+							EvalConnectionPoint(thisGateId, connectionsPair.first),
+							EvalConnectionPoint(otherGateId, otherConnectionPoint.connectionEndId)
+						), weight);
 					}
 				}
 			}
@@ -209,6 +213,33 @@ VecVecEvalConnectionPoint SubcircuitEvalLayer::getReversedMappedConnectionPointG
 	return circuit->getEvaluator().getEvaluatorInternal().mapFromBottomConnectionPointGroupsToTopConnectionPointsForOtherEvals(subcircuitConnectionPoints, address);
 }
 
+void SubcircuitEvalLayer::getReversedMappedEvalConnectionPoint(EvalConnectionPoint evalConnectionPoint, VecEvalConnectionPoint& evalConnectionPoints) const {
+	auto connectionPointIterPair = nextState.getConnectionPointReverseRemapping().equal_range(evalConnectionPoint);
+	for (auto iter = connectionPointIterPair.first; iter != connectionPointIterPair.second; iter++) {
+		auto subcircuitsIter = subcircuits.find(iter->second.gateId);
+		assert(subcircuitsIter != subcircuits.end());
+		const Circuit* circuit = circuitManager.getCircuit(subcircuitsIter->second.circuitId).get();
+		assert(circuit);
+		auto portDataIter = circuit->getEvaluator().getEvaluatorInternal().getPortToInternalPointMapping().find(iter->second.connectionEndId);
+		if (portDataIter->second.portType == BlockData::ConnectionData::PortType::OUTPUT) {
+			evalConnectionPoints.push_back(iter->second);
+			continue;
+		}
+		const EvalGate* gate = currentState.getGate(iter->second.gateId);
+		assert(gate);
+		auto connectionsContainerIter = gate->connections.find(iter->second.connectionEndId);
+		if (connectionsContainerIter == gate->connections.end()) return;
+		for (EvalConnectionPoint connectionPoint : connectionsContainerIter->second) {
+			evalConnectionPoints.push_back(connectionPoint);
+		}
+	}
+	auto evalGateIdIterPair = nextState.getGateIdReverseRemapping().equal_range(evalConnectionPoint.gateId);
+	for (auto iter = evalGateIdIterPair.first; iter != evalGateIdIterPair.second; iter++) {
+		evalConnectionPoints.emplace_back(iter->second, evalConnectionPoint.connectionEndId);
+	}
+	assert(nextState.getGate(evalConnectionPoint.gateId));
+}
+
 void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vector<std::tuple<connection_end_id_t, EvalConnectionPoint, EvalConnectionPoint>>& updatedPortIds) {
 	evaluator.startEdit();
 	const Circuit* circuit = circuitManager.getCircuit(circuitId).get();
@@ -229,10 +260,14 @@ void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vect
 					std::unordered_set<EvalConnectionPoint> otherConnectionPoints = connectionsIter->second;
 					for (const EvalConnectionPoint& otherConnectionPoint : otherConnectionPoints) {
 						if (!subcircuitsPair.second.thisSimulatorIdMappingToOtherSimulator.contains(otherConnectionPoint.gateId)) {
-							nextState.removeConnection(EvalConnection(
+							unsigned int weight = nextState.getConnectionWeight(EvalConnection(
 								EvalConnectionPoint(connectionPointRemappingIter->second.gateId, connectionPointRemappingIter->second.connectionEndId),
 								otherConnectionPoint
 							));
+							nextState.removeConnection(EvalConnection(
+								EvalConnectionPoint(connectionPointRemappingIter->second.gateId, connectionPointRemappingIter->second.connectionEndId),
+								otherConnectionPoint
+							), weight);
 						}
 					}
 				}
@@ -327,10 +362,14 @@ void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vect
 						} else {
 							if (nextState.getConnectionPointRemappingToNothing().contains(otherConnectionPoint)) continue;
 						}
-						nextState.addConnection(EvalConnection(
+						unsigned int weight = currentState.getConnectionWeight(EvalConnection(
 							connectionPoint,
 							otherConnectionPoint
 						));
+						nextState.addConnection(EvalConnection(
+							connectionPoint,
+							otherConnectionPoint
+						), weight);
 					}
 				}
 			}

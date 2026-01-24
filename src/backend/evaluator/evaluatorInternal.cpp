@@ -455,7 +455,7 @@ void EvaluatorInternal::createConnection(Position outputBlockPosition, Position 
 		inputBlockData->getInputOrBidirectionalConnectionId(inputPosition - inputBlockPosition, inputRemappingIter->second.second);
 	assert(inputConnectionEndId);
 
-	layerRunner.getInputLayer().addConnection(EvalConnection(outputGate->gateId, *outputConnectionEndId, inputGate->gateId, *inputConnectionEndId));
+	layerRunner.getInputLayer().addConnection(EvalConnection(outputGate->gateId, *outputConnectionEndId, inputGate->gateId, *inputConnectionEndId), 1);
 }
 
 void EvaluatorInternal::removeConnection(Position outputBlockPosition, Position outputPosition, Position inputBlockPosition, Position inputPosition) {
@@ -477,7 +477,7 @@ void EvaluatorInternal::removeConnection(Position outputBlockPosition, Position 
 		inputBlockData->getInputOrBidirectionalConnectionId(inputPosition - inputBlockPosition, inputRemappingIter->second.second);
 	assert(inputConnectionEndId);
 
-	layerRunner.getInputLayer().removeConnection(EvalConnection(outputGate->gateId, *outputConnectionEndId, inputGate->gateId, *inputConnectionEndId));
+	layerRunner.getInputLayer().removeConnection(EvalConnection(outputGate->gateId, *outputConnectionEndId, inputGate->gateId, *inputConnectionEndId), 1);
 }
 
 std::optional<std::pair<Position, Position>> EvaluatorInternal::mapFromTopConnectionPointToPointAndBlockPosition(EvalConnectionPoint topConnectionPoint) const {

@@ -181,6 +181,6 @@ void LayerRunner::getReversedMappedEvalConnectionPointForOtherEvals(EvalConnecti
 		}
 	}
 	for (EvalConnectionPoint point : evalConnectionPoints) {
-		layers[0]->getReversedMappedEvalConnectionPoint(point, outputVector);
+		dynamic_cast<const SubcircuitEvalLayer*>(layers[0].get())->getReversedMappedEvalConnectionPoint(point, outputVector);
 	}
 }

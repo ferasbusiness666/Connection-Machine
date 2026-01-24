@@ -61,7 +61,8 @@ void JunctionMergeEvalLayer::run() {
 				if (!gate->connections.empty()) {
 					const std::unordered_set<EvalConnectionPoint>& connections = gate->connections.at(0);
 					do {
-						nextState.removeConnection(EvalConnection(EvalConnectionPoint(iter.first, 0), *(connections.begin())));
+						unsigned int weight = nextState.getConnectionWeight(EvalConnection(EvalConnectionPoint(iter.first, 0), *(connections.begin())));
+						nextState.removeConnection(EvalConnection(EvalConnectionPoint(iter.first, 0), *(connections.begin())), weight);
 					} while ((!gate->connections.empty()));
 				}
 			}
@@ -110,7 +111,7 @@ void JunctionMergeEvalLayer::run() {
 			assert(currentState.getGate(iter.first.connectionPointA.gateId));
 			junctionsToScan.insert(iter.first.connectionPointA.gateId);
 		} else {
-			nextState.addConnection(connection);
+			nextState.addConnection(connection, iter.second);
 		}
 	}
 	std::set<eval_gate_id> gatesTokeep;
