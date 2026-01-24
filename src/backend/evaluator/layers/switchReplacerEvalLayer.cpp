@@ -5,45 +5,39 @@ void SwitchReplacerEvalLayer::run() {
 	for (auto iter : currentState.getRemovedConnections()) {
 		EvalConnection connection = iter.first;
 		if (connection.connectionPointA.connectionEndId == 1) {
-			const EvalGate* gate = currentState.getGate(connection.connectionPointA.gateId);
-			EvalGateType type = gate ? gate->type : currentState.getRemovedGates().at(iter.first.connectionPointA.gateId);
+			const EvalGate* gate = nextState.getGate(connection.connectionPointA.gateId);
 			if (
-				type == getEvalGateType(BlockType::SWITCH) ||
-				type == getEvalGateType(BlockType::BUTTON) ||
-				type == getEvalGateType(BlockType::TICK_BUTTON)
+				gate->type == getEvalGateType(BlockType::JUNCTION) ||
+				gate->type == getEvalGateType(BlockType::SWITCH) || // test these incase we changed the block back already
+				gate->type == getEvalGateType(BlockType::BUTTON) ||
+				gate->type == getEvalGateType(BlockType::TICK_BUTTON)
 			) {
-				if (gate && !gate->connections.contains(1)) {
-					nextState.getConnectionPointRemapping().erase(connection.connectionPointA);
-					auto iterPair = nextState.getConnectionPointReverseRemapping().equal_range(EvalConnectionPoint(connection.connectionPointA.gateId, 0));
-					for (auto reverseRemappingIter = iterPair.first; reverseRemappingIter != iterPair.second; reverseRemappingIter++) {
-						if (reverseRemappingIter->second == connection.connectionPointA) {
-							nextState.getConnectionPointReverseRemapping().erase(reverseRemappingIter);
-						}
-						break;
+				if (!currentState.getRemovedGates().contains(iter.first.connectionPointA.gateId)) {
+					const EvalGate* curGate = currentState.getGate(connection.connectionPointA.gateId);
+					if (!curGate->connections.contains(1)) {
+						nextState.getConnectionPointRemapping().erase(connection.connectionPointA);
+						nextState.getConnectionPointReverseRemapping().erase(EvalConnectionPoint(connection.connectionPointA.gateId, 0));
+						nextState.changeGateType(connection.connectionPointA.gateId, curGate->type);
 					}
-					nextState.changeGateType(connection.connectionPointA.gateId, type);
 				}
 				connection.connectionPointA.connectionEndId = 0;
 			}
 		}
 		if (connection.connectionPointB.connectionEndId == 1) {
-			const EvalGate* gate = currentState.getGate(connection.connectionPointB.gateId);
-			EvalGateType type = gate ? gate->type : currentState.getRemovedGates().at(iter.first.connectionPointB.gateId);
+			const EvalGate* gate = nextState.getGate(connection.connectionPointB.gateId);
 			if (
-				type == getEvalGateType(BlockType::SWITCH) ||
-				type == getEvalGateType(BlockType::BUTTON) ||
-				type == getEvalGateType(BlockType::TICK_BUTTON)
+				gate->type == getEvalGateType(BlockType::JUNCTION) ||
+				gate->type == getEvalGateType(BlockType::SWITCH) || // test these incase we changed the block back already
+				gate->type == getEvalGateType(BlockType::BUTTON) ||
+				gate->type == getEvalGateType(BlockType::TICK_BUTTON)
 			) {
-				if (gate && !gate->connections.contains(1)) {
-					nextState.getConnectionPointRemapping().erase(connection.connectionPointB);
-					auto iterPair = nextState.getConnectionPointReverseRemapping().equal_range(EvalConnectionPoint(connection.connectionPointB.gateId, 0));
-					for (auto reverseRemappingIter = iterPair.first; reverseRemappingIter != iterPair.second; reverseRemappingIter++) {
-						if (reverseRemappingIter->second == connection.connectionPointB) {
-							nextState.getConnectionPointReverseRemapping().erase(reverseRemappingIter);
-						}
-						break;
+				if (!currentState.getRemovedGates().contains(iter.first.connectionPointB.gateId)) {
+					const EvalGate* curGate = currentState.getGate(connection.connectionPointB.gateId);
+					if (!curGate->connections.contains(1)) {
+						nextState.getConnectionPointRemapping().erase(connection.connectionPointB);
+						nextState.getConnectionPointReverseRemapping().erase(EvalConnectionPoint(connection.connectionPointB.gateId, 0));
+						nextState.changeGateType(connection.connectionPointB.gateId, curGate->type);
 					}
-					nextState.changeGateType(connection.connectionPointB.gateId, type);
 				}
 				connection.connectionPointB.connectionEndId = 0;
 			}
@@ -53,6 +47,8 @@ void SwitchReplacerEvalLayer::run() {
 	for (auto iter : currentState.getRemovedGates()) {
 		nextState.getGateIdRemapping().erase(iter.first);
 		nextState.getGateIdReverseRemapping().erase(iter.first);
+		nextState.getConnectionPointRemapping().erase(EvalConnectionPoint(iter.first, 1));
+		nextState.getConnectionPointReverseRemapping().erase(EvalConnectionPoint(iter.first, 0));
 		nextState.removeGate(iter.first);
 	}
 	for (auto iter : currentState.getAddedGates()) {
@@ -100,12 +96,8 @@ void SwitchReplacerEvalLayer::run() {
 		nextState.addGateIdRemappingsUpdated(gateId);
 	}
 	for (EvalConnectionPoint connectionPoint : currentState.getConnectionPointRemappingsUpdated()) {
-		if (connectionPoint.connectionEndId == 1) {
-			const EvalGate* gate = nextState.getGate(connectionPoint.gateId);
-			assert(gate);
-			if (isJunctionType(gate->type)) {
-				connectionPoint.connectionEndId = 0;
-			}
+		if (connectionPoint.connectionEndId == 1 && nextState.getConnectionPointRemapping().contains(connectionPoint)) {
+			connectionPoint.connectionEndId = 0;
 		}
 		nextState.addConnectionPointRemappingsUpdated(connectionPoint);
 	}
