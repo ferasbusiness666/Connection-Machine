@@ -2,7 +2,8 @@
 #define simulatorGates_h
 
 #include "logicState.h"
-#include "backend/evaluator/evalDefs.h"
+#include "simulatorDefs.h"
+#include "backend/blockData/blockData.h"
 #include "backend/container/block/connectionEnd.h"
 
 class SimulatorGate {
@@ -98,7 +99,11 @@ public:
 
 	void addInput(simulator_gate_id_t inputId, connection_end_id_t portId) override {
 		if (input.has_value()) {
-			logError("SingleInputGate already has an input", "SingleInputGate::addInput");
+			if (input.value() == inputId) {
+				weight++;
+			} else {
+				logError("SingleInputGate already has an input", "SingleInputGate::addInput"); // this is because rn we do weights into single input gates
+			}
 			return;
 		}
 		input = inputId;
@@ -106,10 +111,15 @@ public:
 
 	void removeInput(simulator_gate_id_t inputId, connection_end_id_t portId) override {
 		if (input == inputId) {
-			input.reset();
+			if (weight == 1) {
+				input.reset();
+			} else {
+				weight--;
+			}
 		} else {
-			logError("SingleInputGate does not have the specified input", "SingleInputGate::removeInput");
+			logError("SingleInputGate does not have the specified input", "SingleInputGate::removeInput"); // this is because rn we do weights into single input gates
 		}
+		assert(weight != 0);
 	}
 
 	void removeIdRefs(simulator_gate_id_t otherId) override {
@@ -119,6 +129,7 @@ public:
 	}
 
 protected:
+	unsigned int weight = 1;
 	std::optional<simulator_gate_id_t> input;
 };
 

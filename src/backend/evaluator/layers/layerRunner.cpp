@@ -24,11 +24,17 @@ LayerRunner::~LayerRunner() = default;
 void LayerRunner::runAll() {
 	// logInfo("------------------------------------------------");
 	// evalTopLayerState->visualize();
+	// unsigned int index = 0;
 	for (std::unique_ptr<BaseEvalLayer>& layer : layers) {
-		// logInfo("----");
-		// layer->getNextState().visualize();
+		// if (index < 4) {
+		// 	logInfo("-- {} --", "", index);
+		// 	layer->getNextState().visualize();
+		// }
 		layer->run();
-		// layer->getNextState().visualize();
+		// if (index < 4) {
+		// 	layer->getNextState().visualize();
+		// }
+		// index++;
 	}
 }
 

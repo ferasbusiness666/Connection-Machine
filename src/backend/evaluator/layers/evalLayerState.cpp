@@ -35,8 +35,9 @@ void EvalLayerState::removeGate(eval_gate_id gateId) { // TODO: add transparent 
 			} else if (addedConnectionIter->second == weight) {
 				addedConnections.erase(addedConnectionIter);
 			} else {
-				assert(addedConnectionIter->second > weight);
-				addedConnectionIter->second -= weight;
+				assert(addedConnectionIter->second < weight);
+				removedConnections.emplace(connection, weight - addedConnectionIter->second);
+				addedConnections.erase(addedConnectionIter);
 			}
 		}
 	}
@@ -88,21 +89,23 @@ void EvalLayerState::addConnection(const EvalConnection& evalConnection, unsigne
 		} else if (removedConnectionIter->second == weight) {
 			removedConnections.erase(removedConnectionIter);
 		} else {
-			assert(removedConnectionIter->second > weight);
 			removedConnectionIter->second -= weight;
 		}
 	}
 }
 
-void EvalLayerState::removeConnection(const EvalConnection& evalConnection, unsigned int weight) { // TODO: add transparent junction splitting
+void EvalLayerState::removeConnection(const EvalConnection& connection, unsigned int weight) { // TODO: add transparent junction splitting
 	assert(weight != 0);
 	bool removeConnection = true;
-	auto connectionWeightIter = connectionWeights.find(evalConnection);
+	unsigned int currentWeight = 1;
+	auto connectionWeightIter = connectionWeights.find(connection);
 	if (connectionWeightIter == connectionWeights.end()) {
 		assert(weight == 1);
 	} else if (connectionWeightIter->second == weight) {
+		currentWeight = weight;
 		connectionWeights.erase(connectionWeightIter);
 	} else {
+		currentWeight = connectionWeightIter->second;
 		assert(connectionWeightIter->second > weight);
 		connectionWeightIter->second -= weight;
 		if (connectionWeightIter->second == 1) connectionWeights.erase(connectionWeightIter);
@@ -110,30 +113,32 @@ void EvalLayerState::removeConnection(const EvalConnection& evalConnection, unsi
 	}
 
 	if (removeConnection) {
-		auto gateAIterBoolPair = gates.find(evalConnection.connectionPointA.gateId);
+		auto gateAIterBoolPair = gates.find(connection.connectionPointA.gateId);
 		assert(gateAIterBoolPair != gates.end());
-		auto gateAConnectionIter = gateAIterBoolPair->second.connections.find(evalConnection.connectionPointA.connectionEndId);
+		auto gateAConnectionIter = gateAIterBoolPair->second.connections.find(connection.connectionPointA.connectionEndId);
 		assert(gateAConnectionIter != gateAIterBoolPair->second.connections.end());
-		assert(gateAConnectionIter->second.contains(evalConnection.connectionPointB));
+		assert(gateAConnectionIter->second.contains(connection.connectionPointB));
 		if (gateAConnectionIter->second.size() == 1) gateAIterBoolPair->second.connections.erase(gateAConnectionIter);
-		else gateAConnectionIter->second.erase(evalConnection.connectionPointB);
+		else gateAConnectionIter->second.erase(connection.connectionPointB);
 
-		auto gateBIterBoolPair = gates.find(evalConnection.connectionPointB.gateId);
+		auto gateBIterBoolPair = gates.find(connection.connectionPointB.gateId);
 		assert(gateBIterBoolPair != gates.end());
-		auto gateBConnectionIter = gateBIterBoolPair->second.connections.find(evalConnection.connectionPointB.connectionEndId);
+		auto gateBConnectionIter = gateBIterBoolPair->second.connections.find(connection.connectionPointB.connectionEndId);
 		assert(gateAConnectionIter != gateBIterBoolPair->second.connections.end());
-		assert(gateBConnectionIter->second.contains(evalConnection.connectionPointA));
+		assert(gateBConnectionIter->second.contains(connection.connectionPointA));
 		if (gateBConnectionIter->second.size() == 1) gateBIterBoolPair->second.connections.erase(gateBConnectionIter);
-		else gateBConnectionIter->second.erase(evalConnection.connectionPointA);
+		else gateBConnectionIter->second.erase(connection.connectionPointA);
 	}
 
-	auto addedConnectionIter = addedConnections.find(evalConnection);
+	auto addedConnectionIter = addedConnections.find(connection);
 	if (addedConnectionIter == addedConnections.end()) {
-		removedConnections[evalConnection] += weight;
+		removedConnections[connection] += weight;
 	} else if (addedConnectionIter->second == weight) {
 		addedConnections.erase(addedConnectionIter);
+	} else if (addedConnectionIter->second < weight) {
+		removedConnections.emplace(connection, weight - addedConnectionIter->second);
+		addedConnections.erase(addedConnectionIter);
 	} else {
-		assert(addedConnectionIter->second > weight);
 		addedConnectionIter->second -= weight;
 	}
 }

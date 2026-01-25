@@ -202,12 +202,13 @@ std::tuple<
 			if (evalGate->type == getEvalGateType(BlockType::JUNCTION_H)) foundPullUp = true;
 			if (evalGate->type == getEvalGateType(BlockType::JUNCTION_X)) foundPullDown = foundPullUp = true;
 			if (!evalGate->connections.empty()) {
-				for (EvalConnectionPoint connection : evalGate->connections.at(0)) {
-					auto pair = visted.emplace(connection, 1);
+				for (EvalConnectionPoint otherConnectionPoint : evalGate->connections.at(0)) {
+					unsigned int weight = evalLayerState.getConnectionWeight(EvalConnection(EvalConnectionPoint(evalGate->gateId, 0), otherConnectionPoint));
+					auto pair = visted.emplace(otherConnectionPoint, weight);
 					if (pair.second) {
-						junctions.push_back(connection.gateId);
+						junctions.push_back(otherConnectionPoint.gateId);
 					} else {
-						pair.first->second += 1;
+						pair.first->second += weight;
 					}
 				}
 			}

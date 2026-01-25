@@ -490,6 +490,7 @@ void LogicSimulator::removeGate(simulator_gate_id_t simulatorId) {
 	for (const auto& outId : outputIds) {
 		auto depIt = outputDependencies.find(outId);
 		if (depIt != outputDependencies.end()) {
+			assert(false);
 			for (const auto& dependency : depIt->second) {
 				auto depLocIt = gateLocations.find(dependency.gateId);
 				if (depLocIt == gateLocations.end()) continue;

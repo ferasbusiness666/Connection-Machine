@@ -5,6 +5,7 @@
 #include "backend/address.h"
 #include "logicSimulator.h"
 #include "simulatorDefs.h"
+#include "../evalDefs.h"
 
 class EvaluatorInternal;
 class BlockDataManager;
