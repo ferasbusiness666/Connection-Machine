@@ -1,6 +1,30 @@
 #include "junctionAddEvalLayer.h"
 #include "evalLayerState.h"
 
+// before update
+// URCL cpu
+// addedGateCount:         6036
+// removedGateCount:       0
+// addedConnectionCount:   12227
+// removedConnectionCount: 0
+// 256 regs
+// addedGateCount:         79386
+// removedGateCount:       0
+// addedConnectionCount:   121750
+// removedConnectionCount: 0
+
+// after update
+// URCL cpu
+// addedGateCount:         4025
+// removedGateCount:       0
+// addedConnectionCount:   10216
+// removedConnectionCount: 0
+// 256 regs
+// addedGateCount:         50508
+// removedGateCount:       0
+// addedConnectionCount:   92872
+// removedConnectionCount: 0
+
 BlockData::ConnectionData::PortType getConnectionEndIdSinglePinPortType(EvalGateType gateType, connection_end_id_t connectionEndId) {
 	// ignore lights, junctions, busses, custom blocks
 	switch (getBlockType(gateType)) {

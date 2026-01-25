@@ -415,8 +415,25 @@ std::vector<SimulatorStateIndexVecVariant> EvalLogicSimulator::getPinSimulatorId
 	return output;
 }
 
+// unsigned long long addedGateCount = 0;
+// unsigned long long removedGateCount = 0;
+// unsigned long long addedConnectionCount = 0;
+// unsigned long long removedConnectionCount = 0;
+
+// void printCounts() {
+// 	std::cout << "addedGateCount:         " << addedGateCount << "\n";
+// 	std::cout << "removedGateCount:       " << removedGateCount << "\n";
+// 	std::cout << "addedConnectionCount:   " << addedConnectionCount << "\n";
+// 	std::cout << "removedConnectionCount: " << removedConnectionCount << std::endl;
+// }
+
 void EvalLogicSimulator::processEdits() {
 	const EvalLayerState& evalLayerState = evaluatorInternal.getLayerRunner().getOutputLayer();
+	// addedGateCount += evalLayerState.getAddedGates().size();
+	// removedGateCount += evalLayerState.getRemovedGates().size();
+	// addedConnectionCount += evalLayerState.getAddedConnections().size();
+	// removedConnectionCount += evalLayerState.getRemovedConnections().size();
+	// printCounts();
 	{
 		SimPauseGuard simPauseGuard(logicSimulator);
 		for (auto iter : evalLayerState.getRemovedConnections()) {
