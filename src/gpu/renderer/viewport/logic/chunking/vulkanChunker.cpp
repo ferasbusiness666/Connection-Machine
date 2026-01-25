@@ -61,11 +61,11 @@ VulkanLogicAllocation::VulkanLogicAllocation(
 	// TODO - should pre-allocate buffers with size and pool them
 	// TODO - maybe should use smaller size coordinates with one big offset
 
-	// simulatorIds = { 0 }; // set first state index to 0 for blocks that dont have any state
+	simulatorIds = { 0 }; // set first state index to 0 for blocks that dont have any state
 
 	// Generate block instances
 	if (blocks.size() > 0) {
-		std::vector<size_t> indices;
+		std::vector<size_t> indices = { 0 };
 		std::vector<std::pair<Position, virtual_connection_id_t>> virtualConnections;
 		std::vector<BlockInstance> blockInstances;
 		blockInstances.reserve(blocks.size());
@@ -122,7 +122,7 @@ VulkanLogicAllocation::VulkanLogicAllocation(
 
 	// Generate wire vertices
 	if (wires.size() > 0) {
-		std::vector<size_t> indices;
+		std::vector<size_t> indices = { 0 };
 		std::vector<Position> positions;
 
 		struct WireSegment {
