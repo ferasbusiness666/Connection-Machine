@@ -178,7 +178,7 @@ void LogicSimulator::setState(simulator_gate_id_t id, logic_state_t st) {
 	std::unique_lock lkA(statesAMutex, std::try_to_lock);
 
 	if (lkMain.owns_lock() && lkA.owns_lock()) {
-		extendDataVectors(id);
+		extendDataVectors(id); // why
 		if (!gateLocations.contains(id)) {
 			return;
 		}
@@ -189,7 +189,7 @@ void LogicSimulator::setState(simulator_gate_id_t id, logic_state_t st) {
 		statesA[id] = st;
 		statesB[id] = st;
 		setStateUsed[replayHead] = true;
-		for (auto& gate : junctions) gate.doubleTick(statesA, statesB);
+		// for (auto& gate : junctions) gate.doubleTick(statesA, statesB); // disabling because this greatly breaks the simulation
 	} else {
 		std::lock_guard<std::mutex> lock(stateChangeQueueMutex);
 		pendingStateChanges.push({ id, st });
