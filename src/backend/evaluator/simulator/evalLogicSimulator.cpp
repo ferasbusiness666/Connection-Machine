@@ -98,7 +98,7 @@ logic_state_t EvalLogicSimulator::getState(const Address& address) const {
 
 std::variant<logic_state_t, std::vector<logic_state_t>> EvalLogicSimulator::getPinState(const Address& address) {
 	std::lock_guard lock(mux);
-	SimulatorStateIndexVecVariant simulatorIdVariant = getPinSimulatorId(address);
+	SimulatorStateIndexVecVariant simulatorIdVariant = getPinSimulatorId_noMux(address);
 	if (std::holds_alternative<simulator_gate_id_t>(simulatorIdVariant)) {
 		simulator_gate_id_t simulatorId = std::get<simulator_gate_id_t>(simulatorIdVariant);
 		return getState(simulatorId);

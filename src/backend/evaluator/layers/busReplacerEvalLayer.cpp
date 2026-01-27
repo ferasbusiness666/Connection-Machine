@@ -47,15 +47,15 @@ void BusReplacerEvalLayer::run() {
 				const EvalGate* nextGate = nextState.getGate(busJunctionsIter->second[0]);
 				assert(nextGate);
 				if (nextGate->connections.empty()) {
-					const EvalGate* gateB = currentState.getGate(iter.first.connectionPointB.gateId);
-					if (!gateB || gateB->connections.empty()) {
+					// const EvalGate* gateB = currentState.getGate(iter.first.connectionPointB.gateId);
+					// if (!gateB || gateB->connections.empty()) {
 						for (unsigned int i = 1; i < busJunctionsIter->second.size(); i++) {
 							nextState.removeGate(busJunctionsIter->second[i]);
 							nextState.getGateIdReverseRemapping().erase(busJunctionsIter->second[i]);
 						}
 						if (currentState.getGate(busJunctionsIter->second[0])) nextState.addGateIdRemappingsUpdated(busJunctionsIter->second[0]);
 						busJunctions.erase(busJunctionsIter);
-					}
+					// }
 				}
 			}
 		} else if (bussesIterB != busses.end()) {
@@ -83,15 +83,15 @@ void BusReplacerEvalLayer::run() {
 				const EvalGate* nextGate = nextState.getGate(busJunctionsIter->second[0]);
 				assert(nextGate);
 				if (nextGate->connections.empty()) {
-					const EvalGate* gateA = currentState.getGate(iter.first.connectionPointA.gateId);
-					if (!gateA || gateA->connections.empty()) {
+					// const EvalGate* gateA = currentState.getGate(iter.first.connectionPointA.gateId);
+					// if (!gateA || gateA->connections.empty()) {
 						for (unsigned int i = 1; i < busJunctionsIter->second.size(); i++) {
 							nextState.removeGate(busJunctionsIter->second[i]);
 							nextState.getGateIdReverseRemapping().erase(busJunctionsIter->second[i]);
 						}
 						if (currentState.getGate(busJunctionsIter->second[0])) nextState.addGateIdRemappingsUpdated(busJunctionsIter->second[0]);
 						busJunctions.erase(busJunctionsIter);
-					}
+					// }
 				}
 			}
 		} else {
