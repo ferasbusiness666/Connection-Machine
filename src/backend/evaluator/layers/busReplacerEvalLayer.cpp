@@ -53,6 +53,7 @@ void BusReplacerEvalLayer::run() {
 							nextState.removeGate(busJunctionsIter->second[i]);
 							nextState.getGateIdReverseRemapping().erase(busJunctionsIter->second[i]);
 						}
+						nextState.addGateIdRemappingsUpdated(busJunctionsIter->second[0]);
 						busJunctions.erase(busJunctionsIter);
 					}
 				}
@@ -88,6 +89,7 @@ void BusReplacerEvalLayer::run() {
 							nextState.removeGate(busJunctionsIter->second[i]);
 							nextState.getGateIdReverseRemapping().erase(busJunctionsIter->second[i]);
 						}
+						nextState.addGateIdRemappingsUpdated(busJunctionsIter->second[0]);
 						busJunctions.erase(busJunctionsIter);
 					}
 				}
@@ -138,6 +140,7 @@ void BusReplacerEvalLayer::run() {
 							EvalConnectionPoint(iter.first, connectionData.first),
 							EvalConnectionPoint(pair.first->second, 0)
 						);
+						nextState.addGateIdRemappingsUpdated(pair.first->second);
 					} else {
 						for (unsigned int lane = 0; lane < std::get<unsigned int>(bitConfiguration); lane++) {
 							iterBool2.first->second.push_back(lane);
@@ -151,6 +154,7 @@ void BusReplacerEvalLayer::run() {
 								EvalConnectionPoint(pair.first->second, 0),
 								EvalConnectionPoint(iter.first, connectionData.first)
 							);
+							nextState.addGateIdRemappingsUpdated(pair.first->second);
 						}
 					}
 				} else {
@@ -171,6 +175,7 @@ void BusReplacerEvalLayer::run() {
 							EvalConnectionPoint(iter.first, connectionData.first),
 							EvalConnectionPoint(pair.first->second, 0)
 						);
+						nextState.addGateIdRemappingsUpdated(pair.first->second);
 					} else {
 						for (unsigned int lane : bitConfigurationVec) {
 							iterBool2.first->second.push_back(lane);
@@ -184,6 +189,7 @@ void BusReplacerEvalLayer::run() {
 								EvalConnectionPoint(pair.first->second, 0),
 								EvalConnectionPoint(iter.first, connectionData.first)
 							);
+							nextState.addGateIdRemappingsUpdated(pair.first->second);
 						}
 					}
 				}
@@ -237,6 +243,7 @@ void BusReplacerEvalLayer::run() {
 						nextState.addGate(junctionId, gateB->type);
 						assert(currentState.getGate(iter.first.connectionPointA.gateId));
 						nextState.getGateIdReverseRemapping().emplace(junctionId, iter.first.connectionPointB.gateId);
+						nextState.addGateIdRemappingsUpdated(junctionId);
 					}
 				}
 				for (unsigned int i = 0; i < busConnectionEndIdIterA->second.size(); i++) {
@@ -272,6 +279,7 @@ void BusReplacerEvalLayer::run() {
 						nextState.addGate(junctionId, gateA->type);
 						assert(currentState.getGate(iter.first.connectionPointB.gateId));
 						nextState.getGateIdReverseRemapping().emplace(junctionId, iter.first.connectionPointA.gateId);
+						nextState.addGateIdRemappingsUpdated(junctionId);
 					}
 				}
 				for (unsigned int i = 0; i < busConnectionEndIdIterB->second.size(); i++) {
@@ -290,6 +298,9 @@ void BusReplacerEvalLayer::run() {
 	for (eval_gate_id gateId : currentState.getGateIdRemappingsUpdateds()) {
 		auto bussesIter = busses.find(gateId);
 		if (bussesIter != busses.end()) {
+			for (std::pair<unsigned int, eval_gate_id> junctionId : bussesIter->second.junctions) {
+				nextState.addGateIdRemappingsUpdated(junctionId.second);
+			}
 			continue;
 		}
 		auto busJunctionsIter = busJunctions.find(gateId);
@@ -305,6 +316,9 @@ void BusReplacerEvalLayer::run() {
 	for (EvalConnectionPoint connectionPoint : currentState.getConnectionPointRemappingsUpdated()) {
 		auto bussesIter = busses.find(connectionPoint.gateId);
 		if (bussesIter != busses.end()) {
+			for (std::pair<unsigned int, eval_gate_id> junctionId : bussesIter->second.junctions) {
+				nextState.addGateIdRemappingsUpdated(junctionId.second);
+			}
 			continue;
 		}
 		if (connectionPoint.connectionEndId == 0) {

@@ -18,6 +18,7 @@ void SwitchReplacerEvalLayer::run() {
 						nextState.getConnectionPointRemapping().erase(connection.connectionPointA);
 						nextState.getConnectionPointReverseRemapping().erase(EvalConnectionPoint(connection.connectionPointA.gateId, 0));
 						nextState.changeGateType(connection.connectionPointA.gateId, curGate->type);
+						nextState.addGateIdRemappingsUpdated(connection.connectionPointA.gateId);
 					}
 				}
 				connection.connectionPointA.connectionEndId = 0;
@@ -37,6 +38,7 @@ void SwitchReplacerEvalLayer::run() {
 						nextState.getConnectionPointRemapping().erase(connection.connectionPointB);
 						nextState.getConnectionPointReverseRemapping().erase(EvalConnectionPoint(connection.connectionPointB.gateId, 0));
 						nextState.changeGateType(connection.connectionPointB.gateId, curGate->type);
+						nextState.addGateIdRemappingsUpdated(connection.connectionPointA.gateId);
 					}
 				}
 				connection.connectionPointB.connectionEndId = 0;
@@ -70,6 +72,7 @@ void SwitchReplacerEvalLayer::run() {
 					nextState.getConnectionPointReverseRemapping().emplace(EvalConnectionPoint(connection.connectionPointA.gateId, 0), connection.connectionPointA);
 					nextState.addConnectionPointRemappingsUpdated(EvalConnectionPoint(connection.connectionPointA.gateId, 0));
 					nextState.changeGateType(connection.connectionPointA.gateId, getEvalGateType(BlockType::JUNCTION));
+					nextState.addGateIdRemappingsUpdated(connection.connectionPointA.gateId);
 				}
 				connection.connectionPointA.connectionEndId = 0;
 			}
@@ -86,6 +89,7 @@ void SwitchReplacerEvalLayer::run() {
 					nextState.getConnectionPointReverseRemapping().emplace(EvalConnectionPoint(connection.connectionPointB.gateId, 0), connection.connectionPointB);
 					nextState.addConnectionPointRemappingsUpdated(EvalConnectionPoint(connection.connectionPointB.gateId, 0));
 					nextState.changeGateType(connection.connectionPointB.gateId, getEvalGateType(BlockType::JUNCTION));
+					nextState.addGateIdRemappingsUpdated(connection.connectionPointA.gateId);
 				}
 				connection.connectionPointB.connectionEndId = 0;
 			}
