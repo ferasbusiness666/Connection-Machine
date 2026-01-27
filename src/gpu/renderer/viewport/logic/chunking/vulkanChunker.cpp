@@ -122,7 +122,7 @@ VulkanLogicAllocation::VulkanLogicAllocation(
 
 	// Generate wire vertices
 	if (wires.size() > 0) {
-		std::vector<size_t> indices = { 0 };
+		std::vector<size_t> indices;
 		std::vector<Position> positions;
 
 		struct WireSegment {
@@ -492,6 +492,7 @@ void VulkanChunker::updateSimulatorIds(const std::vector<SimulatorMappingUpdate>
 					} else {
 						vulkanLogicAllocation.value()->getStateSimulatorIds()[iter->second] = std::get<simulator_gate_id_t>(simulatorIds);
 					}
+					logicGroupsToUpdate.insert(logicGroup);
 					break;
 				}
 			}
