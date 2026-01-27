@@ -36,7 +36,7 @@ MainWindow::MainWindow(Environment& environment) :
 	// eval menutree
 	Rml::Element* evalTreeParent = rmlDocument->GetElementById("eval-tree");
 	evalWindow.emplace(
-		environment.getBackend().getEvaluatorManager(),
+		environment.getBackend().getSimulatorManager(),
 		environment.getBackend().getCircuitManager(),
 		*this,
 		environment.getBackend().getDataUpdateEventManager(),

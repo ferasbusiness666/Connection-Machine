@@ -300,7 +300,7 @@ public:
 	}
 	inline explicit operator bool() const noexcept { return notDone; }
 	inline const Position operator*() const noexcept { return start + Vector(cur % width, cur / width); }
-	inline const Position operator->() const noexcept { return *(*this); }
+	// inline const Position operator->() const noexcept { return *(*this); }
 
 private:
 	inline void next() {
@@ -440,7 +440,7 @@ struct Size {
 
 	inline Iterator iter() const noexcept;
 
-	inline Vector getLargestVectorInArea() { return Vector(w - 1, h - 1); }
+	inline Vector getLargestVectorInArea() const noexcept { return Vector(w - 1, h - 1); }
 
 	coordinate_t w, h;
 };
@@ -585,10 +585,10 @@ template <>
 struct fmt::formatter<Rotation> : fmt::formatter<std::string> {
 	auto format(Rotation v, format_context& ctx) const /* GCOVR_EXCL_FUNCTION */ {
 		switch (v) {
-		case Rotation::TWO_SEVENTY: return "TWO_SEVENTY";
-		case Rotation::ONE_EIGHTY: return "ONE_EIGHTY";
-		case Rotation::NINETY: return "NINETY";
-		default: return "ZERO";
+		case Rotation::TWO_SEVENTY: return  formatter<std::string>::format("TWO_SEVENTY", ctx);
+		case Rotation::ONE_EIGHTY: return  formatter<std::string>::format("ONE_EIGHTY", ctx);
+		case Rotation::NINETY: return  formatter<std::string>::format("NINETY", ctx);
+		default: return  formatter<std::string>::format("ZERO", ctx);
 		}
 	}
 };

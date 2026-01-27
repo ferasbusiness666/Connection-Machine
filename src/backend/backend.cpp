@@ -5,10 +5,11 @@
 
 class CircuitFileManager;
 
-Backend::Backend(CircuitFileManager& fileManager) : circuitManager(dataUpdateEventManager, evaluatorManager, fileManager), evaluatorManager(dataUpdateEventManager) {
+Backend::Backend(CircuitFileManager& fileManager) :
+	circuitManager(dataUpdateEventManager, simulatorManager, fileManager), simulatorManager(circuitManager, dataUpdateEventManager)
+{
 	logInfo("Initializing Backend", "Backend");
 	Wasm::initialize();
-	circuitManager.connectListener(&evaluatorManager, std::bind(&EvaluatorManager::applyDiff, &evaluatorManager, std::placeholders::_1, std::placeholders::_2), 0);
 	logInfo("Backend initialized", "Backend");
 }
 
@@ -16,10 +17,10 @@ circuit_id_t Backend::createCircuit(const std::string& name, const std::string& 
 	return circuitManager.createNewCircuit(name, uuid);
 }
 
-std::optional<evaluator_id_t> Backend::createEvaluator(circuit_id_t circuitId) {
+std::optional<simulator_id_t> Backend::createSimulator(circuit_id_t circuitId) {
 	SharedCircuit circuit = circuitManager.getCircuit(circuitId);
 	if (circuit) {
-		return evaluatorManager.createNewEvaluator(circuitManager, circuitId);
+		return simulatorManager.createNewSimulator(circuitId);
 	}
 	return std::nullopt;
 }
@@ -28,8 +29,8 @@ SharedCircuit Backend::getCircuit(circuit_id_t circuitId) {
 	return circuitManager.getCircuit(circuitId);
 }
 
-SharedEvaluator Backend::getEvaluator(evaluator_id_t evaluatorId) {
-	return evaluatorManager.getEvaluator(evaluatorId);
+EvalLogicSimulator* Backend::getSimulator(simulator_id_t simulator_id) {
+	return simulatorManager.getSimulator(simulator_id);
 }
 
 nlohmann::json Backend::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
@@ -37,6 +38,6 @@ nlohmann::json Backend::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	stateJson["clipboardEditCounter"] = clipboardEditCounter;
 	stateJson["clipboard"] = clipboard ? clipboard->dumpState() : nullptr;
 	stateJson["circuitManager"] = circuitManager.dumpState();
-	stateJson["evaluatorManager"] = evaluatorManager.dumpState();
+	stateJson["simulatorManager"] = simulatorManager.dumpState();
 	return stateJson;
 }

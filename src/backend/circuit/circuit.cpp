@@ -7,14 +7,27 @@
 #include "backend/proceduralCircuits/generatedCircuit.h"
 #include "logging/logging.h"
 #include "parsedCircuit.h"
+#include "backend/evaluator/evaluator.h"
+#include "backend/circuit/circuitManager.h"
 
-Circuit::Circuit(circuit_id_t circuitId, CircuitManager& circuitManager, BlockDataManager& blockDataManager, DataUpdateEventManager& dataUpdateEventManager, const std::string& name, const std::string& uuid) :
-	circuitId(circuitId), blockContainer(circuitManager, blockDataManager), circuitUUID(uuid), circuitName(name), dataUpdateEventManager(dataUpdateEventManager), dataUpdateEventReceiver(dataUpdateEventManager) {
+Circuit::Circuit(
+	circuit_id_t circuitId,
+	CircuitManager& circuitManager,
+	DataUpdateEventManager& dataUpdateEventManager,
+	const std::string& name,
+	const std::string& uuid
+) :
+	circuitId(circuitId), blockContainer(circuitManager), circuitUUID(uuid), circuitName(name), circuitManager(circuitManager),
+	dataUpdateEventManager(dataUpdateEventManager), dataUpdateEventReceiver(dataUpdateEventManager),
+	evaluator(std::make_unique<Evaluator>(circuitManager, *this, dataUpdateEventManager))
+{
 	dataUpdateEventReceiver.linkFunction("preBlockSizeChange", std::bind(&Circuit::blockSizeChange, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("preBlockDataSetConnection", std::bind(&Circuit::addConnectionPort, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("preBlockDataPortBitConfigurationSet", std::bind(&Circuit::setConnectionPortBitwidth, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("preBlockDataRemoveConnection", std::bind(&Circuit::removeConnectionPort, this, std::placeholders::_1));
 }
+
+Circuit::~Circuit() = default;
 
 void Circuit::clear(bool clearUndoTree) {
 	DifferenceSharedPtr difference = std::make_shared<Difference>();
@@ -23,6 +36,21 @@ void Circuit::clear(bool clearUndoTree) {
 	if (clearUndoTree) {
 		undoSystem.clear();
 	}
+}
+
+circuit_id_t Circuit::getCircuitId(const Address& address) const {
+	if (address.size() == 0) return circuitId;
+	const Block* block = blockContainer.getBlock(address.getPosition(0));
+	if (!block) return 0;
+	circuit_id_t id = circuitManager.getCircuitBlockDataManager().getCircuitId(block->type());
+	for (unsigned int i = 1; i < address.size(); i++) {
+		if (id == 0) return 0;
+		const Circuit* circuit = circuitManager.getCircuit(id).get();
+		block = circuit->getBlockContainer().getBlock(address.getPosition(i));
+		if (!block) return 0;
+		id = circuitManager.getCircuitBlockDataManager().getCircuitId(block->type());
+	}
+	return id;
 }
 
 void Circuit::connectListener(void* object, CircuitDiffListenerFunction func, unsigned int priority) {
@@ -564,13 +592,8 @@ void Circuit::redo() {
 	}
 }
 
-void Circuit::blockSizeChange(const DataUpdateEventManager::EventData* eventData) {
-	if (!eventData) {
-		logError("eventData passed was null", "Circuit");
-		undoSystem.addBlocker(); // cant undo after changing block size!
-		return;
-	}
-	auto data = eventData->cast<std::pair<BlockType, Size>>();
+void Circuit::blockSizeChange(const DataUpdateEventManager::EventData* event) {
+	auto data = event->cast<std::pair<BlockType, Size>>();
 	if (!data) {
 		logError("Could not get std::pair<BlockType, Size> from eventData", "Circuit");
 		undoSystem.addBlocker(); // cant undo after changing block size!
@@ -619,12 +642,8 @@ void Circuit::setBlockType(BlockType blockType) {
 	blockContainer.getBlockDataManager().getBlockData(blockType)->setName(getCircuitNameNumber());
 }
 
-void Circuit::addConnectionPort(const DataUpdateEventManager::EventData* eventData) {
-	if (!eventData) {
-		logError("eventData passed was null", "Circuit");
-		return;
-	}
-	auto data = eventData->cast<std::tuple<BlockType, connection_end_id_t, BlockData::ConnectionData::PortType>>();
+void Circuit::addConnectionPort(const DataUpdateEventManager::EventData* event) {
+	auto data = event->cast<std::tuple<BlockType, connection_end_id_t, BlockData::ConnectionData::PortType>>();
 	if (!data) {
 		logError("Could not get std::pair<BlockType, connection_end_id_t> from eventData", "Circuit");
 		return;
@@ -634,12 +653,8 @@ void Circuit::addConnectionPort(const DataUpdateEventManager::EventData* eventDa
 	sendDifference(std::move(difference));
 }
 
-void Circuit::setConnectionPortBitwidth(const DataUpdateEventManager::EventData* eventData) {
-	if (!eventData) {
-		logError("eventData passed was null", "Circuit");
-		return;
-	}
-	auto data = eventData->cast<std::tuple<BlockType, connection_end_id_t, unsigned int>>();
+void Circuit::setConnectionPortBitwidth(const DataUpdateEventManager::EventData* event) {
+	auto data = event->cast<std::tuple<BlockType, connection_end_id_t, unsigned int>>();
 	if (!data) {
 		logError("Could not get std::tuple<BlockType, connection_end_id_t, unsigned int> from eventData", "Circuit");
 		return;
@@ -649,12 +664,8 @@ void Circuit::setConnectionPortBitwidth(const DataUpdateEventManager::EventData*
 	sendDifference(std::move(difference));
 }
 
-void Circuit::removeConnectionPort(const DataUpdateEventManager::EventData* eventData) {
-	if (!eventData) {
-		logError("eventData passed was null", "Circuit");
-		return;
-	}
-	auto data = eventData->cast<std::pair<BlockType, connection_end_id_t>>();
+void Circuit::removeConnectionPort(const DataUpdateEventManager::EventData* event) {
+	auto data = event->cast<std::pair<BlockType, connection_end_id_t>>();
 	if (!data) {
 		logError("Could not get std::pair<BlockType, connection_end_id_t> from eventData", "Circuit");
 		return;
@@ -684,4 +695,12 @@ nlohmann::json Circuit::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	stateJson["editable"] = editable;
 	stateJson["editCount"] = editCount;
 	return stateJson;
+}
+
+void Circuit::sendDifference(DifferenceSharedPtr difference) {
+	if (difference->empty()) return;
+	editCount++;
+	if (!midUndo) undoSystem.addDifference(difference);
+	evaluator->makeEdit(difference);
+	for (const CircuitDiffListenerData& circuitDiffListenerData : listenerFunctions) circuitDiffListenerData.circuitDiffListenerFunction(difference, circuitId);
 }

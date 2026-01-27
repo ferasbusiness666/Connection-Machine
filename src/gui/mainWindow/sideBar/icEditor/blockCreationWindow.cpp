@@ -221,6 +221,9 @@ void BlockCreationWindow::updateFromMenu() {
 	circuit_id_t id = circuit->getCircuitId();
 	CircuitBlockData* circuitBlockData = circuitManager.getCircuitBlockDataManager().getCircuitBlockData(id);
 	BlockData* blockData = circuitManager.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
+	if (!blockData) {
+		logError("Failed to find BlockData onj for block type {}.", "BlockCreationWindow::updateFromMenu", circuitBlockData->getBlockType());
+	}
 	std::string name;
 	Size size;
 	std::vector<std::tuple<connection_end_id_t, std::string, bool, Vector, FVector, Position, unsigned int>> portsData;
@@ -246,7 +249,7 @@ void BlockCreationWindow::updateFromMenu() {
 			Rml::Element* row = inputList->GetChild(i);
 			const std::string& rowId = row->GetId();
 			// get connection end id
-			connection_end_id_t endId = connection_end_id_t(std::stoi(rowId.substr(23, rowId.size() - 23)));
+			connection_end_id_t endId = std::stoi(rowId.substr(23, rowId.size() - 23));
 			// get port name
 			Rml::ElementList elements;
 			row->GetElementsByClassName(elements, "connection-list-item-name");
@@ -289,7 +292,7 @@ void BlockCreationWindow::updateFromMenu() {
 			Rml::Element* row = outputList->GetChild(i);
 			const std::string& rowId = row->GetId();
 			// get connection end id
-			connection_end_id_t endId = connection_end_id_t(std::stoi(rowId.substr(23, rowId.size() - 23)));
+			connection_end_id_t endId = std::stoi(rowId.substr(23, rowId.size() - 23));
 			// get port name
 			Rml::ElementList elements;
 			row->GetElementsByClassName(elements, "connection-list-item-name");
@@ -511,7 +514,7 @@ void BlockCreationWindow::addListItem(
 
 	if (findUnusedEndId) {
 		while (true) {
-			while (blockData->connectionExists(connection_end_id_t(endId))) ++endId;
+			while (blockData->connectionExists(endId)) ++endId;
 			if (inputList->GetElementById("ConnectionListItem Id: " + std::to_string(endId)) == nullptr &&
 				outputList->GetElementById("ConnectionListItem Id: " + std::to_string(endId)) == nullptr)
 				break;
@@ -613,7 +616,7 @@ void BlockCreationWindow::addListItem(
 			mainWindow.getActiveCircuitViewWidget()->getCircuitView()->getToolManager().selectTool(std::make_shared<PortSelector>(environment))
 		);
 		if (tool) {
-			tool->setPort(connection_end_id_t(endId), [this, endId](Position position) {
+			tool->setPort(endId, [this, endId](Position position) {
 				Rml::Element* row = document->GetElementById("ConnectionListItem Id: " + std::to_string(endId));
 				if (row == nullptr) return;
 				Rml::ElementList elements;
@@ -660,25 +663,12 @@ void BlockCreationWindow::addListItem(
 	rowInRow->AppendChild(std::move(remove));
 }
 
-void BlockCreationWindow::makePaths(std::vector<std::vector<std::string>>& paths, std::vector<std::string>& path, const EvalAddressTree& addressTree) {
-	auto& branches = addressTree.getBranches();
-	if (branches.empty()) {
-		paths.push_back(path);
-	} else {
-		for (auto& pair : branches) {
-			path.push_back(circuitManager.getCircuit(pair.second.getContainerId())->getCircuitName() + pair.first.toString());
-			makePaths(paths, path, pair.second);
-			path.pop_back();
-		}
-	}
-}
-
 void BlockCreationWindow::updateSelected(std::string string) {
 	std::vector<std::string> parts = stringSplit(string, '/');
 	std::stringstream evalName(parts.front());
 	std::string str;
-	unsigned int evalId;
-	evalName >> str >> evalId;
+	unsigned int simulatorId;
+	evalName >> str >> simulatorId;
 	Address address;
 	for (unsigned int i = 1; i < parts.size(); i++) {
 		std::string part = parts[i];
@@ -689,9 +679,9 @@ void BlockCreationWindow::updateSelected(std::string string) {
 		char c;
 		posString >> position.x >> c >> position.y;
 		logInfo(position.toString());
-		address.addBlockId(position);
+		address.appendPosition(position);
 	}
 
 	CircuitView* circuitView = mainWindow.getActiveCircuitViewWidget()->getCircuitView();
-	circuitView->setEvaluator(evaluator_id_t(evalId), address);
+	circuitView->setSimulatoruator(simulator_id_t(simulatorId), address);
 }

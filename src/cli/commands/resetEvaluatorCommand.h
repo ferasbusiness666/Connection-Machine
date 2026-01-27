@@ -1,14 +1,14 @@
-/*#ifndef resetEvaluatorCommand_h
-#define resetEvaluatorCommand_h
+/*#ifndef resetSimulatoruatorCommand_h
+#define resetSimulatoruatorCommand_h
 
 #include "../command.h"
 
-class ResetEvaluatorCommand : public Command {
+class ResetSimulatoruatorCommand : public Command {
 public:
-	ResetEvaluatorCommand() : Command("reset_evaluator") {}
+	ResetSimulatoruatorCommand() : Command("reset_simulator") {}
 
 	void run(const std::vector<std::string>& args, Environment& environment) override final;
-	const std::string getHelpString() const override final { return "Resets the evaluator of specified ID."; }
+	const std::string getHelpString() const override final { return "Resets the simulator of specified ID."; }
 };
 
-#endif /* resetEvaluatorCommand_h */
+#endif /* resetSimulatoruatorCommand_h */

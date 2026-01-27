@@ -33,7 +33,7 @@ private:
                 return "TICK_STEP";
             default:
                 return "UNKNOWN";
-       } 
+       }
     }
 
     struct TestCommand {
@@ -43,8 +43,8 @@ private:
     };
 
     void generateTestCircuit();
-    void runSetStatesCommand(TestCommand testCommand, const SharedEvaluator eval, NamePositionMap& nameToConnectedBlockPosition);
-    bool runCheckStatesCommand(TestCommand testCommand, const SharedEvaluator eval, NamePositionMap& nameToConnectedBlockPosition);
+    void runSetStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition);
+    bool runCheckStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition);
 
     std::unordered_map<std::string, std::vector<TestCommand>> testCommandGroups;
 };

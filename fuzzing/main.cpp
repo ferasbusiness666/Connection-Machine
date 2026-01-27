@@ -4,8 +4,11 @@
 
 #include "computerAPI/directoryManager.h"
 
+std::thread::id mainThreadId = std::this_thread::get_id();
+
 int main(int argc, char** argv) {
 	DirectoryManager::findDirectories();
+	std::filesystem::create_directories(DirectoryManager::getConfigDirectory() / "fuzzing");
 	std::string failingTestcasePath = (DirectoryManager::getConfigDirectory() / "fuzzing" / "failing_testcase.json").string();
 	FailingCaseFinder finder;
 	std::vector<FuzzBlockType> blockTypesUsed = {
@@ -49,10 +52,10 @@ int main(int argc, char** argv) {
 		FuzzPrimitiveType { BlockType::LIGHT },
 
 
-		// FuzzPrimitiveType { BlockType::CONSTANT_OFF },
-		// FuzzPrimitiveType { BlockType::CONSTANT_ON },
-		// FuzzPrimitiveType { BlockType::CONSTANT_Z },
-		// FuzzPrimitiveType { BlockType::CONSTANT_X },
+		FuzzPrimitiveType { BlockType::CONSTANT_OFF },
+		FuzzPrimitiveType { BlockType::CONSTANT_ON },
+		FuzzPrimitiveType { BlockType::CONSTANT_Z },
+		FuzzPrimitiveType { BlockType::CONSTANT_X },
 		FuzzBusType { 2, 1, 1, 2 },
 		FuzzBusType { 4, 1, 1, 4 },
 		FuzzBusType { 2, 1, 2, 4 },

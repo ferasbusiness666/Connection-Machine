@@ -29,18 +29,18 @@ SimControlsManager::SimControlsManager(
 		event.StopPropagation();
 	}));
 
-	Evaluator* evaluator = this->circuitViewWidget->getCircuitView()->getEvaluator();
-	new UiDataController<float>(tpsInputElement, evaluator ? evaluator->getTickrate() : 0, [this](float value) {
-		Evaluator* evaluator = this->circuitViewWidget->getCircuitView()->getEvaluator();
-		if (evaluator) evaluator->setTickrate(value);
+	EvalLogicSimulator* simulator = this->circuitViewWidget->getCircuitView()->getSimulator();
+	new UiDataController<float>(tpsInputElement, simulator ? simulator->getTickrate() : 0, [this](float value) {
+		EvalLogicSimulator* simulator = this->circuitViewWidget->getCircuitView()->getSimulator();
+		if (simulator) simulator->setTickrate(value);
 	}, [dataUpdateEventManager = &dataUpdateEventManager, circuitViewWidget](std::function<void(double)> func) {
 		std::shared_ptr<DataUpdateEventManager::DataUpdateEventReceiver> DUER =
 			std::make_shared<DataUpdateEventManager::DataUpdateEventReceiver>(*dataUpdateEventManager);
-		DUER->linkFunction("evaluatorTargetTickrateSet", [circuitViewWidget, func](const DataUpdateEventManager::EventData* dataEvent) {
-			auto data = dataEvent->cast<std::pair<evaluator_id_t, double>>();
-			Evaluator* evaluator = circuitViewWidget->getCircuitView()->getEvaluator();
-			if (!evaluator) return;
-			if (data->get().first == evaluator->getEvaluatorId()) func(data->get().second);
+		DUER->linkFunction("simulatorTargetTickrateSet", [circuitViewWidget, func](const DataUpdateEventManager::EventData* event) {
+			auto data = event->cast<std::pair<simulator_id_t, double>>();
+			EvalLogicSimulator* simulator = circuitViewWidget->getCircuitView()->getSimulator();
+			if (!simulator) return;
+			if (data->get().first == simulator->getSimulatorId()) func(data->get().second);
 		});
 		return DUER;
 	}, [](float value, const std::string* string) -> std::string {
@@ -58,8 +58,8 @@ SimControlsManager::SimControlsManager(
 	});
 
 	// std::stringstream ss(correctValue);
-	// if (!approx_equals(evaluator->getTickrate(), tps)) {
-	// 	std::string tpsStr = fmt::format("{:.1f}", evaluator->getTickrate());
+	// if (!approx_equals(simulator->getTickrate(), tps)) {
+	// 	std::string tpsStr = fmt::format("{:.1f}", simulator->getTickrate());
 	// 	if (tpsStr.back() == '0') tpsStr.pop_back();
 	// 	if (tpsStr.back() == '.') tpsStr.pop_back();
 	// 	tpsInputElement->SetInnerRML(std::string(tpsStr.size(), ' ') + "tps");
@@ -68,26 +68,26 @@ SimControlsManager::SimControlsManager(
 
 	// tpsInputElement->AddEventListener("change", new EventPasser(std::bind(&SimControlsManager::setTPS, this)));
 
-	dataUpdateEventReceiver.linkFunction("circuitViewChangeEvaluator", std::bind(&SimControlsManager::update, this));
+	dataUpdateEventReceiver.linkFunction("circuitViewChangeSimulator", std::bind(&SimControlsManager::update, this));
 	update();
 }
 
 void SimControlsManager::update() {
-	Evaluator* evaluator = circuitViewWidget->getCircuitView()->getEvaluator();
-	if (evaluator) {
-		if (evaluator->isPause()) {
+	EvalLogicSimulator* simulator = circuitViewWidget->getCircuitView()->getSimulator();
+	if (simulator) {
+		if (simulator->isPause()) {
 			toggleSimElement->SetClass("checked", false);
 		} else {
 			toggleSimElement->SetClass("checked", true);
 		}
-		if (evaluator->isRealistic()) {
+		if (simulator->isRealistic()) {
 			realisticElement->SetClass("checked", true);
 			realisticElement->SetInnerRML("R");
 		} else {
 			realisticElement->SetClass("checked", false);
 			realisticElement->SetInnerRML("S");
 		}
-		if (evaluator->getUseTickrate()) {
+		if (simulator->getUseTickrate()) {
 			limitSpeedElement->SetAttribute("checked", true);
 		} else {
 			limitSpeedElement->RemoveAttribute("checked");
@@ -106,8 +106,8 @@ void SimControlsManager::update() {
 		std::stringstream ss(correctValue);
 		double tps = 0;
 		ss >> tps;
-		if (!approx_equals(evaluator->getTickrate(), tps)) {
-			std::string tpsStr = fmt::format("{:.1f}", evaluator->getTickrate());
+		if (!approx_equals(simulator->getTickrate(), tps)) {
+			std::string tpsStr = fmt::format("{:.1f}", simulator->getTickrate());
 			if (tpsStr.back() == '0') tpsStr.pop_back();
 			if (tpsStr.back() == '.') tpsStr.pop_back();
 			tpsInputElement->SetInnerRML(std::string(tpsStr.size(), ' ') + "tps");
@@ -124,36 +124,36 @@ void SimControlsManager::update() {
 }
 
 void SimControlsManager::toggleSimulation() {
-	Evaluator* evaluator = circuitViewWidget->getCircuitView()->getEvaluator();
-	if (evaluator) {
-		if (evaluator->isPause()) {
-			evaluator->setPause(false);
+	EvalLogicSimulator* simulator = circuitViewWidget->getCircuitView()->getSimulator();
+	if (simulator) {
+		if (simulator->isPause()) {
+			simulator->setPause(false);
 		} else {
-			evaluator->setPause(true);
+			simulator->setPause(true);
 		}
 	}
 	update();
 }
 
 void SimControlsManager::setRealistic() {
-	Evaluator* evaluator = circuitViewWidget->getCircuitView()->getEvaluator();
-	if (evaluator) {
-		evaluator->setRealistic(!(evaluator->isRealistic()));
+	EvalLogicSimulator* simulator = circuitViewWidget->getCircuitView()->getSimulator();
+	if (simulator) {
+		simulator->setRealistic(!(simulator->isRealistic()));
 	}
 	update();
 }
 
 void SimControlsManager::limitSpeed() {
-	Evaluator* evaluator = circuitViewWidget->getCircuitView()->getEvaluator();
-	if (evaluator) {
-		evaluator->setUseTickrate(!(evaluator->getUseTickrate()));
+	EvalLogicSimulator* simulator = circuitViewWidget->getCircuitView()->getSimulator();
+	if (simulator) {
+		simulator->setUseTickrate(!(simulator->getUseTickrate()));
 	}
 	update();
 }
 
 void SimControlsManager::setTPS() {
-	Evaluator* evaluator = circuitViewWidget->getCircuitView()->getEvaluator();
-	if (evaluator) {
+	EvalLogicSimulator* simulator = circuitViewWidget->getCircuitView()->getSimulator();
+	if (simulator) {
 		Rml::String value = tpsInputElement->GetAttribute<Rml::String>("value", "");
 		std::string correctValue;
 		bool foundDecimal = false;
@@ -170,7 +170,7 @@ void SimControlsManager::setTPS() {
 		ss >> tps;
 		tpsInputElement->SetInnerRML(std::string(correctValue.size(), ' ') + "tps");
 		tpsInputElement->SetAttribute<Rml::String>("value", correctValue);
-		evaluator->setTickrate(tps);
+		simulator->setTickrate(tps);
 	} else {
 		tpsInputElement->SetInnerRML("tps");
 	}

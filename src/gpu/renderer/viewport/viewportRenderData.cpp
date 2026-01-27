@@ -17,12 +17,12 @@ ViewportViewData ViewportRenderData::getViewData() {
 
 // ====================================== INTERFACE ==========================================
 
-void ViewportRenderData::setEvaluator(Evaluator* evaluator, const Address& address) {
-	std::lock_guard<std::mutex> lock1(evaluatorMux);
+void ViewportRenderData::setSimulatoruator(const EvalLogicSimulator* simulator, const Address& address) {
+	std::lock_guard<std::mutex> lock1(simulatorMux);
 	std::lock_guard<std::mutex> lock2(addressMux);
-	this->evaluator = evaluator;
+	this->simulator = simulator;
 	this->address = address;
-	chunker.setEvaluator(evaluator, address);
+	chunker.setSimulatoruator(simulator, address);
 }
 
 void ViewportRenderData::updateViewFrame(glm::vec2 origin, glm::vec2 size) {

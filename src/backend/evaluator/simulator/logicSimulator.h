@@ -3,10 +3,9 @@
 
 #include "backend/container/block/blockDefs.h"
 #include "backend/container/block/connectionEnd.h"
-#include "backend/evaluator/util/evalConfig.h"
-#include "backend/evaluator/evalDefs.h"
-#include "simulatorGates.h"
 #include "logicState.h"
+#include "simulatorConfig.h"
+#include "simulatorGates.h"
 #include "threadPool.h"
 
 enum class SimGateType : int {
@@ -24,79 +23,65 @@ enum class SimGateType : int {
 
 inline std::string simgatetype_to_string(SimGateType type) /* GCOVR_EXCL_FUNCTION */ {
 	switch (type) {
-		case SimGateType::AND:
-			return "AND";
-		case SimGateType::XOR:
-			return "XOR";
-		case SimGateType::JUNCTION:
-			return "JUNCTION";
-		case SimGateType::BUFFER:
-			return "BUFFER";
-		case SimGateType::SINGLE_BUFFER:
-			return "SINGLE_BUFFER";
-		case SimGateType::TRISTATE_BUFFER:
-			return "TRISTATE_BUFFER";
-		case SimGateType::CONSTANT:
-			return "CONSTANT";
-		case SimGateType::CONSTANT_RESET:
-			return "CONSTANT_RESET";
-		case SimGateType::COPY_SELF_OUTPUT:
-			return "COPY_SELF_OUTPUT";
-		case SimGateType::PORTS_TO_INT:
-			return "PORTS_TO_INT";
-		default:
-			return "UNKNOWN_GATE_TYPE";
+	case SimGateType::AND: return "AND";
+	case SimGateType::XOR: return "XOR";
+	case SimGateType::JUNCTION: return "JUNCTION";
+	case SimGateType::BUFFER: return "BUFFER";
+	case SimGateType::SINGLE_BUFFER: return "SINGLE_BUFFER";
+	case SimGateType::TRISTATE_BUFFER: return "TRISTATE_BUFFER";
+	case SimGateType::CONSTANT: return "CONSTANT";
+	case SimGateType::CONSTANT_RESET: return "CONSTANT_RESET";
+	case SimGateType::COPY_SELF_OUTPUT: return "COPY_SELF_OUTPUT";
+	case SimGateType::PORTS_TO_INT: return "PORTS_TO_INT";
+	default: return "UNKNOWN_GATE_TYPE";
 	}
 }
 
 class LogicSimulator {
-friend class SimulatorOptimizer;
-friend class SimPauseGuard;
+	friend class SimPauseGuard;
 public:
-	LogicSimulator(
-		EvalConfig& evalConfig,
-		std::vector<simulator_id_t>& dirtySimulatorIds);
+	LogicSimulator(simulator_id_t simulatorId, std::vector<simulator_gate_id_t>& dirtySimulatorIds, DataUpdateEventManager &dataUpdateEventManager);
 	~LogicSimulator();
-	void clearState();
 	double getAverageTickrate() const;
-	void setState(simulator_id_t id, logic_state_t state);
+	void setState(simulator_gate_id_t id, logic_state_t state);
 
 	void resetStates();
 
-	logic_state_t getState(simulator_id_t id) const;
-	std::vector<logic_state_t> getStates(const std::vector<simulator_id_t>& ids) const;
-	std::optional<simulator_id_t> getOutputPortId(simulator_id_t simId, connection_end_id_t portId) const;
+	logic_state_t getState(simulator_gate_id_t id) const;
+	std::vector<logic_state_t> getStates(const std::vector<simulator_gate_id_t>& ids) const;
+	std::optional<simulator_gate_id_t> getOutputPortId(simulator_gate_id_t simulatorId, connection_end_id_t portId) const;
+	BlockData::ConnectionData::PortType getPortType(simulator_gate_id_t simulatorId, connection_end_id_t portId) const;
 
-	simulator_id_t addGate(const BlockType blockType);
-	void removeGate(simulator_id_t gateId);
-	void makeConnection(simulator_id_t sourceId, connection_end_id_t sourcePort, simulator_id_t destinationId, connection_end_id_t destinationPort);
-	void removeConnection(simulator_id_t sourceId, connection_end_id_t sourcePort, simulator_id_t destinationId, connection_end_id_t destinationPort);
+	simulator_gate_id_t addGate(const BlockType blockType);
+	void removeGate(simulator_gate_id_t gateId);
+	void makeConnection(simulator_gate_id_t sourceId, connection_end_id_t sourcePort, simulator_gate_id_t destinationId, connection_end_id_t destinationPort);
+	void removeConnection(simulator_gate_id_t sourceId, connection_end_id_t sourcePort, simulator_gate_id_t destinationId, connection_end_id_t destinationPort);
 	void endEdit();
-
-	const std::vector<simulator_id_t> getOutputs(simulator_id_t simId);
 
 	bool stepBack();
 	bool stepForward();
 	bool skipBack();
 	bool skipForward();
-	inline bool isViewingReplay() const {
-		return viewingReplay;
-	}
+	inline bool isViewingReplay() const { return viewingReplay; }
+
+	SimulatorConfig& getSimulatorConfig() { return simulatorConfig; }
+	const SimulatorConfig& getSimulatorConfig() const { return simulatorConfig; }
 
 	nlohmann::json dumpState() const;
 
-private:
-	EvalConfig& evalConfig;
-	std::thread simulationThread;
-	std::atomic<bool> running { true };
 
-	std::atomic<bool> pauseRequest { false };
+private:
+	SimulatorConfig simulatorConfig;
+	std::thread simulationThread;
+	std::atomic<bool> running{ true };
+
+	std::atomic<bool> pauseRequest{ false };
 	std::mutex cvMutex;
 	std::condition_variable cv;
 
-	IdVector<simulator_id_t, logic_state_t> statesA;
-	IdVector<simulator_id_t, logic_state_t> statesB;
-	std::array<IdVector<simulator_id_t, logic_state_t>, 1024> statesReplay;
+	IdVector<simulator_gate_id_t, logic_state_t> statesA;
+	IdVector<simulator_gate_id_t, logic_state_t> statesB;
+	std::array<IdVector<simulator_gate_id_t, logic_state_t>, 1024> statesReplay;
 	std::array<bool, 1024> setStateUsed = { false };
 	int replayHead = 0;
 	int replayTail = 0;
@@ -114,13 +99,13 @@ private:
 		viewingReplay = false;
 	}
 
-	logic_state_t getStateUnlocked(simulator_id_t id) const;
+	logic_state_t getStateUnlocked(simulator_gate_id_t id) const;
 
 	mutable std::shared_mutex statesAMutex;
 	mutable std::mutex mainDataMutex;
 
 	struct StateChange {
-		simulator_id_t id;
+		simulator_gate_id_t id;
 		logic_state_t state;
 		nlohmann::json dumpState() const;
 	};
@@ -214,17 +199,15 @@ private:
 		}
 	};
 
-	IdProvider<simulator_id_t> simulatorIdProvider;
+	IdProvider<simulator_gate_id_t> simulatorIdProvider;
 
 	struct GateDependency {
-		simulator_id_t gateId;
+		simulator_gate_id_t gateId;
 
-		GateDependency() : gateId(0) {}
-		explicit GateDependency(simulator_id_t id) : gateId(id) {}
+		GateDependency() : gateId(0) { }
+		explicit GateDependency(simulator_gate_id_t id) : gateId(id) { }
 
-		bool operator==(const GateDependency& other) const {
-			return gateId == other.gateId;
-		}
+		bool operator==(const GateDependency& other) const { return gateId == other.gateId; }
 		nlohmann::json dumpState() const;
 	};
 
@@ -232,36 +215,33 @@ private:
 		SimGateType gateType;
 		size_t gateIndex;
 
-		GateLocation() : gateType(SimGateType::AND), gateIndex(0) {}
-		GateLocation(SimGateType type, size_t index) : gateType(type), gateIndex(index) {}
+		GateLocation() : gateType(SimGateType::AND), gateIndex(0) { }
+		GateLocation(SimGateType type, size_t index) : gateType(type), gateIndex(index) { }
 		nlohmann::json dumpState() const;
 	};
 
-	std::unordered_map<simulator_id_t, std::vector<GateDependency>> outputDependencies;
-	std::unordered_map<simulator_id_t, GateLocation> gateLocations;
+	std::unordered_map<simulator_gate_id_t, std::vector<GateDependency>> outputDependencies;
+	std::unordered_map<simulator_gate_id_t, GateLocation> gateLocations;
 
 	void simulationLoop();
 	inline void tickOnce();
 	void processPendingStateChanges();
 
-	inline void updateEmaTickrate(
-		const std::chrono::steady_clock::time_point& currentTime,
-		std::chrono::steady_clock::time_point& lastTickTime,
-		bool& isFirstTick);
+	inline void updateEmaTickrate(const std::chrono::steady_clock::time_point& currentTime, std::chrono::steady_clock::time_point& lastTickTime, bool& isFirstTick);
 
-	void addInputToGate(simulator_id_t simId, simulator_id_t inputId, connection_end_id_t portId);
-	void removeInputFromGate(simulator_id_t simId, simulator_id_t inputId, connection_end_id_t portId);
-	std::optional<std::vector<simulator_id_t>> getOutputSimIdsFromGate(simulator_id_t simId) const;
+	void addInputToGate(simulator_gate_id_t simulatorId, simulator_gate_id_t inputId, connection_end_id_t portId);
+	void removeInputFromGate(simulator_gate_id_t simulatorId, simulator_gate_id_t inputId, connection_end_id_t portId);
+	std::optional<std::vector<simulator_gate_id_t>> getOutputSimulatorIdsFromGate(simulator_gate_id_t simulatorId) const;
 
-	void updateGateLocation(simulator_id_t gateId, SimGateType gateType, size_t gateIndex);
-	void removeGateLocation(simulator_id_t gateId);
-	void addOutputDependency(simulator_id_t outputId, simulator_id_t dependentGateId);
-	void removeOutputDependency(simulator_id_t outputId, simulator_id_t dependentGateId);
+	void updateGateLocation(simulator_gate_id_t gateId, SimGateType gateType, size_t gateIndex);
+	void removeGateLocation(simulator_gate_id_t gateId);
+	void addOutputDependency(simulator_gate_id_t outputId, simulator_gate_id_t dependentGateId);
+	void removeOutputDependency(simulator_gate_id_t outputId, simulator_gate_id_t dependentGateId);
 
-	std::atomic<double> averageTickrate { 0.0 };
-	double tickrateHalflife { 0.3 };
+	std::atomic<double> averageTickrate{ 0.0 };
+	double tickrateHalflife{ 0.3 };
 
-	std::vector<simulator_id_t>& dirtySimulatorIds;
+	std::vector<simulator_gate_id_t>& dirtySimulatorIds;
 
 	ThreadPool threadPool;
 	std::vector<std::vector<ThreadPool::Job>> jobs;
@@ -269,11 +249,11 @@ private:
 
 	void regenerateJobs();
 
-	void extendDataVectors(simulator_id_t id) {
+	void extendDataVectors(simulator_gate_id_t id) {
 		if (statesA.size() <= id) {
 			statesA.smartResizeWithOffset(id, 1, logic_state_t::UNDEFINED);
 			statesB.smartResizeWithOffset(id, 1, logic_state_t::UNDEFINED);
-			for (IdVector<simulator_id_t, logic_state_t>& replayStates : statesReplay) {
+			for (IdVector<simulator_gate_id_t, logic_state_t>& replayStates : statesReplay) {
 				replayStates.smartResizeWithOffset(id, 1, logic_state_t::UNDEFINED);
 			}
 		}
@@ -290,9 +270,7 @@ private:
 
 class SimPauseGuard {
 public:
-	explicit SimPauseGuard(LogicSimulator& s) : sim(s), mainLock(sim.mainDataMutex) {
-		sim.pauseRequest.store(true, std::memory_order_release);
-	}
+	explicit SimPauseGuard(LogicSimulator& s) : sim(s), mainLock(sim.mainDataMutex) { sim.pauseRequest.store(true, std::memory_order_release); }
 	~SimPauseGuard() {
 		sim.pauseRequest.store(false, std::memory_order_release);
 		// sim.nextTick = std::chrono::steady_clock::now();

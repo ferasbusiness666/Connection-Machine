@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
+#include "backend/evaluator/simulator/evalLogicSimulator.h"
 #include "environment/environment.h"
-#include "backend/evaluator/evaluator.h"
 
 class EvaluatorICTest : public ::testing::Test {
 protected:
@@ -8,7 +8,7 @@ protected:
     void TearDown() override;
 	Environment environment {false};
 	SharedCircuit parentCircuit = nullptr;
-	SharedEvaluator evaluator = nullptr;
+	EvalLogicSimulator* simulator = nullptr;
     int idx;
 
     circuit_id_t createPassThroughIC(const std::string& name);
@@ -21,15 +21,15 @@ protected:
 void EvaluatorICTest::SetUp() {
     circuit_id_t circuitId = environment.getBackend().createCircuit();
     parentCircuit = environment.getBackend().getCircuit(circuitId);
-    auto evalId = environment.getBackend().createEvaluator(circuitId);
-    ASSERT_TRUE(evalId.has_value());
-    evaluator = environment.getBackend().getEvaluator(evalId.value());
+    auto simulatorId = environment.getBackend().createSimulator(circuitId);
+    ASSERT_TRUE(simulatorId.has_value());
+    simulator = environment.getBackend().getSimulator(simulatorId.value());
     idx = 0;
 }
 
 void EvaluatorICTest::TearDown() {
     parentCircuit.reset();
-    evaluator.reset();
+    simulator = nullptr;
 }
 
 circuit_id_t EvaluatorICTest::createPassThroughIC(const std::string& name) {
@@ -73,13 +73,13 @@ TEST_F(EvaluatorICTest, SingleIC_PropagatesSignal) {
     ASSERT_TRUE(parentCircuit->tryCreateConnection(pSwitch, pIC));
     ASSERT_TRUE(parentCircuit->tryCreateConnection(pIC, pLight));
 
-    EXPECT_EQ(evaluator->getState(Address(pLight)), logic_state_t::LOW);
+    EXPECT_EQ(simulator->getState(Address(pLight)), logic_state_t::LOW);
 
-    evaluator->setState(Address(pSwitch), logic_state_t::HIGH);
-    EXPECT_EQ(evaluator->getState(Address(pLight)), logic_state_t::HIGH);
+    simulator->setState(Address(pSwitch), logic_state_t::HIGH);
+    EXPECT_EQ(simulator->getState(Address(pLight)), logic_state_t::HIGH);
 
-    evaluator->setState(Address(pSwitch), logic_state_t::LOW);
-    EXPECT_EQ(evaluator->getState(Address(pLight)), logic_state_t::LOW);
+    simulator->setState(Address(pSwitch), logic_state_t::LOW);
+    EXPECT_EQ(simulator->getState(Address(pLight)), logic_state_t::LOW);
 }
 
 TEST_F(EvaluatorICTest, NestedICs_PropagateThroughLevels) {
@@ -119,11 +119,11 @@ TEST_F(EvaluatorICTest, NestedICs_PropagateThroughLevels) {
     ASSERT_TRUE(parentCircuit->tryCreateConnection(pSwitch, pIC));
     ASSERT_TRUE(parentCircuit->tryCreateConnection(pIC, pLight));
 
-    evaluator->setState(Address(pSwitch), logic_state_t::HIGH);
-    EXPECT_EQ(evaluator->getState(Address(pLight)), logic_state_t::HIGH);
+    simulator->setState(Address(pSwitch), logic_state_t::HIGH);
+    EXPECT_EQ(simulator->getState(Address(pLight)), logic_state_t::HIGH);
 
-    evaluator->setState(Address(pSwitch), logic_state_t::LOW);
-    EXPECT_EQ(evaluator->getState(Address(pLight)), logic_state_t::LOW);
+    simulator->setState(Address(pSwitch), logic_state_t::LOW);
+    EXPECT_EQ(simulator->getState(Address(pLight)), logic_state_t::LOW);
 }
 
 TEST_F(EvaluatorICTest, SingleIC_MoveIOAndPropagatesSignal) {
@@ -146,22 +146,22 @@ TEST_F(EvaluatorICTest, SingleIC_MoveIOAndPropagatesSignal) {
     ASSERT_TRUE(parentCircuit->tryCreateConnection(pSwitch, pIC));
     ASSERT_TRUE(parentCircuit->tryCreateConnection(pIC, pLight));
 
-    EXPECT_EQ(evaluator->getState(Address(pLight)), logic_state_t::FLOATING);
+    EXPECT_EQ(simulator->getState(Address(pLight)), logic_state_t::FLOATING);
 
-    evaluator->setState(Address(pSwitch), logic_state_t::HIGH);
-    EXPECT_EQ(evaluator->getState(Address(pLight)), logic_state_t::FLOATING);
+    simulator->setState(Address(pSwitch), logic_state_t::HIGH);
+    EXPECT_EQ(simulator->getState(Address(pLight)), logic_state_t::FLOATING);
 
-    evaluator->setState(Address(pSwitch), logic_state_t::LOW);
-    EXPECT_EQ(evaluator->getState(Address(pLight)), logic_state_t::FLOATING);
+    simulator->setState(Address(pSwitch), logic_state_t::LOW);
+    EXPECT_EQ(simulator->getState(Address(pLight)), logic_state_t::FLOATING);
 
 	cbd->setConnectionIdPosition(connection_end_id_t(0), Position(0, 0));
 	cbd->setConnectionIdPosition(connection_end_id_t(1), Position(0, 0));
 
-	evaluator->setState(Address(pSwitch), logic_state_t::HIGH);
-	EXPECT_EQ(evaluator->getState(Address(pLight)), logic_state_t::HIGH);
+	simulator->setState(Address(pSwitch), logic_state_t::HIGH);
+	EXPECT_EQ(simulator->getState(Address(pLight)), logic_state_t::HIGH);
 
-	evaluator->setState(Address(pSwitch), logic_state_t::LOW);
-	EXPECT_EQ(evaluator->getState(Address(pLight)), logic_state_t::LOW);
+	simulator->setState(Address(pSwitch), logic_state_t::LOW);
+	EXPECT_EQ(simulator->getState(Address(pLight)), logic_state_t::LOW);
 }
 
 TEST_F(EvaluatorICTest, SingleIC_MoveBlockMaintainsSignal) {
@@ -179,18 +179,18 @@ TEST_F(EvaluatorICTest, SingleIC_MoveBlockMaintainsSignal) {
 	ASSERT_TRUE(parentCircuit->tryCreateConnection(pSwitch, pIC));
 	ASSERT_TRUE(parentCircuit->tryCreateConnection(pIC, pLight));
 
-	evaluator->setState(Address(pSwitch), logic_state_t::HIGH);
-	EXPECT_EQ(evaluator->getState(Address(pLight)), logic_state_t::HIGH);
+	simulator->setState(Address(pSwitch), logic_state_t::HIGH);
+	EXPECT_EQ(simulator->getState(Address(pLight)), logic_state_t::HIGH);
 
 	const Position movedIC = pIC + Vector(3, 0);
 	ASSERT_TRUE(parentCircuit->tryMoveBlock(pIC, movedIC, Orientation()));
 	pIC = movedIC;
 
-	evaluator->setState(Address(pSwitch), logic_state_t::LOW);
-	EXPECT_EQ(evaluator->getState(Address(pLight)), logic_state_t::LOW);
+	simulator->setState(Address(pSwitch), logic_state_t::LOW);
+	EXPECT_EQ(simulator->getState(Address(pLight)), logic_state_t::LOW);
 
-	evaluator->setState(Address(pSwitch), logic_state_t::HIGH);
-	EXPECT_EQ(evaluator->getState(Address(pLight)), logic_state_t::HIGH);
+	simulator->setState(Address(pSwitch), logic_state_t::HIGH);
+	EXPECT_EQ(simulator->getState(Address(pLight)), logic_state_t::HIGH);
 }
 
 TEST_F(EvaluatorICTest, SingleIC_RemapInputToConstantSource) {
@@ -208,10 +208,10 @@ TEST_F(EvaluatorICTest, SingleIC_RemapInputToConstantSource) {
 	ASSERT_TRUE(parentCircuit->tryCreateConnection(pSwitch, pIC));
 	ASSERT_TRUE(parentCircuit->tryCreateConnection(pIC, pLight));
 
-	evaluator->setState(Address(pSwitch), logic_state_t::HIGH);
-	EXPECT_EQ(evaluator->getState(Address(pLight)), logic_state_t::HIGH);
-	evaluator->setState(Address(pSwitch), logic_state_t::LOW);
-	EXPECT_EQ(evaluator->getState(Address(pLight)), logic_state_t::LOW);
+	simulator->setState(Address(pSwitch), logic_state_t::HIGH);
+	EXPECT_EQ(simulator->getState(Address(pLight)), logic_state_t::HIGH);
+	simulator->setState(Address(pSwitch), logic_state_t::LOW);
+	EXPECT_EQ(simulator->getState(Address(pLight)), logic_state_t::LOW);
 
 	SharedCircuit child = environment.getBackend().getCircuit(icId);
 	ASSERT_TRUE(child);
@@ -226,19 +226,19 @@ TEST_F(EvaluatorICTest, SingleIC_RemapInputToConstantSource) {
 	cbd->setConnectionIdPosition(connection_end_id_t(0), Position(1, 0));
 	cbd->setConnectionIdPosition(connection_end_id_t(1), Position(1, 0));
 
-	evaluator->setState(Address(pSwitch), logic_state_t::LOW);
-	EXPECT_EQ(evaluator->getState(Address(pLight)), logic_state_t::UNDEFINED); // contention with constant HIGH
+	simulator->setState(Address(pSwitch), logic_state_t::LOW);
+	EXPECT_EQ(simulator->getState(Address(pLight)), logic_state_t::UNDEFINED); // contention with constant HIGH
 
-	evaluator->setState(Address(pSwitch), logic_state_t::HIGH);
-	EXPECT_EQ(evaluator->getState(Address(pLight)), logic_state_t::HIGH);
+	simulator->setState(Address(pSwitch), logic_state_t::HIGH);
+	EXPECT_EQ(simulator->getState(Address(pLight)), logic_state_t::HIGH);
 
 	cbd->setConnectionIdPosition(connection_end_id_t(0), Position(0, 0));
 	cbd->setConnectionIdPosition(connection_end_id_t(1), Position(0, 0));
 
-	EXPECT_EQ(evaluator->getState(Address(pLight)), logic_state_t::HIGH);
+	EXPECT_EQ(simulator->getState(Address(pLight)), logic_state_t::HIGH);
 
-	evaluator->setState(Address(pSwitch), logic_state_t::LOW);
-	EXPECT_EQ(evaluator->getState(Address(pLight)), logic_state_t::LOW);
+	simulator->setState(Address(pSwitch), logic_state_t::LOW);
+	EXPECT_EQ(simulator->getState(Address(pLight)), logic_state_t::LOW);
 }
 
 TEST_F(EvaluatorICTest, MultipleICInstances_RemappingPropagatesToAll) {
@@ -267,10 +267,10 @@ TEST_F(EvaluatorICTest, MultipleICInstances_RemappingPropagatesToAll) {
 	ASSERT_TRUE(parentCircuit->tryCreateConnection(pSwitchB, pICB));
 	ASSERT_TRUE(parentCircuit->tryCreateConnection(pICB, pLightB));
 
-	evaluator->setState(Address(pSwitchA), logic_state_t::HIGH);
-	evaluator->setState(Address(pSwitchB), logic_state_t::LOW);
-	EXPECT_EQ(evaluator->getState(Address(pLightA)), logic_state_t::HIGH);
-	EXPECT_EQ(evaluator->getState(Address(pLightB)), logic_state_t::LOW);
+	simulator->setState(Address(pSwitchA), logic_state_t::HIGH);
+	simulator->setState(Address(pSwitchB), logic_state_t::LOW);
+	EXPECT_EQ(simulator->getState(Address(pLightA)), logic_state_t::HIGH);
+	EXPECT_EQ(simulator->getState(Address(pLightB)), logic_state_t::LOW);
 
 	SharedCircuit child = environment.getBackend().getCircuit(icId);
 	ASSERT_TRUE(child);
@@ -285,13 +285,13 @@ TEST_F(EvaluatorICTest, MultipleICInstances_RemappingPropagatesToAll) {
 	cbd->setConnectionIdPosition(connection_end_id_t(0), Position(1, 0));
 	cbd->setConnectionIdPosition(connection_end_id_t(1), Position(1, 0));
 
-	EXPECT_EQ(evaluator->getState(Address(pLightA)), logic_state_t::HIGH);
-	EXPECT_EQ(evaluator->getState(Address(pLightB)), logic_state_t::UNDEFINED); // contention with switch B LOW and constant HIGH
+	EXPECT_EQ(simulator->getState(Address(pLightA)), logic_state_t::HIGH);
+	EXPECT_EQ(simulator->getState(Address(pLightB)), logic_state_t::UNDEFINED); // contention with switch B LOW and constant HIGH
 
 	const Position movedICB = pICB + Vector(0, 3);
 	ASSERT_TRUE(parentCircuit->tryMoveBlock(pICB, movedICB, Orientation())); // nothing should change
 	pICB = movedICB;
 
-	EXPECT_EQ(evaluator->getState(Address(pLightA)), logic_state_t::HIGH);
-	EXPECT_EQ(evaluator->getState(Address(pLightB)), logic_state_t::UNDEFINED);
+	EXPECT_EQ(simulator->getState(Address(pLightA)), logic_state_t::HIGH);
+	EXPECT_EQ(simulator->getState(Address(pLightB)), logic_state_t::UNDEFINED);
 }

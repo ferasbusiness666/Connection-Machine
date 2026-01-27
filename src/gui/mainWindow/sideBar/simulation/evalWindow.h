@@ -1,18 +1,18 @@
 #ifndef evalWindow_h
 #define evalWindow_h
 
-#include "backend/evaluator/util/evalAddressTree.h"
+#include "backend/circuit/circuit.h"
 #include "gui/helper/menuTree.h"
 
-class EvaluatorManager;
+class SimulatorManager;
 class CircuitManager;
 class MainWindow;
 
 class EvalWindow {
 public:
 	EvalWindow(
-		const EvaluatorManager& evaluatorManager,
-		const CircuitManager& circuitManager,
+		SimulatorManager& simulatorManager,
+		CircuitManager& circuitManager,
 		MainWindow& mainWindow,
 		DataUpdateEventManager& dataUpdateEventManager,
 		Rml::ElementDocument* document,
@@ -24,15 +24,15 @@ public:
 
 private:
 	void updateSelected(std::string string);
-	void makePaths(std::vector<std::vector<std::string>>& paths, std::vector<std::string>& path, const EvalAddressTree& addressTree);
-	void selectEvaluatorForCircuit(circuit_id_t circuitId);
-	void onCircuitCreatedSelect(const DataUpdateEventManager::EventData* eventData);
+	void makePaths(std::vector<std::vector<std::string>>& paths, std::vector<std::string>& path, circuit_id_t circuitId);
+	void selectSimulatoruatorForCircuit(circuit_id_t circuitId);
+	void onCircuitCreatedSelect(const DataUpdateEventManager::EventData* event);
 
 	MenuTree menuTree;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 	MainWindow& mainWindow;
-	const EvaluatorManager& evaluatorManager;
-	const CircuitManager& circuitManager;
+	SimulatorManager& simulatorManager;
+	CircuitManager& circuitManager;
 };
 
 #endif /* evalWindow_h */

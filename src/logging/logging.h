@@ -3,6 +3,7 @@
 
 using LogErrorCallback = std::function<void(const std::string& message, const std::string& subcategory)>;
 using LogWarningCallback = std::function<void(const std::string& message, const std::string& subcategory)>;
+using LogOutputCallback = std::function<void(const std::string& line)>;
 
 // basic string logging
 void logInfo(const std::string& message, const std::string& subcategory = "");
@@ -12,6 +13,8 @@ void logFatalError(const std::string& message, const std::string& subcategory = 
 
 void setLogErrorCallback(LogErrorCallback callback);
 void setLogWarningCallback(LogWarningCallback callback);
+void setLogOutputCallback(LogOutputCallback callback);
+void setLogStdErrEnabled(bool enabled);
 
 std::string getLogContents();
 
