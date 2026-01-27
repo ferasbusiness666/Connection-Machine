@@ -74,6 +74,7 @@ circuit_id_t EvalLogicSimulator::getCircuitId(const Address& address) const {
 }
 
 void EvalLogicSimulator::setState(const Address& address, logic_state_t state) {
+	std::lock_guard lock(mux);
 	std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>> connectionPoints = evaluatorInternal.mapFromAddressToBottomConnectionPoints(address);
 	if (!std::holds_alternative<EvalConnectionPoint>(connectionPoints)) return;
 	auto iter2 = gateIdMapping.find(std::get<EvalConnectionPoint>(connectionPoints).gateId);
@@ -85,6 +86,7 @@ void EvalLogicSimulator::setState(const Address& address, logic_state_t state) {
 }
 
 logic_state_t EvalLogicSimulator::getState(const Address& address) const {
+	std::lock_guard lock(mux);
 	std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>> connectionPoints = evaluatorInternal.mapFromAddressToBottomConnectionPoints(address);
 	if (!std::holds_alternative<EvalConnectionPoint>(connectionPoints)) return logic_state_t::UNDEFINED;
 	auto iter2 = gateIdMapping.find(std::get<EvalConnectionPoint>(connectionPoints).gateId);
@@ -95,6 +97,7 @@ logic_state_t EvalLogicSimulator::getState(const Address& address) const {
 }
 
 std::variant<logic_state_t, std::vector<logic_state_t>> EvalLogicSimulator::getPinState(const Address& address) {
+	std::lock_guard lock(mux);
 	SimulatorStateIndexVecVariant simulatorIdVariant = getPinSimulatorId(address);
 	if (std::holds_alternative<simulator_gate_id_t>(simulatorIdVariant)) {
 		simulator_gate_id_t simulatorId = std::get<simulator_gate_id_t>(simulatorIdVariant);
@@ -232,12 +235,14 @@ void EvalLogicSimulator::decreaseTickrateSeq() {
 }
 
 std::optional<simulator_gate_id_t> EvalLogicSimulator::getOutputPortId(eval_gate_id gateId, connection_end_id_t portId) const {
+	std::lock_guard lock(mux);
 	auto gateIdIter = gateIdMapping.find(gateId);
 	if (gateIdIter == gateIdMapping.end()) return std::nullopt;
 	return logicSimulator.getOutputPortId(gateIdIter->second, portId);
 }
 
 SimulatorStateIndexVecVariant EvalLogicSimulator::getVirtualConnectionSimulatorId(const Address& address, virtual_connection_id_t virtualConnectionId) const {
+	std::lock_guard lock(mux);
 	if (virtualConnectionId != 0) return 3;
 	std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>> evalConnectionPoints = evaluatorInternal.mapFromAddressToBottomConnectionPoints(address);
 	if (std::holds_alternative<EvalConnectionPoint>(evalConnectionPoints)) {
@@ -255,6 +260,7 @@ SimulatorStateIndexVecVariant EvalLogicSimulator::getVirtualConnectionSimulatorI
 	}
 
 SimulatorStateIndexVecVariant EvalLogicSimulator::getPinSimulatorId(const Address& address) const {
+	std::lock_guard lock(mux);
 	std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>> evalConnectionPoints = evaluatorInternal.mapFromAddressToBottomConnectionPoints(address);
 	if (std::holds_alternative<EvalConnectionPoint>(evalConnectionPoints)) {
 		EvalConnectionPoint evalConnectionPoint = std::get<EvalConnectionPoint>(evalConnectionPoints);
@@ -318,6 +324,7 @@ SimulatorStateIndexVecVariant EvalLogicSimulator::getPinSimulatorId(const Addres
 }
 
 std::pair<SimulatorStateIndexVecVariant, SimulatorStateIndexVecVariant> EvalLogicSimulator::getPinAndNotPinSimulatorId(std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>> connectionPoints) const {
+	std::lock_guard lock(mux);
 	if (std::holds_alternative<EvalConnectionPoint>(connectionPoints)) {
 		EvalConnectionPoint evalConnectionPoint = std::get<EvalConnectionPoint>(connectionPoints);
 		if (evalConnectionPoint.isNull()) {
@@ -396,21 +403,23 @@ std::pair<SimulatorStateIndexVecVariant, SimulatorStateIndexVecVariant> EvalLogi
 }
 
 std::vector<SimulatorStateIndexVecVariant> EvalLogicSimulator::getVirtualConnectionSimulatorIds(const Address& addressOrigin, const std::vector<std::pair<Position, virtual_connection_id_t>>& virtualConnections) const {
+	std::lock_guard lock(mux);
 	std::vector<SimulatorStateIndexVecVariant> output;
 	for (std::pair<Position, virtual_connection_id_t> virtualConnection : virtualConnections) {
 		Address address = addressOrigin;
 		address.appendPosition(virtualConnection.first);
-		output.push_back(getVirtualConnectionSimulatorId(address, virtualConnection.second));
+		output.push_back(getVirtualConnectionSimulatorId_noMux(address, virtualConnection.second));
 	}
 	return output;
 }
 
 std::vector<SimulatorStateIndexVecVariant> EvalLogicSimulator::getPinSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const {
+	std::lock_guard lock(mux);
 	std::vector<SimulatorStateIndexVecVariant> output;
 	for (Position position : positions) {
 		Address address = addressOrigin;
 		address.appendPosition(position);
-		output.push_back(getPinSimulatorId(address));
+		output.push_back(getPinSimulatorId_noMux(address));
 	}
 	return output;
 }
@@ -428,6 +437,7 @@ std::vector<SimulatorStateIndexVecVariant> EvalLogicSimulator::getPinSimulatorId
 // }
 
 void EvalLogicSimulator::processEdits() {
+	std::lock_guard lock(mux);
 	const EvalLayerState& evalLayerState = evaluatorInternal.getLayerRunner().getOutputLayer();
 	// addedGateCount += evalLayerState.getAddedGates().size();
 	// removedGateCount += evalLayerState.getRemovedGates().size();
@@ -528,7 +538,7 @@ void EvalLogicSimulator::processEdits() {
 		std::vector<SimulatorMappingUpdate> simulatorMappingUpdates;
 		for (unsigned int i = 0; i < topConnectionPoints.size(); i++) {
 			if (topConnectionPoints[i].empty()) continue;;
-			std::pair<SimulatorStateIndexVecVariant, SimulatorStateIndexVecVariant> simulatorIndexes = getPinAndNotPinSimulatorId(aboveBusLayerConnectionPointsToUpdateMappedDown[i]);
+			std::pair<SimulatorStateIndexVecVariant, SimulatorStateIndexVecVariant> simulatorIndexes = getPinAndNotPinSimulatorId_noMux(aboveBusLayerConnectionPointsToUpdateMappedDown[i]);
 			for (EvalConnectionPoint connectionPoint : topConnectionPoints[i]) {
 				std::optional<std::pair<Position, Position>> addressesPair = otherEvaluatorInternal.mapFromTopConnectionPointToPointAndBlockPosition(connectionPoint);
 				assert(addressesPair.has_value());
@@ -541,13 +551,180 @@ void EvalLogicSimulator::processEdits() {
 }
 
 void EvalLogicSimulator::connectListener(void* object, const Address& address, SimulatorMappingUpdateListenerFunction func) const {
+	std::lock_guard lock(mux);
 	simulatorMappingUpdateListeners.try_emplace(object, address, func);
 }
 
 
 void EvalLogicSimulator::disconnectListener(void* object) const {
+	std::lock_guard lock(mux);
 	auto iter = simulatorMappingUpdateListeners.find(object);
 	if (iter != simulatorMappingUpdateListeners.end()) {
 		simulatorMappingUpdateListeners.erase(iter);
 	}
+}
+
+
+std::optional<simulator_gate_id_t> EvalLogicSimulator::getOutputPortId_noMux(eval_gate_id gateId, connection_end_id_t portId) const {
+	auto gateIdIter = gateIdMapping.find(gateId);
+	if (gateIdIter == gateIdMapping.end()) return std::nullopt;
+	return logicSimulator.getOutputPortId(gateIdIter->second, portId);
+}
+
+SimulatorStateIndexVecVariant EvalLogicSimulator::getVirtualConnectionSimulatorId_noMux(const Address& address, virtual_connection_id_t virtualConnectionId) const {
+	if (virtualConnectionId != 0) return 3;
+	std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>> evalConnectionPoints = evaluatorInternal.mapFromAddressToBottomConnectionPoints(address);
+	if (std::holds_alternative<EvalConnectionPoint>(evalConnectionPoints)) {
+		auto iter2 = gateIdMapping.find(std::get<EvalConnectionPoint>(evalConnectionPoints).gateId);
+		if (iter2 == gateIdMapping.end()) return 3;
+		return iter2->second;
+	}
+	std::vector<simulator_gate_id_t> outputSimulatorIds;
+	for (EvalConnectionPoint evalConnectionPoint : std::get<std::vector<EvalConnectionPoint>>(evalConnectionPoints)) {
+		auto iter2 = gateIdMapping.find(evalConnectionPoint.gateId);
+		if (iter2 == gateIdMapping.end()) return 3;
+		outputSimulatorIds.push_back(iter2->second);
+	}
+	return outputSimulatorIds;
+	}
+
+SimulatorStateIndexVecVariant EvalLogicSimulator::getPinSimulatorId_noMux(const Address& address) const {
+	std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>> evalConnectionPoints = evaluatorInternal.mapFromAddressToBottomConnectionPoints(address);
+	if (std::holds_alternative<EvalConnectionPoint>(evalConnectionPoints)) {
+		EvalConnectionPoint evalConnectionPoint = std::get<EvalConnectionPoint>(evalConnectionPoints);
+		if (evalConnectionPoint.isNull()) {
+			logError("Failed to get bottom connection point.", "EvalLogicSimulator::getPinSimulatorId");
+			return 0;
+		}
+		const EvalLayerState& evalLayerState = evaluatorInternal.getLayerRunner().getOutputLayer();
+		const EvalGate* evalGate = evalLayerState.getGate(evalConnectionPoint.gateId);
+		auto connectionsIter = evalGate->connections.find(evalConnectionPoint.connectionEndId);
+		eval_gate_id evalGateIdToReadState = evalConnectionPoint.gateId;
+		if (connectionsIter != evalGate->connections.end() && connectionsIter->second.size() == 1) {
+			const EvalGate* otherSimulatorGate = evalLayerState.getGate(connectionsIter->second.begin()->gateId);
+			if (
+				otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION) ||
+				otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION_L) ||
+				otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION_H) ||
+				otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION_X)
+			) {
+				evalGateIdToReadState = otherSimulatorGate->gateId;
+			}
+		}
+		auto iter2 = gateIdMapping.find(evalGateIdToReadState);
+		if (iter2 == gateIdMapping.end()) {
+			logError("Failed to get sim id.", "EvalLogicSimulator::getPinSimulatorId");
+			return 0;
+		}
+		return iter2->second;
+	}
+	std::vector<simulator_gate_id_t> outputSimulatorIds;
+	for (EvalConnectionPoint evalConnectionPoint : std::get<std::vector<EvalConnectionPoint>>(evalConnectionPoints)) {
+		if (evalConnectionPoint.isNull()) {
+			logError("Failed to get bottom connection point.", "EvalLogicSimulator::getPinSimulatorId");
+			outputSimulatorIds.push_back(3);
+			continue;
+		}
+		const EvalLayerState& evalLayerState = evaluatorInternal.getLayerRunner().getOutputLayer();
+		const EvalGate* evalGate = evalLayerState.getGate(evalConnectionPoint.gateId);
+		auto connectionsIter = evalGate->connections.find(evalConnectionPoint.connectionEndId);
+		eval_gate_id evalGateIdToReadState = evalConnectionPoint.gateId;
+		if (connectionsIter != evalGate->connections.end() && connectionsIter->second.size() == 1) {
+			const EvalGate* otherSimulatorGate = evalLayerState.getGate(connectionsIter->second.begin()->gateId);
+			if (
+				otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION) ||
+				otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION_L) ||
+				otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION_H) ||
+				otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION_X)
+			) {
+				evalGateIdToReadState = otherSimulatorGate->gateId;
+			}
+		}
+		auto iter2 = gateIdMapping.find(evalGateIdToReadState);
+		if (iter2 == gateIdMapping.end()) {
+			logError("Failed to get sim id.", "EvalLogicSimulator::getPinSimulatorId");
+			outputSimulatorIds.push_back(3);
+			continue;
+		}
+		outputSimulatorIds.push_back(iter2->second);
+	}
+	return outputSimulatorIds;
+}
+
+std::pair<SimulatorStateIndexVecVariant, SimulatorStateIndexVecVariant> EvalLogicSimulator::getPinAndNotPinSimulatorId_noMux(std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>> connectionPoints) const {
+	if (std::holds_alternative<EvalConnectionPoint>(connectionPoints)) {
+		EvalConnectionPoint evalConnectionPoint = std::get<EvalConnectionPoint>(connectionPoints);
+		if (evalConnectionPoint.isNull()) {
+			logError("Failed to get bottom connection point.", "EvalLogicSimulator::getPinAndNotPinSimulatorId");
+			return {3, 3};
+		}
+		// non pin
+		auto nonPinIter = gateIdMapping.find(evalConnectionPoint.gateId);
+		if (nonPinIter == gateIdMapping.end()) {
+			logError("Failed to get sim id.", "EvalLogicSimulator::getPinAndNotPinSimulatorId");
+			return {3, 3};
+		}
+		// pin
+		const EvalLayerState& evalLayerState = evaluatorInternal.getLayerRunner().getOutputLayer();
+		const EvalGate* evalGate = evalLayerState.getGate(evalConnectionPoint.gateId);
+		auto connectionsIter = evalGate->connections.find(evalConnectionPoint.connectionEndId);
+		eval_gate_id evalGateIdToReadState = evalConnectionPoint.gateId;
+		if (connectionsIter != evalGate->connections.end() && connectionsIter->second.size() == 1) {
+			const EvalGate* otherSimulatorGate = evalLayerState.getGate(connectionsIter->second.begin()->gateId);
+			if (
+				otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION) ||
+				otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION_L) ||
+				otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION_H) ||
+				otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION_X)
+			) {
+				evalGateIdToReadState = otherSimulatorGate->gateId;
+			}
+		}
+		auto pinIter = gateIdMapping.find(evalGateIdToReadState);
+		if (pinIter == gateIdMapping.end()) {
+			logError("Failed to get sim id.", "EvalLogicSimulator::getPinAndNotPinSimulatorId");
+			return {3, 3};
+		}
+		// output
+		return {pinIter->second, nonPinIter->second};
+	}
+	std::vector<simulator_gate_id_t> outputNonPinIds;
+	std::vector<simulator_gate_id_t> outputPinIds;
+	for (EvalConnectionPoint evalConnectionPoint : std::get<std::vector<EvalConnectionPoint>>(connectionPoints)) {
+		if (evalConnectionPoint.isNull()) {
+			logError("Failed to get bottom connection point.", "EvalLogicSimulator::getPinAndNotPinSimulatorId");
+			return {3, 3};
+		}
+		// non pin
+		auto nonPinIter = gateIdMapping.find(evalConnectionPoint.gateId);
+		if (nonPinIter == gateIdMapping.end()) {
+			logError("Failed to get sim id.", "EvalLogicSimulator::getPinAndNotPinSimulatorId");
+			return {3, 3};
+		}
+		// pin
+		const EvalLayerState& evalLayerState = evaluatorInternal.getLayerRunner().getOutputLayer();
+		const EvalGate* evalGate = evalLayerState.getGate(evalConnectionPoint.gateId);
+		auto connectionsIter = evalGate->connections.find(evalConnectionPoint.connectionEndId);
+		eval_gate_id evalGateIdToReadState = evalConnectionPoint.gateId;
+		if (connectionsIter != evalGate->connections.end() && connectionsIter->second.size() == 1) {
+			const EvalGate* otherSimulatorGate = evalLayerState.getGate(connectionsIter->second.begin()->gateId);
+			if (
+				otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION) ||
+				otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION_L) ||
+				otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION_H) ||
+				otherSimulatorGate->type == getEvalGateType(BlockType::JUNCTION_X)
+			) {
+				evalGateIdToReadState = otherSimulatorGate->gateId;
+			}
+		}
+		auto pinIter = gateIdMapping.find(evalGateIdToReadState);
+		if (pinIter == gateIdMapping.end()) {
+			logError("Failed to get sim id.", "EvalLogicSimulator::getPinAndNotPinSimulatorId");
+			return {3, 3};
+		}
+		// output
+		outputPinIds.push_back(pinIter->second);
+		outputNonPinIds.push_back(nonPinIter->second);
+	}
+	return {outputPinIds, outputNonPinIds};
 }

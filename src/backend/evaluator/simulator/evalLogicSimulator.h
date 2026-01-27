@@ -79,6 +79,13 @@ public:
 	nlohmann::json dumpState() const { return logicSimulator.dumpState(); }
 
 private:
+	std::optional<simulator_gate_id_t> getOutputPortId_noMux(eval_gate_id gateId, connection_end_id_t portId) const;
+	SimulatorStateIndexVecVariant getVirtualConnectionSimulatorId_noMux(const Address& address, virtual_connection_id_t virtualConnectionId) const;
+	SimulatorStateIndexVecVariant getPinSimulatorId_noMux(const Address& address) const;
+	std::pair<SimulatorStateIndexVecVariant, SimulatorStateIndexVecVariant> getPinAndNotPinSimulatorId_noMux(std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>> connectionPoints) const;
+
+	mutable std::mutex mux;
+
 	std::vector<simulator_gate_id_t> dirtySimulatorIds;
 	LogicSimulator logicSimulator;
 	const CircuitManager& circuitManager;

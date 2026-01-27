@@ -146,6 +146,7 @@ void LogicSimulator::processPendingStateChanges() {
 		std::scoped_lock lk(mainDataMutex, statesAMutex);
 		while (!localQueue.empty()) {
 			const StateChange& change = localQueue.front();
+			localQueue.pop();
 
 			extendDataVectors(change.id);
 			if (!gateLocations.contains(change.id)) {
@@ -159,7 +160,6 @@ void LogicSimulator::processPendingStateChanges() {
 			statesA[change.id] = change.state;
 			statesB[change.id] = change.state;
 			setStateUsed[replayHead] = true;
-			localQueue.pop();
 		}
 		for (auto& gate : junctions) gate.doubleTick(statesA, statesB);
 	}
