@@ -7,13 +7,13 @@
 #include "util/uuid.h"
 #include "circuit.h"
 
-class EvaluatorManager;
+class SimulatorManager;
 class GeneratedCircuit;
 class ParsedCircuit;
 
 class CircuitManager {
 public:
-	CircuitManager(DataUpdateEventManager& dataUpdateEventManager, EvaluatorManager& evaluatorManager, CircuitFileManager& fileManager);
+	CircuitManager(DataUpdateEventManager& dataUpdateEventManager, SimulatorManager& simulatorManager, CircuitFileManager& fileManager);
 	CircuitManager(const CircuitManager&) = delete;
     CircuitManager& operator=(const CircuitManager&) = delete;
 
@@ -146,8 +146,8 @@ public:
 	}
 
 	template<class T>
-	void linkedFunctionForUpdates(const DataUpdateEventManager::EventData* eventData) {
-		auto eventWithData = eventData->cast<std::pair<BlockType, T>>();
+	void linkedFunctionForUpdates(const DataUpdateEventManager::EventData* event) {
+		auto eventWithData = event->cast<std::pair<BlockType, T>>();
 		if (!eventWithData) return;
 		SharedCircuit circuit = getCircuit(circuitBlockDataManager.getCircuitId(eventWithData->get().first));
 		if (!circuit) return;
@@ -164,7 +164,7 @@ private:
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 	ProceduralCircuitManager proceduralCircuitManager;
 	DataUpdateEventManager& dataUpdateEventManager;
-	EvaluatorManager& evaluatorManager;
+	SimulatorManager& simulatorManager;
 
 	circuit_id_t lastId = 0;
 	std::map<circuit_id_t, SharedCircuit> circuits;

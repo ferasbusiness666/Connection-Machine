@@ -22,6 +22,7 @@ CircuitRenderManager::~CircuitRenderManager() {
 	SharedCircuit circuit = backend.getCircuit(circuitId);
 	if (!circuit) return; // not an error because the circuit may have already been destroyed
 	MainRenderer::get().resetCircuit(viewportId);
+	MainRenderer::get().setViewportSimulatoruator(viewportId, nullptr, Address());
 	circuit->disconnectListener(this);
 }
 

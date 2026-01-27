@@ -207,6 +207,10 @@ void MainRenderer::setBlockPortName(BlockRenderDataId blockRenderDataId, BlockPo
 	blockRenderDataManager.setBlockPortName(blockRenderDataId, blockPortRenderDataId, newPortName);
 }
 
+void MainRenderer::setTextureVirtualConnection(BlockRenderDataId blockRenderDataId, std::optional<virtual_connection_id_t> textureVirtualConnection) {
+	blockRenderDataManager.setTextureVirtualConnection(blockRenderDataId, textureVirtualConnection);
+}
+
 void MainRenderer::regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDataId) {
 	for (std::pair<const unsigned int, ViewportRenderData>& pair : viewportRenderers) {
 		pair.second.getChunker().regenerateAllChunksWithBlock(blockRenderDataId);
@@ -251,23 +255,23 @@ void MainRenderer::moveViewportView(ViewportId viewportId, FPosition topLeft, FP
 	iter->second.updateView(topLeft, bottomRight);
 }
 
-void MainRenderer::setViewportEvaluator(ViewportId viewportId, Evaluator* evaluator, Address address) {
+void MainRenderer::setViewportSimulatoruator(ViewportId viewportId, const EvalLogicSimulator* simulator, Address address) {
 	auto iter = viewportRenderers.find(viewportId);
 	if (iter == viewportRenderers.end()) {
-		logError("Failed to call setViewportEvaluator on non existent viewport {}", "MainRenderer", viewportId);
+		logError("Failed to call setViewportSimulatoruator on non existent viewport {}", "MainRenderer", viewportId);
 		return;
 	}
-	iter->second.setEvaluator(evaluator, address);
+	iter->second.setSimulatoruator(simulator, address);
 }
 
 void MainRenderer::resetViewport(ViewportId viewportId) {
 	auto iter = viewportRenderers.find(viewportId);
 	if (iter == viewportRenderers.end()) {
-		logError("Failed to call setViewportEvaluator on non existent viewport {}", "MainRenderer", viewportId);
+		logError("Failed to call setViewportSimulatoruator on non existent viewport {}", "MainRenderer", viewportId);
 		return;
 	}
 	iter->second.getChunker().reset();
-	iter->second.setEvaluator(nullptr, Address());
+	iter->second.setSimulatoruator(nullptr, Address());
 }
 
 void MainRenderer::deregisterViewport(ViewportId viewport) { }

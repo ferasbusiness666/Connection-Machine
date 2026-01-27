@@ -6,7 +6,6 @@ class Environment;
 
 #include "renderer/elementCreator.h"
 #include "./viewManager/viewManager.h"
-#include "computerAPI/tutorialLoader.h"
 
 struct TutorialCondition {
 	struct BlockRequirement {
@@ -66,7 +65,7 @@ private:
 	CircuitView* circuitView;
 	ElementCreator elementCreator;
 	Environment& environment;
-	SharedEvaluator evaluator;
+	EvalLogicSimulator* simulator;
 	SharedCircuit curentCircuit;
 	ViewManager viewManager;
 

@@ -7,12 +7,13 @@
 
 #include <parallel_hashmap/phmap.h>
 
-#include "backend/evaluator/evaluator.h"
+#include "backend/evaluator/simulator/evalLogicSimulator.h"
 #include "gpu/abstractions/vulkanBuffer.h"
 #include "gpu/blockRenderDataManager.h"
 #include "gpu/helper/nBuffer.h"
 
 class SimulatorMappingUpdate;
+class BlockRenderDataManager;
 
 // ====================================================================================================================
 
@@ -32,8 +33,8 @@ struct BlockInstance {
 		bindingDescriptions[0].stride = sizeof(BlockInstance);
 		bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
-        return bindingDescriptions;
-    }
+		return bindingDescriptions;
+	}
 
 	inline static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
 		std::vector<VkVertexInputAttributeDescription> attributeDescriptions(7);
@@ -89,8 +90,8 @@ struct WireInstance {
 		bindingDescriptions[0].stride = sizeof(WireInstance);
 		bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
-        return bindingDescriptions;
-    }
+		return bindingDescriptions;
+	}
 
 	inline static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
 		std::vector<VkVertexInputAttributeDescription> attributeDescriptions(4);
@@ -135,8 +136,8 @@ struct RenderedWire {
 	FPosition end;
 };
 
-typedef phmap::flat_hash_map<Position, RenderedBlock> RenderedBlocks;
-typedef phmap::flat_hash_map<std::pair<Position, Position>, RenderedWire> RenderedWires;
+typedef std::unordered_map<Position, RenderedBlock> RenderedBlocks;
+typedef std::unordered_map<std::pair<Position, Position>, RenderedWire> RenderedWires;
 
 struct PortStateRange {
 	size_t baseIndex = 0;
@@ -148,10 +149,10 @@ struct PortStateRange {
 };
 
 // TODO - maybe these should just be split into two different types
-class VulkanChunkAllocation {
+class VulkanLogicAllocation {
 public:
-	VulkanChunkAllocation(VulkanDevice* device, const RenderedBlocks& blocks, const RenderedWires& wires, const Evaluator* evaluator, const Address& address);
-	~VulkanChunkAllocation();
+	VulkanLogicAllocation(VulkanDevice* device, const RenderedBlocks& blocks, const RenderedWires& wires, const EvalLogicSimulator* simulator, const Address& address);
+	~VulkanLogicAllocation();
 
 	inline const std::optional<AllocatedBuffer>& getBlockBuffer() const { return blockBuffer; }
 	inline uint32_t getNumBlockInstances() const { return numBlockInstances; }
@@ -161,7 +162,7 @@ public:
 
 	inline std::optional<NBuffer>& getStateBuffer() { return stateBuffer; }
 
-	inline std::vector<simulator_id_t>& getStateSimulatorIds() { return simulatorIds; }
+	inline std::vector<simulator_gate_id_t>& getStateSimulatorIds() { return simulatorIds; }
 	inline const phmap::flat_hash_map<Position, size_t>& getBlockStateIndex() const { return blockStateIndex; }
 	inline const phmap::flat_hash_map<Position, PortStateRange>& getPortStateIndex() const { return portStateIndex; }
 
@@ -177,20 +178,20 @@ private:
 	std::optional<NBuffer> stateBuffer;
 	VkDescriptorBufferInfo stateDescriptorBufferInfo;
 
-	std::vector<simulator_id_t> simulatorIds;
+	std::vector<simulator_gate_id_t> simulatorIds;
 	phmap::flat_hash_map<Position, size_t> blockStateIndex;
 	phmap::flat_hash_map<Position, PortStateRange> portStateIndex;
 };
 
 // ====================================================================================================================
 
-class Chunk {
+class LogicGroup {
 public:
 	inline RenderedBlocks& getRenderedBlocks() { return blocks; }
 	inline RenderedWires& getRenderedWires() { return wires; }
-	void rebuildAllocation(VulkanDevice* device, const Evaluator* evaluator, const Address& address);
+	void rebuildAllocation(VulkanDevice* device, const EvalLogicSimulator* simulator, const Address& address);
 
-	std::optional<std::shared_ptr<VulkanChunkAllocation>> getAllocation();
+	std::optional<std::shared_ptr<VulkanLogicAllocation>> getAllocation();
 
 private:
 	void annihilateOrphanGBs();
@@ -199,9 +200,9 @@ private:
 	RenderedBlocks blocks;
 	RenderedWires wires;
 
-	std::optional<std::shared_ptr<VulkanChunkAllocation>> newestAllocation;
-	std::optional<std::shared_ptr<VulkanChunkAllocation>> currentlyAllocating;
-	std::vector<std::shared_ptr<VulkanChunkAllocation>> gbJail; // deleted chunks mid allocation go here
+	std::optional<std::shared_ptr<VulkanLogicAllocation>> newestAllocation;
+	std::optional<std::shared_ptr<VulkanLogicAllocation>> currentlyAllocating;
+	std::vector<std::shared_ptr<VulkanLogicAllocation>> gbJail; // deleted chunks mid allocation go here
 };
 
 // ====================================================================================================================
@@ -228,31 +229,25 @@ public:
 	void regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDataId);
 
 	void updateSimulatorIds(const std::vector<SimulatorMappingUpdate>& simulatorMappingUpdates);
-	void setEvaluator(Evaluator* evaluator, const Address& address);
+	void setSimulatoruator(const EvalLogicSimulator* simulator, const Address& address);
 
-	std::vector<std::shared_ptr<VulkanChunkAllocation>> getAllocations(Position min, Position max);
+	std::vector<std::shared_ptr<VulkanLogicAllocation>> getAllocations(Position min, Position max);
 
 private:
 	std::vector<ChunkIntersection> getChunkIntersections(FPosition start, FPosition end);
-	std::vector<ChunkIntersection> getNeededChunkIntersections(FPosition start, FPosition end);
 
 private:
 	std::unordered_map<BlockRenderDataId, unsigned int> blockTypesCount; // Used to regenerateAllChunksWithBlock
 
-	Chunk chunkToAlwaysRender;
-	bool chunkToAlwaysRenderNeedUpdate = false;
-	phmap::flat_hash_map<Position, Chunk> chunks;
-	std::unordered_map<std::pair<Position, Position>, std::vector<Position>> chunksUnderWire;
+	std::unordered_map<std::string, LogicGroup> logicGroups;
+	std::unordered_map<Position, std::set<LogicGroup*>> chunkToGroups;
 	std::mutex mux; // sync can be relaxed in the future
 
-	std::unordered_map<Position, std::unordered_map<Position, unsigned int>> portStatePosToChunks;
-
-
 	// while edits are being made
-	std::unordered_set<Position> chunksToUpdate;
+	std::unordered_set<LogicGroup*> logicGroupsToUpdate;
 
 	VulkanDevice* device = nullptr;
-	Evaluator* evaluator = nullptr;
+	const EvalLogicSimulator* simulator = nullptr;
 	Address address;
 };
 

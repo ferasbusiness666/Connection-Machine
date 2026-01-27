@@ -24,7 +24,7 @@ project(Connection_Machine VERSION 0.13.2)
 if (APPLE)
 	set(APP_NAME "Connection Machine") # name of the bundle
 else()
-	set(APP_NAME ${PROJECT_NAME})
+	set(APP_NAME "Connection-Machine")
 endif()
 
 # Set directories

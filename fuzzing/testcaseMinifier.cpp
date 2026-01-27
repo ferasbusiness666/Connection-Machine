@@ -2,6 +2,7 @@
 #include "testcaseMinifier.h"
 #include "environment/environment.h"
 #include "backend/evaluator/evaluator.h"
+#include "backend/evaluator/simulator/evalLogicSimulator.h"
 #include "backend/container/block/blockDefs.h"
 
 FuzzTestcase TestcaseMinifier::minifyTestcase(const FuzzTestcase& originalTestcase) {
@@ -45,9 +46,8 @@ std::unique_ptr<FuzzTestcase> TestcaseMinifier::tryRemoveEditActions(const FuzzT
 	Environment environment { false };
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
 	SharedCircuit circuit = environment.getBackend().getCircuit(circuitId);
-	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuitId).value();
-	SharedEvaluator tEval = environment.getBackend().getEvaluator(evalId); // test evaluator
-	SharedEvaluator rEval = nullptr; // reference evaluator
+	simulator_id_t simulatorId = environment.getBackend().createSimulator(circuitId).value();
+	EvalLogicSimulator* tSimulator = environment.getBackend().getSimulator(simulatorId); // test evaluator
 
 	std::vector<BlockType> blockTypesUsed = makeBlockTypesUsableVector(testcase.getBlockTypesUsed(), environment);
 
@@ -119,18 +119,19 @@ std::unique_ptr<FuzzTestcase> TestcaseMinifier::tryRemoveEditActions(const FuzzT
 		}, action);
 	}
 
-	evaluator_id_t refEvalId = environment.getBackend().createEvaluator(circuitId).value();
-	rEval = environment.getBackend().getEvaluator(refEvalId);
+	Evaluator rEvaluator(environment.getBackend().getCircuitManager(), *circuit, environment.getBackend().getDataUpdateEventManager());
+	simulator_id_t refSimulatorId = simulator_id_t(1000000 + simulatorId.get());
+	EvalLogicSimulator rSimulator(refSimulatorId, environment.getBackend().getCircuitManager(), circuitId, environment.getBackend().getDataUpdateEventManager());
 
-	tEval->setRealistic(testcase.getRunRealistic());
-	rEval->setRealistic(testcase.getRunRealistic());
+	tSimulator->setRealistic(testcase.getRunRealistic());
+	rSimulator.setRealistic(testcase.getRunRealistic());
 	outputTestcase->setRealistic(testcase.getRunRealistic());
 
-	tEval->resetStates();
-	rEval->resetStates();
+	tSimulator->resetStates();
+	rSimulator.resetStates();
 
-	std::vector<simulator_id_t> simulatorIdsTest;
-	std::vector<simulator_id_t> simulatorIdsRef;
+	std::vector<simulator_gate_id_t> simulatorIdsTest;
+	std::vector<simulator_gate_id_t> simulatorIdsRef;
 	std::unordered_map<block_id_t, Position> blockIdToPosition;
 
 	BlockDataManager& blockDataManager = environment.getBackend().getBlockDataManager();
@@ -140,40 +141,26 @@ std::unique_ptr<FuzzTestcase> TestcaseMinifier::tryRemoveEditActions(const FuzzT
 		if (block == nullptr) continue;
 		Position pos = block->getPosition();
 		blockIdToPosition[blockId] = pos;
-		simulatorIdsTest.push_back(tEval->getBlockSimulatorId(pos));
-		simulatorIdsRef.push_back(rEval->getBlockSimulatorId(pos));
+		simulatorIdsTest.push_back(std::get<simulator_gate_id_t>(tSimulator->getVirtualConnectionSimulatorId(Address(pos), 0)));
+		simulatorIdsRef.push_back(std::get<simulator_gate_id_t>(tSimulator->getVirtualConnectionSimulatorId(Address(pos), 0)));
 		const BlockData* blockData = blockDataManager.getBlockData(block->type());
 		if (blockData == nullptr) continue;
 		if (blockData->isDefaultData()) {
-			std::variant<simulator_id_t, std::vector<simulator_id_t>> simIdTest = tEval->getPinSimulatorId(pos);
-			std::variant<simulator_id_t, std::vector<simulator_id_t>> simIdRef = rEval->getPinSimulatorId(pos);
-			if (std::holds_alternative<simulator_id_t>(simIdTest) && std::holds_alternative<simulator_id_t>(simIdRef)) {
-				simulatorIdsTest.push_back(std::get<simulator_id_t>(simIdTest));
-				simulatorIdsRef.push_back(std::get<simulator_id_t>(simIdRef));
-			} else if (std::holds_alternative<std::vector<simulator_id_t>>(simIdTest) && std::holds_alternative<std::vector<simulator_id_t>>(simIdRef)) {
-				std::vector<simulator_id_t>& vecTest = std::get<std::vector<simulator_id_t>>(simIdTest);
-				std::vector<simulator_id_t>& vecRef = std::get<std::vector<simulator_id_t>>(simIdRef);
-				simulatorIdsTest.insert(simulatorIdsTest.end(), vecTest.begin(), vecTest.end());
-				simulatorIdsRef.insert(simulatorIdsRef.end(), vecRef.begin(), vecRef.end());
-			} else {
-				return outputTestcase;
-			}
-		} else {
-			const std::unordered_map<connection_end_id_t, BlockData::ConnectionData>& connections = blockData->getConnections();
+			std::unordered_map<connection_end_id_t, BlockData::ConnectionData> connections = blockData->getConnectionsSafe();
 			for (const auto& [connectionId, connectionData] : connections) {
 				if (connectionData.portType == BlockData::ConnectionData::PortType::INPUT) {
 					continue;
 				}
 				std::optional<Position> portPositionOpt = block->getConnectionPosition(connectionId);
 				Position portPosition = portPositionOpt.value();
-				std::variant<simulator_id_t, std::vector<simulator_id_t>> simIdTest = tEval->getPinSimulatorId(portPosition);
-				std::variant<simulator_id_t, std::vector<simulator_id_t>> simIdRef = rEval->getPinSimulatorId(portPosition);
-				if (std::holds_alternative<simulator_id_t>(simIdTest) && std::holds_alternative<simulator_id_t>(simIdRef)) {
-					simulatorIdsTest.push_back(std::get<simulator_id_t>(simIdTest));
-					simulatorIdsRef.push_back(std::get<simulator_id_t>(simIdRef));
-				} else if (std::holds_alternative<std::vector<simulator_id_t>>(simIdTest) && std::holds_alternative<std::vector<simulator_id_t>>(simIdRef)) {
-					std::vector<simulator_id_t>& vecTest = std::get<std::vector<simulator_id_t>>(simIdTest);
-					std::vector<simulator_id_t>& vecRef = std::get<std::vector<simulator_id_t>>(simIdRef);
+				std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> simIdTest = tSimulator->getPinSimulatorId(portPosition);
+				std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> simIdRef = rSimulator.getPinSimulatorId(portPosition);
+				if (std::holds_alternative<simulator_gate_id_t>(simIdTest) && std::holds_alternative<simulator_gate_id_t>(simIdRef)) {
+					simulatorIdsTest.push_back(std::get<simulator_gate_id_t>(simIdTest));
+					simulatorIdsRef.push_back(std::get<simulator_gate_id_t>(simIdRef));
+				} else if (std::holds_alternative<std::vector<simulator_gate_id_t>>(simIdTest) && std::holds_alternative<std::vector<simulator_gate_id_t>>(simIdRef)) {
+					std::vector<simulator_gate_id_t>& vecTest = std::get<std::vector<simulator_gate_id_t>>(simIdTest);
+					std::vector<simulator_gate_id_t>& vecRef = std::get<std::vector<simulator_gate_id_t>>(simIdRef);
 					if (vecTest.size() != vecRef.size()) {
 						return outputTestcase;
 					}
@@ -193,19 +180,19 @@ std::unique_ptr<FuzzTestcase> TestcaseMinifier::tryRemoveEditActions(const FuzzT
 		std::visit([&](auto&& arg) {
 			using T = std::decay_t<decltype(arg)>;
 			if constexpr (std::is_same_v<T, SetBlockStateAction>) {
-				tEval->setState(arg.position, arg.state);
-				rEval->setState(arg.position, arg.state);
+				tSimulator->setState(arg.position, arg.state);
+				rSimulator.setState(arg.position, arg.state);
 				outputTestcase->addTestAction(arg);
 			} else if constexpr (std::is_same_v<T, TickEvalAction>) {
-				tEval->tickStep(arg.numTicks);
-				rEval->tickStep(arg.numTicks);
+				tSimulator->tickStep(arg.numTicks);
+				rSimulator.tickStep(arg.numTicks);
 				outputTestcase->addTestAction(arg);
 			}
 		}, action);
 	}
 
-	std::vector<logic_state_t> statesTest = tEval->getStatesFromSimulatorIds(simulatorIdsTest);
-	std::vector<logic_state_t> statesRef = rEval->getStatesFromSimulatorIds(simulatorIdsRef);
+	std::vector<logic_state_t> statesTest = tSimulator->getStates(simulatorIdsTest);
+	std::vector<logic_state_t> statesRef = rSimulator.getStates(simulatorIdsRef);
 	for (size_t k = 0; k < statesTest.size(); ++k) {
 		if (statesTest[k] != statesRef[k]) {
 			return outputTestcase;

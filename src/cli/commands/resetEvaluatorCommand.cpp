@@ -1,31 +1,31 @@
-/*#include "resetEvaluatorCommand.h"
+/*#include "resetSimulatoruatorCommand.h"
 
 #include "environment/environment.h"
 #include "../commandManager.h"
 #include "util/runAtStartup.h"
 
-runAtStartup(CommandManager::get().registerCommand(std::make_unique<ResetEvaluatorCommand>());)
+runAtStartup(CommandManager::get().registerCommand(std::make_unique<ResetSimulatoruatorCommand>());)
 
-void ResetEvaluatorCommand::run(const std::vector<std::string>& args, Environment& environment) {
+void ResetSimulatoruatorCommand::run(const std::vector<std::string>& args, Environment& environment) {
 	if (args.size() != 2) {
-		logError("Wrong number of arguments passed to reset_evaluator. Proper usage is 'reset_evaluator {eval_id}'", "ResetEvaluatorCommand");
+		logError("Wrong number of arguments passed to reset_simulator. Proper usage is 'reset_simulator {eval_id}'", "ResetSimulatoruatorCommand");
 		return;
 	}
 
-    int evalID;
+    int simulatorId;
     try {
-        evalID = std::stoi(args[1]);
+        simulatorId = std::stoi(args[1]);
     }
     catch (...) {
-        logError("Exception occured. Check your arguments, they should be reasonably-sized integers.", "ResetEvaluatorCommand");
+        logError("Exception occured. Check your arguments, they should be reasonably-sized integers.", "ResetSimulatoruatorCommand");
         return;
     }
-    SharedEvaluator eval = environment.getBackend().getEvaluatorManager().getEvaluator(evalID);
+    const EvalLogicSimulator* eval = environment.getBackend().getSimulatorManager().getSimulator(simulatorId);
     if (eval == nullptr) {
-        logError("Unrecognized evaluator ID. Available evaluators can be found with the 'list_evaluators' command.", "ResetEvaluatorCommand");
+        logError("Unrecognized simulator ID. Available simulators can be found with the 'list_simulators' command.", "ResetSimulatoruatorCommand");
         return;
     }
     eval->reset();
-    logInfo("Reset evaluator of ID {}", "ResetEvaluatorCommand", evalID);
+    logInfo("Reset simulator of ID {}", "ResetSimulatoruatorCommand", simulatorId);
 }
 */

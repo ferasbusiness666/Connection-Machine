@@ -1,6 +1,7 @@
 #include "tutorial.h"
 
 #include "circuitView.h"
+#include "computerAPI/tutorialLoader.h"
 #include "environment/environment.h"
 #include "events/customEvents.h"
 
@@ -14,11 +15,11 @@ void Tutorial::StartTutorial() {
 	tutorialRunning = true;
 	tutorialState = 0;
 	circuit_id_t circuitId = circuitView->getBackend().getCircuitManager().createNewCircuit(false);
-	std::optional<evaluator_id_t> evaluatorId = circuitView->getBackend().createEvaluator(circuitId);
-	if (!evaluatorId) return;
-	circuitView->setEvaluator(evaluatorId.value());
+	std::optional<simulator_id_t> simulatorId = circuitView->getBackend().createSimulator(circuitId);
+	if (!simulatorId) return;
+	circuitView->setSimulatoruator(simulatorId.value());
 
-	evaluator = circuitView->getBackend().getEvaluator(evaluatorId.value());
+	simulator = circuitView->getBackend().getSimulator(simulatorId.value());
 	SharedCircuit circuit = circuitView->getBackend().getCircuitManager().getCircuit(circuitId);
 	curentCircuit = circuitView->getBackend().getCircuitManager().getCircuit(circuitId);
 	curentCircuit->connectListener(this, std::bind(&Tutorial::checkTutorial, this, std::placeholders::_1, std::placeholders::_2));
@@ -86,8 +87,8 @@ bool Tutorial::isCurrentStepComplete() const {
 	}
 	for (std::vector<TutorialCondition::LogicStateRequirement>::iterator it = currentStep.condition.logicStates.begin(); it != currentStep.condition.logicStates.end();
 		 it++) {
-		evaluator->tickStep(it->numSteps);
-		if (evaluator->getState(Address(it->pos)) != it->state) {
+		simulator->tickStep(it->numSteps);
+		if (simulator->getState(Address(it->pos)) != it->state) {
 			return false;
 		}
 	}

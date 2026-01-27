@@ -1,26 +1,26 @@
 #include <gtest/gtest.h>
 #include "environment/environment.h"
-#include "backend/evaluator/evaluator.h"
+#include "backend/evaluator/simulator/evalLogicSimulator.h"
 
 class PrimitivesEvaluatorTest : public ::testing::Test {
 protected:
 	void SetUp() override;
 	void TearDown() override;
 	Environment environment { false };
-	SharedEvaluator evaluator = nullptr;
+	EvalLogicSimulator* simulator = nullptr;
 	SharedCircuit circuit = nullptr;
 };
 
 void PrimitivesEvaluatorTest::SetUp() {
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
 	circuit = environment.getBackend().getCircuit(circuitId);
-	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuitId).value();
-	evaluator = environment.getBackend().getEvaluator(evalId);
+	simulator_id_t simulatorId = environment.getBackend().createSimulator(circuitId).value();
+	simulator = environment.getBackend().getSimulator(simulatorId);
 }
 
 void PrimitivesEvaluatorTest::TearDown() {
 	circuit.reset();
-	evaluator.reset();
+	simulator = nullptr;
 }
 
 namespace {
@@ -246,11 +246,11 @@ TEST_F(PrimitivesEvaluatorTest, AllBasicGatesBehavior) {
 		}
 		for (int i = 0; i < testcase.inputStates.size(); ++i) {
 			ASSERT_TRUE(circuit->tryCreateConnection(Position(0, i), Position(1, 0) + testcase.connectionOffset));
-			evaluator->setState(Address({ 0, i }), testcase.inputStates[i]);
+			simulator->setState(Address({ 0, i }), testcase.inputStates[i]);
 		}
-		evaluator->tickStep();
+		simulator->tickStep();
 		logic_state_t expectedState = naiveButCorrectGateImplementation(testcase.blockType, testcase.inputStates);
-		logic_state_t computedState = evaluator->getState(Address(Position(1, 0)));
+		logic_state_t computedState = simulator->getState(Address(Position(1, 0)));
 		EXPECT_EQ(expectedState, computedState);
 		for (int i = 0; i < testcase.inputStates.size(); ++i) {
 			ASSERT_TRUE(circuit->tryRemoveConnection(Position(0, i), Position(1, 0) + testcase.connectionOffset));
@@ -290,7 +290,7 @@ TEST_F(PrimitivesEvaluatorTest, TristateBufferBehavior) {
 			int switchPos = 10;
 			for (int i = 0; i < testcase.enableStates.size(); ++i) {
 				ASSERT_TRUE(circuit->tryInsertBlock(Position(0, switchPos), Rotation::ZERO, BlockType::SWITCH));
-				evaluator->setState(Address(Position(0, switchPos)), testcase.enableStates[i]);
+				simulator->setState(Address(Position(0, switchPos)), testcase.enableStates[i]);
 				std::optional<Position> connectionPos = tristateBuffer->getConnectionPosition(connection_end_id_t(1));
 				ASSERT_TRUE(connectionPos.has_value());
 				ASSERT_TRUE(circuit->tryCreateConnection(Position(0, switchPos), connectionPos.value()));
@@ -298,7 +298,7 @@ TEST_F(PrimitivesEvaluatorTest, TristateBufferBehavior) {
 			}
 			for (int i = 0; i < testcase.dataStates.size(); ++i) {
 				ASSERT_TRUE(circuit->tryInsertBlock(Position(0, switchPos), Rotation::ZERO, BlockType::SWITCH));
-				evaluator->setState(Address(Position(0, switchPos)), testcase.dataStates[i]);
+				simulator->setState(Address(Position(0, switchPos)), testcase.dataStates[i]);
 				std::optional<Position> connectionPos = tristateBuffer->getConnectionPosition(connection_end_id_t(0));
 				ASSERT_TRUE(connectionPos.has_value());
 				ASSERT_TRUE(circuit->tryCreateConnection(Position(0, switchPos), connectionPos.value()));
@@ -309,9 +309,9 @@ TEST_F(PrimitivesEvaluatorTest, TristateBufferBehavior) {
 			ASSERT_TRUE(connectionPos.has_value());
 			ASSERT_TRUE(circuit->tryCreateConnection(connectionPos.value(), Position(5, 0)));
 			logic_state_t expectedState = tristateBufferImplementation(testcase.enableStates, testcase.dataStates);
-			evaluator->tickStep();
-			logic_state_t computedState1 = evaluator->getState(Position(5, 0));
-			logic_state_t computedState2 = evaluator->getState(Position(0, 0));
+			simulator->tickStep();
+			logic_state_t computedState1 = simulator->getState(Position(5, 0));
+			logic_state_t computedState2 = simulator->getState(Position(0, 0));
 			EXPECT_EQ(expectedState, computedState1);
 			EXPECT_EQ(expectedState, computedState2);
 		}

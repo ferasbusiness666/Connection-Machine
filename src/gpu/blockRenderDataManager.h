@@ -1,7 +1,7 @@
 #ifndef blockRenderDataManager_h
 #define blockRenderDataManager_h
 
-#include "backend/position/position.h"
+#include "backend/blockData/blockData.h"
 #include "renderer/viewport/blockTextureManager.h"
 
 typedef uint32_t BlockRenderDataId;
@@ -20,9 +20,10 @@ public:
 		Size size = Size(1);
 		BlockTextureCords blockTextureCords = BlockTextureCords({0, 0}, {1, 1}, 0, {0, 0});
 		std::map<BlockPortRenderDataId, BlockPortRenderData> blockPortRenderData;
+		std::optional<virtual_connection_id_t> textureVirtualConnection;
 	};
 
-	const BlockRenderData* getBlockRenderData(BlockRenderDataId blockRenderDataId);
+	const BlockRenderData* getBlockRenderData(BlockRenderDataId blockRenderDataId) const;
 
 	BlockRenderDataId addBlockRenderData();
 	void removeBlockRenderData(BlockRenderDataId blockRenderDataId);
@@ -35,6 +36,7 @@ public:
 	void removeBlockPort(BlockRenderDataId blockRenderDataId, BlockPortRenderDataId blockPortRenderDataId);
 	void moveBlockPort(BlockRenderDataId blockRenderDataId, BlockPortRenderDataId blockPortRenderDataId, FVector newPositionOnBlock);
 	void setBlockPortName(BlockRenderDataId blockRenderDataId, BlockPortRenderDataId blockPortRenderDataId, const std::string newPortName);
+	void setTextureVirtualConnection(BlockRenderDataId blockRenderDataId, std::optional<virtual_connection_id_t> textureVirtualConnection);
 
 private:
 	std::map<BlockRenderDataId, BlockRenderData> blockRenderData;

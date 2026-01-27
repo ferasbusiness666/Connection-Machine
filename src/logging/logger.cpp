@@ -12,34 +12,50 @@
 
 Logger::Logger(const std::filesystem::path& outputFile) : outputFile(outputFile), outputFileStream(outputFile) { }
 
-void Logger::log(LogType type, const std::string& message, const std::string& subcategory) {
+void Logger::log(
+	LogType type,
+	const std::string& message,
+	const std::string& subcategory,
+	bool emitToStdErr,
+	const std::function<void(const std::string&)>& outputCallback) {
 	std::lock_guard<std::mutex> guard(loggingMutex);
 
-	std::string categoryText;
+	std::string categorySuffix;
 	if (subcategory != "") {
-		categoryText = " - " + subcategory;
+		categorySuffix = " - " + subcategory;
 	}
 
+	const char* ansiPrefix = "";
+	const char* categoryLabel = "";
 	switch (type) {
 	// output to stderr
 	case LogType::Info:
-		categoryText = "Info" + categoryText;
-		std::cerr << "[" << ANSI_INFO << categoryText << ANSI_TAIL << "] " << message << "\n";
+		ansiPrefix = ANSI_INFO;
+		categoryLabel = "Info";
 		break;
 	case LogType::Warning:
-		categoryText = "Warning" + categoryText;
-		std::cerr << "[" << ANSI_WARNING << categoryText << ANSI_TAIL << "] " << message << "\n";
+		ansiPrefix = ANSI_WARNING;
+		categoryLabel = "Warning";
 		break;
 	case LogType::Error:
-		categoryText = "ERROR" + categoryText;
-		std::cerr << "[" << ANSI_ERROR << categoryText << ANSI_TAIL << "] " << message << "\n";
+		ansiPrefix = ANSI_ERROR;
+		categoryLabel = "ERROR";
 		break;
 	case LogType::Fatal:
-		categoryText = "FATAL" + categoryText;
-		std::cerr << "[" << ANSI_FATAL << categoryText << ANSI_TAIL << "] " << message << "\n";
+		ansiPrefix = ANSI_FATAL;
+		categoryLabel = "FATAL";
 		break;
 	}
-	std::cerr.flush();
+
+	std::string categoryText = std::string(categoryLabel) + categorySuffix;
+	std::string consoleLine = "[" + std::string(ansiPrefix) + categoryText + ANSI_TAIL + "] " + message;
+	if (emitToStdErr) {
+		std::cerr << consoleLine << "\n";
+		std::cerr.flush();
+	}
+	if (outputCallback) {
+		outputCallback(consoleLine);
+	}
 
 #ifdef TRACY_PROFILER
 	// output to tracy

@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include "environment/environment.h"
-#include "backend/evaluator/evaluator.h"
+#include "backend/evaluator/simulator/evalLogicSimulator.h"
 #include "backend/container/block/blockDefs.h"
 #include "backend/blockData/blockDataManager.h"
 #include "computerAPI/directoryManager.h"
@@ -116,7 +116,7 @@ namespace {
 		// return {testcases.at(80)};
 		return testcases;
 	}
-}; // namespace 
+}; // namespace
 
 class BasicFuzzingEvaluatorTest : public ::testing::TestWithParam<TestcaseConfig> {
 protected:
@@ -125,8 +125,8 @@ protected:
 	std::mt19937_64 gen;
 	Environment environment {false};
 	SharedCircuit circuit = nullptr;
-	SharedEvaluator tEval = nullptr; // testing evaluator
-	SharedEvaluator rEval = nullptr; // reference evaluator
+	EvalLogicSimulator* tSimulator = nullptr; // testing simulator
+	EvalLogicSimulator* rSimulator = nullptr; // reference simulator
 	BlockType loadCircuit(const std::filesystem::path& path);
 };
 
@@ -140,15 +140,15 @@ BlockType BasicFuzzingEvaluatorTest::loadCircuit(const std::filesystem::path& pa
 void BasicFuzzingEvaluatorTest::SetUp() {
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
 	circuit = environment.getBackend().getCircuit(circuitId);
-	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuitId).value();
-	tEval = environment.getBackend().getEvaluator(evalId);
-	ASSERT_TRUE(tEval->isPause());
+	simulator_id_t simulatorId = environment.getBackend().createSimulator(circuitId).value();
+	tSimulator = environment.getBackend().getSimulator(simulatorId);
+	ASSERT_TRUE(tSimulator->isPause());
 }
 
 void BasicFuzzingEvaluatorTest::TearDown() {
 	circuit.reset();
-	tEval.reset();
-	rEval.reset();
+	tSimulator = nullptr;
+	rSimulator = nullptr;
 }
 
 std::optional<connection_end_id_t> getRandomConnectionEnd(const BlockData* blockData, std::mt19937_64& gen, bool wantInput) {
@@ -187,7 +187,7 @@ TEST_P(BasicFuzzingEvaluatorTest, FuzzInteractions) {
 	TestcaseConfig config = GetParam();
 	gen.seed(config.seed);
 	bool runRealistic = config.realistic;
-	tEval->setRealistic(runRealistic);
+	tSimulator->setRealistic(runRealistic);
 	BlockDataManager& blockDataManager = environment.getBackend().getBlockDataManager();
 	std::uniform_int_distribution<int> distPos(-20, 20);
 	std::vector<block_id_t> blockIds;
@@ -287,15 +287,15 @@ TEST_P(BasicFuzzingEvaluatorTest, FuzzInteractions) {
 	}
 
 	logInfo("Creating reference evaluator", "BasicFuzzingEvaluatorTest");
-	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuit->getCircuitId()).value();
-	rEval = environment.getBackend().getEvaluator(evalId);
-	rEval->setRealistic(runRealistic);
-	ASSERT_TRUE(tEval->isPause());
-	ASSERT_TRUE(rEval->isPause());
-	tEval->resetStates();
-	rEval->resetStates();
-	std::vector<simulator_id_t> simulatorIdsTest;
-	std::vector<simulator_id_t> simulatorIdsRef;
+	simulator_id_t simulatorId = environment.getBackend().createSimulator(circuit->getCircuitId()).value();
+	rSimulator = environment.getBackend().getSimulator(simulatorId);
+	rSimulator->setRealistic(runRealistic);
+	ASSERT_TRUE(tSimulator->isPause());
+	ASSERT_TRUE(rSimulator->isPause());
+	tSimulator->resetStates();
+	rSimulator->resetStates();
+	std::vector<simulator_gate_id_t> simulatorIdsTest;
+	std::vector<simulator_gate_id_t> simulatorIdsRef;
 	std::unordered_map<block_id_t, Position> blockIdToPosition;
 	std::vector<std::string> ps;
 	for (block_id_t blockId : blockIds) {
@@ -303,21 +303,21 @@ TEST_P(BasicFuzzingEvaluatorTest, FuzzInteractions) {
 		ASSERT_NE(block, nullptr);
 		Position pos = block->getPosition();
 		blockIdToPosition[blockId] = pos;
-		simulatorIdsTest.push_back(tEval->getBlockSimulatorId(pos));
-		simulatorIdsRef.push_back(rEval->getBlockSimulatorId(pos));
+		simulatorIdsTest.push_back(std::get<simulator_gate_id_t>(tSimulator->getVirtualConnectionSimulatorId(Address(pos), 0)));
+		simulatorIdsRef.push_back(std::get<simulator_gate_id_t>(rSimulator->getVirtualConnectionSimulatorId(Address(pos), 0)));
 		ps.push_back("B " + pos.toString());
 		const BlockData* blockData = blockDataManager.getBlockData(block->type());
 		ASSERT_NE(blockData, nullptr);
 		if (blockData->isDefaultData()) {
-			std::variant<simulator_id_t, std::vector<simulator_id_t>> simIdTest = tEval->getPinSimulatorId(pos);
-			std::variant<simulator_id_t, std::vector<simulator_id_t>> simIdRef = rEval->getPinSimulatorId(pos);
-			if (std::holds_alternative<simulator_id_t>(simIdTest) && std::holds_alternative<simulator_id_t>(simIdRef)) {
-				simulatorIdsTest.push_back(std::get<simulator_id_t>(simIdTest));
-				simulatorIdsRef.push_back(std::get<simulator_id_t>(simIdRef));
+			SimulatorStateIndexVecVariant simulatorIdTest = tSimulator->getPinSimulatorId(pos);
+			SimulatorStateIndexVecVariant simulatorIdRef = rSimulator->getPinSimulatorId(pos);
+			if (std::holds_alternative<simulator_gate_id_t>(simulatorIdTest) && std::holds_alternative<simulator_gate_id_t>(simulatorIdRef)) {
+				simulatorIdsTest.push_back(std::get<simulator_gate_id_t>(simulatorIdTest));
+				simulatorIdsRef.push_back(std::get<simulator_gate_id_t>(simulatorIdRef));
 				ps.push_back("P " + pos.toString());
-			} else if (std::holds_alternative<std::vector<simulator_id_t>>(simIdTest) && std::holds_alternative<std::vector<simulator_id_t>>(simIdRef)) {
-				std::vector<simulator_id_t>& vecTest = std::get<std::vector<simulator_id_t>>(simIdTest);
-				std::vector<simulator_id_t>& vecRef = std::get<std::vector<simulator_id_t>>(simIdRef);
+			} else if (std::holds_alternative<std::vector<simulator_gate_id_t>>(simulatorIdTest) && std::holds_alternative<std::vector<simulator_gate_id_t>>(simulatorIdRef)) {
+				std::vector<simulator_gate_id_t>& vecTest = std::get<std::vector<simulator_gate_id_t>>(simulatorIdTest);
+				std::vector<simulator_gate_id_t>& vecRef = std::get<std::vector<simulator_gate_id_t>>(simulatorIdRef);
 				simulatorIdsTest.insert(simulatorIdsTest.end(), vecTest.begin(), vecTest.end());
 				simulatorIdsRef.insert(simulatorIdsRef.end(), vecRef.begin(), vecRef.end());
 				for (size_t i = 0; i < vecTest.size(); ++i) {
@@ -335,15 +335,15 @@ TEST_P(BasicFuzzingEvaluatorTest, FuzzInteractions) {
 				std::optional<Position> portPositionOpt = block->getConnectionPosition(connectionId);
 				ASSERT_TRUE(portPositionOpt.has_value());
 				Position portPosition = portPositionOpt.value();
-				std::variant<simulator_id_t, std::vector<simulator_id_t>> simIdTest = tEval->getPinSimulatorId(portPosition);
-				std::variant<simulator_id_t, std::vector<simulator_id_t>> simIdRef = rEval->getPinSimulatorId(portPosition);
-				if (std::holds_alternative<simulator_id_t>(simIdTest) && std::holds_alternative<simulator_id_t>(simIdRef)) {
-					simulatorIdsTest.push_back(std::get<simulator_id_t>(simIdTest));
-					simulatorIdsRef.push_back(std::get<simulator_id_t>(simIdRef));
+				SimulatorStateIndexVecVariant simulatorIdTest = tSimulator->getPinSimulatorId(portPosition);
+				SimulatorStateIndexVecVariant simulatorIdRef = rSimulator->getPinSimulatorId(portPosition);
+				if (std::holds_alternative<simulator_gate_id_t>(simulatorIdTest) && std::holds_alternative<simulator_gate_id_t>(simulatorIdRef)) {
+					simulatorIdsTest.push_back(std::get<simulator_gate_id_t>(simulatorIdTest));
+					simulatorIdsRef.push_back(std::get<simulator_gate_id_t>(simulatorIdRef));
 					ps.push_back("P " + portPosition.toString());
-				} else if (std::holds_alternative<std::vector<simulator_id_t>>(simIdTest) && std::holds_alternative<std::vector<simulator_id_t>>(simIdRef)) {
-					std::vector<simulator_id_t>& vecTest = std::get<std::vector<simulator_id_t>>(simIdTest);
-					std::vector<simulator_id_t>& vecRef = std::get<std::vector<simulator_id_t>>(simIdRef);
+				} else if (std::holds_alternative<std::vector<simulator_gate_id_t>>(simulatorIdTest) && std::holds_alternative<std::vector<simulator_gate_id_t>>(simulatorIdRef)) {
+					std::vector<simulator_gate_id_t>& vecTest = std::get<std::vector<simulator_gate_id_t>>(simulatorIdTest);
+					std::vector<simulator_gate_id_t>& vecRef = std::get<std::vector<simulator_gate_id_t>>(simulatorIdRef);
 					ASSERT_EQ(vecTest.size(), vecRef.size()) << "Mismatched simulator ID vector sizes for pin at position " << portPosition.toString();
 					simulatorIdsTest.insert(simulatorIdsTest.end(), vecTest.begin(), vecTest.end());
 					simulatorIdsRef.insert(simulatorIdsRef.end(), vecRef.begin(), vecRef.end());
@@ -364,61 +364,61 @@ TEST_P(BasicFuzzingEvaluatorTest, FuzzInteractions) {
 			block_id_t blockId = blockIds[gen() % blockIds.size()];
 			Position pos = blockIdToPosition.at(blockId);
 			logic_state_t state = logic_state_t(gen() % 4);
-			rEval->setState(pos, state);
-			tEval->setState(pos, state);
+			rSimulator->setState(pos, state);
+			tSimulator->setState(pos, state);
 		}
 
 		// compare states
-		std::vector<logic_state_t> statesTest = tEval->getStatesFromSimulatorIds(simulatorIdsTest);
-		std::vector<logic_state_t> statesRef = rEval->getStatesFromSimulatorIds(simulatorIdsRef);
+		std::vector<logic_state_t> statesTest = tSimulator->getStates(simulatorIdsTest);
+		std::vector<logic_state_t> statesRef = rSimulator->getStates(simulatorIdsRef);
 		ASSERT_EQ(statesTest.size(), statesRef.size());
 		for (size_t k = 0; k < statesTest.size(); ++k) {
 			if (statesTest[k] != statesRef[k]) {
-				simulator_id_t testSimId = simulatorIdsTest[k];
-				simulator_id_t refSimId = simulatorIdsRef[k];
-				logInfo("Mismatch at simulator ID index {} (simulator ID test: {}, ref: {}) at p {}", "BasicFuzzingEvaluatorTest", k, testSimId.get(), refSimId.get(), ps.at(k));
+				simulator_gate_id_t testSimulatorId = simulatorIdsTest[k];
+				simulator_gate_id_t refSimulatorId = simulatorIdsRef[k];
+				logInfo("Mismatch at simulator ID index {} (simulator ID test: {}, ref: {}) at p {}", "BasicFuzzingEvaluatorTest", k, testSimulatorId.get(), refSimulatorId.get(), ps.at(k));
 				int stepBackAmount = 6;
 				for (int m = 0; m < stepBackAmount; ++m) {
-					tEval->stepBack();
-					rEval->stepBack();
+					tSimulator->stepBack();
+					rSimulator->stepBack();
 				}
 				for (size_t m = 0; m < stepBackAmount; ++m) {
 					logInfo("After stepping back {} ticks:", "BasicFuzzingEvaluatorTest", stepBackAmount - m);
-					logic_state_t stateTest = tEval->getStateFromSimulatorId(testSimId);
-					logic_state_t stateRef = rEval->getStateFromSimulatorId(refSimId);
+					logic_state_t stateTest = tSimulator->getState(testSimulatorId);
+					logic_state_t stateRef = rSimulator->getState(refSimulatorId);
 					logInfo("  Test evaluator state: {}, Reference evaluator state: {}", "BasicFuzzingEvaluatorTest", logicstate_to_string(stateTest), logicstate_to_string(stateRef));
-					rEval->stepForward();
-					tEval->stepForward();
+					rSimulator->stepForward();
+					tSimulator->stepForward();
 				}
 			}
 			ASSERT_EQ(statesTest[k], statesRef[k]) << "Mismatch at simulator ID index " << k << " at p " << ps.at(k);
 		}
 
 		// tick
-		tEval->tickStep(numTicksBetweenTests);
-		rEval->tickStep(numTicksBetweenTests);
+		tSimulator->tickStep(numTicksBetweenTests);
+		rSimulator->tickStep(numTicksBetweenTests);
 
 		// compare states
-		statesTest = tEval->getStatesFromSimulatorIds(simulatorIdsTest);
-		statesRef = rEval->getStatesFromSimulatorIds(simulatorIdsRef);
+		statesTest = tSimulator->getStates(simulatorIdsTest);
+		statesRef = rSimulator->getStates(simulatorIdsRef);
 		ASSERT_EQ(statesTest.size(), statesRef.size());
 		for (size_t k = 0; k < statesTest.size(); ++k) {
 			if (statesTest[k] != statesRef[k]) {
-				simulator_id_t testSimId = simulatorIdsTest[k];
-				simulator_id_t refSimId = simulatorIdsRef[k];
-				logInfo("Mismatch at simulator ID index {} (simulator ID test: {}, ref: {}) at p {}", "BasicFuzzingEvaluatorTest", k, testSimId.get(), refSimId.get(), ps.at(k));
+				simulator_gate_id_t testSimulatorId = simulatorIdsTest[k];
+				simulator_gate_id_t refSimulatorId = simulatorIdsRef[k];
+				logInfo("Mismatch at simulator ID index {} (simulator ID test: {}, ref: {}) at p {}", "BasicFuzzingEvaluatorTest", k, testSimulatorId.get(), refSimulatorId.get(), ps.at(k));
 				int stepBackAmount = 6;
 				for (int m = 0; m < stepBackAmount; ++m) {
-					tEval->stepBack();
-					rEval->stepBack();
+					tSimulator->stepBack();
+					rSimulator->stepBack();
 				}
 				for (size_t m = 0; m < stepBackAmount; ++m) {
 					logInfo("After stepping back {} ticks:", "BasicFuzzingEvaluatorTest", stepBackAmount - m);
-					logic_state_t stateTest = tEval->getStateFromSimulatorId(testSimId);
-					logic_state_t stateRef = rEval->getStateFromSimulatorId(refSimId);
+					logic_state_t stateTest = tSimulator->getState(testSimulatorId);
+					logic_state_t stateRef = rSimulator->getState(refSimulatorId);
 					logInfo("  Test evaluator state: {}, Reference evaluator state: {}", "BasicFuzzingEvaluatorTest", logicstate_to_string(stateTest), logicstate_to_string(stateRef));
-					rEval->stepForward();
-					tEval->stepForward();
+					rSimulator->stepForward();
+					tSimulator->stepForward();
 				}
 			}
 			ASSERT_EQ(statesTest[k], statesRef[k]) << "Mismatch at simulator ID index " << k << " at p " << ps.at(k);

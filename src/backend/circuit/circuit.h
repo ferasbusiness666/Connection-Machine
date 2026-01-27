@@ -3,6 +3,7 @@
 
 #include <assert.h>
 
+#include "backend/address.h"
 #include "backend/container/blockContainer.h"
 #include "backend/container/copiedBlocks.h"
 #include "backend/selection.h"
@@ -13,24 +14,30 @@
 class CircuitManager;
 class GeneratedCircuit;
 class ParsedCircuit;
+class Evaluator;
 
 typedef std::function<void(DifferenceSharedPtr, circuit_id_t)> CircuitDiffListenerFunction;
 
 class Circuit {
 	friend class CircuitManager;
 public:
-	Circuit(circuit_id_t circuitId, CircuitManager& circuitManager, BlockDataManager& blockDataManager, DataUpdateEventManager& dataUpdateEventManager, const std::string& name, const std::string& uuid);
+	Circuit(circuit_id_t circuitId, CircuitManager& circuitManager, DataUpdateEventManager& dataUpdateEventManager, const std::string& name, const std::string& uuid);
 	Circuit(const Circuit&) = delete;
     Circuit& operator=(const Circuit&) = delete;
+	~Circuit();
 
 	void clear(bool clearUndoTree = false);
 
 	inline BlockType getBlockType() const { return blockContainer.getBlockType(); }
 	inline const std::string& getUUID() const { return circuitUUID; }
 	inline circuit_id_t getCircuitId() const { return circuitId; }
+	circuit_id_t getCircuitId(const Address& address) const;
 	inline std::string getCircuitNameNumber() const { return circuitName + " : " + std::to_string(circuitId); }
 	inline const std::string& getCircuitName() const { return circuitName; }
 	void setCircuitName(const std::string& name);
+
+	Evaluator& getEvaluator() { return *evaluator; }
+	const Evaluator& getEvaluator() const { return *evaluator; }
 
 	inline unsigned long long getEditCount() const { return editCount; }
 	void addEdit() { editCount++; }
@@ -102,10 +109,10 @@ private:
 	void popOffStack(Position position, Orientation transformAmount, bool resetRotation, Difference * difference, MoveType moveType = MoveType::MULTI_FINAL);
 
 	void setBlockType(BlockType blockType);
-	void blockSizeChange(const DataUpdateEventManager::EventData* eventData);
-	void addConnectionPort(const DataUpdateEventManager::EventData* eventData);
-	void setConnectionPortBitwidth(const DataUpdateEventManager::EventData* eventData);
-	void removeConnectionPort(const DataUpdateEventManager::EventData* eventData);
+	void blockSizeChange(const DataUpdateEventManager::EventData* event);
+	void addConnectionPort(const DataUpdateEventManager::EventData* event);
+	void setConnectionPortBitwidth(const DataUpdateEventManager::EventData* event);
+	void removeConnectionPort(const DataUpdateEventManager::EventData* event);
 
 	// helpers
 	void setType(const SharedSelection& selection, BlockType type, Difference* difference);
@@ -116,12 +123,7 @@ private:
 	void startUndo() { midUndo = true; }
 	void endUndo() { midUndo = false; }
 
-	void sendDifference(DifferenceSharedPtr difference) {
-		if (difference->empty()) return;
-		editCount++;
-		if (!midUndo) undoSystem.addDifference(difference);
-		for (const CircuitDiffListenerData& circuitDiffListenerData : listenerFunctions) circuitDiffListenerData.circuitDiffListenerFunction(difference, circuitId);
-	}
+	void sendDifference(DifferenceSharedPtr difference);
 
 	const Position stackBottom = Position(10000000, -10000000);
 	Position stackTop = stackBottom;
@@ -129,6 +131,7 @@ private:
 	std::string circuitUUID;
 	circuit_id_t circuitId;
 	BlockContainer blockContainer;
+	CircuitManager& circuitManager;
 	DataUpdateEventManager& dataUpdateEventManager;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 
@@ -145,6 +148,8 @@ private:
 	bool editable = true;
 
 	unsigned long long editCount = 0;
+
+	std::unique_ptr<Evaluator> evaluator;
 };
 
 #endif /* circuit_h */

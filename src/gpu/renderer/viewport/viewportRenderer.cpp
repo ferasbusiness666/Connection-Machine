@@ -31,8 +31,8 @@ void ViewportRenderer::render(Frame& frame, ViewportRenderData* viewport) {
 	vkCmdSetScissor(frame.mainCommandBuffer, 0, 1, &scissor);
 
 	// render subrenderers
-	gridRenderer.render(frame, viewData.viewportViewMat, viewData.viewScale, viewport->getEvaluator());
-	chunkRenderer.render(frame, viewData.viewportViewMat, viewport->getEvaluator(), viewport->getAddress(), viewport->getChunker().getAllocations(viewData.viewBounds.first.snap(), viewData.viewBounds.second.snap()));
+	gridRenderer.render(frame, viewData.viewportViewMat, viewData.viewScale, viewport->getSimulator());
+	chunkRenderer.render(frame, viewData.viewportViewMat, viewport->getSimulator(), viewport->getAddress(), viewport->getChunker().getAllocations(viewData.viewBounds.first.snap(), viewData.viewBounds.second.snap()));
 	elementRenderer.renderBlockPreviews(frame, viewData.viewportViewMat, viewport->getBlockPreviews());
 	elementRenderer.renderConnectionPreviews(frame, viewData.viewportViewMat, viewport->getConnectionPreviews());
 	elementRenderer.renderBoxSelections(frame, viewData.viewportViewMat, viewport->getBoxSelections());

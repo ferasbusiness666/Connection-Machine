@@ -2,28 +2,33 @@
 #define simulatorGates_h
 
 #include "logicState.h"
-#include "backend/evaluator/evalDefs.h"
+#include "simulatorDefs.h"
+#include "backend/blockData/blockData.h"
 #include "backend/container/block/connectionEnd.h"
 
 class SimulatorGate {
 public:
 	virtual ~SimulatorGate() = default;
 
-	SimulatorGate(simulator_id_t id) : id(id) {}
+	SimulatorGate(simulator_gate_id_t id) : id(id) {}
 
-	virtual void addInput(simulator_id_t inputId, connection_end_id_t portId) = 0;
-	virtual void removeInput(simulator_id_t inputId, connection_end_id_t portId) = 0;
-	virtual void removeIdRefs(simulator_id_t otherId) = 0;
-	virtual simulator_id_t getIdOfOutputPort(connection_end_id_t portId) const = 0;
-	virtual void resetState(bool realistic, IdVector<simulator_id_t, logic_state_t>& states) = 0;
-	virtual std::vector<simulator_id_t> getOutputSimIds() const = 0;
+	virtual void addInput(simulator_gate_id_t inputId, connection_end_id_t portId) = 0;
+	virtual void removeInput(simulator_gate_id_t inputId, connection_end_id_t portId) = 0;
+	virtual void removeIdRefs(simulator_gate_id_t otherId) = 0;
+	virtual BlockData::ConnectionData::PortType getPortType(connection_end_id_t portId) const {
+		assert(false);
+		return BlockData::ConnectionData::PortType::NONE;
+	}
+	virtual simulator_gate_id_t getIdOfOutputPort(connection_end_id_t portId) const = 0;
+	virtual void resetState(bool realistic, IdVector<simulator_gate_id_t, logic_state_t>& states) = 0;
+	virtual std::vector<simulator_gate_id_t> getOutputSimulatorIds() const = 0;
 
-	simulator_id_t getId() const { return id; }
+	simulator_gate_id_t getId() const { return id; }
 
 protected:
-	simulator_id_t id;
+	simulator_gate_id_t id;
 
-	inline void applyRealisticTick(logic_state_t targetState, const IdVector<simulator_id_t, logic_state_t>& statesA, IdVector<simulator_id_t, logic_state_t>& statesB) noexcept {
+	inline void applyRealisticTick(logic_state_t targetState, const IdVector<simulator_gate_id_t, logic_state_t>& statesA, IdVector<simulator_gate_id_t, logic_state_t>& statesB) noexcept {
 		logic_state_t currentState = statesA[id];
 		if (currentState == logic_state_t::UNDEFINED) {
 			statesB[id] = targetState;
@@ -37,9 +42,9 @@ protected:
 
 class LogicGate : public SimulatorGate {
 public:
-	LogicGate(simulator_id_t id) : SimulatorGate(id) {}
+	LogicGate(simulator_gate_id_t id) : SimulatorGate(id) {}
 
-	void resetState(bool realistic, IdVector<simulator_id_t, logic_state_t>& states) override {
+	void resetState(bool realistic, IdVector<simulator_gate_id_t, logic_state_t>& states) override {
 		if (realistic) {
 			states[id] = logic_state_t::UNDEFINED;
 		} else {
@@ -47,24 +52,24 @@ public:
 		}
 	}
 
-	simulator_id_t getIdOfOutputPort(connection_end_id_t portId) const override {
+	simulator_gate_id_t getIdOfOutputPort(connection_end_id_t portId) const override {
 		return id;
 	}
 
-	std::vector<simulator_id_t> getOutputSimIds() const override {
+	std::vector<simulator_gate_id_t> getOutputSimulatorIds() const override {
 		return {id};
 	}
 };
 
 class MultiInputGate : public LogicGate {
 public:
-	MultiInputGate(simulator_id_t id) : LogicGate(id) {}
+	MultiInputGate(simulator_gate_id_t id) : LogicGate(id) {}
 
-	void addInput(simulator_id_t inputId, connection_end_id_t portId) override {
+	void addInput(simulator_gate_id_t inputId, connection_end_id_t portId) override {
 		inputs.push_back(inputId);
 	}
 
-	void removeInput(simulator_id_t inputId, connection_end_id_t portId) override {
+	void removeInput(simulator_gate_id_t inputId, connection_end_id_t portId) override {
 		for (size_t i = 0; i < inputs.size(); ++i) {
 			if (inputs[i] == inputId) {
 				inputs[i] = inputs.back();
@@ -74,7 +79,7 @@ public:
 		}
 	}
 
-	void removeIdRefs(simulator_id_t otherId) override {
+	void removeIdRefs(simulator_gate_id_t otherId) override {
 		for (size_t i = 0; i < inputs.size(); ++i) {
 			if (inputs[i] == otherId) {
 				inputs[i] = inputs.back();
@@ -85,37 +90,47 @@ public:
 	}
 
 protected:
-	std::vector<simulator_id_t> inputs;
+	std::vector<simulator_gate_id_t> inputs;
 };
 
 class SingleInputGate : public LogicGate {
 public:
-	SingleInputGate(simulator_id_t id) : LogicGate(id) {}
+	SingleInputGate(simulator_gate_id_t id) : LogicGate(id) {}
 
-	void addInput(simulator_id_t inputId, connection_end_id_t portId) override {
+	void addInput(simulator_gate_id_t inputId, connection_end_id_t portId) override {
 		if (input.has_value()) {
-			logError("SingleInputGate already has an input", "SingleInputGate::addInput");
+			if (input.value() == inputId) {
+				weight++;
+			} else {
+				logError("SingleInputGate already has an input", "SingleInputGate::addInput"); // this is because rn we do weights into single input gates
+			}
 			return;
 		}
 		input = inputId;
 	}
 
-	void removeInput(simulator_id_t inputId, connection_end_id_t portId) override {
+	void removeInput(simulator_gate_id_t inputId, connection_end_id_t portId) override {
 		if (input == inputId) {
-			input.reset();
+			if (weight == 1) {
+				input.reset();
+			} else {
+				weight--;
+			}
 		} else {
-			logError("SingleInputGate does not have the specified input", "SingleInputGate::removeInput");
+			logError("SingleInputGate does not have the specified input", "SingleInputGate::removeInput"); // this is because rn we do weights into single input gates
 		}
+		assert(weight != 0);
 	}
 
-	void removeIdRefs(simulator_id_t otherId) override {
+	void removeIdRefs(simulator_gate_id_t otherId) override {
 		if (input.has_value() && input.value() == otherId) {
 			input.reset();
 		}
 	}
 
 protected:
-	std::optional<simulator_id_t> input;
+	unsigned int weight = 1;
+	std::optional<simulator_gate_id_t> input;
 };
 
 struct ANDLikeGate : public MultiInputGate {
@@ -125,10 +140,10 @@ struct ANDLikeGate : public MultiInputGate {
 	bool outputInverted;
 	unsigned int lastInputToEarlyExit;
 
-	ANDLikeGate(simulator_id_t id, bool inputsInverted = false, bool outputInverted = false)
+	ANDLikeGate(simulator_gate_id_t id, bool inputsInverted = false, bool outputInverted = false)
 		: MultiInputGate(id), inputsInverted(inputsInverted), outputInverted(outputInverted), lastInputToEarlyExit(0) {}
 
-	inline logic_state_t calculate(const IdVector<simulator_id_t, logic_state_t>& statesA) noexcept {
+	inline logic_state_t calculate(const IdVector<simulator_gate_id_t, logic_state_t>& statesA) noexcept {
 		if (inputs.empty()) [[unlikely]] {
 			return logic_state_t::LOW;
 		}
@@ -150,23 +165,28 @@ struct ANDLikeGate : public MultiInputGate {
 		return foundGoofyState ? logic_state_t::UNDEFINED : (logic_state_t)!outputInverted;
 	}
 
-	inline void tick(const IdVector<simulator_id_t, logic_state_t>& statesA, IdVector<simulator_id_t, logic_state_t>& statesB) noexcept {
+	inline void tick(const IdVector<simulator_gate_id_t, logic_state_t>& statesA, IdVector<simulator_gate_id_t, logic_state_t>& statesB) noexcept {
 		statesB[id] = calculate(statesA);
 	}
 
-	inline void realisticTick(const IdVector<simulator_id_t, logic_state_t>& statesA, IdVector<simulator_id_t, logic_state_t>& statesB) noexcept {
+	inline void realisticTick(const IdVector<simulator_gate_id_t, logic_state_t>& statesA, IdVector<simulator_gate_id_t, logic_state_t>& statesB) noexcept {
 		logic_state_t targetState = calculate(statesA);
 		applyRealisticTick(targetState, statesA, statesB);
 	}
 
-	void removeInput(simulator_id_t inputId, connection_end_id_t portId) override {
+	void removeInput(simulator_gate_id_t inputId, connection_end_id_t portId) override {
 		lastInputToEarlyExit = 0;
 		MultiInputGate::removeInput(inputId, portId);
 	}
 
-	void removeIdRefs(simulator_id_t otherId) override {
+	void removeIdRefs(simulator_gate_id_t otherId) override {
 		lastInputToEarlyExit = 0;
 		MultiInputGate::removeIdRefs(otherId);
+	}
+
+	BlockData::ConnectionData::PortType getPortType(connection_end_id_t portId) const override {
+		if (portId == 1) return BlockData::ConnectionData::PortType::OUTPUT;
+		return BlockData::ConnectionData::PortType::INPUT;
 	}
 
 	nlohmann::json dumpState() const /* GCOVR_EXCL_FUNCTION */ {
@@ -176,7 +196,7 @@ struct ANDLikeGate : public MultiInputGate {
 		stateJson["outputInverted"] = outputInverted;
 		stateJson["lastInputToEarlyExit"] = lastInputToEarlyExit;
 		stateJson["inputs"] = nlohmann::json::array();
-		for (const simulator_id_t inputId : inputs) {
+		for (const simulator_gate_id_t inputId : inputs) {
 			stateJson["inputs"].push_back(inputId.get());
 		}
 		return stateJson;
@@ -188,16 +208,16 @@ struct XORLikeGate : public MultiInputGate {
 	// Can be used for XOR and XNOR
 	bool outputInverted;
 
-	XORLikeGate(simulator_id_t id, bool outputInverted = false)
+	XORLikeGate(simulator_gate_id_t id, bool outputInverted = false)
 		: MultiInputGate(id), outputInverted(outputInverted) {}
 
-	inline logic_state_t calculate(const IdVector<simulator_id_t, logic_state_t>& statesA) const noexcept {
+	inline logic_state_t calculate(const IdVector<simulator_gate_id_t, logic_state_t>& statesA) const noexcept {
 		if (inputs.empty()) {
 			return logic_state_t::LOW;
 		}
 		// parity == true means current result would be HIGH
 		bool parity = outputInverted;
-		for (const simulator_id_t inputId : inputs) {
+		for (const simulator_gate_id_t inputId : inputs) {
 			const logic_state_t state = statesA[inputId];
 			if (state >= logic_state_t::FLOATING) { // FLOATING or UNDEFINED
 				return logic_state_t::UNDEFINED;
@@ -207,13 +227,18 @@ struct XORLikeGate : public MultiInputGate {
 		return (logic_state_t)parity;
 	}
 
-	inline void tick(const IdVector<simulator_id_t, logic_state_t>& statesA, IdVector<simulator_id_t, logic_state_t>& statesB) noexcept {
+	inline void tick(const IdVector<simulator_gate_id_t, logic_state_t>& statesA, IdVector<simulator_gate_id_t, logic_state_t>& statesB) noexcept {
 		statesB[id] = calculate(statesA);
 	}
 
-	inline void realisticTick(const IdVector<simulator_id_t, logic_state_t>& statesA, IdVector<simulator_id_t, logic_state_t>& statesB) noexcept {
+	inline void realisticTick(const IdVector<simulator_gate_id_t, logic_state_t>& statesA, IdVector<simulator_gate_id_t, logic_state_t>& statesB) noexcept {
 		logic_state_t targetState = calculate(statesA);
 		applyRealisticTick(targetState, statesA, statesB);
+	}
+
+	BlockData::ConnectionData::PortType getPortType(connection_end_id_t portId) const override {
+		if (portId == 1) return BlockData::ConnectionData::PortType::OUTPUT;
+		return BlockData::ConnectionData::PortType::INPUT;
 	}
 
 	nlohmann::json dumpState() const /* GCOVR_EXCL_FUNCTION */ {
@@ -221,7 +246,7 @@ struct XORLikeGate : public MultiInputGate {
 		stateJson["id"] = id.get();
 		stateJson["outputInverted"] = outputInverted;
 		stateJson["inputs"] = nlohmann::json::array();
-		for (const simulator_id_t inputId : inputs) {
+		for (const simulator_gate_id_t inputId : inputs) {
 			stateJson["inputs"].push_back(inputId.get());
 		}
 		return stateJson;
@@ -229,14 +254,14 @@ struct XORLikeGate : public MultiInputGate {
 };
 
 struct JunctionGate : public SimulatorGate {
-	std::vector<simulator_id_t> inputs;
+	std::vector<simulator_gate_id_t> inputs;
 	logic_state_t defaultState;
 
-	JunctionGate(simulator_id_t id, logic_state_t defaultState) : SimulatorGate(id), defaultState(defaultState) {}
+	JunctionGate(simulator_gate_id_t id, logic_state_t defaultState) : SimulatorGate(id), defaultState(defaultState) {}
 
-	inline logic_state_t calculate(const IdVector<simulator_id_t, logic_state_t>& states) const noexcept {
+	inline logic_state_t calculate(const IdVector<simulator_gate_id_t, logic_state_t>& states) const noexcept {
 		logic_state_t outputState = logic_state_t::FLOATING;
-		for (const simulator_id_t inputId : inputs) {
+		for (const simulator_gate_id_t inputId : inputs) {
 			const logic_state_t state = states[inputId];
 			if (state == logic_state_t::FLOATING) {
 				continue;
@@ -256,40 +281,44 @@ struct JunctionGate : public SimulatorGate {
 		return outputState;
 	}
 
-	inline void tick(IdVector<simulator_id_t, logic_state_t>& states) noexcept {
+	inline void tick(IdVector<simulator_gate_id_t, logic_state_t>& states) noexcept {
 		states[id] = calculate(states);
 	}
 
-	inline void doubleTick(IdVector<simulator_id_t, logic_state_t>& statesA, IdVector<simulator_id_t, logic_state_t>& statesB) noexcept {
+	inline void doubleTick(IdVector<simulator_gate_id_t, logic_state_t>& statesA, IdVector<simulator_gate_id_t, logic_state_t>& statesB) noexcept {
 		logic_state_t state = calculate(statesB);
 		statesA[id] = state;
 		statesB[id] = state;
 	}
 
-	void addInput(simulator_id_t inputId, connection_end_id_t portId) override {
+	void addInput(simulator_gate_id_t inputId, connection_end_id_t portId) override {
 		inputs.push_back(inputId);
 	}
 
-	void removeInput(simulator_id_t inputId, connection_end_id_t portId) override {
+	void removeInput(simulator_gate_id_t inputId, connection_end_id_t portId) override {
 		auto it = std::find(inputs.begin(), inputs.end(), inputId);
 		if (it != inputs.end()) {
 			inputs.erase(it);
 		}
 	}
 
-	void removeIdRefs(simulator_id_t otherId) override {
+	void removeIdRefs(simulator_gate_id_t otherId) override {
 		inputs.erase(std::remove(inputs.begin(), inputs.end(), otherId), inputs.end());
 	}
 
-	void resetState(bool realistic, IdVector<simulator_id_t, logic_state_t>& states) override {
+	BlockData::ConnectionData::PortType getPortType(connection_end_id_t portId) const override {
+		return BlockData::ConnectionData::PortType::BIDIRECTIONAL;
+	}
+
+	void resetState(bool realistic, IdVector<simulator_gate_id_t, logic_state_t>& states) override {
 		states[id] = logic_state_t::FLOATING;
 	}
 
-	simulator_id_t getIdOfOutputPort(connection_end_id_t portId) const override {
+	simulator_gate_id_t getIdOfOutputPort(connection_end_id_t portId) const override {
 		return id;
 	}
 
-	std::vector<simulator_id_t> getOutputSimIds() const override {
+	std::vector<simulator_gate_id_t> getOutputSimulatorIds() const override {
 		return {id};
 	}
 
@@ -298,29 +327,28 @@ struct JunctionGate : public SimulatorGate {
 		stateJson["id"] = id.get();
 		stateJson["defaultState"] = logicstate_to_string(defaultState);
 		stateJson["inputs"] = nlohmann::json::array();
-		for (const simulator_id_t inputId : inputs) {
+		for (const simulator_gate_id_t inputId : inputs) {
 			stateJson["inputs"].push_back(inputId.get());
 		}
 		return stateJson;
 	}
 };
 
-
 class BufferGateBase : public SingleInputGate {
 public:
 	bool outputInverted;
 
-	BufferGateBase(simulator_id_t id, bool outputInverted = false)
+	BufferGateBase(simulator_gate_id_t id, bool outputInverted = false)
 		: SingleInputGate(id), outputInverted(outputInverted) {}
 };
 
 struct BufferGate : public BufferGateBase {
 	unsigned int extraDelayTicks;
 
-	BufferGate(simulator_id_t id, bool outputInverted = false, unsigned int extraDelayTicks = 0)
+	BufferGate(simulator_gate_id_t id, bool outputInverted = false, unsigned int extraDelayTicks = 0)
 		: BufferGateBase(id, outputInverted), extraDelayTicks(extraDelayTicks) {}
 
-	inline void tick(const IdVector<simulator_id_t, logic_state_t>& statesA, IdVector<simulator_id_t, logic_state_t>& statesB) noexcept {}
+	inline void tick(const IdVector<simulator_gate_id_t, logic_state_t>& statesA, IdVector<simulator_gate_id_t, logic_state_t>& statesB) noexcept {}
 
 	nlohmann::json dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 		nlohmann::json stateJson = nlohmann::json::object();
@@ -337,10 +365,10 @@ struct BufferGate : public BufferGateBase {
 };
 
 struct SingleBufferGate : public BufferGateBase {
-	SingleBufferGate(simulator_id_t id, bool outputInverted = false)
+	SingleBufferGate(simulator_gate_id_t id, bool outputInverted = false)
 		: BufferGateBase(id, outputInverted) {}
 
-	inline logic_state_t calculate(const IdVector<simulator_id_t, logic_state_t>& statesA) const noexcept {
+	inline logic_state_t calculate(const IdVector<simulator_gate_id_t, logic_state_t>& statesA) const noexcept {
 		if (!input.has_value()) [[unlikely]] {
 			return logic_state_t::UNDEFINED;
 		}
@@ -351,11 +379,16 @@ struct SingleBufferGate : public BufferGateBase {
 		return outputInverted ? (state == logic_state_t::HIGH ? logic_state_t::LOW : logic_state_t::HIGH) : state;
 	}
 
-	inline void tick(const IdVector<simulator_id_t, logic_state_t>& statesA, IdVector<simulator_id_t, logic_state_t>& statesB) noexcept {
+	BlockData::ConnectionData::PortType getPortType(connection_end_id_t portId) const override {
+		if (portId == 1) return BlockData::ConnectionData::PortType::OUTPUT;
+		return BlockData::ConnectionData::PortType::INPUT;
+	}
+
+	inline void tick(const IdVector<simulator_gate_id_t, logic_state_t>& statesA, IdVector<simulator_gate_id_t, logic_state_t>& statesB) noexcept {
 		statesB[id] = calculate(statesA);
 	}
 
-	inline void realisticTick(const IdVector<simulator_id_t, logic_state_t>& statesA, IdVector<simulator_id_t, logic_state_t>& statesB) noexcept {
+	inline void realisticTick(const IdVector<simulator_gate_id_t, logic_state_t>& statesA, IdVector<simulator_gate_id_t, logic_state_t>& statesB) noexcept {
 		logic_state_t targetState = calculate(statesA);
 		applyRealisticTick(targetState, statesA, statesB);
 	}
@@ -375,38 +408,38 @@ struct SingleBufferGate : public BufferGateBase {
 
 struct TristateBufferGate : public SimulatorGate {
 	bool enableInverted;
-	simulator_id_t dataInput;
-	simulator_id_t enableInput;
+	simulator_gate_id_t dataInput;
+	simulator_gate_id_t enableInput;
 
-	TristateBufferGate(simulator_id_t id, bool enableInverted = false)
+	TristateBufferGate(simulator_gate_id_t id, bool enableInverted = false)
 		: SimulatorGate(id), enableInverted(enableInverted) {}
 
-	void addInput(simulator_id_t inputId, connection_end_id_t portId) override {
-		if (portId == connection_end_id_t(0)) {
+	void addInput(simulator_gate_id_t inputId, connection_end_id_t portId) override {
+		if (portId == 0) {
 			dataInput = inputId;
 		} else {
 			enableInput = inputId;
 		}
 	}
 
-	void removeInput(simulator_id_t inputId, connection_end_id_t portId) override {
-		if (portId == connection_end_id_t(0)) {
-			dataInput = simulator_id_t(0);
+	void removeInput(simulator_gate_id_t inputId, connection_end_id_t portId) override {
+		if (portId == 0) {
+			dataInput = simulator_gate_id_t(0);
 		} else {
-			enableInput = simulator_id_t(0);
+			enableInput = simulator_gate_id_t(0);
 		}
 	}
 
-	void removeIdRefs(simulator_id_t otherId) override {
+	void removeIdRefs(simulator_gate_id_t otherId) override {
 		if (dataInput == otherId) {
-			dataInput = simulator_id_t(0);
+			dataInput = simulator_gate_id_t(0);
 		}
 		if (enableInput == otherId) {
-			enableInput = simulator_id_t(0);
+			enableInput = simulator_gate_id_t(0);
 		}
 	}
 
-	void resetState(bool realistic, IdVector<simulator_id_t, logic_state_t>& states) override {
+	void resetState(bool realistic, IdVector<simulator_gate_id_t, logic_state_t>& states) override {
 		if (realistic) {
 			states[id] = logic_state_t::UNDEFINED;
 		} else {
@@ -414,7 +447,7 @@ struct TristateBufferGate : public SimulatorGate {
 		}
 	}
 
-	inline logic_state_t calculate(const IdVector<simulator_id_t, logic_state_t>& statesA) const noexcept {
+	inline logic_state_t calculate(const IdVector<simulator_gate_id_t, logic_state_t>& statesA) const noexcept {
 		logic_state_t enableState = statesA[enableInput];
 		if (enableState >= logic_state_t::FLOATING) { // FLOATING or UNDEFINED
 			return logic_state_t::UNDEFINED;
@@ -430,20 +463,25 @@ struct TristateBufferGate : public SimulatorGate {
 		return state;
 	}
 
-	inline void tick(const IdVector<simulator_id_t, logic_state_t>& statesA, IdVector<simulator_id_t, logic_state_t>& statesB) noexcept {
+	inline void tick(const IdVector<simulator_gate_id_t, logic_state_t>& statesA, IdVector<simulator_gate_id_t, logic_state_t>& statesB) noexcept {
 		statesB[id] = calculate(statesA);
 	}
 
-	inline void realisticTick(const IdVector<simulator_id_t, logic_state_t>& statesA, IdVector<simulator_id_t, logic_state_t>& statesB) noexcept {
+	inline void realisticTick(const IdVector<simulator_gate_id_t, logic_state_t>& statesA, IdVector<simulator_gate_id_t, logic_state_t>& statesB) noexcept {
 		logic_state_t targetState = calculate(statesA);
 		applyRealisticTick(targetState, statesA, statesB);
 	}
 
-	simulator_id_t getIdOfOutputPort(connection_end_id_t portId) const override {
+	BlockData::ConnectionData::PortType getPortType(connection_end_id_t portId) const override {
+		if (portId == 2) return BlockData::ConnectionData::PortType::OUTPUT;
+		return BlockData::ConnectionData::PortType::INPUT;
+	}
+
+	simulator_gate_id_t getIdOfOutputPort(connection_end_id_t portId) const override {
 		return id;
 	}
 
-	std::vector<simulator_id_t> getOutputSimIds() const override {
+	std::vector<simulator_gate_id_t> getOutputSimulatorIds() const override {
 		return {id};
 	}
 
@@ -461,30 +499,34 @@ class ConstantGateBase : public SimulatorGate {
 public:
 	logic_state_t outputState;
 
-	ConstantGateBase(simulator_id_t id, logic_state_t outputState)
+	ConstantGateBase(simulator_gate_id_t id, logic_state_t outputState)
 		: SimulatorGate(id), outputState(outputState) {}
 
-	void addInput(simulator_id_t inputId, connection_end_id_t portId) override {}
+	void addInput(simulator_gate_id_t inputId, connection_end_id_t portId) override {}
 
-	void removeInput(simulator_id_t inputId, connection_end_id_t portId) override {}
+	void removeInput(simulator_gate_id_t inputId, connection_end_id_t portId) override {}
 
-	void resetState(bool realistic, IdVector<simulator_id_t, logic_state_t>& states) override {
+	void resetState(bool realistic, IdVector<simulator_gate_id_t, logic_state_t>& states) override {
 		states[id] = outputState;
 	}
 
-	void removeIdRefs(simulator_id_t otherId) override {}
+	void removeIdRefs(simulator_gate_id_t otherId) override {}
 
-	simulator_id_t getIdOfOutputPort(connection_end_id_t portId) const override {
+	BlockData::ConnectionData::PortType getPortType(connection_end_id_t portId) const override {
+		return BlockData::ConnectionData::PortType::OUTPUT;
+	}
+
+	simulator_gate_id_t getIdOfOutputPort(connection_end_id_t portId) const override {
 		return id;
 	}
 
-	std::vector<simulator_id_t> getOutputSimIds() const override {
+	std::vector<simulator_gate_id_t> getOutputSimulatorIds() const override {
 		return {id};
 	}
 };
 
 struct ConstantGate : public ConstantGateBase {
-	ConstantGate(simulator_id_t id, logic_state_t outputState = logic_state_t::LOW)
+	ConstantGate(simulator_gate_id_t id, logic_state_t outputState = logic_state_t::LOW)
 		: ConstantGateBase(id, outputState) {}
 
 	nlohmann::json dumpState() const /* GCOVR_EXCL_FUNCTION */ {
@@ -496,14 +538,14 @@ struct ConstantGate : public ConstantGateBase {
 };
 
 struct ConstantResetGate : public ConstantGateBase {
-	ConstantResetGate(simulator_id_t id, logic_state_t outputState = logic_state_t::LOW)
+	ConstantResetGate(simulator_gate_id_t id, logic_state_t outputState = logic_state_t::LOW)
 		: ConstantGateBase(id, outputState) {}
 
 	inline logic_state_t calculate() const noexcept {
 		return outputState;
 	}
 
-	inline void tick(IdVector<simulator_id_t, logic_state_t>& statesB) noexcept {
+	inline void tick(IdVector<simulator_gate_id_t, logic_state_t>& statesB) noexcept {
 		statesB[id] = calculate();
 	}
 
@@ -516,27 +558,31 @@ struct ConstantResetGate : public ConstantGateBase {
 };
 
 struct CopySelfOutputGate : public LogicGate {
-	CopySelfOutputGate(simulator_id_t id) : LogicGate(id) {}
+	CopySelfOutputGate(simulator_gate_id_t id) : LogicGate(id) {}
 
-	void addInput(simulator_id_t inputId, connection_end_id_t portId) override {}
+	void addInput(simulator_gate_id_t inputId, connection_end_id_t portId) override {}
 
-	void removeInput(simulator_id_t inputId, connection_end_id_t portId) override {}
+	void removeInput(simulator_gate_id_t inputId, connection_end_id_t portId) override {}
 
-	void removeIdRefs(simulator_id_t otherId) override {}
+	void removeIdRefs(simulator_gate_id_t otherId) override {}
 
-	inline logic_state_t calculate(const IdVector<simulator_id_t, logic_state_t>& statesA) const noexcept {
+	inline logic_state_t calculate(const IdVector<simulator_gate_id_t, logic_state_t>& statesA) const noexcept {
 		return statesA[id];
 	}
 
-	inline void tick(const IdVector<simulator_id_t, logic_state_t>& statesA, IdVector<simulator_id_t, logic_state_t>& statesB) noexcept {
+	inline void tick(const IdVector<simulator_gate_id_t, logic_state_t>& statesA, IdVector<simulator_gate_id_t, logic_state_t>& statesB) noexcept {
 		statesB[id] = calculate(statesA);
 	}
 
-	simulator_id_t getIdOfOutputPort(connection_end_id_t portId) const override {
+	BlockData::ConnectionData::PortType getPortType(connection_end_id_t portId) const override {
+		return BlockData::ConnectionData::PortType::OUTPUT;
+	}
+
+	simulator_gate_id_t getIdOfOutputPort(connection_end_id_t portId) const override {
 		return id;
 	}
 
-	void resetState(bool realistic, IdVector<simulator_id_t, logic_state_t>& states) override {
+	void resetState(bool realistic, IdVector<simulator_gate_id_t, logic_state_t>& states) override {
 		states[id] = logic_state_t::LOW;
 	}
 
@@ -548,13 +594,13 @@ struct CopySelfOutputGate : public LogicGate {
 };
 
 struct PortsToIntGate : public SimulatorGate {
-	IdVector<connection_end_id_t, simulator_id_t> inputPorts;
+	IdVector<connection_end_id_t, simulator_gate_id_t> inputPorts;
 
-	PortsToIntGate(simulator_id_t id, int numInputs) : SimulatorGate(id) {
-		inputPorts.resize(connection_end_id_t(numInputs), simulator_id_t(0));
+	PortsToIntGate(simulator_gate_id_t id, unsigned int numInputs) : SimulatorGate(id) {
+		inputPorts.resize(numInputs, simulator_gate_id_t(0));
 	}
 
-	void addInput(simulator_id_t inputId, connection_end_id_t portId) override {
+	void addInput(simulator_gate_id_t inputId, connection_end_id_t portId) override {
 		if (portId >= inputPorts.size()) {
 			logError("Port ID out of range in PortsToIntGate::addInput", "PortsToIntGate::addInput");
 			return;
@@ -562,33 +608,33 @@ struct PortsToIntGate : public SimulatorGate {
 		inputPorts[portId] = inputId;
 	}
 
-	void removeInput(simulator_id_t inputId, connection_end_id_t portId) override {
+	void removeInput(simulator_gate_id_t inputId, connection_end_id_t portId) override {
 		if (portId >= inputPorts.size()) {
 			logError("Port ID out of range in PortsToIntGate::removeInput", "PortsToIntGate::removeInput");
 			return;
 		}
 		if (inputPorts[portId] == inputId) {
-			inputPorts[portId] = simulator_id_t(0);
+			inputPorts[portId] = simulator_gate_id_t(0);
 		}
 	}
 
-	void removeIdRefs(simulator_id_t otherId) override {
-		for (simulator_id_t& inputId : inputPorts) {
+	void removeIdRefs(simulator_gate_id_t otherId) override {
+		for (simulator_gate_id_t& inputId : inputPorts) {
 			if (inputId == otherId) {
-				inputId = simulator_id_t(0);
+				inputId = simulator_gate_id_t(0);
 			}
 		}
 	}
 
-	void resetState(bool realistic, IdVector<simulator_id_t, logic_state_t>& states) override {
+	void resetState(bool realistic, IdVector<simulator_gate_id_t, logic_state_t>& states) override {
 		states[id] = static_cast<logic_state_t>(0);
 	}
 
-	inline logic_state_t calculate(const IdVector<simulator_id_t, logic_state_t>& statesA) const noexcept {
+	inline logic_state_t calculate(const IdVector<simulator_gate_id_t, logic_state_t>& statesA) const noexcept {
 		unsigned int result = 0;
 		for (connection_end_id_t i : inputPorts.ids()) {
-			simulator_id_t inputId = inputPorts[i];
-			if (inputId == simulator_id_t(0)) {
+			simulator_gate_id_t inputId = inputPorts[i];
+			if (inputId == simulator_gate_id_t(0)) {
 				continue;
 			}
 			logic_state_t state = statesA[inputId];
@@ -599,15 +645,18 @@ struct PortsToIntGate : public SimulatorGate {
 		return static_cast<logic_state_t>(result);
 	}
 
-	inline void tick(const IdVector<simulator_id_t, logic_state_t>& statesA, IdVector<simulator_id_t, logic_state_t>& statesB) noexcept {
+	inline void tick(const IdVector<simulator_gate_id_t, logic_state_t>& statesA, IdVector<simulator_gate_id_t, logic_state_t>& statesB) noexcept {
 		statesB[id] = calculate(statesA);
 	}
 
-	simulator_id_t getIdOfOutputPort(connection_end_id_t portId) const override {
+	simulator_gate_id_t getIdOfOutputPort(connection_end_id_t portId) const override {
 		return id;
 	}
-	std::vector<simulator_id_t> getOutputSimIds() const override {
+	std::vector<simulator_gate_id_t> getOutputSimulatorIds() const override {
 		return {id};
+	}
+	BlockData::ConnectionData::PortType getPortType(connection_end_id_t portId) const override {
+		return BlockData::ConnectionData::PortType::INPUT;
 	}
 
 	nlohmann::json dumpState() const /* GCOVR_EXCL_FUNCTION */ {
