@@ -29,14 +29,14 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
     bool fullTestSucceedStatus = true;
     Backend& backend = environment.getBackend();
     CircuitManager& cirManager = backend.getCircuitManager();
-    const EvaluatorManager& evalManager = backend.getEvaluatorManager();
+    SimulatorManager& evalManager = backend.getSimulatorManager();
     BlockDataManager& blockDataManager = backend.getBlockDataManager();
 
     circuit_id_t cirId = cirManager.createNewCircuit(false);
     SharedCircuit cir = cirManager.getCircuit(cirId);
-    evaluator_id_t evalId = backend.createEvaluator(cirId).value();
-    const SharedEvaluator eval = evalManager.getEvaluator(evalId);
-    eval->setPause(true);
+    simulator_id_t simID = backend.createSimulator(cirId).value();
+    EvalLogicSimulator* sim = evalManager.getSimulator(simID);
+    sim->setPause(true);
     const BlockContainer blockContainer = cir->getBlockContainer();
 
     const BlockData* blockData = blockDataManager.getBlockData(blockType);
@@ -110,12 +110,12 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
         if (commandIter->type == NOP_COMMAND) {
             continue;
         } else if (commandIter->type == SET_STATES) {
-            runSetStatesCommand(*commandIter, eval, nameToConnectedBlockPosition);
+            runSetStatesCommand(*commandIter, *sim, nameToConnectedBlockPosition);
         } else if (commandIter->type == CHECK_STATES) {
-            isTestGroupSuccessful = runCheckStatesCommand(*commandIter, eval, nameToConnectedBlockPosition);
+            isTestGroupSuccessful = runCheckStatesCommand(*commandIter, *sim, nameToConnectedBlockPosition);
         } else if (commandIter->type == TICK_STEP) {
             logInfo("Stepping forward by {} ticks", "CircuitTestCase - TICK_STEP", commandIter->ticks);
-            eval->tickStep(commandIter->ticks);
+            sim->tickStep(commandIter->ticks);
         } else {
             logError("Unrecognized test command", "CircuitTestCase");
             isTestGroupSuccessful = false;
