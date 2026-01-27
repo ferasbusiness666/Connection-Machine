@@ -53,7 +53,7 @@ void BusReplacerEvalLayer::run() {
 							nextState.removeGate(busJunctionsIter->second[i]);
 							nextState.getGateIdReverseRemapping().erase(busJunctionsIter->second[i]);
 						}
-						nextState.addGateIdRemappingsUpdated(busJunctionsIter->second[0]);
+						if (currentState.getGate(busJunctionsIter->second[0])) nextState.addGateIdRemappingsUpdated(busJunctionsIter->second[0]);
 						busJunctions.erase(busJunctionsIter);
 					}
 				}
@@ -89,7 +89,7 @@ void BusReplacerEvalLayer::run() {
 							nextState.removeGate(busJunctionsIter->second[i]);
 							nextState.getGateIdReverseRemapping().erase(busJunctionsIter->second[i]);
 						}
-						nextState.addGateIdRemappingsUpdated(busJunctionsIter->second[0]);
+						if (currentState.getGate(busJunctionsIter->second[0])) nextState.addGateIdRemappingsUpdated(busJunctionsIter->second[0]);
 						busJunctions.erase(busJunctionsIter);
 					}
 				}

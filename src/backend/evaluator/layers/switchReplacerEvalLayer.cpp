@@ -18,7 +18,7 @@ void SwitchReplacerEvalLayer::run() {
 						nextState.getConnectionPointRemapping().erase(connection.connectionPointA);
 						nextState.getConnectionPointReverseRemapping().erase(EvalConnectionPoint(connection.connectionPointA.gateId, 0));
 						nextState.changeGateType(connection.connectionPointA.gateId, curGate->type);
-						nextState.addGateIdRemappingsUpdated(connection.connectionPointA.gateId);
+						if (currentState.getGate(connection.connectionPointA.gateId)) nextState.addGateIdRemappingsUpdated(connection.connectionPointA.gateId);
 					}
 				}
 				connection.connectionPointA.connectionEndId = 0;
@@ -38,7 +38,7 @@ void SwitchReplacerEvalLayer::run() {
 						nextState.getConnectionPointRemapping().erase(connection.connectionPointB);
 						nextState.getConnectionPointReverseRemapping().erase(EvalConnectionPoint(connection.connectionPointB.gateId, 0));
 						nextState.changeGateType(connection.connectionPointB.gateId, curGate->type);
-						nextState.addGateIdRemappingsUpdated(connection.connectionPointA.gateId);
+						if (currentState.getGate(connection.connectionPointB.gateId)) nextState.addGateIdRemappingsUpdated(connection.connectionPointB.gateId);
 					}
 				}
 				connection.connectionPointB.connectionEndId = 0;
@@ -89,7 +89,7 @@ void SwitchReplacerEvalLayer::run() {
 					nextState.getConnectionPointReverseRemapping().emplace(EvalConnectionPoint(connection.connectionPointB.gateId, 0), connection.connectionPointB);
 					nextState.addConnectionPointRemappingsUpdated(EvalConnectionPoint(connection.connectionPointB.gateId, 0));
 					nextState.changeGateType(connection.connectionPointB.gateId, getEvalGateType(BlockType::JUNCTION));
-					nextState.addGateIdRemappingsUpdated(connection.connectionPointA.gateId);
+					nextState.addGateIdRemappingsUpdated(connection.connectionPointB.gateId);
 				}
 				connection.connectionPointB.connectionEndId = 0;
 			}
@@ -97,12 +97,14 @@ void SwitchReplacerEvalLayer::run() {
 		nextState.addConnection(connection, iter.second);
 	}
 	for (eval_gate_id gateId : currentState.getGateIdRemappingsUpdateds()) {
+		assert(nextState.getGate(gateId));
 		nextState.addGateIdRemappingsUpdated(gateId);
 	}
 	for (EvalConnectionPoint connectionPoint : currentState.getConnectionPointRemappingsUpdated()) {
 		if (connectionPoint.connectionEndId == 1 && nextState.getConnectionPointRemapping().contains(connectionPoint)) {
 			connectionPoint.connectionEndId = 0;
 		}
+		assert(nextState.getGate(connectionPoint.gateId));
 		nextState.addConnectionPointRemappingsUpdated(connectionPoint);
 	}
 }

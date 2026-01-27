@@ -160,9 +160,11 @@ void SubcircuitEvalLayer::run() {
 		nextState.addConnection(connection, iter.second);
 	}
 	for (eval_gate_id gateId : currentState.getGateIdRemappingsUpdateds()) {
+		assert(nextState.getGate(gateId));
 		nextState.addGateIdRemappingsUpdated(gateId);
 	}
 	for (EvalConnectionPoint connectionPoint : currentState.getConnectionPointRemappingsUpdated()) {
+		assert(nextState.getGate(connectionPoint.gateId));
 		nextState.addConnectionPointRemappingsUpdated(connectionPoint);
 	}
 }
@@ -379,6 +381,7 @@ void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vect
 					logError("could not find eval id while proagating id {} update from IC.", "SubcircuitEvalLayer::processICEdits", gateId);
 					continue;
 				}
+				assert(nextState.getGate(iter->second));
 				nextState.addGateIdRemappingsUpdated(iter->second);
 			}
 			for (EvalConnectionPoint connectionPoint : subcircuitsPair.second.outputEvalLayer.getConnectionPointRemappingsUpdated()) {
@@ -387,6 +390,7 @@ void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vect
 					logError("could not find eval id while proagating connectionPoint {} update from IC.", "SubcircuitEvalLayer::processICEdits", connectionPoint);
 					continue;
 				}
+				assert(nextState.getGate(iter->second));
 				nextState.addConnectionPointRemappingsUpdated(EvalConnectionPoint(iter->second, connectionPoint.connectionEndId));
 			}
 		}
