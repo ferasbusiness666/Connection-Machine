@@ -1,12 +1,15 @@
 #ifndef blockRenderDataFeeder_h
 #define blockRenderDataFeeder_h
 
-#include "gpu/blockRenderDataManager.h"
 #include "gpu/cpuImageEditor/cpuImage.h"
 #include "backend/container/block/blockDefs.h"
 #include "backend/container/block/connectionEnd.h"
 #include "backend/dataUpdateEventManager.h"
 #include "blockTextureGenerator.h"
+
+typedef uint32_t BlockRenderDataId;
+typedef uint32_t BlockPortRenderDataId;
+typedef uint32_t BlockTextureId;
 
 class Font;
 class Backend;

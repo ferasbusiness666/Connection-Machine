@@ -31,10 +31,13 @@ void MenuBar::triggerEvent(const std::string& name) {
 	} else if (name == "menu-feedback") {
 		window->getPopUpManager().addFeedbackPopup();
 	} else if (name == "file-new") {
+		if (!window->getActiveCircuitViewWidget()) return;
 		window->getActiveCircuitViewWidget()->newCircuit();
 	} else if (name == "file-open") {
+		if (!window->getActiveCircuitViewWidget()) return;
 		window->getActiveCircuitViewWidget()->load();
 	} else if (name == "file-save") {
+		if (!window->getActiveCircuitViewWidget()) return;
 		window->getActiveCircuitViewWidget()->save();
 	} else if (name == "new-window") {
 		App::get().newMainWindow();
