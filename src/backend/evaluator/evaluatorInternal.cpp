@@ -304,9 +304,6 @@ EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, Evaluator& evaluato
 		portToInternalPointMapping.try_emplace(connectionEndId, EvalConnectionPoint(positionRemappingIter->second.first, internalConnectionEndId), portType, bitWidth);
 		connectionEndIdsToUpdate.emplace_back(connectionEndId, EvalConnectionPoint::null(), EvalConnectionPoint(positionRemappingIter->second.first, internalConnectionEndId));
 	}
-	for (const std::pair<SubcircuitEvalLayer*, unsigned int>& subcircuitEvalLayer : evaluatorsUsingThisEvaluator) {
-		subcircuitEvalLayer.first->processICEdits(circuit.getCircuitId(), connectionEndIdsToUpdate);
-	}
 }
 
 void EvaluatorInternal::startEdit() {
@@ -554,7 +551,8 @@ std::vector<std::pair<Position, circuit_id_t>> EvaluatorInternal::getSubcircuits
 	return subcircuits;
 }
 
-void EvaluatorInternal::sendPortUpdate(connection_end_id_t connectionEndId, EvalConnectionPoint preConnectionPoint, EvalConnectionPoint postConnectionPoint) const {
+void EvaluatorInternal::sendPortUpdate(connection_end_id_t connectionEndId, EvalConnectionPoint preConnectionPoint, EvalConnectionPoint postConnectionPoint) {
+	startEdit();
 	for (const std::pair<SubcircuitEvalLayer*, unsigned int>& subcircuitEvalLayer : evaluatorsUsingThisEvaluator) {
 		subcircuitEvalLayer.first->processICEdits(circuit.getCircuitId(), {{ connectionEndId, preConnectionPoint, postConnectionPoint }});
 	}

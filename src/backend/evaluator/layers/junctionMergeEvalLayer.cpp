@@ -1,170 +1,473 @@
 #include "junctionMergeEvalLayer.h"
 #include "evalLayerState.h"
 
+bool isConnectionEndIdSinglePin(EvalGateType gateType, connection_end_id_t connectionEndId) {
+	// ignore lights, junctions, busses, custom blocks
+	switch (getBlockType(gateType)) {
+	case BlockType::SWITCH:
+	case BlockType::BUTTON:
+	case BlockType::TICK_BUTTON:
+	case BlockType::BUFFER:
+	case BlockType::NOT:
+	case BlockType::CONSTANT_OFF:
+	case BlockType::CONSTANT_ON:
+	case BlockType::CONSTANT_X:
+	case BlockType::CONSTANT_Z:
+	case BlockType::TRISTATE_BUFFER:
+		return true;
+	case BlockType::AND:
+	case BlockType::OR:
+	case BlockType::XOR:
+	case BlockType::NAND:
+	case BlockType::NOR:
+	case BlockType::XNOR:
+		return connectionEndId == 1;
+	default:
+		return false;
+	}
+}
+
+
+bool isOutputConnectionPort(EvalGateType gateType, connection_end_id_t connectionEndId) {
+	// ignore lights, junctions, busses, custom blocks
+	switch (getBlockType(gateType)) {
+	case BlockType::SWITCH:
+	case BlockType::BUTTON:
+	case BlockType::TICK_BUTTON:
+	case BlockType::CONSTANT_OFF:
+	case BlockType::CONSTANT_ON:
+	case BlockType::CONSTANT_X:
+	case BlockType::CONSTANT_Z:
+		return true;
+	case BlockType::TRISTATE_BUFFER:
+		return connectionEndId == 2;
+	case BlockType::BUFFER:
+	case BlockType::NOT:
+	case BlockType::AND:
+	case BlockType::OR:
+	case BlockType::XOR:
+	case BlockType::NAND:
+	case BlockType::NOR:
+	case BlockType::XNOR:
+		return connectionEndId == 1;
+	default:
+		return false;
+	}
+}
+
+
 void JunctionMergeEvalLayer::run() {
-	std::set<eval_gate_id> junctionsToScan;
+	// logInfo("Running layer {}", "", (unsigned long long)this);
+	// currentState.visualize();
+	std::unordered_set<EvalConnectionPoint> connectionPointsToScan;
+	std::unordered_set<eval_gate_id> junctionGroupsToKill;
 	for (auto iter : currentState.getRemovedConnections()) {
 		EvalConnection connection = iter.first;
-		if (connection.connectionPointA.connectionEndId == 0) {
-			auto remappingIter = nextState.getGateIdRemapping().find(connection.connectionPointA.gateId);
-			if (remappingIter == nextState.getGateIdRemapping().end()) {
-				logError("Failled to find junction gate remapping for gate id {}.", "JunctionMergeEvalLayer::run", connection.connectionPointA.gateId);
+		auto connectionPointRemappingIterA = connectionPointRemapping.find(connection.connectionPointA);
+		if (connectionPointRemappingIterA != connectionPointRemapping.end()) {
+			connection.connectionPointA = EvalConnectionPoint(connectionPointRemappingIterA->second, 0);
+		} else if (connection.connectionPointA.connectionEndId == 0) {
+			auto remappingIterA = nextState.getGateIdRemapping().find(connection.connectionPointA.gateId);
+			if (remappingIterA == nextState.getGateIdRemapping().end()) {
+				// logError("Failed to find junction gate remapping for gate id {}.", "JunctionMergeEvalLayer::run", connection.connectionPointA.gateId);
 				continue;
 			}
-			connection.connectionPointA.gateId = remappingIter->second;
+			connection.connectionPointA.gateId = remappingIterA->second;
 		}
-		if (connection.connectionPointB.connectionEndId == 0) {
-			auto remappingIter = nextState.getGateIdRemapping().find(connection.connectionPointB.gateId);
-			if (remappingIter == nextState.getGateIdRemapping().end()) {
-				logError("Failled to find junction gate remapping for gate id {}.", "JunctionMergeEvalLayer::run", connection.connectionPointB.gateId);
+		auto connectionPointRemappingIterB = connectionPointRemapping.find(connection.connectionPointB);
+		if (connectionPointRemappingIterB != connectionPointRemapping.end()) {
+			connection.connectionPointB = EvalConnectionPoint(connectionPointRemappingIterB->second, 0);
+		} else if (connection.connectionPointB.connectionEndId == 0) {
+			auto remappingIterB = nextState.getGateIdRemapping().find(connection.connectionPointB.gateId);
+			if (remappingIterB == nextState.getGateIdRemapping().end()) {
+				// logError("Failed to find junction gate remapping for gate id {}.", "JunctionMergeEvalLayer::run", connection.connectionPointB.gateId);
 				continue;
 			}
-			connection.connectionPointB.gateId = remappingIter->second;
+			connection.connectionPointB.gateId = remappingIterB->second;
 		}
 		if (connection.connectionPointB == connection.connectionPointA) {
 			const EvalGate* nextLayerJunction = nextState.getGate(connection.connectionPointA.gateId);
 			assert(nextLayerJunction);
 			assert(isJunctionType(nextLayerJunction->type));
-			if (currentState.getGate(iter.first.connectionPointA.gateId)) junctionsToScan.insert(iter.first.connectionPointA.gateId);
-			if (currentState.getGate(iter.first.connectionPointB.gateId)) junctionsToScan.insert(iter.first.connectionPointB.gateId);
+
+			auto iterPair = connectionPointReverseRemapping.equal_range(connection.connectionPointB.gateId);
+			for (auto reverseRemappingIter = iterPair.first; reverseRemappingIter != iterPair.second; reverseRemappingIter++) {
+				connectionPointRemapping.erase(reverseRemappingIter->second);
+				connectionPointsToScan.insert(reverseRemappingIter->second);
+			}
+			connectionPointReverseRemapping.erase(iterPair.first, iterPair.second);
+			auto iterPair2 = nextState.getGateIdReverseRemapping().equal_range(connection.connectionPointB.gateId);
+			for (auto reverseRemappingIter = iterPair2.first; reverseRemappingIter != iterPair2.second; reverseRemappingIter++) {
+				if (nextState.getGate(reverseRemappingIter->second)) nextState.removeGate(reverseRemappingIter->second);
+				nextState.getGateIdRemapping().erase(reverseRemappingIter->second);
+				connectionPointsToScan.emplace(reverseRemappingIter->second, 0);
+			}
+			nextState.getGateIdReverseRemapping().erase(iterPair2.first, iterPair2.second);
+			assert(connectionPointRemapping.size() == connectionPointReverseRemapping.size());
+
+
+			// junctionGroupsToKill.insert(connection.connectionPointA.gateId);
+			// if (!currentState.getRemovedGates().contains(iter.first.connectionPointA.gateId)) connectionPointsToScan.insert(iter.first.connectionPointA);
+			// if (!currentState.getRemovedGates().contains(iter.first.connectionPointB.gateId)) connectionPointsToScan.insert(iter.first.connectionPointB);
 		} else {
-			nextState.removeConnection(connection, iter.second);
+			if (nextState.getConnectionWeight(connection)) nextState.removeConnection(connection, iter.second);
 		}
 	}
 	for (auto iter : currentState.getRemovedGates()) {
 		const EvalGate* gate = nextState.getGate(iter.first);
-		if (gate == nullptr) {
+		if (gate == nullptr) { // if the gate was merged already
+			assert(isJunctionType(iter.second));
 			auto remappingIter = nextState.getGateIdRemapping().find(iter.first);
-			if (remappingIter == nextState.getGateIdRemapping().end()) {
-				continue;
-			}
-			if (currentState.getGate(remappingIter->second) == nullptr) continue;
-			auto iterPair = nextState.getGateIdReverseRemapping().equal_range(remappingIter->second);
-			auto reverseRemappingIterToErase = iterPair.second;
+			if (remappingIter == nextState.getGateIdRemapping().end()) continue;
+			// if (currentState.getAddedGates().contains(iter.first)) nextState.getGateIdRemapping().erase(remappingIter);
+
+			auto iterPair = connectionPointReverseRemapping.equal_range(remappingIter->second);
 			for (auto reverseRemappingIter = iterPair.first; reverseRemappingIter != iterPair.second; reverseRemappingIter++) {
-				if (reverseRemappingIter->second == iter.first) {
-					reverseRemappingIterToErase = reverseRemappingIter;
-				} else if (currentState.getGate(reverseRemappingIter->second)) {
-					assert(currentState.getGate(reverseRemappingIter->second));
-					junctionsToScan.insert(reverseRemappingIter->second);
-				}
+				connectionPointRemapping.erase(reverseRemappingIter->second);
+				connectionPointsToScan.insert(reverseRemappingIter->second);
 			}
-			assert(reverseRemappingIterToErase != iterPair.second);
-			nextState.getGateIdRemapping().erase(remappingIter);
-			nextState.getGateIdReverseRemapping().erase(reverseRemappingIterToErase);
+			connectionPointReverseRemapping.erase(iterPair.first, iterPair.second);
+			auto iterPair2 = nextState.getGateIdReverseRemapping().equal_range(remappingIter->second);
+			for (auto reverseRemappingIter = iterPair2.first; reverseRemappingIter != iterPair2.second; reverseRemappingIter++) {
+				if (nextState.getGate(reverseRemappingIter->second)) nextState.removeGate(reverseRemappingIter->second);
+				nextState.getGateIdRemapping().erase(reverseRemappingIter->second);
+				connectionPointsToScan.emplace(reverseRemappingIter->second, 0);
+			}
+			nextState.getGateIdReverseRemapping().erase(iterPair2.first, iterPair2.second);
+			assert(connectionPointRemapping.size() == connectionPointReverseRemapping.size());
+
 			continue;
 		}
-		if (isJunctionType(iter.second)) {
-			auto scanIter = junctionsToScan.find(iter.first);
-			if (scanIter != junctionsToScan.end()) {
-				junctionsToScan.erase(scanIter);
-				if (!gate->connections.empty()) {
-					const std::unordered_set<EvalConnectionPoint>& connections = gate->connections.at(0);
-					do {
-						unsigned int weight = nextState.getConnectionWeight(EvalConnection(EvalConnectionPoint(iter.first, 0), *(connections.begin())));
-						nextState.removeConnection(EvalConnection(EvalConnectionPoint(iter.first, 0), *(connections.begin())), weight);
-					} while ((!gate->connections.empty()));
-				}
-			}
-			auto iterPair = nextState.getGateIdReverseRemapping().equal_range(iter.first);
-			assert(iterPair.first != iterPair.second);
+		if (isJunctionType(gate->type)) { // if the gate had other gates merged into it
+			auto iterPair = connectionPointReverseRemapping.equal_range(iter.first);
 			for (auto reverseRemappingIter = iterPair.first; reverseRemappingIter != iterPair.second; reverseRemappingIter++) {
-				if (reverseRemappingIter->second == iter.first || currentState.getGate(reverseRemappingIter->second) == nullptr) continue;
-				junctionsToScan.insert(reverseRemappingIter->second);
+				connectionPointRemapping.erase(reverseRemappingIter->second);
+				connectionPointsToScan.insert(reverseRemappingIter->second);
 			}
+			connectionPointReverseRemapping.erase(iterPair.first, iterPair.second);
+			auto iterPair2 = nextState.getGateIdReverseRemapping().equal_range(iter.first);
+			for (auto reverseRemappingIter = iterPair2.first; reverseRemappingIter != iterPair2.second; reverseRemappingIter++) {
+				if (nextState.getGate(reverseRemappingIter->second)) nextState.removeGate(reverseRemappingIter->second);
+				nextState.getGateIdRemapping().erase(reverseRemappingIter->second);
+				connectionPointsToScan.emplace(reverseRemappingIter->second, 0);
+			}
+			nextState.getGateIdReverseRemapping().erase(iterPair2.first, iterPair2.second);
+			assert(connectionPointRemapping.size() == connectionPointReverseRemapping.size());
+			continue;
 		}
-		auto iterPair = nextState.getGateIdReverseRemapping().equal_range(iter.first);
-		for (auto iter = iterPair.first; iter != iterPair.second; iter++) nextState.getGateIdRemapping().erase(iter->second);
-		nextState.getGateIdReverseRemapping().erase(iterPair.first, iterPair.second);
+		for (auto remappingIter = connectionPointRemapping.begin(); remappingIter != connectionPointRemapping.end(); ) {
+			if (remappingIter->first.gateId == iter.first) {
+				auto iterPair = connectionPointReverseRemapping.equal_range(remappingIter->second);
+				for (auto reverseRemappingIter = iterPair.first; reverseRemappingIter != iterPair.second; reverseRemappingIter++) {
+					if (reverseRemappingIter->second.gateId == iter.first) {
+						connectionPointReverseRemapping.erase(reverseRemappingIter);
+						break;
+					}
+				}
+				remappingIter = connectionPointRemapping.erase(remappingIter);
+			} else ++remappingIter;
+		}
+		assert(connectionPointRemapping.size() == connectionPointReverseRemapping.size());
+		nextState.getGateIdRemapping().erase(iter.first);
+		nextState.getGateIdReverseRemapping().erase(iter.first);
 		nextState.removeGate(iter.first);
 	}
+	// logInfo("----------------------------------------------");
+	// currentState.visualize();
+	// nextState.visualize();
 	for (auto iter : currentState.getAddedGates()) {
-		junctionsToScan.erase(iter.first);
-		nextState.getGateIdRemapping().emplace(iter.first, iter.first);
-		nextState.getGateIdReverseRemapping().emplace(iter.first, iter.first);
-		nextState.addGate(iter.first, iter.second);
+		if (isJunctionType(iter.second)) {
+			connectionPointsToScan.emplace(iter.first, 0);
+		} else {
+			auto suc = nextState.getGateIdRemapping().emplace(iter.first, iter.first);
+			assert(suc.second);
+			nextState.getGateIdReverseRemapping().emplace(iter.first, iter.first);
+			assert(nextState.getGateIdReverseRemapping().size() == nextState.getGateIdRemapping().size());
+			nextState.addGate(iter.first, iter.second);
+		}
 	}
+	// nextState.visualize();
 	for (auto iter : currentState.getAddedConnections()) {
 		EvalConnection connection = iter.first;
-		if (connection.connectionPointA.connectionEndId == 0) {
-			auto remappingIter = nextState.getGateIdRemapping().find(connection.connectionPointA.gateId);
-			if (remappingIter == nextState.getGateIdRemapping().end()) {
-				if (junctionsToScan.contains(connection.connectionPointA.gateId)) continue;
-				logError("Failled to find junction gate remapping for gate id {}.", "JunctionMergeEvalLayer::run", connection.connectionPointA.gateId);
-				continue;
+		unsigned int remappedTypeA = 0; // 0: None, 1: connection point, 2: junction id remapped, 3: already at merged junction
+		auto connectionPointRemappingIterA = connectionPointRemapping.find(connection.connectionPointA);
+		if (connectionPointRemappingIterA != connectionPointRemapping.end()) {
+			const EvalGate* gate = nextState.getGate(connection.connectionPointA.gateId);
+			assert(gate);
+			assert(isConnectionEndIdSinglePin(gate->type, connection.connectionPointA.connectionEndId));
+			connection.connectionPointA = EvalConnectionPoint(connectionPointRemappingIterA->second, 0);
+			remappedTypeA = 1;
+		} else if (connection.connectionPointA.connectionEndId == 0) {
+			const EvalGate* gate = nextState.getGate(connection.connectionPointA.gateId);
+			if (gate) {
+				if (isJunctionType(gate->type)) {
+					remappedTypeA = 3;
+				}
+			} else {
+				auto remappingAIter = nextState.getGateIdRemapping().find(connection.connectionPointA.gateId);
+				if (remappingAIter == nextState.getGateIdRemapping().end()) {
+					if (connectionPointsToScan.contains(connection.connectionPointA)) continue;
+					// logError("Failed to find junction gate remapping for gate id {}.", "JunctionMergeEvalLayer::run", connection.connectionPointA.gateId);
+					continue;
+				}
+				connection.connectionPointA.gateId = remappingAIter->second;
+				remappedTypeA = 2;
 			}
-			connection.connectionPointA.gateId = remappingIter->second;
 		}
-		if (connection.connectionPointB.connectionEndId == 0) {
-			auto remappingIter = nextState.getGateIdRemapping().find(connection.connectionPointB.gateId);
-			if (remappingIter == nextState.getGateIdRemapping().end()) {
-				if (junctionsToScan.contains(connection.connectionPointB.gateId)) continue;
-				logError("Failled to find junction gate remapping for gate id {}.", "JunctionMergeEvalLayer::run", connection.connectionPointB.gateId);
-				continue;
+		unsigned int remappedTypeB = 0; // 0: None, 1: connection point, 2: junction id remapped, 3: already at merged junction
+		auto connectionPointRemappingIterB = connectionPointRemapping.find(connection.connectionPointB);
+		if (connectionPointRemappingIterB != connectionPointRemapping.end()) {
+			const EvalGate* gate = nextState.getGate(connection.connectionPointB.gateId);
+			assert(gate);
+			assert(isConnectionEndIdSinglePin(gate->type, connection.connectionPointB.connectionEndId));
+			connection.connectionPointB = EvalConnectionPoint(connectionPointRemappingIterB->second, 0);
+			remappedTypeB = 1;
+		} else if (connection.connectionPointB.connectionEndId == 0) {
+			const EvalGate* gate = nextState.getGate(connection.connectionPointB.gateId);
+			if (gate) {
+				if (isJunctionType(gate->type)) {
+					remappedTypeB = 3;
+				}
+			} else {
+				auto remappingBIter = nextState.getGateIdRemapping().find(connection.connectionPointB.gateId);
+				if (remappingBIter == nextState.getGateIdRemapping().end()) {
+					if (connectionPointsToScan.contains(connection.connectionPointB)) continue;
+					// logError("Failed to find junction gate remapping for gate id {}.", "JunctionMergeEvalLayer::run", connection.connectionPointB.gateId);
+					continue;
+				}
+				connection.connectionPointB.gateId = remappingBIter->second;
+				remappedTypeB = 2;
 			}
-			connection.connectionPointB.gateId = remappingIter->second;
 		}
 		if (connection.connectionPointB == connection.connectionPointA) continue;
+
 		const EvalGate* gateA = nextState.getGate(connection.connectionPointA.gateId);
+		assert(gateA);
 		const EvalGate* gateB = nextState.getGate(connection.connectionPointB.gateId);
+		assert(gateB);
+
+		if (remappedTypeA != 0) assert(isJunctionType(gateA->type));
+		if (remappedTypeB != 0) assert(isJunctionType(gateB->type));
+
 		if (isJunctionType(gateA->type) && isJunctionType(gateB->type)) {
-			assert(currentState.getGate(iter.first.connectionPointA.gateId));
-			junctionsToScan.insert(iter.first.connectionPointA.gateId);
+			connectionPointsToScan.insert(iter.first.connectionPointA);
+			if (remappedTypeA != 0) junctionGroupsToKill.insert(connection.connectionPointA.gateId);
+			if (remappedTypeB != 0) junctionGroupsToKill.insert(connection.connectionPointB.gateId);
+		} else if (
+			isConnectionEndIdSinglePin(gateA->type, connection.connectionPointA.connectionEndId) &&
+			isConnectionEndIdSinglePin(gateB->type, connection.connectionPointB.connectionEndId)
+		) {
+			connectionPointsToScan.insert(iter.first.connectionPointA);
+			assert(remappedTypeA == 0);
+			assert(remappedTypeB == 0);
+		} else if (isJunctionType(gateA->type) && isConnectionEndIdSinglePin(gateB->type, connection.connectionPointB.connectionEndId)) {
+			connectionPointsToScan.insert(iter.first.connectionPointA);
+			if (remappedTypeA != 0) junctionGroupsToKill.insert(connection.connectionPointA.gateId);
+		} else if (isJunctionType(gateB->type) && isConnectionEndIdSinglePin(gateA->type, connection.connectionPointA.connectionEndId)) {
+			connectionPointsToScan.insert(iter.first.connectionPointA);
+			if (remappedTypeB != 0) junctionGroupsToKill.insert(connection.connectionPointB.gateId);
 		} else {
 			nextState.addConnection(connection, iter.second);
 		}
 	}
-	std::set<eval_gate_id> gatesTokeep;
-	while (!junctionsToScan.empty()) {
-		eval_gate_id gateId = *junctionsToScan.begin();
-		junctionsToScan.erase(junctionsToScan.begin());
-		auto [junctions, otherConnectionPoints, gateType] = gatherJunctionGroup(gateId, currentState);
-		// We do sorting to see which gate would be the best to place down.
-		gateId = std::numeric_limits<eval_gate_id::rep>::max();
-		bool typeMatches = false;
-		for (eval_gate_id junctionId : junctions) {
-			if (junctionId < gateId) {
-				if (currentState.getGate(junctionId)->type == gateType) {
-					typeMatches = true;
-					gateId = junctionId;
-				} else if (!typeMatches) {
-					gateId = junctionId;
-				}
-			} else if ((!typeMatches) && currentState.getGate(junctionId)->type == gateType) {
-				typeMatches = true;
-				gateId = junctionId;
+	for (eval_gate_id junctionId : junctionGroupsToKill) {
+		auto iterPair = connectionPointReverseRemapping.equal_range(junctionId);
+		for (auto reverseRemappingIter = iterPair.first; reverseRemappingIter != iterPair.second; reverseRemappingIter++) {
+			connectionPointRemapping.erase(reverseRemappingIter->second);
+			connectionPointsToScan.insert(reverseRemappingIter->second);
+		}
+		connectionPointReverseRemapping.erase(iterPair.first, iterPair.second);
+		auto iterPair2 = nextState.getGateIdReverseRemapping().equal_range(junctionId);
+		for (auto reverseRemappingIter = iterPair2.first; reverseRemappingIter != iterPair2.second; reverseRemappingIter++) {
+			if (nextState.getGate(reverseRemappingIter->second)) nextState.removeGate(reverseRemappingIter->second);
+			nextState.getGateIdRemapping().erase(reverseRemappingIter->second);
+			connectionPointsToScan.emplace(reverseRemappingIter->second, 0);
+		}
+		nextState.getGateIdReverseRemapping().erase(iterPair2.first, iterPair2.second);
+		assert(connectionPointRemapping.size() == connectionPointReverseRemapping.size());
+
+
+		// if (nextState.getGate(junctionId) != nullptr) nextState.removeGate(junctionId);
+		// if (nextState.getGate(junctionId) == nullptr) {
+		// 	assert(currentState.getRemovedGates().contains(junctionId));
+		// } else {
+		// 	if (currentState.getGate(junctionId) == nullptr) {
+		// 		nextState.removeGate(junctionId); // if it was added this layer remove it
+		// 	}
+		// }
+		// auto iterPair = nextState.getGateIdReverseRemapping().equal_range(junctionId);
+		// if (iterPair.first != iterPair.second) {
+		// 	for (auto reverseRemappingIter = iterPair.first; reverseRemappingIter != iterPair.second; reverseRemappingIter++) {
+		// 		auto addedGatesIter = currentState.getAddedGates().find(reverseRemappingIter->second);
+		// 		if (addedGatesIter != currentState.getAddedGates().end()) {
+		// 			assert(nextState.getGateIdRemapping().contains(reverseRemappingIter->second));
+		// 			assert(nextState.getGateIdRemapping().at(reverseRemappingIter->second) == reverseRemappingIter->second);
+		// 			if (!isJunctionType(addedGatesIter->second)) continue;
+		// 			bool suc1 = nextState.getGateIdRemapping().erase(reverseRemappingIter->second);
+		// 			assert(suc1);
+		// 			if (nextState.getGate(junctionId) != nullptr) nextState.removeGate(junctionId);
+		// 			connectionPointsToScan.insert(EvalConnectionPoint(reverseRemappingIter->second, 0));
+		// 		} else {
+		// 			bool suc1 = nextState.getGateIdRemapping().erase(reverseRemappingIter->second);
+		// 			assert(suc1);
+		// 			if (currentState.getRemovedGates().contains(reverseRemappingIter->second)) continue;
+		// 			if (nextState.getGate(junctionId) != nullptr) nextState.removeGate(junctionId);
+		// 			connectionPointsToScan.insert(EvalConnectionPoint(reverseRemappingIter->second, 0));
+		// 		}
+		// 	}
+		// 	nextState.getGateIdReverseRemapping().erase(iterPair.first, iterPair.second);
+		// 	if (currentState.getAddedGates().contains(junctionId))	{ // if the gate was added back after being deleted then add the id remapping back
+		// 		// assert(currentState.getRemovedGates().contains(junctionId));
+		// 		assert(!nextState.getGateIdReverseRemapping().contains(junctionId));
+		// 		if (currentState.getAddedGates().contains(junctionId)) nextState.getGateIdReverseRemapping().emplace(junctionId, junctionId);
+		// 		assert(nextState.getGateIdReverseRemapping().size() == nextState.getGateIdRemapping().size());
+		// 	}
+		// }
+		// auto iterPair2 = connectionPointReverseRemapping.equal_range(junctionId);
+		// for (auto reverseRemappingIter = iterPair2.first; reverseRemappingIter != iterPair2.second; reverseRemappingIter++) {
+		// 	const EvalGate* curGate = currentState.getGate(reverseRemappingIter->second.gateId);
+		// 	assert(curGate);
+		// 	if (!(isJunctionType(curGate->type) || isConnectionEndIdSinglePin(curGate->type, reverseRemappingIter->second.connectionEndId))) {
+		// 		logError("This is a bug and should not happen. Tho it should not break anything I dont want it to happen!");
+		// 	}
+		// 	connectionPointRemapping.erase(reverseRemappingIter->second);
+		// 	const EvalGate* gate = nextState.getGate(reverseRemappingIter->second.gateId);
+		// 	if (gate) {
+		// 		while (true) {
+		// 			auto iter = gate->connections.find(reverseRemappingIter->second.connectionEndId);
+		// 			if (iter == gate->connections.end()) break;
+		// 			EvalConnectionPoint otherConnectionPoint = *iter->second.begin();
+		// 			unsigned int weight = nextState.getConnectionWeight(EvalConnection(reverseRemappingIter->second, otherConnectionPoint));
+		// 			assert(weight != 0);
+		// 			nextState.removeConnection(EvalConnection(reverseRemappingIter->second, otherConnectionPoint), weight);
+		// 		}
+		// 		connectionPointsToScan.insert(reverseRemappingIter->second);
+		// 	} else {
+		// 		connectionPointsToScan.erase(reverseRemappingIter->second);
+		// 	}
+		// }
+		// connectionPointReverseRemapping.erase(iterPair2.first, iterPair2.second);
+		// assert(connectionPointRemapping.size() == connectionPointReverseRemapping.size());
+
+
+	}
+	// nextState.visualize();
+	while (!connectionPointsToScan.empty()) {
+		EvalConnectionPoint connectionPointToScanFrom = *connectionPointsToScan.begin();
+		connectionPointsToScan.erase(connectionPointsToScan.begin());
+		{
+			const EvalGate* curGate = currentState.getGate(connectionPointToScanFrom.gateId);
+			if (!curGate) continue;
+			if (!(isJunctionType(curGate->type) || isConnectionEndIdSinglePin(curGate->type, connectionPointToScanFrom.connectionEndId))) {
+				// logError("This is a bug and should not happen. Tho it should not break anything I dont want it to happen!"); // for now this will happen as I just throw alot at connectionPointsToScan
+				continue;
 			}
 		}
-		for (eval_gate_id junctionId : junctions) {
-			junctionsToScan.erase(junctionId);
-			auto pair = nextState.getGateIdRemapping().emplace(junctionId, gateId);
-			if (!pair.second) {
-				if (junctionId != pair.first->second && (!gatesTokeep.contains(pair.first->second)) && nextState.getGate(pair.first->second)) {
-					nextState.removeGate(pair.first->second);
+		auto [junctions, singlePinConnectionPoints, nonJunctionConnectionPoints, gateType] = gatherJunctionGroup(connectionPointToScanFrom, currentState);
+		assert(junctions.size() > 0 || singlePinConnectionPoints.size() > 0);
+		std::optional<EvalConnectionPoint> outputConnectionPoint = junctions.empty() ? std::optional<EvalConnectionPoint>(EvalConnectionPoint::null()) : std::nullopt;
+		for (EvalConnectionPoint connectionPoint : singlePinConnectionPoints) {
+			auto connectionPointRemappingIter = connectionPointRemapping.find(connectionPoint);
+			if (connectionPointRemappingIter != connectionPointRemapping.end()) {
+				auto iterPair = connectionPointReverseRemapping.equal_range(connectionPointRemappingIter->second);
+				for (auto reverseRemappingIter = iterPair.first; reverseRemappingIter != iterPair.second; reverseRemappingIter++) {
+					connectionPointRemapping.erase(reverseRemappingIter->second);
 				}
-				auto iterPair = nextState.getGateIdReverseRemapping().equal_range(pair.first->second);
-				for (auto iter = iterPair.first; iter != iterPair.second; iter++) {
-					if (iter->second == junctionId) {
-						nextState.getGateIdReverseRemapping().erase(iter);
-						break;
+				connectionPointReverseRemapping.erase(iterPair.first, iterPair.second);
+			}
+			const EvalGate* gate = nextState.getGate(connectionPoint.gateId);
+			assert(gate);
+			if (outputConnectionPoint.has_value()) {
+				if (isOutputConnectionPort(gate->type, connectionPoint.connectionEndId)) {
+					if (outputConnectionPoint->isNull()) outputConnectionPoint = connectionPoint;
+					else outputConnectionPoint = std::nullopt;
+				}
+			}
+			while (true) {
+				auto iter = gate->connections.find(connectionPoint.connectionEndId);
+				if (iter == gate->connections.end()) break;
+				EvalConnectionPoint otherConnectionPoint = *iter->second.begin();
+				unsigned int weight = nextState.getConnectionWeight(EvalConnection(connectionPoint, otherConnectionPoint));
+				assert(weight != 0);
+				nextState.removeConnection(EvalConnection(connectionPoint, otherConnectionPoint), weight);
+			}
+		}
+		if (outputConnectionPoint.has_value()) { // we can not add any junctions (this also means that one of the points is a output)
+			EvalConnectionPoint connectionPoint = outputConnectionPoint.value();
+			for (std::pair<EvalConnectionPoint, unsigned int> pair : nonJunctionConnectionPoints) {
+				connectionPointsToScan.erase(pair.first);
+				if (pair.first == connectionPoint) continue;
+				nextState.addConnection(EvalConnection(connectionPoint, pair.first), pair.second);
+			}
+			// const EvalGate* gate = currentState.getGate(connectionPoint.gateId);
+			// auto connectionIter = gate->connections.find(connectionPoint.connectionEndId);
+			// if (connectionIter == gate->connections.end()) continue;
+			// for (EvalConnectionPoint otherConnectionPoint : connectionIter->second) {
+			// 	// if (connectionPoint == pair.first) continue;
+			// 	unsigned int weight = currentState.getConnectionWeight(EvalConnection(connectionPoint, otherConnectionPoint));
+			// 	assert(weight);
+			// 	nextState.addConnection(EvalConnection(connectionPoint, otherConnectionPoint), weight);
+			// }
+			continue;
+		}
+
+		eval_gate_id mergedGateId = std::numeric_limits<eval_gate_id::rep>::max();
+		if (junctions.empty()) {
+			// create a junction if needed
+			mergedGateId = nextState.getUnusedEvalGateId();
+		} else {
+			// We do sorting to see which gate would be the best to place down.
+			bool typeMatches = false;
+			for (eval_gate_id junctionId : junctions) {
+				if (junctionId < mergedGateId) {
+					if (currentState.getGate(junctionId)->type == gateType) {
+						typeMatches = true;
+						mergedGateId = junctionId;
+					} else if (!typeMatches) {
+						mergedGateId = junctionId;
 					}
+				} else if ((!typeMatches) && currentState.getGate(junctionId)->type == gateType) {
+					typeMatches = true;
+					mergedGateId = junctionId;
 				}
-				pair.first->second = gateId;
 			}
-			nextState.getGateIdReverseRemapping().emplace(gateId, junctionId);
-			if (nextState.getGate(junctionId)) nextState.removeGate(junctionId);
 		}
-		nextState.addGateIdRemappingsUpdated(gateId);
-		gatesTokeep.insert(gateId);
-		nextState.addGate(gateId, gateType);
-		for (std::pair<EvalConnectionPoint, unsigned int> pair : otherConnectionPoints) {
-			nextState.addConnection(EvalConnection(EvalConnectionPoint(gateId, 0), pair.first), pair.second);
+		for (std::pair<EvalConnectionPoint, unsigned int> connectionPoint : nonJunctionConnectionPoints) {
+			connectionPointsToScan.erase(connectionPoint.first);
+			if (singlePinConnectionPoints.contains(connectionPoint.first)) {
+				auto suc = connectionPointRemapping.emplace(connectionPoint.first, mergedGateId);
+				assert(suc.second);
+				connectionPointReverseRemapping.emplace(mergedGateId, connectionPoint.first);
+			}
+		}
+		for (eval_gate_id junctionId : junctions) {
+			connectionPointsToScan.erase(EvalConnectionPoint(junctionId, 0));
+			auto remappingIter = nextState.getGateIdRemapping().find(junctionId);
+			if (remappingIter != nextState.getGateIdRemapping().end()) {
+				auto iterPair = nextState.getGateIdReverseRemapping().equal_range(remappingIter->second);
+				for (auto reverseRemappingIter = iterPair.first; reverseRemappingIter != iterPair.second; reverseRemappingIter++) {
+					nextState.getGateIdRemapping().erase(reverseRemappingIter->second);
+					if (nextState.getGate(reverseRemappingIter->second)) nextState.removeGate(reverseRemappingIter->second);
+				}
+				nextState.getGateIdReverseRemapping().erase(iterPair.first, iterPair.second);
+			}
+		}
+		for (eval_gate_id junctionId : junctions) {
+			auto suc = nextState.getGateIdRemapping().emplace(junctionId, mergedGateId);
+			assert(suc.second);
+			nextState.getGateIdReverseRemapping().emplace(mergedGateId, junctionId);
+			assert(nextState.getGateIdReverseRemapping().size() == nextState.getGateIdRemapping().size());
+		}
+		nextState.addGateIdRemappingsUpdated(mergedGateId);
+		nextState.addGate(mergedGateId, gateType);
+		for (std::pair<EvalConnectionPoint, unsigned int> pair : nonJunctionConnectionPoints) {
+			nextState.addConnection(EvalConnection(EvalConnectionPoint(mergedGateId, 0), pair.first), pair.second);
 		}
 	}
 	for (eval_gate_id gateId : currentState.getGateIdRemappingsUpdateds()) {
 		auto iter = nextState.getGateIdRemapping().find(gateId);
 		if (iter == nextState.getGateIdRemapping().end()) {
-			logError("could not find eval id while proagating id {} update from IC.", "JunctionMergeEvalLayer::run", gateId);
+			logError("could not find eval id while proagating id {} update.", "JunctionMergeEvalLayer::run", gateId);
 			continue;
 		}
 		assert(nextState.getGate(iter->second));
@@ -174,65 +477,99 @@ void JunctionMergeEvalLayer::run() {
 		if (connectionPoint.connectionEndId == 0) {
 			auto iter = nextState.getGateIdRemapping().find(connectionPoint.gateId);
 			if (iter == nextState.getGateIdRemapping().end()) {
-				logError("could not find eval id while proagating connectionPoint {} update from IC.", "JunctionMergeEvalLayer::run", connectionPoint);
+				logError("Could not find eval id while proagating connectionPoint {} update.", "JunctionMergeEvalLayer::run", connectionPoint);
 				continue;
 			}
 			connectionPoint.gateId = iter->second;
 		}
-		auto iter = nextState.getGateIdRemapping().find(connectionPoint.gateId);
-		const EvalGate* g = currentState.getGate(connectionPoint.gateId);
-		assert(nextState.getGate(connectionPoint.gateId));
 		nextState.addConnectionPointRemappingsUpdated(connectionPoint);
 	}
+	assert(connectionPointRemapping.size() == connectionPointReverseRemapping.size());
+	// nextState.visualize();
 }
 
 std::tuple<
 	std::vector<eval_gate_id>,
+	std::unordered_set<EvalConnectionPoint>,
 	std::unordered_map<EvalConnectionPoint, unsigned int>,
 	EvalGateType
-> JunctionMergeEvalLayer::gatherJunctionGroup(eval_gate_id gateId, const EvalLayerState& evalLayerState) const {
-	std::vector<eval_gate_id> junctions = { gateId };
-	std::unordered_map<EvalConnectionPoint, unsigned int> visted = { {EvalConnectionPoint(gateId, 0), 1} };
+> JunctionMergeEvalLayer::gatherJunctionGroup(EvalConnectionPoint start, const EvalLayerState& layerState) const {
+	const EvalGate* startGate = layerState.getGate(start.gateId);
+	assert(startGate);
+
+	std::vector<eval_gate_id> junctions;
+	std::unordered_map<EvalConnectionPoint, unsigned int> nonJunctionConnectionPoints;
+	std::unordered_set<EvalConnectionPoint> singlePinConnectionPoints;
+
 	bool foundPullDown = false;
 	bool foundPullUp = false;
-	for (unsigned int i = 0; i < junctions.size(); i++) {
-		const EvalGate* evalGate = evalLayerState.getGate(junctions[i]);
-		if (isJunctionType(evalGate->type)) {
-			if (evalGate->type == getEvalGateType(BlockType::JUNCTION_L)) foundPullDown = true;
-			if (evalGate->type == getEvalGateType(BlockType::JUNCTION_H)) foundPullUp = true;
-			if (evalGate->type == getEvalGateType(BlockType::JUNCTION_X)) foundPullDown = foundPullUp = true;
-			if (!evalGate->connections.empty()) {
-				for (EvalConnectionPoint otherConnectionPoint : evalGate->connections.at(0)) {
-					unsigned int weight = evalLayerState.getConnectionWeight(EvalConnection(EvalConnectionPoint(evalGate->gateId, 0), otherConnectionPoint));
-					auto pair = visted.emplace(otherConnectionPoint, weight);
-					if (pair.second) {
-						junctions.push_back(otherConnectionPoint.gateId);
-					} else {
-						pair.first->second += weight;
-					}
+
+	if (isJunctionType(startGate->type) ) {
+		junctions.push_back(start.gateId);
+		if (startGate->type == getEvalGateType(BlockType::JUNCTION_L)) foundPullDown = true;
+		else if (startGate->type == getEvalGateType(BlockType::JUNCTION_H)) foundPullUp = true;
+		else if (startGate->type == getEvalGateType(BlockType::JUNCTION_X)) foundPullUp = foundPullDown = true;
+	} else if (isConnectionEndIdSinglePin(startGate->type, start.connectionEndId)) {
+		singlePinConnectionPoints.insert(start);
+	} else {
+		assert(false);
+	}
+
+	std::unordered_set<EvalConnectionPoint> visited;
+	std::unordered_set<EvalConnection> visitedEdges;
+	std::deque<EvalConnectionPoint> queue;
+	queue.push_back(start);
+	visited.insert(start);
+
+
+	while (!queue.empty()) {
+		EvalConnectionPoint connectionPoint = queue.front();
+		queue.pop_front();
+
+		const EvalGate* gate = layerState.getGate(connectionPoint.gateId);
+		assert(gate);
+		auto connectionIter = gate->connections.find(connectionPoint.connectionEndId);
+		if (connectionIter == gate->connections.end())continue;
+		for (const EvalConnectionPoint& otherConnectionPoint : connectionIter->second) {
+			const EvalGate* otherGate = layerState.getGate(otherConnectionPoint.gateId);
+			assert(otherGate);
+
+			EvalConnection connection(connectionPoint, otherConnectionPoint);
+			unsigned int weight = layerState.getConnectionWeight(connection);
+			assert(weight != 0);
+
+			if (isJunctionType(otherGate->type)) {
+				assert(otherConnectionPoint.connectionEndId == 0);
+				if (visited.insert(otherConnectionPoint).second) {
+					junctions.push_back(otherConnectionPoint.gateId);
+					queue.push_back(otherConnectionPoint);
+
+					if (otherGate->type == getEvalGateType(BlockType::JUNCTION_L)) foundPullDown = true;
+					else if (otherGate->type == getEvalGateType(BlockType::JUNCTION_H)) foundPullUp = true;
+					else if (otherGate->type == getEvalGateType(BlockType::JUNCTION_X)) foundPullUp = foundPullDown = true;
 				}
-			}
-		} else {
-			if (i + 1 == junctions.size()) {
-				junctions.pop_back();
+			} else if (isConnectionEndIdSinglePin(otherGate->type, otherConnectionPoint.connectionEndId)) {
+				if (visited.insert(otherConnectionPoint).second) {
+					queue.push_back(otherConnectionPoint);
+					singlePinConnectionPoints.insert(otherConnectionPoint);
+				}
+				if (visitedEdges.insert(connection).second) {
+					if (!isJunctionType(gate->type)) nonJunctionConnectionPoints[connectionPoint] += weight;
+					nonJunctionConnectionPoints[otherConnectionPoint] += weight;
+				}
 			} else {
-				junctions[i] = junctions.back();
-				junctions.pop_back();
-				i--;
+				if (visitedEdges.insert(connection).second) {
+					if (!isJunctionType(gate->type)) nonJunctionConnectionPoints[connectionPoint] += weight;
+					nonJunctionConnectionPoints[otherConnectionPoint] += weight;
+				}
 			}
 		}
 	}
-	for (eval_gate_id junction : junctions) {
-		visted.erase(EvalConnectionPoint(junction, 0));
-		const EvalGate* evalGate = evalLayerState.getGate(junction);
-		assert(isJunctionType(evalGate->type));
-	}
-	EvalGateType gateType = getEvalGateType(BlockType::JUNCTION);
-	if (foundPullDown) {
-		if (foundPullUp) gateType = getEvalGateType(BlockType::JUNCTION_X);
-		else gateType = getEvalGateType(BlockType::JUNCTION_L);
-	} else if (foundPullUp) {
-		gateType = getEvalGateType(BlockType::JUNCTION_H);
-	}
-	return { junctions, visted, gateType };
+
+	EvalGateType resultType = getEvalGateType(BlockType::JUNCTION);
+	if (foundPullDown && foundPullUp) resultType = getEvalGateType(BlockType::JUNCTION_X);
+	else if (foundPullDown) resultType = getEvalGateType(BlockType::JUNCTION_L);
+	else if (foundPullUp) resultType = getEvalGateType(BlockType::JUNCTION_H);
+
+	return { junctions, singlePinConnectionPoints, nonJunctionConnectionPoints, resultType };
 }

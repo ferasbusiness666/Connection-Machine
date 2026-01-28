@@ -124,7 +124,7 @@ void EvalLayerState::removeConnection(const EvalConnection& connection, unsigned
 		auto gateBIterBoolPair = gates.find(connection.connectionPointB.gateId);
 		assert(gateBIterBoolPair != gates.end());
 		auto gateBConnectionIter = gateBIterBoolPair->second.connections.find(connection.connectionPointB.connectionEndId);
-		assert(gateAConnectionIter != gateBIterBoolPair->second.connections.end());
+		assert(gateBConnectionIter != gateBIterBoolPair->second.connections.end());
 		assert(gateBConnectionIter->second.contains(connection.connectionPointA));
 		if (gateBConnectionIter->second.size() == 1) gateBIterBoolPair->second.connections.erase(gateBConnectionIter);
 		else gateBConnectionIter->second.erase(connection.connectionPointA);
