@@ -285,71 +285,6 @@ void JunctionMergeEvalLayer::run() {
 		}
 		nextState.getGateIdReverseRemapping().erase(iterPair2.first, iterPair2.second);
 		assert(connectionPointRemapping.size() == connectionPointReverseRemapping.size());
-
-
-		// if (nextState.getGate(junctionId) != nullptr) nextState.removeGate(junctionId);
-		// if (nextState.getGate(junctionId) == nullptr) {
-		// 	assert(currentState.getRemovedGates().contains(junctionId));
-		// } else {
-		// 	if (currentState.getGate(junctionId) == nullptr) {
-		// 		nextState.removeGate(junctionId); // if it was added this layer remove it
-		// 	}
-		// }
-		// auto iterPair = nextState.getGateIdReverseRemapping().equal_range(junctionId);
-		// if (iterPair.first != iterPair.second) {
-		// 	for (auto reverseRemappingIter = iterPair.first; reverseRemappingIter != iterPair.second; reverseRemappingIter++) {
-		// 		auto addedGatesIter = currentState.getAddedGates().find(reverseRemappingIter->second);
-		// 		if (addedGatesIter != currentState.getAddedGates().end()) {
-		// 			assert(nextState.getGateIdRemapping().contains(reverseRemappingIter->second));
-		// 			assert(nextState.getGateIdRemapping().at(reverseRemappingIter->second) == reverseRemappingIter->second);
-		// 			if (!isJunctionType(addedGatesIter->second)) continue;
-		// 			bool suc1 = nextState.getGateIdRemapping().erase(reverseRemappingIter->second);
-		// 			assert(suc1);
-		// 			if (nextState.getGate(junctionId) != nullptr) nextState.removeGate(junctionId);
-		// 			connectionPointsToScan.insert(EvalConnectionPoint(reverseRemappingIter->second, 0));
-		// 		} else {
-		// 			bool suc1 = nextState.getGateIdRemapping().erase(reverseRemappingIter->second);
-		// 			assert(suc1);
-		// 			if (currentState.getRemovedGates().contains(reverseRemappingIter->second)) continue;
-		// 			if (nextState.getGate(junctionId) != nullptr) nextState.removeGate(junctionId);
-		// 			connectionPointsToScan.insert(EvalConnectionPoint(reverseRemappingIter->second, 0));
-		// 		}
-		// 	}
-		// 	nextState.getGateIdReverseRemapping().erase(iterPair.first, iterPair.second);
-		// 	if (currentState.getAddedGates().contains(junctionId))	{ // if the gate was added back after being deleted then add the id remapping back
-		// 		// assert(currentState.getRemovedGates().contains(junctionId));
-		// 		assert(!nextState.getGateIdReverseRemapping().contains(junctionId));
-		// 		if (currentState.getAddedGates().contains(junctionId)) nextState.getGateIdReverseRemapping().emplace(junctionId, junctionId);
-		// 		assert(nextState.getGateIdReverseRemapping().size() == nextState.getGateIdRemapping().size());
-		// 	}
-		// }
-		// auto iterPair2 = connectionPointReverseRemapping.equal_range(junctionId);
-		// for (auto reverseRemappingIter = iterPair2.first; reverseRemappingIter != iterPair2.second; reverseRemappingIter++) {
-		// 	const EvalGate* curGate = currentState.getGate(reverseRemappingIter->second.gateId);
-		// 	assert(curGate);
-		// 	if (!(isJunctionType(curGate->type) || isConnectionEndIdSinglePin(curGate->type, reverseRemappingIter->second.connectionEndId))) {
-		// 		logError("This is a bug and should not happen. Tho it should not break anything I dont want it to happen!");
-		// 	}
-		// 	connectionPointRemapping.erase(reverseRemappingIter->second);
-		// 	const EvalGate* gate = nextState.getGate(reverseRemappingIter->second.gateId);
-		// 	if (gate) {
-		// 		while (true) {
-		// 			auto iter = gate->connections.find(reverseRemappingIter->second.connectionEndId);
-		// 			if (iter == gate->connections.end()) break;
-		// 			EvalConnectionPoint otherConnectionPoint = *iter->second.begin();
-		// 			unsigned int weight = nextState.getConnectionWeight(EvalConnection(reverseRemappingIter->second, otherConnectionPoint));
-		// 			assert(weight != 0);
-		// 			nextState.removeConnection(EvalConnection(reverseRemappingIter->second, otherConnectionPoint), weight);
-		// 		}
-		// 		connectionPointsToScan.insert(reverseRemappingIter->second);
-		// 	} else {
-		// 		connectionPointsToScan.erase(reverseRemappingIter->second);
-		// 	}
-		// }
-		// connectionPointReverseRemapping.erase(iterPair2.first, iterPair2.second);
-		// assert(connectionPointRemapping.size() == connectionPointReverseRemapping.size());
-
-
 	}
 	// nextState.visualize();
 	while (!connectionPointsToScan.empty()) {
@@ -399,15 +334,6 @@ void JunctionMergeEvalLayer::run() {
 				if (pair.first == connectionPoint) continue;
 				nextState.addConnection(EvalConnection(connectionPoint, pair.first), pair.second);
 			}
-			// const EvalGate* gate = currentState.getGate(connectionPoint.gateId);
-			// auto connectionIter = gate->connections.find(connectionPoint.connectionEndId);
-			// if (connectionIter == gate->connections.end()) continue;
-			// for (EvalConnectionPoint otherConnectionPoint : connectionIter->second) {
-			// 	// if (connectionPoint == pair.first) continue;
-			// 	unsigned int weight = currentState.getConnectionWeight(EvalConnection(connectionPoint, otherConnectionPoint));
-			// 	assert(weight);
-			// 	nextState.addConnection(EvalConnection(connectionPoint, otherConnectionPoint), weight);
-			// }
 			continue;
 		}
 

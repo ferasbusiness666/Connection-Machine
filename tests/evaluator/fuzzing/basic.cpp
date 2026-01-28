@@ -22,6 +22,8 @@ namespace {
 	};
 
 	struct BlockTypesAllowed {
+		BlockTypesAllowed(std::vector<BlockType> blockTypesToUse, std::vector<BusDef> busDefinitions, std::vector<std::string> customBlockPaths) :
+			blockTypesToUse(blockTypesToUse), busDefinitions(busDefinitions), customBlockPaths(customBlockPaths) {}
 		std::vector<BlockType> blockTypesToUse;
 		std::vector<BusDef> busDefinitions;
 		std::vector<std::string> customBlockPaths;
@@ -69,7 +71,7 @@ namespace {
 			for (bool realistic : {false, true}) {
 				// RunningConfig runningConfig = {5000, 100, 3, 50};
 				RunningConfig runningConfig = {100, 50, 3, 20};
-				BlockTypesAllowed blockTypesAllowed = {
+				BlockTypesAllowed blockTypesAllowed(
 					{
 						BlockType::AND,
 						BlockType::OR,
@@ -87,28 +89,49 @@ namespace {
 						BlockType::LIGHT,
 						BlockType::SWITCH,
 						BlockType::BUTTON
-					}, {}, {}
-				};
+					},
+					{},
+					{}
+				);
 				testcases.push_back(TestcaseConfig { seed, realistic, runningConfig, blockTypesAllowed, u++ });
 
-				blockTypesAllowed = {
-					{}, {}, {}
-				};
-				for (unsigned int i = 1; i <= 21; ++i) {
-					blockTypesAllowed.blockTypesToUse.push_back(BlockType(i));
-				}
-				blockTypesAllowed.busDefinitions.push_back(BusDef {2, 1, 1, 2});
-				blockTypesAllowed.busDefinitions.push_back(BusDef {4, 1, 1, 4});
-				blockTypesAllowed.busDefinitions.push_back(BusDef {2, 1, 2, 4});
-				blockTypesAllowed.busDefinitions.push_back(BusDef {8, 1, 1, 8});
-				blockTypesAllowed.busDefinitions.push_back(BusDef {4, 1, 2, 8});
-				blockTypesAllowed.busDefinitions.push_back(BusDef {2, 1, 4, 8});
-				blockTypesAllowed.busDefinitions.push_back(BusDef { 2, 4, 4, 2 });
+				blockTypesAllowed = BlockTypesAllowed(
+					{
+						BlockType::AND,
+						BlockType::OR,
+						BlockType::XOR,
+						BlockType::NAND,
+						BlockType::NOR,
+						BlockType::XNOR,
+						BlockType::BUFFER,
+						BlockType::NOT,
+						BlockType::TRISTATE_BUFFER,
+						BlockType::JUNCTION,
+						BlockType::JUNCTION_L,
+						BlockType::JUNCTION_H,
+						BlockType::JUNCTION_X,
+						BlockType::LIGHT,
+						BlockType::SWITCH,
+						BlockType::BUTTON
+					},
+					{
+						BusDef {2, 1, 1, 2},
+						BusDef {4, 1, 1, 4},
+						BusDef {2, 1, 2, 4},
+						BusDef {8, 1, 1, 8},
+						BusDef {4, 1, 2, 8},
+						BusDef {2, 1, 4, 8},
+						BusDef { 2, 4, 4, 2 }
+					},
+					{
+						"passthrough.cir",
+						"full_adder.cir",
+						"bus_tristate_2.cir",
+						"nested_passthrough.cir",
+					}
+				);
+				// a test case fails if you just have types, passthrough, nested_passthrough!
 
-				blockTypesAllowed.customBlockPaths.push_back("passthrough.cir");
-				blockTypesAllowed.customBlockPaths.push_back("full_adder.cir");
-				blockTypesAllowed.customBlockPaths.push_back("bus_tristate_2.cir");
-				blockTypesAllowed.customBlockPaths.push_back("nested_passthrough.cir");
 				testcases.push_back(TestcaseConfig { seed, realistic, runningConfig, blockTypesAllowed, u++ });
 			}
 		}
@@ -212,7 +235,7 @@ TEST_P(BasicFuzzingEvaluatorTest, FuzzInteractions) {
 		allowedBlockTypes.push_back(customBlockType);
 	}
 	logInfo("Fuzzing test with seed {}, realistic {}, {} edit operations, {} test operations, {} ticks between tests, {} states per test, {} allowed block types. config idx: {}", "BasicFuzzingEvaluatorTest", config.seed, runRealistic, numEditOperations, numTestOperations, numTicksBetweenTests, numStatesSetPerTest, allowedBlockTypes.size(), config.index);
-	for (int i = 0; i < numEditOperations; ++i) {
+	for (int i = 0; i < numEditOperations || blockIds.empty(); ++i) {
 		int operation = gen() % 8; // 0,1: place, 2: remove, 3,4,5: connect, 6,7: disconnect
 		if (operation <= 1) { // place block
 			Orientation orientation(Rotation(gen() % 4), (gen() % 2) == 0);
@@ -279,8 +302,7 @@ TEST_P(BasicFuzzingEvaluatorTest, FuzzInteractions) {
 	// SAVE CIRCUIT TO FILE
 	{
 		CircuitFileManager& circuitFileManager = environment.getCircuitFileManager();
-		const std::filesystem::path savePath =
-			DirectoryManager::getConfigDirectory() / "tmp" / ("BasicFuzzingCircuit_" + testcase_config_to_string(config) + ".cir");
+		const std::filesystem::path savePath = DirectoryManager::getConfigDirectory() / "tmp" / ("BasicFuzzingCircuit_" + testcase_config_to_string(config) + ".cir");
 		std::filesystem::create_directories(savePath.parent_path());
 		ASSERT_TRUE(circuitFileManager.saveToFile(savePath.string(), circuit->getUUID()));
 		logInfo("Saved fuzzing circuit to " + savePath.string(), "BasicFuzzingEvaluatorTest");
@@ -364,8 +386,28 @@ TEST_P(BasicFuzzingEvaluatorTest, FuzzInteractions) {
 			block_id_t blockId = blockIds[gen() % blockIds.size()];
 			Position pos = blockIdToPosition.at(blockId);
 			logic_state_t state = logic_state_t(gen() % 4);
-			rSimulator->setState(pos, state);
-			tSimulator->setState(pos, state);
+			const Block* block = circuit->getBlockContainer().getBlock(pos);
+			if ( // limit state sets to only settable blocks
+				block->type() == BlockType::AND ||
+				block->type() == BlockType::OR ||
+				block->type() == BlockType::XOR ||
+				block->type() == BlockType::NAND ||
+				block->type() == BlockType::NOR ||
+				block->type() == BlockType::XNOR ||
+				block->type() == BlockType::BUFFER ||
+				block->type() == BlockType::NOT ||
+				// block->type() == BlockType::TRISTATE_BUFFER || // cant be set
+				// block->type() == BlockType::JUNCTION ||
+				// block->type() == BlockType::JUNCTION_L ||
+				// block->type() == BlockType::JUNCTION_H ||
+				// block->type() == BlockType::JUNCTION_X ||
+				// block->type() == BlockType::LIGHT ||
+				block->type() == BlockType::SWITCH ||
+				block->type() == BlockType::BUTTON
+			) {
+				rSimulator->setState(pos, state);
+				tSimulator->setState(pos, state);
+			}
 		}
 
 		// compare states
