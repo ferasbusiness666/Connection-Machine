@@ -186,6 +186,8 @@ CircuitViewWidget::CircuitViewWidget(Environment& environment, Rml::ElementDocum
 	keybindHandler.addListener("Keybinds/File/New", [this]() { newCircuit(); });
 	keybindHandler.addListener("Keybinds/Tutorial/Start", [this]() { circuitView->initializeTutorial("BasicTutorial.tir"); circuitView->getTutorialManager().StartTutorial(); });
 	keybindHandler.addListener("Keybinds/Tutorial/Stop", [this]() { circuitView->getTutorialManager().Stop(); });
+	keybindHandler.addListener("Keybinds/Tutorial/DebugForceCompleteStep", [this]() { circuitView->getTutorialManager().forceCompleteStep(); });
+
 	keybindHandler.addListener(Rml::Input::KeyIdentifier::KI_P, 0, [this]() { this->mainWindow.log(circuitView->getViewManager().getPointerPosition().snap().toString()); });
 	// keybindHandler.addListener("Keybinds/Tutorial/Start", [this]() { circuitView->getTutorialManager().StartTutorial(); });
 	// keybindHandler.addListener("Keybinds/Tutorial/Stop", [this]() { circuitView->getTutorialManager().Stop(); });

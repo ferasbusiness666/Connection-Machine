@@ -19,10 +19,12 @@ Step:
 Step:
 	Condition:
 		Connection: (0, 0) (2, 1)
+		Connection: (0, 2) (2, 1)
 	Action:
 		Message: "Click the 'Connection' tool and connect both switches to the AND block."
 		Message: "Connect 2 blocks by clicking the one you want the output from, and then clicking the one you want the output to go to."
 		Connection Preview: (0, 0) (2, 1)
+		Connection Preview: (0, 2) (2, 1)
 Step:
 	Condition:
 		Block: LIGHT (4, 1) ZERO
