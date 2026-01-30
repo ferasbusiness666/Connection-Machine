@@ -95,8 +95,6 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
             nameToConnectedBlockPosition.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
         }
     }
-	// logInfo(cir->dumpState().dump());
-    // return false;
 
     // run tests on the generated test circuit
     for (auto commandIter = testCommands.begin(); commandIter != testCommands.end(); commandIter++) {
@@ -132,7 +130,6 @@ void CircuitTestCase::runSetStatesCommand(TestCommand testCommand, EvalLogicSimu
         auto blockPosIter = nameToConnectedBlockPosition.find(statesIter->first);
         simulator.setState((Address(blockPosIter->second)), statesIter->second);
         logInfo("Set port '{}' to state '{}'", "CircuitTestCase - SET_STATES", statesIter->first, statesIter->second);
-		// logInfo(eval->dumpState().dump());
     }
 }
 
