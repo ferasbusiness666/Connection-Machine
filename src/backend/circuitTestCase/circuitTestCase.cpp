@@ -50,9 +50,10 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
         return false;
     }
 
+	const Block* testedBlock = cir->getBlockContainer().getBlock(Position(0, 0));
+
     for (auto iter = connections.begin(); iter != connections.end(); iter++) {
         if (iter->second.portType == BlockData::ConnectionData::PortType::INPUT || iter->second.portType == BlockData::ConnectionData::PortType::BIDIRECTIONAL) {
-            Position internalConnPos = Position(iter->second.positionOnBlock.dx, iter->second.positionOnBlock.dy);
             Position externalConnPos = Position(-1-nameToConnectedBlockPosition.size(), 0);
             if (!cir->tryInsertBlock(externalConnPos, Orientation(), SWITCH)) {
                 logError("Couldn't insert switch test circuit block", "circuitTestCase");
@@ -63,17 +64,13 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
             const Block* block = blockContainer.getBlock(externalConnPos);
             if (block == nullptr) {
                 logInfo("No block at position {}.", "GetBlockDataCommand", externalConnPos);
+				return false;
             }
-            else {
-                logInfo("Something at position {}.", "GetBlockDataCommand", externalConnPos);
-            }
-            logInfo(block->type() == BlockType::SWITCH);
-            logInfo("{}, {}", "", externalConnPos, internalConnPos);
-            logInfo(iter->first);
 
-            if (!cir->tryCreateConnection(externalConnPos, internalConnPos)) {
-                logError("Couldn't create switch test circuit connection, ext: {} int: {}", "circuitTestCase", externalConnPos, internalConnPos);
-                //return false;
+
+            if (!cir->tryCreateConnection(ConnectionEnd(testedBlock->id(), iter->first), ConnectionEnd(block->id(), 0))) {
+                logError("Couldn't create switch test circuit connection, ext: {}", "circuitTestCase", externalConnPos);
+                return false;
             }
             nameToConnectedBlockPosition.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
         }
@@ -90,18 +87,16 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
             if (block == nullptr) {
                 logInfo("No block at position {}.", "GetBlockDataCommand", externalConnPos);
             }
-            else {
-                logInfo("Something at position {}.", "GetBlockDataCommand", externalConnPos);
-            }
 
-            if (!cir->tryCreateConnection(internalConnPos, externalConnPos)) {
+            if (!cir->tryCreateConnection(ConnectionEnd(testedBlock->id(), iter->first), ConnectionEnd(block->id(), 0))) {
                 logError("Couldn't create light test circuit connection, ext: {} int: {}", "circuitTestCase", externalConnPos, internalConnPos);
-                //return false;
+                return false;
             }
             nameToConnectedBlockPosition.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
         }
     }
-    return false;
+	// logInfo(cir->dumpState().dump());
+    // return false;
 
     // run tests on the generated test circuit
     for (auto commandIter = testCommands.begin(); commandIter != testCommands.end(); commandIter++) {
@@ -137,6 +132,7 @@ void CircuitTestCase::runSetStatesCommand(TestCommand testCommand, const SharedE
         auto blockPosIter = nameToConnectedBlockPosition.find(statesIter->first);
         eval->setState((Address(blockPosIter->second)), statesIter->second);
         logInfo("Set port '{}' to state '{}'", "CircuitTestCase - SET_STATES", statesIter->first, statesIter->second);
+		// logInfo(eval->dumpState().dump());
     }
 }
 

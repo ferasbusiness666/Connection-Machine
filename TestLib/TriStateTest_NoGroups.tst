@@ -3,113 +3,113 @@ Test: "Tri State Buffer Test"
 Ports: "Input" "Enable" "Output"
 
 >Set:
-    "Input":0
     "Enable":0
+    "Input":0
 >Step 10
 >Check:
     "Output":2
 
 >Set:
-    "Input":1
-    "Enable":0
+    "Enable":1
+    "Input":0
 >Step 10
 >Check:
     "Output":0
 
 >Set:
-    "Input":2
-    "Enable":0
->Step 10
->Check:
-    "Output":3
-
->Set:
-    "Input":3
-    "Enable":0
->Step 10
->Check:
-    "Output":3
-
->Set:
+    "Enable":2
     "Input":0
-    "Enable":1
+>Step 10
+>Check:
+    "Output":3
+
+>Set:
+    "Enable":3
+    "Input":0
+>Step 10
+>Check:
+    "Output":3
+
+>Set:
+    "Enable":0
+    "Input":1
 >Step 10
 >Check:
     "Output":2
 
 >Set:
-    "Input":1
     "Enable":1
+    "Input":1
 >Step 10
 >Check:
     "Output":1
 
 >Set:
-    "Input":2
-    "Enable":1
->Step 10
->Check:
-    "Output":3
-
->Set:
-    "Input":3
-    "Enable":1
->Step 10
->Check:
-    "Output":3
-
->Set:
-    "Input":0
     "Enable":2
+    "Input":1
+>Step 10
+>Check:
+    "Output":3
+
+>Set:
+    "Enable":3
+    "Input":1
+>Step 10
+>Check:
+    "Output":3
+
+>Set:
+    "Enable":0
+    "Input":2
 >Step 10
 >Check:
     "Output":2
 
 >Set:
-    "Input":1
-    "Enable":2
->Step 10
->Check:
-    "Output":3
-
->Set:
+    "Enable":1
     "Input":2
-    "Enable":2
 >Step 10
 >Check:
     "Output":3
 
 >Set:
-    "Input":3
     "Enable":2
+    "Input":2
 >Step 10
 >Check:
     "Output":3
 
 >Set:
-    "Input":0
     "Enable":3
+    "Input":2
+>Step 10
+>Check:
+    "Output":3
+
+>Set:
+    "Enable":0
+    "Input":3
 >Step 10
 >Check:
     "Output":2
 
 >Set:
-    "Input":1
-    "Enable":3
->Step 10
->Check:
-    "Output":3
-
->Set:
-    "Input":2
-    "Enable":3
->Step 10
->Check:
-    "Output":3
-
->Set:
+    "Enable":1
     "Input":3
+>Step 10
+>Check:
+    "Output":3
+
+>Set:
+    "Enable":2
+    "Input":3
+>Step 10
+>Check:
+    "Output":3
+
+>Set:
     "Enable":3
+    "Input":3
 >Step 10
 >Check:
     "Output":3
