@@ -26,6 +26,8 @@ public:
 	VkResult submitPresent(VkPresentInfoKHR* presentInfo);
 	void immediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function);
 
+	inline std::mutex& getGraphicsQueueLock() { return queueMux; }
+	inline const QueueInfo& getGraphicsQueue() const { return graphicsQueue; }
 	inline uint32_t getGraphicsQueueIndex() const { return graphicsQueue.index; }
 	inline uint32_t getPresentQueueIndex() const { return presentQueue.index; }
 

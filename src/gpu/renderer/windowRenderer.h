@@ -3,6 +3,7 @@
 
 #include <RmlUi/Core/RenderInterface.h>
 
+#include "gpu/renderer/imgui/imGuiRenderer.h"
 #include "gui/sdl/sdlWindow.h"
 
 #include "gpu/abstractions/vulkanSwapchain.h"
@@ -25,6 +26,9 @@ public:
 
 	RmlRenderer& getRmlRenderer() { return rmlRenderer; }
 	const RmlRenderer& getRmlRenderer() const { return rmlRenderer; }
+
+	ImGuiRenderer& getImGuiRenderer() { return *imGuiRenderer; }
+	const ImGuiRenderer& getImGuiRenderer() const { return *imGuiRenderer; }
 
 	void registerViewportRenderData(ViewportRenderData* viewportRenderData);
 	void deregisterViewportRenderData(ViewportRenderData* viewportRenderData);
@@ -52,6 +56,7 @@ private:
 
 	// subrenderers
 	RmlRenderer rmlRenderer;
+	std::optional<ImGuiRenderer> imGuiRenderer;
 	ViewportRenderer viewportRenderer;
 
 	// render loop

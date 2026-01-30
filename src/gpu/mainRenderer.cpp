@@ -1,4 +1,5 @@
 #include "mainRenderer.h"
+#include "gpu/renderer/imgui/imGuiRenderer.h"
 
 std::optional<MainRenderer> mainRendererSingleton;
 

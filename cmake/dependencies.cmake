@@ -3,6 +3,7 @@ include(ExternalProject)
 
 function(add_main_dependencies)
 	message("adding main dependencies")
+
 	if (APPLE)
 		find_library(COREFOUNDATION_FRAMEWORK CoreFoundation)
 		list(APPEND EXTERNAL_LINKS ${COREFOUNDATION_FRAMEWORK})

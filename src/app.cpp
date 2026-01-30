@@ -9,7 +9,7 @@
 #include "gui/mainWindow/circuitView/circuitViewWidget.h"
 #include "network/network.h"
 #include "util/version.h"
-// #include "computerAPI/directoryManager.h" // TEMPORARY
+#include "gpu/renderer/imgui/imGuiRenderer.h"
 
 #include <SDL3/SDL.h>
 
@@ -117,6 +117,7 @@ void App::runLoop() {
 			// process events (TODO - should probably just have a map of window ids to windows)
 			SDL_Event event;
 			while (SDL_PollEvent(&event)) {
+				ImGuiRenderer::allProcessEvent(event);
 				switch (event.type) {
 				case SDL_EVENT_QUIT: {
 					// Main application quit (eg. ctrl-c in terminal)

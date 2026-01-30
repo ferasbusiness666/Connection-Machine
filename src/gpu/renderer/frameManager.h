@@ -32,6 +32,7 @@ public:
 	float waitForCurrentFrameCompletion();
 	void startCurrentFrame();
 
+	inline uint32_t getCurrentFrameIndex() { return frameIndex; }
 	inline Frame& getCurrentFrame() { return frames[frameIndex]; }
 
 private:

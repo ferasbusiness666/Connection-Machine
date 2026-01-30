@@ -1,4 +1,5 @@
 #include "windowRenderer.h"
+#include "imgui/imgui.h"
 
 #ifdef TRACY_PROFILER
 #include <tracy/Tracy.hpp>
@@ -27,6 +28,7 @@ WindowRenderer::WindowRenderer(SdlWindow* sdlWindow) : sdlWindow(sdlWindow) {
 	// subrenderers
 	rmlRenderer.init(device, renderPass);
 	viewportRenderer.init(device, renderPass);
+	imGuiRenderer.emplace(sdlWindow->getHandle(), renderPass, FRAMES_IN_FLIGHT);
 
 	// start render loop
 	running = true;
@@ -94,6 +96,13 @@ void WindowRenderer::renderLoop() {
 
 		// record command buffer
 		vkResetCommandBuffer(frame.mainCommandBuffer, 0);
+
+		// ImGui rendering
+		imGuiRenderer->beginFrame();
+		ImGui::Begin("Debug");
+		ImGui::Text("Frame: %d", frames.getCurrentFrameIndex());
+        ImGui::End();
+
 		renderToCommandBuffer(frame, imageIndex);
 
 		// start setting up graphics submission ====================================================
@@ -188,6 +197,9 @@ void WindowRenderer::renderToCommandBuffer(Frame& frame, uint32_t imageIndex) {
 
 		// rml rendering
 		rmlRenderer.render(frame, windowSize);
+
+		// imgui rendering
+		imGuiRenderer->endFrame(frame.mainCommandBuffer);
 	}
 
 	// end render pass
