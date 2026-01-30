@@ -96,8 +96,10 @@ void SubcircuitEvalLayer::run() {
 		auto subcircuitsPair = subcircuits.try_emplace(iter.first, circuitId, evalLayerState);
 		for (std::pair<eval_gate_id, EvalGate> pair : evalLayerState.getGates()) {
 			eval_gate_id gateId = nextState.getUnusedEvalGateId();
-			subcircuitsPair.first->second.otherSimulatorToThisSimulatorIdMapping.emplace(pair.second.gateId, gateId);
-			subcircuitsPair.first->second.thisSimulatorIdMappingToOtherSimulator.emplace(gateId, pair.second.gateId);
+			auto pair1 = subcircuitsPair.first->second.otherSimulatorToThisSimulatorIdMapping.emplace(pair.second.gateId, gateId);
+			assert(pair1.second);
+			auto pair2 = subcircuitsPair.first->second.thisSimulatorIdMappingToOtherSimulator.emplace(gateId, pair.second.gateId);
+			assert(pair2.second);
 			nextState.addGate(gateId, pair.second.type);
 		}
 		for (std::pair<eval_gate_id, EvalGate> pair : evalLayerState.getGates()) {
@@ -297,15 +299,19 @@ void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vect
 			}
 			for (auto iter : subcircuitsPair.second.outputEvalLayer.getRemovedGates()) {
 				auto otherSimulatorToThisSimulatorIdMappingIter = subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.find(iter.first);
-				subcircuitsPair.second.thisSimulatorIdMappingToOtherSimulator.erase(otherSimulatorToThisSimulatorIdMappingIter->second);
+				assert(otherSimulatorToThisSimulatorIdMappingIter != subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.end());
+				bool suc = subcircuitsPair.second.thisSimulatorIdMappingToOtherSimulator.erase(otherSimulatorToThisSimulatorIdMappingIter->second);
+				assert(suc);
 				nextState.removeGate(otherSimulatorToThisSimulatorIdMappingIter->second);
 				nextState.releaseUnusedEvalGateId(otherSimulatorToThisSimulatorIdMappingIter->second);
 				subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.erase(otherSimulatorToThisSimulatorIdMappingIter);
 			}
 			for (auto iter : subcircuitsPair.second.outputEvalLayer.getAddedGates()) {
 				eval_gate_id gateId = nextState.getUnusedEvalGateId();
-				subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.emplace(iter.first, gateId);
-				subcircuitsPair.second.thisSimulatorIdMappingToOtherSimulator.emplace(gateId, iter.first);
+				auto pair1 = subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.emplace(iter.first, gateId);
+				assert(pair1.second);
+				auto pair2 = subcircuitsPair.second.thisSimulatorIdMappingToOtherSimulator.emplace(gateId, iter.first);
+				assert(pair2.second);
 				nextState.addGate(gateId, iter.second);
 			}
 			for (std::pair<eval_gate_id, EvalGate> pair : subcircuitsPair.second.outputEvalLayer.getGates()) {
@@ -365,9 +371,10 @@ void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vect
 							if (nextState.getConnectionPointRemappingToNothing().contains(otherConnectionPoint)) continue;
 						}
 						unsigned int weight = currentState.getConnectionWeight(EvalConnection(
-							connectionPoint,
+							EvalConnectionPoint(subcircuitsPair.first, connectionEndId),
 							otherConnectionPoint
 						));
+						assert(weight);
 						nextState.addConnection(EvalConnection(
 							connectionPoint,
 							otherConnectionPoint

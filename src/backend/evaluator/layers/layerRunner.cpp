@@ -2,7 +2,7 @@
 
 #include "evalLayerState.h"
 #include "subcircuitEvalLayer.h"
-#include "junctionAddEvalLayer.h"
+// #include "junctionAddEvalLayer.h"
 #include "junctionMergeEvalLayer.h"
 #include "switchReplacerEvalLayer.h"
 #include "busReplacerEvalLayer.h"
@@ -11,7 +11,7 @@ LayerRunner::LayerRunner(IdProvider<eval_gate_id>& evalGateIdProvider, Evaluator
 	evalTopLayerState = std::make_unique<EvalLayerState>(evalGateIdProvider);
 	layers.emplace_back(std::make_unique<SubcircuitEvalLayer>(*evalTopLayerState, evaluator, circuitManager));
 	layers.emplace_back(std::make_unique<SwitchReplacerEvalLayer>(layers.back()->getNextState(), circuitManager));
-	layers.emplace_back(std::make_unique<JunctionAddEvalLayer>(layers.back()->getNextState(), circuitManager));
+	// layers.emplace_back(std::make_unique<JunctionAddEvalLayer>(layers.back()->getNextState(), circuitManager));
 	layers.emplace_back(std::make_unique<JunctionMergeEvalLayer>(layers.back()->getNextState(), circuitManager));
 	busLayerIndex = layers.size();
 	layers.emplace_back(std::make_unique<BusReplacerEvalLayer>(layers.back()->getNextState(), circuitManager));

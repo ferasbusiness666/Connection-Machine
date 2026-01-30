@@ -1,5 +1,6 @@
 #include "blockRenderDataFeeder.h"
 
+#include "gpu/blockRenderDataManager.h"
 #include "backend/backend.h"
 #include "gpu/freetype/freetype.h"
 #include "gpu/mainRenderer.h"

@@ -1,6 +1,5 @@
 #include "testCircuitCommand.h"
 
-#include "environment/environment.h"
 #include "util/runAtStartup.h"
 #include "../commandManager.h"
 #include "backend/circuitTestCase/circuitTestCase.h"

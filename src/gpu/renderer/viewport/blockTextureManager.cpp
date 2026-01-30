@@ -53,6 +53,7 @@ BlockTextureId BlockTextureManager::addTexture(const std::string& path) {
 		rectId = layerRectPackers[layer].tryAddRect({textureWidth, textureHeight});
 		if (!rectId) {
 			logError("Could not fit texture with size ({}, {})", "BlockTextureManager", textureWidth, textureHeight);
+			stbi_image_free(pixels);
 			return 0;
 		}
 	}
@@ -81,7 +82,8 @@ void BlockTextureManager::refreshBlockTexture(const std::string& path) {
 	int textureWidth, texHeight, texChannels;
 	stbi_uc* pixels = stbi_load(path.c_str(), &textureWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 	if (!pixels) {
-		throwFatalError("Failed to load texture: " + path);
+		logError("Failed to load texture: {}", "", path);
+		return;
 	}
 
 	if (blockTexture.textureSize.x != textureWidth || blockTexture.textureSize.y != texHeight) {
@@ -94,6 +96,7 @@ void BlockTextureManager::refreshBlockTexture(const std::string& path) {
 			textureWidth,
 			texHeight
 		);
+		stbi_image_free(pixels);
 		return;
 	}
 

@@ -40,7 +40,13 @@ public:
 
 	unsigned int getConnectionWeight(EvalConnection connection) const {
 		auto iter = connectionWeights.find(connection);
-		if (iter == connectionWeights.end()) return 1;
+		if (iter == connectionWeights.end()) {
+			const EvalGate* gate = getGate(connection.connectionPointA.gateId);
+			if (!gate) return 0;
+			auto iter = gate->connections.find(connection.connectionPointA.connectionEndId);
+			if (iter == gate->connections.end()) return 0;
+			return iter->second.contains(connection.connectionPointB);
+		}
 		return iter->second;
 	}
 	void setConnectionWeight(EvalConnection connection, unsigned int weight) {

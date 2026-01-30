@@ -1,6 +1,5 @@
 #include "helpCommand.h"
 
-#include "environment/environment.h"
 #include "../commandManager.h"
 #include "util/runAtStartup.h"
 

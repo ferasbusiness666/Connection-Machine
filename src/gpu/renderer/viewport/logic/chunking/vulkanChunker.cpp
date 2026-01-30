@@ -11,7 +11,7 @@
 #include "gpu/mainRenderer.h"
 #include "gpu/renderer/viewport/blockTextureManager.h"
 
-const int CHUNK_SIZE = 16;
+const int CHUNK_SIZE = 32;
 coordinate_t getChunk(coordinate_t in) { return std::floor((float)in / (float)CHUNK_SIZE) * (int)CHUNK_SIZE; }
 Position getChunk(Position in) {
 	in.x = getChunk(in.x);
@@ -551,18 +551,18 @@ std::vector<std::shared_ptr<VulkanLogicAllocation>> VulkanChunker::getAllocation
 	max = getChunk(max + Vector(1));
 
 	// go through each chunk in view and collect it if it exists and has an allocation
-	std::set<LogicGroup*> logicGroups;
+	std::set<LogicGroup*> logicGroupsToRender;
 	for (coordinate_t chunkX = min.x; chunkX <= max.x; chunkX += CHUNK_SIZE) {
 		for (coordinate_t chunkY = min.y; chunkY <= max.y; chunkY += CHUNK_SIZE) {
 			auto groupsAtChunkIter = chunkToGroups.find({ chunkX, chunkY });
 			if (groupsAtChunkIter == chunkToGroups.end()) continue;
 			for (LogicGroup* group : groupsAtChunkIter->second) {
-				if (group->getAllocation().has_value()) logicGroups.insert(group);
+				if (group->getAllocation().has_value()) logicGroupsToRender.insert(group);
 			}
 		}
 	}
 	std::vector<std::shared_ptr<VulkanLogicAllocation>> seen;
-	for (LogicGroup* group : logicGroups) {
+	for (LogicGroup* group : logicGroupsToRender) {
 		seen.push_back(group->getAllocation().value());
 	}
 
