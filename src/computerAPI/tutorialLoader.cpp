@@ -93,6 +93,7 @@ std::vector<TutorialStep> parseTutorialFile(std::string& fileName) {
 					TutorialAction a;
 					while (true) {
 						if (!(istream >> cur)) {
+							step.action = a;
 							break;
 						}
 						line++;

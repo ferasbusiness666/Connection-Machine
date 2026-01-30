@@ -151,13 +151,13 @@ void Tutorial::forceCompleteStep() {
 	if (tutorialState >= tutorialSteps.size()) return;
 	TutorialStep currentStep = tutorialSteps[tutorialState];
 	const BlockContainer& blockContainer = curentCircuit->getBlockContainer();
-	for (std::vector<TutorialAction::BlockPreviewInfo>::iterator it = currentStep.action.blockPreviews.begin(); it != currentStep.action.blockPreviews.end(); it++) {
-		const Block* currentBlock = blockContainer.getBlock(it->pos);
-		if (currentBlock != nullptr) {
-			curentCircuit->tryRemoveBlock(it->pos);
-		}
-		curentCircuit->tryInsertBlock(it->pos, it->orientation, it->type);
-	}
+	// for (std::vector<TutorialAction::BlockPreviewInfo>::iterator it = currentStep.action.blockPreviews.begin(); it != currentStep.action.blockPreviews.end(); it++) {
+	// 	const Block* currentBlock = blockContainer.getBlock(it->pos);
+	// 	if (currentBlock != nullptr) {
+	// 		curentCircuit->tryRemoveBlock(it->pos);
+	// 	}
+	// 	curentCircuit->tryInsertBlock(it->pos, it->orientation, it->type);
+	// }
 
 	for (std::vector<TutorialCondition::BlockRequirement>::iterator it = currentStep.condition.blocks.begin(); it != currentStep.condition.blocks.end(); it++) {
 		const Block* currentBlock = blockContainer.getBlock(it->pos);
@@ -167,17 +167,17 @@ void Tutorial::forceCompleteStep() {
 		curentCircuit->tryInsertBlock(it->pos, it->orientation, it->type);
 	}
 
-	for (std::vector<TutorialAction::ConnectionPreviewInfo>::iterator it = currentStep.action.connectionPreviews.begin(); it != currentStep.action.connectionPreviews.end(); it++) {
-		const Block* currentBlock1 = blockContainer.getBlock(it->pos1);
-		const Block* currentBlock2 = blockContainer.getBlock(it->pos2);
-		if (currentBlock1 == nullptr) {
-			curentCircuit->tryInsertBlock(it->pos1, Rotation::ZERO, BlockType::JUNCTION);
-		}
-		if (currentBlock2 == nullptr) {
-			curentCircuit->tryInsertBlock(it->pos2, Rotation::ZERO, BlockType::JUNCTION);
-		}
-		curentCircuit->tryCreateConnection(it->pos1, it->pos2);
-	}
+	// for (std::vector<TutorialAction::ConnectionPreviewInfo>::iterator it = currentStep.action.connectionPreviews.begin(); it != currentStep.action.connectionPreviews.end(); it++) {
+	// 	const Block* currentBlock1 = blockContainer.getBlock(it->pos1);
+	// 	const Block* currentBlock2 = blockContainer.getBlock(it->pos2);
+	// 	if (currentBlock1 == nullptr) {
+	// 		curentCircuit->tryInsertBlock(it->pos1, Rotation::ZERO, BlockType::JUNCTION);
+	// 	}
+	// 	if (currentBlock2 == nullptr) {
+	// 		curentCircuit->tryInsertBlock(it->pos2, Rotation::ZERO, BlockType::JUNCTION);
+	// 	}
+	// 	curentCircuit->tryCreateConnection(it->pos1, it->pos2);
+	// }
 
 	for (std::vector<TutorialCondition::ConnectionRequirement>::iterator it = currentStep.condition.connections.begin(); it != currentStep.condition.connections.end(); it++) {
 		const Block* currentBlock1 = blockContainer.getBlock(it->pos1);
