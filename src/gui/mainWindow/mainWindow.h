@@ -11,10 +11,9 @@
 class CircuitViewWidget;
 class Environment;
 
-class MainWindow : virtual SdlWindow {
+class MainWindow : public SdlWindow {
 public:
 	MainWindow();
-	~MainWindow();
 
 	// no copy
 	MainWindow(const MainWindow&) = delete;
@@ -43,11 +42,8 @@ public:
 		// cornerLog->logError(message.str());
 	}
 
-	void updateUi();
-
-
 private:
-	bool killWindow(bool forced) override;
+	// bool killWindow(bool forced) override; // we will do this layer
 	void render() override;
 	void processEvent(SDL_Event& event) override;
 	nlohmann::json dumpState() const override { return "Main Window"; }
@@ -56,7 +52,6 @@ private:
 	void offsetUiScale(double delta);
 	void applyUiScale(float scale);
 
-	WindowId windowId;
 	Environment environment;
 
 	// inputs and tools

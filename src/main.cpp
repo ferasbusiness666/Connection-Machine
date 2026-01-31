@@ -8,6 +8,7 @@
 #include "backend/settings/settingsMap.h"
 #include "computerAPI/directoryManager.h"
 #include "computerAPI/saveSettings.h"
+#include "gui/mainWindow/mainWindow.h"
 #include "util/version.h"
 
 std::thread::id mainThreadId = std::this_thread::get_id();
@@ -109,7 +110,8 @@ int main(int argc, char* argv[]) {
 		// regular app
 		registerSettings();
 
-		App::get().runLoop();
+		App::makeWindow<MainWindow>();
+		App::runLoop();
 		App::kill();
 #ifdef MAIN_TRY_CATCH
 	} catch (const std::exception& e) {

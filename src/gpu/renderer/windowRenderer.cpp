@@ -26,7 +26,7 @@ WindowRenderer::WindowRenderer(SdlWindow* sdlWindow) : sdlWindow(sdlWindow) {
 
 	// subrenderers
 	viewportRenderer.init(device, renderPass);
-	imGuiRenderer.emplace(sdlWindow->getHandle(), renderPass, FRAMES_IN_FLIGHT);
+	imGuiRenderer.emplace(sdlWindow->getHandlePtr(), renderPass, FRAMES_IN_FLIGHT);
 
 	// start render loop
 	running = true;
@@ -95,10 +95,7 @@ void WindowRenderer::renderLoop() {
 
 		// ImGui rendering
 		imGuiRenderer->beginFrame();
-		{
-			std::lock_guard<std::mutex> lock(imGuiRenderFuncMux);
-			if (imGuiRenderFunc) imGuiRenderFunc();
-		}
+		sdlWindow->doRendering();
 
 		renderToCommandBuffer(frame, imageIndex);
 

@@ -5,6 +5,8 @@
 #include <SDL3/SDL_video.h>
 #include <SDL3/SDL_vulkan.h>
 
+#include "gpu/mainRendererDefs.h"
+
 namespace App { void runLoop(); }
 
 class SdlWindow {
@@ -15,32 +17,33 @@ public:
 	SdlWindow(SDL_Window* handle);
 	virtual ~SdlWindow();
 
+	float getWindowScalingSize() const { return windowScalingSize; }
+	std::string getName() const;
+	std::pair<uint32_t, uint32_t> getSize() const;
+
+	WindowId getWindowId() const { return windowId; }
+	SDL_Window& getHandle() { return *handle; }
+	SDL_Window* getHandlePtr() { return handle; }
+
 	bool recieveEvent(SDL_Event& event);
 	bool isThisMyEvent(const SDL_Event& event) const;
+	void toggleBorderlessFullscreen();
 
 	void sendKillEvent();
 	void instantKillEvent();
 	bool isKilled() const { return killed; }
 
-	std::string getName() const;
-
 	VkSurfaceKHR createVkSurface(VkInstance instance);
-	std::pair<uint32_t, uint32_t> getSize() const;
-
-	float getWindowScalingSize() const { return windowScalingSize; }
-
-	SDL_Window& getHandle() { return *handle; }
-	SDL_Window* getHandlePtr() { return handle; }
-
-	void toggleBorderlessFullscreen();
+	void doRendering(); // called by vulkan
 
 	nlohmann::json dumpWindowState() const;
+
 
 protected:
 	// return false when the window does not want to close.
 	// (This will only work when forced is false and so windows should clean up all their resources if forced is true!)
 	virtual bool killWindow(bool forced) { return true; }
-	virtual void render() { } // called by vulkan
+	virtual void render() { }
 	virtual void processEvent(SDL_Event& event) { } // called by recieveEvent
 	virtual nlohmann::json dumpState() const { return "dumpState not overridden"; }
 
@@ -51,9 +54,12 @@ private:
 	SDL_Window* handle = nullptr;
 	float windowScalingSize;
 
+	std::mutex renderingMux;
+
 	// Vulkan stuff
 	VkInstance vkInstance = nullptr;
 	std::optional<VkSurfaceKHR> vkSurface;
+	WindowId windowId;
 };
 
 #endif

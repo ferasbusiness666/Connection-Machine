@@ -14,8 +14,8 @@
 
 #include <SDL3/SDL.h>
 
-SdlInstance sdl;
-
+// gloable app values
+std::optional<SdlInstance> sdl;
 std::set<std::shared_ptr<SdlWindow>> windows;
 bool running = false;
 bool tryingToQuit = false;
@@ -34,15 +34,10 @@ void App::kill() {
 	Network::kill();
 }
 
-// std::shared_ptr<SdlWindow> App::registerWindow(const std::string& windowName) {
-// 	return *windows.emplace(std::make_shared<SdlWindow>(windowName)).first;
-// }
-// std::shared_ptr<SdlWindow> App::registerWindow(SDL_Window* handle) {
-// 	return *windows.emplace(std::make_shared<SdlWindow>(handle)).first;
-// }
-// std::shared_ptr<SdlWindow> App::registerWindow(const std::string& windowName, unsigned int width, unsigned int height) {
-// 	return *windows.emplace(std::make_shared<SdlWindow>(windowName, width, height)).first;
-// }
+
+void App::registerWindow(std::shared_ptr<SdlWindow>& window) {
+	windows.emplace(window);
+}
 
 #ifdef TRACY_PROFILER
 const char* const addLoopTracyName = "appLoop";

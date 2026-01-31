@@ -40,15 +40,6 @@ void MainRenderer::deregisterWindow(WindowId windowId) {
 	windowRenderers.erase(iter);
 }
 
-void MainRenderer::setWindowImGuiRenderFunc(WindowId windowId, std::function<void()> imGuiRenderFunc) {
-	auto iter = windowRenderers.find(windowId);
-	if (iter == windowRenderers.end()) {
-		logError("Failed to call setScissorRegion on non existent window {}", "MainRenderer", windowId);
-		return;
-	}
-	iter->second.setImGuiRenderFunc(imGuiRenderFunc);
-}
-
 BlockRenderDataId MainRenderer::registerBlockRenderData() {
 	return blockRenderDataManager.addBlockRenderData();
 }

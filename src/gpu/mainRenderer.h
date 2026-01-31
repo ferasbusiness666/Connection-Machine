@@ -29,9 +29,6 @@ public:
 	void resizeWindow(WindowId windowId, std::pair<uint32_t, uint32_t> size);
 	void deregisterWindow(WindowId windowId);
 
-	// ImGui ===============================================================================================================================
-	void setWindowImGuiRenderFunc(WindowId windowId, std::function<void()> imGuiRenderFunc);
-
 	// Block Render Data ===============================================================================================================================
 	BlockRenderDataId registerBlockRenderData();
 	void deregisterBlockRenderData(BlockRenderDataId blockRenderDataId);

@@ -1,5 +1,6 @@
 #include "sdlWindow.h"
 #include "util/fastMath.h"
+#include "gpu/mainRenderer.h"
 #include "app.h"
 
 #include <SDL3/SDL_events.h>
@@ -24,8 +25,6 @@ SdlWindow::SdlWindow(const std::string& name, unsigned int width, unsigned int h
 		throwFatalError("SDL could not create window! SDL_Error: " + std::string(SDL_GetError()));
 	}
 
-	App::registerWindow(handle);
-
 	SDL_AddEventWatch(resizingEventWatcher, this);
 
 	int winW, winH, drawW, drawH;
@@ -40,6 +39,8 @@ SdlWindow::SdlWindow(const std::string& name, unsigned int width, unsigned int h
 	}
 
 	windowScalingSize = scaleX;
+
+	windowId = MainRenderer::get().registerWindow(this);
 }
 
 SdlWindow::SdlWindow(SDL_Window* handle) : handle(handle) {
@@ -70,15 +71,41 @@ SdlWindow::~SdlWindow() {
 	kill(true);
 }
 
+std::string SdlWindow::getName() const {
+	if (killed) {
+		logError("SdlWindow is killed and does not have name!", "SdlWindow::getName");
+		return "Killed window!";
+	}
+	return SDL_GetWindowTitle(handle);
+}
+
+std::pair<uint32_t, uint32_t> SdlWindow::getSize() const {
+	if (killed) {
+		logError("SdlWindow is killed and does not have size!", "SdlWindow::getSize");
+		return {1, 1};
+	}
+	if (!handle) return {1, 1};
+	int w, h;
+	SDL_GetWindowSize(handle, &w, &h);
+	return { w, h };
+}
+
 bool SdlWindow::recieveEvent(SDL_Event& event) {
 	if (killed) {
 		logError("SdlWindow is killed and cant recieve events!", "SdlWindow::recieveEvent");
 		return false;
 	}
 	if (isThisMyEvent(event)) {
-		processEvent(event);
+		{
+			std::lock_guard mux(renderingMux);
+			processEvent(event);
+		}
+		if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
+			std::lock_guard mux(renderingMux);
+			MainRenderer::get().resizeWindow(windowId, { event.window.data1, event.window.data2 });
+		}
 		if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
-			kill(false);
+			kill(false); // kill with lock renderingMux
 		}
 		return true;
 	}
@@ -98,7 +125,6 @@ bool SdlWindow::isThisMyEvent(const SDL_Event& event) const {
 
 void SdlWindow::sendKillEvent() {
 	if (killed) return;
-	if (!handle) return;
 	SDL_Event e;
 	SDL_zero(e);
 
@@ -118,25 +144,6 @@ void SdlWindow::instantKillEvent() {
 	e.window.windowID = SDL_GetWindowID(handle);
 
 	recieveEvent(e);
-}
-
-std::string SdlWindow::getName() const {
-	if (killed) {
-		logError("SdlWindow is killed and does not have name!", "SdlWindow::getName");
-		return "Killed window!";
-	}
-	return SDL_GetWindowTitle(handle);
-}
-
-std::pair<uint32_t, uint32_t> SdlWindow::getSize() const {
-	if (killed) {
-		logError("SdlWindow is killed and does not have size!", "SdlWindow::getSize");
-		return {1, 1};
-	}
-	if (!handle) return {1, 1};
-	int w, h;
-	SDL_GetWindowSize(handle, &w, &h);
-	return { w, h };
 }
 
 VkSurfaceKHR SdlWindow::createVkSurface(VkInstance instance) {
@@ -160,6 +167,15 @@ VkSurfaceKHR SdlWindow::createVkSurface(VkInstance instance) {
 	return surface;
 }
 
+void SdlWindow::doRendering() {
+	std::lock_guard mux(renderingMux);
+	if (killed) {
+		logError("Can't render killed SdlWindow!", "SdlWindow::doRendering");
+		return;
+	}
+	render();
+}
+
 void SdlWindow::toggleBorderlessFullscreen() {
 	if (killed) {
 		logError("SdlWindow is killed and cant be set to full screen!", "SdlWindow::toggleBorderlessFullscreen");
@@ -167,6 +183,7 @@ void SdlWindow::toggleBorderlessFullscreen() {
 	}
 	Uint32 flags = SDL_GetWindowFlags(handle);
 	bool is_fullscreen = (flags & SDL_WINDOW_FULLSCREEN) != 0;
+	std::lock_guard mux(renderingMux);
 	if (!is_fullscreen) {
 		if (!SDL_SetWindowFullscreen(handle, true)) {
 			logError("Failed to enter fullscreen: {}", "SdlWindow", SDL_GetError());
@@ -194,11 +211,17 @@ nlohmann::json SdlWindow::dumpWindowState() const {
 }
 
 void SdlWindow::kill(bool forced) {
+	if (killed) {
+		logError("Cant kill already killed window!", "SdlWindow::kill");
+		return;
+	}
+	std::lock_guard mux(renderingMux);
 	bool subclassKilled = killWindow(forced);
 	if (forced) assert(subclassKilled);
 	if (!(forced || subclassKilled)) return;
 	killed = true; // set killed afterward to allow the subclasses to access values one last time
 	logInfo("Destroying SDL window...");
+	MainRenderer::get().deregisterWindow(windowId);
 	SDL_RemoveEventWatch(resizingEventWatcher, this);
 	if (vkSurface.has_value()) {
 		SDL_Vulkan_DestroySurface(vkInstance, vkSurface.value(), nullptr);

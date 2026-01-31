@@ -1,12 +1,6 @@
 #include "mainWindow.h"
 #include <SDL3/SDL_video.h>
 
-#include "gpu/mainRenderer.h"
-
-// #include "gui/mainWindow/circuitView/circuitViewWidget.h"
-// #include "gui/rml/rmlRenderInterface.h"
-// #include "gui/rml/rmlSystemInterface.h"
-
 #include "app.h"
 
 #include "backend/settings/settings.h"
@@ -14,10 +8,7 @@
 #include "environment/environment.h"
 #include "imgui/imgui.h"
 
-MainWindow::MainWindow() : SdlWindow("Connection Machine"), toolManagerManager(environment)/*, popUpManager(*this)*/ {
-
-	windowId = MainRenderer::get().registerWindow(this);
-
+MainWindow::MainWindow() : SdlWindow("Connection Machine"), environment(true), toolManagerManager(environment)/*, popUpManager(*this)*/ {
 	// keybind handling
 	// rmlDocument->AddEventListener(Rml::EventId::Keydown, &keybindHandler);
 	// keybindHandler.addListener("Keybinds/Editing/Paste", [this]() { toolManagerManager.setTool("paste tool"); });
@@ -50,9 +41,6 @@ MainWindow::MainWindow() : SdlWindow("Connection Machine"), toolManagerManager(e
 	applyUiScale(initialUiScale ? static_cast<float>(*initialUiScale) : 1.0f);
 	Settings::registerListener<SettingType::DECIMAL>("Appearance/UI Scale", [this](const double& value) { applyUiScale(static_cast<float>(value)); });
 
-	// show rmlUi document
-	// rmlDocument->Show();
-
 	Settings::registerListener<SettingType::FILE_PATH>("Appearance/Font", [this](const std::string& fontFilePath) {
 		// Rml::LoadFontFace(fontFilePath);
 		logInfo("loaded, {}", "", fontFilePath);
@@ -60,30 +48,15 @@ MainWindow::MainWindow() : SdlWindow("Connection Machine"), toolManagerManager(e
 
 }
 
-MainWindow::~MainWindow() {
-	if (windowId != 0) MainRenderer::get().deregisterWindow(windowId);
-	if (sdlWindow) App::get().deregisterWindow(*sdlWindow);
-}
-
-bool MainWindow::recieveEvent(SDL_Event& event) {
+void MainWindow::processEvent(SDL_Event& event) {
 	// if (event.type == SDL_EVENT_KEYMAP_CHANGED) {
 	// 	if (settingsWindow) {
 	// 		settingsWindow->reloadContent();
 	// 	}
 	// }
 
-	// check if we want this event
-	if (!sdlWindow->isThisMyEvent(event)) return event.type == SDL_EVENT_KEYMAP_CHANGED;
-
-	if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
-		if (App::get().closeMainWindow(this)) {
-			MainRenderer::get().deregisterWindow(windowId);
-			windowId = 0;
-			App::get().deregisterWindow(*sdlWindow);
-			sdlWindow = nullptr;
-		}
-		return true;
-	}
+	// check if we want this event // done before the event is sent
+	// if (!isThisMyEvent(event)) return;// event.type == SDL_EVENT_KEYMAP_CHANGED;
 
 	// send event to RML
 	// RmlSDL::InputEventHandler(rmlContext, sdlWindow->getHandle(), event, getSdlWindowScalingSize());
@@ -91,66 +64,38 @@ bool MainWindow::recieveEvent(SDL_Event& event) {
 	if (event.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
 		applyUiScale(uiScale);
 	}
-
-	// let renderer know we if resized the window
-	if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
-		MainRenderer::get().resizeWindow(windowId, { event.window.data1, event.window.data2 });
-		// for (auto circuitViewWidget : circuitViewWidgets) {
-		// 	circuitViewWidget->handleResize();
-		// }
-	}
-
-	return true;
 }
 
-void MainWindow::updateUi() {
-	MainRenderer::get().setWindowImGuiRenderFunc(windowId, [](){
-		ImGui::DockSpaceOverViewport();
+void MainWindow::render() {
+	ImGui::DockSpaceOverViewport();
 
-		bool my_tool_active = true;
-		ImGui::Begin("My First Tool", &my_tool_active, ImGuiWindowFlags_MenuBar);
-		if (ImGui::BeginMenuBar())
+	bool my_tool_active = true;
+	ImGui::Begin("My First Tool", &my_tool_active, ImGuiWindowFlags_MenuBar);
+	if (ImGui::BeginMenuBar())
+	{
+		if (ImGui::BeginMenu("File"))
 		{
-			if (ImGui::BeginMenu("File"))
-			{
-				if (ImGui::MenuItem("Open..", "Ctrl+O")) { /* Do stuff */ }
-				if (ImGui::MenuItem("Save", "Ctrl+S"))   { /* Do stuff */ }
-				if (ImGui::MenuItem("Close", "Ctrl+W"))  { my_tool_active = false; }
-				ImGui::EndMenu();
-			}
-			ImGui::EndMenuBar();
+			if (ImGui::MenuItem("Open..", "Ctrl+O")) { /* Do stuff */ }
+			if (ImGui::MenuItem("Save", "Ctrl+S"))   { /* Do stuff */ }
+			if (ImGui::MenuItem("Close", "Ctrl+W"))  { my_tool_active = false; }
+			ImGui::EndMenu();
 		}
+		ImGui::EndMenuBar();
+	}
+	// Generate samples and plot them
+	float samples[100];
+	for (int n = 0; n < 100; n++)
+		samples[n] = sinf(n * 0.2f + ImGui::GetTime() * 1.5f);
+	ImGui::PlotLines("Samples", samples, 100);
 
-		// Edit a color stored as 4 floats
-		// ImGui::ColorEdit4("Color", my_color);
-
-		// Generate samples and plot them
-		float samples[100];
-		for (int n = 0; n < 100; n++)
-			samples[n] = sinf(n * 0.2f + ImGui::GetTime() * 1.5f);
-		ImGui::PlotLines("Samples", samples, 100);
-
-		// Display contents in a scrolling region
-		ImGui::TextColored(ImVec4(1,1,0,1), "Important Stuff");
-		ImGui::BeginChild("Scrolling");
-		for (int n = 0; n < 50; n++)
-			ImGui::Text("%04d: Some text", n);
-		ImGui::EndChild();
-		ImGui::End();
-	});
-
-	// update circuit view widget UI components like TPS display
-	// for (auto& circuitViewWidget : circuitViewWidgets) {
-		// circuitViewWidget->updateTps();
-	// }
-	// cornerLog->updateMessages();
+	// Display contents in a scrolling region
+	ImGui::TextColored(ImVec4(1,1,0,1), "Important Stuff");
+	ImGui::BeginChild("Scrolling");
+	for (int n = 0; n < 50; n++)
+		ImGui::Text("%04d: Some text", n);
+	ImGui::EndChild();
+	ImGui::End();
 }
-
-// void MainWindow::createCircuitViewWidget(Rml::Element* element) {
-// 	// circuitViewWidgets.push_back(std::make_shared<CircuitViewWidget>(environment, rmlDocument, *this, windowId, element));
-// 	// toolManagerManager.addCircuitView(circuitViewWidgets.back()->getCircuitView());
-// 	// activeCircuitViewWidget = circuitViewWidgets.back(); // if it is created, it should be used
-// }
 
 void MainWindow::offsetUiScale(double delta) {
 	const double* storedScale = Settings::get<SettingType::DECIMAL>("Appearance/UI Scale");
@@ -177,11 +122,9 @@ void MainWindow::applyUiScale(float scale) {
 	}
 	uiScale = clamped;
 	float displayScale = 1.0f;
-	if (sdlWindow) {
-		displayScale = SDL_GetWindowDisplayScale(sdlWindow->getHandle());
-		if (!(displayScale > 0.0f)) {
-			displayScale = 1.0f;
-		}
+	displayScale = SDL_GetWindowDisplayScale(getHandlePtr());
+	if (!(displayScale > 0.0f)) {
+		displayScale = 1.0f;
 	}
 	// rmlContext->SetDensityIndependentPixelRatio(displayScale * uiScale);
 
@@ -192,18 +135,4 @@ void MainWindow::applyUiScale(float scale) {
 	// for (auto circuitViewWidget : circuitViewWidgets) {
 	// 	circuitViewWidget->handleResize();
 	// }
-}
-
-// void setGlobalCssPropertyRec(Rml::Element* element, const std::string& property, const std::string& value) {
-// 	if (!element) return;
-
-// 	element->SetProperty(property, value);
-// 	for (int i = 0; i < element->GetNumChildren(); i++) {
-// 		setGlobalCssPropertyRec(element->GetChild(i), property, value);
-// 	}
-// }
-
-void MainWindow::setGlobalCssProperty(const std::string& property, const std::string& value) {
-	logInfo("Setting {} to {}", "", property, value);
-	// setGlobalCssPropertyRec(rmlDocument, property, value);
 }
