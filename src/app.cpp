@@ -4,92 +4,45 @@
 #include <tracy/Tracy.hpp>
 #endif
 
-#include "RmlUi/Debugger/Debugger.h"
-#include "gui/helper/saveCallback.h"
-#include "gui/mainWindow/circuitView/circuitViewWidget.h"
+
+#include "gui/sdl/sdlWindow.h"
 #include "network/network.h"
 #include "util/version.h"
 #include "gpu/renderer/imgui/imGuiRenderer.h"
+#include "gui/sdl/sdlInstance.h"
+#include "gpu/mainRenderer.h"
 
 #include <SDL3/SDL.h>
 
-std::optional<App> appSingleton;
+SdlInstance sdl;
 
-App& App::get() {
-	if (!appSingleton) {
-		logInfo("Creating App", "App");
-		appSingleton.emplace();
-		appSingleton->newMainWindow();
-		if (appSingleton->windows.back()->getActiveCircuitViewWidget()) appSingleton->windows.back()->getActiveCircuitViewWidget()->newCircuit();
-	}
-	return *appSingleton;
-}
+std::set<std::shared_ptr<SdlWindow>> windows;
+bool running = false;
+bool tryingToQuit = false;
+unsigned int tasksToFinishToQuit = 0;
 
 void App::kill() {
 	logInfo("Killing App", "App");
-	appSingleton->preShutdownStep();
-	appSingleton.reset();
-}
-
-App::App() {
-	logInfo("Initializing App", "App");
-	rml.emplace(&rmlSystemInterface, &rmlRenderInterface);
-	logInfo("App initialized", "App");
-}
-
-void App::preShutdownStep() {
 	logInfo("Shutting down App", "App");
-	for (std::shared_ptr<SdlWindow>& sdlWindow : sdlWindows) {
-		if (sdlWindow) sdlWindow->instantKillEvent(); // make sure window knows its going
-	}
-	sdlWindows.clear();
-	if (windows.size() != windowsToDestroy.size()) {
-		logError("Not all main windows were cleaned up. Clearing up {} extra.", "App", windows.size() - windowsToDestroy.size());
+	for (std::shared_ptr<SdlWindow> window : windows) {
+		if (!window->isKilled()) {
+			logError("SDL window \"{}\" was not killed.", "App", window->getName());
+		}
 	}
 	windows.clear();
-	rml.reset();
 	MainRenderer::kill();
 	Network::kill();
 }
 
-App::~App() { logInfo("App shut down", "App"); }
-
-std::shared_ptr<SdlWindow> App::registerWindow(const std::string& windowName) { return sdlWindows.emplace_back(std::make_shared<SdlWindow>(windowName)); }
-std::shared_ptr<SdlWindow> App::registerWindow(SDL_Window* handle) { return sdlWindows.emplace_back(std::make_shared<SdlWindow>(handle)); }
-std::shared_ptr<SdlWindow> App::registerWindow(const std::string& windowName, unsigned int width, unsigned int height) {
-	return sdlWindows.emplace_back(std::make_shared<SdlWindow>(windowName, width, height));
-}
-
-void App::deregisterWindow(SdlWindow& sdlWindow) {
-	auto iter = std::find_if(sdlWindows.begin(), sdlWindows.end(), [sdlWindow = &sdlWindow](const std::shared_ptr<SdlWindow>& a) { return a.get() == sdlWindow; });
-	std::shared_ptr<SdlWindow> sdlWindowPtr = nullptr;
-	if (iter != sdlWindows.end()) {
-		sdlWindowPtr = *iter; // keep shared ptr alive until end of function
-		sdlWindows.erase(iter);
-	}
-	sdlWindow.clear();
-}
-
-void App::newMainWindow() {
-	logInfo("Creating new MainWindow", "App");
-	windows.push_back(std::make_unique<MainWindow>(environment));
-	newlyCreatedWindowsNext.push_back(windows.back().get());
-}
-
-bool App::closeMainWindow(const MainWindow* mainWindow) {
-	logInfo("Closing MainWindow", "App");
-	if (windows.size() == windowsToDestroy.size() + 1) {
-		startTryingToQuit();
-		if (tasksToFinishToQuit == 0) {
-			windowsToDestroy.push_back(mainWindow);
-			return true;
-		}
-		return false;
-	} else {
-		windowsToDestroy.push_back(mainWindow);
-		return true;
-	}
-}
+// std::shared_ptr<SdlWindow> App::registerWindow(const std::string& windowName) {
+// 	return *windows.emplace(std::make_shared<SdlWindow>(windowName)).first;
+// }
+// std::shared_ptr<SdlWindow> App::registerWindow(SDL_Window* handle) {
+// 	return *windows.emplace(std::make_shared<SdlWindow>(handle)).first;
+// }
+// std::shared_ptr<SdlWindow> App::registerWindow(const std::string& windowName, unsigned int width, unsigned int height) {
+// 	return *windows.emplace(std::make_shared<SdlWindow>(windowName, width, height)).first;
+// }
 
 #ifdef TRACY_PROFILER
 const char* const addLoopTracyName = "appLoop";
@@ -102,17 +55,19 @@ void App::runLoop() {
 		App::kill();
 		return;
 	}
-	Network::get().checkForUpdates(get().windows[0]->getPopUpManager());
+	// Network::get().checkForUpdates(get().windows[0]->getPopUpManager());
 	running = true;
 	while (running) {
-		// do texture updates
-		environment.getBlockRenderDataFeeder().doBlockTextureUpdates();
+		if (windows.empty()) App::kill(); // Ff there are not more windows kill the app!
 
 		// Wait for the next event (so we don't broork the cpu)
 		bool gotEvent = SDL_WaitEventTimeout(nullptr, 50);
 #ifdef TRACY_PROFILER
 		FrameMarkStart(addLoopTracyName);
 #endif
+		// clean up killed windows
+		std::erase_if(windows, [](const std::shared_ptr<SdlWindow>& window){ return window->isKilled(); });
+
 		if (gotEvent) {
 			// process events (TODO - should probably just have a map of window ids to windows)
 			SDL_Event event;
@@ -124,38 +79,16 @@ void App::runLoop() {
 					startTryingToQuit();
 					break;
 				}
-				// case SDL_EVENT_WINDOW_CLOSE_REQUESTED: {
-				// 	// Single window was closed, check which window was closed and remove it
-				// 	for (auto itr = sdlWindows.begin(); itr != sdlWindows.end(); ++itr) {
-				// 		std::shared_ptr<SdlWindow> sdlWindow = *itr;
-				// 		if (sdlWindow->recieveEvent(event)) {
-				// 			deregisterWindow(sdlWindow);
-				// 			break;
-				// 		}
-				// 	}
-				// 	break;
-				// }
-				case SDL_EVENT_WINDOW_FOCUS_GAINED: {
-					// Window focus switched, check which window gained focus
-					for (auto& sdlWindow : sdlWindows) {
-						if (sdlWindow->recieveEvent(event)) {
-							// tell system interface about focus change
-							rmlSystemInterface.SetWindow(sdlWindow->getHandle());
-							break;
-						}
-					}
-					break;
-				}
 				default: {
 					// Send event to all windows
 					std::vector<std::weak_ptr<SdlWindow>> windowsToSendEvents;
-					for (unsigned int i = 0; i < sdlWindows.size(); ++i) {
-						windowsToSendEvents.push_back(sdlWindows[i]);
+					for (const std::shared_ptr<SdlWindow>& window : windows) {
+						windowsToSendEvents.push_back(window);
 					}
 					for (unsigned int i = 0; i < windowsToSendEvents.size(); ++i) {
 						std::shared_ptr<SdlWindow> thisWindow = windowsToSendEvents[i].lock();
 						if (!thisWindow) continue;
-						if (std::any_of(sdlWindows.begin(), sdlWindows.end(), [windowPtr = thisWindow.get()](const std::shared_ptr<SdlWindow>& a) {
+						if (std::any_of(windows.begin(), windows.end(), [windowPtr = thisWindow.get()](const std::shared_ptr<SdlWindow>& a) {
 							return a.get() == windowPtr;
 						})) {
 							thisWindow->recieveEvent(event);
@@ -164,41 +97,18 @@ void App::runLoop() {
 				}
 				}
 			}
-			for (unsigned int i = 0; i < windowsToDestroy.size(); ++i) {
-				auto iter = std::find_if(windows.begin(), windows.end(), [mainWindow = windowsToDestroy[i]](const std::unique_ptr<MainWindow>& a) {
-					return a.get() == mainWindow;
-				});
-				if (iter == windows.end()) {
-					logError("Could not find MainWindow when trying to close it.", "App");
-					return;
-				}
-				windows.erase(iter);
-			}
-			windowsToDestroy.clear();
 		}
-		// tell all windows to update rml
-		std::vector<std::weak_ptr<SdlWindow>> windowsToRender;
-		for (unsigned int i = 0; i < sdlWindows.size(); ++i) {
-			windowsToRender.push_back(sdlWindows[i]);
-		}
-		for (unsigned int i = 0; i < windowsToRender.size(); ++i) {
-			std::shared_ptr<SdlWindow> thisWindow = windowsToRender[i].lock();
-			if (!thisWindow) continue;
-			thisWindow->render();
-		}
-		for (auto* window : newlyCreatedWindows) {
-			for (auto circuitViewWidget : window->getCircuitViewWidgets()) {
-				circuitViewWidget->handleResize();
-			}
-		}
-		newlyCreatedWindows = std::move(newlyCreatedWindowsNext);
-		newlyCreatedWindowsNext.clear();
-
-		for (const std::function<void()>& function : functionsToRunAtEndOfUpdate) {
-			function();
-		}
-		functionsToRunAtEndOfUpdate.clear();
-
+		// { // do we need to do this???
+		// 	std::vector<std::weak_ptr<SdlWindow>> windowsToRender;
+		// 	for (const std::shared_ptr<SdlWindow>& window : windows) {
+		// 		windowsToRender.push_back(window);
+		// 	}
+		// 	for (unsigned int i = 0; i < windowsToRender.size(); ++i) {
+		// 		std::shared_ptr<SdlWindow> thisWindow = windowsToRender[i].lock();
+		// 		if (!thisWindow) continue;
+		// 		thisWindow->render();
+		// 	}
+		// }
 #ifdef TRACY_PROFILER
 		FrameMarkEnd(addLoopTracyName);
 #endif
@@ -206,7 +116,7 @@ void App::runLoop() {
 }
 
 void App::startTryingToQuit() {
-	if (tryingToQuit) return;
+	// if (tryingToQuit) return;
 	// { // TEMPORARY
 	// 	// do dumpstate and into file
 	// 	std::string dumpStateStr = dumpState().dump(1, '\t');
@@ -220,151 +130,98 @@ void App::startTryingToQuit() {
 	// 		logError("Could not open {} to dump state!", "App", path);
 	// 	}
 	// }
-	tasksToFinishToQuit = 0;
-	tryingToQuit = true;
-	auto windowIter = windows.begin();
-	while (&windowIter->get()->getEnvironment() != &environment) {
-		++windowIter;
-		if (windowIter == windows.end()) {
-			logError("Could not find window to save with! TODO: create new window that saves can happen in!");
-			return;
-		}
-	}
-	for (auto& fileData : environment.getCircuitFileManager().getAllFiles()) {
-		if (fileData.second.lastSavedEdit.empty()) continue;
-		std::string message = "Do you want to save:\n";
-		std::vector<const std::string*> toSave;
-		for (auto lastSavedEdit : fileData.second.lastSavedEdit) {
-			const SharedCircuit& circuit = environment.getBackend().getCircuitManager().getCircuit(lastSavedEdit.first);
-			if (!circuit->isEditable()) continue;
-			if (lastSavedEdit.second == circuit->getEditCount()) continue;
-			message += circuit->getCircuitName() + "\n";
-			toSave.emplace_back(&circuit->getUUID());
-		}
-		if (toSave.size() == 0) continue;
-		++tasksToFinishToQuit;
-		windowIter->get()->getPopUpManager().addOptionsPopUp(
-			message,
-			{ std::make_pair(
-				  "Save",
-				  [filePath = fileData.second.fileLocation, this]() {
-			logInfo("Saving {}", "", filePath);
-			environment.getCircuitFileManager().saveFile(filePath);
-			--tasksToFinishToQuit;
-			if (tasksToFinishToQuit == 0) running = false;
-		}
-			  ),
-			  std::make_pair(
-				  "Dont Save",
-				  [this]() {
-			logInfo("\"Dont Save\" option picked.");
-			--tasksToFinishToQuit;
-			if (tasksToFinishToQuit == 0) running = false;
-		}
-			  ),
-			  std::make_pair("Cancel", [this]() {
-			logInfo("Canceling close.");
-			stopTryingToQuit();
-		}) }
-		);
-	}
-	for (auto& circuit : environment.getBackend().getCircuitManager().getCircuits()) {
-		if (environment.getCircuitFileManager().getSavePath(circuit.second->getUUID())) continue;
-		if (circuit.second->isEmpty() || circuit.second->getEditCount() == 0 || !circuit.second->isEditable()) continue;
-		++tasksToFinishToQuit;
-		windowIter->get()->getPopUpManager().addOptionsPopUp(
-			"Do you want to save: " + circuit.second->getCircuitName(),
-			{ std::make_pair(
-				  "Save",
-				  [window = windowIter->get(), uuid = circuit.second->getUUID(), this]() {
-			logInfo("Saving circuit {}", "", uuid);
-			static const SDL_DialogFileFilter filters[] = { { "Circuit Files", "cir" } };
-			std::pair<CircuitFileManager*, std::string>* data = new std::pair<CircuitFileManager*, std::string>(&environment.getCircuitFileManager(), uuid);
-			SDL_ShowSaveFileDialog([](void* userData, const char* const* filePaths, int filter) {
-				SaveCallback(userData, filePaths, filter);
-				--(App::get().tasksToFinishToQuit);
-				if (App::get().tasksToFinishToQuit == 0) App::get().running = false;
-			}, data, nullptr, filters, 1, nullptr);
-		}
-			  ),
-			  std::make_pair(
-				  "Dont Save",
-				  [this]() {
-			logInfo("\"Dont Save\" option picked.");
-			--tasksToFinishToQuit;
-			if (tasksToFinishToQuit == 0) running = false;
-		}
-			  ),
-			  std::make_pair("Cancel", [this]() {
-			logInfo("Canceling close.");
-			stopTryingToQuit();
-		}) }
-		);
-	}
+	// tasksToFinishToQuit = 0;
+	// tryingToQuit = true;
+	// auto windowIter = windows.begin();
+	// while (&windowIter->get()->getEnvironment() != &environment) {
+	// 	++windowIter;
+	// 	if (windowIter == windows.end()) {
+	// 		logError("Could not find window to save with! TODO: create new window that saves can happen in!");
+	// 		return;
+	// 	}
+	// }
+	// for (auto& fileData : environment.getCircuitFileManager().getAllFiles()) {
+	// 	if (fileData.second.lastSavedEdit.empty()) continue;
+	// 	std::string message = "Do you want to save:\n";
+	// 	std::vector<const std::string*> toSave;
+	// 	for (auto lastSavedEdit : fileData.second.lastSavedEdit) {
+	// 		const SharedCircuit& circuit = environment.getBackend().getCircuitManager().getCircuit(lastSavedEdit.first);
+	// 		if (!circuit->isEditable()) continue;
+	// 		if (lastSavedEdit.second == circuit->getEditCount()) continue;
+	// 		message += circuit->getCircuitName() + "\n";
+	// 		toSave.emplace_back(&circuit->getUUID());
+	// 	}
+	// 	if (toSave.size() == 0) continue;
+	// 	++tasksToFinishToQuit;
+	// 	windowIter->get()->getPopUpManager().addOptionsPopUp(
+	// 		message,
+	// 		{ std::make_pair(
+	// 			  "Save",
+	// 			  [filePath = fileData.second.fileLocation, this]() {
+	// 		logInfo("Saving {}", "", filePath);
+	// 		environment.getCircuitFileManager().saveFile(filePath);
+	// 		--tasksToFinishToQuit;
+	// 		if (tasksToFinishToQuit == 0) running = false;
+	// 	}
+	// 		  ),
+	// 		  std::make_pair(
+	// 			  "Dont Save",
+	// 			  [this]() {
+	// 		logInfo("\"Dont Save\" option picked.");
+	// 		--tasksToFinishToQuit;
+	// 		if (tasksToFinishToQuit == 0) running = false;
+	// 	}
+	// 		  ),
+	// 		  std::make_pair("Cancel", [this]() {
+	// 		logInfo("Canceling close.");
+	// 		stopTryingToQuit();
+	// 	}) }
+	// 	);
+	// }
+	// for (auto& circuit : environment.getBackend().getCircuitManager().getCircuits()) {
+	// 	if (environment.getCircuitFileManager().getSavePath(circuit.second->getUUID())) continue;
+	// 	if (circuit.second->isEmpty() || circuit.second->getEditCount() == 0 || !circuit.second->isEditable()) continue;
+	// 	++tasksToFinishToQuit;
+	// 	windowIter->get()->getPopUpManager().addOptionsPopUp(
+	// 		"Do you want to save: " + circuit.second->getCircuitName(),
+	// 		{ std::make_pair(
+	// 			  "Save",
+	// 			  [window = windowIter->get(), uuid = circuit.second->getUUID(), this]() {
+	// 		logInfo("Saving circuit {}", "", uuid);
+	// 		static const SDL_DialogFileFilter filters[] = { { "Circuit Files", "cir" } };
+	// 		std::pair<CircuitFileManager*, std::string>* data = new std::pair<CircuitFileManager*, std::string>(&environment.getCircuitFileManager(), uuid);
+	// 		SDL_ShowSaveFileDialog([](void* userData, const char* const* filePaths, int filter) {
+	// 			SaveCallback(userData, filePaths, filter);
+	// 			--(App::get().tasksToFinishToQuit);
+	// 			if (App::get().tasksToFinishToQuit == 0) App::get().running = false;
+	// 		}, data, nullptr, filters, 1, nullptr);
+	// 	}
+	// 		  ),
+	// 		  std::make_pair(
+	// 			  "Dont Save",
+	// 			  [this]() {
+	// 		logInfo("\"Dont Save\" option picked.");
+	// 		--tasksToFinishToQuit;
+	// 		if (tasksToFinishToQuit == 0) running = false;
+	// 	}
+	// 		  ),
+	// 		  std::make_pair("Cancel", [this]() {
+	// 		logInfo("Canceling close.");
+	// 		stopTryingToQuit();
+	// 	}) }
+	// 	);
+	// }
 	if (tasksToFinishToQuit == 0) running = false;
 }
 
 void App::stopTryingToQuit() { tryingToQuit = false; }
 
-nlohmann::json App::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
+nlohmann::json App::dumpState() /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;
-	stateJson["environment"] = environment.dumpState();
+	stateJson["windows"] = nlohmann::json::array();
+	for (const std::shared_ptr<SdlWindow>& window : windows) {
+		stateJson["windows"] = window->dumpWindowState();
+	}
 	stateJson["version"] = getCurrentVersion().toString();
 	return stateJson;
-}
-
-void App::launchRmlDebugger(Rml::Context* rmlContext) {
-	if (debuggingWindow) {
-		Rml::Debugger::SetContext(rmlContext);
-		return;
-	}
-	SdlWindow* sdlWindow = App::get().registerWindow("Debugger", 350, 800).get();
-	debuggingWindow = sdlWindow;
-	WindowId windowId = MainRenderer::get().registerWindow(sdlWindow);
-	Rml::Context* debuggerRmlContext = Rml::CreateContext("Debugger", Rml::Vector2i(sdlWindow->getSize().first, sdlWindow->getSize().second));
-	if (debuggerRmlContext) {
-		// Rml::ElementDocument* rmlDocument = debuggerRmlContext->CreateDocument();
-		// rmlDocument->AppendChild(rmlDocument->CreateElement("div"));
-		Rml::Debugger::Initialise(debuggerRmlContext);
-		Rml::Debugger::SetContext(rmlContext);
-		Rml::Debugger::SetVisible(true);
-		sdlWindow->setRenderFunction([windowId, debuggerRmlContext]() {
-			RmlRenderInterface* rmlRenderInterface = dynamic_cast<RmlRenderInterface*>(Rml::GetRenderInterface());
-			if (rmlRenderInterface) {
-				debuggerRmlContext->Update();
-				rmlRenderInterface->setWindowToRenderOn(windowId);
-				MainRenderer::get().prepareForRmlRender(windowId);
-				debuggerRmlContext->Render();
-				MainRenderer::get().endRmlRender(windowId);
-			}
-		});
-		sdlWindow->setRecieveEventFunction([this, windowId, debuggerRmlContext, sdlWindow](SDL_Event& event) {
-			if (sdlWindow->isThisMyEvent(event)) {
-				if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
-					Rml::RemoveContext(debuggerRmlContext->GetName());
-					MainRenderer::get().deregisterWindow(windowId);
-					App::get().deregisterWindow(*sdlWindow);
-					this->debuggingWindow = nullptr;
-					Rml::Debugger::Shutdown();
-					return true;
-				}
-
-				RmlSDL::InputEventHandler(debuggerRmlContext, sdlWindow->getHandle(), event, sdlWindow->getWindowScalingSize());
-
-				// let renderer know we if resized the window
-				if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
-					MainRenderer::get().resizeWindow(windowId, { event.window.data1, event.window.data2 });
-					debuggerRmlContext->Update();
-				}
-				return true;
-			}
-			return false;
-		});
-	}
-}
-
-void App::killRmlDebugger() {
-	if (debuggingWindow) {
-		debuggingWindow->sendKillEvent();
-	}
 }

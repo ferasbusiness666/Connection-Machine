@@ -35,7 +35,6 @@ private:
 
 	ImGuiContext* m_context;
 	VkDescriptorPool m_imguiDescriptorPool;
-	VkSurfaceKHR m_surface;
 };
 
 #endif /* imGuiRenderer_h */

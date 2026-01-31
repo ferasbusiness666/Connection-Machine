@@ -1,7 +1,5 @@
 #include "viewportRenderData.h"
 
-#include <RmlUi/Core/Element.h>
-
 #include <glm/ext/matrix_clip_space.hpp>
 
 #include "backend/selection.h"

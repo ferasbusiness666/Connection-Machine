@@ -40,100 +40,13 @@ void MainRenderer::deregisterWindow(WindowId windowId) {
 	windowRenderers.erase(iter);
 }
 
-void MainRenderer::prepareForRmlRender(WindowId windowId) {
-	auto iter = windowRenderers.find(windowId);
-	if (iter == windowRenderers.end()) {
-		logError("Failed to call prepareForRmlRender on non existent window {}.", "MainRenderer", windowId);
-		return;
-	}
-	iter->second.getRmlRenderer().prepareForRmlRender();
-}
-
-void MainRenderer::endRmlRender(WindowId windowId) {
-	auto iter = windowRenderers.find(windowId);
-	if (iter == windowRenderers.end()) {
-		logError("Failed to call endRmlRender on non existent window {}", "MainRenderer", windowId);
-		return;
-	}
-	iter->second.getRmlRenderer().endRmlRender();
-}
-
-Rml::CompiledGeometryHandle MainRenderer::compileGeometry(WindowId windowId, Rml::Span<const Rml::Vertex> vertices, Rml::Span<const int> indices) {
-	// auto iter = windowRenderers.find(windowId);
-	// if (iter == windowRenderers.end()) {
-	// 	logError("Failed to call CompileGeometry on non existent window {}", "MainRenderer", windowId);
-	// 	return (Rml::CompiledGeometryHandle)0;
-	// }
-	// return iter->second.getRmlRenderer().compileGeometry(vertices, indices);
-	VulkanDevice* device = vulkanInstance.getDevice();
-	if (!device) {
-		logError("Failed to call CompileGeometry. No Vulkan device found", "MainRenderer");
-		return (Rml::CompiledGeometryHandle)0;
-	}
-	return device->getRmlResourceManager().compileGeometry(vertices, indices);
-}
-
-void MainRenderer::releaseGeometry(WindowId windowId, Rml::CompiledGeometryHandle geometry) {
-	VulkanDevice* device = vulkanInstance.getDevice();
-	if (!device) {
-		logError("Failed to call CompileGeometry. No Vulkan device found", "MainRenderer");
-		return;
-	}
-	return device->getRmlResourceManager().releaseGeometry(geometry);
-}
-
-Rml::TextureHandle MainRenderer::loadTexture(WindowId windowId, Rml::Vector2i& texture_dimensions, const Rml::String& source) {
-	VulkanDevice* device = vulkanInstance.getDevice();
-	if (!device) {
-		logError("Failed to call CompileGeometry. No Vulkan device found", "MainRenderer");
-		return (Rml::TextureHandle)0;
-	}
-	return device->getRmlResourceManager().loadTexture(texture_dimensions, source);
-}
-
-Rml::TextureHandle MainRenderer::generateTexture(WindowId windowId, Rml::Span<const Rml::byte> source, Rml::Vector2i source_dimensions) {
-	VulkanDevice* device = vulkanInstance.getDevice();
-	if (!device) {
-		logError("Failed to call CompileGeometry. No Vulkan device found", "MainRenderer");
-		return (Rml::TextureHandle)0;
-	}
-	return device->getRmlResourceManager().generateTexture(source, source_dimensions);
-}
-
-void MainRenderer::releaseTexture(WindowId windowId, Rml::TextureHandle texture_handle) {
-	VulkanDevice* device = vulkanInstance.getDevice();
-	if (!device) {
-		logError("Failed to call CompileGeometry. No Vulkan device found", "MainRenderer");
-		return;
-	}
-	return device->getRmlResourceManager().releaseTexture(texture_handle);
-}
-
-void MainRenderer::renderGeometry(WindowId windowId, Rml::CompiledGeometryHandle handle, Rml::Vector2f translation, Rml::TextureHandle texture) {
-	auto iter = windowRenderers.find(windowId);
-	if (iter == windowRenderers.end()) {
-		logError("Failed to call renderGeometry on non existent window {}", "MainRenderer", windowId);
-		return;
-	}
-	iter->second.getRmlRenderer().renderGeometry(handle, translation, texture);
-}
-
-void MainRenderer::enableScissorRegion(WindowId windowId, bool enable) {
-	auto iter = windowRenderers.find(windowId);
-	if (iter == windowRenderers.end()) {
-		logError("Failed to call enableScissorRegion on non existent window {}", "MainRenderer", windowId);
-		return;
-	}
-	iter->second.getRmlRenderer().enableScissorRegion(enable);
-}
-
-void MainRenderer::setScissorRegion(WindowId windowId, Rml::Rectanglei region) {
+void MainRenderer::setWindowImGuiRenderFunc(WindowId windowId, std::function<void()> imGuiRenderFunc) {
 	auto iter = windowRenderers.find(windowId);
 	if (iter == windowRenderers.end()) {
 		logError("Failed to call setScissorRegion on non existent window {}", "MainRenderer", windowId);
 		return;
 	}
-	iter->second.getRmlRenderer().setScissorRegion(region);
+	iter->second.setImGuiRenderFunc(imGuiRenderFunc);
 }
 
 BlockRenderDataId MainRenderer::registerBlockRenderData() {

@@ -51,15 +51,11 @@ VulkanDevice::VulkanDevice(VkSurfaceKHR surfaceForPresenting) {
 
 	// Set up texture manager
 	blockTextureManager.init(this);
-
-	// Set up rml resource manager
-	rmlResourceManager.init(this);
 }
 
 VulkanDevice::~VulkanDevice() {
 	waitIdle();
 
-	rmlResourceManager.cleanup();
 	blockTextureManager.cleanup();
 	vmaDestroyAllocator(vmaAllocator);
 

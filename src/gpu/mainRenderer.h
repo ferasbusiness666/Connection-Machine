@@ -1,8 +1,6 @@
 #ifndef mainRenderer_h
 #define mainRenderer_h
 
-#include <RmlUi/Core/ElementDocument.h>
-#include <RmlUi/Core/Vertex.h>
 #include <glm/ext/vector_float2.hpp>
 
 #include "backend/evaluator/simulator/evalLogicSimulator.h"
@@ -31,24 +29,8 @@ public:
 	void resizeWindow(WindowId windowId, std::pair<uint32_t, uint32_t> size);
 	void deregisterWindow(WindowId windowId);
 
-	// RmlUI ====================================================================================================================================
-	// Prepare for Rml
-	void prepareForRmlRender(WindowId windowId);
-	void endRmlRender(WindowId windowId);
-
-	// Geometry resources
-	Rml::CompiledGeometryHandle compileGeometry(WindowId windowId, Rml::Span<const Rml::Vertex> vertices, Rml::Span<const int> indices);
-	void releaseGeometry(WindowId windowId, Rml::CompiledGeometryHandle geometry);
-
-	// Texture resources
-	Rml::TextureHandle loadTexture(WindowId windowId, Rml::Vector2i& texture_dimensions, const Rml::String& source);
-	Rml::TextureHandle generateTexture(WindowId windowId, Rml::Span<const Rml::byte> source, Rml::Vector2i source_dimensions);
-	void releaseTexture(WindowId windowId, Rml::TextureHandle texture_handle);
-
-	// Rendering (per window)
-	void renderGeometry(WindowId windowId, Rml::CompiledGeometryHandle handle, Rml::Vector2f translation, Rml::TextureHandle texture);
-	void enableScissorRegion(WindowId windowId, bool enable);
-	void setScissorRegion(WindowId windowId, Rml::Rectanglei region);
+	// ImGui ===============================================================================================================================
+	void setWindowImGuiRenderFunc(WindowId windowId, std::function<void()> imGuiRenderFunc);
 
 	// Block Render Data ===============================================================================================================================
 	BlockRenderDataId registerBlockRenderData();

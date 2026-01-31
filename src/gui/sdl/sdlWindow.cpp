@@ -7,9 +7,9 @@
 bool resizingEventWatcher(void* data, SDL_Event* event) {
 	if (event->type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
 		SDL_Window* win = SDL_GetWindowFromID(event->window.windowID);
-		if (((SdlWindow*)data)->getHandle() == win) {
-			if (((SdlWindow*)data)->doRecieveEvent) {
-				((SdlWindow*)data)->doRecieveEvent(*event);
+		if (((SdlWindow*)data)->getHandlePtr() == win) {
+			if (((SdlWindow*)data)->recieveEvent(*event)) {
+				((SdlWindow*)data)->recieveEvent(*event);
 			}
 		}
 	}
@@ -20,10 +20,11 @@ SdlWindow::SdlWindow(const std::string& name, unsigned int width, unsigned int h
 	logInfo("Creating SDL window...", "SdlWindow");
 
 	handle = SDL_CreateWindow(name.c_str(), width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN | SDL_WINDOW_HIGH_PIXEL_DENSITY);
-	if (!handle)
-	{
+	if (!handle) {
 		throwFatalError("SDL could not create window! SDL_Error: " + std::string(SDL_GetError()));
 	}
+
+	App::registerWindow(handle);
 
 	SDL_AddEventWatch(resizingEventWatcher, this);
 
@@ -65,31 +66,19 @@ SdlWindow::SdlWindow(SDL_Window* handle) : handle(handle) {
 }
 
 SdlWindow::~SdlWindow() {
-	clear();
-}
-
-void SdlWindow::clear() {
-	if (handle) logInfo("Destroying SDL window...");
-	SDL_RemoveEventWatch(resizingEventWatcher, this);
-	doRender = nullptr;
-	doRecieveEvent = nullptr;
-	if (vkSurface.has_value()) {
-		SDL_Vulkan_DestroySurface(vkInstance, vkSurface.value(), nullptr);
-		vkSurface.reset();
-	}
-	if (handle) {
-		SDL_DestroyWindow(handle);
-		handle = nullptr;
-	}
+	if (killed) return;
+	kill(true);
 }
 
 bool SdlWindow::recieveEvent(SDL_Event& event) {
-	if (doRecieveEvent) {
-		return doRecieveEvent(event);
+	if (killed) {
+		logError("SdlWindow is killed and cant recieve events!", "SdlWindow::recieveEvent");
+		return false;
 	}
 	if (isThisMyEvent(event)) {
+		processEvent(event);
 		if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
-			App::get().deregisterWindow(*this);
+			kill(false);
 		}
 		return true;
 	}
@@ -97,7 +86,18 @@ bool SdlWindow::recieveEvent(SDL_Event& event) {
 	return false;
 }
 
+bool SdlWindow::isThisMyEvent(const SDL_Event& event) const {
+	if (killed) {
+		logError("SdlWindow is killed and cant do event stuff!", "SdlWindow::isThisMyEvent");
+		return false;
+	}
+	if (!handle) return false;
+	if (event.type == 2050) return true; // the fuck is this? - jack quay jamison
+	return SDL_GetWindowFromEvent(&event) == handle;
+}
+
 void SdlWindow::sendKillEvent() {
+	if (killed) return;
 	if (!handle) return;
 	SDL_Event e;
 	SDL_zero(e);
@@ -109,6 +109,7 @@ void SdlWindow::sendKillEvent() {
 }
 
 void SdlWindow::instantKillEvent() {
+	if (killed) return;
 	if (!handle) return;
 	SDL_Event e;
 	SDL_zero(e);
@@ -119,13 +120,19 @@ void SdlWindow::instantKillEvent() {
 	recieveEvent(e);
 }
 
-bool SdlWindow::isThisMyEvent(const SDL_Event& event) {
-	if (!handle) return false;
-	if (event.type == 2050) return true; // the fuck is this? - jack quay jamison
-	return SDL_GetWindowFromEvent(&event) == handle;
+std::string SdlWindow::getName() const {
+	if (killed) {
+		logError("SdlWindow is killed and does not have name!", "SdlWindow::getName");
+		return "Killed window!";
+	}
+	return SDL_GetWindowTitle(handle);
 }
 
-std::pair<uint32_t, uint32_t> SdlWindow::getSize() {
+std::pair<uint32_t, uint32_t> SdlWindow::getSize() const {
+	if (killed) {
+		logError("SdlWindow is killed and does not have size!", "SdlWindow::getSize");
+		return {1, 1};
+	}
 	if (!handle) return {1, 1};
 	int w, h;
 	SDL_GetWindowSize(handle, &w, &h);
@@ -133,6 +140,10 @@ std::pair<uint32_t, uint32_t> SdlWindow::getSize() {
 }
 
 VkSurfaceKHR SdlWindow::createVkSurface(VkInstance instance) {
+	if (killed) {
+		logError("SdlWindow is killed and does not have a vk surface!", "SdlWindow::createVkSurface");
+		return nullptr;
+	}
 	if (!handle) return nullptr;
 
 	if (vkSurface.has_value()) return vkSurface.value();
@@ -150,6 +161,10 @@ VkSurfaceKHR SdlWindow::createVkSurface(VkInstance instance) {
 }
 
 void SdlWindow::toggleBorderlessFullscreen() {
+	if (killed) {
+		logError("SdlWindow is killed and cant be set to full screen!", "SdlWindow::toggleBorderlessFullscreen");
+		return;
+	}
 	Uint32 flags = SDL_GetWindowFlags(handle);
 	bool is_fullscreen = (flags & SDL_WINDOW_FULLSCREEN) != 0;
 	if (!is_fullscreen) {
@@ -165,4 +180,30 @@ void SdlWindow::toggleBorderlessFullscreen() {
 			logInfo("Exited borderless fullscreen");
 		}
 	}
+}
+
+nlohmann::json SdlWindow::dumpWindowState() const {
+	if (killed) return "Killed window!";
+	nlohmann::json json;
+	json["name"] = getName();
+	json["size"] = getSize();
+	json["windowScalingSize"] = windowScalingSize;
+	json["hasVkSurface"] = vkSurface.has_value();
+	json["windowSubclass"] = dumpState();
+	return json;
+}
+
+void SdlWindow::kill(bool forced) {
+	bool subclassKilled = killWindow(forced);
+	if (forced) assert(subclassKilled);
+	if (!(forced || subclassKilled)) return;
+	killed = true; // set killed afterward to allow the subclasses to access values one last time
+	logInfo("Destroying SDL window...");
+	SDL_RemoveEventWatch(resizingEventWatcher, this);
+	if (vkSurface.has_value()) {
+		SDL_Vulkan_DestroySurface(vkInstance, vkSurface.value(), nullptr);
+		vkSurface.reset();
+	}
+	SDL_DestroyWindow(handle);
+	handle = nullptr;
 }

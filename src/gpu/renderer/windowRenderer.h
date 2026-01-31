@@ -1,8 +1,6 @@
 #ifndef windowRenderer_h
 #define windowRenderer_h
 
-#include <RmlUi/Core/RenderInterface.h>
-
 #include "gpu/renderer/imgui/imGuiRenderer.h"
 #include "gui/sdl/sdlWindow.h"
 
@@ -10,7 +8,6 @@
 #include "gpu/renderer/frameManager.h"
 #include "gpu/renderer/viewport/viewportRenderData.h"
 #include "gpu/renderer/viewport/viewportRenderer.h"
-#include "gpu/renderer/rml/rmlRenderer.h"
 
 class WindowRenderer {
 public:
@@ -24,11 +21,9 @@ public:
 public:
 	void resize(std::pair<uint32_t, uint32_t> windowSize);
 
-	RmlRenderer& getRmlRenderer() { return rmlRenderer; }
-	const RmlRenderer& getRmlRenderer() const { return rmlRenderer; }
-
 	ImGuiRenderer& getImGuiRenderer() { return *imGuiRenderer; }
 	const ImGuiRenderer& getImGuiRenderer() const { return *imGuiRenderer; }
+	void setImGuiRenderFunc(std::function<void()> imGuiRenderFunc);
 
 	void registerViewportRenderData(ViewportRenderData* viewportRenderData);
 	void deregisterViewportRenderData(ViewportRenderData* viewportRenderData);
@@ -55,8 +50,9 @@ private:
 	VkRenderPass renderPass;
 
 	// subrenderers
-	RmlRenderer rmlRenderer;
 	std::optional<ImGuiRenderer> imGuiRenderer;
+	std::mutex imGuiRenderFuncMux;
+	std::function<void()> imGuiRenderFunc = nullptr;
 	ViewportRenderer viewportRenderer;
 
 	// render loop
@@ -72,7 +68,6 @@ private:
 	// handles
 	SdlWindow* sdlWindow;
 	VulkanDevice* device;
-
 
 	AllocatedImage colorImage;
 };

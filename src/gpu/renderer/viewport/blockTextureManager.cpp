@@ -1,5 +1,6 @@
 #include "blockTextureManager.h"
 
+#include "gpu/abstractions/vulkanBuffer.h"
 #include "gpu/vulkanDevice.h"
 #include "util/algorithm.h"
 

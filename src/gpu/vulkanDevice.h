@@ -5,7 +5,6 @@
 #include <VkBootstrap.h>
 #include <vk_mem_alloc.h>
 
-#include "gpu/renderer/rml/rmlResourceManager.h"
 #include "gpu/renderer/viewport/blockTextureManager.h"
 
 class BlockTextureManager;
@@ -37,7 +36,6 @@ public:
 	inline const VmaAllocator getAllocator() const { return vmaAllocator; }
 
 	inline BlockTextureManager& getBlockTextureManager() { return blockTextureManager; }
-	inline RmlResourceManager& getRmlResourceManager() { return rmlResourceManager; }
 
 	VkSampleCountFlagBits getMaxUsableSampleCount() const { return msaaSamples; }
 
@@ -63,7 +61,6 @@ private:
 	std::mutex immediateSubmitMux;
 
 	// Texture
-	RmlResourceManager rmlResourceManager;
 	BlockTextureManager blockTextureManager;
 	VkSampleCountFlagBits msaaSamples;
 };

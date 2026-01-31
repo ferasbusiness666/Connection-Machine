@@ -1,103 +1,57 @@
 #include "mainWindow.h"
-
-#include <RmlUi/Core.h>
-#include <RmlUi/Debugger.h>
 #include <SDL3/SDL_video.h>
 
 #include "gpu/mainRenderer.h"
 
-#include "gui/mainWindow/circuitView/circuitViewWidget.h"
-#include "gui/rml/rmlRenderInterface.h"
-#include "gui/rml/rmlSystemInterface.h"
+// #include "gui/mainWindow/circuitView/circuitViewWidget.h"
+// #include "gui/rml/rmlRenderInterface.h"
+// #include "gui/rml/rmlSystemInterface.h"
 
 #include "app.h"
 
 #include "backend/settings/settings.h"
-#include "computerAPI/directoryManager.h"
+// #include "computerAPI/directoryManager.h"
 #include "environment/environment.h"
+#include "imgui/imgui.h"
 
-MainWindow::MainWindow(Environment& environment) :
-	sdlWindow(App::get().registerWindow("Connection Machine")), environment(environment), toolManagerManager(environment), popUpManager(*this) {
-	sdlWindow->setRecieveEventFunction(std::bind(&MainWindow::recieveEvent, this, std::placeholders::_1));
-	sdlWindow->setRenderFunction(std::bind(&MainWindow::updateRml, this));
+MainWindow::MainWindow() : SdlWindow("Connection Machine"), toolManagerManager(environment)/*, popUpManager(*this)*/ {
 
-	windowId = MainRenderer::get().registerWindow(sdlWindow.get());
-
-	// create rmlUI context
-	rmlContext = Rml::CreateContext("mainWindow_" + std::to_string(windowId), Rml::Vector2i(sdlWindow->getSize().first, sdlWindow->getSize().second)); // ptr managed by rmlUi (I think)
-
-	// create rmlUI document
-	rmlDocument = rmlContext->LoadDocument(DirectoryManager::getResourceDirectory().generic_string() + "/gui/mainWindow/mainWindow.rml");
-
-	// get widget for circuit view
-	Rml::Element* circuitViewWidgetElement = rmlDocument->GetElementById("circuit-view-rendering-area");
-	createCircuitViewWidget(circuitViewWidgetElement);
-
-	// eval menutree
-	Rml::Element* evalTreeParent = rmlDocument->GetElementById("eval-tree");
-	evalWindow.emplace(
-		environment.getBackend().getSimulatorManager(),
-		environment.getBackend().getCircuitManager(),
-		*this,
-		environment.getBackend().getDataUpdateEventManager(),
-		rmlDocument,
-		evalTreeParent
-	);
-
-	//  blocks/tools menutree
-	selectorWindow.emplace(
-		environment.getBackend().getBlockDataManager(),
-		environment.getBackend().getDataUpdateEventManager(),
-		environment.getBackend().getCircuitManager().getProceduralCircuitManager(),
-		toolManagerManager,
-		rmlDocument
-	);
-
-	Rml::Element* blockCreationMenu = rmlDocument->GetElementById("block-creation-form");
-	blockCreationWindow.emplace(environment.getBackend().getCircuitManager(), environment, *this, environment.getBackend().getDataUpdateEventManager(), toolManagerManager, rmlDocument, blockCreationMenu);
-
-	simControlsManager.emplace(rmlDocument, getCircuitViewWidget(0), environment.getBackend().getDataUpdateEventManager());
-
-	settingsWindow.emplace(rmlDocument);
-
-	menuBar.emplace(rmlDocument, &settingsWindow.value(), this);
-
-	cornerLog.emplace(rmlDocument);
+	windowId = MainRenderer::get().registerWindow(this);
 
 	// keybind handling
-	rmlDocument->AddEventListener(Rml::EventId::Keydown, &keybindHandler);
-	keybindHandler.addListener("Keybinds/Editing/Paste", [this]() { toolManagerManager.setTool("paste tool"); });
-	keybindHandler.addListener("Keybinds/Editing/Tools/State Changer", [this]() { toolManagerManager.setTool("state changer"); });
-	keybindHandler.addListener("Keybinds/Editing/Tools/Connection", [this]() {
-		toolManagerManager.setTool("connection");
-		toolManagerManager.setMode("Single");
-	});
-	keybindHandler.addListener("Keybinds/Editing/Tools/Tensor Connect", [this]() {
-		toolManagerManager.setTool("connection");
-		toolManagerManager.setMode("Tensor");
-	});
-	keybindHandler.addListener("Keybinds/Editing/Tools/Move", [this]() { toolManagerManager.setTool("move"); });
-	keybindHandler.addListener("Keybinds/Editing/Tools/Mode Changer", [this]() { toolManagerManager.setTool("mode changer"); });
-	keybindHandler.addListener("Keybinds/Editing/Tools/Placement", [this]() {
-		toolManagerManager.setTool("placement");
-		toolManagerManager.setMode("Single");
-	});
-	keybindHandler.addListener("Keybinds/Editing/Tools/Area Placement", [this]() {
-		toolManagerManager.setTool("placement");
-		toolManagerManager.setMode("Area");
-	});
-	keybindHandler.addListener("Keybinds/Editing/Tools/Selection Maker", [this]() { toolManagerManager.setTool("selection maker"); });
-	keybindHandler.addListener("Keybinds/Window/Toggle Fullscreen", [this]() { sdlWindow->toggleBorderlessFullscreen(); });
-	keybindHandler.addListener("Keybinds/Window/Increase UI Scale", [this]() { offsetUiScale(kUiScaleStep); });
-	keybindHandler.addListener("Keybinds/Window/Decrease UI Scale", [this]() { offsetUiScale(-kUiScaleStep); });
-	keybindHandler.addListener("Keybinds/Window/Reset UI Scale", [this]() { applyUiScale(1.0f); });
+	// rmlDocument->AddEventListener(Rml::EventId::Keydown, &keybindHandler);
+	// keybindHandler.addListener("Keybinds/Editing/Paste", [this]() { toolManagerManager.setTool("paste tool"); });
+	// keybindHandler.addListener("Keybinds/Editing/Tools/State Changer", [this]() { toolManagerManager.setTool("state changer"); });
+	// keybindHandler.addListener("Keybinds/Editing/Tools/Connection", [this]() {
+	// 	toolManagerManager.setTool("connection");
+	// 	toolManagerManager.setMode("Single");
+	// });
+	// keybindHandler.addListener("Keybinds/Editing/Tools/Tensor Connect", [this]() {
+	// 	toolManagerManager.setTool("connection");
+	// 	toolManagerManager.setMode("Tensor");
+	// });
+	// keybindHandler.addListener("Keybinds/Editing/Tools/Move", [this]() { toolManagerManager.setTool("move"); });
+	// keybindHandler.addListener("Keybinds/Editing/Tools/Mode Changer", [this]() { toolManagerManager.setTool("mode changer"); });
+	// keybindHandler.addListener("Keybinds/Editing/Tools/Placement", [this]() {
+	// 	toolManagerManager.setTool("placement");
+	// 	toolManagerManager.setMode("Single");
+	// });
+	// keybindHandler.addListener("Keybinds/Editing/Tools/Area Placement", [this]() {
+	// 	toolManagerManager.setTool("placement");
+	// 	toolManagerManager.setMode("Area");
+	// });
+	// keybindHandler.addListener("Keybinds/Editing/Tools/Selection Maker", [this]() { toolManagerManager.setTool("selection maker"); });
+	// keybindHandler.addListener("Keybinds/Window/Toggle Fullscreen", [this]() { sdlWindow->toggleBorderlessFullscreen(); });
+	// keybindHandler.addListener("Keybinds/Window/Increase UI Scale", [this]() { offsetUiScale(kUiScaleStep); });
+	// keybindHandler.addListener("Keybinds/Window/Decrease UI Scale", [this]() { offsetUiScale(-kUiScaleStep); });
+	// keybindHandler.addListener("Keybinds/Window/Reset UI Scale", [this]() { applyUiScale(1.0f); });
 
 	const double* initialUiScale = Settings::get<SettingType::DECIMAL>("Appearance/UI Scale");
 	applyUiScale(initialUiScale ? static_cast<float>(*initialUiScale) : 1.0f);
 	Settings::registerListener<SettingType::DECIMAL>("Appearance/UI Scale", [this](const double& value) { applyUiScale(static_cast<float>(value)); });
 
 	// show rmlUi document
-	rmlDocument->Show();
+	// rmlDocument->Show();
 
 	Settings::registerListener<SettingType::FILE_PATH>("Appearance/Font", [this](const std::string& fontFilePath) {
 		// Rml::LoadFontFace(fontFilePath);
@@ -107,25 +61,22 @@ MainWindow::MainWindow(Environment& environment) :
 }
 
 MainWindow::~MainWindow() {
-	if (rmlContext) Rml::RemoveContext(rmlContext->GetName());
 	if (windowId != 0) MainRenderer::get().deregisterWindow(windowId);
 	if (sdlWindow) App::get().deregisterWindow(*sdlWindow);
 }
 
 bool MainWindow::recieveEvent(SDL_Event& event) {
-	if (event.type == SDL_EVENT_KEYMAP_CHANGED) {
-		if (settingsWindow) {
-			settingsWindow->reloadContent();
-		}
-	}
+	// if (event.type == SDL_EVENT_KEYMAP_CHANGED) {
+	// 	if (settingsWindow) {
+	// 		settingsWindow->reloadContent();
+	// 	}
+	// }
 
 	// check if we want this event
 	if (!sdlWindow->isThisMyEvent(event)) return event.type == SDL_EVENT_KEYMAP_CHANGED;
 
 	if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
 		if (App::get().closeMainWindow(this)) {
-			Rml::RemoveContext(rmlContext->GetName());
-			rmlContext = nullptr;
 			MainRenderer::get().deregisterWindow(windowId);
 			windowId = 0;
 			App::get().deregisterWindow(*sdlWindow);
@@ -135,7 +86,7 @@ bool MainWindow::recieveEvent(SDL_Event& event) {
 	}
 
 	// send event to RML
-	RmlSDL::InputEventHandler(rmlContext, sdlWindow->getHandle(), event, getSdlWindowScalingSize());
+	// RmlSDL::InputEventHandler(rmlContext, sdlWindow->getHandle(), event, getSdlWindowScalingSize());
 
 	if (event.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
 		applyUiScale(uiScale);
@@ -144,36 +95,62 @@ bool MainWindow::recieveEvent(SDL_Event& event) {
 	// let renderer know we if resized the window
 	if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
 		MainRenderer::get().resizeWindow(windowId, { event.window.data1, event.window.data2 });
-		rmlContext->Update();
-		for (auto circuitViewWidget : circuitViewWidgets) {
-			circuitViewWidget->handleResize();
-		}
+		// for (auto circuitViewWidget : circuitViewWidgets) {
+		// 	circuitViewWidget->handleResize();
+		// }
 	}
 
 	return true;
 }
 
-void MainWindow::updateRml() {
-	RmlRenderInterface* rmlRenderInterface = dynamic_cast<RmlRenderInterface*>(Rml::GetRenderInterface());
-	if (rmlRenderInterface) {
-		rmlContext->Update();
-		rmlRenderInterface->setWindowToRenderOn(windowId);
-		MainRenderer::get().prepareForRmlRender(windowId);
-		rmlContext->Render();
-		MainRenderer::get().endRmlRender(windowId);
-	}
+void MainWindow::updateUi() {
+	MainRenderer::get().setWindowImGuiRenderFunc(windowId, [](){
+		ImGui::DockSpaceOverViewport();
+
+		bool my_tool_active = true;
+		ImGui::Begin("My First Tool", &my_tool_active, ImGuiWindowFlags_MenuBar);
+		if (ImGui::BeginMenuBar())
+		{
+			if (ImGui::BeginMenu("File"))
+			{
+				if (ImGui::MenuItem("Open..", "Ctrl+O")) { /* Do stuff */ }
+				if (ImGui::MenuItem("Save", "Ctrl+S"))   { /* Do stuff */ }
+				if (ImGui::MenuItem("Close", "Ctrl+W"))  { my_tool_active = false; }
+				ImGui::EndMenu();
+			}
+			ImGui::EndMenuBar();
+		}
+
+		// Edit a color stored as 4 floats
+		// ImGui::ColorEdit4("Color", my_color);
+
+		// Generate samples and plot them
+		float samples[100];
+		for (int n = 0; n < 100; n++)
+			samples[n] = sinf(n * 0.2f + ImGui::GetTime() * 1.5f);
+		ImGui::PlotLines("Samples", samples, 100);
+
+		// Display contents in a scrolling region
+		ImGui::TextColored(ImVec4(1,1,0,1), "Important Stuff");
+		ImGui::BeginChild("Scrolling");
+		for (int n = 0; n < 50; n++)
+			ImGui::Text("%04d: Some text", n);
+		ImGui::EndChild();
+		ImGui::End();
+	});
+
 	// update circuit view widget UI components like TPS display
-	for (auto& circuitViewWidget : circuitViewWidgets) {
-		circuitViewWidget->updateTps();
-	}
-	cornerLog->updateMessages();
+	// for (auto& circuitViewWidget : circuitViewWidgets) {
+		// circuitViewWidget->updateTps();
+	// }
+	// cornerLog->updateMessages();
 }
 
-void MainWindow::createCircuitViewWidget(Rml::Element* element) {
-	circuitViewWidgets.push_back(std::make_shared<CircuitViewWidget>(environment, rmlDocument, *this, windowId, element));
-	toolManagerManager.addCircuitView(circuitViewWidgets.back()->getCircuitView());
-	activeCircuitViewWidget = circuitViewWidgets.back(); // if it is created, it should be used
-}
+// void MainWindow::createCircuitViewWidget(Rml::Element* element) {
+// 	// circuitViewWidgets.push_back(std::make_shared<CircuitViewWidget>(environment, rmlDocument, *this, windowId, element));
+// 	// toolManagerManager.addCircuitView(circuitViewWidgets.back()->getCircuitView());
+// 	// activeCircuitViewWidget = circuitViewWidgets.back(); // if it is created, it should be used
+// }
 
 void MainWindow::offsetUiScale(double delta) {
 	const double* storedScale = Settings::get<SettingType::DECIMAL>("Appearance/UI Scale");
@@ -199,7 +176,6 @@ void MainWindow::applyUiScale(float scale) {
 		}
 	}
 	uiScale = clamped;
-	if (!rmlContext) return;
 	float displayScale = 1.0f;
 	if (sdlWindow) {
 		displayScale = SDL_GetWindowDisplayScale(sdlWindow->getHandle());
@@ -207,28 +183,27 @@ void MainWindow::applyUiScale(float scale) {
 			displayScale = 1.0f;
 		}
 	}
-	rmlContext->SetDensityIndependentPixelRatio(displayScale * uiScale);
+	// rmlContext->SetDensityIndependentPixelRatio(displayScale * uiScale);
 
-	if (settingsWindow) {
-		settingsWindow->reloadContent();
-	}
+	// if (settingsWindow) {
+	// 	settingsWindow->reloadContent();
+	// }
 
-	rmlContext->Update();
-	for (auto circuitViewWidget : circuitViewWidgets) {
-		circuitViewWidget->handleResize();
-	}
+	// for (auto circuitViewWidget : circuitViewWidgets) {
+	// 	circuitViewWidget->handleResize();
+	// }
 }
 
-void setGlobalCssPropertyRec(Rml::Element* element, const std::string& property, const std::string& value) {
-	if (!element) return;
+// void setGlobalCssPropertyRec(Rml::Element* element, const std::string& property, const std::string& value) {
+// 	if (!element) return;
 
-	element->SetProperty(property, value);
-	for (int i = 0; i < element->GetNumChildren(); i++) {
-		setGlobalCssPropertyRec(element->GetChild(i), property, value);
-	}
-}
+// 	element->SetProperty(property, value);
+// 	for (int i = 0; i < element->GetNumChildren(); i++) {
+// 		setGlobalCssPropertyRec(element->GetChild(i), property, value);
+// 	}
+// }
 
 void MainWindow::setGlobalCssProperty(const std::string& property, const std::string& value) {
 	logInfo("Setting {} to {}", "", property, value);
-	setGlobalCssPropertyRec(rmlDocument, property, value);
+	// setGlobalCssPropertyRec(rmlDocument, property, value);
 }

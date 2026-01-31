@@ -1,5 +1,4 @@
 #include "windowRenderer.h"
-#include "imgui/imgui.h"
 
 #ifdef TRACY_PROFILER
 #include <tracy/Tracy.hpp>
@@ -26,7 +25,6 @@ WindowRenderer::WindowRenderer(SdlWindow* sdlWindow) : sdlWindow(sdlWindow) {
 	swapchain.createFramebuffers(renderPass, colorImage);
 
 	// subrenderers
-	rmlRenderer.init(device, renderPass);
 	viewportRenderer.init(device, renderPass);
 	imGuiRenderer.emplace(sdlWindow->getHandle(), renderPass, FRAMES_IN_FLIGHT);
 
@@ -49,8 +47,6 @@ WindowRenderer::~WindowRenderer() {
 	// clean up color image for multisampled
 	destroyImage(colorImage);
 
-	// delete rml renderer
-	rmlRenderer.cleanup();
 	// delete viewport renderer
 	viewportRenderer.cleanup();
 }
@@ -99,9 +95,10 @@ void WindowRenderer::renderLoop() {
 
 		// ImGui rendering
 		imGuiRenderer->beginFrame();
-		ImGui::Begin("Debug");
-		ImGui::Text("Frame: %d", frames.getCurrentFrameIndex());
-        ImGui::End();
+		{
+			std::lock_guard<std::mutex> lock(imGuiRenderFuncMux);
+			if (imGuiRenderFunc) imGuiRenderFunc();
+		}
 
 		renderToCommandBuffer(frame, imageIndex);
 
@@ -196,7 +193,7 @@ void WindowRenderer::renderToCommandBuffer(Frame& frame, uint32_t imageIndex) {
 		}
 
 		// rml rendering
-		rmlRenderer.render(frame, windowSize);
+		// rmlRenderer.render(frame, windowSize);
 
 		// imgui rendering
 		imGuiRenderer->endFrame(frame.mainCommandBuffer);
@@ -301,6 +298,11 @@ void WindowRenderer::recreateSwapchain() {
 	swapchain.createFramebuffers(renderPass, colorImage);
 
 	swapchainRecreationNeeded = false;
+}
+
+void WindowRenderer::setImGuiRenderFunc(std::function<void()> imGuiRenderFunc) {
+	std::lock_guard<std::mutex> lock(imGuiRenderFuncMux);
+	this->imGuiRenderFunc = imGuiRenderFunc;
 }
 
 void WindowRenderer::registerViewportRenderData(ViewportRenderData *viewportRenderData) {

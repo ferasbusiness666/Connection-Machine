@@ -50,6 +50,18 @@ ImGuiRenderer::ImGuiRenderer(SDL_Window* window, VkRenderPass renderPass, uint32
 	io.IniFilename = NULL;
 
 	ImGui::StyleColorsDark();
+
+	// When viewports are enabled, tweak WindowRounding/WindowBg for platform windows
+	ImGuiStyle& style = ImGui::GetStyle();
+	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+		style.WindowRounding = 0.0f;
+		style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+
+		// Ensure platform windows can be created properly
+		io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;
+		io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;
+	}
+
 	if (!ImGui_ImplSDL3_InitForVulkan(m_mainWindow)) {
 		throw std::runtime_error("Failed to initialize ImGui SDL3 backend");
 	}
@@ -68,6 +80,16 @@ ImGuiRenderer::ImGuiRenderer(SDL_Window* window, VkRenderPass renderPass, uint32
 	initInfo.PipelineInfoMain.Subpass = 0;
 	initInfo.PipelineInfoMain.MSAASamples = MainRenderer::get().getVulkanInstance().getDevice()->getMaxUsableSampleCount();
 
+	// For platform windows (viewports), we need to specify UseDynamicRendering or provide a compatible render pass
+	// ImGui will create surfaces and swapchains for secondary viewports automatically
+	// Platform windows don't use MSAA - they use simple 1-sample rendering
+	initInfo.UseDynamicRendering = false;
+
+	// Set up info for platform windows (secondary viewports) - no MSAA
+	initInfo.PipelineInfoForViewports.RenderPass = VK_NULL_HANDLE; // Will be created by ImGui
+	initInfo.PipelineInfoForViewports.Subpass = 0;
+	initInfo.PipelineInfoForViewports.MSAASamples = MainRenderer::get().getVulkanInstance().getDevice()->getMaxUsableSampleCount(); // Platform windows don't use MSAA
+
 	static bool vulkanFunctionsLoaded = false;
 	if (!vulkanFunctionsLoaded) {
 		ImGui_ImplVulkan_LoadFunctions(VK_API_VERSION_1_3, [](const char* name, void*) {
@@ -79,6 +101,9 @@ ImGuiRenderer::ImGuiRenderer(SDL_Window* window, VkRenderPass renderPass, uint32
 	if (!ImGui_ImplVulkan_Init(&initInfo)) {
 		throw std::runtime_error("Failed to initialize ImGui Vulkan backend");
 	}
+
+	// Upload fonts - required for platform windows (viewports)
+	// ImGui_ImplVulkan_CreateFontsTexture();
 }
 
 ImGuiRenderer::~ImGuiRenderer() {
@@ -100,11 +125,6 @@ ImGuiRenderer::~ImGuiRenderer() {
 		vkDestroyDescriptorPool(MainRenderer::get().getVulkanInstance().getDevice()->getDevice().device, m_imguiDescriptorPool, nullptr);
 		m_imguiDescriptorPool = VK_NULL_HANDLE;
 	}
-
-	if (m_surface != VK_NULL_HANDLE) {
-		vkDestroySurfaceKHR(MainRenderer::get().getVulkanInstance().getVkbInstance().instance, m_surface, nullptr);
-		m_surface = VK_NULL_HANDLE;
-	}
 }
 
 void ImGuiRenderer::beginFrame() {
@@ -121,12 +141,21 @@ void ImGuiRenderer::endFrame(VkCommandBuffer cmd) {
 	ImGui::SetCurrentContext(m_context);
 
 	ImGui::Render();
-	std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
 
+	// Render main window
+	{
+		std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
+		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+	}
+
+	// Handle platform windows (viewports) - must be done after main rendering
 	ImGuiIO& io = ImGui::GetIO();
 	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+		// Update platform windows (creates/destroys platform windows as needed)
 		ImGui::UpdatePlatformWindows();
+
+		// Render platform windows
+		// Note: This internally calls SDL to render each platform window
 		ImGui::RenderPlatformWindowsDefault();
 	}
 
