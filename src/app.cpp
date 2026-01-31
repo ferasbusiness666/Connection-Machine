@@ -37,6 +37,7 @@ void App::kill() {
 
 void App::registerWindow(std::shared_ptr<SdlWindow>& window) {
 	windows.emplace(window);
+	window->renderingMux.unlock();
 }
 
 #ifdef TRACY_PROFILER

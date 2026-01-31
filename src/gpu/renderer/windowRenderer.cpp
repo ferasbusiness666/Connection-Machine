@@ -183,17 +183,14 @@ void WindowRenderer::renderToCommandBuffer(Frame& frame, uint32_t imageIndex) {
 
 	// do actual rendering...
 	{
-		// viewports
+		// imgui
+		imGuiRenderer->endFrame(frame.mainCommandBuffer);
+
+		// viewports // should be moved to own thread for render
 		std::lock_guard<std::mutex> lock(viewportRenderersMux);
 		for (ViewportRenderData* viewport : viewportRenderDatas) {
 			viewportRenderer.render(frame, viewport);
 		}
-
-		// rml rendering
-		// rmlRenderer.render(frame, windowSize);
-
-		// imgui rendering
-		imGuiRenderer->endFrame(frame.mainCommandBuffer);
 	}
 
 	// end render pass

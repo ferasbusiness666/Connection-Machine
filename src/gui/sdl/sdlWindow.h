@@ -7,14 +7,20 @@
 
 #include "gpu/mainRendererDefs.h"
 
-namespace App { void runLoop(); }
+class SdlWindow;
+
+namespace App {
+	void runLoop();
+	void registerWindow(std::shared_ptr<SdlWindow>& window);
+}
 
 class SdlWindow {
 	friend void App::runLoop();
+	friend void App::registerWindow(std::shared_ptr<SdlWindow>& window);
 	friend bool resizingEventWatcher(void* data, SDL_Event* event);
 public:
 	SdlWindow(const std::string& name, unsigned int width = 800, unsigned int height = 600);
-	SdlWindow(SDL_Window* handle);
+	// SdlWindow(SDL_Window* handle);
 	virtual ~SdlWindow();
 
 	float getWindowScalingSize() const { return windowScalingSize; }

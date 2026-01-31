@@ -40,31 +40,32 @@ SdlWindow::SdlWindow(const std::string& name, unsigned int width, unsigned int h
 
 	windowScalingSize = scaleX;
 
+	renderingMux.lock();
 	windowId = MainRenderer::get().registerWindow(this);
 }
 
-SdlWindow::SdlWindow(SDL_Window* handle) : handle(handle) {
-	logInfo("Using pre created SDL window...", "SdlWindow");
+// SdlWindow::SdlWindow(SDL_Window* handle) : handle(handle) {
+// 	logInfo("Using pre created SDL window...", "SdlWindow");
 
-	if (!handle) {
-		throwFatalError("SdlWindow can't use NULL window!");
-	}
+// 	if (!handle) {
+// 		throwFatalError("SdlWindow can't use NULL window!");
+// 	}
 
-	SDL_AddEventWatch(resizingEventWatcher, this);
+// 	SDL_AddEventWatch(resizingEventWatcher, this);
 
-	int winW, winH, drawW, drawH;
-	SDL_GetWindowSize(handle, &winW, &winH);
-	SDL_GetWindowSizeInPixels(handle, &drawW, &drawH);
+// 	int winW, winH, drawW, drawH;
+// 	SDL_GetWindowSize(handle, &winW, &winH);
+// 	SDL_GetWindowSizeInPixels(handle, &drawW, &drawH);
 
-	float scaleX = (float)drawW / winW;
-	float scaleY = (float)drawH / winH;
+// 	float scaleX = (float)drawW / winW;
+// 	float scaleY = (float)drawH / winH;
 
-	if (!approx_equals(scaleX, scaleY)) {
-		logError("width scale not the same x={} y={}", "SdlWindow", scaleX, scaleY);
-	}
+// 	if (!approx_equals(scaleX, scaleY)) {
+// 		logError("width scale not the same x={} y={}", "SdlWindow", scaleX, scaleY);
+// 	}
 
-	windowScalingSize = scaleX;
-}
+// 	windowScalingSize = scaleX;
+// }
 
 SdlWindow::~SdlWindow() {
 	if (killed) return;

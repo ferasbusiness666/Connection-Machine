@@ -6,9 +6,11 @@
 #include "backend/settings/settings.h"
 // #include "computerAPI/directoryManager.h"
 #include "environment/environment.h"
+#include "gui/mainWindow/widgets/circuitViewWidget.h"
 #include "imgui/imgui.h"
+#include "imgui/imgui_internal.h"
 
-MainWindow::MainWindow() : SdlWindow("Connection Machine"), environment(true), toolManagerManager(environment)/*, popUpManager(*this)*/ {
+MainWindow::MainWindow() : SdlWindow("Connection Machine"), environment(true), toolManagerManager(environment), widgetIdProvider(1)/*, popUpManager(*this)*/ {
 	// keybind handling
 	// rmlDocument->AddEventListener(Rml::EventId::Keydown, &keybindHandler);
 	// keybindHandler.addListener("Keybinds/Editing/Paste", [this]() { toolManagerManager.setTool("paste tool"); });
@@ -46,7 +48,11 @@ MainWindow::MainWindow() : SdlWindow("Connection Machine"), environment(true), t
 		logInfo("loaded, {}", "", fontFilePath);
 	});
 
+	WidgetId widgetId = widgetIdProvider.getNewId();
+	widgets.emplace(widgetId, std::make_unique<CircuitViewWidget>(widgetId, *this));
 }
+
+MainWindow::~MainWindow() = default;
 
 void MainWindow::processEvent(SDL_Event& event) {
 	// if (event.type == SDL_EVENT_KEYMAP_CHANGED) {
@@ -67,34 +73,46 @@ void MainWindow::processEvent(SDL_Event& event) {
 }
 
 void MainWindow::render() {
-	ImGui::DockSpaceOverViewport();
+	bool open = true;
+	ImGuiIO& io = ImGui::GetIO();
 
-	bool my_tool_active = true;
-	ImGui::Begin("My First Tool", &my_tool_active, ImGuiWindowFlags_MenuBar);
-	if (ImGui::BeginMenuBar())
-	{
-		if (ImGui::BeginMenu("File"))
-		{
-			if (ImGui::MenuItem("Open..", "Ctrl+O")) { /* Do stuff */ }
-			if (ImGui::MenuItem("Save", "Ctrl+S"))   { /* Do stuff */ }
-			if (ImGui::MenuItem("Close", "Ctrl+W"))  { my_tool_active = false; }
-			ImGui::EndMenu();
-		}
-		ImGui::EndMenuBar();
+	ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+	ImGuiViewport* viewport = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(viewport->Pos);
+	ImGui::SetNextWindowSize(viewport->Size);
+	ImGui::SetNextWindowViewport(viewport->ID);
+	window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+	window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+	ImGui::Begin("DockSpace", &open, window_flags);
+	ImGui::PopStyleVar(2);
+
+	if (ImGui::DockBuilderGetNode(ImGui::GetID("MyDockspace")) == NULL) {
+		ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
+		ImGui::DockBuilderRemoveNode(dockspace_id);
+		ImGui::DockBuilderAddNode(dockspace_id);
+
+		ImGuiID dock_main_id = dockspace_id; // This variable will track the document node, however we are not using it here as we aren't docking anything into it.
+		ImGuiID dock_id_left = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.20f, NULL, &dock_main_id);
+		ImGuiID dock_id_right = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.20f, NULL, &dock_main_id);
+		ImGuiID dock_id_bottom = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.20f, NULL, &dock_main_id);
+
+		ImGui::DockBuilderDockWindow("James_1", dock_id_left);
+		ImGui::DockBuilderDockWindow("James_2", dock_main_id);
+		ImGui::DockBuilderDockWindow("James_3", dock_id_right);
+		ImGui::DockBuilderDockWindow("James_4", dock_id_bottom);
+		ImGui::DockBuilderFinish(dockspace_id);
 	}
-	// Generate samples and plot them
-	float samples[100];
-	for (int n = 0; n < 100; n++)
-		samples[n] = sinf(n * 0.2f + ImGui::GetTime() * 1.5f);
-	ImGui::PlotLines("Samples", samples, 100);
 
-	// Display contents in a scrolling region
-	ImGui::TextColored(ImVec4(1,1,0,1), "Important Stuff");
-	ImGui::BeginChild("Scrolling");
-	for (int n = 0; n < 50; n++)
-		ImGui::Text("%04d: Some text", n);
-	ImGui::EndChild();
+	ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
+	ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), 0);
 	ImGui::End();
+
+	for (std::pair<const WidgetId, std::unique_ptr<Widget>>& widget : widgets) {
+		widget.second->render();
+	}
 }
 
 void MainWindow::offsetUiScale(double delta) {

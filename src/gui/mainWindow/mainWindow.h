@@ -7,13 +7,12 @@
 #include "gui/sdl/sdlWindow.h"
 
 #include "tools/toolManagerManager.h"
-
-class CircuitViewWidget;
-class Environment;
+#include "widget.h"
 
 class MainWindow : public SdlWindow {
 public:
 	MainWindow();
+	~MainWindow();
 
 	// no copy
 	MainWindow(const MainWindow&) = delete;
@@ -62,6 +61,9 @@ private:
 	static constexpr double kUiScaleStep = 0.1;
 	static constexpr double kUiScaleMin = 0.5;
 	static constexpr double kUiScaleMax = 3.0;
+
+	std::unordered_map<WidgetId, std::unique_ptr<Widget>> widgets;
+	IdProvider<WidgetId> widgetIdProvider;
 
 	// widgets
 	// std::optional<SelectorWindow> selectorWindow;
