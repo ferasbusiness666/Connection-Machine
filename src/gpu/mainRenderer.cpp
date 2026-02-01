@@ -163,11 +163,11 @@ void MainRenderer::setViewportSimulator(ViewportId viewportId, const EvalLogicSi
 	iter->second.setSimulator(simulator, address);
 }
 
-VkDescriptorSet MainRenderer::getViewportLatestImage(ViewportId viewportId) {
+std::pair<VkDescriptorSet, std::shared_ptr<void>> MainRenderer::getViewportLatestImage(ViewportId viewportId) {
 	auto iter = viewportRenderers.find(viewportId);
 	if (iter == viewportRenderers.end()) {
 		logError("Failed to call getViewportLatestImage on non existent viewport {}", "MainRenderer", viewportId);
-		return nullptr;
+		return { VK_NULL_HANDLE, nullptr };
 	}
 	return iter->second.getLatestImage();
 }

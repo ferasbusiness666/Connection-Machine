@@ -23,7 +23,6 @@ unsigned int tasksToFinishToQuit = 0;
 
 void App::kill() {
 	logInfo("Killing App", "App");
-	logInfo("Shutting down App", "App");
 	for (std::shared_ptr<SdlWindow> window : windows) {
 		if (!window->isKilled()) {
 			logError("SDL window \"{}\" was not killed.", "App", window->getName());

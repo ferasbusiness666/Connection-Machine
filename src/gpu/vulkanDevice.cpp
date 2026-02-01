@@ -69,6 +69,10 @@ void VulkanDevice::waitIdle() {
 	vkDeviceWaitIdle(device);
 }
 
+void VulkanDevice::waitIdleNoMux() {
+	vkDeviceWaitIdle(device);
+}
+
 VkResult VulkanDevice::submitGraphicsQueue(VkSubmitInfo* submitInfo, VkFence fence) {
 	std::lock_guard<std::mutex> lock(queueMux);
 	return vkQueueSubmit(graphicsQueue.queue, 1, submitInfo, fence);

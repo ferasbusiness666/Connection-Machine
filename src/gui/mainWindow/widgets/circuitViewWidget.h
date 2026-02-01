@@ -10,7 +10,7 @@ class CircuitViewWidget : public Widget {
 public:
 	CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow);
 	~CircuitViewWidget();
-	void render() override final;
+	void render(std::function<void(std::shared_ptr<void>)> preserveForFrame) override final;
 private:
 	std::unique_ptr<CircuitView> circuitView;
 };

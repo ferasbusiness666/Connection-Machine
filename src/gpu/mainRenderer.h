@@ -57,7 +57,7 @@ public:
 	void resizeViewport(ViewportId viewportId, glm::vec2 size);
 	void moveViewportView(ViewportId viewportId, FPosition topLeft, FPosition bottomRight);
 	void setViewportSimulator(ViewportId viewportId, const EvalLogicSimulator* simulator, Address address); // tmp circuit
-	VkDescriptorSet getViewportLatestImage(ViewportId viewportId);
+	std::pair<VkDescriptorSet, std::shared_ptr<void>> getViewportLatestImage(ViewportId viewportId);
 	void resetViewport(ViewportId viewportId);
 	void deregisterViewport(ViewportId viewportId);
 

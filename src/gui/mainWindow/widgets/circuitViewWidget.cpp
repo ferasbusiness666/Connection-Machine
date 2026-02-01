@@ -12,7 +12,7 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 
 CircuitViewWidget::~CircuitViewWidget() { MainRenderer::get().deregisterViewport(circuitView->getViewportId()); }
 
-void CircuitViewWidget::render() {
+void CircuitViewWidget::render(std::function<void(std::shared_ptr<void>)> preserveForFrame) {
 	ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_FirstUseEver);
 	ImGui::Begin(getWidgetIdStr().c_str());
 	{
@@ -20,8 +20,9 @@ void CircuitViewWidget::render() {
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 		circuitView->getViewManager().setAspectRatio(viewportPanelSize.x / viewportPanelSize.y); // prob needs to be does in a thread safe way.
 		MainRenderer::get().resizeViewport(circuitView->getViewportId(), { viewportPanelSize.x, viewportPanelSize.y });
-		VkDescriptorSet descriptor = MainRenderer::get().getViewportLatestImage(circuitView->getViewportId());
-		if (descriptor != VK_NULL_HANDLE) ImGui::Image(descriptor, ImVec2{ viewportPanelSize.x, viewportPanelSize.y });
+		std::pair<VkDescriptorSet, std::shared_ptr<void>> descriptor = MainRenderer::get().getViewportLatestImage(circuitView->getViewportId());
+		preserveForFrame(descriptor.second);
+		if (descriptor.first != VK_NULL_HANDLE) ImGui::Image(descriptor.first, ImVec2{ viewportPanelSize.x, viewportPanelSize.y });
 		// MainRenderer::get().moveViewport(
 		// 	circuitView->getViewportId(),
 		// 	getMainWindow().getWindowId(),

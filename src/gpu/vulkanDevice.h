@@ -21,6 +21,7 @@ public:
 
 	// queue submission functions
 	void waitIdle();
+	void waitIdleNoMux();
 	VkResult submitGraphicsQueue(VkSubmitInfo* submitInfo, VkFence fence);
 	VkResult submitPresent(VkPresentInfoKHR* presentInfo);
 	void immediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function);

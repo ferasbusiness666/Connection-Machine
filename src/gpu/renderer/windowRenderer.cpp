@@ -87,12 +87,14 @@ void WindowRenderer::renderLoop() {
 		frames.startCurrentFrame();
 
 		// record command buffer
-		vkResetCommandBuffer(frame.mainCommandBuffer, 0);
+		{
+			std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
+			vkResetCommandBuffer(frame.mainCommandBuffer, 0);
+		}
 
 		// ImGui rendering
 		imGuiRenderer->beginFrame();
-		sdlWindow->doRendering();
-
+		sdlWindow->doRendering([&](std::shared_ptr<void> ptr){ frame.lifetime.push(ptr); });
 		renderToCommandBuffer(frame, imageIndex);
 
 		// start setting up graphics submission ====================================================
@@ -272,7 +274,9 @@ void WindowRenderer::createColorResources() {
 }
 
 void WindowRenderer::recreateSwapchain() {
-	device->waitIdle();
+
+	std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
+	device->waitIdleNoMux();
 
 	std::lock_guard<std::mutex> lock(windowSizeMux);
 

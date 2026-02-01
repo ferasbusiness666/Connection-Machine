@@ -38,17 +38,25 @@ ViewportRenderer::ViewportRenderer(VulkanDevice* device) : chunker(device), devi
 
 	frames.init(device);
 
+	createdImages.resize(FRAMES_IN_FLIGHT, false);
+	imagesToRecreate.resize(FRAMES_IN_FLIGHT, true);
+	msaaImages.resize(FRAMES_IN_FLIGHT);
+	resolveImages.resize(FRAMES_IN_FLIGHT);
+	framebuffers.resize(FRAMES_IN_FLIGHT);
+	imguiTextures.resize(FRAMES_IN_FLIGHT);
+
 	running = true;
 	renderThread = std::thread(&ViewportRenderer::renderLoop, this);
 }
 
 ViewportRenderer::~ViewportRenderer() {
-	running = false;
-	if (renderThread.joinable()) {
-		renderThread.join();
-	}
+	running.store(false);
+	if (renderThread.joinable()) renderThread.join();
 
-	destroyImages();
+	{
+		std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
+		for (unsigned int i = 0; i < FRAMES_IN_FLIGHT; i++)	destroyImage(i);
+	}
 
 	vkDestroySampler(device->getDevice(), sampler, nullptr);
 	vkDestroyRenderPass(device->getDevice(), renderPass, nullptr);
@@ -56,6 +64,7 @@ ViewportRenderer::~ViewportRenderer() {
 	elementRenderer.cleanup();
 	chunkRenderer.cleanup();
 	gridRenderer.cleanup();
+	frames.cleanup();
 }
 
 ViewportViewData ViewportRenderer::getViewData() {
@@ -74,34 +83,52 @@ void ViewportRenderer::setSimulator(const EvalLogicSimulator* simulator, const A
 }
 
 void ViewportRenderer::updateViewFrame(glm::vec2 size) {
-	std::lock_guard<std::mutex> lock(viewMux);
-
-	// Only recreate if size actually changed
-	if (newViewData.viewportSize.width != static_cast<uint32_t>(size.x) ||
-	    newViewData.viewportSize.height != static_cast<uint32_t>(size.y)) {
+	{
+		std::lock_guard<std::mutex> lock(viewMux);
 		newViewData.viewportSize.width = size.x;
 		newViewData.viewportSize.height = size.y;
-		recreateImages = true;
+	}
+	if (viewData.viewportSize.width != newViewData.viewportSize.width || viewData.viewportSize.height != newViewData.viewportSize.height) {
+		std::lock_guard lock(imagesToRecreateMux);
+		for (unsigned int i = 0; i < FRAMES_IN_FLIGHT; i++)	imagesToRecreate[i] = true;
 	}
 }
 
 void ViewportRenderer::updateView(FPosition topLeft, FPosition bottomRight) {
-	std::lock_guard<std::mutex> lock(viewMux);
-	newViewData.viewportViewMat = glm::ortho(topLeft.x, bottomRight.x, topLeft.y, bottomRight.y);
-	newViewData.viewBounds = { topLeft, bottomRight };
-	float viewWidth = bottomRight.x - topLeft.x;
-	float viewHeight = bottomRight.y - topLeft.y;
-	newViewData.viewScale = std::min(viewWidth, viewHeight);
+	{
+		std::lock_guard<std::mutex> lock(viewMux);
+		newViewData.viewportViewMat = glm::ortho(topLeft.x, bottomRight.x, topLeft.y, bottomRight.y);
+		newViewData.viewBounds = { topLeft, bottomRight };
+		float viewWidth = bottomRight.x - topLeft.x;
+		float viewHeight = bottomRight.y - topLeft.y;
+		newViewData.viewScale = std::min(viewWidth, viewHeight);
+	}
+	{
+		std::lock_guard lock(imagesToRecreateMux);
+		for (unsigned int i = 0; i < FRAMES_IN_FLIGHT; i++)	imagesToRecreate[i] = true;
+	}
 }
 
-VkDescriptorSet ViewportRenderer::getLatestImage() {
+class BorrowedImageDetector {
+public:
+	BorrowedImageDetector(std::atomic<int>& currentBorrowedImage) : currentBorrowedImage(currentBorrowedImage) {}
+	~BorrowedImageDetector() { currentBorrowedImage.store(-1); }
+private:
+	std::atomic<int>& currentBorrowedImage;
+};
+
+std::pair<VkDescriptorSet, std::shared_ptr<void>> ViewportRenderer::getLatestImage() {
 	std::lock_guard<std::mutex> lock(imageMux);
-	// Return the texture that ImGui should read from
-	// Make sure images are actually created and ready
-	if (!imagesReady || imguiTextures.empty() || imguiReadTexture == VK_NULL_HANDLE) {
-		return VK_NULL_HANDLE;
+	if (!imageReady || imguiTextures.size() < FRAMES_IN_FLIGHT) {
+		return { VK_NULL_HANDLE, nullptr };
 	}
-	return imguiReadTexture;
+	{
+		unsigned int lastFrameIndex = (frames.getCurrentFrameIndex() - 1) % FRAMES_IN_FLIGHT;
+		VkDescriptorSet descriptorSet = imguiTextures[lastFrameIndex];
+		if (descriptorSet == VK_NULL_HANDLE) return { VK_NULL_HANDLE, nullptr };
+		currentBorrowedImage.store(lastFrameIndex);
+		return { descriptorSet, std::make_shared<BorrowedImageDetector>(currentBorrowedImage) } ;
+	}
 }
 
 ElementId ViewportRenderer::addSelectionObjectElement(const SelectionObjectElement& selection) {
@@ -429,37 +456,28 @@ void ViewportRenderer::createRenderPass() {
 }
 
 void ViewportRenderer::renderLoop() {
-	while(running) {
-		if (recreateImages) {
-			{
-				std::lock_guard<std::mutex> lock(viewMux);
-				viewData = newViewData;
-			}
-
-			// Wait for device idle before recreating images
-			device->waitIdle();
-
-			// Mark images as not ready
-			imagesReady = false;
-
-			{
-				std::lock_guard<std::mutex> lock(imageMux);
-				// Clear the read texture while we're recreating
-				imguiReadTexture = VK_NULL_HANDLE;
-			}
-
-			destroyImages();
-			createImages();
-
-			// Mark images as ready only after creation succeeds
-			imagesReady = true;
-			recreateImages = false;
-		}
-
-		// Don't try to render if images aren't ready
-		if (!imagesReady || msaaImages.empty() || resolveImages.empty() || imguiTextures.empty()) {
+	while(running.load()) {
+		uint32_t currentFrameIndex = frames.getCurrentFrameIndex();
+		if (currentFrameIndex == currentBorrowedImage.load()) {
 			std::this_thread::sleep_for(std::chrono::milliseconds(16));
 			continue;
+		}
+
+		{
+			std::lock_guard lock(imagesToRecreateMux);
+			if (imagesToRecreate[currentFrameIndex]) {
+				{
+					std::lock_guard<std::mutex> lock(viewMux);
+					viewData = newViewData;
+				}
+				std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
+				destroyImage(currentFrameIndex);
+				createImage(currentFrameIndex);
+				if (imagesToRecreate[currentFrameIndex]) {
+					std::this_thread::sleep_for(std::chrono::milliseconds(16));
+					continue;
+				}
+			}
 		}
 
 		Frame& frame = frames.getCurrentFrame();
@@ -470,12 +488,12 @@ void ViewportRenderer::renderLoop() {
 		// Mark frame as started
 		frames.startCurrentFrame();
 
-		// Get the current render target index
-		uint32_t renderIndex = frames.getCurrentFrameIndex();
-
 		// Record command buffer
-		vkResetCommandBuffer(frame.mainCommandBuffer, 0);
-		renderToCommandBuffer(frame, renderIndex);
+		{
+			std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
+			vkResetCommandBuffer(frame.mainCommandBuffer, 0);
+		}
+		renderToCommandBuffer(frame, currentFrameIndex);
 
 		// Submit to graphics queue
 		VkSubmitInfo submitInfo{};
@@ -488,18 +506,16 @@ void ViewportRenderer::renderLoop() {
 			continue;
 		}
 
-		// Update which texture ImGui should read from (only after successful submission)
 		{
 			std::lock_guard<std::mutex> lock(imageMux);
-			imguiReadTexture = imguiTextures[renderIndex];
-			// Mark images as ready after first successful render
-			if (!imagesReady) {
-				imagesReady = true;
-			}
+			imageReady = true;
 		}
-
-		frames.incrementFrame();
+		{
+			std::lock_guard<std::mutex> lock(framesMutex);
+			frames.incrementFrame();
+		}
 	}
+	device->waitIdle();
 }
 
 void ViewportRenderer::renderToCommandBuffer(Frame& frame, uint32_t imageIndex) {
@@ -518,20 +534,13 @@ void ViewportRenderer::renderToCommandBuffer(Frame& frame, uint32_t imageIndex) 
 	clearValues[0].color = { { 0.0f, 0.0f, 0.0f, 1.0f } }; // MSAA attachment
 	clearValues[1].color = { { 0.0f, 0.0f, 0.0f, 1.0f } }; // Resolve attachment
 
-	// Get view data once for the whole render
-	ViewportViewData localViewData;
-	{
-		std::lock_guard<std::mutex> lock(viewMux);
-		localViewData = viewData;
-	}
-
 	// Begin render pass
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassInfo.renderPass = renderPass;
 	renderPassInfo.framebuffer = framebuffers[imageIndex];
 	renderPassInfo.renderArea.offset = {0, 0};
-	renderPassInfo.renderArea.extent = localViewData.viewportSize;
+	renderPassInfo.renderArea.extent = viewData.viewportSize;
 	renderPassInfo.clearValueCount = 2;
 	renderPassInfo.pClearValues = clearValues;
 
@@ -541,19 +550,19 @@ void ViewportRenderer::renderToCommandBuffer(Frame& frame, uint32_t imageIndex) 
 	VkViewport viewport{};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
-	viewport.width = static_cast<float>(localViewData.viewportSize.width);
-	viewport.height = static_cast<float>(localViewData.viewportSize.height);
+	viewport.width = static_cast<float>(viewData.viewportSize.width);
+	viewport.height = static_cast<float>(viewData.viewportSize.height);
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 	vkCmdSetViewport(frame.mainCommandBuffer, 0, 1, &viewport);
 
 	VkRect2D scissor{};
 	scissor.offset = {0, 0};
-	scissor.extent = localViewData.viewportSize;
+	scissor.extent = viewData.viewportSize;
 	vkCmdSetScissor(frame.mainCommandBuffer, 0, 1, &scissor);
 
 	// Render viewport content - only if viewport has valid dimensions
-	if (localViewData.viewportSize.width > 0 && localViewData.viewportSize.height > 0) {
+	if (viewData.viewportSize.width > 0 && viewData.viewportSize.height > 0) {
 		render(frame);
 	}
 
@@ -565,111 +574,71 @@ void ViewportRenderer::renderToCommandBuffer(Frame& frame, uint32_t imageIndex) 
 	}
 }
 
-void ViewportRenderer::destroyImages() {
-	// Mark images as not ready immediately
-	imagesReady = false;
+void ViewportRenderer::destroyImage(unsigned int index) {
+	if (!createdImages[index]) return;
 
-	// Wait for all frames to complete their rendering
-	// This ensures ImGui is done using the descriptor sets
-	for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
-		frames.waitForCurrentFrameCompletion();
-		frames.incrementFrame();
-	}
+	device->waitIdleNoMux();
 
-	// Also wait for device to be completely idle
-	device->waitIdle();
+	ImGui_ImplVulkan_RemoveTexture(imguiTextures[index]);
+	vkDestroyFramebuffer(device->getDevice(), framebuffers[index], nullptr);
+	::destroyImage(msaaImages[index]);
+	::destroyImage(resolveImages[index]);
 
-	// Clear the read texture so new ImGui frames won't try to use it
-	imguiReadTexture = VK_NULL_HANDLE;
-
-	// Now safe to destroy ImGui textures
-	for (VkDescriptorSet texture : imguiTextures) {
-		if (texture != VK_NULL_HANDLE) {
-			ImGui_ImplVulkan_RemoveTexture(texture);
-		}
-	}
-	imguiTextures.clear();
-
-	// Destroy framebuffers
-	for (VkFramebuffer framebuffer : framebuffers) {
-		vkDestroyFramebuffer(device->getDevice(), framebuffer, nullptr);
-	}
-	framebuffers.clear();
-
-	// Destroy images
-	for (AllocatedImage& image : msaaImages) {
-		destroyImage(image);
-	}
-	msaaImages.clear();
-
-	for (AllocatedImage& image : resolveImages) {
-		destroyImage(image);
-	}
-	resolveImages.clear();
+	createdImages[index] = false;
 }
 
-void ViewportRenderer::createImages() {
-	if (viewData.viewportSize.width == 0 || viewData.viewportSize.height == 0) {
-		return;
-	}
+void ViewportRenderer::createImage(unsigned int index) {
+	if (viewData.viewportSize.width == 0 || viewData.viewportSize.height == 0) return;
+
+	imagesToRecreate[index] = false;
 
 	VkExtent3D imageSize = {viewData.viewportSize.width, viewData.viewportSize.height, 1};
 	VkSampleCountFlagBits msaaSamples = device->getMaxUsableSampleCount();
 
-	// Resize arrays
-	msaaImages.resize(FRAMES_IN_FLIGHT);
-	resolveImages.resize(FRAMES_IN_FLIGHT);
-	framebuffers.resize(FRAMES_IN_FLIGHT);
-	imguiTextures.resize(FRAMES_IN_FLIGHT);
+	// Create MSAA image (transient - doesn't need to be stored)
+	msaaImages[index] = ::createImage(
+		device,
+		imageSize,
+		VK_FORMAT_R8G8B8A8_UNORM,
+		VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+		false,
+		msaaSamples
+	);
 
-	for (size_t i = 0; i < FRAMES_IN_FLIGHT; i++) {
-		// Create MSAA image (transient - doesn't need to be stored)
-		msaaImages[i] = createImage(
-			device,
-			imageSize,
-			VK_FORMAT_R8G8B8A8_UNORM,
-			VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-			false,
-			msaaSamples
-		);
+	// Create resolve image (non-MSAA, for ImGui to sample)
+	resolveImages[index] = ::createImage(
+		device,
+		imageSize,
+		VK_FORMAT_R8G8B8A8_UNORM,
+		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		false,
+		VK_SAMPLE_COUNT_1_BIT
+	);
 
-		// Create resolve image (non-MSAA, for ImGui to sample)
-		resolveImages[i] = createImage(
-			device,
-			imageSize,
-			VK_FORMAT_R8G8B8A8_UNORM,
-			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			false,
-			VK_SAMPLE_COUNT_1_BIT
-		);
+	// Create framebuffer with both attachments
+	std::array<VkImageView, 2> attachments = {
+		msaaImages[index].imageView,    // Color attachment (MSAA)
+		resolveImages[index].imageView  // Resolve attachment (non-MSAA)
+	};
 
-		// Create framebuffer with both attachments
-		std::array<VkImageView, 2> attachments = {
-			msaaImages[i].imageView,    // Color attachment (MSAA)
-			resolveImages[i].imageView  // Resolve attachment (non-MSAA)
-		};
+	VkFramebufferCreateInfo framebufferInfo{};
+	framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+	framebufferInfo.renderPass = renderPass;
+	framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+	framebufferInfo.pAttachments = attachments.data();
+	framebufferInfo.width = viewData.viewportSize.width;
+	framebufferInfo.height = viewData.viewportSize.height;
+	framebufferInfo.layers = 1;
 
-		VkFramebufferCreateInfo framebufferInfo{};
-		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass = renderPass;
-		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-		framebufferInfo.pAttachments = attachments.data();
-		framebufferInfo.width = viewData.viewportSize.width;
-		framebufferInfo.height = viewData.viewportSize.height;
-		framebufferInfo.layers = 1;
-
-		if (vkCreateFramebuffer(device->getDevice(), &framebufferInfo, nullptr, &framebuffers[i]) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create framebuffer!");
-		}
-
-		// Create ImGui descriptor for the resolve image
-		imguiTextures[i] = ImGui_ImplVulkan_AddTexture(
-			sampler,
-			resolveImages[i].imageView,
-			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-		);
+	if (vkCreateFramebuffer(device->getDevice(), &framebufferInfo, nullptr, &framebuffers[index]) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create framebuffer!");
 	}
 
-	// Don't set imguiReadTexture here - let the render loop set it after the first frame renders
-	// This ensures we never expose an image that hasn't been rendered to yet
+	imguiTextures[index] = ImGui_ImplVulkan_AddTexture(
+		sampler,
+		resolveImages[index].imageView,
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+	);
+
+	createdImages[index] = true;
 }

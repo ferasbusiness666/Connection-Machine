@@ -27,7 +27,6 @@ public:
 
 private:
 	void createColorResources();
-	void cleanupColorResources();
 	void renderToCommandBuffer(Frame& frame, uint32_t imageIndex);
 	void createRenderPass();
 	void recreateSwapchain();

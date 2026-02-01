@@ -44,7 +44,7 @@ public:
 	void updateViewFrame(glm::vec2 size);
 	void updateView(FPosition topLeft, FPosition bottomRight);
 
-	VkDescriptorSet getLatestImage();
+	std::pair<VkDescriptorSet, std::shared_ptr<void>> getLatestImage();
 
 	// elements
 	ElementId addSelectionObjectElement(const SelectionObjectElement& selection);
@@ -62,8 +62,8 @@ public:
 	void removeHalfConnectionPreview(ElementId halfConnectionPreview);
 
 private:
-	void destroyImages();
-	void createImages();
+	void destroyImage(unsigned int index);
+	void createImage(unsigned int index);
 	void createRenderPass();
 	void render(Frame& frame);
 	void renderToCommandBuffer(Frame& frame, uint32_t imageIndex);
@@ -91,8 +91,6 @@ private:
 	ViewportViewData viewData{};
 	std::mutex viewMux;
 
-	std::atomic<bool> recreateImages = false;
-
 	// renderers
 	VkRenderPass renderPass;
 	GridRenderer gridRenderer;
@@ -101,18 +99,21 @@ private:
 
 	VkSampler sampler;
 
+	std::mutex framesMutex;
 	FrameManager frames;
 	std::thread renderThread;
 	std::atomic<bool> running = false;
 
-	// Double-buffered images for offscreen rendering
+	std::atomic<int> currentBorrowedImage = -1;
+	std::mutex imagesToRecreateMux;
+	std::vector<bool> createdImages;
+	std::vector<bool> imagesToRecreate;
 	std::vector<VkFramebuffer> framebuffers;
 	std::vector<AllocatedImage> msaaImages;      // MSAA render targets
 	std::vector<AllocatedImage> resolveImages;   // Resolved images for ImGui
 	std::vector<VkDescriptorSet> imguiTextures;  // ImGui descriptor sets
-	VkDescriptorSet imguiReadTexture = VK_NULL_HANDLE; // Current texture for ImGui to read
-	std::mutex imageMux; // Protects imguiReadTexture
-	std::atomic<bool> imagesReady = false; // Track if images are fully initialized
+	std::atomic<bool> imageReady = false;
+	std::mutex imageMux;
 };
 
 #endif

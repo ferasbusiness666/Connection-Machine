@@ -168,13 +168,13 @@ VkSurfaceKHR SdlWindow::createVkSurface(VkInstance instance) {
 	return surface;
 }
 
-void SdlWindow::doRendering() {
+void SdlWindow::doRendering(std::function<void(std::shared_ptr<void>)> preserveForFrame) {
 	std::lock_guard mux(renderingMux);
 	if (killed) {
-		logError("Can't render killed SdlWindow!", "SdlWindow::doRendering");
+		// logError("Can't render killed SdlWindow!", "SdlWindow::doRendering");
 		return;
 	}
-	render();
+	render(preserveForFrame);
 }
 
 void SdlWindow::toggleBorderlessFullscreen() {
@@ -216,11 +216,13 @@ void SdlWindow::kill(bool forced) {
 		logError("Cant kill already killed window!", "SdlWindow::kill");
 		return;
 	}
-	std::lock_guard mux(renderingMux);
-	bool subclassKilled = killWindow(forced);
-	if (forced) assert(subclassKilled);
-	if (!(forced || subclassKilled)) return;
-	killed = true; // set killed afterward to allow the subclasses to access values one last time
+	{
+		std::lock_guard mux(renderingMux);
+		bool subclassKilled = killWindow(forced);
+		if (forced) assert(subclassKilled);
+		if (!(forced || subclassKilled)) return;
+		killed = true; // set killed afterward to allow the subclasses to access values one last time
+	}
 	logInfo("Destroying SDL window...");
 	MainRenderer::get().deregisterWindow(windowId);
 	SDL_RemoveEventWatch(resizingEventWatcher, this);

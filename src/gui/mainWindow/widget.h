@@ -11,7 +11,7 @@ class Widget {
 public:
 	Widget(WidgetId widgetId, MainWindow& mainWindow) : widgetId(widgetId), mainWindow(mainWindow), widgetIdStr(fmt::format("Widget {}", widgetId)) { }
 	virtual ~Widget() = default;
-	virtual void render() = 0;
+	virtual void render(std::function<void(std::shared_ptr<void>)> preserveForFrame) = 0;
 	MainWindow& getMainWindow() const { return mainWindow; }
 	WidgetId getWidgetId() const { return widgetId; }
 	const std::string& getWidgetIdStr() const { return widgetIdStr; }

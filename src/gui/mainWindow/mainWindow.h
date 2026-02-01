@@ -42,8 +42,8 @@ public:
 	}
 
 private:
-	// bool killWindow(bool forced) override; // we will do this layer
-	void render() override;
+	bool killWindow(bool forced) override { widgets.clear(); return true; }
+	void render(std::function<void(std::shared_ptr<void>)> preserveForFrame) override;
 	void processEvent(SDL_Event& event) override;
 	nlohmann::json dumpState() const override { return "Main Window"; }
 
