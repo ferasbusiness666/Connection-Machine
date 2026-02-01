@@ -47,8 +47,8 @@ public:
 	const Address& getAddress() const { return address; }
 
 	// void setBackend(Backend* backend);
-	void setSimulatoruator(simulator_id_t simulatorId, const Address& address = Address());
-	void setSimulatoruator(const EvalLogicSimulator* simulator, const Address& address = Address());
+	void setSimulator(simulator_id_t simulatorId, const Address& address = Address());
+	void setSimulator(const EvalLogicSimulator* simulator, const Address& address = Address());
 	void setCircuit(std::shared_ptr<Circuit> circuit);
 	void setCircuit(circuit_id_t circuitId);
 

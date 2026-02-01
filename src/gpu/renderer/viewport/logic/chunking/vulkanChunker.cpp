@@ -529,7 +529,7 @@ void VulkanChunker::updateSimulatorIds(const std::vector<SimulatorMappingUpdate>
 	}
 }
 
-void VulkanChunker::setSimulatoruator(const EvalLogicSimulator* simulator, const Address& address) {
+void VulkanChunker::setSimulator(const EvalLogicSimulator* simulator, const Address& address) {
 	if (this->simulator) {
 		this->simulator->disconnectListener(this);
 	}

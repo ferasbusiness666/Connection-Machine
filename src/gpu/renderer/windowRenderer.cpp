@@ -25,7 +25,6 @@ WindowRenderer::WindowRenderer(SdlWindow* sdlWindow) : sdlWindow(sdlWindow) {
 	swapchain.createFramebuffers(renderPass, colorImage);
 
 	// subrenderers
-	viewportRenderer.init(device, renderPass);
 	imGuiRenderer.emplace(sdlWindow->getHandlePtr(), renderPass, FRAMES_IN_FLIGHT);
 
 	// start render loop
@@ -46,9 +45,6 @@ WindowRenderer::~WindowRenderer() {
 	frames.cleanup();
 	// clean up color image for multisampled
 	destroyImage(colorImage);
-
-	// delete viewport renderer
-	viewportRenderer.cleanup();
 }
 
 void WindowRenderer::resize(std::pair<uint32_t, uint32_t> windowSize) {
@@ -185,12 +181,6 @@ void WindowRenderer::renderToCommandBuffer(Frame& frame, uint32_t imageIndex) {
 	{
 		// imgui
 		imGuiRenderer->endFrame(frame.mainCommandBuffer);
-
-		// viewports // should be moved to own thread for render
-		std::lock_guard<std::mutex> lock(viewportRenderersMux);
-		for (ViewportRenderData* viewport : viewportRenderDatas) {
-			viewportRenderer.render(frame, viewport);
-		}
 	}
 
 	// end render pass
@@ -297,19 +287,4 @@ void WindowRenderer::recreateSwapchain() {
 void WindowRenderer::setImGuiRenderFunc(std::function<void()> imGuiRenderFunc) {
 	std::lock_guard<std::mutex> lock(imGuiRenderFuncMux);
 	this->imGuiRenderFunc = imGuiRenderFunc;
-}
-
-void WindowRenderer::registerViewportRenderData(ViewportRenderData *viewportRenderData) {
-	std::lock_guard<std::mutex> lock(viewportRenderersMux);
-	viewportRenderDatas.insert(viewportRenderData);
-}
-
-void WindowRenderer::deregisterViewportRenderData(ViewportRenderData* viewportRenderData) {
-	std::lock_guard<std::mutex> lock(viewportRenderersMux);
-	viewportRenderDatas.erase(viewportRenderData);
-}
-
-bool WindowRenderer::hasViewportRenderData(ViewportRenderData* viewportRenderData) {
-	std::lock_guard<std::mutex> lock(viewportRenderersMux);
-	return viewportRenderDatas.contains(viewportRenderData);
 }

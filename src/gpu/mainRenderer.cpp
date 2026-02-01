@@ -117,38 +117,32 @@ void MainRenderer::setTextureVirtualConnection(BlockRenderDataId blockRenderData
 }
 
 void MainRenderer::regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDataId) {
-	for (std::pair<const unsigned int, ViewportRenderData>& pair : viewportRenderers) {
+	for (std::pair<const unsigned int, ViewportRenderer>& pair : viewportRenderers) {
 		pair.second.getChunker().regenerateAllChunksWithBlock(blockRenderDataId);
 	}
 }
 
-ViewportId MainRenderer::registerViewport(WindowId windowId, glm::vec2 origin, glm::vec2 size) {
-	auto iter = windowRenderers.find(windowId);
-	if (iter == windowRenderers.end()) {
-		logError("Failed to call registerViewport on non existent window {}", "MainRenderer", windowId);
-		return 0;
-	}
-	auto pair = viewportRenderers.try_emplace(getNewViewportId(), iter->second.getDevice());
-	iter->second.registerViewportRenderData(&(pair.first->second));
+ViewportId MainRenderer::registerViewport(glm::vec2 size) {
+	viewportRenderers.try_emplace(getNewViewportId(), getVulkanInstance().getDevice());
 	return lastViewportId;
 }
 
-void MainRenderer::moveViewport(ViewportId viewportId, WindowId windowId, glm::vec2 origin, glm::vec2 size) {
+void MainRenderer::resizeViewport(ViewportId viewportId, glm::vec2 size) {
 	auto viewportIter = viewportRenderers.find(viewportId);
 	if (viewportIter == viewportRenderers.end()) {
 		logError("Failed to call moveViewport on non existent viewport {}", "MainRenderer", viewportId);
 		return;
 	}
-	auto windowIter = windowRenderers.find(windowId);
-	if (windowIter == windowRenderers.end()) {
-		logError("Failed to call moveViewport on non existent window {}", "MainRenderer", windowId);
-		return;
-	}
-	if (! windowIter->second.hasViewportRenderData(&(viewportIter->second))) {
-		logError("moving viewport to other window not supported yet");
-		return;
-	}
-	viewportIter->second.updateViewFrame(origin, {std::max(size.x, 1.f), std::max(size.y, 1.f)});
+	// auto windowIter = windowRenderers.find(windowId);
+	// if (windowIter == windowRenderers.end()) {
+	// 	logError("Failed to call moveViewport on non existent window {}", "MainRenderer", windowId);
+	// 	return;
+	// }
+	// if (! windowIter->second.hasViewportRenderer(&(viewportIter->second))) {
+	// 	logError("moving viewport to other window not supported yet");
+	// 	return;
+	// }
+	viewportIter->second.updateViewFrame({std::max(size.x, 1.f), std::max(size.y, 1.f)});
 }
 
 void MainRenderer::moveViewportView(ViewportId viewportId, FPosition topLeft, FPosition bottomRight) {
@@ -160,26 +154,37 @@ void MainRenderer::moveViewportView(ViewportId viewportId, FPosition topLeft, FP
 	iter->second.updateView(topLeft, bottomRight);
 }
 
-void MainRenderer::setViewportSimulatoruator(ViewportId viewportId, const EvalLogicSimulator* simulator, Address address) {
+void MainRenderer::setViewportSimulator(ViewportId viewportId, const EvalLogicSimulator* simulator, Address address) {
 	auto iter = viewportRenderers.find(viewportId);
 	if (iter == viewportRenderers.end()) {
-		logError("Failed to call setViewportSimulatoruator on non existent viewport {}", "MainRenderer", viewportId);
+		logError("Failed to call setViewportSimulator on non existent viewport {}", "MainRenderer", viewportId);
 		return;
 	}
-	iter->second.setSimulatoruator(simulator, address);
+	iter->second.setSimulator(simulator, address);
+}
+
+VkDescriptorSet MainRenderer::getViewportLatestImage(ViewportId viewportId) {
+	auto iter = viewportRenderers.find(viewportId);
+	if (iter == viewportRenderers.end()) {
+		logError("Failed to call getViewportLatestImage on non existent viewport {}", "MainRenderer", viewportId);
+		return nullptr;
+	}
+	return iter->second.getLatestImage();
 }
 
 void MainRenderer::resetViewport(ViewportId viewportId) {
 	auto iter = viewportRenderers.find(viewportId);
 	if (iter == viewportRenderers.end()) {
-		logError("Failed to call setViewportSimulatoruator on non existent viewport {}", "MainRenderer", viewportId);
+		logError("Failed to call setViewportSimulator on non existent viewport {}", "MainRenderer", viewportId);
 		return;
 	}
 	iter->second.getChunker().reset();
-	iter->second.setSimulatoruator(nullptr, Address());
+	iter->second.setSimulator(nullptr, Address());
 }
 
-void MainRenderer::deregisterViewport(ViewportId viewport) { }
+void MainRenderer::deregisterViewport(ViewportId viewport) {
+	viewportRenderers.erase(viewport);
+}
 
 void MainRenderer::startMakingEdits(ViewportId viewportId) {
 	auto iter = viewportRenderers.find(viewportId);

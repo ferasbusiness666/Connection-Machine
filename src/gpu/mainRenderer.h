@@ -4,6 +4,7 @@
 #include <glm/ext/vector_float2.hpp>
 
 #include "backend/evaluator/simulator/evalLogicSimulator.h"
+#include "gpu/renderer/viewport/viewportRenderer.h"
 #include "gui/sdl/sdlWindow.h"
 
 #include "renderer/windowRenderer.h"
@@ -51,12 +52,12 @@ public:
 	void setTextureVirtualConnection(BlockRenderDataId blockRenderDataId, std::optional<virtual_connection_id_t> textureVirtualConnection);
 	void regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDataId);
 
-
 	// Viewports ================================================================================================================================
-	ViewportId registerViewport(WindowId windowId, glm::vec2 origin, glm::vec2 size);
-	void moveViewport(ViewportId viewportId, WindowId windowId, glm::vec2 origin, glm::vec2 size);
+	ViewportId registerViewport(glm::vec2 size);
+	void resizeViewport(ViewportId viewportId, glm::vec2 size);
 	void moveViewportView(ViewportId viewportId, FPosition topLeft, FPosition bottomRight);
-	void setViewportSimulatoruator(ViewportId viewportId, const EvalLogicSimulator* simulator, Address address); // tmp circuit
+	void setViewportSimulator(ViewportId viewportId, const EvalLogicSimulator* simulator, Address address); // tmp circuit
+	VkDescriptorSet getViewportLatestImage(ViewportId viewportId);
 	void resetViewport(ViewportId viewportId);
 	void deregisterViewport(ViewportId viewportId);
 
@@ -95,7 +96,7 @@ private:
 	WindowId lastWindowId = 0;
 	ViewportId lastViewportId = 0;
 	std::map<WindowId, WindowRenderer> windowRenderers;
-	std::map<ViewportId, ViewportRenderData> viewportRenderers;
+	std::map<ViewportId, ViewportRenderer> viewportRenderers;
 	BlockRenderDataManager blockRenderDataManager;
 };
 

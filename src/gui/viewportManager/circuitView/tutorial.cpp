@@ -17,7 +17,7 @@ void Tutorial::StartTutorial() {
 	circuit_id_t circuitId = circuitView->getBackend().getCircuitManager().createNewCircuit(false);
 	std::optional<simulator_id_t> simulatorId = circuitView->getBackend().createSimulator(circuitId);
 	if (!simulatorId) return;
-	circuitView->setSimulatoruator(simulatorId.value());
+	circuitView->setSimulator(simulatorId.value());
 
 	simulator = circuitView->getBackend().getSimulator(simulatorId.value());
 	SharedCircuit circuit = circuitView->getBackend().getCircuitManager().getCircuit(circuitId);
