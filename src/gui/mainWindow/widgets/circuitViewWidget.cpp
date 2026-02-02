@@ -2,34 +2,141 @@
 
 #include "../mainWindow.h"
 #include "gpu/mainRenderer.h"
+#include "gui/helper/keybindHelpers.h"
 #include "gui/viewportManager/circuitView/circuitView.h"
+#include "gui/viewportManager/circuitView/events/customEvents.h"
 #include "imgui/imgui.h"
 
 CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) : Widget(widgetId, mainWindow) {
 	ViewportId viewportId = MainRenderer::get().registerViewport({ 100, 100 });
 	circuitView = std::make_unique<CircuitView>(mainWindow.getEnvironment(), viewportId);
+	circuit_id_t circuitId = mainWindow.getEnvironment().getBackend().createCircuit();
+	std::optional<simulator_id_t> simulatorId = mainWindow.getEnvironment().getBackend().createSimulator(circuitId);
+	circuitView->setSimulator(simulatorId.value(), Address());
+	SharedCircuit circuit = mainWindow.getEnvironment().getBackend().getCircuit(circuitId);
+	// circuit->tryInsertOverArea(Position(-10, -10), Position(10, 10), Orientation(), BlockType::AND);
+	setupGUIValue<float>("AspectRatio", 1, [&](const float& aspectRatio) { circuitView->getViewManager().setAspectRatio(aspectRatio); });
+	setupGUIValue<bool>("MouseLeftDown", false, [&](const bool& state) {
+		if (state) {
+			std::set<ImGuiKey> pressedKeys = getPressedKeys();
+			std::lock_guard lock(Settings::getSettingsMapReadLock());
+			if (isPressingKeys(*Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Pick Block"), pressedKeys)) {
+				std::unique_ptr<CircuitView>& circuitView = this->circuitView;
+				Circuit* circuit = circuitView->getCircuit();
+				if (circuit) {
+					const Block* block = circuit->getBlockContainer().getBlock(circuitView->getViewManager().getPointerPosition().snap());
+					if (block) {
+						BlockType type = block->type();
+						Orientation orientation = block->getOrientation();
+						ToolManagerManager& toolManagerManager = this->getMainWindow().getToolManagerManager();
+						toolManagerManager.setBlock(type);
+						if (*Settings::get<SettingType::BOOL>("Preferences/Editing/Pick Block Copy Orientation")) {
+							toolManagerManager.setOrientation(orientation);
+						} else {
+							toolManagerManager.setOrientation(Orientation());
+						}
+						return;
+					}
+				}
+			}
+			if (isPressingKeys(*Settings::get<SettingType::KEYBIND>("Keybinds/Camera/Pan"), pressedKeys)) {
+				if (circuitView->getEventRegister().doEvent(PositionEvent("View Attach Anchor", circuitView->getViewManager().getPointerPosition()))) {
+					return;
+				}
+			}
+			circuitView->getEventRegister().doEvent(PositionEvent("Tool Primary Activate", circuitView->getViewManager().getPointerPosition()));
+		} else {
+			circuitView->getEventRegister().doEvent(PositionEvent("View Dettach Anchor", circuitView->getViewManager().getPointerPosition()));
+			circuitView->getEventRegister().doEvent(PositionEvent("tool primary deactivate", circuitView->getViewManager().getPointerPosition()));
+		}
+	});
+	setupGUIValue<bool>("MouseRightDown", false, [&](const bool& state) {
+		if (state) {
+			circuitView->getEventRegister().doEvent(PositionEvent("Tool Secondary Activate", circuitView->getViewManager().getPointerPosition()));
+		} else {
+			circuitView->getEventRegister().doEvent(PositionEvent("tool secondary deactivate", circuitView->getViewManager().getPointerPosition()));
+		}
+	});
+	setupGUIValue<Vec2>("MousePosition", {0, 0}, [&](const Vec2& viewPos) {
+		circuitView->getEventRegister().doEvent(ViewPositionEvent("Pointer Move On View", viewPos));
+	});
+	setupGUIValue<bool>("MouseInView", false, [&](const bool& inView) {
+		// const Vec2* viewPos = getGUIValue<Vec2>("MousePosition");
+		// if (viewPos == nullptr) return;
+		if (inView) {
+			// if (viewPos->x < 0 || viewPos->y < 0 || viewPos->x > 1 || viewPos->y > 1) return;
+			circuitView->getEventRegister().doEvent(PositionEvent("pointer enter view", circuitView->getViewManager().getPointerPosition()));
+		} else {
+			// if (viewPos->x >= 0 && viewPos->y >= 0 && viewPos->x <= 1 && viewPos->y <= 1) return;
+			circuitView->getEventRegister().doEvent(PositionEvent("pointer exit view", circuitView->getViewManager().getPointerPosition()));
+		}
+	});
 }
 
-CircuitViewWidget::~CircuitViewWidget() { MainRenderer::get().deregisterViewport(circuitView->getViewportId()); }
+CircuitViewWidget::~CircuitViewWidget() {
+	ViewportId viewportId = circuitView->getViewportId();
+	circuitView.reset();
+	MainRenderer::get().deregisterViewport(viewportId);
+}
 
 void CircuitViewWidget::render(std::function<void(std::shared_ptr<void>)> preserveForFrame) {
-	ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(400, 300), ImGuiCond_FirstUseEver);
 	ImGui::Begin(getWidgetIdStr().c_str());
+	bool isHovered = false;
+	bool isFocused = false;
+	bool isActive = false;
+	bool leftClick = false;
+	bool rightClick = false;
+	ImVec2 mousePos;
+	ImGui::BeginChild("circuitView");
 	{
-		ImGui::BeginChild("CircuitView");
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-		circuitView->getViewManager().setAspectRatio(viewportPanelSize.x / viewportPanelSize.y); // prob needs to be does in a thread safe way.
-		MainRenderer::get().resizeViewport(circuitView->getViewportId(), { viewportPanelSize.x, viewportPanelSize.y });
-		std::pair<VkDescriptorSet, std::shared_ptr<void>> descriptor = MainRenderer::get().getViewportLatestImage(circuitView->getViewportId());
-		preserveForFrame(descriptor.second);
-		if (descriptor.first != VK_NULL_HANDLE) ImGui::Image(descriptor.first, ImVec2{ viewportPanelSize.x, viewportPanelSize.y });
-		// MainRenderer::get().moveViewport(
-		// 	circuitView->getViewportId(),
-		// 	getMainWindow().getWindowId(),
-		// 	{ ImGui::GetWindowPos().x * getMainWindow().getWindowScalingSize(), ImGui::GetWindowPos().y * getMainWindow().getWindowScalingSize() },
-		// 	{ ImGui::GetWindowSize().x * getMainWindow().getWindowScalingSize(), ImGui::GetWindowSize().y * getMainWindow().getWindowScalingSize() }
-		// );
+		ImVec2 viewportWindowScreenPos = ImGui::GetCursorScreenPos();
+		ImVec2 viewportWindowPos = ImGui::GetCursorPos();
+		{
+			MainRenderer::get().resizeViewport(circuitView->getViewportId(), { viewportPanelSize.x, viewportPanelSize.y });
+			std::pair<VkDescriptorSet, std::shared_ptr<void>> descriptor = MainRenderer::get().getViewportLatestImage(circuitView->getViewportId());
+			preserveForFrame(descriptor.second);
+			if (descriptor.first != VK_NULL_HANDLE) {
+				ImGui::Image(descriptor.first, ImVec2{ viewportPanelSize.x, viewportPanelSize.y });
+			} else {
+				ImGui::Text("RENDERING BROKEN!! :(");
+			}
+		}
+		ImGui::SetCursorPos(viewportWindowPos);
+		ImGui::InvisibleButton("circuitViewInvisibleButton", viewportPanelSize, ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight);
+		isActive = ImGui::IsItemActive();
+		isFocused = ImGui::IsItemFocused();
+		isHovered = ImGui::IsItemHovered();
+		leftClick = ImGui::IsMouseDown(ImGuiMouseButton_Left);
+		rightClick = ImGui::IsMouseDown(ImGuiMouseButton_Right);
+		mousePos = ImGui::GetMousePos();
+		mousePos = ImVec2(mousePos.x - viewportWindowScreenPos.x, mousePos.y - viewportWindowScreenPos.y);
+
+		setGUIValue_rendering<float>("AspectRatio", viewportPanelSize.x / viewportPanelSize.y);
+		setGUIValue_rendering("MouseLeftDown", leftClick);
+		setGUIValue_rendering("MouseRightDown", rightClick);
+		setGUIValue_rendering("MousePosition", Vec2(mousePos.x / viewportPanelSize.x, mousePos.y / viewportPanelSize.y));
+		setGUIValue_rendering("MouseInView", isHovered);
+
+		ImGui::SetCursorPos(viewportWindowPos);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.0f, 2.0f));
+		ImGui::BeginChild("circuitView", {0, 0}, ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_NoInputs);
+		{
+			ImGui::PopStyleVar();
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+			ImGui::Text("%s", fmt::format("key press count: {}", getPressedKeys().size()).c_str());
+			ImGui::Text("%s", fmt::format("isHovered: {}", isHovered).c_str());
+			ImGui::Text("%s", fmt::format("isFocused: {}", isFocused).c_str());
+			ImGui::Text("%s", fmt::format("isActive: {}", isActive).c_str());
+			ImGui::Text("%s", fmt::format("leftClick: {}", leftClick).c_str());
+			ImGui::Text("%s", fmt::format("rightClick: {}", rightClick).c_str());
+			ImGui::Text("%s", fmt::format("mousePos: ({}, {})", mousePos.x, mousePos.y).c_str());
+			ImGui::Text("%s", fmt::format("ImGui {} fps. Circuit {} fps.", (int)ImGui::GetIO().Framerate, MainRenderer::get().getFps(circuitView->getViewportId())).c_str());
+			ImGui::PopStyleColor();
+		}
 		ImGui::EndChild();
 	}
+	ImGui::EndChild();
 	ImGui::End();
 }

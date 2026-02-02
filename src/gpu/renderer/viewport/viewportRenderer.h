@@ -46,6 +46,8 @@ public:
 
 	std::pair<VkDescriptorSet, std::shared_ptr<void>> getLatestImage();
 
+	float getFps() const { return fps.load(); }
+
 	// elements
 	ElementId addSelectionObjectElement(const SelectionObjectElement& selection);
 	ElementId addSelectionElement(const SelectionElement& selection);
@@ -103,6 +105,8 @@ private:
 	FrameManager frames;
 	std::thread renderThread;
 	std::atomic<bool> running = false;
+
+	std::atomic<float> fps = 0;
 
 	std::atomic<int> currentBorrowedImage = -1;
 	std::mutex imagesToRecreateMux;

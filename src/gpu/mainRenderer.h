@@ -58,6 +58,7 @@ public:
 	void moveViewportView(ViewportId viewportId, FPosition topLeft, FPosition bottomRight);
 	void setViewportSimulator(ViewportId viewportId, const EvalLogicSimulator* simulator, Address address); // tmp circuit
 	std::pair<VkDescriptorSet, std::shared_ptr<void>> getViewportLatestImage(ViewportId viewportId);
+	float getFps(ViewportId viewportId) const;
 	void resetViewport(ViewportId viewportId);
 	void deregisterViewport(ViewportId viewportId);
 

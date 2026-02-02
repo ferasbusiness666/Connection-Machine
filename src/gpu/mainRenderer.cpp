@@ -172,6 +172,15 @@ std::pair<VkDescriptorSet, std::shared_ptr<void>> MainRenderer::getViewportLates
 	return iter->second.getLatestImage();
 }
 
+float MainRenderer::getFps(ViewportId viewportId) const {
+	auto iter = viewportRenderers.find(viewportId);
+	if (iter == viewportRenderers.end()) {
+		logError("Failed to call getFps on non existent viewport {}", "MainRenderer", viewportId);
+		return 0;
+	}
+	return iter->second.getFps();
+}
+
 void MainRenderer::resetViewport(ViewportId viewportId) {
 	auto iter = viewportRenderers.find(viewportId);
 	if (iter == viewportRenderers.end()) {

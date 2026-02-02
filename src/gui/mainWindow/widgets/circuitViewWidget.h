@@ -13,6 +13,7 @@ public:
 	void render(std::function<void(std::shared_ptr<void>)> preserveForFrame) override final;
 private:
 	std::unique_ptr<CircuitView> circuitView;
+
 };
 
 #endif /* circuitViewWidget_h */

@@ -483,7 +483,10 @@ void ViewportRenderer::renderLoop() {
 		Frame& frame = frames.getCurrentFrame();
 
 		// Wait for this frame to complete
-		frames.waitForCurrentFrameCompletion();
+		float time = frames.waitForCurrentFrameCompletion();
+		float alpha = 0.9f;
+		fps.store((alpha * time) + (1.0 - alpha) * fps);
+
 
 		// Mark frame as started
 		frames.startCurrentFrame();
