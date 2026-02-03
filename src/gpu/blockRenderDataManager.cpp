@@ -54,10 +54,9 @@ void BlockRenderDataManager::setBlockTexture(BlockRenderDataId blockRenderDataId
 	}
 	BlockTextureManager& blockTextureManager = MainRenderer::get().getVulkanInstance().getDevice()->getBlockTextureManager();
 	BlockTextureCords newBlockTextureCords = blockTextureManager.getBlockTextureCords(blockTextureId);
-	if (newBlockTextureCords != iter->second.blockTextureCords) {
-		iter->second.blockTextureCords = newBlockTextureCords;
-		MainRenderer::get().regenerateAllChunksWithBlock(blockRenderDataId);
-	}
+	if (newBlockTextureCords == iter->second.blockTextureCords) return;
+	iter->second.blockTextureCords = newBlockTextureCords;
+	MainRenderer::get().regenerateAllChunksWithBlock(blockRenderDataId);
 }
 
 void BlockRenderDataManager::setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize) {
@@ -68,10 +67,9 @@ void BlockRenderDataManager::setBlockTexture(BlockRenderDataId blockRenderDataId
 	}
 	BlockTextureManager& blockTextureManager = MainRenderer::get().getVulkanInstance().getDevice()->getBlockTextureManager();
 	BlockTextureCords newBlockTextureCords = blockTextureManager.getBlockTextureCords(blockTextureId, tileSize, smallestCordTile, blockSize);
-	if (newBlockTextureCords != iter->second.blockTextureCords) {
-		iter->second.blockTextureCords = newBlockTextureCords;
-		MainRenderer::get().regenerateAllChunksWithBlock(blockRenderDataId);
-	}
+	if (newBlockTextureCords == iter->second.blockTextureCords) return;
+	iter->second.blockTextureCords = newBlockTextureCords;
+	MainRenderer::get().regenerateAllChunksWithBlock(blockRenderDataId);
 }
 
 void BlockRenderDataManager::setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize, Vec2Int textureStepSize) {
@@ -141,11 +139,13 @@ void BlockRenderDataManager::setBlockPortName(BlockRenderDataId blockRenderDataI
 	portIter->second.portName = newPortName;
 }
 
-void BlockRenderDataManager::setBlockStatePortPosition(BlockRenderDataId blockRenderDataId, Vector blockStatePortPosition) {
+void BlockRenderDataManager::setTextureVirtualConnection(BlockRenderDataId blockRenderDataId, std::optional<virtual_connection_id_t> textureVirtualConnection) {
 	auto iter = blockRenderData.find(blockRenderDataId);
 	if (iter == blockRenderData.end()) {
-		logError("Failed to call setBlockStatePort on non existent BlockRenderData {}.", "BlockRenderDataManager", blockRenderDataId);
+		logError("Failed to call setTextureVirtualConnection on non existent BlockRenderData {}.", "BlockRenderDataManager", blockRenderDataId);
 		return;
 	}
-	iter->second.blockStatePortPosition = blockStatePortPosition;
+	if (iter->second.textureVirtualConnection == textureVirtualConnection) return;
+	iter->second.textureVirtualConnection = textureVirtualConnection;
+	MainRenderer::get().regenerateAllChunksWithBlock(blockRenderDataId);
 }

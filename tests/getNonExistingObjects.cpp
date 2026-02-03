@@ -1,6 +1,6 @@
 #include "getNonExistingObjects.h"
 
-#include "backend/evaluator/evaluator.h"
+#include "backend/evaluator/simulator/evalLogicSimulator.h"
 #include "environment/environment.h"
 
 TEST_F(GetNonExistingObjects, BlockContainer) {
@@ -49,22 +49,26 @@ TEST_F(GetNonExistingObjects, Evaluator) {
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
 	SharedCircuit circuit = environment.getBackend().getCircuit(circuitId);
 	ASSERT_NE(circuit, nullptr);
-	std::optional<evaluator_id_t> evaluatorId = environment.getBackend().createEvaluator(circuitId);
-	ASSERT_NE(evaluatorId, std::nullopt);
-	SharedEvaluator evaluator = environment.getBackend().getEvaluator(*evaluatorId);
-	ASSERT_NE(evaluator, nullptr);
-	ASSERT_EQ(evaluator->getBlockSimulatorId(Address(Position(10, 29))), 3);
-	ASSERT_EQ(evaluator->getBlockSimulatorIds(Address(Position(29, -86)), {Position(-21, 18)}), std::vector<simulator_id_t>{3});
-	ASSERT_EQ(evaluator->getState(Position(-1, 2)), X);
-	ASSERT_EQ(evaluator->getState(Position(0, 0)), X);
+	std::optional<simulator_id_t> simulatorId = environment.getBackend().createSimulator(circuitId);
+	ASSERT_NE(simulatorId, std::nullopt);
+	EvalLogicSimulator* simulator = environment.getBackend().getSimulator(*simulatorId);
+	ASSERT_NE(simulator, nullptr);
+	ASSERT_EQ(simulator->getVirtualConnectionSimulatorId(Address(Position(10, 29)), 0), (SimulatorStateIndexVecVariant)3);
+	std::vector<SimulatorStateIndexVecVariant> XstateVec = { 3 };
+	ASSERT_EQ(
+		simulator->getVirtualConnectionSimulatorIds(Address(Position(29, -86)), {{Position(-21, 18), 0}}),
+		XstateVec
+	);
+	ASSERT_EQ(simulator->getState(Position(-1, 2)), X);
+	ASSERT_EQ(simulator->getState(Position(0, 0)), X);
 }
 
 TEST_F(GetNonExistingObjects, Backend) {
 	Environment environment(false);
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
-	std::optional<evaluator_id_t> evaluatorId = environment.getBackend().createEvaluator(circuitId);
+	std::optional<simulator_id_t> simulatorId = environment.getBackend().createSimulator(circuitId);
 	ASSERT_EQ(environment.getBackend().getCircuit(0), nullptr);
 	ASSERT_EQ(environment.getBackend().getCircuit(194 + (circuitId == 194)), nullptr);
-	ASSERT_EQ(environment.getBackend().getEvaluator(0), nullptr);
-	ASSERT_EQ(environment.getBackend().getEvaluator(412 + (evaluatorId.value_or(0) == 412)), nullptr);
+	ASSERT_EQ(environment.getBackend().getSimulator(0), nullptr);
+	ASSERT_EQ(environment.getBackend().getSimulator(412 + (simulatorId.value_or(0) == 412)), nullptr);
 }

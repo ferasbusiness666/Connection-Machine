@@ -43,6 +43,9 @@ function(add_main_dependencies)
 		GITHUB_REPOSITORY google/brotli
 		GIT_TAG v1.2.0
 		EXCLUDE_FROM_ALL YES
+		OPTIONS
+			"BUILD_SHARED_LIBS OFF"
+			"BROTLI_BUILD_TOOLS OFF"
 		SOURCE_DIR "${EXTERNAL_DIR}/brotli"
 	)
 	if (brotli_ADDED)

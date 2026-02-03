@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include "environment/environment.h"
-#include "backend/evaluator/evaluator.h"
+#include "backend/evaluator/simulator/evalLogicSimulator.h"
 #include "computerAPI/directoryManager.h"
 #include "backend/blockData/blockDataManager.h"
 
@@ -9,7 +9,7 @@ protected:
 	void SetUp() override;
 	void TearDown() override;
 	Environment environment { false };
-	SharedEvaluator evaluator = nullptr;
+	EvalLogicSimulator* simulator = nullptr;
 	SharedCircuit circuit = nullptr;
 	logic_state_t L = logic_state_t::LOW;
 	logic_state_t H = logic_state_t::HIGH;
@@ -34,14 +34,14 @@ const BlockData* CompleteCircuitsEvaluatorTest::getBlockData(BlockType type) {
 void CompleteCircuitsEvaluatorTest::SetUp() {
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
 	circuit = environment.getBackend().getCircuit(circuitId);
-	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuitId).value();
-	evaluator = environment.getBackend().getEvaluator(evalId);
-	ASSERT_TRUE(evaluator->isPause());
+	simulator_id_t simulatorId = environment.getBackend().createSimulator(circuitId).value();
+	simulator = environment.getBackend().getSimulator(simulatorId);
+	ASSERT_TRUE(simulator->isPause());
 }
 
 void CompleteCircuitsEvaluatorTest::TearDown() {
 	circuit.reset();
-	evaluator.reset();
+	simulator = nullptr;
 }
 
 TEST_F(CompleteCircuitsEvaluatorTest, FullAdder) {
@@ -72,35 +72,35 @@ TEST_F(CompleteCircuitsEvaluatorTest, FullAdder) {
 	ASSERT_TRUE(circuit->tryCreateConnection(sumPos, light1Pos));
 	ASSERT_TRUE(circuit->tryCreateConnection(coutPos, light2Pos));
 
-	evaluator->tickStep(3);
-	EXPECT_EQ(evaluator->getState(light1Pos), L);
-	EXPECT_EQ(evaluator->getState(light2Pos), L);
-	evaluator->setState(switch1Pos, H);
-	evaluator->tickStep(3);
-	EXPECT_EQ(evaluator->getState(light1Pos), H);
-	EXPECT_EQ(evaluator->getState(light2Pos), L);
-	evaluator->setState(switch2Pos, H);
-	evaluator->tickStep(3);
-	EXPECT_EQ(evaluator->getState(light1Pos), L);
-	EXPECT_EQ(evaluator->getState(light2Pos), H);
-	evaluator->setState(switch1Pos, L);
-	evaluator->tickStep(3);
-	EXPECT_EQ(evaluator->getState(light1Pos), H);
-	EXPECT_EQ(evaluator->getState(light2Pos), L);
-	evaluator->setState(switch3Pos, H);
-	evaluator->tickStep(3);
-	EXPECT_EQ(evaluator->getState(light1Pos), L);
-	EXPECT_EQ(evaluator->getState(light2Pos), H);
-	evaluator->setState(switch2Pos, L);
-	evaluator->tickStep(3);
-	EXPECT_EQ(evaluator->getState(light1Pos), H);
-	EXPECT_EQ(evaluator->getState(light2Pos), L);
-	evaluator->setState(switch1Pos, H);
-	evaluator->tickStep(3);
-	EXPECT_EQ(evaluator->getState(light1Pos), L);
-	EXPECT_EQ(evaluator->getState(light2Pos), H);
-	evaluator->setState(switch2Pos, H);
-	evaluator->tickStep(3);
-	EXPECT_EQ(evaluator->getState(light1Pos), H);
-	EXPECT_EQ(evaluator->getState(light2Pos), H);
+	simulator->tickStep(3);
+	EXPECT_EQ(simulator->getState(light1Pos), L);
+	EXPECT_EQ(simulator->getState(light2Pos), L);
+	simulator->setState(switch1Pos, H);
+	simulator->tickStep(3);
+	EXPECT_EQ(simulator->getState(light1Pos), H);
+	EXPECT_EQ(simulator->getState(light2Pos), L);
+	simulator->setState(switch2Pos, H);
+	simulator->tickStep(3);
+	EXPECT_EQ(simulator->getState(light1Pos), L);
+	EXPECT_EQ(simulator->getState(light2Pos), H);
+	simulator->setState(switch1Pos, L);
+	simulator->tickStep(3);
+	EXPECT_EQ(simulator->getState(light1Pos), H);
+	EXPECT_EQ(simulator->getState(light2Pos), L);
+	simulator->setState(switch3Pos, H);
+	simulator->tickStep(3);
+	EXPECT_EQ(simulator->getState(light1Pos), L);
+	EXPECT_EQ(simulator->getState(light2Pos), H);
+	simulator->setState(switch2Pos, L);
+	simulator->tickStep(3);
+	EXPECT_EQ(simulator->getState(light1Pos), H);
+	EXPECT_EQ(simulator->getState(light2Pos), L);
+	simulator->setState(switch1Pos, H);
+	simulator->tickStep(3);
+	EXPECT_EQ(simulator->getState(light1Pos), L);
+	EXPECT_EQ(simulator->getState(light2Pos), H);
+	simulator->setState(switch2Pos, H);
+	simulator->tickStep(3);
+	EXPECT_EQ(simulator->getState(light1Pos), H);
+	EXPECT_EQ(simulator->getState(light2Pos), H);
 }

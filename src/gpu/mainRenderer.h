@@ -5,7 +5,7 @@
 #include <RmlUi/Core/Vertex.h>
 #include <glm/ext/vector_float2.hpp>
 
-#include "backend/evaluator/evaluator.h"
+#include "backend/evaluator/simulator/evalLogicSimulator.h"
 #include "gui/sdl/sdlWindow.h"
 
 #include "renderer/windowRenderer.h"
@@ -69,7 +69,7 @@ public:
 	void removeBlockPort(BlockRenderDataId blockRenderDataId, BlockPortRenderDataId blockPortRenderDataId);
 	void moveBlockPort(BlockRenderDataId blockRenderDataId, BlockPortRenderDataId blockPortRenderDataId, FVector newPositionOnBlock);
 	void setBlockPortName(BlockRenderDataId blockRenderDataId, BlockPortRenderDataId blockPortRenderDataId, const std::string& newPortName);
-	void setBlockStatePortPosition(BlockRenderDataId blockRenderDataId, Vector blockStatePortPosition);
+	void setTextureVirtualConnection(BlockRenderDataId blockRenderDataId, std::optional<virtual_connection_id_t> textureVirtualConnection);
 	void regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDataId);
 
 
@@ -77,7 +77,7 @@ public:
 	ViewportId registerViewport(WindowId windowId, glm::vec2 origin, glm::vec2 size);
 	void moveViewport(ViewportId viewportId, WindowId windowId, glm::vec2 origin, glm::vec2 size);
 	void moveViewportView(ViewportId viewportId, FPosition topLeft, FPosition bottomRight);
-	void setViewportEvaluator(ViewportId viewportId, Evaluator* evaluator, Address address); // tmp circuit
+	void setViewportSimulatoruator(ViewportId viewportId, const EvalLogicSimulator* simulator, Address address); // tmp circuit
 	void resetViewport(ViewportId viewportId);
 	void deregisterViewport(ViewportId viewportId);
 

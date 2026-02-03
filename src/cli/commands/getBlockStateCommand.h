@@ -8,7 +8,7 @@ public:
 	GetBlockStateCommand() : Command("get_block_state") {}
 
 	void run(const std::vector<std::string>& args, Environment& environment) override final;
-	const std::string getHelpString() const override final { return "Returns the state of a block in a certain evaluator at the specified position."; }
+	const std::string getHelpString() const override final { return "Returns the state of a block in a certain simulator at the specified position."; }
 };
 
 #endif /* getBlockStateCommand_h */

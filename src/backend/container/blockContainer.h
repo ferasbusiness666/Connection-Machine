@@ -10,7 +10,7 @@ class CircuitManager;
 
 class BlockContainer {
 public:
-	inline BlockContainer(CircuitManager& circuitManager, BlockDataManager& blockDataManager) : circuitManager(circuitManager), blockDataManager(blockDataManager) { }
+	BlockContainer(CircuitManager& circuitManager);
 
 	inline BlockDataManager& getBlockDataManager() const { return blockDataManager; }
 

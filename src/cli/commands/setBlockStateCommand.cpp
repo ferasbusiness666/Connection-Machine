@@ -1,6 +1,6 @@
 #include "setBlockStateCommand.h"
 
-#include "backend/evaluator/evaluator.h"
+#include "backend/evaluator/simulator/evalLogicSimulator.h"
 #include "environment/environment.h"
 #include "util/runAtStartup.h"
 #include "../commandManager.h"
@@ -13,12 +13,12 @@ void SetBlockStateCommand::run(const std::vector<std::string>& args, Environment
 		return;
 	}
 
-    int evalID;
+    int simulatorId;
     int state;
     int xPos;
     int yPos;
     try {
-        evalID = std::stoi(args[1]);
+        simulatorId = std::stoi(args[1]);
         state = std::stoi(args[2]);
         xPos = std::stoi(args[3]);
         yPos = std::stoi(args[4]);
@@ -31,11 +31,11 @@ void SetBlockStateCommand::run(const std::vector<std::string>& args, Environment
         logError("Invalid state. Valid states are 0 for low, 1 for high, 2 for floating, and 3 for undefined.", "SetBlockStateCommand");
         return;
     }
-    SharedEvaluator eval = environment.getBackend().getEvaluatorManager().getEvaluator(evaluator_id_t(evalID));
-    if (eval == nullptr) {
-        logError("Unrecognized evaluator ID. Available evaluators can be found with the 'list_evaluators' command.", "SetBlockStateCommand");
+    EvalLogicSimulator* simulator = environment.getBackend().getSimulatorManager().getSimulator(simulator_id_t(simulatorId));
+    if (simulator == nullptr) {
+        logError("Unrecognized simulator ID. Available simulators can be found with the 'list_simulators' command.", "SetBlockStateCommand");
         return;
     }
-    eval->setState(Address(Position(xPos, yPos)), (logic_state_t)state);
-    logInfo("Set state of block belonging to eval with ID {} in position ({}, {}) to {}", "SetBlockStateCommand", evalID, xPos, yPos, state);
+    simulator->setState(Address(Position(xPos, yPos)), (logic_state_t)state);
+    logInfo("Set state of block belonging to eval with ID {} in position ({}, {}) to {}", "SetBlockStateCommand", simulatorId, xPos, yPos, state);
 }

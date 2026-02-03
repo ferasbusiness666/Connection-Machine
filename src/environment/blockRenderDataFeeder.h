@@ -1,12 +1,15 @@
 #ifndef blockRenderDataFeeder_h
 #define blockRenderDataFeeder_h
 
-#include "gpu/blockRenderDataManager.h"
 #include "gpu/cpuImageEditor/cpuImage.h"
 #include "backend/container/block/blockDefs.h"
 #include "backend/container/block/connectionEnd.h"
 #include "backend/dataUpdateEventManager.h"
 #include "blockTextureGenerator.h"
+
+typedef uint32_t BlockRenderDataId;
+typedef uint32_t BlockPortRenderDataId;
+typedef uint32_t BlockTextureId;
 
 class Font;
 class Backend;
@@ -23,17 +26,18 @@ public:
 	void doBlockTextureUpdates();
 
 private:
-	void newBlockTypeUpdate(const DataUpdateEventManager::EventData* dataEvent);
-	void postBlockSizeChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
-	void blockNameChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
+	void newBlockTypeUpdate(const DataUpdateEventManager::EventData* event);
+	void postBlockSizeChangeUpdate(const DataUpdateEventManager::EventData* event);
+	void blockNameChangeUpdate(const DataUpdateEventManager::EventData* event);
 
-	void blockDataSetConnectionUpdate(const DataUpdateEventManager::EventData* dataEvent);
-	void blockDataRemoveConnectionUpdate(const DataUpdateEventManager::EventData* dataEvent);
-	void blockDataConnectionNameSetUpdate(const DataUpdateEventManager::EventData* dataEvent);
-	void blockDataTextureChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
-	void blockDataUsesTileMapTextureChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
-	void blockDataTextureTileChangeUpdate(const DataUpdateEventManager::EventData* dataEvent);
-	void updateImageIfNotSpecified(const DataUpdateEventManager::EventData* dataEvent);
+	void blockDataSetConnectionUpdate(const DataUpdateEventManager::EventData* event);
+	void blockDataRemoveConnectionUpdate(const DataUpdateEventManager::EventData* event);
+	void blockDataConnectionNameSetUpdate(const DataUpdateEventManager::EventData* event);
+	void blockDataTextureChangeUpdate(const DataUpdateEventManager::EventData* event);
+	void blockDataTextureVirtualConnectionUpdate(const DataUpdateEventManager::EventData* event);
+	void blockDataUsesTileMapTextureChangeUpdate(const DataUpdateEventManager::EventData* event);
+	void blockDataTextureTileChangeUpdate(const DataUpdateEventManager::EventData* event);
+	void updateImageIfNotSpecified(const DataUpdateEventManager::EventData* event);
 
 	struct RenderData {
 		RenderData(BlockRenderDataId blockRenderDataId) : blockRenderDataId(blockRenderDataId) {}

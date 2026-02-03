@@ -20,7 +20,7 @@ App& App::get() {
 		logInfo("Creating App", "App");
 		appSingleton.emplace();
 		appSingleton->newMainWindow();
-		appSingleton->windows.back()->getActiveCircuitViewWidget()->newCircuit();
+		if (appSingleton->windows.back()->getActiveCircuitViewWidget()) appSingleton->windows.back()->getActiveCircuitViewWidget()->newCircuit();
 	}
 	return *appSingleton;
 }
@@ -97,6 +97,11 @@ const char* const addLoopTracyName = "appLoop";
 
 void App::runLoop() {
 	logInfo("Starting App loop", "App");
+	if (windows.empty()) {
+		logError("Killing App loop. No windows Found!", "App");
+		App::kill();
+		return;
+	}
 	Network::get().checkForUpdates(get().windows[0]->getPopUpManager());
 	running = true;
 	while (running) {

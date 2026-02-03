@@ -68,7 +68,7 @@ void ChunkRenderer::cleanup() {
 	wirePipeline.cleanup();
 }
 
-void ChunkRenderer::render(Frame& frame, const glm::mat4& viewMatrix, Evaluator* evaluator, const Address& address, const std::vector<std::shared_ptr<VulkanLogicAllocation>>& chunks) {
+void ChunkRenderer::render(Frame& frame, const glm::mat4& viewMatrix, const EvalLogicSimulator* simulator, const Address& address, const std::vector<std::shared_ptr<VulkanLogicAllocation>>& chunks) {
 #ifdef TRACY_PROFILER
 	ZoneScoped;
 #endif
@@ -87,8 +87,8 @@ void ChunkRenderer::render(Frame& frame, const glm::mat4& viewMatrix, Evaluator*
 			chunk->getStateBuffer()->incrementBufferFrame();
 
 			std::vector<logic_state_t> states(chunk->getStateSimulatorIds().size());
-			if (evaluator != nullptr) {
-				states = evaluator->getStatesFromSimulatorIds(chunk->getStateSimulatorIds());
+			if (simulator != nullptr) {
+				states = simulator->getStates(chunk->getStateSimulatorIds());
 			}
 
 			vmaCopyMemoryToAllocation(device->getAllocator(), states.data(), chunk->getStateBuffer()->getCurrentBuffer().allocation, 0, states.size());

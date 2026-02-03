@@ -9,8 +9,8 @@ public:
     CircuitBlockDataManager& operator=(const CircuitBlockDataManager&) = delete;
 
 	CircuitBlockDataManager(DataUpdateEventManager& dataUpdateEventManager) : dataUpdateEventManager(dataUpdateEventManager), dataUpdateEventReceiver(dataUpdateEventManager) {
-		dataUpdateEventReceiver.linkFunction("blockDataRemoveConnection", [this](const DataUpdateEventManager::EventData* eventData) {
-			auto eventWithData = eventData->cast<std::pair<BlockType, connection_end_id_t>>();
+		dataUpdateEventReceiver.linkFunction("blockDataRemoveConnection", [this](const DataUpdateEventManager::EventData* event) {
+			auto eventWithData = event->cast<std::pair<BlockType, connection_end_id_t>>();
 			if (!eventWithData) return;
 			CircuitBlockData* data = getCircuitBlockData(getCircuitId(eventWithData->get().first));
 			if (data) data->removeConnectionIdPosition(eventWithData->get().second);

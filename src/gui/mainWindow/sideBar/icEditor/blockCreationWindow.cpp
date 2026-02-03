@@ -80,6 +80,7 @@ BlockCreationWindow::BlockCreationWindow(
 	addOutputConnection->AddEventListener("click", new EventPasser([this](Rml::Event&) { this->addListItem(false); }));
 	// texture
 	menu->GetElementById("pick-texture")->AddEventListener("click", new EventPasser([this](Rml::Event& event) {
+		if (!this->mainWindow.getActiveCircuitViewWidget()) return;
 		Circuit* circuit = this->mainWindow.getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 		if (!circuit || !(circuit->isEditable())) return;
 		// static const SDL_DialogFileFilter filters[] = {}; // error C2466: cannot allocate an array of constant size 0
@@ -87,6 +88,7 @@ BlockCreationWindow::BlockCreationWindow(
 			if (!filePaths || !filePaths[0]) return;
 
 			BlockCreationWindow* blockCreationWindow = (BlockCreationWindow*)userData;
+			if (!blockCreationWindow->mainWindow.getActiveCircuitViewWidget()) return;
 			Circuit* circuit = blockCreationWindow->mainWindow.getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 			if (!circuit || !(circuit->isEditable())) return;
 			BlockData* blockData = blockCreationWindow->circuitManager.getBlockDataManager().getBlockData(circuit->getBlockType());
@@ -112,6 +114,7 @@ BlockCreationWindow::BlockCreationWindow(
 		this->menu->GetElementById("block-texture-menu-has-texture")->SetClass("invisible", false);
 	}));
 	menu->GetElementById("pick-new-texture")->AddEventListener("click", new EventPasser([this](Rml::Event& event) {
+		if (!this->mainWindow.getActiveCircuitViewWidget()) return;
 		Circuit* circuit = this->mainWindow.getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 		if (!circuit || !(circuit->isEditable())) return;
 		// static const SDL_DialogFileFilter filters[] = {}; // error C2466: cannot allocate an array of constant size 0
@@ -119,6 +122,7 @@ BlockCreationWindow::BlockCreationWindow(
 			if (!filePaths || !filePaths[0]) return;
 
 			BlockCreationWindow* blockCreationWindow = (BlockCreationWindow*)userData;
+			if (!blockCreationWindow->mainWindow.getActiveCircuitViewWidget()) return;
 			Circuit* circuit = blockCreationWindow->mainWindow.getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 			if (!circuit || !(circuit->isEditable())) return;
 			BlockData* blockData = blockCreationWindow->circuitManager.getBlockDataManager().getBlockData(circuit->getBlockType());
@@ -128,6 +132,7 @@ BlockCreationWindow::BlockCreationWindow(
 		}, this, nullptr, nullptr, 0, nullptr, true);
 	}));
 	menu->GetElementById("pick-new-texture")->AddEventListener("dropFile", new EventPasser([this](Rml::Event& event) {
+		if (!this->mainWindow.getActiveCircuitViewWidget()) return;
 		Circuit* circuit = this->mainWindow.getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 		if (!circuit || !(circuit->isEditable())) return;
 		BlockData* blockData = this->circuitManager.getBlockDataManager().getBlockData(circuit->getBlockType());
@@ -137,11 +142,13 @@ BlockCreationWindow::BlockCreationWindow(
 		blockData->setTexturePath(filePath);
 	}));
 	menu->GetElementById("reload-texture")->AddEventListener("click", new EventPasser([this](Rml::Event& event) {
+		if (!this->mainWindow.getActiveCircuitViewWidget()) return;
 		Circuit* circuit = this->mainWindow.getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 		if (!circuit || !(circuit->isEditable())) return;
 		this->environment.getBlockRenderDataFeeder().refreshBlockTexture(circuit->getBlockType());
 	}));
 	menu->GetElementById("remove-texture")->AddEventListener("click", new EventPasser([this](Rml::Event& event) {
+		if (!this->mainWindow.getActiveCircuitViewWidget()) return;
 		Circuit* circuit = this->mainWindow.getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 		if (!circuit || !(circuit->isEditable())) return;
 		BlockData* blockData = this->circuitManager.getBlockDataManager().getBlockData(circuit->getBlockType());
@@ -150,11 +157,13 @@ BlockCreationWindow::BlockCreationWindow(
 		this->menu->GetElementById("block-texture-menu-has-texture")->SetClass("invisible", true);
 	}));
 	// menu->GetElementById("embed-texture")->AddEventListener("click", new EventPasser([this](Rml::Event& event){
+	//	if (!this->mainWindow.getActiveCircuitViewWidget()) return;
 	// 	Circuit* circuit = this->mainWindow.getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 	// 	if (!circuit || !(circuit->isEditable())) return;
 	// 	logError("Embed texture not supported yet.");
 	// }));
 	menu->GetElementById("texture-uses-tilemap")->AddEventListener("click", new EventPasser([this](Rml::Event& event) {
+		if (!this->mainWindow.getActiveCircuitViewWidget()) return;
 		Circuit* circuit = this->mainWindow.getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 		if (!circuit || !(circuit->isEditable())) {
 			this->menu->GetElementById("texture-uses-tilemap")->SetClass("checked", false);
@@ -168,36 +177,42 @@ BlockCreationWindow::BlockCreationWindow(
 	}));
 
 	makeNumberInputFunc(menu->GetElementById("block-texture-tile-size-x"), [this](int x) {
+		if (!this->mainWindow.getActiveCircuitViewWidget()) return;
 		Circuit* circuit = this->mainWindow.getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 		if (!circuit || !(circuit->isEditable())) return;
 		BlockData* blockData = this->circuitManager.getBlockDataManager().getBlockData(circuit->getBlockType());
 		blockData->setTextureTileSize({ x, blockData->getTextureTileSize().y });
 	});
 	makeNumberInputFunc(menu->GetElementById("block-texture-tile-size-y"), [this](int y) {
+		if (!this->mainWindow.getActiveCircuitViewWidget()) return;
 		Circuit* circuit = this->mainWindow.getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 		if (!circuit || !(circuit->isEditable())) return;
 		BlockData* blockData = this->circuitManager.getBlockDataManager().getBlockData(circuit->getBlockType());
 		blockData->setTextureTileSize({ blockData->getTextureTileSize().x, y });
 	});
 	makeNumberInputFunc(menu->GetElementById("block-texture-smallest-cord-tile-x"), [this](int x) {
+		if (!this->mainWindow.getActiveCircuitViewWidget()) return;
 		Circuit* circuit = this->mainWindow.getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 		if (!circuit || !(circuit->isEditable())) return;
 		BlockData* blockData = this->circuitManager.getBlockDataManager().getBlockData(circuit->getBlockType());
 		blockData->setTextureSmallestCordTile({ x, blockData->getTextureSmallestCordTile().y });
 	});
 	makeNumberInputFunc(menu->GetElementById("block-texture-smallest-cord-tile-y"), [this](int y) {
+		if (!this->mainWindow.getActiveCircuitViewWidget()) return;
 		Circuit* circuit = this->mainWindow.getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 		if (!circuit || !(circuit->isEditable())) return;
 		BlockData* blockData = this->circuitManager.getBlockDataManager().getBlockData(circuit->getBlockType());
 		blockData->setTextureSmallestCordTile({ blockData->getTextureSmallestCordTile().x, y });
 	});
 	makeNumberInputFunc(menu->GetElementById("block-texture-block-tile-size-x"), [this](int x) {
+		if (!this->mainWindow.getActiveCircuitViewWidget()) return;
 		Circuit* circuit = this->mainWindow.getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 		if (!circuit || !(circuit->isEditable())) return;
 		BlockData* blockData = this->circuitManager.getBlockDataManager().getBlockData(circuit->getBlockType());
 		blockData->setTextureBlockTileSize({ x, blockData->getTextureBlockTileSize().y });
 	});
 	makeNumberInputFunc(menu->GetElementById("block-texture-block-tile-size-y"), [this](int y) {
+		if (!this->mainWindow.getActiveCircuitViewWidget()) return;
 		Circuit* circuit = this->mainWindow.getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 		if (!circuit || !(circuit->isEditable())) return;
 		BlockData* blockData = this->circuitManager.getBlockDataManager().getBlockData(circuit->getBlockType());
@@ -216,11 +231,15 @@ BlockCreationWindow::BlockCreationWindow(
 constexpr float edgeDistanceIC = 0.4f;
 
 void BlockCreationWindow::updateFromMenu() {
+	if (!mainWindow.getActiveCircuitViewWidget()) return;
 	Circuit* circuit = mainWindow.getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 	if (!circuit || !(circuit->isEditable())) return;
 	circuit_id_t id = circuit->getCircuitId();
 	CircuitBlockData* circuitBlockData = circuitManager.getCircuitBlockDataManager().getCircuitBlockData(id);
 	BlockData* blockData = circuitManager.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
+	if (!blockData) {
+		logError("Failed to find BlockData onj for block type {}.", "BlockCreationWindow::updateFromMenu", circuitBlockData->getBlockType());
+	}
 	std::string name;
 	Size size;
 	std::vector<std::tuple<connection_end_id_t, std::string, bool, Vector, FVector, Position, unsigned int>> portsData;
@@ -246,7 +265,7 @@ void BlockCreationWindow::updateFromMenu() {
 			Rml::Element* row = inputList->GetChild(i);
 			const std::string& rowId = row->GetId();
 			// get connection end id
-			connection_end_id_t endId = connection_end_id_t(std::stoi(rowId.substr(23, rowId.size() - 23)));
+			connection_end_id_t endId = std::stoi(rowId.substr(23, rowId.size() - 23));
 			// get port name
 			Rml::ElementList elements;
 			row->GetElementsByClassName(elements, "connection-list-item-name");
@@ -289,7 +308,7 @@ void BlockCreationWindow::updateFromMenu() {
 			Rml::Element* row = outputList->GetChild(i);
 			const std::string& rowId = row->GetId();
 			// get connection end id
-			connection_end_id_t endId = connection_end_id_t(std::stoi(rowId.substr(23, rowId.size() - 23)));
+			connection_end_id_t endId = std::stoi(rowId.substr(23, rowId.size() - 23));
 			// get port name
 			Rml::ElementList elements;
 			row->GetElementsByClassName(elements, "connection-list-item-name");
@@ -501,6 +520,7 @@ void BlockCreationWindow::addListItem(
 	std::optional<Position> posOfBlockValue,
 	unsigned int bitWidthValue
 ) {
+	if (!mainWindow.getActiveCircuitViewWidget()) return;
 	Circuit* circuit = mainWindow.getActiveCircuitViewWidget()->getCircuitView()->getCircuit();
 	if (!circuit) return;
 	circuit_id_t id = circuit->getCircuitId();
@@ -511,7 +531,7 @@ void BlockCreationWindow::addListItem(
 
 	if (findUnusedEndId) {
 		while (true) {
-			while (blockData->connectionExists(connection_end_id_t(endId))) ++endId;
+			while (blockData->connectionExists(endId)) ++endId;
 			if (inputList->GetElementById("ConnectionListItem Id: " + std::to_string(endId)) == nullptr &&
 				outputList->GetElementById("ConnectionListItem Id: " + std::to_string(endId)) == nullptr)
 				break;
@@ -532,6 +552,7 @@ void BlockCreationWindow::addListItem(
 			row->GetElementsByClassName(elements, "connection-list-item-pos-y");
 			if (elements.empty()) return;
 			coordinate_t y = std::stoi(rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements.front())->GetValue());
+			if (!mainWindow.getActiveCircuitViewWidget()) return;
 			elementCreator.emplace(mainWindow.getActiveCircuitViewWidget()->getCircuitView()->getViewportId());
 			elementCreator.value().addSelectionElement(SelectionElement(Position(x, y), Position(x, y)));
 		} catch (const std::exception& e) {}
@@ -609,11 +630,12 @@ void BlockCreationWindow::addListItem(
 	/* trust me bro */ new Tooltip(mainWindow.getSdlWindoHandle(), setPositionButton.get(), "Set Position To Connect To");
 	setPositionButton->AppendChild(std::move(document->CreateTextNode("S")));
 	setPositionButton->AddEventListener(Rml::EventId::Click, new EventPasser([this, endId](Rml::Event& event) {
+		if (!mainWindow.getActiveCircuitViewWidget()) return;
 		auto tool = std::dynamic_pointer_cast<PortSelector>(
 			mainWindow.getActiveCircuitViewWidget()->getCircuitView()->getToolManager().selectTool(std::make_shared<PortSelector>(environment))
 		);
 		if (tool) {
-			tool->setPort(connection_end_id_t(endId), [this, endId](Position position) {
+			tool->setPort(endId, [this, endId](Position position) {
 				Rml::Element* row = document->GetElementById("ConnectionListItem Id: " + std::to_string(endId));
 				if (row == nullptr) return;
 				Rml::ElementList elements;
@@ -660,25 +682,12 @@ void BlockCreationWindow::addListItem(
 	rowInRow->AppendChild(std::move(remove));
 }
 
-void BlockCreationWindow::makePaths(std::vector<std::vector<std::string>>& paths, std::vector<std::string>& path, const EvalAddressTree& addressTree) {
-	auto& branches = addressTree.getBranches();
-	if (branches.empty()) {
-		paths.push_back(path);
-	} else {
-		for (auto& pair : branches) {
-			path.push_back(circuitManager.getCircuit(pair.second.getContainerId())->getCircuitName() + pair.first.toString());
-			makePaths(paths, path, pair.second);
-			path.pop_back();
-		}
-	}
-}
-
 void BlockCreationWindow::updateSelected(std::string string) {
 	std::vector<std::string> parts = stringSplit(string, '/');
 	std::stringstream evalName(parts.front());
 	std::string str;
-	unsigned int evalId;
-	evalName >> str >> evalId;
+	unsigned int simulatorId;
+	evalName >> str >> simulatorId;
 	Address address;
 	for (unsigned int i = 1; i < parts.size(); i++) {
 		std::string part = parts[i];
@@ -689,9 +698,9 @@ void BlockCreationWindow::updateSelected(std::string string) {
 		char c;
 		posString >> position.x >> c >> position.y;
 		logInfo(position.toString());
-		address.addBlockId(position);
+		address.appendPosition(position);
 	}
-
+	if (!mainWindow.getActiveCircuitViewWidget()) return;
 	CircuitView* circuitView = mainWindow.getActiveCircuitViewWidget()->getCircuitView();
-	circuitView->setEvaluator(evaluator_id_t(evalId), address);
+	circuitView->setSimulatoruator(simulator_id_t(simulatorId), address);
 }

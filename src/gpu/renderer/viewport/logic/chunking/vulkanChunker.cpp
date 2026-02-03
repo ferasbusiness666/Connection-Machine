@@ -4,14 +4,14 @@
 #include <tracy/Tracy.hpp>
 #endif
 
-#include "backend/evaluator/evaluator.h"
+#include "backend/evaluator/simulator/evalLogicSimulator.h"
 #include "backend/position/position.h"
 #include "logging/logging.h"
 
 #include "gpu/mainRenderer.h"
 #include "gpu/renderer/viewport/blockTextureManager.h"
 
-const int CHUNK_SIZE = 16;
+const int CHUNK_SIZE = 32;
 coordinate_t getChunk(coordinate_t in) { return std::floor((float)in / (float)CHUNK_SIZE) * (int)CHUNK_SIZE; }
 Position getChunk(Position in) {
 	in.x = getChunk(in.x);
@@ -52,7 +52,7 @@ VulkanLogicAllocation::VulkanLogicAllocation(
 	VulkanDevice* device,
 	const RenderedBlocks& blocks,
 	const RenderedWires& wires,
-	const Evaluator* evaluator,
+	const EvalLogicSimulator* simulator,
 	const Address& address
 ) {
 #ifdef TRACY_PROFILER
@@ -61,11 +61,12 @@ VulkanLogicAllocation::VulkanLogicAllocation(
 	// TODO - should pre-allocate buffers with size and pool them
 	// TODO - maybe should use smaller size coordinates with one big offset
 
-	std::vector<Position> positions;
-	std::vector<size_t> indices;
+	simulatorIds = { 0 }; // set first state index to 0 for blocks that dont have any state
 
 	// Generate block instances
 	if (blocks.size() > 0) {
+		std::vector<size_t> indices = { 0 };
+		std::vector<std::pair<Position, virtual_connection_id_t>> virtualConnections;
 		std::vector<BlockInstance> blockInstances;
 		blockInstances.reserve(blocks.size());
 		for (const auto& block : blocks) {
@@ -83,32 +84,47 @@ VulkanLogicAllocation::VulkanLogicAllocation(
 
 			blockInstances.push_back(instance);
 
-			// blocks are added to state array
-			blockStateIndex[block.first] = simulatorIds.size();
-			positions.push_back(block.first);
-			indices.push_back(simulatorIds.size());
-			simulatorIds.push_back(simulator_id_t(0));
-		}
-
-		if (evaluator) {
-			std::vector<simulator_id_t> simIds = evaluator->getBlockSimulatorIds(address, positions);
-			for (size_t i = 0; i < simIds.size(); i++) {
-				simulatorIds[indices[i]] = simIds[i];
+			if (simulator) {
+				// blocks are added to state array
+				std::optional<virtual_connection_id_t> textureVirtualConnection = MainRenderer::get().getBlockRenderDataManager().getBlockRenderData(block.second.blockRenderDataId)->textureVirtualConnection;
+				if (textureVirtualConnection) {
+					blockStateIndex[block.first] = simulatorIds.size();
+					virtualConnections.push_back({block.first, textureVirtualConnection.value()});
+					indices.push_back(simulatorIds.size());
+					simulatorIds.push_back(simulator_gate_id_t(0));
+				} else {
+					blockStateIndex[block.first] = 0;
+				}
+			} else {
+				blockStateIndex[block.first] = 0;
 			}
 		}
 
-		positions.clear();
-		indices.clear();
+		if (simulator) {
+			std::vector<SimulatorStateIndexVecVariant> blockSimulatorIds = simulator->getVirtualConnectionSimulatorIds(address, virtualConnections);
+			for (size_t i = 0; i < blockSimulatorIds.size(); i++) {
+				if (std::holds_alternative<std::vector<simulator_gate_id_t>>(blockSimulatorIds[i])) {
+					simulatorIds[indices[i]] = 0;
+				} else {
+					simulatorIds[indices[i]] = std::get<simulator_gate_id_t>(blockSimulatorIds[i]);
+				}
+			}
+		}
 
 		// upload block vertices
 		numBlockInstances = blockInstances.size();
 		size_t blockBufferSize = sizeof(BlockInstance) * numBlockInstances;
 		blockBuffer = createBuffer(device, blockBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 		vmaCopyMemoryToAllocation(device->getAllocator(), blockInstances.data(), blockBuffer->allocation, 0, blockBufferSize);
+
+		indices.clear();
 	}
 
 	// Generate wire vertices
 	if (wires.size() > 0) {
+		std::vector<size_t> indices;
+		std::vector<Position> positions;
+
 		struct WireSegment {
 			glm::vec2 pointA;
 			glm::vec2 pointB;
@@ -118,8 +134,6 @@ VulkanLogicAllocation::VulkanLogicAllocation(
 		std::vector<WireSegment> wireSegments;
 		wireSegments.reserve(wires.size());
 
-		positions.clear();
-		indices.clear();
 		std::vector<uint32_t> laneCounts;
 		laneCounts.reserve(wires.size());
 
@@ -135,9 +149,9 @@ VulkanLogicAllocation::VulkanLogicAllocation(
 			}
 		}
 
-		std::vector<std::variant<simulator_id_t, std::vector<simulator_id_t>>> pinSimIds;
-		if (evaluator) {
-			pinSimIds = evaluator->getPinSimulatorIds(address, positions);
+		std::vector<SimulatorStateIndexVecVariant> pinSimulatorIds;
+		if (simulator) {
+			pinSimulatorIds = simulator->getPinSimulatorIds(address, positions);
 		}
 
 		laneCounts.resize(positions.size(), 1);
@@ -145,12 +159,12 @@ VulkanLogicAllocation::VulkanLogicAllocation(
 
 		for (size_t i = 0; i < positions.size(); i++) {
 			uint32_t laneCount = 1;
-			if (pinSimIds.size() != 0 && std::holds_alternative<std::vector<simulator_id_t>>(pinSimIds[i])) {
-				const std::vector<simulator_id_t>& wireSimIds = std::get<std::vector<simulator_id_t>>(pinSimIds[i]);
-				if (wireSimIds.empty()) {
+			if (pinSimulatorIds.size() != 0 && std::holds_alternative<std::vector<simulator_gate_id_t>>(pinSimulatorIds[i])) {
+				const std::vector<simulator_gate_id_t>& wireSimulatorIds = std::get<std::vector<simulator_gate_id_t>>(pinSimulatorIds[i]);
+				if (wireSimulatorIds.empty()) {
 					logError("pin simulator ids vector should not be empty. Pin: {}", "VulkanLogicAllocation", positions[i]);
 				} else {
-					laneCount = static_cast<uint32_t>(wireSimIds.size());
+					laneCount = static_cast<uint32_t>(wireSimulatorIds.size());
 				}
 			}
 
@@ -160,21 +174,21 @@ VulkanLogicAllocation::VulkanLogicAllocation(
 			portStateIndex[positions[i]] = PortStateRange(baseIndex, laneCount);
 
 			for (uint32_t lane = 0; lane < laneCount; lane++) {
-				simulatorIds.push_back(simulator_id_t(0));
+				simulatorIds.push_back(simulator_gate_id_t(0));
 			}
 		}
 
-		if (evaluator) {
-			for (size_t i = 0; i < pinSimIds.size() && i < positions.size(); i++) {
+		if (simulator) {
+			for (size_t i = 0; i < pinSimulatorIds.size() && i < positions.size(); i++) {
 				size_t baseIndex = indices[i];
 				uint32_t laneCount = laneCounts[i];
-				if (std::holds_alternative<std::vector<simulator_id_t>>(pinSimIds[i])) {
-					const auto& vec = std::get<std::vector<simulator_id_t>>(pinSimIds[i]);
+				if (std::holds_alternative<std::vector<simulator_gate_id_t>>(pinSimulatorIds[i])) {
+					const auto& vec = std::get<std::vector<simulator_gate_id_t>>(pinSimulatorIds[i]);
 					for (uint32_t lane = 0; lane < laneCount && lane < vec.size(); lane++) {
 						simulatorIds[baseIndex + lane] = vec[lane];
 					}
 				} else {
-					simulatorIds[baseIndex] = std::get<simulator_id_t>(pinSimIds[i]);
+					simulatorIds[baseIndex] = std::get<simulator_gate_id_t>(pinSimulatorIds[i]);
 				}
 			}
 		}
@@ -240,10 +254,10 @@ VulkanLogicAllocation::~VulkanLogicAllocation() {
 // LogicGroup
 // =========================================================================================================
 
-void LogicGroup::rebuildAllocation(VulkanDevice* device, const Evaluator* evaluator, const Address& address) {
+void LogicGroup::rebuildAllocation(VulkanDevice* device, const EvalLogicSimulator* simulator, const Address& address) {
 	if (!blocks.empty() || !wires.empty()) { // if we have data to upload
 		// allocate new date
-		std::shared_ptr<VulkanLogicAllocation> newAllocation = std::make_unique<VulkanLogicAllocation>(device, blocks, wires, evaluator, address);
+		std::shared_ptr<VulkanLogicAllocation> newAllocation = std::make_unique<VulkanLogicAllocation>(device, blocks, wires, simulator, address);
 		// replace currently allocating data
 		if (currentlyAllocating.has_value()) {
 			gbJail.push_back(currentlyAllocating.value());
@@ -295,7 +309,7 @@ VulkanChunker::~VulkanChunker() { std::lock_guard<std::mutex> lock(mux); }
 void VulkanChunker::startMakingEdits() { mux.lock(); }
 
 void VulkanChunker::stopMakingEdits() {
-	for (LogicGroup* logicGroup : logicGroupsToUpdate) logicGroup->rebuildAllocation(device, evaluator, address);
+	for (LogicGroup* logicGroup : logicGroupsToUpdate) logicGroup->rebuildAllocation(device, simulator, address);
 	logicGroupsToUpdate.clear();
 	mux.unlock();
 }
@@ -326,12 +340,6 @@ void VulkanChunker::addBlock(BlockRenderDataId blockRenderDataId, Position posit
 			(orientation * blockRenderData->size).free()
 		)
 	);
-	if (blockRenderData->blockStatePortPosition) {
-		logicGroup.getBlockStatePortMapping().try_emplace(position + orientation.transformVectorWithArea(
-				blockRenderData->blockStatePortPosition.value(),
-				blockRenderData->size
-		), position);
-	}
 	if (newGroup) {
 		for (auto chunkPosIter = getChunk(position).iterTo(getChunk(position + (orientation * blockRenderData->size).getLargestVectorInArea())); chunkPosIter;
 			 ++chunkPosIter) {
@@ -353,12 +361,6 @@ void VulkanChunker::removeBlock(Position position) {
 		auto blockIter = logicGroup->getRenderedBlocks().find(position);
 		if (blockIter == logicGroup->getRenderedBlocks().end()) continue;
 		const BlockRenderDataManager::BlockRenderData* blockRenderData = MainRenderer::get().getBlockRenderDataManager().getBlockRenderData(blockIter->second.blockRenderDataId);
-		if (blockRenderData->blockStatePortPosition) {
-			logicGroup->getBlockStatePortMapping().erase(position + blockIter->second.orientation.transformVectorWithArea(
-				blockRenderData->blockStatePortPosition.value(),
-				blockRenderData->size
-			));
-		}
 		logicGroup->getRenderedBlocks().erase(blockIter);
 		logicGroupsToUpdate.insert(logicGroup);
 		return;
@@ -461,75 +463,83 @@ void VulkanChunker::regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDa
 				block.second.textureStateStep = blockRenderData->blockTextureCords.textureUVStateStep;
 			}
 		}
-		if (foundType) logicGroup.second.rebuildAllocation(device, evaluator, address);
+		if (foundType) logicGroup.second.rebuildAllocation(device, simulator, address);
 	}
 }
 
 void VulkanChunker::updateSimulatorIds(const std::vector<SimulatorMappingUpdate>& simulatorMappingUpdates) {
 	for (const SimulatorMappingUpdate& simulatorMappingUpdate : simulatorMappingUpdates) {
-		const std::variant<simulator_id_t, std::vector<simulator_id_t>>& simIds = simulatorMappingUpdate.simulatorIds;
-
-		Position chunkPos = getChunk(simulatorMappingUpdate.portPosition);
+		const SimulatorStateIndexVecVariant& simulatorIds = simulatorMappingUpdate.simulatorIds;
+		Position chunkPos = getChunk(simulatorMappingUpdate.position);
 		auto groupsAtChunkIter = chunkToGroups.find(chunkPos);
 		if (groupsAtChunkIter == chunkToGroups.end()) {
 			continue;
 		}
-		for (LogicGroup* logicGroup : groupsAtChunkIter->second) {
-			std::optional<std::shared_ptr<VulkanLogicAllocation>> vulkanLogicAllocation = logicGroup->getAllocation();
-			if (!vulkanLogicAllocation) continue;
-			auto blockPosIter = logicGroup->getBlockStatePortMapping().find(simulatorMappingUpdate.portPosition);
-			if (blockPosIter == logicGroup->getBlockStatePortMapping().end()) continue;
-			auto iter = vulkanLogicAllocation.value()->getBlockStateIndex().find(blockPosIter->second);
-			if (iter == vulkanLogicAllocation.value()->getBlockStateIndex().end()) continue;
-			if (std::holds_alternative<std::vector<simulator_id_t>>(simIds)) {
-				vulkanLogicAllocation.value()->getStateSimulatorIds()[iter->second] = 0;
-			} else {
-				vulkanLogicAllocation.value()->getStateSimulatorIds()[iter->second] = std::get<simulator_id_t>(simIds);
-			}
-			break;
-		}
-		for (LogicGroup* logicGroup : groupsAtChunkIter->second) {
-			std::optional<std::shared_ptr<VulkanLogicAllocation>> vulkanLogicAllocation = logicGroup->getAllocation();
-			if (!vulkanLogicAllocation) continue;
-			auto portStateIter = vulkanLogicAllocation.value()->getPortStateIndex().find(simulatorMappingUpdate.portPosition);
-			if (portStateIter == vulkanLogicAllocation.value()->getPortStateIndex().end()) continue;
-
-			const PortStateRange& range = portStateIter->second;
-			if (!range.isValid()) continue;
-
-			std::vector<simulator_id_t>& chunkStateSimulatorIds = vulkanLogicAllocation.value()->getStateSimulatorIds();
-			if (std::holds_alternative<std::vector<simulator_id_t>>(simIds)) {
-				const std::vector<simulator_id_t>& wireSimIds = std::get<std::vector<simulator_id_t>>(simIds);
-				uint32_t laneCount = wireSimIds.size();
-				if (laneCount != range.laneCount) {
-					logicGroupsToUpdate.insert(logicGroup);
-				} else {
-					for (uint32_t lane = 0; lane < laneCount; lane++) {
-						chunkStateSimulatorIds[range.baseIndex + lane] = wireSimIds[lane];
-					}
+		if (simulatorMappingUpdate.virtualConnectionId) {
+			for (LogicGroup* logicGroup : groupsAtChunkIter->second) {
+				std::optional<std::shared_ptr<VulkanLogicAllocation>> vulkanLogicAllocation = logicGroup->getAllocation();
+				if (!vulkanLogicAllocation) continue;
+				auto blockIter = logicGroup->getRenderedBlocks().find(simulatorMappingUpdate.position);
+				if (blockIter == logicGroup->getRenderedBlocks().end()) {
+					// logError("Could not find block pos {} in renderedBlocks.", "VulkanChunker::updateSimulatorIds", simulatorMappingUpdate.position);
+					continue;
 				}
-			} else {
-				if (1 != range.laneCount) {
+				if (simulatorMappingUpdate.virtualConnectionId == MainRenderer::get().getBlockRenderDataManager().getBlockRenderData(blockIter->second.blockRenderDataId)->textureVirtualConnection) {
+					auto iter = vulkanLogicAllocation.value()->getBlockStateIndex().find(simulatorMappingUpdate.position);
+					if (iter == vulkanLogicAllocation.value()->getBlockStateIndex().end()) continue;
+					if (std::holds_alternative<std::vector<simulator_gate_id_t>>(simulatorIds)) {
+						vulkanLogicAllocation.value()->getStateSimulatorIds()[iter->second] = 0;
+					} else {
+						vulkanLogicAllocation.value()->getStateSimulatorIds()[iter->second] = std::get<simulator_gate_id_t>(simulatorIds);
+					}
 					logicGroupsToUpdate.insert(logicGroup);
+					break;
+				}
+			}
+		} else {
+			for (LogicGroup* logicGroup : groupsAtChunkIter->second) {
+				std::optional<std::shared_ptr<VulkanLogicAllocation>> vulkanLogicAllocation = logicGroup->getAllocation();
+				if (!vulkanLogicAllocation) continue;
+				auto portStateIter = vulkanLogicAllocation.value()->getPortStateIndex().find(simulatorMappingUpdate.position);
+				if (portStateIter == vulkanLogicAllocation.value()->getPortStateIndex().end()) continue;
+
+				const PortStateRange& range = portStateIter->second;
+				if (!range.isValid()) continue;
+
+				std::vector<simulator_gate_id_t>& chunkStateSimulatorIds = vulkanLogicAllocation.value()->getStateSimulatorIds();
+				if (std::holds_alternative<std::vector<simulator_gate_id_t>>(simulatorIds)) {
+					const std::vector<simulator_gate_id_t>& wireSimulatorIds = std::get<std::vector<simulator_gate_id_t>>(simulatorIds);
+					uint32_t laneCount = wireSimulatorIds.size();
+					if (laneCount != range.laneCount) {
+						logicGroupsToUpdate.insert(logicGroup);
+					} else {
+						for (uint32_t lane = 0; lane < laneCount; lane++) {
+							chunkStateSimulatorIds[range.baseIndex + lane] = wireSimulatorIds[lane];
+						}
+					}
 				} else {
-					chunkStateSimulatorIds[range.baseIndex] = std::get<simulator_id_t>(simIds);
+					if (1 != range.laneCount) {
+						logicGroupsToUpdate.insert(logicGroup);
+					} else {
+						chunkStateSimulatorIds[range.baseIndex] = std::get<simulator_gate_id_t>(simulatorIds);
+					}
 				}
 			}
 		}
 	}
 }
 
-void VulkanChunker::setEvaluator(Evaluator* evaluator, const Address& address) {
-	if (this->evaluator) {
-		this->evaluator->disconnectListener(this);
+void VulkanChunker::setSimulatoruator(const EvalLogicSimulator* simulator, const Address& address) {
+	if (this->simulator) {
+		this->simulator->disconnectListener(this);
 	}
 	this->address = address;
-	this->evaluator = evaluator;
-	if (evaluator) {
-		evaluator->connectListener(this, address, std::bind(&VulkanChunker::updateSimulatorIds, this, std::placeholders::_1));
+	this->simulator = simulator;
+	if (simulator) {
+		simulator->connectListener(this, address, std::bind(&VulkanChunker::updateSimulatorIds, this, std::placeholders::_1));
 	}
 	for (auto& pair : logicGroups) {
-		pair.second.rebuildAllocation(device, evaluator, address);
+		pair.second.rebuildAllocation(device, simulator, address);
 	}
 }
 
@@ -541,18 +551,18 @@ std::vector<std::shared_ptr<VulkanLogicAllocation>> VulkanChunker::getAllocation
 	max = getChunk(max + Vector(1));
 
 	// go through each chunk in view and collect it if it exists and has an allocation
-	std::set<LogicGroup*> logicGroups;
+	std::set<LogicGroup*> logicGroupsToRender;
 	for (coordinate_t chunkX = min.x; chunkX <= max.x; chunkX += CHUNK_SIZE) {
 		for (coordinate_t chunkY = min.y; chunkY <= max.y; chunkY += CHUNK_SIZE) {
 			auto groupsAtChunkIter = chunkToGroups.find({ chunkX, chunkY });
 			if (groupsAtChunkIter == chunkToGroups.end()) continue;
 			for (LogicGroup* group : groupsAtChunkIter->second) {
-				if (group->getAllocation().has_value()) logicGroups.insert(group);
+				if (group->getAllocation().has_value()) logicGroupsToRender.insert(group);
 			}
 		}
 	}
 	std::vector<std::shared_ptr<VulkanLogicAllocation>> seen;
-	for (LogicGroup* group : logicGroups) {
+	for (LogicGroup* group : logicGroupsToRender) {
 		seen.push_back(group->getAllocation().value());
 	}
 

@@ -1,47 +1,49 @@
 #include "circuitManager.h"
 
-#include "backend/evaluator/evaluator.h"
-#include "backend/evaluator/evaluatorManager.h"
+#include "backend/evaluator/simulator/evalLogicSimulator.h"
+#include "backend/evaluator/simulatorManager.h"
 #include "backend/proceduralCircuits/generatedCircuit.h"
 #include "parsedCircuit.h"
 
-circuit_id_t CircuitManager::createNewCircuit(const std::string& name, const std::string& uuid, bool createEval) {
-	circuit_id_t id = getNewCircuitId();
-	const SharedCircuit circuit = std::make_shared<Circuit>(id, *this, blockDataManager, dataUpdateEventManager, name, uuid);
-	circuits.emplace(id, circuit);
+circuit_id_t CircuitManager::createNewCircuit(const std::string& name, const std::string& uuid, bool createSim) {
+	circuit_id_t circuitId = getNewCircuitId();
+	const SharedCircuit circuit = std::make_shared<Circuit>(circuitId, *this, dataUpdateEventManager, name, uuid);
+	circuits.emplace(circuitId, circuit);
 	UUIDToCircuits.emplace(uuid, circuit);
 	for (auto& [object, funcData] : listenerFunctions) {
 		circuit->connectListener(object, funcData.second, funcData.first);
 	}
 
-	setupBlockData(id);
+	setupBlockData(circuitId);
 	circuit->editCount = 0;
 
-	if (createEval) {
-		auto evaluatorId = evaluatorManager.createNewEvaluator(*this, id);
-		SharedEvaluator eval = evaluatorManager.getEvaluator(evaluatorId);
-		eval->setPause(false);
-		eval->setUseTickrate(true);
-		eval->setTickrate(40);
+	if (createSim) {
+		simulator_id_t simulatorId = simulatorManager.createNewSimulator(circuitId);
+		if (simulatorId != 0) {
+			EvalLogicSimulator* simulator = simulatorManager.getSimulator(simulatorId);
+			simulator->setPause(false);
+			simulator->setUseTickrate(true);
+			simulator->setTickrate(40);
+		}
 	}
 
-	return id;
+	return circuitId;
 }
 
-CircuitManager::CircuitManager(DataUpdateEventManager& dataUpdateEventManager, EvaluatorManager& evaluatorManager, CircuitFileManager& fileManager) :
+CircuitManager::CircuitManager(DataUpdateEventManager& dataUpdateEventManager, SimulatorManager& simulatorManager, CircuitFileManager& fileManager) :
 	blockDataManager(dataUpdateEventManager), circuitBlockDataManager(dataUpdateEventManager), proceduralCircuitManager(*this, dataUpdateEventManager, fileManager),
-	dataUpdateEventManager(dataUpdateEventManager), dataUpdateEventReceiver(dataUpdateEventManager), evaluatorManager(evaluatorManager) {
-	dataUpdateEventReceiver.linkFunction("postBlockSizeChange", [this](const DataUpdateEventManager::EventData* eventData) {
-		linkedFunctionForUpdates<Vector>(eventData);
+	dataUpdateEventManager(dataUpdateEventManager), dataUpdateEventReceiver(dataUpdateEventManager), simulatorManager(simulatorManager) {
+	dataUpdateEventReceiver.linkFunction("postBlockSizeChange", [this](const DataUpdateEventManager::EventData* event) {
+		linkedFunctionForUpdates<Vector>(event);
 	});
-	dataUpdateEventReceiver.linkFunction("blockDataRemoveConnection", [this](const DataUpdateEventManager::EventData* eventData) {
-		linkedFunctionForUpdates<connection_end_id_t>(eventData);
+	dataUpdateEventReceiver.linkFunction("blockDataRemoveConnection", [this](const DataUpdateEventManager::EventData* event) {
+		linkedFunctionForUpdates<connection_end_id_t>(event);
 	});
-	dataUpdateEventReceiver.linkFunction("blockDataSetConnection", [this](const DataUpdateEventManager::EventData* eventData) {
-		linkedFunctionForUpdates<connection_end_id_t>(eventData);
+	dataUpdateEventReceiver.linkFunction("blockDataSetConnection", [this](const DataUpdateEventManager::EventData* event) {
+		linkedFunctionForUpdates<connection_end_id_t>(event);
 	});
-	dataUpdateEventReceiver.linkFunction("blockDataConnectionNameSet", [this](const DataUpdateEventManager::EventData* eventData) {
-		linkedFunctionForUpdates<connection_end_id_t>(eventData);
+	dataUpdateEventReceiver.linkFunction("blockDataConnectionNameSet", [this](const DataUpdateEventManager::EventData* event) {
+		linkedFunctionForUpdates<connection_end_id_t>(event);
 	});
 }
 

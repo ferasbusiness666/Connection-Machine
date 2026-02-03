@@ -1,45 +1,45 @@
 #include <gtest/gtest.h>
 #include "environment/environment.h"
-#include "backend/evaluator/evaluator.h"
+#include "backend/evaluator/simulator/evalLogicSimulator.h"
 
 class TickrateIncDecEvaluatorTest : public ::testing::TestWithParam<double> {
 protected:
 	void SetUp() override;
 	void TearDown() override;
 	Environment environment {false};
-	SharedEvaluator evaluator = nullptr;
+	EvalLogicSimulator* simulator = nullptr;
 	SharedCircuit circuit = nullptr;
 };
 
 void TickrateIncDecEvaluatorTest::SetUp() {
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
 	circuit = environment.getBackend().getCircuit(circuitId);
-	evaluator_id_t evalId = environment.getBackend().createEvaluator(circuitId).value();
-	evaluator = environment.getBackend().getEvaluator(evalId);
+	simulator_id_t simulatorId = environment.getBackend().createSimulator(circuitId).value();
+	simulator = environment.getBackend().getSimulator(simulatorId);
 }
 
 void TickrateIncDecEvaluatorTest::TearDown() {
 	circuit.reset();
-	evaluator.reset();
+	simulator = nullptr;
 }
 
 TEST_P(TickrateIncDecEvaluatorTest, IncreaseTickrate) {
 	double tickrate = GetParam();
-	evaluator->setTickrate(tickrate);
-	EXPECT_DOUBLE_EQ(evaluator->getTickrate(), tickrate);
-	evaluator->increaseTickrateSeq();
-	EXPECT_GT(evaluator->getTickrate(), tickrate);
+	simulator->setTickrate(tickrate);
+	EXPECT_DOUBLE_EQ(simulator->getTickrate(), tickrate);
+	simulator->increaseTickrateSeq();
+	EXPECT_GT(simulator->getTickrate(), tickrate);
 }
 
 TEST_P(TickrateIncDecEvaluatorTest, DecreaseTickrate) {
 	double tickrate = GetParam();
-	evaluator->setTickrate(tickrate);
-	EXPECT_DOUBLE_EQ(evaluator->getTickrate(), tickrate);
-	evaluator->decreaseTickrateSeq();
-	if (tickrate > Evaluator::MIN_TICKRATE_DECREASABLE) {
-		EXPECT_LT(evaluator->getTickrate(), tickrate);
+	simulator->setTickrate(tickrate);
+	EXPECT_DOUBLE_EQ(simulator->getTickrate(), tickrate);
+	simulator->decreaseTickrateSeq();
+	if (tickrate > EvalLogicSimulator::MIN_TICKRATE_DECREASABLE) {
+		EXPECT_LT(simulator->getTickrate(), tickrate);
 	} else {
-		EXPECT_DOUBLE_EQ(evaluator->getTickrate(), Evaluator::MIN_TICKRATE_DECREASABLE);
+		EXPECT_DOUBLE_EQ(simulator->getTickrate(), EvalLogicSimulator::MIN_TICKRATE_DECREASABLE);
 	}
 }
 
@@ -75,12 +75,12 @@ TEST_F(TickrateIncDecEvaluatorTest, ExactSequenceRounding) {
 	};
 
 	for (const auto& c : cases) {
-		evaluator->setTickrate(c.start);
-		evaluator->increaseTickrateSeq();
-		EXPECT_DOUBLE_EQ(evaluator->getTickrate(), c.expectedNext);
+		simulator->setTickrate(c.start);
+		simulator->increaseTickrateSeq();
+		EXPECT_DOUBLE_EQ(simulator->getTickrate(), c.expectedNext);
 
-		evaluator->setTickrate(c.start);
-		evaluator->decreaseTickrateSeq();
-		EXPECT_DOUBLE_EQ(evaluator->getTickrate(), c.expectedPrev);
+		simulator->setTickrate(c.start);
+		simulator->decreaseTickrateSeq();
+		EXPECT_DOUBLE_EQ(simulator->getTickrate(), c.expectedPrev);
 	}
 }
