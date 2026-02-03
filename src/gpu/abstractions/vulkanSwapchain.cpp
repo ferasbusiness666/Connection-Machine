@@ -87,4 +87,3 @@ void Swapchain::createFramebuffers(const VkRenderPass renderPass, const Allocate
 		}
 	}
 }
-

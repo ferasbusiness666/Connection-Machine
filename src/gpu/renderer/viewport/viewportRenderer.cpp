@@ -468,7 +468,7 @@ void ViewportRenderer::renderLoop() {
 	while(running.load()) {
 		uint32_t currentFrameIndex = frames.getCurrentFrameIndex();
 		if (currentFrameIndex == currentBorrowedImage.load()) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(5));
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 			continue;
 		}
 
@@ -483,7 +483,7 @@ void ViewportRenderer::renderLoop() {
 				destroyImage(currentFrameIndex);
 				createImage(currentFrameIndex);
 				if (imagesToRecreate[currentFrameIndex]) {
-					std::this_thread::sleep_for(std::chrono::milliseconds(5));
+					std::this_thread::sleep_for(std::chrono::milliseconds(1));
 					continue;
 				}
 			}

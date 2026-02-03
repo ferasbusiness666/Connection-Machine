@@ -73,6 +73,7 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 	});
 	setupGUIValue<Vec2>("CircuitViewSize", Vec2(1, 1), nullptr);
 	setupGUIValue<bool>("CircuitViewIsHovered", false, nullptr);
+	setupGUIValue<float>("WindowScalingSize", getMainWindow().getWindowScalingSize(), nullptr);
 }
 
 CircuitViewWidget::~CircuitViewWidget() {
@@ -82,7 +83,7 @@ CircuitViewWidget::~CircuitViewWidget() {
 }
 
 void CircuitViewWidget::processEvent(SDL_Event& event) {
-	if (getGUIValue<bool>("CircuitViewIsHovered").value_or(false)) {
+	if (valueOr(getGUIValue<bool>("CircuitViewIsHovered"), false)) {
 		if (event.type == SDL_EVENT_MOUSE_WHEEL) {
 			Vec2 movement(-event.wheel.x * getMainWindow().getWindowScalingSize(), event.wheel.y * getMainWindow().getWindowScalingSize());
 			const bool* scrollPanning = Settings::get<SettingType::BOOL>("Keybinds/Camera/Scroll Panning");
@@ -97,7 +98,7 @@ void CircuitViewWidget::processEvent(SDL_Event& event) {
 				// do zoom
 				circuitView->getEventRegister().doEvent(DeltaEvent("view zoom", (float)(movement.y) / 15.f));
 			} else {
-				Vec2 size = getGUIValue<Vec2>("CircuitViewSize").value_or(Vec2(100, 100));
+				Vec2 size = valueOr(getGUIValue<Vec2>("CircuitViewSize"), Vec2(100, 100));
 				float scaleAmout = App::getDetlaTime() * 160.;
 				circuitView->getEventRegister().doEvent(DeltaXYEvent(
 					"view pan",
@@ -107,7 +108,6 @@ void CircuitViewWidget::processEvent(SDL_Event& event) {
 			}
 	 	} else if (event.type == SDL_EVENT_DROP_FILE && event.drop.data != nullptr) {
 			std::string filePath(event.drop.data);
-			std::cout << filePath << "\n";
 			if (filePath.empty()) return;
 			std::vector<circuit_id_t> ids = getMainWindow().getEnvironment().getCircuitFileManager().loadFromFile(filePath);
 			if (ids.empty()) {
@@ -145,7 +145,8 @@ void CircuitViewWidget::render(std::function<void(std::shared_ptr<void>)> preser
 		ImVec2 viewportWindowScreenPos = ImGui::GetCursorScreenPos();
 		ImVec2 viewportWindowPos = ImGui::GetCursorPos();
 		{
-			MainRenderer::get().resizeViewport(circuitView->getViewportId(), { viewportPanelSize.x, viewportPanelSize.y });
+			float windowScalingSize = valueOr(getGUIValue_rendering<float>("WindowScalingSize"), 1.f);
+			MainRenderer::get().resizeViewport(circuitView->getViewportId(), { viewportPanelSize.x * windowScalingSize, viewportPanelSize.y * windowScalingSize });
 			std::pair<VkDescriptorSet, std::shared_ptr<void>> descriptor = MainRenderer::get().getViewportLatestImage(circuitView->getViewportId());
 			preserveForFrame(descriptor.second);
 			if (descriptor.first != VK_NULL_HANDLE) {

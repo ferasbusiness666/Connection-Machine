@@ -63,11 +63,11 @@ protected:
 	template<class ValueType>
 	void setupGUIValue(const std::string& key, const ValueType& initalValue, std::function<void(const ValueType&)> func);
 	template<class ValueType>
-	const std::optional<ValueType>& getGUIValue(const std::string& key) const;
+	const ValueType* getGUIValue(const std::string& key) const;
 	template<class ValueType>
 	void setGUIValue(const std::string& key, const ValueType& value);
 	template<class ValueType>
-	const std::optional<ValueType>& getGUIValue_rendering(const std::string& key) const;
+	const ValueType* getGUIValue_rendering(const std::string& key) const;
 	template<class ValueType>
 	void setGUIValue_rendering(const std::string& key, const ValueType& value);
 	template<class ValueType>
@@ -90,19 +90,19 @@ void Widget::setupGUIValue(const std::string& key, const ValueType& initalValue,
 }
 
 template<class ValueType>
-const std::optional<ValueType>& Widget::getGUIValue(const std::string& key) const {
+const ValueType* Widget::getGUIValue(const std::string& key) const {
 	std::lock_guard mux(guiValuesMux);
 	auto iter = guiValues.find(key);
 	if (iter == guiValues.end()) {
 		logError("Could not find {} in guiValues.", "Widget::getGUIValue", key);
-		return std::nullopt;
+		return nullptr;
 	}
 	const GuiValue<ValueType>* guiValue = iter->second->cast<ValueType>();
 	if (guiValue == nullptr) {
 		logError("Could not cast value with key {}.", "Widget::getGUIValue", key);
-		return std::nullopt;
+		return nullptr;
 	}
-	return guiValue->value;
+	return &guiValue->value;
 }
 
 template<class ValueType>
@@ -123,17 +123,17 @@ void Widget::setGUIValue(const std::string& key, const ValueType& value) {
 }
 
 template<class ValueType>
-const std::optional<ValueType>& Widget::getGUIValue_rendering(const std::string& key) const {
+const ValueType* Widget::getGUIValue_rendering(const std::string& key) const {
 	std::lock_guard mux(guiValuesMux);
 	auto iter = guiValues.find(key);
 	if (iter == guiValues.end()) {
 		logError("Could not find {} in guiValues.", "Widget::getGUIValue_rendering", key);
-		return std::nullopt;
+		return nullptr;
 	}
 	const GuiValue<ValueType>* guiValue = iter->second->cast<ValueType>();
 	if (guiValue == nullptr) {
 		logError("Could not cast value with key {}.", "Widget::getGUIValue_rendering", key);
-		return std::nullopt;
+		return nullptr;
 	}
 	return &guiValue->renderingValue;
 }
