@@ -130,7 +130,7 @@ void CircuitViewWidget::processEvent(SDL_Event& event) {
 	}
 }
 
-void CircuitViewWidget::render(std::function<void(std::shared_ptr<void>)> preserveForFrame) {
+void CircuitViewWidget::render() {
 	ImGui::SetNextWindowSize(ImVec2(400, 300), ImGuiCond_FirstUseEver);
 	ImGui::Begin(getWidgetIdStr().c_str());
 	bool isHovered = false;
@@ -147,10 +147,9 @@ void CircuitViewWidget::render(std::function<void(std::shared_ptr<void>)> preser
 		{
 			float windowScalingSize = valueOr(getGUIValue_rendering<float>("WindowScalingSize"), 1.f);
 			MainRenderer::get().resizeViewport(circuitView->getViewportId(), { viewportPanelSize.x * windowScalingSize, viewportPanelSize.y * windowScalingSize });
-			std::pair<VkDescriptorSet, std::shared_ptr<void>> descriptor = MainRenderer::get().getViewportLatestImage(circuitView->getViewportId());
-			preserveForFrame(descriptor.second);
-			if (descriptor.first != VK_NULL_HANDLE) {
-				ImGui::Image(descriptor.first, ImVec2{ viewportPanelSize.x, viewportPanelSize.y });
+			VkDescriptorSet descriptorSet = MainRenderer::get().startViewportRendering(circuitView->getViewportId());
+			if (descriptorSet != VK_NULL_HANDLE) {
+				ImGui::Image(descriptorSet, ImVec2{ viewportPanelSize.x, viewportPanelSize.y });
 			} else {
 				ImGui::Text("RENDERING BROKEN!! :(");
 			}
@@ -186,7 +185,7 @@ void CircuitViewWidget::render(std::function<void(std::shared_ptr<void>)> preser
 			ImGui::Text("%s", fmt::format("leftClick: {}", leftClick).c_str());
 			ImGui::Text("%s", fmt::format("rightClick: {}", rightClick).c_str());
 			ImGui::Text("%s", fmt::format("mousePos: ({}, {})", mousePos.x, mousePos.y).c_str());
-			ImGui::Text("%s", fmt::format("ImGui {} fps. Circuit {} fps.", (int)ImGui::GetIO().Framerate, MainRenderer::get().getFps(circuitView->getViewportId())).c_str());
+			ImGui::Text("%s", fmt::format("ImGui {} fps", (int)ImGui::GetIO().Framerate/*, MainRenderer::get().getFps(circuitView->getViewportId())*/).c_str());
 			ImGui::PopStyleColor();
 		}
 		ImGui::EndChild();

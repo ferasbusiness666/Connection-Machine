@@ -40,7 +40,7 @@ public:
 	bool isKilled() const { return killed; }
 
 	VkSurfaceKHR createVkSurface(VkInstance instance);
-	void doRendering(std::function<void(std::shared_ptr<void>)> preserveForFrame); // called by vulkan
+	void doRendering(); // called by vulkan
 
 	nlohmann::json dumpWindowState() const;
 
@@ -50,7 +50,7 @@ protected:
 	// (This will only work when forced is false and so windows should clean up all their resources if forced is true!)
 	virtual void doUpdate() { } // called once per main app loop
 	virtual bool killWindow(bool forced) { return true; }
-	virtual void render(std::function<void(std::shared_ptr<void>)> preserveForFrame) { }
+	virtual void render() { }
 	virtual void processEvent(SDL_Event& event) { } // called by recieveEvent
 	virtual nlohmann::json dumpState() const { return "dumpState not overridden"; }
 

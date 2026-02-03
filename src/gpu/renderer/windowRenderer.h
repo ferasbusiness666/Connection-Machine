@@ -9,7 +9,7 @@
 
 class WindowRenderer {
 public:
-	WindowRenderer(SdlWindow* sdlWindow);
+	WindowRenderer(WindowId windowId, SdlWindow* sdlWindow);
 	~WindowRenderer();
 
 	// no copy
@@ -23,7 +23,8 @@ public:
 	const ImGuiRenderer& getImGuiRenderer() const { return *imGuiRenderer; }
 	void setImGuiRenderFunc(std::function<void()> imGuiRenderFunc);
 
-	inline VulkanDevice* getDevice() { return device; }
+	void addSemaphore(VkSemaphore semaphore) { semaphoreForThisFrame.push_back(semaphore); }
+	VulkanDevice* getDevice() { return device; }
 
 private:
 	void createColorResources();
@@ -33,6 +34,7 @@ private:
 
 private:
 	// screen
+	WindowId windowId;
 	Swapchain swapchain;
 	std::atomic<bool> swapchainRecreationNeeded = false;
 	std::pair<uint32_t, uint32_t> windowSize;
@@ -41,6 +43,7 @@ private:
 	// main vulkan
 	VkSurfaceKHR surface;
 	VkRenderPass renderPass;
+	std::vector<VkSemaphore> semaphoreForThisFrame;
 
 	// subrenderers
 	std::optional<ImGuiRenderer> imGuiRenderer;

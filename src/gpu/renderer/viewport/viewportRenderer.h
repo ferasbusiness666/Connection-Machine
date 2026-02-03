@@ -3,6 +3,7 @@
 
 #include <glm/ext/matrix_float4x4.hpp>
 
+#include "gpu/abstractions/vulkanImageSwapchain.h"
 #include "logic/chunking/vulkanChunker.h"
 #include "gpu/renderer/frameManager.h"
 #include "gpu/mainRendererDefs.h"
@@ -44,9 +45,11 @@ public:
 	void updateViewFrame(glm::vec2 size);
 	void updateView(FPosition topLeft, FPosition bottomRight);
 
-	std::pair<VkDescriptorSet, std::shared_ptr<void>> getLatestImage();
+	// std::pair<VkDescriptorSet, std::shared_ptr<void>> getLatestImage();
 
-	float getFps() const { return fps.load(); }
+	// float getFps() const { return fps.load(); }
+
+	std::pair<VkDescriptorSet, VkSemaphore> startImageRender();
 
 	// elements
 	ElementId addSelectionObjectElement(const SelectionObjectElement& selection);
@@ -64,12 +67,12 @@ public:
 	void removeHalfConnectionPreview(ElementId halfConnectionPreview);
 
 private:
-	void destroyImage(unsigned int index);
-	void createImage(unsigned int index);
+	void destroyImages();
+	void createImages();
 	void createRenderPass();
 	void render(Frame& frame);
 	void renderToCommandBuffer(Frame& frame, uint32_t imageIndex);
-	void renderLoop();
+	// void renderLoop();
 
 	const EvalLogicSimulator* simulator = nullptr;
 	std::mutex simulatorMux;
@@ -103,20 +106,18 @@ private:
 
 	std::mutex framesMutex;
 	FrameManager frames;
-	std::thread renderThread;
-	std::atomic<bool> running = false;
+	// std::thread renderThread;
+	// std::atomic<bool> running = false;
 
-	std::atomic<float> fps = 0;
+	// std::atomic<float> fps = 0;
 
 	std::atomic<int> currentBorrowedImage = -1;
-	std::mutex imagesToRecreateMux;
-	std::vector<bool> createdImages;
-	std::vector<bool> imagesToRecreate;
-	std::vector<VkFramebuffer> framebuffers;
-	std::vector<AllocatedImage> msaaImages;      // MSAA render targets
-	std::vector<AllocatedImage> resolveImages;   // Resolved images for ImGui
+	AllocatedImage msaaImage;
+	ImageSwapchain imageSwapchain;
 	std::vector<VkDescriptorSet> imguiTextures;  // ImGui descriptor sets
 	std::atomic<bool> imageReady = false;
+	std::atomic<unsigned int> imagesReady = 0;
+	std::atomic<bool> updateViewData = true;
 	std::mutex imageMux;
 
 	std::chrono::time_point<std::chrono::high_resolution_clock> lastUpdateRender;

@@ -1,5 +1,5 @@
-#ifndef vulkanSwapchain_h
-#define vulkanSwapchain_h
+#ifndef vulkanImageSwapchain_h
+#define vulkanImageSwapchain_h
 
 #include "gpu/vulkanDevice.h"
 
@@ -23,4 +23,4 @@ private:
 	VulkanDevice* device;
 };
 
-#endif
+#endif /* vulkanImageSwapchain_h */

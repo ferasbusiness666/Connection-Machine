@@ -6,7 +6,7 @@
 
 #include "gpu/mainRenderer.h"
 
-WindowRenderer::WindowRenderer(SdlWindow* sdlWindow) : sdlWindow(sdlWindow) {
+WindowRenderer::WindowRenderer(WindowId windowId, SdlWindow* sdlWindow) : windowId(windowId), sdlWindow(sdlWindow) {
 	logInfo("Initializing window renderer...");
 
 	// create surface and use it to make sure a vulkan device has been created
@@ -94,7 +94,10 @@ void WindowRenderer::renderLoop() {
 
 		// ImGui rendering
 		imGuiRenderer->beginFrame();
-		sdlWindow->doRendering([&](std::shared_ptr<void> ptr){ frame.lifetime.push(ptr); });
+		semaphoreForThisFrame.clear();
+		MainRenderer::get().setCurrentlyRenderedWindow(windowId);
+		sdlWindow->doRendering();
+		MainRenderer::get().clearCurrentlyRenderedWindow();
 		renderToCommandBuffer(frame, imageIndex);
 
 		// start setting up graphics submission ====================================================
@@ -102,10 +105,10 @@ void WindowRenderer::renderLoop() {
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
 		// wait semaphore
-		VkSemaphore waitSemaphores[] = { frame.acquireSemaphore };
+		semaphoreForThisFrame.push_back(frame.acquireSemaphore);
 		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-		submitInfo.waitSemaphoreCount = 1;
-		submitInfo.pWaitSemaphores = waitSemaphores;
+		submitInfo.waitSemaphoreCount = semaphoreForThisFrame.size();
+		submitInfo.pWaitSemaphores = semaphoreForThisFrame.data();
 		submitInfo.pWaitDstStageMask = waitStages;
 
 		// command buffers

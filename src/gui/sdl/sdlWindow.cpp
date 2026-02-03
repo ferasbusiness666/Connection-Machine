@@ -168,13 +168,13 @@ VkSurfaceKHR SdlWindow::createVkSurface(VkInstance instance) {
 	return surface;
 }
 
-void SdlWindow::doRendering(std::function<void(std::shared_ptr<void>)> preserveForFrame) {
+void SdlWindow::doRendering() {
 	std::lock_guard mux(renderingMux);
 	if (killed) {
 		// logError("Can't render killed SdlWindow!", "SdlWindow::doRendering");
 		return;
 	}
-	render(preserveForFrame);
+	render();
 }
 
 void SdlWindow::toggleBorderlessFullscreen() {

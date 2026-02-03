@@ -41,8 +41,8 @@ class Widget {
 public:
 	Widget(WidgetId widgetId, MainWindow& mainWindow) : widgetId(widgetId), mainWindow(mainWindow), widgetIdStr(fmt::format("Widget {}", widgetId)) { }
 	virtual ~Widget() = default;
-	void doRendering(std::function<void(std::shared_ptr<void>)> preserveForFrame) {
-		render(preserveForFrame);
+	void doRendering() {
+		render();
 		doRenderDataUpdate.store(true);
 	}
 	void doUpdate() {
@@ -57,7 +57,7 @@ public:
 	virtual void processEvent(SDL_Event& event) = 0;
 
 protected:
-	virtual void render(std::function<void(std::shared_ptr<void>)> preserveForFrame) = 0;
+	virtual void render() = 0;
 
 	// gui values
 	template<class ValueType>

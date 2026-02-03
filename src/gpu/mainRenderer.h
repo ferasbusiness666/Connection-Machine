@@ -28,6 +28,8 @@ public:
 	// Windows ==================================================================================================================================
 	WindowId registerWindow(SdlWindow* window);
 	void resizeWindow(WindowId windowId, std::pair<uint32_t, uint32_t> size);
+	void setCurrentlyRenderedWindow(WindowId windowId);
+	void clearCurrentlyRenderedWindow();
 	void deregisterWindow(WindowId windowId);
 
 	// Block Render Data ===============================================================================================================================
@@ -57,8 +59,8 @@ public:
 	void resizeViewport(ViewportId viewportId, glm::vec2 size);
 	void moveViewportView(ViewportId viewportId, FPosition topLeft, FPosition bottomRight);
 	void setViewportSimulator(ViewportId viewportId, const EvalLogicSimulator* simulator, Address address); // tmp circuit
-	std::pair<VkDescriptorSet, std::shared_ptr<void>> getViewportLatestImage(ViewportId viewportId);
-	float getFps(ViewportId viewportId) const;
+	VkDescriptorSet startViewportRendering(ViewportId viewportId);
+	// float getFps(ViewportId viewportId) const;
 	void resetViewport(ViewportId viewportId);
 	void deregisterViewport(ViewportId viewportId);
 
@@ -94,6 +96,7 @@ private:
 
 	VulkanInstance vulkanInstance;
 
+	WindowId currentlyRenderedWindow = 0;
 	WindowId lastWindowId = 0;
 	ViewportId lastViewportId = 0;
 	std::map<WindowId, WindowRenderer> windowRenderers;

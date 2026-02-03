@@ -18,8 +18,9 @@ void MainRenderer::kill() {
 }
 
 WindowId MainRenderer::registerWindow(SdlWindow* sdlWindow) {
-	auto pair = windowRenderers.try_emplace(getNewWindowId(), sdlWindow);
-	return lastWindowId;
+	WindowId windowId = getNewWindowId();
+	windowRenderers.try_emplace(windowId, windowId, sdlWindow);
+	return windowId;
 }
 
 void MainRenderer::resizeWindow(WindowId windowId, std::pair<uint32_t, uint32_t> size) {
@@ -29,6 +30,15 @@ void MainRenderer::resizeWindow(WindowId windowId, std::pair<uint32_t, uint32_t>
 		return;
 	}
 	iter->second.resize(size);
+}
+
+void MainRenderer::setCurrentlyRenderedWindow(WindowId windowId) {
+	assert(currentlyRenderedWindow == 0);
+	currentlyRenderedWindow = windowId;
+}
+
+void MainRenderer::clearCurrentlyRenderedWindow() {
+	currentlyRenderedWindow = 0;
 }
 
 void MainRenderer::deregisterWindow(WindowId windowId) {
@@ -163,23 +173,31 @@ void MainRenderer::setViewportSimulator(ViewportId viewportId, const EvalLogicSi
 	iter->second.setSimulator(simulator, address);
 }
 
-std::pair<VkDescriptorSet, std::shared_ptr<void>> MainRenderer::getViewportLatestImage(ViewportId viewportId) {
+VkDescriptorSet MainRenderer::startViewportRendering(ViewportId viewportId) {
+	if (currentlyRenderedWindow == 0) {
+		logError("Can't start viewport rendering when no window is rendering.");
+		return VK_NULL_HANDLE;
+	}
+	auto windowsIter = windowRenderers.find(currentlyRenderedWindow);
+	assert(windowsIter != windowRenderers.end());
 	auto iter = viewportRenderers.find(viewportId);
 	if (iter == viewportRenderers.end()) {
-		logError("Failed to call getViewportLatestImage on non existent viewport {}", "MainRenderer", viewportId);
-		return { VK_NULL_HANDLE, nullptr };
+		logError("Failed to call get_viewport_latest_image on non existent viewport {}", "MainRenderer", viewportId);
+		return VK_NULL_HANDLE;
 	}
-	return iter->second.getLatestImage();
+	std::pair<VkDescriptorSet, VkSemaphore> pair = iter->second.startImageRender();
+	windowsIter->second.addSemaphore(pair.second);
+	return pair.first;
 }
 
-float MainRenderer::getFps(ViewportId viewportId) const {
-	auto iter = viewportRenderers.find(viewportId);
-	if (iter == viewportRenderers.end()) {
-		logError("Failed to call getFps on non existent viewport {}", "MainRenderer", viewportId);
-		return 0;
-	}
-	return iter->second.getFps();
-}
+// float MainRenderer::getFps(ViewportId viewportId) const {
+// 	auto iter = viewportRenderers.find(viewportId);
+// 	if (iter == viewportRenderers.end()) {
+// 		logError("Failed to call getFps on non existent viewport {}", "MainRenderer", viewportId);
+// 		return 0;
+// 	}
+// 	return iter->second.getFps();
+// }
 
 void MainRenderer::resetViewport(ViewportId viewportId) {
 	auto iter = viewportRenderers.find(viewportId);

@@ -43,24 +43,20 @@ ViewportRenderer::ViewportRenderer(VulkanDevice* device) : chunker(device), devi
 
 	frames.init(device);
 
-	createdImages.resize(FRAMES_IN_FLIGHT, false);
-	imagesToRecreate.resize(FRAMES_IN_FLIGHT, true);
-	msaaImages.resize(FRAMES_IN_FLIGHT);
-	resolveImages.resize(FRAMES_IN_FLIGHT);
-	framebuffers.resize(FRAMES_IN_FLIGHT);
+	imageSwapchain.init(device);
 	imguiTextures.resize(FRAMES_IN_FLIGHT);
 
-	running = true;
-	renderThread = std::thread(&ViewportRenderer::renderLoop, this);
+	// running = true;
+	// renderThread = std::thread(&ViewportRenderer::renderLoop, this);
 }
 
 ViewportRenderer::~ViewportRenderer() {
-	running.store(false);
-	if (renderThread.joinable()) renderThread.join();
+	// running.store(false);
+	// if (renderThread.joinable()) renderThread.join();
 
 	{
 		std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
-		for (unsigned int i = 0; i < FRAMES_IN_FLIGHT; i++)	destroyImage(i);
+		destroyImages();
 	}
 
 	vkDestroySampler(device->getDevice(), sampler, nullptr);
@@ -94,8 +90,7 @@ void ViewportRenderer::updateViewFrame(glm::vec2 size) {
 		newViewData.viewportSize.height = size.y;
 	}
 	if (viewData.viewportSize.width != newViewData.viewportSize.width || viewData.viewportSize.height != newViewData.viewportSize.height) {
-		std::lock_guard lock(imagesToRecreateMux);
-		for (unsigned int i = 0; i < FRAMES_IN_FLIGHT; i++)	imagesToRecreate[i] = true;
+		updateViewData.store(true);
 	}
 }
 
@@ -108,10 +103,7 @@ void ViewportRenderer::updateView(FPosition topLeft, FPosition bottomRight) {
 		float viewHeight = bottomRight.y - topLeft.y;
 		newViewData.viewScale = std::min(viewWidth, viewHeight);
 	}
-	{
-		std::lock_guard lock(imagesToRecreateMux);
-		for (unsigned int i = 0; i < FRAMES_IN_FLIGHT; i++)	imagesToRecreate[i] = true;
-	}
+	updateViewData.store(true);
 }
 
 class BorrowedImageDetector {
@@ -121,20 +113,6 @@ public:
 private:
 	std::atomic<int>& currentBorrowedImage;
 };
-
-std::pair<VkDescriptorSet, std::shared_ptr<void>> ViewportRenderer::getLatestImage() {
-	std::lock_guard<std::mutex> lock(imageMux);
-	if (!imageReady || imguiTextures.size() < FRAMES_IN_FLIGHT) {
-		return { VK_NULL_HANDLE, nullptr };
-	}
-	{
-		unsigned int lastFrameIndex = (frames.getCurrentFrameIndex() - 1) % FRAMES_IN_FLIGHT;
-		VkDescriptorSet descriptorSet = imguiTextures[lastFrameIndex];
-		if (descriptorSet == VK_NULL_HANDLE) return { VK_NULL_HANDLE, nullptr };
-		currentBorrowedImage.store(lastFrameIndex);
-		return { descriptorSet, std::make_shared<BorrowedImageDetector>(currentBorrowedImage) } ;
-	}
-}
 
 ElementId ViewportRenderer::addSelectionObjectElement(const SelectionObjectElement& selection) {
 	std::lock_guard<std::mutex> lock(elementsMux);
@@ -436,13 +414,21 @@ void ViewportRenderer::createRenderPass() {
 	subpass.pResolveAttachments = &resolveAttachmentRef;
 
 	// Subpass dependency for layout transitions
-	VkSubpassDependency dependency{};
-	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-	dependency.dstSubpass = 0;
-	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependency.srcAccessMask = 0;
-	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	std::array<VkSubpassDependency, 2> dependencies{};
+
+	dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependencies[0].dstSubpass = 0;
+	dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependencies[0].srcAccessMask = 0;
+	dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+	dependencies[1].srcSubpass = 0;
+	dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+	dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
 	// Create render pass with both attachments
 	std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, resolveAttachment};
@@ -452,8 +438,8 @@ void ViewportRenderer::createRenderPass() {
 	renderPassInfo.pAttachments = attachments.data();
 	renderPassInfo.subpassCount = 1;
 	renderPassInfo.pSubpasses = &subpass;
-	renderPassInfo.dependencyCount = 1;
-	renderPassInfo.pDependencies = &dependency;
+	renderPassInfo.dependencyCount = dependencies.size();
+	renderPassInfo.pDependencies = dependencies.data();
 
 	if (vkCreateRenderPass(device->getDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create MSAA render pass!");
@@ -464,57 +450,83 @@ void ViewportRenderer::createRenderPass() {
 const char* const viewportLoop_Tracy = "ViewportLoop";
 #endif
 
-void ViewportRenderer::renderLoop() {
-	while(running.load()) {
+// std::pair<VkDescriptorSet, std::shared_ptr<void>> ViewportRenderer::getLatestImage() {
+// 	std::lock_guard<std::mutex> lock(imageMux);
+// 	if (!imageReady || imguiTextures.size() < FRAMES_IN_FLIGHT || imagesReady.load() < FRAMES_IN_FLIGHT) {
+// 		return { VK_NULL_HANDLE, nullptr };
+// 	}
+// 	{
+// 		unsigned int lastFrameIndex = (frames.getCurrentFrameIndex() - 1) % FRAMES_IN_FLIGHT;
+// 		VkDescriptorSet descriptorSet = imguiTextures[lastFrameIndex];
+// 		if (descriptorSet == VK_NULL_HANDLE) return { VK_NULL_HANDLE, nullptr };
+// 		currentBorrowedImage.store(lastFrameIndex);
+// 		return { descriptorSet, std::make_shared<BorrowedImageDetector>(currentBorrowedImage) } ;
+// 	}
+// }
+
+std::pair<VkDescriptorSet, VkSemaphore> ViewportRenderer::startImageRender() {
+	// while(running.load()) {
+	// 	if (currentBorrowedImage.load() != -1) {
+	// 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	// 		continue;
+	// 	}
 		uint32_t currentFrameIndex = frames.getCurrentFrameIndex();
-		if (currentFrameIndex == currentBorrowedImage.load()) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
-			continue;
-		}
 
-		{
-			std::lock_guard lock(imagesToRecreateMux);
-			if (imagesToRecreate[currentFrameIndex]) {
-				{
-					std::lock_guard<std::mutex> lock(viewMux);
-					viewData = newViewData;
+		if (updateViewData.load()) {
+			bool recreateImages = false;
+			{
+				if (viewData.viewportSize.width == 0 || viewData.viewportSize.height == 0) {
+					viewData.viewportSize.width = 1;
+					viewData.viewportSize.height = 1;
+					recreateImages = true;
 				}
-				std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
-				destroyImage(currentFrameIndex);
-				createImage(currentFrameIndex);
-				if (imagesToRecreate[currentFrameIndex]) {
-					std::this_thread::sleep_for(std::chrono::milliseconds(1));
-					continue;
+				std::lock_guard<std::mutex> lock(viewMux);
+				if (newViewData.viewportSize.width == 0 || newViewData.viewportSize.height == 0) {
+					newViewData.viewportSize.width = 1;
+					newViewData.viewportSize.height = 1;
 				}
+				if (viewData.viewportSize.width != newViewData.viewportSize.width || viewData.viewportSize.height != newViewData.viewportSize.height) {
+					recreateImages = true;
+				}
+				updateViewData.store(false);
+				viewData = newViewData;
 			}
+			if (recreateImages) {
+				imagesReady.store(0);
+				std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
+				destroyImages();
+				createImages();
+			}
+		} else if (imguiTextures.empty()) {
+			destroyImages();
+			createImages();
 		}
-
 
 		// Wait for this frame to complete
 		frames.waitForCurrentFrameCompletion();
-		#ifdef TRACY_PROFILER
-		FrameMarkEnd(viewportLoop_Tracy);
-		#endif
+		// #ifdef TRACY_PROFILER
+		// FrameMarkEnd(viewportLoop_Tracy);
+		// #endif
 
-		std::chrono::time_point<std::chrono::high_resolution_clock> now = std::chrono::high_resolution_clock::now();
-		std::chrono::nanoseconds deltaTime = now - lastUpdateRender;
-		// force 60 fps
-		if (deltaTime.count() < 16 * 1000000) {
-			std::this_thread::sleep_for(std::chrono::nanoseconds(16 * 1000000 - deltaTime.count()));
-		}
-		// get real time between frames
-		now = std::chrono::high_resolution_clock::now();
-		deltaTime = now - lastUpdateRender;
-		lastUpdateRender = now;
-		float alpha = 0.2f;
-		fps.store((alpha * 1000000000. / (float)deltaTime.count()) + (1.0 - alpha) * fps);
+		// std::chrono::time_point<std::chrono::high_resolution_clock> now = std::chrono::high_resolution_clock::now();
+		// std::chrono::nanoseconds deltaTime = now - lastUpdateRender;
+		// // force 60 fps
+		// if (deltaTime.count() < 16 * 1000000) {
+		// 	std::this_thread::sleep_for(std::chrono::nanoseconds(16 * 1000000 - deltaTime.count()));
+		// }
+		// // get real time between frames
+		// now = std::chrono::high_resolution_clock::now();
+		// deltaTime = now - lastUpdateRender;
+		// lastUpdateRender = now;
+		// float alpha = 0.2f;
+		// fps.store((alpha * 1000000000. / (float)deltaTime.count()) + (1.0 - alpha) * fps);
 
 		Frame& frame = frames.getCurrentFrame();
 
 		// Mark frame as started
-		#ifdef TRACY_PROFILER
-		FrameMarkStart(viewportLoop_Tracy);
-		#endif
+		// #ifdef TRACY_PROFILER
+		// FrameMarkStart(viewportLoop_Tracy);
+		// #endif
 		frames.startCurrentFrame();
 
 		// Record command buffer
@@ -524,27 +536,33 @@ void ViewportRenderer::renderLoop() {
 		}
 		renderToCommandBuffer(frame, currentFrameIndex);
 
+		VkSemaphore semaphore = imageSwapchain.getImageSemaphores()[currentFrameIndex];
+
 		// Submit to graphics queue
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.pSignalSemaphores = &semaphore;
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = &frame.mainCommandBuffer;
 
 		if (device->submitGraphicsQueue(&submitInfo, frame.renderFence) != VK_SUCCESS) {
 			// Handle error - submission failed
-			continue;
+			return {VK_NULL_HANDLE, VK_NULL_HANDLE};
 		}
 
 		{
 			std::lock_guard<std::mutex> lock(imageMux);
-			imageReady = true;
+			imageReady.store(true);
 		}
 		{
 			std::lock_guard<std::mutex> lock(framesMutex);
 			frames.incrementFrame();
+			imagesReady.fetch_add(1);
 		}
-	}
-	device->waitIdle();
+	// }
+	// device->waitIdle();
+	return { imguiTextures[currentFrameIndex], semaphore };
 }
 
 void ViewportRenderer::renderToCommandBuffer(Frame& frame, uint32_t imageIndex) {
@@ -567,7 +585,7 @@ void ViewportRenderer::renderToCommandBuffer(Frame& frame, uint32_t imageIndex) 
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassInfo.renderPass = renderPass;
-	renderPassInfo.framebuffer = framebuffers[imageIndex];
+	renderPassInfo.framebuffer = imageSwapchain.getFramebuffers()[imageIndex];
 	renderPassInfo.renderArea.offset = {0, 0};
 	renderPassInfo.renderArea.extent = viewData.viewportSize;
 	renderPassInfo.clearValueCount = 2;
@@ -603,29 +621,24 @@ void ViewportRenderer::renderToCommandBuffer(Frame& frame, uint32_t imageIndex) 
 	}
 }
 
-void ViewportRenderer::destroyImage(unsigned int index) {
-	if (!createdImages[index]) return;
-
-	device->waitIdleNoMux();
-
-	ImGui_ImplVulkan_RemoveTexture(imguiTextures[index]);
-	vkDestroyFramebuffer(device->getDevice(), framebuffers[index], nullptr);
-	::destroyImage(msaaImages[index]);
-	::destroyImage(resolveImages[index]);
-
-	createdImages[index] = false;
+void ViewportRenderer::destroyImages() {
+	if (imageReady.load()) {
+		device->waitIdleNoMux();
+		imageReady.store(false);
+		for (VkDescriptorSet descriptorSet : imguiTextures) {
+			ImGui_ImplVulkan_RemoveTexture(descriptorSet);
+		}
+		imguiTextures.clear();
+		destroyImage(msaaImage);
+	}
 }
 
-void ViewportRenderer::createImage(unsigned int index) {
-	if (viewData.viewportSize.width == 0 || viewData.viewportSize.height == 0) return;
-
-	imagesToRecreate[index] = false;
-
+void ViewportRenderer::createImages() {
 	VkExtent3D imageSize = {viewData.viewportSize.width, viewData.viewportSize.height, 1};
 	VkSampleCountFlagBits msaaSamples = device->getMaxUsableSampleCount();
 
 	// Create MSAA image (transient - doesn't need to be stored)
-	msaaImages[index] = ::createImage(
+	msaaImage = createImage(
 		device,
 		imageSize,
 		VK_FORMAT_R8G8B8A8_UNORM,
@@ -634,40 +647,15 @@ void ViewportRenderer::createImage(unsigned int index) {
 		msaaSamples
 	);
 
-	// Create resolve image (non-MSAA, for ImGui to sample)
-	resolveImages[index] = ::createImage(
-		device,
-		imageSize,
-		VK_FORMAT_R8G8B8A8_UNORM,
-		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		false,
-		VK_SAMPLE_COUNT_1_BIT
-	);
-
-	// Create framebuffer with both attachments
-	std::array<VkImageView, 2> attachments = {
-		msaaImages[index].imageView,    // Color attachment (MSAA)
-		resolveImages[index].imageView  // Resolve attachment (non-MSAA)
-	};
-
-	VkFramebufferCreateInfo framebufferInfo{};
-	framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-	framebufferInfo.renderPass = renderPass;
-	framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-	framebufferInfo.pAttachments = attachments.data();
-	framebufferInfo.width = viewData.viewportSize.width;
-	framebufferInfo.height = viewData.viewportSize.height;
-	framebufferInfo.layers = 1;
-
-	if (vkCreateFramebuffer(device->getDevice(), &framebufferInfo, nullptr, &framebuffers[index]) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create framebuffer!");
+	imageSwapchain.recreate(renderPass, { viewData.viewportSize.width, viewData.viewportSize.height }, msaaImage);
+	imguiTextures.resize(FRAMES_IN_FLIGHT);
+	for (unsigned int i = 0; i < imguiTextures.size(); i++) {
+		imguiTextures[i] = ImGui_ImplVulkan_AddTexture(
+			sampler,
+			imageSwapchain.getImages()[i].imageView,
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+		);
 	}
 
-	imguiTextures[index] = ImGui_ImplVulkan_AddTexture(
-		sampler,
-		resolveImages[index].imageView,
-		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-	);
-
-	createdImages[index] = true;
+	imageReady.store(true);
 }

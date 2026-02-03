@@ -12,7 +12,7 @@ public:
 	~CircuitViewWidget();
 	void processEvent(SDL_Event& event) override final;
 private:
-	void render(std::function<void(std::shared_ptr<void>)> preserveForFrame) override final;
+	void render() override final;
 	std::unique_ptr<CircuitView> circuitView;
 	bool mouseControls;
 };

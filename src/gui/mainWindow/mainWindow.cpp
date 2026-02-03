@@ -85,7 +85,7 @@ void MainWindow::processEvent(SDL_Event& event) {
 	}
 }
 
-void MainWindow::render(std::function<void(std::shared_ptr<void>)> preserveForFrame) {
+void MainWindow::render() {
 	bool open = true;
 	ImGuiIO& io = ImGui::GetIO();
 
@@ -124,7 +124,7 @@ void MainWindow::render(std::function<void(std::shared_ptr<void>)> preserveForFr
 	ImGui::End();
 
 	for (std::pair<const WidgetId, std::unique_ptr<Widget>>& widget : widgets) {
-		widget.second->doRendering(preserveForFrame);
+		widget.second->doRendering();
 	}
 }
 

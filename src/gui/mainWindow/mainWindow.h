@@ -44,7 +44,7 @@ public:
 private:
 	void doUpdate() override final;
 	bool killWindow(bool forced) override final { widgets.clear(); return true; }
-	void render(std::function<void(std::shared_ptr<void>)> preserveForFrame) override final;
+	void render() override final;
 	void processEvent(SDL_Event& event) override final;
 	nlohmann::json dumpState() const override final { return "Main Window"; }
 
