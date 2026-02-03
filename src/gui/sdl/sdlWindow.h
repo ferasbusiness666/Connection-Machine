@@ -44,9 +44,11 @@ public:
 
 	nlohmann::json dumpWindowState() const;
 
+
 protected:
 	// return false when the window does not want to close.
 	// (This will only work when forced is false and so windows should clean up all their resources if forced is true!)
+	virtual void doUpdate() { } // called once per main app loop
 	virtual bool killWindow(bool forced) { return true; }
 	virtual void render(std::function<void(std::shared_ptr<void>)> preserveForFrame) { }
 	virtual void processEvent(SDL_Event& event) { } // called by recieveEvent

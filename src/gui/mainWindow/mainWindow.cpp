@@ -48,11 +48,20 @@ MainWindow::MainWindow() : SdlWindow("Connection Machine"), environment(true), t
 		logInfo("loaded, {}", "", fontFilePath);
 	});
 
-	WidgetId widgetId = widgetIdProvider.getNewId();
-	widgets.emplace(widgetId, std::make_unique<CircuitViewWidget>(widgetId, *this));
+	WidgetId widgetId1 = widgetIdProvider.getNewId();
+	widgets.emplace(widgetId1, std::make_unique<CircuitViewWidget>(widgetId1, *this));
+	// WidgetId widgetId2 = widgetIdProvider.getNewId();
+	// widgets.emplace(widgetId2, std::make_unique<CircuitViewWidget>(widgetId2, *this));
 }
 
 MainWindow::~MainWindow() = default;
+
+void MainWindow::doUpdate() {
+	for (std::pair<const WidgetId, std::unique_ptr<Widget>>& widget : widgets) {
+		widget.second->doUpdate();
+	}
+	environment.getBlockRenderDataFeeder().doBlockTextureUpdates();
+}
 
 void MainWindow::processEvent(SDL_Event& event) {
 	// if (event.type == SDL_EVENT_KEYMAP_CHANGED) {
@@ -66,6 +75,10 @@ void MainWindow::processEvent(SDL_Event& event) {
 
 	// send event to RML
 	// RmlSDL::InputEventHandler(rmlContext, sdlWindow->getHandle(), event, getSdlWindowScalingSize());
+
+	for (std::pair<const WidgetId, std::unique_ptr<Widget>>& widget : widgets) {
+		widget.second->processEvent(event);
+	}
 
 	if (event.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
 		applyUiScale(uiScale);

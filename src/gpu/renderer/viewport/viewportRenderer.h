@@ -118,6 +118,8 @@ private:
 	std::vector<VkDescriptorSet> imguiTextures;  // ImGui descriptor sets
 	std::atomic<bool> imageReady = false;
 	std::mutex imageMux;
+
+	std::chrono::time_point<std::chrono::high_resolution_clock> lastUpdateRender;
 };
 
 #endif

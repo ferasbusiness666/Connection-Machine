@@ -1,6 +1,7 @@
 #include "circuitViewWidget.h"
 
 #include "../mainWindow.h"
+#include "app.h"
 #include "gpu/mainRenderer.h"
 #include "gui/helper/keybindHelpers.h"
 #include "gui/viewportManager/circuitView/circuitView.h"
@@ -14,12 +15,11 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 	std::optional<simulator_id_t> simulatorId = mainWindow.getEnvironment().getBackend().createSimulator(circuitId);
 	circuitView->setSimulator(simulatorId.value(), Address());
 	SharedCircuit circuit = mainWindow.getEnvironment().getBackend().getCircuit(circuitId);
-	// circuit->tryInsertOverArea(Position(-10, -10), Position(10, 10), Orientation(), BlockType::AND);
 	setupGUIValue<float>("AspectRatio", 1, [&](const float& aspectRatio) { circuitView->getViewManager().setAspectRatio(aspectRatio); });
 	setupGUIValue<bool>("MouseLeftDown", false, [&](const bool& state) {
 		if (state) {
 			std::set<ImGuiKey> pressedKeys = getPressedKeys();
-			std::lock_guard lock(Settings::getSettingsMapReadLock());
+			// std::lock_guard lock(Settings::getSettingsMapReadLock()); // we will be running these on main thread
 			if (isPressingKeys(*Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Pick Block"), pressedKeys)) {
 				std::unique_ptr<CircuitView>& circuitView = this->circuitView;
 				Circuit* circuit = circuitView->getCircuit();
@@ -71,12 +71,63 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 			circuitView->getEventRegister().doEvent(PositionEvent("pointer exit view", circuitView->getViewManager().getPointerPosition()));
 		}
 	});
+	setupGUIValue<Vec2>("CircuitViewSize", Vec2(1, 1), nullptr);
+	setupGUIValue<bool>("CircuitViewIsHovered", false, nullptr);
 }
 
 CircuitViewWidget::~CircuitViewWidget() {
 	ViewportId viewportId = circuitView->getViewportId();
 	circuitView.reset();
 	MainRenderer::get().deregisterViewport(viewportId);
+}
+
+void CircuitViewWidget::processEvent(SDL_Event& event) {
+	if (getGUIValue<bool>("CircuitViewIsHovered").value_or(false)) {
+		if (event.type == SDL_EVENT_MOUSE_WHEEL) {
+			Vec2 movement(-event.wheel.x * getMainWindow().getWindowScalingSize(), event.wheel.y * getMainWindow().getWindowScalingSize());
+			const bool* scrollPanning = Settings::get<SettingType::BOOL>("Keybinds/Camera/Scroll Panning");
+			if (scrollPanning && !*scrollPanning) {
+				circuitView->getEventRegister().doEvent(DeltaEvent("view zoom", (float)(movement.y) / 15.f));
+				return;
+			}
+			const Keybind* keybind = Settings::get<SettingType::KEYBIND>("Keybinds/Camera/Zoom");
+			if (keybind == nullptr) return;
+			std::set<ImGuiKey> pressedKeys = getPressedKeys();
+			if (isPressingKeys(*keybind, pressedKeys)) {
+				// do zoom
+				circuitView->getEventRegister().doEvent(DeltaEvent("view zoom", (float)(movement.y) / 15.f));
+			} else {
+				Vec2 size = getGUIValue<Vec2>("CircuitViewSize").value_or(Vec2(100, 100));
+				float scaleAmout = App::getDetlaTime() * 160.;
+				circuitView->getEventRegister().doEvent(DeltaXYEvent(
+					"view pan",
+					movement.x / size.x * circuitView->getViewManager().getViewWidth() * scaleAmout,
+					movement.y / size.y * circuitView->getViewManager().getViewHeight() * scaleAmout
+				));
+			}
+	 	} else if (event.type == SDL_EVENT_DROP_FILE && event.drop.data != nullptr) {
+			std::string filePath(event.drop.data);
+			std::cout << filePath << "\n";
+			if (filePath.empty()) return;
+			std::vector<circuit_id_t> ids = getMainWindow().getEnvironment().getCircuitFileManager().loadFromFile(filePath);
+			if (ids.empty()) {
+				// logError("Error", "Failed to load circuit file."); // Not a error! It is valid to load 0 circuits.
+			} else {
+				circuit_id_t id = ids.back();
+				if (id == 0) {
+					logError("Error", "Failed to load circuit file.");
+					getMainWindow().logError("Failed to load circuit.");
+				} else {
+					circuitView->setCircuit(id);
+					for (auto& iter : circuitView->getBackend().getSimulatorManager().getSimulators()) {
+						if (iter.second->getCircuitId() == id) {
+							circuitView->setSimulator(iter.first);
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 void CircuitViewWidget::render(std::function<void(std::shared_ptr<void>)> preserveForFrame) {
@@ -113,11 +164,13 @@ void CircuitViewWidget::render(std::function<void(std::shared_ptr<void>)> preser
 		mousePos = ImGui::GetMousePos();
 		mousePos = ImVec2(mousePos.x - viewportWindowScreenPos.x, mousePos.y - viewportWindowScreenPos.y);
 
-		setGUIValue_rendering<float>("AspectRatio", viewportPanelSize.x / viewportPanelSize.y);
+		setGUIValue_rendering("AspectRatio", viewportPanelSize.x / viewportPanelSize.y);
 		setGUIValue_rendering("MouseLeftDown", leftClick);
 		setGUIValue_rendering("MouseRightDown", rightClick);
 		setGUIValue_rendering("MousePosition", Vec2(mousePos.x / viewportPanelSize.x, mousePos.y / viewportPanelSize.y));
 		setGUIValue_rendering("MouseInView", isHovered);
+		setGUIValue_rendering("CircuitViewSize", Vec2(viewportPanelSize.x, viewportPanelSize.y));
+		setGUIValue_rendering("CircuitViewIsHovered", isHovered);
 
 		ImGui::SetCursorPos(viewportWindowPos);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.0f, 2.0f));

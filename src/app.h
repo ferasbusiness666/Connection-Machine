@@ -11,6 +11,7 @@ namespace App {
 	std::shared_ptr<SdlWindow> makeWindow(Args&&... args);
 	void registerWindow(std::shared_ptr<SdlWindow>& window);
 
+	float getDetlaTime();
 	void runLoop();
 	void startTryingToQuit();
 	void stopTryingToQuit();

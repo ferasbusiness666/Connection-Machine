@@ -39,8 +39,15 @@ void App::registerWindow(std::shared_ptr<SdlWindow>& window) {
 	window->renderingMux.unlock();
 }
 
+std::chrono::time_point<std::chrono::high_resolution_clock> lastUpdateTime;
+std::chrono::nanoseconds detlaTime;
+
+float App::getDetlaTime() {
+	return ((double)detlaTime.count()) / 1000000000.;
+}
+
 #ifdef TRACY_PROFILER
-const char* const addLoopTracyName = "appLoop";
+const char* const mainAppLoop_Tracy = "AppLoop";
 #endif
 
 void App::runLoop() {
@@ -52,13 +59,17 @@ void App::runLoop() {
 	}
 	// Network::get().checkForUpdates(get().windows[0]->getPopUpManager());
 	running = true;
+	lastUpdateTime = std::chrono::high_resolution_clock::now();
 	while (running) {
 		if (windows.empty()) App::kill(); // Ff there are not more windows kill the app!
 
 		// Wait for the next event (so we don't broork the cpu)
 		bool gotEvent = SDL_WaitEventTimeout(nullptr, 50);
+		std::chrono::time_point<std::chrono::high_resolution_clock> updateTime = std::chrono::high_resolution_clock::now();
+		detlaTime = updateTime - lastUpdateTime;
+		lastUpdateTime = updateTime;
 #ifdef TRACY_PROFILER
-		FrameMarkStart(addLoopTracyName);
+		FrameMarkStart(mainAppLoop_Tracy);
 #endif
 		// clean up killed windows
 		std::erase_if(windows, [](const std::shared_ptr<SdlWindow>& window){ return window->isKilled(); });
@@ -93,19 +104,11 @@ void App::runLoop() {
 				}
 			}
 		}
-		// { // do we need to do this???
-		// 	std::vector<std::weak_ptr<SdlWindow>> windowsToRender;
-		// 	for (const std::shared_ptr<SdlWindow>& window : windows) {
-		// 		windowsToRender.push_back(window);
-		// 	}
-		// 	for (unsigned int i = 0; i < windowsToRender.size(); ++i) {
-		// 		std::shared_ptr<SdlWindow> thisWindow = windowsToRender[i].lock();
-		// 		if (!thisWindow) continue;
-		// 		thisWindow->render();
-		// 	}
-		// }
+		for (const std::shared_ptr<SdlWindow>& window : windows) {
+			window->doUpdate();
+		}
 #ifdef TRACY_PROFILER
-		FrameMarkEnd(addLoopTracyName);
+		FrameMarkEnd(mainAppLoop_Tracy);
 #endif
 	}
 }

@@ -8,6 +8,11 @@
 #include "gpu/abstractions/vulkanImage.h"
 #include "imgui/imgui_impl_vulkan.h"
 
+#ifdef TRACY_PROFILER
+#include <tracy/Tracy.hpp>
+#endif
+
+
 ViewportRenderer::ViewportRenderer(VulkanDevice* device) : chunker(device), device(device) {
 	createRenderPass();
 	gridRenderer.init(device, renderPass);
@@ -455,11 +460,15 @@ void ViewportRenderer::createRenderPass() {
 	}
 }
 
+#ifdef TRACY_PROFILER
+const char* const viewportLoop_Tracy = "ViewportLoop";
+#endif
+
 void ViewportRenderer::renderLoop() {
 	while(running.load()) {
 		uint32_t currentFrameIndex = frames.getCurrentFrameIndex();
 		if (currentFrameIndex == currentBorrowedImage.load()) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(16));
+			std::this_thread::sleep_for(std::chrono::milliseconds(5));
 			continue;
 		}
 
@@ -474,21 +483,38 @@ void ViewportRenderer::renderLoop() {
 				destroyImage(currentFrameIndex);
 				createImage(currentFrameIndex);
 				if (imagesToRecreate[currentFrameIndex]) {
-					std::this_thread::sleep_for(std::chrono::milliseconds(16));
+					std::this_thread::sleep_for(std::chrono::milliseconds(5));
 					continue;
 				}
 			}
 		}
 
-		Frame& frame = frames.getCurrentFrame();
 
 		// Wait for this frame to complete
-		float time = frames.waitForCurrentFrameCompletion();
-		float alpha = 0.9f;
-		fps.store((alpha * time) + (1.0 - alpha) * fps);
+		frames.waitForCurrentFrameCompletion();
+		#ifdef TRACY_PROFILER
+		FrameMarkEnd(viewportLoop_Tracy);
+		#endif
 
+		std::chrono::time_point<std::chrono::high_resolution_clock> now = std::chrono::high_resolution_clock::now();
+		std::chrono::nanoseconds deltaTime = now - lastUpdateRender;
+		// force 60 fps
+		if (deltaTime.count() < 16 * 1000000) {
+			std::this_thread::sleep_for(std::chrono::nanoseconds(16 * 1000000 - deltaTime.count()));
+		}
+		// get real time between frames
+		now = std::chrono::high_resolution_clock::now();
+		deltaTime = now - lastUpdateRender;
+		lastUpdateRender = now;
+		float alpha = 0.2f;
+		fps.store((alpha * 1000000000. / (float)deltaTime.count()) + (1.0 - alpha) * fps);
+
+		Frame& frame = frames.getCurrentFrame();
 
 		// Mark frame as started
+		#ifdef TRACY_PROFILER
+		FrameMarkStart(viewportLoop_Tracy);
+		#endif
 		frames.startCurrentFrame();
 
 		// Record command buffer

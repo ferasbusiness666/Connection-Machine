@@ -10,10 +10,11 @@ class CircuitViewWidget : public Widget {
 public:
 	CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow);
 	~CircuitViewWidget();
-	void render(std::function<void(std::shared_ptr<void>)> preserveForFrame) override final;
+	void processEvent(SDL_Event& event) override final;
 private:
+	void render(std::function<void(std::shared_ptr<void>)> preserveForFrame) override final;
 	std::unique_ptr<CircuitView> circuitView;
-
+	bool mouseControls;
 };
 
 #endif /* circuitViewWidget_h */
