@@ -5,7 +5,9 @@
 SelectorWidget::SelectorWidget(WidgetId widgetId, MainWindow& mainWindow) :
 	Widget(widgetId, mainWindow), dataUpdateEventReceiver(getMainWindow().getEnvironment().getBackend().getDataUpdateEventManager()) {
 	{
+		// =================================== Init all tree data ===================================
 		std::lock_guard mux(pathsMux);
+		// Blocks
 		const BlockDataManager& blockDataManager = getMainWindow().getEnvironment().getBackend().getBlockDataManager();
 		for (unsigned int type = 0; type < blockDataManager.maxBlockId(); type++) {
 			const BlockData* blockData = blockDataManager.getBlockData((BlockType)type);
@@ -15,11 +17,19 @@ SelectorWidget::SelectorWidget(WidgetId widgetId, MainWindow& mainWindow) :
 				root.updateWith(path, (BlockType)type);
 			}
 		}
+		// Procedural Circuits
+		for (const auto& iter : getMainWindow().getEnvironment().getBackend().getCircuitManager().getProceduralCircuitManager().getProceduralCircuits()) {
+			root.updateWith("Blocks/" + iter.second->getPath(), iter.second->getPath());
+		}
+		// Tools
+		for (const auto& iter : getMainWindow().getToolManagerManager().getAllTools()) {
+			root.updateWith("Tools/" + iter.first, iter.first);
+		}
 	}
+
 	dataUpdateEventReceiver.linkFunction("blockDataUpdate", [this](const DataUpdateEventManager::EventData* event) {
 		const DataUpdateEventManager::EventDataWithValue<BlockType>* data = event->cast<BlockType>();
 		assert(data);
-		if (!data) return;
 		std::string path = getMainWindow().getEnvironment().getBackend().getBlockDataManager().getBlockData(data->get())->getPath();
 		std::lock_guard mux(pathsMux);
 		paths.insert_or_assign(data->get(), path);
@@ -30,22 +40,46 @@ SelectorWidget::SelectorWidget(WidgetId widgetId, MainWindow& mainWindow) :
 	dataUpdateEventReceiver.linkFunction("setToolModeUpdate", [](const DataUpdateEventManager::EventData* event) {
 
 	});
-	dataUpdateEventReceiver.linkFunction("setToolUpdate", [](const DataUpdateEventManager::EventData* event) {
+	dataUpdateEventReceiver.linkFunction("setToolBlockTypeUpdate", [this](const DataUpdateEventManager::EventData* event) {
+		const DataUpdateEventManager::EventDataWithValue<BlockType>* data = event->cast<BlockType>();
+		assert(data);
+		setGUIValue<BlockType>("selectedBlockType", data->get());
+	});
+	// dataUpdateEventReceiver.linkFunction("setToolBlockOrientationUpdate", [](const DataUpdateEventManager::EventData* event) {
 
+	// });
+	dataUpdateEventReceiver.linkFunction("setToolUpdate", [this](const DataUpdateEventManager::EventData* event) {
+		const DataUpdateEventManager::EventDataWithValue<std::string>* data = event->cast<std::string>();
+		assert(data);
+		setGUIValue<std::string>("selectedTool", data->get());
 	});
 	setupGUIValue<BlockType>("selectedBlockType", BlockType::NONE, [this](const BlockType& blockType) {
 		getMainWindow().getToolManagerManager().setBlock(blockType);
 	});
+	setupGUIValue<std::string>("selectedTool", "", [this](const std::string& toolPath) {
+		getMainWindow().getToolManagerManager().setTool(toolPath);
+	});
+	// setupGUIValue<std::string>("selectedToolMode", BlockType::NONE, [this](const BlockType& blockType) {
+	// 	getMainWindow().getToolManagerManager().setBlock(blockType);
+	// });
 }
 
 
-void SelectorWidget::createTree(const SelectorTreeNode& node) {
+void SelectorWidget::createTree(const SelectorTreeNode& node, const std::string& rootString) {
 	for (auto& pair : node.children) {
 		if (pair.second.data.has_value()) {
 			// leaf (never children)
 			ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf;
 			if (std::holds_alternative<BlockType>(pair.second.data.value())) {
+				assert(rootString == "Blocks");
 				if (valueOr(getGUIValue_rendering<BlockType>("selectedBlockType"), BlockType::NONE) == std::get<BlockType>(pair.second.data.value())) {
+					flags |= ImGuiTreeNodeFlags_Selected;
+				}
+			} else if (rootString == "Blocks") {
+				// pair.second.data.value().
+			} else if (rootString == "Tools") {
+				assert(std::holds_alternative<std::string>(pair.second.data.value()));
+				if (valueOr(getGUIValue_rendering<std::string>("selectedTool"), std::string()) == std::get<std::string>(pair.second.data.value())) {
 					flags |= ImGuiTreeNodeFlags_Selected;
 				}
 			}
@@ -53,7 +87,13 @@ void SelectorWidget::createTree(const SelectorTreeNode& node) {
 			if (ImGui::TreeNodeEx(pair.first.c_str(), flags)) {
 				if (ImGui::IsItemClicked()) {
 					if (std::holds_alternative<BlockType>(pair.second.data.value())) {
+						assert(rootString == "Blocks");
 						setGUIValue_rendering<BlockType>("selectedBlockType", std::get<BlockType>(pair.second.data.value()));
+					}else if (rootString == "Blocks") {
+						// pair.second.data.value().
+					} else if (rootString == "Tools") {
+						assert(std::holds_alternative<std::string>(pair.second.data.value()));
+						setGUIValue_rendering("selectedTool", std::get<std::string>(pair.second.data.value()));
 					}
 				}
 				ImGui::TreePop();
@@ -61,7 +101,11 @@ void SelectorWidget::createTree(const SelectorTreeNode& node) {
 		} else {
 			// non-leaf (sometimes children)
 			if (ImGui::TreeNodeEx(pair.first.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-				createTree(pair.second);
+				if (rootString.empty()) {
+					createTree(pair.second, pair.first);
+				} else {
+					createTree(pair.second, rootString);
+				}
 				ImGui::TreePop();
 			}
 		}

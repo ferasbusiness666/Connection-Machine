@@ -7,7 +7,7 @@
 
 class SelectorWidget : public Widget {
 	struct SelectorTreeNode {
-		void updateWith(const std::string_view& path, std::variant<BlockType> data) {
+		void updateWith(const std::string_view& path, std::variant<BlockType, std::string> data) {
 			size_t slashPos = path.find_first_of("/");
 			if (slashPos == std::string::npos) {
 				auto pair = children.emplace(path, SelectorTreeNode());
@@ -17,14 +17,14 @@ class SelectorWidget : public Widget {
 				pair.first->second.updateWith(path.substr(slashPos + 1), data);
 			}
 		}
-		std::optional<std::variant<BlockType>> data;
+		std::optional<std::variant<BlockType, std::string>> data = std::nullopt;
 		std::unordered_map<std::string, SelectorTreeNode> children;
 	};
 public:
 	SelectorWidget(WidgetId widgetId, MainWindow& mainWindow);
 	~SelectorWidget();
 private:
-	void createTree(const SelectorTreeNode& node);
+	void createTree(const SelectorTreeNode& node, const std::string& rootString = "");
 	void render() override final;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 	std::mutex pathsMux;

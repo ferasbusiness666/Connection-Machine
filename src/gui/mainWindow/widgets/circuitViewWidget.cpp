@@ -19,6 +19,7 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 	setupGUIValue<float>("AspectRatio", 1, [&](const float& aspectRatio) { circuitView->getViewManager().setAspectRatio(aspectRatio); });
 	setupGUIValue<bool>("MouseLeftDown", false, [&](const bool& state) {
 		if (state) {
+			if (!valueOr(getGUIValue<bool>("MouseInView"), false)) return;
 			std::set<ImGuiKey> pressedKeys = getPressedKeys();
 			// std::lock_guard lock(Settings::getSettingsMapReadLock()); // we will be running these on main thread
 			if (isPressingKeys(*Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Pick Block"), pressedKeys)) {
@@ -53,6 +54,7 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 	});
 	setupGUIValue<bool>("MouseRightDown", false, [&](const bool& state) {
 		if (state) {
+			if (!valueOr(getGUIValue<bool>("MouseInView"), false)) return;
 			circuitView->getEventRegister().doEvent(PositionEvent("Tool Secondary Activate", circuitView->getViewManager().getPointerPosition()));
 		} else {
 			circuitView->getEventRegister().doEvent(PositionEvent("tool secondary deactivate", circuitView->getViewManager().getPointerPosition()));
