@@ -18,7 +18,7 @@ SelectorWidget::SelectorWidget(WidgetId widgetId, MainWindow& mainWindow) :
 	}
 	dataUpdateEventReceiver.linkFunction("blockDataUpdate", [this](const DataUpdateEventManager::EventData* event) {
 		const DataUpdateEventManager::EventDataWithValue<BlockType>* data = event->cast<BlockType>();
-		assert(data);
+		// assert(data);
 		if (!data) return;
 		std::string path = getMainWindow().getEnvironment().getBackend().getBlockDataManager().getBlockData(data->get())->getPath();
 		std::lock_guard mux(pathsMux);
