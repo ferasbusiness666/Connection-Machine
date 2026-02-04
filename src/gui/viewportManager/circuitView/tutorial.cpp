@@ -1,5 +1,6 @@
 #include "tutorial.h"
 
+#include "backend/position/position.h"
 #include "circuitView.h"
 #include "computerAPI/tutorialLoader.h"
 
@@ -61,33 +62,31 @@ void Tutorial::advanceTutorial() {
 
 bool Tutorial::isCurrentStepComplete() const {
 	if (tutorialState >= tutorialSteps.size()) return false;
-	TutorialStep currentStep = tutorialSteps[tutorialState];
+	const TutorialStep& currentStep = tutorialSteps[tutorialState];
 	const BlockContainer& blockContainer = curentCircuit->getBlockContainer();
 
-	for (std::vector<TutorialCondition::BlockRequirement>::iterator it = currentStep.condition.blocks.begin(); it != currentStep.condition.blocks.end(); it++) {
-		const Block* currentBlock = blockContainer.getBlock(it->pos);
+	for (const TutorialCondition::BlockRequirement& blockCondition : currentStep.condition.blocks) {
+		const Block* currentBlock = blockContainer.getBlock(blockCondition.pos);
 		if (currentBlock == nullptr) {
 			return false;
 		}
-		if (currentBlock->type() != it->type) {
+		if (currentBlock->type() != blockCondition.type) {
 			return false;
 		}
-		if (currentBlock->getOrientation() != it->orientation) {
-			return false;
-		}
-	}
-	for (std::vector<TutorialCondition::ConnectionRequirement>::iterator it = currentStep.condition.connections.begin(); it != currentStep.condition.connections.end();
-		 it++) {
-		if (!blockContainer.connectionExists(it->pos1, it->pos2)) {
+		if (currentBlock->getOrientation() != blockCondition.orientation) {
 			return false;
 		}
 	}
-	for (std::vector<TutorialCondition::LogicStateRequirement>::iterator it = currentStep.condition.logicStates.begin(); it != currentStep.condition.logicStates.end();
-		 it++) {
-		simulator->tickStep(it->numSteps);
-		logic_state_t b = simulator->getState(Address(it->pos));
-		if (simulator->getState(Address(it->pos)) != it->state) {
-			logic_state_t a = simulator->getState(Address(it->pos));
+	for (const TutorialCondition::ConnectionRequirement& connectionCondition : currentStep.condition.connections) {
+		if (!blockContainer.connectionExists(connectionCondition.pos1, connectionCondition.pos2)) {
+			return false;
+		}
+	}
+	for (const TutorialCondition::LogicStateRequirement stateCondition : currentStep.condition.logicStates) {
+		// simulator->tickStep(stateCondition.numSteps);
+		logic_state_t b = simulator->getState(Address(stateCondition.pos));
+		if (simulator->getState(Address(stateCondition.pos)) != stateCondition.state) {
+			logic_state_t a = simulator->getState(Address(stateCondition.pos));
 			return false;
 		}
 	}
@@ -96,41 +95,49 @@ bool Tutorial::isCurrentStepComplete() const {
 
 void Tutorial::runCurrentStep() {
 	if (tutorialState >= tutorialSteps.size()) return;
-	TutorialStep currentStep = tutorialSteps[tutorialState];
+	const TutorialStep& currentStep = tutorialSteps[tutorialState];
 	const BlockContainer& blockContainer = curentCircuit->getBlockContainer();
 	// change this later to real popups or something
-	for (std::vector<std::string>::iterator it = currentStep.action.messages.begin(); it != currentStep.action.messages.end(); it++) {
-		logInfo(*it);
+	for (const std::string& message : currentStep.action.messages) {
+		logInfo(message);
 	}
-	for (std::vector<TutorialAction::BlockPreviewInfo>::iterator it = currentStep.action.blockPreviews.begin(); it != currentStep.action.blockPreviews.end(); it++) {
-		elementCreator.addBlockPreview(BlockPreview(environment.getBlockRenderDataFeeder().getBlockRenderDataId(it->type), it->pos, it->orientation));
+	for (const TutorialAction::BlockPreviewInfo& blockPreview : currentStep.action.blockPreviews) {
+		elementCreator.addBlockPreview(
+			BlockPreview(environment.getBlockRenderDataFeeder().getBlockRenderDataId(blockPreview.type), blockPreview.pos, blockPreview.orientation)
+		);
 	}
-	for (std::vector<TutorialAction::ConnectionPreviewInfo>::iterator it = currentStep.action.connectionPreviews.begin();
-		 it != currentStep.action.connectionPreviews.end();
-		 it++) {
+	for (const TutorialAction::ConnectionPreviewInfo& connectionPreview : currentStep.action.connectionPreviews) {
 		std::optional<FVector> optionalPos1Offset;
-		if (blockContainer.getBlock(it->pos1) != nullptr) {
+		const Block* block1 = blockContainer.getBlock(connectionPreview.pos1);
+		if (block1 != nullptr) {
 			optionalPos1Offset = blockContainer.getBlockDataManager()
-									 .getBlockData(blockContainer.getBlock(it->pos1)->type())
-									 ->getConnectionPortOffset(blockContainer.getOutputConnectionEnd(it->pos1).value().getConnectionId());
+									 .getBlockData(block1->type())
+									 ->getConnectionPortOffset(blockContainer.getOutputConnectionEnd(connectionPreview.pos1).value().getConnectionId());
 		} else {
-			for (std::vector<TutorialAction::BlockPreviewInfo>::iterator it2 = currentStep.action.blockPreviews.begin(); it2 != currentStep.action.blockPreviews.end();
-				 it2++) {
-				if (it2->pos == it->pos1) {
-					optionalPos1Offset = blockContainer.getBlockDataManager().getBlockData(it2->type)->getConnectionPortOffset((connection_end_id_t)0);
+			for (const TutorialAction::BlockPreviewInfo& blockPreview : currentStep.action.blockPreviews) {
+				if (connectionPreview.pos1.withinArea(
+						blockPreview.pos,
+						blockPreview.pos +
+							(blockPreview.orientation * blockContainer.getBlockDataManager().getBlockData(blockPreview.type)->getSize()).getLargestVectorInArea()
+					)) {
+					optionalPos1Offset = blockContainer.getBlockDataManager().getBlockData(blockPreview.type)->getConnectionPortOffset((connection_end_id_t)0);
 				}
 			}
 		}
 		std::optional<FVector> optionalPos2Offset;
-		if (blockContainer.getBlock(it->pos2) != nullptr) {
+		const Block* block2 = blockContainer.getBlock(connectionPreview.pos2);
+		if (block2 != nullptr) {
 			optionalPos2Offset = blockContainer.getBlockDataManager()
-									 .getBlockData(blockContainer.getBlock(it->pos2)->type())
-									 ->getConnectionPortOffset(blockContainer.getInputConnectionEnd(it->pos2).value().getConnectionId());
+									 .getBlockData(block2->type())
+									 ->getConnectionPortOffset(blockContainer.getInputConnectionEnd(connectionPreview.pos2).value().getConnectionId());
 		} else {
-			for (std::vector<TutorialAction::BlockPreviewInfo>::iterator it2 = currentStep.action.blockPreviews.begin(); it2 != currentStep.action.blockPreviews.end();
-				 it2++) {
-				if (it2->pos == it->pos2) {
-					optionalPos2Offset = blockContainer.getBlockDataManager().getBlockData(it2->type)->getConnectionPortOffset((connection_end_id_t)0);
+			for (const TutorialAction::BlockPreviewInfo& blockPreview : currentStep.action.blockPreviews) {
+				if (connectionPreview.pos2.withinArea(
+						blockPreview.pos,
+						blockPreview.pos +
+							(blockPreview.orientation * blockContainer.getBlockDataManager().getBlockData(blockPreview.type)->getSize()).getLargestVectorInArea()
+					)) {
+					optionalPos2Offset = blockContainer.getBlockDataManager().getBlockData(blockPreview.type)->getConnectionPortOffset((connection_end_id_t)0);
 				}
 			}
 		}
@@ -140,55 +147,47 @@ void Tutorial::runCurrentStep() {
 		if (!optionalPos2Offset.has_value()) {
 			optionalPos2Offset = FVector(0.5, 0.5);
 		}
-		elementCreator.addConnectionPreview(
-			ConnectionPreview(FPosition(it->pos1.x, it->pos1.y) + optionalPos1Offset.value(), FPosition(it->pos2.x, it->pos2.y) + optionalPos2Offset.value())
-		);
+		elementCreator.addConnectionPreview(ConnectionPreview(
+			FPosition(connectionPreview.pos1.x, connectionPreview.pos1.y) + optionalPos1Offset.value(),
+			FPosition(connectionPreview.pos2.x, connectionPreview.pos2.y) + optionalPos2Offset.value()
+		));
 	}
 }
 
 void Tutorial::forceCompleteStep() {
 	if (!tutorialRunning) return;
 	if (tutorialState >= tutorialSteps.size()) return;
-	TutorialStep currentStep = tutorialSteps[tutorialState];
+	const TutorialStep& currentStep = tutorialSteps[tutorialState];
 	const BlockContainer& blockContainer = curentCircuit->getBlockContainer();
-	// for (std::vector<TutorialAction::BlockPreviewInfo>::iterator it = currentStep.action.blockPreviews.begin(); it != currentStep.action.blockPreviews.end(); it++) {
-	// 	const Block* currentBlock = blockContainer.getBlock(it->pos);
-	// 	if (currentBlock != nullptr) {
-	// 		curentCircuit->tryRemoveBlock(it->pos);
-	// 	}
-	// 	curentCircuit->tryInsertBlock(it->pos, it->orientation, it->type);
-	// }
 
-	for (std::vector<TutorialCondition::BlockRequirement>::iterator it = currentStep.condition.blocks.begin(); it != currentStep.condition.blocks.end(); it++) {
-		const Block* currentBlock = blockContainer.getBlock(it->pos);
+	for (const TutorialCondition::BlockRequirement& block : currentStep.condition.blocks) {
+		const Block* currentBlock = blockContainer.getBlock(block.pos);
 		if (currentBlock != nullptr) {
-			curentCircuit->tryRemoveBlock(it->pos);
+			curentCircuit->tryRemoveBlock(block.pos);
 		}
-		curentCircuit->tryInsertBlock(it->pos, it->orientation, it->type);
+		curentCircuit->tryInsertBlock(block.pos, block.orientation, block.type);
 	}
 
-	// for (std::vector<TutorialAction::ConnectionPreviewInfo>::iterator it = currentStep.action.connectionPreviews.begin(); it != currentStep.action.connectionPreviews.end(); it++) {
-	// 	const Block* currentBlock1 = blockContainer.getBlock(it->pos1);
-	// 	const Block* currentBlock2 = blockContainer.getBlock(it->pos2);
-	// 	if (currentBlock1 == nullptr) {
-	// 		curentCircuit->tryInsertBlock(it->pos1, Rotation::ZERO, BlockType::JUNCTION);
-	// 	}
-	// 	if (currentBlock2 == nullptr) {
-	// 		curentCircuit->tryInsertBlock(it->pos2, Rotation::ZERO, BlockType::JUNCTION);
-	// 	}
-	// 	curentCircuit->tryCreateConnection(it->pos1, it->pos2);
-	// }
-
-	for (std::vector<TutorialCondition::ConnectionRequirement>::iterator it = currentStep.condition.connections.begin(); it != currentStep.condition.connections.end(); it++) {
-		const Block* currentBlock1 = blockContainer.getBlock(it->pos1);
-		const Block* currentBlock2 = blockContainer.getBlock(it->pos2);
+	for (const TutorialCondition::ConnectionRequirement& connection : currentStep.condition.connections) {
+		const Block* currentBlock1 = blockContainer.getBlock(connection.pos1);
+		const Block* currentBlock2 = blockContainer.getBlock(connection.pos2);
 		if (currentBlock1 == nullptr) {
-			curentCircuit->tryInsertBlock(it->pos1, Rotation::ZERO, BlockType::JUNCTION);
+			curentCircuit->tryInsertBlock(connection.pos1, Rotation::ZERO, BlockType::JUNCTION);
 		}
 		if (currentBlock2 == nullptr) {
-			curentCircuit->tryInsertBlock(it->pos2, Rotation::ZERO, BlockType::JUNCTION);
+			curentCircuit->tryInsertBlock(connection.pos2, Rotation::ZERO, BlockType::JUNCTION);
 		}
-		curentCircuit->tryCreateConnection(it->pos1, it->pos2);
+		curentCircuit->tryCreateConnection(connection.pos1, connection.pos2);
 	}
+
+	for (const TutorialCondition::LogicStateRequirement stateCondition : currentStep.condition.logicStates) {
+		const Block* currentBlock = blockContainer.getBlock(stateCondition.pos);
+		if (currentBlock != nullptr) {
+			simulator->setState(Address(stateCondition.pos), stateCondition.state);
+			// simulator->tickStep(1);
+		}
+	}
+
 	advanceTutorial();
+	simulator->tickStep(1);
 }
