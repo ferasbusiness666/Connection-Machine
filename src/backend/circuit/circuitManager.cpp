@@ -135,7 +135,7 @@ circuit_id_t CircuitManager::createNewCircuit(const ParsedCircuit& parsedCircuit
 		blockData->setConnectionPortOffset(port.connectionEndId, port.portOffset);
 	}
 
-	dataUpdateEventManager.sendEvent("blockDataUpdate");
+	dataUpdateEventManager.sendEvent<BlockType>("blockDataUpdate", blockType);
 
 	return id;
 }
@@ -202,7 +202,7 @@ circuit_id_t CircuitManager::createNewCircuit(const GeneratedCircuit& generatedC
 		}
 	}
 
-	dataUpdateEventManager.sendEvent("blockDataUpdate");
+	dataUpdateEventManager.sendEvent<BlockType>("blockDataUpdate", blockType);
 
 	return id;
 }
@@ -316,7 +316,7 @@ void CircuitManager::updateExistingCircuit(circuit_id_t id, const GeneratedCircu
 		}
 	}
 
-	dataUpdateEventManager.sendEvent("blockDataUpdate");
+	dataUpdateEventManager.sendEvent<BlockType>("blockDataUpdate", blockType);
 }
 
 nlohmann::json CircuitManager::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
