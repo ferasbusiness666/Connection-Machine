@@ -2,6 +2,10 @@
 #include "evalLayerState.h"
 #include "backend/circuit/circuitManager.h"
 
+#ifdef TRACY_PROFILER
+#include <tracy/Tracy.hpp>
+#endif
+
 // before update
 // URCL cpu
 // addedGateCount:         6036
@@ -57,6 +61,9 @@ bool isConnectionEndIdInputSinglePin(EvalGateType gateType, connection_end_id_t 
 }
 
 void JunctionAddEvalLayer::run() {
+	#ifdef TRACY_PROFILER
+	ZoneScopedN("JunctionAdd Run");
+	#endif
 	for (auto iter : currentState.getRemovedConnections()) {
 		EvalConnection connection = iter.first;
 		const EvalGate* gateA = nextState.getGate(connection.connectionPointA.gateId);

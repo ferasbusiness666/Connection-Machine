@@ -4,7 +4,14 @@
 #include "backend/evaluator/evaluator.h"
 #include "backend/evaluator/evaluatorInternal.h"
 
+#ifdef TRACY_PROFILER
+#include <tracy/Tracy.hpp>
+#endif
+
 void SubcircuitEvalLayer::run() {
+	#ifdef TRACY_PROFILER
+	ZoneScopedN("Subcircuit Run");
+	#endif
 	for (auto iter : currentState.getRemovedConnections()) {
 		EvalConnection connection = iter.first;
 		auto remappingAIter = nextState.getConnectionPointRemapping().find(connection.connectionPointA);

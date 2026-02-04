@@ -1,6 +1,10 @@
 #include "junctionMergeEvalLayer.h"
 #include "evalLayerState.h"
 
+#ifdef TRACY_PROFILER
+#include <tracy/Tracy.hpp>
+#endif
+
 bool isConnectionEndIdSinglePin(EvalGateType gateType, connection_end_id_t connectionEndId) {
 	// ignore lights, junctions, busses, custom blocks
 	switch (getBlockType(gateType)) {
@@ -57,6 +61,9 @@ bool isOutputConnectionPort(EvalGateType gateType, connection_end_id_t connectio
 
 
 void JunctionMergeEvalLayer::run() {
+	#ifdef TRACY_PROFILER
+	ZoneScopedN("JunctionMerge Run");
+	#endif
 	// logInfo("Running layer {}", "", (unsigned long long)this);
 	// currentState.visualize();
 	std::unordered_set<EvalConnectionPoint> connectionPointsToScan;

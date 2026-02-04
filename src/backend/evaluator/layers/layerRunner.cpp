@@ -7,6 +7,10 @@
 #include "switchReplacerEvalLayer.h"
 #include "busReplacerEvalLayer.h"
 
+#ifdef TRACY_PROFILER
+#include <tracy/Tracy.hpp>
+#endif
+
 LayerRunner::LayerRunner(IdProvider<eval_gate_id>& evalGateIdProvider, Evaluator& evaluator, const CircuitManager& circuitManager) {
 	evalTopLayerState = std::make_unique<EvalLayerState>(evalGateIdProvider);
 	layers.emplace_back(std::make_unique<SubcircuitEvalLayer>(*evalTopLayerState, evaluator, circuitManager));
@@ -22,6 +26,9 @@ LayerRunner::LayerRunner(IdProvider<eval_gate_id>& evalGateIdProvider, Evaluator
 LayerRunner::~LayerRunner() = default;
 
 void LayerRunner::runAll() {
+	#ifdef TRACY_PROFILER
+	ZoneScoped;
+	#endif
 	// logInfo("------------------------------------------------");
 	// evalTopLayerState->visualize();
 	// unsigned int index = 0;

@@ -309,6 +309,9 @@ VulkanChunker::~VulkanChunker() { std::lock_guard<std::mutex> lock(mux); }
 void VulkanChunker::startMakingEdits() { mux.lock(); }
 
 void VulkanChunker::stopMakingEdits() {
+	#ifdef TRACY_PROFILER
+	ZoneScoped;
+	#endif
 	for (LogicGroup* logicGroup : logicGroupsToUpdate) logicGroup->rebuildAllocation(device, simulator, address);
 	logicGroupsToUpdate.clear();
 	mux.unlock();

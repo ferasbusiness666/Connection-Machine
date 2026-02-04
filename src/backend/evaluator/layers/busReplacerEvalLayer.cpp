@@ -2,7 +2,14 @@
 #include "backend/circuit/circuitManager.h"
 #include "evalLayerState.h"
 
+#ifdef TRACY_PROFILER
+#include <tracy/Tracy.hpp>
+#endif
+
 void BusReplacerEvalLayer::run() {
+	#ifdef TRACY_PROFILER
+	ZoneScopedN("BusReplacer Run");
+	#endif
 	for (auto iter : currentState.getRemovedConnections()) {
 		auto bussesIterA = busses.find(iter.first.connectionPointA.gateId);
 		auto bussesIterB = busses.find(iter.first.connectionPointB.gateId);

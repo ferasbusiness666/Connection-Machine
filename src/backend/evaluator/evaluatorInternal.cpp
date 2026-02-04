@@ -4,6 +4,10 @@
 #include "backend/evaluator/layers/evalLayerState.h"
 #include "backend/evaluator/layers/subcircuitEvalLayer.h"
 
+#ifdef TRACY_PROFILER
+#include <tracy/Tracy.hpp>
+#endif
+
 extern std::thread::id mainThreadId;
 
 EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, Evaluator& evaluator, const CircuitManager& circuitManager, DataUpdateEventManager::DataUpdateEventReceiver& receiver) :
@@ -311,6 +315,9 @@ void EvaluatorInternal::startEdit() {
 }
 
 void EvaluatorInternal::endEdit() {
+	#ifdef TRACY_PROFILER
+	ZoneScoped;
+	#endif
 	layerRunner.runAll();
 	const BlockData* blockData = circuitManager.getBlockDataManager().getBlockData(circuit.getBlockType());
 	if (!blockData) return;

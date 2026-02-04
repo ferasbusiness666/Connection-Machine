@@ -106,10 +106,6 @@ private:
 
 	std::mutex framesMutex;
 	FrameManager frames;
-	// std::thread renderThread;
-	// std::atomic<bool> running = false;
-
-	// std::atomic<float> fps = 0;
 
 	std::atomic<int> currentBorrowedImage = -1;
 	AllocatedImage msaaImage;

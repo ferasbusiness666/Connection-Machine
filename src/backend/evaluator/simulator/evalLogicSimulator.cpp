@@ -403,6 +403,9 @@ std::pair<SimulatorStateIndexVecVariant, SimulatorStateIndexVecVariant> EvalLogi
 }
 
 std::vector<SimulatorStateIndexVecVariant> EvalLogicSimulator::getVirtualConnectionSimulatorIds(const Address& addressOrigin, const std::vector<std::pair<Position, virtual_connection_id_t>>& virtualConnections) const {
+	#ifdef TRACY_PROFILER
+	ZoneScoped;
+	#endif
 	std::lock_guard lock(mux);
 	std::vector<SimulatorStateIndexVecVariant> output;
 	for (std::pair<Position, virtual_connection_id_t> virtualConnection : virtualConnections) {
@@ -414,6 +417,9 @@ std::vector<SimulatorStateIndexVecVariant> EvalLogicSimulator::getVirtualConnect
 }
 
 std::vector<SimulatorStateIndexVecVariant> EvalLogicSimulator::getPinSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const {
+	#ifdef TRACY_PROFILER
+	ZoneScoped;
+	#endif
 	std::lock_guard lock(mux);
 	std::vector<SimulatorStateIndexVecVariant> output;
 	for (Position position : positions) {
@@ -437,6 +443,9 @@ std::vector<SimulatorStateIndexVecVariant> EvalLogicSimulator::getPinSimulatorId
 // }
 
 void EvalLogicSimulator::processEdits() {
+	#ifdef TRACY_PROFILER
+	ZoneScoped;
+	#endif
 	std::lock_guard lock(mux);
 	const EvalLayerState& evalLayerState = evaluatorInternal.getLayerRunner().getOutputLayer();
 	// addedGateCount += evalLayerState.getAddedGates().size();
@@ -446,6 +455,9 @@ void EvalLogicSimulator::processEdits() {
 	// printCounts();
 	{
 		SimPauseGuard simPauseGuard(logicSimulator);
+		#ifdef TRACY_PROFILER
+		ZoneScopedN("Apply edits to sim");
+		#endif
 		for (auto iter : evalLayerState.getRemovedConnections()) {
 			auto gateAIdIter = gateIdMapping.find(iter.first.connectionPointA.gateId);
 			if (gateAIdIter == gateIdMapping.end()) {
