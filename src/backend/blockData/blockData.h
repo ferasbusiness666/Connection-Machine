@@ -46,7 +46,7 @@ public:
 
 	BlockData(BlockType blockType, DataUpdateEventManager& dataUpdateEventManager);
 
-	inline void sendBlockDataUpdate() { dataUpdateEventManager.sendEvent("blockDataUpdate"); }
+	inline void sendBlockDataUpdate() { dataUpdateEventManager.sendEvent("blockDataUpdate", blockType); }
 
 	void setDefaultData(bool defaultData);
 	inline bool isDefaultData() const noexcept { return defaultData; }

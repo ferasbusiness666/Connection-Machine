@@ -70,5 +70,11 @@ void ImageSwapchain::create(VkRenderPass renderPass, std::pair<uint32_t, uint32_
 }
 
 void ImageSwapchain::recreate(VkRenderPass renderPass, std::pair<uint32_t, uint32_t> size, const AllocatedImage& msaaImage) {
+	for (unsigned int i = 0; i < images.size(); i++) {
+		vkDestroyFramebuffer(device->getDevice(), framebuffers[i], nullptr);
+		destroyImage(images[i]);
+	}
+	framebuffers.clear();
+	images.clear();
 	create(renderPass, size, msaaImage, true);
 }

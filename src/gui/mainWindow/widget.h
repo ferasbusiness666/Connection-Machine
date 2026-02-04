@@ -54,7 +54,7 @@ public:
 	MainWindow& getMainWindow() const { return mainWindow; }
 	WidgetId getWidgetId() const { return widgetId; }
 	const std::string& getWidgetIdStr() const { return widgetIdStr; }
-	virtual void processEvent(SDL_Event& event) = 0;
+	virtual void processEvent(SDL_Event& event) { }
 
 protected:
 	virtual void render() = 0;

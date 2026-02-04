@@ -7,6 +7,7 @@
 // #include "computerAPI/directoryManager.h"
 #include "environment/environment.h"
 #include "gui/mainWindow/widgets/circuitViewWidget.h"
+#include "gui/mainWindow/widgets/selectorWidget.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
 
@@ -50,8 +51,8 @@ MainWindow::MainWindow() : SdlWindow("Connection Machine"), environment(true), t
 
 	WidgetId widgetId1 = widgetIdProvider.getNewId();
 	widgets.emplace(widgetId1, std::make_unique<CircuitViewWidget>(widgetId1, *this));
-	// WidgetId widgetId2 = widgetIdProvider.getNewId();
-	// widgets.emplace(widgetId2, std::make_unique<CircuitViewWidget>(widgetId2, *this));
+	WidgetId widgetId2 = widgetIdProvider.getNewId();
+	widgets.emplace(widgetId2, std::make_unique<SelectorWidget>(widgetId2, *this));
 }
 
 MainWindow::~MainWindow() = default;

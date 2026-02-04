@@ -51,13 +51,12 @@ ViewportRenderer::ViewportRenderer(VulkanDevice* device) : chunker(device), devi
 }
 
 ViewportRenderer::~ViewportRenderer() {
-	// running.store(false);
-	// if (renderThread.joinable()) renderThread.join();
-
 	{
 		std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
 		destroyImages();
 	}
+
+	imageSwapchain.cleanup();
 
 	vkDestroySampler(device->getDevice(), sampler, nullptr);
 	vkDestroyRenderPass(device->getDevice(), renderPass, nullptr);

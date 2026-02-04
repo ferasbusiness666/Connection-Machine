@@ -11,6 +11,7 @@
 CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) : Widget(widgetId, mainWindow) {
 	ViewportId viewportId = MainRenderer::get().registerViewport({ 100, 100 });
 	circuitView = std::make_unique<CircuitView>(mainWindow.getEnvironment(), viewportId);
+	getMainWindow().getToolManagerManager().addCircuitView(circuitView.get());
 	circuit_id_t circuitId = mainWindow.getEnvironment().getBackend().createCircuit();
 	std::optional<simulator_id_t> simulatorId = mainWindow.getEnvironment().getBackend().createSimulator(circuitId);
 	circuitView->setSimulator(simulatorId.value(), Address());
@@ -77,6 +78,7 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 }
 
 CircuitViewWidget::~CircuitViewWidget() {
+	getMainWindow().getToolManagerManager().addCircuitView(circuitView.get());
 	ViewportId viewportId = circuitView->getViewportId();
 	circuitView.reset();
 	MainRenderer::get().deregisterViewport(viewportId);
@@ -99,7 +101,7 @@ void CircuitViewWidget::processEvent(SDL_Event& event) {
 				circuitView->getEventRegister().doEvent(DeltaEvent("view zoom", (float)(movement.y) / 15.f));
 			} else {
 				Vec2 size = valueOr(getGUIValue<Vec2>("CircuitViewSize"), Vec2(100, 100));
-				float scaleAmout = App::getDetlaTime() * 160.;
+				float scaleAmout = App::getDetlaTime() * 220.;
 				circuitView->getEventRegister().doEvent(DeltaXYEvent(
 					"view pan",
 					movement.x / size.x * circuitView->getViewManager().getViewWidth() * scaleAmout,
@@ -139,8 +141,7 @@ void CircuitViewWidget::render() {
 	bool leftClick = false;
 	bool rightClick = false;
 	ImVec2 mousePos;
-	ImGui::BeginChild("circuitView");
-	{
+	if (ImGui::BeginChild("circuitView")) {
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 		ImVec2 viewportWindowScreenPos = ImGui::GetCursorScreenPos();
 		ImVec2 viewportWindowPos = ImGui::GetCursorPos();
@@ -159,14 +160,12 @@ void CircuitViewWidget::render() {
 		isActive = ImGui::IsItemActive();
 		isFocused = ImGui::IsItemFocused();
 		isHovered = ImGui::IsItemHovered();
-		leftClick = ImGui::IsMouseDown(ImGuiMouseButton_Left);
-		rightClick = ImGui::IsMouseDown(ImGuiMouseButton_Right);
 		mousePos = ImGui::GetMousePos();
 		mousePos = ImVec2(mousePos.x - viewportWindowScreenPos.x, mousePos.y - viewportWindowScreenPos.y);
 
 		setGUIValue_rendering("AspectRatio", viewportPanelSize.x / viewportPanelSize.y);
-		setGUIValue_rendering("MouseLeftDown", leftClick);
-		setGUIValue_rendering("MouseRightDown", rightClick);
+		setGUIValue_rendering("MouseLeftDown", ImGui::IsMouseDown(ImGuiMouseButton_Left));
+		setGUIValue_rendering("MouseRightDown", ImGui::IsMouseDown(ImGuiMouseButton_Right));
 		setGUIValue_rendering("MousePosition", Vec2(mousePos.x / viewportPanelSize.x, mousePos.y / viewportPanelSize.y));
 		setGUIValue_rendering("MouseInView", isHovered);
 		setGUIValue_rendering("CircuitViewSize", Vec2(viewportPanelSize.x, viewportPanelSize.y));
@@ -178,14 +177,11 @@ void CircuitViewWidget::render() {
 		{
 			ImGui::PopStyleVar();
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-			ImGui::Text("%s", fmt::format("key press count: {}", getPressedKeys().size()).c_str());
 			ImGui::Text("%s", fmt::format("isHovered: {}", isHovered).c_str());
 			ImGui::Text("%s", fmt::format("isFocused: {}", isFocused).c_str());
 			ImGui::Text("%s", fmt::format("isActive: {}", isActive).c_str());
-			ImGui::Text("%s", fmt::format("leftClick: {}", leftClick).c_str());
-			ImGui::Text("%s", fmt::format("rightClick: {}", rightClick).c_str());
 			ImGui::Text("%s", fmt::format("mousePos: ({}, {})", mousePos.x, mousePos.y).c_str());
-			ImGui::Text("%s", fmt::format("ImGui {} fps", (int)ImGui::GetIO().Framerate/*, MainRenderer::get().getFps(circuitView->getViewportId())*/).c_str());
+			ImGui::Text("%s", fmt::format("ImGui {} fps", (int)ImGui::GetIO().Framerate).c_str());
 			ImGui::PopStyleColor();
 		}
 		ImGui::EndChild();
