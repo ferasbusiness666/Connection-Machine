@@ -4,42 +4,13 @@
 #include "app.h"
 
 #include "backend/settings/settings.h"
-// #include "computerAPI/directoryManager.h"
 #include "environment/environment.h"
 #include "gui/mainWindow/widgets/circuitViewWidget.h"
 #include "gui/mainWindow/widgets/selectorWidget.h"
-#include "imgui/imgui.h"
+#include "gui/helper/keybindHelpers.h"
 #include "imgui/imgui_internal.h"
 
 MainWindow::MainWindow() : SdlWindow("Connection Machine"), environment(true), toolManagerManager(environment), widgetIdProvider(1)/*, popUpManager(*this)*/ {
-	// keybind handling
-	// rmlDocument->AddEventListener(Rml::EventId::Keydown, &keybindHandler);
-	// keybindHandler.addListener("Keybinds/Editing/Paste", [this]() { toolManagerManager.setTool("paste tool"); });
-	// keybindHandler.addListener("Keybinds/Editing/Tools/State Changer", [this]() { toolManagerManager.setTool("state changer"); });
-	// keybindHandler.addListener("Keybinds/Editing/Tools/Connection", [this]() {
-	// 	toolManagerManager.setTool("connection");
-	// 	toolManagerManager.setMode("Single");
-	// });
-	// keybindHandler.addListener("Keybinds/Editing/Tools/Tensor Connect", [this]() {
-	// 	toolManagerManager.setTool("connection");
-	// 	toolManagerManager.setMode("Tensor");
-	// });
-	// keybindHandler.addListener("Keybinds/Editing/Tools/Move", [this]() { toolManagerManager.setTool("move"); });
-	// keybindHandler.addListener("Keybinds/Editing/Tools/Mode Changer", [this]() { toolManagerManager.setTool("mode changer"); });
-	// keybindHandler.addListener("Keybinds/Editing/Tools/Placement", [this]() {
-	// 	toolManagerManager.setTool("placement");
-	// 	toolManagerManager.setMode("Single");
-	// });
-	// keybindHandler.addListener("Keybinds/Editing/Tools/Area Placement", [this]() {
-	// 	toolManagerManager.setTool("placement");
-	// 	toolManagerManager.setMode("Area");
-	// });
-	// keybindHandler.addListener("Keybinds/Editing/Tools/Selection Maker", [this]() { toolManagerManager.setTool("selection maker"); });
-	// keybindHandler.addListener("Keybinds/Window/Toggle Fullscreen", [this]() { sdlWindow->toggleBorderlessFullscreen(); });
-	// keybindHandler.addListener("Keybinds/Window/Increase UI Scale", [this]() { offsetUiScale(kUiScaleStep); });
-	// keybindHandler.addListener("Keybinds/Window/Decrease UI Scale", [this]() { offsetUiScale(-kUiScaleStep); });
-	// keybindHandler.addListener("Keybinds/Window/Reset UI Scale", [this]() { applyUiScale(1.0f); });
-
 	const double* initialUiScale = Settings::get<SettingType::DECIMAL>("Appearance/UI Scale");
 	applyUiScale(initialUiScale ? static_cast<float>(*initialUiScale) : 1.0f);
 	Settings::registerListener<SettingType::DECIMAL>("Appearance/UI Scale", [this](const double& value) { applyUiScale(static_cast<float>(value)); });
@@ -57,7 +28,56 @@ MainWindow::MainWindow() : SdlWindow("Connection Machine"), environment(true), t
 
 MainWindow::~MainWindow() = default;
 
+bool MainWindow::isPressingKeybind(const Keybind& keybind) const {
+	return ::isPressingKeybind(keybind, pressedKeys);
+}
+
 void MainWindow::doUpdate() {
+	pressedKeys = ::getPressedKeys();
+	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Paste"), Keybind()))) {
+		toolManagerManager.setTool("paste tool");
+	}
+	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Tools/State Changer"), Keybind()))) {
+		toolManagerManager.setTool("state changer");
+	}
+	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Tools/Connection"), Keybind()))) {
+		toolManagerManager.setTool("connection");
+		toolManagerManager.setMode("Single");
+	}
+	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Tools/Tensor Connect"), Keybind()))) {
+		toolManagerManager.setTool("connection");
+		toolManagerManager.setMode("Tensor");
+	}
+	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Tools/Move"), Keybind()))) {
+		toolManagerManager.setTool("move");
+	}
+	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Tools/Mode Changer"), Keybind()))) {
+		toolManagerManager.setTool("mode changer");
+	}
+	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Tools/Placement"), Keybind()))) {
+		toolManagerManager.setTool("placement");
+		toolManagerManager.setMode("Single");
+	}
+	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Tools/Area Placement"), Keybind()))) {
+		toolManagerManager.setTool("placement");
+		toolManagerManager.setMode("Area");
+	}
+	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Tools/Selection Maker"), Keybind()))) {
+		toolManagerManager.setTool("selection maker");
+	}
+	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Window/Toggle Fullscreen"), Keybind()))) {
+		toggleBorderlessFullscreen();
+	}
+	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Window/Increase UI Scale"), Keybind()))) {
+		offsetUiScale(kUiScaleStep);
+	}
+	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Window/Decrease UI Scale"), Keybind()))) {
+		offsetUiScale(-kUiScaleStep);
+	}
+	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Window/Reset UI Scale"), Keybind()))) {
+		applyUiScale(1.0f);
+	}
+
 	for (std::pair<const WidgetId, std::unique_ptr<Widget>>& widget : widgets) {
 		widget.second->doUpdate();
 	}

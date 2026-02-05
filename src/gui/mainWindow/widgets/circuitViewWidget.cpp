@@ -3,7 +3,6 @@
 #include "../mainWindow.h"
 #include "app.h"
 #include "gpu/mainRenderer.h"
-#include "gui/helper/keybindHelpers.h"
 #include "gui/viewportManager/circuitView/circuitView.h"
 #include "gui/viewportManager/circuitView/events/customEvents.h"
 #include "imgui/imgui.h"
@@ -20,9 +19,8 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 	setupGUIValue<bool>("MouseLeftDown", false, [&](const bool& state) {
 		if (state) {
 			if (!valueOr(getGUIValue<bool>("MouseInView"), false)) return;
-			std::set<ImGuiKey> pressedKeys = getPressedKeys();
 			// std::lock_guard lock(Settings::getSettingsMapReadLock()); // we will be running these on main thread
-			if (isPressingKeys(*Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Pick Block"), pressedKeys)) {
+			if (getMainWindow().isPressingKeybind(*Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Pick Block"))) {
 				std::unique_ptr<CircuitView>& circuitView = this->circuitView;
 				Circuit* circuit = circuitView->getCircuit();
 				if (circuit) {
@@ -41,7 +39,7 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 					}
 				}
 			}
-			if (isPressingKeys(*Settings::get<SettingType::KEYBIND>("Keybinds/Camera/Pan"), pressedKeys)) {
+			if (getMainWindow().isPressingKeybind(*Settings::get<SettingType::KEYBIND>("Keybinds/Camera/Pan"))) {
 				if (circuitView->getEventRegister().doEvent(PositionEvent("View Attach Anchor", circuitView->getViewManager().getPointerPosition()))) {
 					return;
 				}
@@ -49,7 +47,7 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 			circuitView->getEventRegister().doEvent(PositionEvent("Tool Primary Activate", circuitView->getViewManager().getPointerPosition()));
 		} else {
 			circuitView->getEventRegister().doEvent(PositionEvent("View Dettach Anchor", circuitView->getViewManager().getPointerPosition()));
-			circuitView->getEventRegister().doEvent(PositionEvent("tool primary deactivate", circuitView->getViewManager().getPointerPosition()));
+			circuitView->getEventRegister().doEvent(PositionEvent("Tool Primary Deactivate", circuitView->getViewManager().getPointerPosition()));
 		}
 	});
 	setupGUIValue<bool>("MouseRightDown", false, [&](const bool& state) {
@@ -57,7 +55,7 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 			if (!valueOr(getGUIValue<bool>("MouseInView"), false)) return;
 			circuitView->getEventRegister().doEvent(PositionEvent("Tool Secondary Activate", circuitView->getViewManager().getPointerPosition()));
 		} else {
-			circuitView->getEventRegister().doEvent(PositionEvent("tool secondary deactivate", circuitView->getViewManager().getPointerPosition()));
+			circuitView->getEventRegister().doEvent(PositionEvent("Tool Secondary Deactivate", circuitView->getViewManager().getPointerPosition()));
 		}
 	});
 	setupGUIValue<Vec2>("MousePosition", {0, 0}, [&](const Vec2& viewPos) {
@@ -76,6 +74,7 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 	});
 	setupGUIValue<Vec2>("CircuitViewSize", Vec2(1, 1), nullptr);
 	setupGUIValue<bool>("CircuitViewIsHovered", false, nullptr);
+	setupGUIValue<bool>("CircuitViewIsFocused", false, nullptr);
 	setupGUIValue<float>("WindowScalingSize", getMainWindow().getWindowScalingSize(), nullptr);
 }
 
@@ -87,6 +86,9 @@ CircuitViewWidget::~CircuitViewWidget() {
 }
 
 void CircuitViewWidget::processEvent(SDL_Event& event) {
+	if (valueOr(getGUIValue<bool>("CircuitViewIsFocused"), false)) {
+
+	}
 	if (valueOr(getGUIValue<bool>("CircuitViewIsHovered"), false)) {
 		if (event.type == SDL_EVENT_MOUSE_WHEEL) {
 			Vec2 movement(-event.wheel.x * getMainWindow().getWindowScalingSize(), event.wheel.y * getMainWindow().getWindowScalingSize());
@@ -97,8 +99,7 @@ void CircuitViewWidget::processEvent(SDL_Event& event) {
 			}
 			const Keybind* keybind = Settings::get<SettingType::KEYBIND>("Keybinds/Camera/Zoom");
 			if (keybind == nullptr) return;
-			std::set<ImGuiKey> pressedKeys = getPressedKeys();
-			if (isPressingKeys(*keybind, pressedKeys)) {
+			if (getMainWindow().isPressingKeybind(*keybind)) {
 				// do zoom
 				circuitView->getEventRegister().doEvent(DeltaEvent("view zoom", (float)(movement.y) / 15.f));
 			} else {
@@ -110,7 +111,7 @@ void CircuitViewWidget::processEvent(SDL_Event& event) {
 					movement.y / size.y * circuitView->getViewManager().getViewHeight() * scaleAmout
 				));
 			}
-	 	} else if (event.type == SDL_EVENT_DROP_FILE && event.drop.data != nullptr) {
+		} else if (event.type == SDL_EVENT_DROP_FILE && event.drop.data != nullptr) {
 			std::string filePath(event.drop.data);
 			if (filePath.empty()) return;
 			std::vector<circuit_id_t> ids = getMainWindow().getEnvironment().getCircuitFileManager().loadFromFile(filePath);
@@ -172,6 +173,7 @@ void CircuitViewWidget::render() {
 		setGUIValue_rendering("MouseInView", isHovered);
 		setGUIValue_rendering("CircuitViewSize", Vec2(viewportPanelSize.x, viewportPanelSize.y));
 		setGUIValue_rendering("CircuitViewIsHovered", isHovered);
+		setGUIValue_rendering("CircuitViewIsFocused", isFocused);
 
 		ImGui::SetCursorPos(viewportWindowPos);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.0f, 2.0f));

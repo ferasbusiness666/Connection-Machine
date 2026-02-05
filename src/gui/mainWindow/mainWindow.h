@@ -41,6 +41,9 @@ public:
 		// cornerLog->logError(message.str());
 	}
 
+	bool isPressingKeybind(const Keybind& keybind) const;
+	const std::set<ImGuiKey>& getPressedKeys() const { return pressedKeys; }
+
 private:
 	void doUpdate() override final;
 	bool killWindow(bool forced) override final { widgets.clear(); return true; }
@@ -53,6 +56,8 @@ private:
 	void applyUiScale(float scale);
 
 	Environment environment;
+
+	std::set<ImGuiKey> pressedKeys;
 
 	// inputs and tools
 	// KeybindHandler keybindHandler;

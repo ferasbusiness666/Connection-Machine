@@ -5,7 +5,7 @@
 
 class Keybind {
 public:
-	Keybind() = default;
+	Keybind() : key(ImGuiKey::ImGuiKey_NamedKey_END) {}
 	Keybind(ImGuiKey key) : key(key) { }
 	Keybind(unsigned int key) : Keybind((ImGuiKey)key) { }
 	Keybind(std::string keyString) {

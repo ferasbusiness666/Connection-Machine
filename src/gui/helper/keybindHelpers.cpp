@@ -11,7 +11,7 @@ std::set<ImGuiKey> getPressedKeys() {
 	return pressedKeys;
 }
 
-bool isPressingKeys(const Keybind& keybinds, const std::set<ImGuiKey>& pressedKeys) {
+bool isPressingKeybind(const Keybind& keybinds, const std::set<ImGuiKey>& pressedKeys) {
 	if (
 		((ImGuiKey)(keybinds.getKeybind() & ~ImGuiKey::ImGuiMod_Mask_) != ImGuiKey::ImGuiKey_None) &&
 		(!pressedKeys.contains((ImGuiKey)(keybinds.getKeybind() & ~ImGuiKey::ImGuiMod_Mask_)))

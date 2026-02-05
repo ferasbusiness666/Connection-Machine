@@ -6,6 +6,6 @@ class Keybind;
 
 std::set<ImGuiKey> getPressedKeys();
 
-bool isPressingKeys(const Keybind& keybinds, const std::set<ImGuiKey>& pressedKeys);
+bool isPressingKeybind(const Keybind& keybinds, const std::set<ImGuiKey>& pressedKeys);
 
 #endif /* keybindHelpers_h */
