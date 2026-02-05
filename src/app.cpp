@@ -63,12 +63,15 @@ void App::runLoop() {
 	running = true;
 	lastUpdateTime = std::chrono::high_resolution_clock::now();
 	while (running) {
-		for (auto func : runOnMainFunctions) func();
-		runOnMainFunctions.clear();
 		if (windows.empty()) App::kill(); // Ff there are not more windows kill the app!
 
 		// Wait for the next event (so we don't broork the cpu)
-		bool gotEvent = SDL_WaitEventTimeout(nullptr, 50);
+		bool gotEvent = SDL_WaitEventTimeout(nullptr, 8);
+
+		// first thing we need to do is run functions from other threads (mainly imgui rending)
+		for (auto func : runOnMainFunctions) func();
+		runOnMainFunctions.clear();
+
 		std::chrono::time_point<std::chrono::high_resolution_clock> updateTime = std::chrono::high_resolution_clock::now();
 		detlaTime = updateTime - lastUpdateTime;
 		lastUpdateTime = updateTime;
