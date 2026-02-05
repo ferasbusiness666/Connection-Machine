@@ -1,5 +1,6 @@
 #include "imGuiRenderer.h"
 
+#include "app.h"
 #include "gpu/mainRenderer.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_sdl3.h"
@@ -159,9 +160,17 @@ void ImGuiRenderer::beginFrame() {
 }
 
 void ImGuiRenderer::endFrame(VkCommandBuffer cmd) {
-	ImGui::SetCurrentContext(m_context);
+	m_mutex.unlock();
 
-	ImGui::Render();
+	App::runOnMain_blocking([this]() {
+		ImGui::SetCurrentContext(m_context);
+		ImGui::Render();
+	});
+
+
+	std::lock_guard lock(m_mutex);
+
+	ImGui::SetCurrentContext(m_context);
 
 	// Render main window
 	{
@@ -174,8 +183,6 @@ void ImGuiRenderer::endFrame(VkCommandBuffer cmd) {
 		ImGui::UpdatePlatformWindows();
 		ImGui::RenderPlatformWindowsDefault();
 	}
-
-	m_mutex.unlock();
 }
 
 void ImGuiRenderer::allProcessEvent(const SDL_Event& e) {

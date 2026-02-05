@@ -2,6 +2,8 @@
 
 #include "../mainWindow.h"
 
+#include "imgui/imgui_stdlib.h"
+
 SelectorWidget::SelectorWidget(WidgetId widgetId, MainWindow& mainWindow) :
 	Widget(widgetId, mainWindow), dataUpdateEventReceiver(getMainWindow().getEnvironment().getBackend().getDataUpdateEventManager()) {
 	{
@@ -21,6 +23,7 @@ SelectorWidget::SelectorWidget(WidgetId widgetId, MainWindow& mainWindow) :
 		for (const auto& iter : getMainWindow().getEnvironment().getBackend().getCircuitManager().getProceduralCircuitManager().getProceduralCircuits()) {
 			root.updateWith("Blocks/" + iter.second->getPath(), iter.second->getPath());
 		}
+		root.updateWith("Blocks/Other/Bus", "Other/Bus");
 		// Tools
 		for (const auto& iter : getMainWindow().getToolManagerManager().getAllTools()) {
 			root.updateWith("Tools/" + iter.first, iter.first);
@@ -59,6 +62,7 @@ SelectorWidget::SelectorWidget(WidgetId widgetId, MainWindow& mainWindow) :
 	setupGUIValue<std::string>("selectedTool", "", [this](const std::string& toolPath) {
 		getMainWindow().getToolManagerManager().setTool(toolPath);
 	});
+	setupGUIValue<std::string>("selectedProceduralCircuitOrBus", "", nullptr);
 	// setupGUIValue<std::string>("selectedToolMode", BlockType::NONE, [this](const BlockType& blockType) {
 	// 	getMainWindow().getToolManagerManager().setBlock(blockType);
 	// });
@@ -76,7 +80,9 @@ void SelectorWidget::createTree(const SelectorTreeNode& node, const std::string&
 					flags |= ImGuiTreeNodeFlags_Selected;
 				}
 			} else if (rootString == "Blocks") {
-				// pair.second.data.value().
+				if (valueOr(getGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus"), std::string()) == std::get<std::string>(pair.second.data.value())) {
+					flags |= ImGuiTreeNodeFlags_Selected;
+				};
 			} else if (rootString == "Tools") {
 				assert(std::holds_alternative<std::string>(pair.second.data.value()));
 				if (valueOr(getGUIValue_rendering<std::string>("selectedTool"), std::string()) == std::get<std::string>(pair.second.data.value())) {
@@ -90,7 +96,8 @@ void SelectorWidget::createTree(const SelectorTreeNode& node, const std::string&
 						assert(rootString == "Blocks");
 						setGUIValue_rendering<BlockType>("selectedBlockType", std::get<BlockType>(pair.second.data.value()));
 					}else if (rootString == "Blocks") {
-						// pair.second.data.value().
+						const std::string& data = std::get<std::string>(pair.second.data.value());
+						setGUIValue_rendering("selectedProceduralCircuitOrBus", data);
 					} else if (rootString == "Tools") {
 						assert(std::holds_alternative<std::string>(pair.second.data.value()));
 						setGUIValue_rendering("selectedTool", std::get<std::string>(pair.second.data.value()));
@@ -116,6 +123,44 @@ SelectorWidget::~SelectorWidget() { }
 void SelectorWidget::render() {
 	ImGui::SetNextWindowSize(ImVec2(100, 300), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin(getWidgetIdStr().c_str())) {
+		const std::string* selectedProceduralCircuitOrBus = getGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus");
+		if (selectedProceduralCircuitOrBus && *selectedProceduralCircuitOrBus != "") {
+			if (*selectedProceduralCircuitOrBus == "Other/Bus") {
+				if (ImGui::BeginChild("Bus Creator", {0, 0}, ImGuiChildFlags_AutoResizeY)) {
+					std::lock_guard lock(proceduralCircuitOrBusParameterMux);
+					auto pair = proceduralCircuitOrBusParameter.try_emplace("Other/Bus");
+					auto numberOfPorts = pair.first->second.emplace("Number of Ports", 8);
+					if (ImGui::InputInt("Number of Ports", &std::get<int>(numberOfPorts.first->second), 1, 10))
+						numberOfPorts.first->second = max(1, std::get<int>(numberOfPorts.first->second));
+					auto portBitWidths = pair.first->second.emplace("Port Bit Widths", 1);
+					if (ImGui::InputInt("Port Bit Widths", &std::get<int>(portBitWidths.first->second), 1, 10))
+						portBitWidths.first->second = max(1, std::get<int>(portBitWidths.first->second));
+				}
+				ImGui::EndChild();
+			} else {
+				if (ImGui::BeginChild("Procedural Circuit", {0, 0}, ImGuiChildFlags_AutoResizeY)) {
+					std::lock_guard lock(proceduralCircuitOrBusParameterMux);
+					auto iter = proceduralCircuitOrBusParameter.find(*selectedProceduralCircuitOrBus);
+					if (iter == proceduralCircuitOrBusParameter.end()) {
+						logError("Could not find {} in proceduralCircuitOrBusParameter. This should have been setup before this code runs.", "SelectorWidget::render");
+					} else {
+						for (auto parameterIter : iter->second) {
+							if (std::holds_alternative<int>(parameterIter.second)) {
+								ImGui::InputInt(parameterIter.first.c_str(), &std::get<int>(parameterIter.second), 1, 10);
+							} else if (std::holds_alternative<unsigned int>(parameterIter.second)) {
+								if (ImGui::InputInt(parameterIter.first.c_str(), (int*)&std::get<unsigned int>(parameterIter.second), 1, 10))
+									parameterIter.second = max(1, std::get<int>(parameterIter.second));
+							} else if (std::holds_alternative<float>(parameterIter.second)) {
+								ImGui::InputFloat(parameterIter.first.c_str(), &std::get<float>(parameterIter.second));
+							} else if (std::holds_alternative<std::string>(parameterIter.second)) {
+								ImGui::InputText(parameterIter.first.c_str(), &std::get<std::string>(parameterIter.second));
+							}
+						}
+					}
+				}
+				ImGui::EndChild();
+			}
+		}
 		std::lock_guard mux(pathsMux);
 		createTree(root);
 	}

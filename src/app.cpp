@@ -4,6 +4,7 @@
 #include <tracy/Tracy.hpp>
 #endif
 
+std::thread::id mainThreadId = std::this_thread::get_id();
 
 #include "gui/sdl/sdlWindow.h"
 #include "network/network.h"
@@ -19,7 +20,8 @@ std::optional<SdlInstance> sdl;
 std::set<std::shared_ptr<SdlWindow>> windows;
 bool running = false;
 bool tryingToQuit = false;
-unsigned int tasksToFinishToQuit = 0;
+// unsigned int tasksToFinishToQuit = 0;
+std::vector<std::function<void()>> runOnMainFunctions;
 
 void App::kill() {
 	logInfo("Killing App", "App");
@@ -61,6 +63,8 @@ void App::runLoop() {
 	running = true;
 	lastUpdateTime = std::chrono::high_resolution_clock::now();
 	while (running) {
+		for (auto func : runOnMainFunctions) func();
+		runOnMainFunctions.clear();
 		if (windows.empty()) App::kill(); // Ff there are not more windows kill the app!
 
 		// Wait for the next event (so we don't broork the cpu)
@@ -209,10 +213,37 @@ void App::startTryingToQuit() {
 	// 	}) }
 	// 	);
 	// }
-	if (tasksToFinishToQuit == 0) running = false;
+	// if (tasksToFinishToQuit == 0) running = false;
 }
 
 void App::stopTryingToQuit() { tryingToQuit = false; }
+
+void App::runOnMain_blocking(std::function<void()> func) {
+#ifdef TRACY_PROFILER
+	ZoneScoped; // allow us to see it stuff is slow because of this.
+#endif
+	// if this happens to be the main thread then we can just run the function
+	if (mainThreadId == std::this_thread::get_id()) {
+		func();
+		return;
+	}
+	std::atomic<bool> isDone{false};
+	runOnMainFunctions.push_back([isDone = &isDone, func](){
+		func();
+		isDone->store(true);
+		isDone->notify_all();
+	});
+	isDone.wait(false);
+}
+
+void App::runOnMain(std::function<void()> func) {
+	// if this happens to be the main thread then we can just run the function
+	if (mainThreadId == std::this_thread::get_id()) {
+		func();
+		return;
+	}
+	runOnMainFunctions.push_back(func);
+}
 
 nlohmann::json App::dumpState() /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json stateJson;

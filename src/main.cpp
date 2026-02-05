@@ -11,8 +11,6 @@
 #include "gui/mainWindow/mainWindow.h"
 #include "util/version.h"
 
-std::thread::id mainThreadId = std::this_thread::get_id();
-
 void registerSettings() {
 	logInfo("Registering settings", "Main");
 	Settings::registerSetting<SettingType::FILE_PATH>("Appearance/Font", (DirectoryManager::getResourceDirectory() / "gui/fonts/monaspace.otf").generic_string());

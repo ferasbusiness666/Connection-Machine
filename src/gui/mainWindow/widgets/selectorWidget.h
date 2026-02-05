@@ -30,6 +30,9 @@ private:
 	std::mutex pathsMux;
 	std::map<std::variant<BlockType, std::string>, std::string> paths;
 	SelectorTreeNode root;
+
+	std::mutex proceduralCircuitOrBusParameterMux;
+	std::map<std::string, std::map<std::string, std::variant<unsigned, int, float, std::string>>> proceduralCircuitOrBusParameter;
 };
 
 #endif /* selectorWidget_h */
