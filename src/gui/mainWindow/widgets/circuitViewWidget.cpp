@@ -7,6 +7,7 @@
 #include "gui/viewportManager/circuitView/circuitView.h"
 #include "gui/viewportManager/circuitView/events/customEvents.h"
 #include "imgui/imgui.h"
+#include "imgui/imgui_internal.h"
 
 void LoadCallback(void* userData, const char* const* filePaths, int filter) {
 	CircuitViewWidget* circuitViewWidget = (CircuitViewWidget*)userData;
@@ -231,9 +232,10 @@ void CircuitViewWidget::render() {
 		}
 		ImGui::SetCursorPos(viewportWindowPos);
 		ImGui::InvisibleButton("circuitViewInvisibleButton", viewportPanelSize, ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight);
+		isHovered = ImGui::IsItemHovered();
+		if (isHovered) ImGui::FocusItem();
 		isActive = ImGui::IsItemActive();
 		isFocused = ImGui::IsItemFocused();
-		isHovered = ImGui::IsItemHovered();
 		mousePos = ImGui::GetMousePos();
 		mousePos = ImVec2(mousePos.x - viewportWindowScreenPos.x, mousePos.y - viewportWindowScreenPos.y);
 

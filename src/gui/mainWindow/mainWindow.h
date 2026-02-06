@@ -41,8 +41,8 @@ public:
 		// cornerLog->logError(message.str());
 	}
 
-	bool isPressingKeybind(const Keybind& keybind) const;
-	bool isPressingKeybind(const std::string& settingKey) const;
+	bool isPressingKeybind(const Keybind& keybind, bool repeat = false) const;
+	bool isPressingKeybind(const std::string& settingKey, bool repeat = false) const;
 	const std::set<ImGuiKey>& getPressedKeys() const { return pressedKeys; }
 
 private:
@@ -59,6 +59,7 @@ private:
 	Environment environment;
 
 	std::set<ImGuiKey> pressedKeys;
+	std::set<ImGuiKey> heldKeys;
 
 	// inputs and tools
 	// KeybindHandler keybindHandler;

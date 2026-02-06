@@ -28,17 +28,19 @@ MainWindow::MainWindow() : SdlWindow("Connection Machine"), environment(true), t
 
 MainWindow::~MainWindow() = default;
 
-bool MainWindow::isPressingKeybind(const Keybind& keybind) const {
+bool MainWindow::isPressingKeybind(const Keybind& keybind, bool repeat) const {
+	if (!repeat && ::isPressingKeybind(keybind, heldKeys)) return false; // dont send twice unless repeat is true
 	return ::isPressingKeybind(keybind, pressedKeys);
 }
 
-bool MainWindow::isPressingKeybind(const std::string& settingKey) const {
+bool MainWindow::isPressingKeybind(const std::string& settingKey, bool repeat) const {
 	const Keybind* keybind = Settings::get<SettingType::KEYBIND>(settingKey);
 	if (!keybind) return false;
-	return ::isPressingKeybind(*keybind, pressedKeys);
+	return isPressingKeybind(*keybind, repeat);
 }
 
 void MainWindow::doUpdate() {
+	heldKeys = std::move(pressedKeys);
 	pressedKeys = ::getPressedKeys();
 	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Paste"), Keybind()))) {
 		toolManagerManager.setTool("paste tool");
