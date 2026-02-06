@@ -26,7 +26,7 @@ WindowRenderer::WindowRenderer(WindowId windowId, SdlWindow* sdlWindow) : window
 	swapchain.createFramebuffers(renderPass, colorImage);
 
 	// subrenderers
-	imGuiRenderer.emplace(sdlWindow->getHandlePtr(), renderPass, FRAMES_IN_FLIGHT);
+	imGuiRenderer.emplace(sdlWindow->getHandle(), renderPass, FRAMES_IN_FLIGHT);
 
 	// start render loop
 	running.store(true);

@@ -7,7 +7,7 @@
 #include "imgui/imgui_impl_vulkan.h"
 
 std::map<SDL_Window*, ImGuiRenderer&> imGuiRenderers;
-std::mutex m_mutex;
+std::mutex mutex;
 
 static void check_vk_result(VkResult err) {
     if (err == VK_SUCCESS)
@@ -17,10 +17,10 @@ static void check_vk_result(VkResult err) {
         abort();
 }
 
-ImGuiRenderer::ImGuiRenderer(SDL_Window* window, VkRenderPass renderPass, uint32_t framesInFlight) :
-	m_mainWindow(window), m_renderPass(renderPass), m_framesInFlight(framesInFlight), m_context(nullptr), m_imguiDescriptorPool(VK_NULL_HANDLE) {
-	std::lock_guard<std::mutex> lock(m_mutex);
-	auto result = imGuiRenderers.emplace(m_mainWindow, *this);
+ImGuiRenderer::ImGuiRenderer(SDL_Window& window, VkRenderPass renderPass, uint32_t framesInFlight) :
+	mainWindow(window), renderPass(renderPass), framesInFlight(framesInFlight), imguiDescriptorPool(VK_NULL_HANDLE) {
+	std::lock_guard<std::mutex> lock(mutex);
+	auto result = imGuiRenderers.emplace(&mainWindow, *this);
 	assert(result.second);
 
 	VkDescriptorPoolSize poolSizes[] = {
@@ -44,14 +44,14 @@ ImGuiRenderer::ImGuiRenderer(SDL_Window* window, VkRenderPass renderPass, uint32
 	poolInfo.poolSizeCount = std::size(poolSizes);
 	poolInfo.pPoolSizes = poolSizes;
 
-	if (vkCreateDescriptorPool(MainRenderer::get().getVulkanInstance().getDevice()->getDevice().device, &poolInfo, nullptr, &m_imguiDescriptorPool) != VK_SUCCESS) {
+	if (vkCreateDescriptorPool(MainRenderer::get().getVulkanInstance().getDevice()->getDevice().device, &poolInfo, nullptr, &imguiDescriptorPool) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create ImGui descriptor pool");
 	}
 
 	// init ImGui
-	m_context = ImGui::CreateContext();
+	context = ImGui::CreateContext();
 
-	ImGui::SetCurrentContext(m_context);
+	ImGui::SetCurrentContext(context);
 	ImGuiIO& io = ImGui::GetIO();
 
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -71,7 +71,7 @@ ImGuiRenderer::ImGuiRenderer(SDL_Window* window, VkRenderPass renderPass, uint32
 		// io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;
 	}
 
-	if (!ImGui_ImplSDL3_InitForVulkan(m_mainWindow)) {
+	if (!ImGui_ImplSDL3_InitForVulkan(&mainWindow)) {
 		throw std::runtime_error("Failed to initialize ImGui SDL3 backend");
 	}
 
@@ -112,9 +112,9 @@ ImGuiRenderer::ImGuiRenderer(SDL_Window* window, VkRenderPass renderPass, uint32
     init_info.Device = MainRenderer::get().getVulkanInstance().getDevice()->getDevice().device;
     init_info.QueueFamily = MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueIndex();
     init_info.Queue = MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueue().queue;
-    init_info.DescriptorPool = m_imguiDescriptorPool;
-    init_info.MinImageCount = m_framesInFlight;
-    init_info.ImageCount = m_framesInFlight;
+    init_info.DescriptorPool = imguiDescriptorPool;
+    init_info.MinImageCount = framesInFlight;
+    init_info.ImageCount = framesInFlight;
     init_info.PipelineInfoMain.RenderPass = renderPass;
     init_info.PipelineInfoMain.Subpass = 0;
     init_info.PipelineInfoMain.MSAASamples = MainRenderer::get().getVulkanInstance().getDevice()->getMaxUsableSampleCount();
@@ -129,30 +129,30 @@ ImGuiRenderer::ImGuiRenderer(SDL_Window* window, VkRenderPass renderPass, uint32
 }
 
 ImGuiRenderer::~ImGuiRenderer() {
-	std::lock_guard<std::mutex> lock(m_mutex);
-	imGuiRenderers.erase(m_mainWindow);
+	std::lock_guard<std::mutex> lock(mutex);
+	imGuiRenderers.erase(&mainWindow);
 
-	if (!m_context) return;
+	if (!context) return;
 
-	ImGui::SetCurrentContext(m_context);
+	ImGui::SetCurrentContext(context);
 
 	ImGui_ImplVulkan_Shutdown();
 	ImGui_ImplSDL3_Shutdown();
 
-	ImGui::DestroyContext(m_context);
-	m_context = nullptr;
+	ImGui::DestroyContext(context);
+	context = nullptr;
 
 	// Clean up Vulkan resources
-	if (m_imguiDescriptorPool != VK_NULL_HANDLE) {
-		vkDestroyDescriptorPool(MainRenderer::get().getVulkanInstance().getDevice()->getDevice().device, m_imguiDescriptorPool, nullptr);
-		m_imguiDescriptorPool = VK_NULL_HANDLE;
+	if (imguiDescriptorPool != VK_NULL_HANDLE) {
+		vkDestroyDescriptorPool(MainRenderer::get().getVulkanInstance().getDevice()->getDevice().device, imguiDescriptorPool, nullptr);
+		imguiDescriptorPool = VK_NULL_HANDLE;
 	}
 }
 
 void ImGuiRenderer::beginFrame() {
-	m_mutex.lock();
+	mutex.lock();
 
-	ImGui::SetCurrentContext(m_context);
+	ImGui::SetCurrentContext(context);
 
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplSDL3_NewFrame();
@@ -160,17 +160,17 @@ void ImGuiRenderer::beginFrame() {
 }
 
 void ImGuiRenderer::endFrame(VkCommandBuffer cmd) {
-	m_mutex.unlock();
+	mutex.unlock();
 
 	App::runOnMain_blocking([this]() {
-		ImGui::SetCurrentContext(m_context);
+		ImGui::SetCurrentContext(context);
 		ImGui::Render();
 	});
 
 
-	std::lock_guard lock(m_mutex);
+	std::lock_guard lock(mutex);
 
-	ImGui::SetCurrentContext(m_context);
+	ImGui::SetCurrentContext(context);
 
 	// Render main window
 	{
@@ -185,10 +185,21 @@ void ImGuiRenderer::endFrame(VkCommandBuffer cmd) {
 	}
 }
 
+std::mutex& ImGuiRenderer::setActiveContext() const {
+	return mutex;
+	ImGui::SetCurrentContext(context);
+}
+
+ImGuiRenderer* ImGuiRenderer::getImGuiRenderer(SDL_Window& sdlWindow) {
+	auto iter = imGuiRenderers.find(&sdlWindow);
+	if (iter == imGuiRenderers.end()) return nullptr;
+	return &iter->second;
+}
+
 void ImGuiRenderer::allProcessEvent(const SDL_Event& e) {
-	std::lock_guard<std::mutex> lock(m_mutex);
+	std::lock_guard<std::mutex> lock(mutex);
 	for (std::pair<SDL_Window*, ImGuiRenderer&> imGuiRenderer : imGuiRenderers) {
-		ImGui::SetCurrentContext(imGuiRenderer.second.m_context);
+		ImGui::SetCurrentContext(imGuiRenderer.second.context);
 		ImGui_ImplSDL3_ProcessEvent(&e);
 	}
 }

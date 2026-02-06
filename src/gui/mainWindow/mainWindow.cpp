@@ -40,7 +40,7 @@ bool MainWindow::isPressingKeybind(const std::string& settingKey, bool repeat) c
 }
 
 void MainWindow::doUpdate() {
-	pressedKeys = ::getPressedKeys();
+	pressedKeys = ::getPressedKeys(getHandle());
 	if (isPressingKeybind("Keybinds/Editing/Paste")) {
 		toolManagerManager.setTool("paste tool");
 	}

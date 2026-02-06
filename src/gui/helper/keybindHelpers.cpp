@@ -1,8 +1,10 @@
 #include "keybindHelpers.h"
 
 #include "backend/settings/keybind.h"
+#include "gpu/renderer/imgui/imGuiRenderer.h"
 
-std::set<ImGuiKey> getPressedKeys() {
+std::set<ImGuiKey> getPressedKeys(SDL_Window& sdlWindow) {
+	ImGuiRenderer::getImGuiRenderer(sdlWindow);
 	std::set<ImGuiKey> pressedKeys;
 	for (int key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_NamedKey_END; key++) {
 		if (ImGui::IsKeyPressed((ImGuiKey)key)) pressedKeys.insert((ImGuiKey)key);
