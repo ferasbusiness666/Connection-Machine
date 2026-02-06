@@ -54,8 +54,9 @@ public:
 	void StartTutorial();
 	void Stop();
 	void setTutorial(const std::vector<TutorialStep>& steps);
-
 	void forceCompleteStep();
+
+    std::string selectTutorial();
 
 private:
 	void checkTutorial(DifferenceSharedPtr diff, circuit_id_t circuitId);

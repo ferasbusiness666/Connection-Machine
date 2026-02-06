@@ -1,5 +1,5 @@
 version_0
-Tutorial: "Basic Tutorial"
+Tutorial: "AND Tutorial"
 Step:
 	Condition:
 		Block: SWITCH (0, 0) ZERO
@@ -35,7 +35,8 @@ Step:
 		Connection Preview: (2, 1) (4, 1)
 Step:
 	Condition:
-		State: h (2, 1) 2
+		State: h (0, 0) 3
+        State: h (0, 2) 3
 	Action:
 		Message: "Switch to the state changer and flip the switches so the AND output turns ON."
 Step:

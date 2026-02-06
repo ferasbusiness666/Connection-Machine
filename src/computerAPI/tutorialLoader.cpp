@@ -1,13 +1,17 @@
 #include "tutorialLoader.h"
 #include "computerAPI/circuits/textParser.h"
-#include "fileLoader.h"
+#include "logging/logging.h"
 
 Position getPositionFromString(const std::string str1, const std::string str2) {
 	return Position(std::stoi(str1.substr(str1.find('(') + 1)), std::stoi(str2.substr(0, str2.size() - 1)));
 }
 
-std::vector<TutorialStep> parseTutorialFile(std::string& fileName) {
+std::vector<TutorialStep> parseTutorialFile(std::string fileName) {
+    logInfo("Loading tutorial '" + fileName + "'", "TutorialLoader");
 	std::ifstream istream("TutorialLib/" + fileName);
+    if (!istream.is_open()) {
+        logInfo("Failed to open file '" + fileName + "'", "TutorialLoader");
+    }
 	std::vector<TutorialStep> steps;
 	std::string cur;
 	int line = 0;

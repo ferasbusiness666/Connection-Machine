@@ -2,10 +2,11 @@
 
 #include "backend/position/position.h"
 #include "circuitView.h"
-#include "computerAPI/tutorialLoader.h"
+#include <filesystem>
 
 #include "environment/environment.h"
 #include "events/customEvents.h"
+#include "logging/logging.h"
 
 Tutorial::Tutorial(Environment& environment, CircuitView& circuitView) :
 	circuitView(&circuitView), elementCreator(circuitView.getViewportId()), environment(environment), tutorialRunning(false), tutorialState(0) { }
@@ -31,6 +32,27 @@ void Tutorial::StartTutorial() {
 		return false;
 	});
 	runCurrentStep();
+}
+
+std::string Tutorial::selectTutorial() {
+    // change to text and buttons on screen later
+    std::vector<std::string> filenames;
+    logInfo("Select a tutorial");
+    for (const auto& file : std::filesystem::directory_iterator("TutorialLib/")) {
+        filenames.push_back(file.path().filename().string());
+        logInfo("  [" + std::to_string(filenames.size()) + "] " + file.path().filename().string());
+    }
+    const char* in;
+    char* p;
+    long converted;
+    do {
+        logInfo("Enter number 1-" +std::to_string(filenames.size()) + ": ");
+        std::string num;
+        std::cin >> num;
+        in = num.c_str();
+        converted = strtol(in, &p, 10);
+    } while (*p || converted < 1 || converted > filenames.size());
+    return filenames[converted - 1];
 }
 
 void Tutorial::Stop() {
@@ -83,7 +105,7 @@ bool Tutorial::isCurrentStepComplete() const {
 		}
 	}
 	for (const TutorialCondition::LogicStateRequirement stateCondition : currentStep.condition.logicStates) {
-		// simulator->tickStep(stateCondition.numSteps);
+		simulator->tickStep(stateCondition.numSteps);
 		logic_state_t b = simulator->getState(Address(stateCondition.pos));
 		if (simulator->getState(Address(stateCondition.pos)) != stateCondition.state) {
 			logic_state_t a = simulator->getState(Address(stateCondition.pos));
@@ -184,7 +206,6 @@ void Tutorial::forceCompleteStep() {
 		const Block* currentBlock = blockContainer.getBlock(stateCondition.pos);
 		if (currentBlock != nullptr) {
 			simulator->setState(Address(stateCondition.pos), stateCondition.state);
-			// simulator->tickStep(1);
 		}
 	}
 

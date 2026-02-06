@@ -3,6 +3,6 @@
 
 #include "gui/viewportManager/circuitView/tutorial.h"
 
-std::vector<TutorialStep> parseTutorialFile(std::string& fileName);
+std::vector<TutorialStep> parseTutorialFile(std::string fileName);
 
 #endif
