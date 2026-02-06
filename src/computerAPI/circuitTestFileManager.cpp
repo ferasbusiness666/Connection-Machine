@@ -27,8 +27,7 @@ std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestFromFilePa
     const unsigned int latestVersion = 0;
     if (token == "version_0") {
         version = 0;
-    }
-    else {
+    } else {
         logError("Invalid test case file version: {}", "CircuitTestFileManager", token);
         return std::nullopt;
     }
@@ -67,11 +66,18 @@ std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestFromFilePa
                 while (inputFile.peek() != '>' && !inputFile.eof()) {
                     std::string portName;
                     inputFile >> std::quoted(portName);
+                    if (!portNames.contains(portName)) {
+                        logError("Unrecognized port name '{}', be sure to include it at the top of the file", "CircuitTestFileManager", portName);
+                        return std::nullopt;
+                    }
                     inputFile >> std::ws;
                     char colon;
                     inputFile >> colon;
                     int portState;
                     inputFile >> portState;
+                    if (portState < 0 || portState > 3) {
+                        logWarning("Unrecognized state {} for port {}", "CircuitTestFileManager", portState, portName);
+                    }
                     inputFile >> std::ws;
                     states.push_back(std::make_pair(portName, (logic_state_t)portState));
                 }
@@ -85,7 +91,7 @@ std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestFromFilePa
                 inputFile >> ticks;
                 testGroup.addTickStepCommand(ticks);
             } else {
-                logError("Unknown command '{}' in test file", "CircuitTestFileManager", token.substr(1));
+                logError("Error parsing test file: Unknown command '{}'", "CircuitTestFileManager", token.substr(1));
                 return std::nullopt;
             }
         }
