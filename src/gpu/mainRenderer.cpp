@@ -185,9 +185,9 @@ VkDescriptorSet MainRenderer::startViewportRendering(ViewportId viewportId) {
 		logError("Failed to call get_viewport_latest_image on non existent viewport {}", "MainRenderer", viewportId);
 		return VK_NULL_HANDLE;
 	}
-	std::pair<VkDescriptorSet, VkSemaphore> pair = iter->second.startImageRender();
-	windowsIter->second.addSemaphore(pair.second, iter->second.getCurrentFrame());
-	return pair.first;
+	auto [vkDescriptorSet, vkSemaphore, lifetimeObjects] = iter->second.startImageRender();
+	windowsIter->second.addSemaphore(vkSemaphore, lifetimeObjects);
+	return vkDescriptorSet;
 }
 
 // float MainRenderer::getFps(ViewportId viewportId) const {

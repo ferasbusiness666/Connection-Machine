@@ -11,12 +11,12 @@ public:
 	void create(VkRenderPass renderPass, std::pair<uint32_t, uint32_t> size, const AllocatedImage& colorImage, bool useOld);
 	void recreate(VkRenderPass renderPass, std::pair<uint32_t, uint32_t> size, const AllocatedImage& msaaImage);
 
-	inline std::vector<AllocatedImage>& getImages() { return images; }
+	inline std::vector<std::shared_ptr<AllocatedImage>>& getImages() { return images; }
 	inline std::vector<VkFramebuffer>& getFramebuffers() { return framebuffers; }
 	inline std::vector<VkSemaphore>& getImageSemaphores() { return imageSemaphores; }
 
 private:
-	std::vector<AllocatedImage> images;
+	std::vector<std::shared_ptr<AllocatedImage>> images;
 	std::vector<VkFramebuffer> framebuffers;
 	std::vector<VkSemaphore> imageSemaphores;
 

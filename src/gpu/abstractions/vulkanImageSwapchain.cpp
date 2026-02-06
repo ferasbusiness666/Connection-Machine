@@ -16,7 +16,6 @@ void ImageSwapchain::init(VulkanDevice* device) {
 void ImageSwapchain::cleanup() {
 	for (unsigned int i = 0; i < images.size(); i++) {
 		vkDestroyFramebuffer(device->getDevice(), framebuffers[i], nullptr);
-		destroyImage(images[i]);
 	}
 	framebuffers.clear();
 	images.clear();
@@ -39,7 +38,7 @@ void ImageSwapchain::create(VkRenderPass renderPass, std::pair<uint32_t, uint32_
 		VkSampleCountFlagBits msaaSamples = device->getMaxUsableSampleCount();
 
 		// Create resolve image (non-MSAA, for ImGui to sample)
-		images[i] = createImage(
+		images[i] = std::make_shared<AllocatedImage>(
 			device,
 			imageSize,
 			VK_FORMAT_R8G8B8A8_UNORM,
@@ -51,7 +50,7 @@ void ImageSwapchain::create(VkRenderPass renderPass, std::pair<uint32_t, uint32_
 		// Create framebuffer with both attachments
 		std::array<VkImageView, 2> attachments = {
 			msaaImage.imageView,    	// Color attachment (MSAA)
-			images[i].imageView	// Resolve attachment (non-MSAA)
+			images[i]->imageView	// Resolve attachment (non-MSAA)
 		};
 
 		VkFramebufferCreateInfo framebufferInfo{};
@@ -72,7 +71,6 @@ void ImageSwapchain::create(VkRenderPass renderPass, std::pair<uint32_t, uint32_
 void ImageSwapchain::recreate(VkRenderPass renderPass, std::pair<uint32_t, uint32_t> size, const AllocatedImage& msaaImage) {
 	for (unsigned int i = 0; i < images.size(); i++) {
 		vkDestroyFramebuffer(device->getDevice(), framebuffers[i], nullptr);
-		destroyImage(images[i]);
 	}
 	framebuffers.clear();
 	images.clear();

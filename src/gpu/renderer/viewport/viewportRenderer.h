@@ -19,6 +19,17 @@ struct ViewportViewData {
 };
 
 class ViewportRenderer {
+	struct ImGuiDescriptorSet {
+		ImGuiDescriptorSet(VkDescriptorSet descriptorSet, const std::vector<std::shared_ptr<void>>& lifetimeObjects = {});
+		~ImGuiDescriptorSet();
+		VkDescriptorSet descriptorSet;
+		std::vector<std::shared_ptr<void>> lifetimeObjects;
+	};
+	struct Sampler {
+		Sampler(VkSampler sampler);
+		~Sampler();
+		VkSampler sampler;
+	};
 public:
 	ViewportRenderer(VulkanDevice* device);
 	~ViewportRenderer();
@@ -49,7 +60,7 @@ public:
 
 	// float getFps() const { return fps.load(); }
 
-	std::pair<VkDescriptorSet, VkSemaphore> startImageRender();
+	std::tuple<VkDescriptorSet, VkSemaphore, std::vector<std::shared_ptr<void>>> startImageRender();
 
 	// elements
 	ElementId addSelectionObjectElement(const SelectionObjectElement& selection);
@@ -104,15 +115,15 @@ private:
 	ChunkRenderer chunkRenderer;
 	ElementRenderer elementRenderer;
 
-	VkSampler sampler;
+	std::shared_ptr<Sampler> sampler;
 
 	std::mutex framesMutex;
 	FrameManager frames;
 
 	std::atomic<int> currentBorrowedImage = -1;
-	AllocatedImage msaaImage;
+	std::optional<AllocatedImage> msaaImage;
 	ImageSwapchain imageSwapchain;
-	std::vector<VkDescriptorSet> imguiTextures;  // ImGui descriptor sets
+	std::vector<std::shared_ptr<ImGuiDescriptorSet>> imguiTextures;  // ImGui descriptor sets
 	std::atomic<bool> imageReady = false;
 	std::atomic<unsigned int> imagesReady = 0;
 	std::atomic<bool> updateViewData = true;

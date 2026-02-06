@@ -66,4 +66,4 @@ private:
 	VkSampleCountFlagBits msaaSamples;
 };
 
-#endif
+#endif /* vulkanDevice_h */

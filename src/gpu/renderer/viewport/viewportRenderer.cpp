@@ -3,15 +3,21 @@
 #include <glm/ext/matrix_clip_space.hpp>
 
 #include "backend/selection.h"
-#include "gpu/renderer/viewport/elements/elementRenderer.h"
-#include "gpu/mainRenderer.h"
 #include "gpu/abstractions/vulkanImage.h"
+#include "gpu/mainRenderer.h"
+#include "gpu/renderer/viewport/elements/elementRenderer.h"
 #include "imgui/imgui_impl_vulkan.h"
 
 #ifdef TRACY_PROFILER
 #include <tracy/Tracy.hpp>
 #endif
 
+ViewportRenderer::ImGuiDescriptorSet::ImGuiDescriptorSet(VkDescriptorSet descriptorSet, const std::vector<std::shared_ptr<void>>& lifetimeObjects) :
+	descriptorSet(descriptorSet), lifetimeObjects(lifetimeObjects) { }
+ViewportRenderer::ImGuiDescriptorSet::~ImGuiDescriptorSet() { ImGui_ImplVulkan_RemoveTexture(descriptorSet); }
+
+ViewportRenderer::Sampler::Sampler(VkSampler sampler) : sampler(sampler) { }
+ViewportRenderer::Sampler::~Sampler() { vkDestroySampler(MainRenderer::get().getVulkanInstance().getDevice()->getDevice(), sampler, nullptr); }
 
 ViewportRenderer::ViewportRenderer(VulkanDevice* device) : chunker(device), device(device) {
 	createRenderPass();
@@ -38,16 +44,14 @@ ViewportRenderer::ViewportRenderer(VulkanDevice* device) : chunker(device), devi
 	samplerInfo.compareEnable = VK_FALSE;
 	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
 	samplerInfo.unnormalizedCoordinates = VK_FALSE;
-
-	vkCreateSampler(device->getDevice(), &samplerInfo, nullptr, &sampler);
+	VkSampler vkSampler;
+	vkCreateSampler(device->getDevice(), &samplerInfo, nullptr, &vkSampler);
+	sampler = std::make_shared<Sampler>(vkSampler);
 
 	frames.init(device);
 
 	imageSwapchain.init(device);
 	imguiTextures.resize(FRAMES_IN_FLIGHT);
-
-	// running = true;
-	// renderThread = std::thread(&ViewportRenderer::renderLoop, this);
 }
 
 ViewportRenderer::~ViewportRenderer() {
@@ -58,7 +62,6 @@ ViewportRenderer::~ViewportRenderer() {
 
 	imageSwapchain.cleanup();
 
-	vkDestroySampler(device->getDevice(), sampler, nullptr);
 	vkDestroyRenderPass(device->getDevice(), renderPass, nullptr);
 
 	elementRenderer.cleanup();
@@ -107,7 +110,7 @@ void ViewportRenderer::updateView(FPosition topLeft, FPosition bottomRight) {
 
 class BorrowedImageDetector {
 public:
-	BorrowedImageDetector(std::atomic<int>& currentBorrowedImage) : currentBorrowedImage(currentBorrowedImage) {}
+	BorrowedImageDetector(std::atomic<int>& currentBorrowedImage) : currentBorrowedImage(currentBorrowedImage) { }
 	~BorrowedImageDetector() { currentBorrowedImage.store(-1); }
 private:
 	std::atomic<int>& currentBorrowedImage;
@@ -389,11 +392,11 @@ void ViewportRenderer::createRenderPass() {
 	VkAttachmentDescription resolveAttachment{};
 	resolveAttachment.format = VK_FORMAT_R8G8B8A8_UNORM;
 	resolveAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	resolveAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR; // Clear on each frame
+	resolveAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;	  // Clear on each frame
 	resolveAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // We need this for ImGui
 	resolveAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	resolveAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	resolveAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // Don't care about previous contents
+	resolveAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;			  // Don't care about previous contents
 	resolveAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; // Ready for ImGui sampling
 
 	// Attachment references
@@ -430,7 +433,7 @@ void ViewportRenderer::createRenderPass() {
 	dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
 	// Create render pass with both attachments
-	std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, resolveAttachment};
+	std::array<VkAttachmentDescription, 2> attachments = { colorAttachment, resolveAttachment };
 	VkRenderPassCreateInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
@@ -463,105 +466,105 @@ const char* const viewportLoop_Tracy = "ViewportLoop";
 // 	}
 // }
 
-std::pair<VkDescriptorSet, VkSemaphore> ViewportRenderer::startImageRender() {
+std::tuple<VkDescriptorSet, VkSemaphore, std::vector<std::shared_ptr<void>>> ViewportRenderer::startImageRender() {
 	// while(running.load()) {
 	// 	if (currentBorrowedImage.load() != -1) {
 	// 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	// 		continue;
 	// 	}
-		uint32_t currentFrameIndex = frames.getCurrentFrameIndex();
+	uint32_t currentFrameIndex = frames.getCurrentFrameIndex();
 
-		if (updateViewData.load()) {
-			bool recreateImages = false;
-			{
-				if (viewData.viewportSize.width == 0 || viewData.viewportSize.height == 0) {
-					viewData.viewportSize.width = 1;
-					viewData.viewportSize.height = 1;
-					recreateImages = true;
-				}
-				std::lock_guard<std::mutex> lock(viewMux);
-				if (newViewData.viewportSize.width == 0 || newViewData.viewportSize.height == 0) {
-					newViewData.viewportSize.width = 1;
-					newViewData.viewportSize.height = 1;
-				}
-				if (viewData.viewportSize.width != newViewData.viewportSize.width || viewData.viewportSize.height != newViewData.viewportSize.height) {
-					recreateImages = true;
-				}
-				updateViewData.store(false);
-				viewData = newViewData;
+	if (updateViewData.load()) {
+		bool recreateImages = false;
+		{
+			if (viewData.viewportSize.width == 0 || viewData.viewportSize.height == 0) {
+				viewData.viewportSize.width = 1;
+				viewData.viewportSize.height = 1;
+				recreateImages = true;
 			}
-			if (recreateImages) {
-				imagesReady.store(0);
-				std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
-				destroyImages();
-				createImages();
+			std::lock_guard<std::mutex> lock(viewMux);
+			if (newViewData.viewportSize.width == 0 || newViewData.viewportSize.height == 0) {
+				newViewData.viewportSize.width = 1;
+				newViewData.viewportSize.height = 1;
 			}
-		} else if (imguiTextures.empty()) {
+			if (viewData.viewportSize.width != newViewData.viewportSize.width || viewData.viewportSize.height != newViewData.viewportSize.height) {
+				recreateImages = true;
+			}
+			updateViewData.store(false);
+			viewData = newViewData;
+		}
+		if (recreateImages) {
+			imagesReady.store(0);
+			std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
 			destroyImages();
 			createImages();
 		}
+	} else if (imguiTextures.empty()) {
+		destroyImages();
+		createImages();
+	}
 
-		// Wait for this frame to complete
-		frames.waitForCurrentFrameCompletion();
-		// #ifdef TRACY_PROFILER
-		// FrameMarkEnd(viewportLoop_Tracy);
-		// #endif
+	// Wait for this frame to complete
+	frames.waitForCurrentFrameCompletion();
+	// #ifdef TRACY_PROFILER
+	// FrameMarkEnd(viewportLoop_Tracy);
+	// #endif
 
-		// std::chrono::time_point<std::chrono::high_resolution_clock> now = std::chrono::high_resolution_clock::now();
-		// std::chrono::nanoseconds deltaTime = now - lastUpdateRender;
-		// // force 60 fps
-		// if (deltaTime.count() < 16 * 1000000) {
-		// 	std::this_thread::sleep_for(std::chrono::nanoseconds(16 * 1000000 - deltaTime.count()));
-		// }
-		// // get real time between frames
-		// now = std::chrono::high_resolution_clock::now();
-		// deltaTime = now - lastUpdateRender;
-		// lastUpdateRender = now;
-		// float alpha = 0.2f;
-		// fps.store((alpha * 1000000000. / (float)deltaTime.count()) + (1.0 - alpha) * fps);
+	// std::chrono::time_point<std::chrono::high_resolution_clock> now = std::chrono::high_resolution_clock::now();
+	// std::chrono::nanoseconds deltaTime = now - lastUpdateRender;
+	// // force 60 fps
+	// if (deltaTime.count() < 16 * 1000000) {
+	// 	std::this_thread::sleep_for(std::chrono::nanoseconds(16 * 1000000 - deltaTime.count()));
+	// }
+	// // get real time between frames
+	// now = std::chrono::high_resolution_clock::now();
+	// deltaTime = now - lastUpdateRender;
+	// lastUpdateRender = now;
+	// float alpha = 0.2f;
+	// fps.store((alpha * 1000000000. / (float)deltaTime.count()) + (1.0 - alpha) * fps);
 
-		std::shared_ptr<Frame> frame = frames.getCurrentFrame();
+	std::shared_ptr<Frame> frame = frames.getCurrentFrame();
 
-		// Mark frame as started
-		// #ifdef TRACY_PROFILER
-		// FrameMarkStart(viewportLoop_Tracy);
-		// #endif
-		frames.startCurrentFrame();
+	// Mark frame as started
+	// #ifdef TRACY_PROFILER
+	// FrameMarkStart(viewportLoop_Tracy);
+	// #endif
+	frames.startCurrentFrame();
 
-		// Record command buffer
-		{
-			std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
-			vkResetCommandBuffer(frame->mainCommandBuffer, 0);
-		}
-		renderToCommandBuffer(*frame, currentFrameIndex);
+	// Record command buffer
+	{
+		std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
+		vkResetCommandBuffer(frame->mainCommandBuffer, 0);
+	}
+	renderToCommandBuffer(*frame, currentFrameIndex);
 
-		VkSemaphore semaphore = imageSwapchain.getImageSemaphores()[currentFrameIndex];
+	VkSemaphore semaphore = imageSwapchain.getImageSemaphores()[currentFrameIndex];
 
-		// Submit to graphics queue
-		VkSubmitInfo submitInfo{};
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submitInfo.signalSemaphoreCount = 1;
-		submitInfo.pSignalSemaphores = &semaphore;
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &frame->mainCommandBuffer;
+	// Submit to graphics queue
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = &semaphore;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &frame->mainCommandBuffer;
 
-		if (device->submitGraphicsQueue(&submitInfo, frame->renderFence) != VK_SUCCESS) {
-			// Handle error - submission failed
-			return {VK_NULL_HANDLE, VK_NULL_HANDLE};
-		}
+	if (device->submitGraphicsQueue(&submitInfo, frame->renderFence) != VK_SUCCESS) {
+		// Handle error - submission failed
+		return { VK_NULL_HANDLE, VK_NULL_HANDLE, {} };
+	}
 
-		{
-			std::lock_guard<std::mutex> lock(imageMux);
-			imageReady.store(true);
-		}
-		{
-			std::lock_guard<std::mutex> lock(framesMutex);
-			frames.incrementFrame();
-			imagesReady.fetch_add(1);
-		}
+	{
+		std::lock_guard<std::mutex> lock(imageMux);
+		imageReady.store(true);
+	}
+	{
+		std::lock_guard<std::mutex> lock(framesMutex);
+		frames.incrementFrame();
+		imagesReady.fetch_add(1);
+	}
 	// }
 	// device->waitIdle();
-	return { imguiTextures[currentFrameIndex], semaphore };
+	return { imguiTextures[currentFrameIndex]->descriptorSet, semaphore, { frame, imguiTextures[currentFrameIndex] } };
 }
 
 void ViewportRenderer::renderToCommandBuffer(Frame& frame, uint32_t imageIndex) {
@@ -585,7 +588,7 @@ void ViewportRenderer::renderToCommandBuffer(Frame& frame, uint32_t imageIndex) 
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassInfo.renderPass = renderPass;
 	renderPassInfo.framebuffer = imageSwapchain.getFramebuffers()[imageIndex];
-	renderPassInfo.renderArea.offset = {0, 0};
+	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = viewData.viewportSize;
 	renderPassInfo.clearValueCount = 2;
 	renderPassInfo.pClearValues = clearValues;
@@ -603,7 +606,7 @@ void ViewportRenderer::renderToCommandBuffer(Frame& frame, uint32_t imageIndex) 
 	vkCmdSetViewport(frame.mainCommandBuffer, 0, 1, &viewport);
 
 	VkRect2D scissor{};
-	scissor.offset = {0, 0};
+	scissor.offset = { 0, 0 };
 	scissor.extent = viewData.viewportSize;
 	vkCmdSetScissor(frame.mainCommandBuffer, 0, 1, &scissor);
 
@@ -624,35 +627,24 @@ void ViewportRenderer::destroyImages() {
 	if (imageReady.load()) {
 		device->waitIdleNoMux();
 		imageReady.store(false);
-		for (VkDescriptorSet descriptorSet : imguiTextures) {
-			ImGui_ImplVulkan_RemoveTexture(descriptorSet);
-		}
-		imguiTextures.clear();
-		destroyImage(msaaImage);
+		imguiTextures.clear(); // will clear when done
+		msaaImage.reset();
 	}
 }
 
 void ViewportRenderer::createImages() {
-	VkExtent3D imageSize = {viewData.viewportSize.width, viewData.viewportSize.height, 1};
+	VkExtent3D imageSize = { viewData.viewportSize.width, viewData.viewportSize.height, 1 };
 	VkSampleCountFlagBits msaaSamples = device->getMaxUsableSampleCount();
 
 	// Create MSAA image (transient - doesn't need to be stored)
-	msaaImage = createImage(
-		device,
-		imageSize,
-		VK_FORMAT_R8G8B8A8_UNORM,
-		VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-		false,
-		msaaSamples
-	);
+	msaaImage.emplace(device, imageSize, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, false, msaaSamples);
 
-	imageSwapchain.recreate(renderPass, { viewData.viewportSize.width, viewData.viewportSize.height }, msaaImage);
+	imageSwapchain.recreate(renderPass, { viewData.viewportSize.width, viewData.viewportSize.height }, *msaaImage);
 	imguiTextures.resize(FRAMES_IN_FLIGHT);
 	for (unsigned int i = 0; i < imguiTextures.size(); i++) {
-		imguiTextures[i] = ImGui_ImplVulkan_AddTexture(
-			sampler,
-			imageSwapchain.getImages()[i].imageView,
-			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+		imguiTextures[i] = std::make_shared<ImGuiDescriptorSet>(
+			ImGui_ImplVulkan_AddTexture(sampler->sampler, imageSwapchain.getImages()[i]->imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
+			std::vector<std::shared_ptr<void>>{ imageSwapchain.getImages()[i], sampler }
 		);
 	}
 

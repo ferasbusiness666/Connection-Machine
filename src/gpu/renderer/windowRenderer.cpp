@@ -23,7 +23,7 @@ WindowRenderer::WindowRenderer(WindowId windowId, SdlWindow* sdlWindow) : window
 	swapchain.init(device, surface, windowSize);
 	createRenderPass();
 	createColorResources();
-	swapchain.createFramebuffers(renderPass, colorImage);
+	swapchain.createFramebuffers(renderPass, *colorImage);
 
 	// subrenderers
 	imGuiRenderer.emplace(sdlWindow->getHandle(), renderPass, FRAMES_IN_FLIGHT);
@@ -47,8 +47,6 @@ WindowRenderer::~WindowRenderer() {
 	swapchain.cleanup();
 	// now the frames are free!
 	frames.cleanup();
-	// clean up color image for multisampled
-	destroyImage(colorImage);
 }
 
 void WindowRenderer::resize(std::pair<uint32_t, uint32_t> windowSize) {
@@ -270,7 +268,7 @@ void WindowRenderer::createColorResources() {
     VkFormat colorFormat = swapchain.getSwapchain().image_format;
     VkSampleCountFlagBits msaaSamples = device->getMaxUsableSampleCount();
 
-    colorImage = createImage(
+    colorImage.emplace(
         device,
         size,
         colorFormat,
@@ -287,10 +285,10 @@ void WindowRenderer::recreateSwapchain() {
 
 	std::lock_guard<std::mutex> lock(windowSizeMux);
 
-	destroyImage(colorImage);
+	colorImage.reset();
 	swapchain.recreate(surface, windowSize);
 	createColorResources();
-	swapchain.createFramebuffers(renderPass, colorImage);
+	swapchain.createFramebuffers(renderPass, *colorImage);
 
 	swapchainRecreationNeeded = false;
 }

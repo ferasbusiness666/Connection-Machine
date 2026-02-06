@@ -16,16 +16,15 @@ public:
 	WindowRenderer(const WindowRenderer&) = delete;
 	WindowRenderer& operator=(const WindowRenderer&) = delete;
 
-public:
 	void resize(std::pair<uint32_t, uint32_t> windowSize);
 
 	ImGuiRenderer& getImGuiRenderer() { return *imGuiRenderer; }
 	const ImGuiRenderer& getImGuiRenderer() const { return *imGuiRenderer; }
 	void setImGuiRenderFunc(std::function<void()> imGuiRenderFunc);
 
-	void addSemaphore(VkSemaphore semaphore, std::shared_ptr<void> lifetime) {
+	void addSemaphore(VkSemaphore semaphore, const std::vector<std::shared_ptr<void>>& lifetimeObjects) {
 		semaphoreForThisFrame.push_back(semaphore);
-		frames.getCurrentFrame()->lifetime.push(lifetime);
+		for (const std::shared_ptr<void>& obj : lifetimeObjects) frames.getCurrentFrame()->lifetime.push(obj);
 	}
 	VulkanDevice* getDevice() { return device; }
 
@@ -64,7 +63,7 @@ private:
 	SdlWindow* sdlWindow;
 	VulkanDevice* device;
 
-	AllocatedImage colorImage;
+	std::optional<AllocatedImage> colorImage;
 };
 
 #endif /* windowRenderer_h */

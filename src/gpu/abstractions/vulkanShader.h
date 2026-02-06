@@ -6,4 +6,4 @@
 VkShaderModule createShaderModule(VkDevice device, std::vector<char> byteCode);
 void destroyShaderModule(VkDevice device, VkShaderModule shader);
 
-#endif
+#endif /* vulkanShader_h */

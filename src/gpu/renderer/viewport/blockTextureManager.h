@@ -14,7 +14,7 @@ class VulkanDevice;
 struct BlockTextureArray {
 	DescriptorAllocator descriptorAllocator;
 	VulkanDevice* device;
-	AllocatedImage image;
+	std::optional<AllocatedImage> image;
 	VkSampler sampler;
 	VkDescriptorSet descriptor;
 	VkExtent3D textureSize;
