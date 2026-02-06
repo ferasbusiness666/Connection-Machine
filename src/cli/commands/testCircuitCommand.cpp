@@ -1,5 +1,6 @@
 #include "testCircuitCommand.h"
 
+#include "backend/circuit/circuit.h"
 #include "util/runAtStartup.h"
 #include "../commandManager.h"
 #include "backend/circuitTestCase/circuitTestCase.h"
@@ -24,6 +25,10 @@ void TestCircuitCommand::run(const std::vector<std::string>& args, Environment& 
     }
     
     BlockType circuitBlock = environment.getBackend().getCircuitManager().setupBlockData(cirID);
+    if (circuitBlock == 0) {
+        logError("Invalid circuit ID. Run list_circuits to get a list of circuit IDs.", "TestCircuitCommand");
+        return;
+    }
 
     std::optional<CircuitTestCase> testCase = TestCaseFileManager::getCircuitTestCaseFromFilePath(args[1]);
     if (testCase == std::nullopt) {
