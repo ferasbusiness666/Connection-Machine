@@ -1,5 +1,5 @@
-#include "./testCaseFileManager.h"
-#include "backend/circuitTestCase/circuitTestCase.h"
+#include "./circuitTestFileManager.h"
+#include "backend/circuitTests/circuitTestGroup.h"
 #include "backend/evaluator/simulator/logicState.h"
 #include "logging/logging.h"
 #include <utility>
@@ -12,11 +12,11 @@ std::optional<logic_state_t> stringToLogicState(const std::string& str) {
     return std::nullopt;
 }
 
-std::optional<CircuitTestCase> TestCaseFileManager::getCircuitTestCaseFromFilePath(const std::string &path) {
-    logInfo("Parsing test file (.tst)", "TestCaseFileManager");
+std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestFromFilePath(const std::string &path) {
+    logInfo("Parsing test file (.tst)", "CircuitTestFileManager");
 	std::ifstream inputFile(path, std::ios::in | std::ios::binary);
 	if (!inputFile.is_open()) {
-		logError("Couldn't open file at path: " + path, "TestCaseFileManager");
+		logError("Couldn't open file at path: " + path, "CircuitTestFileManager");
 		return std::nullopt;
 	}
 
@@ -29,7 +29,7 @@ std::optional<CircuitTestCase> TestCaseFileManager::getCircuitTestCaseFromFilePa
         version = 0;
     }
     else {
-        logError("Invalid test case file version: {}", "TestCaseFileManager", token);
+        logError("Invalid test case file version: {}", "CircuitTestFileManager", token);
         return std::nullopt;
     }
 
@@ -38,7 +38,7 @@ std::optional<CircuitTestCase> TestCaseFileManager::getCircuitTestCaseFromFilePa
     if (token == "Test:") {
         inputFile >> std::quoted(testName);
     } else {
-        logError("Invalid file format, expected 'Test:' on line 2", "TestCaseFileManager");
+        logError("Invalid file format, expected 'Test:' on line 2", "CircuitTestFileManager");
         return std::nullopt;
     }
 
@@ -53,11 +53,11 @@ std::optional<CircuitTestCase> TestCaseFileManager::getCircuitTestCaseFromFilePa
             inputFile >> std::ws;
         }
     } else {
-        logError("Invalid file format, expected 'Ports:' on line 3", "TestCaseFileManager");
+        logError("Invalid file format, expected 'Ports:' on line 3", "CircuitTestFileManager");
         return std::nullopt;
     }
 
-    CircuitTestCase testCase;
+    CircuitTestGroup testGroup;
 
     while (inputFile >> token) {
         if (token[0] == '>') {
@@ -76,21 +76,21 @@ std::optional<CircuitTestCase> TestCaseFileManager::getCircuitTestCaseFromFilePa
                     states.push_back(std::make_pair(portName, (logic_state_t)portState));
                 }
                 if (token.substr(1) == "Set:") {
-                    testCase.addSetStatesCommand(states);
+                    testGroup.addSetStatesCommand(states);
                 } else {
-                    testCase.addCheckStatesCommand(states);
+                    testGroup.addCheckStatesCommand(states);
                 }
             } else if (token.substr(1) == "Step") {
                 int ticks;
                 inputFile >> ticks;
-                testCase.addTickStepCommand(ticks);
+                testGroup.addTickStepCommand(ticks);
             } else {
-                logError("Unknown command in test file", "TestCaseFileManager");
+                logError("Unknown command '{}' in test file", "CircuitTestFileManager", token.substr(1));
                 return std::nullopt;
             }
         }
     }
 
-    logInfo("Loaded test", "TestCaseFileManager");
-    return testCase;
+    logInfo("Loaded test", "CircuitTestFileManager");
+    return testGroup;
 }

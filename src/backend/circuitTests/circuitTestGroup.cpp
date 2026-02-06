@@ -1,4 +1,4 @@
-#include "circuitTestCase.h"
+#include "circuitTestGroup.h"
 
 #include "backend/address.h"
 #include "backend/blockData/blockData.h"
@@ -9,22 +9,22 @@
 #include "backend/position/position.h"
 #include "logging/logging.h"
 
-void CircuitTestCase::addSetStatesCommand(std::vector<std::pair<std::string, logic_state_t>> states) {
+void CircuitTestGroup::addSetStatesCommand(std::vector<std::pair<std::string, logic_state_t>> states) {
     TestCommand testCommand = TestCommand(SET_STATES, 0, states);
     testCommands.push_back(testCommand);
 }
 
-void CircuitTestCase::addCheckStatesCommand(std::vector<std::pair<std::string, logic_state_t>> states) {
+void CircuitTestGroup::addCheckStatesCommand(std::vector<std::pair<std::string, logic_state_t>> states) {
     TestCommand testCommand = TestCommand(CHECK_STATES, 0, states);
     testCommands.push_back(testCommand);
 }
 
-void CircuitTestCase::addTickStepCommand(int ticks) {
+void CircuitTestGroup::addTickStepCommand(int ticks) {
     TestCommand testCommand = TestCommand(TICK_STEP, ticks, {});
     testCommands.push_back(testCommand);
 }
 
-bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environment& environment) {
+bool CircuitTestGroup::runTest(BlockType blockType, bool haltOnFailure, Environment& environment) {
     // retrieve necessary objects to run test
     bool fullTestSucceedStatus = true;
     Backend& backend = environment.getBackend();
@@ -56,7 +56,7 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
         if (iter->second.portType == BlockData::ConnectionData::PortType::INPUT || iter->second.portType == BlockData::ConnectionData::PortType::BIDIRECTIONAL) {
             Position externalConnPos = Position(-1-nameToConnectedBlockPosition.size(), 0);
             if (!cir->tryInsertBlock(externalConnPos, Orientation(), SWITCH)) {
-                logError("Couldn't insert switch test circuit block", "circuitTestCase");
+                logError("Couldn't insert switch test circuit block", "circuitTestGroup");
                 return false;
             }
 
@@ -69,7 +69,7 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
 
 
             if (!cir->tryCreateConnection(ConnectionEnd(testedBlock->id(), iter->first), ConnectionEnd(block->id(), 0))) {
-                logError("Couldn't create switch test circuit connection, ext: {}", "circuitTestCase", externalConnPos);
+                logError("Couldn't create switch test circuit connection, ext: {}", "circuitTestGroup", externalConnPos);
                 return false;
             }
             nameToConnectedBlockPosition.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
@@ -78,7 +78,7 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
             Position internalConnPos = Position(iter->second.positionOnBlock.dx, iter->second.positionOnBlock.dy);
             Position externalConnPos = Position(-1-nameToConnectedBlockPosition.size(), 0);
             if (!cir->tryInsertBlock(externalConnPos, Orientation(), LIGHT)) {
-                logError("Couldn't insert light test circuit block", "circuitTestCase");
+                logError("Couldn't insert light test circuit block", "circuitTestGroup");
                 return false;
             }
 
@@ -89,7 +89,7 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
             }
 
             if (!cir->tryCreateConnection(ConnectionEnd(testedBlock->id(), iter->first), ConnectionEnd(block->id(), 0))) {
-                logError("Couldn't create light test circuit connection, ext: {} int: {}", "circuitTestCase", externalConnPos, internalConnPos);
+                logError("Couldn't create light test circuit connection, ext: {} int: {}", "circuitTestGroup", externalConnPos, internalConnPos);
                 return false;
             }
             nameToConnectedBlockPosition.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
@@ -98,7 +98,7 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
 
     // run tests on the generated test circuit
     for (auto commandIter = testCommands.begin(); commandIter != testCommands.end(); commandIter++) {
-        logInfo("Performing a test command of type {}", "CircuitTestCase", getTestCommandTypeString(commandIter->type));
+        logInfo("Performing a test command of type {}", "CircuitTestGroup", getTestCommandTypeString(commandIter->type));
         bool isTestGroupSuccessful = true;
         if (commandIter->type == NOP_COMMAND) {
             continue;
@@ -107,15 +107,15 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
         } else if (commandIter->type == CHECK_STATES) {
             isTestGroupSuccessful = runCheckStatesCommand(*commandIter, *sim, nameToConnectedBlockPosition);
         } else if (commandIter->type == TICK_STEP) {
-            logInfo("Stepping forward by {} ticks", "CircuitTestCase - TICK_STEP", commandIter->ticks);
+            logInfo("Stepping forward by {} ticks", "CircuitTestGroup - TICK_STEP", commandIter->ticks);
             sim->tickStep(commandIter->ticks);
         } else {
-            logError("Unrecognized test command", "CircuitTestCase");
+            logError("Unrecognized test command", "CircuitTestGroup");
             isTestGroupSuccessful = false;
         }
 
         if (!isTestGroupSuccessful) {
-            logError("Test group failed.", "CircuitTestCase");
+            logError("Test group failed.", "CircuitTestGroup");
             fullTestSucceedStatus = false;
             if (haltOnFailure) {
                 return false;
@@ -125,15 +125,15 @@ bool CircuitTestCase::runTest(BlockType blockType, bool haltOnFailure, Environme
     return fullTestSucceedStatus;
 }
 
-void CircuitTestCase::runSetStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition) {
+void CircuitTestGroup::runSetStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition) {
     for (auto statesIter = testCommand.states.begin(); statesIter != testCommand.states.end(); statesIter++) {
         auto blockPosIter = nameToConnectedBlockPosition.find(statesIter->first);
         simulator.setState((Address(blockPosIter->second)), statesIter->second);
-        logInfo("Set port '{}' to state '{}'", "CircuitTestCase - SET_STATES", statesIter->first, statesIter->second);
+        logInfo("Set port '{}' to state '{}'", "CircuitTestGroup - SET_STATES", statesIter->first, statesIter->second);
     }
 }
 
-bool CircuitTestCase::runCheckStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition) {
+bool CircuitTestGroup::runCheckStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition) {
 // probably needs to return the state of every single block tested instead of whether just one of them fails
     bool testSucceeded = true;
     for (auto statesIter = testCommand.states.begin(); statesIter != testCommand.states.end(); statesIter++) {
@@ -141,9 +141,9 @@ bool CircuitTestCase::runCheckStatesCommand(TestCommand testCommand, EvalLogicSi
         logic_state_t actualState = simulator.getState((Address(blockPosIter->second)));
         if (actualState != statesIter->second) {
             testSucceeded = false;
-            logError("Inner test case failed: Expected port '{}' to have output '{}', got '{}'", "CircuitTestCase - CHECK_STATES", statesIter->first, statesIter->second, actualState);
+            logError("Inner test case failed: Expected port '{}' to have output '{}', got '{}'", "CircuitTestGroup - CHECK_STATES", statesIter->first, statesIter->second, actualState);
         } else {
-            logInfo("Inner test case succeeded: Expected port '{}' to have output '{}', got '{}'", "CircuitTestCase - CHECK_STATES", statesIter->first, statesIter->second, actualState);
+            logInfo("Inner test case succeeded: Expected port '{}' to have output '{}', got '{}'", "CircuitTestGroup - CHECK_STATES", statesIter->first, statesIter->second, actualState);
         }
     }
     return testSucceeded;

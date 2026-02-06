@@ -1,15 +1,15 @@
-#ifndef circuitTestCase_h
-#define circuitTestCase_h
+#ifndef circuitTestGroup_h
+#define circuitTestGroup_h
 
 #include "backend/evaluator/evalDefs.h"
 #include "environment/environment.h"
 #include "backend/evaluator/simulator/logicState.h"
 
 // add upper level logic later
-class CircuitTestCase {
+class CircuitTestGroup {
     typedef std::unordered_multimap<std::string, Position> NamePositionMap;
 public:
-    CircuitTestCase() {}
+    CircuitTestGroup() {}
     bool runTest(BlockType blockType, bool haltOnFailure, Environment& environment);
     void addSetStatesCommand(std::vector<std::pair<std::string, logic_state_t>> states);
     void addCheckStatesCommand(std::vector<std::pair<std::string, logic_state_t>> states);
@@ -38,6 +38,7 @@ private:
        }
     }
 
+
     struct TestCommand {
         TestCommandType type = NOP_COMMAND;
         int ticks = 0;
@@ -52,3 +53,5 @@ private:
 };
 
 #endif
+
+// change things: make groups as structs, make each group have a name, have some info about whether it's a truth table

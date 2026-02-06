@@ -3,9 +3,9 @@
 #include "backend/circuit/circuit.h"
 #include "util/runAtStartup.h"
 #include "../commandManager.h"
-#include "backend/circuitTestCase/circuitTestCase.h"
+#include "backend/circuitTests/circuitTestGroup.h"
 #include "backend/container/block/blockDefs.h"
-#include "computerAPI/testCaseFileManager.h"
+#include "computerAPI/circuitTestFileManager.h"
 
 runAtStartup(CommandManager::get().registerCommand(std::make_unique<TestCircuitCommand>());)
 
@@ -30,15 +30,15 @@ void TestCircuitCommand::run(const std::vector<std::string>& args, Environment& 
         return;
     }
 
-    std::optional<CircuitTestCase> testCase = TestCaseFileManager::getCircuitTestCaseFromFilePath(args[1]);
+    std::optional<CircuitTestGroup> testCase = CircuitTestFileManager::getCircuitTestFromFilePath(args[1]);
     if (testCase == std::nullopt) {
         logInfo("No tests run", "TestCircuitCommand");
         return;
     }
     if (!testCase.value().runTest(circuitBlock, false, environment)) {
-        logInfo("Test case failed.", "TestCircuitCommand");
+        logInfo("Test failed.", "TestCircuitCommand");
     }
     else {
-        logInfo("Test case succeeded.", "TestCircuitCommand");
+        logInfo("Test succeeded.", "TestCircuitCommand");
     }
 }
