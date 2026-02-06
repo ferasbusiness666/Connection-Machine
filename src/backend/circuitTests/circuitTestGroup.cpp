@@ -37,7 +37,7 @@ bool CircuitTestGroup::runTest(BlockType blockType, bool haltOnFailure, Environm
     simulator_id_t simID = backend.createSimulator(cirId).value();
     EvalLogicSimulator* sim = evalManager.getSimulator(simID);
     sim->setPause(true);
-    const BlockContainer blockContainer = cir->getBlockContainer();
+    const BlockContainer& blockContainer = cir->getBlockContainer();
 
     const BlockData* blockData = blockDataManager.getBlockData(blockType);
     std::unordered_map<connection_end_id_t, BlockData::ConnectionData> connections = blockData->getConnections();
@@ -59,14 +59,7 @@ bool CircuitTestGroup::runTest(BlockType blockType, bool haltOnFailure, Environm
                 logError("Couldn't insert switch test circuit block", "circuitTestGroup");
                 return false;
             }
-
-            const BlockContainer& blockContainer = cir->getBlockContainer();
             const Block* block = blockContainer.getBlock(externalConnPos);
-            if (block == nullptr) {
-                logInfo("No block at position {}.", "GetBlockDataCommand", externalConnPos);
-				return false;
-            }
-
 
             if (!cir->tryCreateConnection(ConnectionEnd(testedBlock->id(), iter->first), ConnectionEnd(block->id(), 0))) {
                 logError("Couldn't create switch test circuit connection, ext: {}", "circuitTestGroup", externalConnPos);
@@ -81,12 +74,7 @@ bool CircuitTestGroup::runTest(BlockType blockType, bool haltOnFailure, Environm
                 logError("Couldn't insert light test circuit block", "circuitTestGroup");
                 return false;
             }
-
-            const BlockContainer& blockContainer = cir->getBlockContainer();
             const Block* block = blockContainer.getBlock(externalConnPos);
-            if (block == nullptr) {
-                logInfo("No block at position {}.", "GetBlockDataCommand", externalConnPos);
-            }
 
             if (!cir->tryCreateConnection(ConnectionEnd(testedBlock->id(), iter->first), ConnectionEnd(block->id(), 0))) {
                 logError("Couldn't create light test circuit connection, ext: {} int: {}", "circuitTestGroup", externalConnPos, internalConnPos);

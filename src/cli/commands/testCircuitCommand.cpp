@@ -20,7 +20,7 @@ void TestCircuitCommand::run(const std::vector<std::string>& args, Environment& 
         cirID = std::stoi(args[2]);
     }
     catch (...) {
-        logError("Exception occured. Check the circuit_id parameter, it should be a reasonably-sized integer.", "GetBlockDataCommand");
+        logError("Exception occured. Check the circuit_id parameter, it should be a reasonably-sized integer.", "TestCircuitCommand");
         return;
     }
     

@@ -5,7 +5,6 @@
 #include "environment/environment.h"
 #include "backend/evaluator/simulator/logicState.h"
 
-// add upper level logic later
 class CircuitTestGroup {
     typedef std::unordered_multimap<std::string, Position> NamePositionMap;
 public:
@@ -38,11 +37,15 @@ private:
        }
     }
 
-
     struct TestCommand {
         TestCommandType type = NOP_COMMAND;
         int ticks = 0;
         std::vector<std::pair<std::string, logic_state_t>> states = {};
+    };
+
+    struct TestCase {
+        std::string name;
+        std::vector<TestCommand> testCommands;
     };
 
     void generateTestCircuit();
@@ -54,4 +57,4 @@ private:
 
 #endif
 
-// change things: make groups as structs, make each group have a name, have some info about whether it's a truth table
+// change things: make test cases as structs, make each test case have a name, have some info about whether it's a truth table
