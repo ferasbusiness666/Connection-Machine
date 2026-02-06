@@ -52,6 +52,7 @@ public:
 			doRenderDataUpdate.store(false);
 			for (std::pair<const std::string, std::unique_ptr<GuiValueBase>>& guiValueBase : guiValues) guiValueBase.second->renderDataUpdate();
 		}
+		update();
 	}
 	MainWindow& getMainWindow() const { return mainWindow; }
 	Environment& getEnvironment() const;
@@ -63,6 +64,7 @@ public:
 
 protected:
 	virtual void render() = 0;
+	virtual void update() { };
 
 	// gui values
 	template<class ValueType>

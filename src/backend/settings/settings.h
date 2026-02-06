@@ -2,6 +2,7 @@
 #define settings_h
 
 #include "settingsMap.h"
+#include "util/algorithm.h"
 
 extern std::thread::id mainThreadId;
 
@@ -29,6 +30,10 @@ namespace Settings {
 	template<SettingType settingType>
 	inline const SettingTypeToType<settingType>::type* get(const std::string& key) {
 		return getSettingsMap().get<settingType>(key);
+	}
+	template<SettingType settingType>
+	inline const SettingTypeToType<settingType>::type& get(const std::string& key, const typename SettingTypeToType<settingType>::type& fallbackValue) {
+		return valueOr(getSettingsMap().get<settingType>(key), fallbackValue);
 	}
 	template<SettingType settingType>
 	inline bool set(const std::string& key, const typename SettingTypeToType<settingType>::type& value) {

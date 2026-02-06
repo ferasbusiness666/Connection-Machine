@@ -1,4 +1,5 @@
 #include "windowRenderer.h"
+#include "app.h"
 
 #ifdef TRACY_PROFILER
 #include <tracy/Tracy.hpp>
@@ -28,14 +29,16 @@ WindowRenderer::WindowRenderer(WindowId windowId, SdlWindow* sdlWindow) : window
 	imGuiRenderer.emplace(sdlWindow->getHandlePtr(), renderPass, FRAMES_IN_FLIGHT);
 
 	// start render loop
-	running = true;
+	running.store(true);
+	renderLoopStopped.store(false);
 	renderThread = std::thread(&WindowRenderer::renderLoop, this);
 }
 
 WindowRenderer::~WindowRenderer() {
 	// stop render thread (not completely sure if this is right for the destructor yet)
-	running = false;
-	if (renderThread.joinable()) renderThread.join();
+	running.store(false);
+	while (!renderLoopStopped.load()) App::doRunOnMainForThread(renderThread.get_id()); // do all the work it needs till its done
+	if (renderThread.joinable()) renderThread.detach();
 
 	// start by deleting render pass
 	vkDestroyRenderPass(device->getDevice(), renderPass, nullptr);
@@ -56,7 +59,7 @@ void WindowRenderer::resize(std::pair<uint32_t, uint32_t> windowSize) {
 }
 
 void WindowRenderer::renderLoop() {
-	while(running) {
+	while(running.load()) {
 		Frame& frame = frames.getCurrentFrame();
 
 		// wait for frame completion
@@ -150,8 +153,8 @@ void WindowRenderer::renderLoop() {
 		FrameMark;
 #endif
 	}
-
-	device->waitIdle();
+	renderLoopStopped.store(true);
+	renderLoopStopped.notify_all();
 }
 
 void WindowRenderer::renderToCommandBuffer(Frame& frame, uint32_t imageIndex) {

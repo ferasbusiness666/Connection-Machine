@@ -32,6 +32,12 @@ bool MainWindow::isPressingKeybind(const Keybind& keybind) const {
 	return ::isPressingKeybind(keybind, pressedKeys);
 }
 
+bool MainWindow::isPressingKeybind(const std::string& settingKey) const {
+	const Keybind* keybind = Settings::get<SettingType::KEYBIND>(settingKey);
+	if (!keybind) return false;
+	return ::isPressingKeybind(*keybind, pressedKeys);
+}
+
 void MainWindow::doUpdate() {
 	pressedKeys = ::getPressedKeys();
 	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Paste"), Keybind()))) {

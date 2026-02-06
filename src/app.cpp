@@ -4,7 +4,7 @@
 #include <tracy/Tracy.hpp>
 #endif
 
-std::thread::id mainThreadId = std::this_thread::get_id();
+#include <SDL3/SDL.h>
 
 #include "gui/sdl/sdlWindow.h"
 #include "network/network.h"
@@ -13,15 +13,18 @@ std::thread::id mainThreadId = std::this_thread::get_id();
 #include "gui/sdl/sdlInstance.h"
 #include "gpu/mainRenderer.h"
 
-#include <SDL3/SDL.h>
+std::thread::id mainThreadId = std::this_thread::get_id();
 
 // gloable app values
 std::optional<SdlInstance> sdl;
 std::set<std::shared_ptr<SdlWindow>> windows;
 bool running = false;
 bool tryingToQuit = false;
-// unsigned int tasksToFinishToQuit = 0;
-std::vector<std::function<void()>> runOnMainFunctions;
+std::mutex runOnMainFunctionsMux;
+std::vector<std::pair<std::thread::id, std::function<void()>>> runOnMainFunctions;
+std::chrono::time_point<std::chrono::high_resolution_clock> lastUpdateTime;
+std::chrono::nanoseconds detlaTime;
+std::atomic<bool> killingApp = false;
 
 void App::kill() {
 	logInfo("Killing App", "App");
@@ -30,19 +33,19 @@ void App::kill() {
 			logError("SDL window \"{}\" was not killed.", "App", window->getName());
 		}
 	}
+	killingApp.store(true);
 	windows.clear();
 	MainRenderer::kill();
 	Network::kill();
+	sdl.reset();
+	std::lock_guard lock(runOnMainFunctionsMux);
+	assert(runOnMainFunctions.empty());
 }
-
 
 void App::registerWindow(std::shared_ptr<SdlWindow>& window) {
 	windows.emplace(window);
 	window->renderingMux.unlock();
 }
-
-std::chrono::time_point<std::chrono::high_resolution_clock> lastUpdateTime;
-std::chrono::nanoseconds detlaTime;
 
 float App::getDetlaTime() {
 	return ((double)detlaTime.count()) / 1000000000.;
@@ -69,8 +72,11 @@ void App::runLoop() {
 		bool gotEvent = SDL_WaitEventTimeout(nullptr, 8);
 
 		// first thing we need to do is run functions from other threads (mainly imgui rending)
-		for (auto func : runOnMainFunctions) func();
-		runOnMainFunctions.clear();
+		{
+			std::lock_guard lock(runOnMainFunctionsMux);
+			for (auto func : runOnMainFunctions) func.second();
+			runOnMainFunctions.clear();
+		}
 
 		std::chrono::time_point<std::chrono::high_resolution_clock> updateTime = std::chrono::high_resolution_clock::now();
 		detlaTime = updateTime - lastUpdateTime;
@@ -221,22 +227,48 @@ void App::startTryingToQuit() {
 
 void App::stopTryingToQuit() { tryingToQuit = false; }
 
-void App::runOnMain_blocking(std::function<void()> func) {
+void App::doRunOnMainForThread(std::thread::id threadId) {
+	std::lock_guard lock(runOnMainFunctionsMux);
+	for (int i = 0; i < runOnMainFunctions.size(); i++) {
+		if (runOnMainFunctions[i].first == threadId) {
+			if (i + 1 == runOnMainFunctions.size()) {
+				runOnMainFunctions.pop_back();
+				return;
+			} else {
+				runOnMainFunctions[i] = runOnMainFunctions.back();
+				runOnMainFunctions.pop_back();
+				i--;
+			}
+		}
+	}
+}
+
+bool App::runOnMain_blocking(std::function<void()> func) {
 #ifdef TRACY_PROFILER
 	ZoneScoped; // allow us to see it stuff is slow because of this.
 #endif
 	// if this happens to be the main thread then we can just run the function
 	if (mainThreadId == std::this_thread::get_id()) {
 		func();
-		return;
+		return true;
+	}
+	if (killingApp.load()) {
+		std::stringstream ss;
+		ss << std::this_thread::get_id();
+		logWarning("runOnMain_blocking called from thread {} while app was closing! This may be a error.", "App::runOnMain_blocking", ss.str());
+		return false;
 	}
 	std::atomic<bool> isDone{false};
-	runOnMainFunctions.push_back([isDone = &isDone, func](){
-		func();
-		isDone->store(true);
-		isDone->notify_all();
-	});
+	{
+		std::lock_guard lock(runOnMainFunctionsMux);
+		runOnMainFunctions.emplace_back(std::this_thread::get_id(), [isDone = &isDone, func](){
+			func();
+			isDone->store(true);
+			isDone->notify_all();
+		});
+	}
 	isDone.wait(false);
+	return false;
 }
 
 void App::runOnMain(std::function<void()> func) {
@@ -245,7 +277,7 @@ void App::runOnMain(std::function<void()> func) {
 		func();
 		return;
 	}
-	runOnMainFunctions.push_back(func);
+	runOnMainFunctions.emplace_back(std::this_thread::get_id(), func);
 }
 
 nlohmann::json App::dumpState() /* GCOVR_EXCL_FUNCTION */ {

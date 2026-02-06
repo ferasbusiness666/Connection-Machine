@@ -16,7 +16,9 @@ namespace App {
 	void startTryingToQuit();
 	void stopTryingToQuit();
 
-	void runOnMain_blocking(std::function<void()> func);
+	void doRunOnMainForThread(std::thread::id threadId);
+	// can fail is app is getting killed
+	bool runOnMain_blocking(std::function<void()> func);
 	void runOnMain(std::function<void()> func);
 
 	nlohmann::json dumpState();

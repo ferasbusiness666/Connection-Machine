@@ -42,6 +42,7 @@ public:
 	}
 
 	bool isPressingKeybind(const Keybind& keybind) const;
+	bool isPressingKeybind(const std::string& settingKey) const;
 	const std::set<ImGuiKey>& getPressedKeys() const { return pressedKeys; }
 
 private:

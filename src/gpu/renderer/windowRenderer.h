@@ -54,6 +54,7 @@ private:
 	FrameManager frames;
 	std::thread renderThread;
 	std::atomic<bool> running = false;
+	std::atomic<bool> renderLoopStopped = true;
 	void renderLoop();
 
 	// handles
