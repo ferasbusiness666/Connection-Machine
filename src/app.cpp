@@ -39,6 +39,7 @@ void App::kill() {
 	Network::kill();
 	sdl.reset();
 	std::lock_guard lock(runOnMainFunctionsMux);
+	running = false;
 	assert(runOnMainFunctions.empty());
 }
 
@@ -66,7 +67,10 @@ void App::runLoop() {
 	running = true;
 	lastUpdateTime = std::chrono::high_resolution_clock::now();
 	while (running) {
-		if (windows.empty()) App::kill(); // Ff there are not more windows kill the app!
+		if (windows.empty()) {
+			App::kill(); // Ff there are not more windows kill the app!
+			return;
+		}
 
 		// Wait for the next event (so we don't broork the cpu)
 		bool gotEvent = SDL_WaitEventTimeout(nullptr, 8);
@@ -118,6 +122,7 @@ void App::runLoop() {
 			}
 		}
 		for (const std::shared_ptr<SdlWindow>& window : windows) {
+			if (window->isKilled()) continue;
 			window->doUpdate();
 		}
 #ifdef TRACY_PROFILER
@@ -231,6 +236,7 @@ void App::doRunOnMainForThread(std::thread::id threadId) {
 	std::lock_guard lock(runOnMainFunctionsMux);
 	for (int i = 0; i < runOnMainFunctions.size(); i++) {
 		if (runOnMainFunctions[i].first == threadId) {
+			runOnMainFunctions[i].second();
 			if (i + 1 == runOnMainFunctions.size()) {
 				runOnMainFunctions.pop_back();
 				return;

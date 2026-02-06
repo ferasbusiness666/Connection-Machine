@@ -59,7 +59,8 @@ private:
 	Environment environment;
 
 	std::set<ImGuiKey> pressedKeys;
-	std::set<ImGuiKey> heldKeys;
+	std::atomic<unsigned long long> frameIndex;
+	unsigned long long lastUpdatedFrame;
 
 	// inputs and tools
 	// KeybindHandler keybindHandler;

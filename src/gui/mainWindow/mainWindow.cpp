@@ -29,7 +29,7 @@ MainWindow::MainWindow() : SdlWindow("Connection Machine"), environment(true), t
 MainWindow::~MainWindow() = default;
 
 bool MainWindow::isPressingKeybind(const Keybind& keybind, bool repeat) const {
-	if (!repeat && ::isPressingKeybind(keybind, heldKeys)) return false; // dont send twice unless repeat is true
+	if (lastUpdatedFrame >= frameIndex.load() && (keybind.getKeybind() & (~ImGuiKey::ImGuiMod_Mask_)) != ImGuiKey::ImGuiKey_None) return false;
 	return ::isPressingKeybind(keybind, pressedKeys);
 }
 
@@ -40,49 +40,48 @@ bool MainWindow::isPressingKeybind(const std::string& settingKey, bool repeat) c
 }
 
 void MainWindow::doUpdate() {
-	heldKeys = std::move(pressedKeys);
 	pressedKeys = ::getPressedKeys();
-	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Paste"), Keybind()))) {
+	if (isPressingKeybind("Keybinds/Editing/Paste")) {
 		toolManagerManager.setTool("paste tool");
 	}
-	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Tools/State Changer"), Keybind()))) {
+	if (isPressingKeybind("Keybinds/Editing/Tools/State Changer")) {
 		toolManagerManager.setTool("state changer");
 	}
-	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Tools/Connection"), Keybind()))) {
+	if (isPressingKeybind("Keybinds/Editing/Tools/Connection")) {
 		toolManagerManager.setTool("connection");
 		toolManagerManager.setMode("Single");
 	}
-	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Tools/Tensor Connect"), Keybind()))) {
+	if (isPressingKeybind("Keybinds/Editing/Tools/Tensor Connect")) {
 		toolManagerManager.setTool("connection");
 		toolManagerManager.setMode("Tensor");
 	}
-	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Tools/Move"), Keybind()))) {
+	if (isPressingKeybind("Keybinds/Editing/Tools/Move")) {
 		toolManagerManager.setTool("move");
 	}
-	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Tools/Mode Changer"), Keybind()))) {
+	if (isPressingKeybind("Keybinds/Editing/Tools/Mode Changer")) {
 		toolManagerManager.setTool("mode changer");
 	}
-	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Tools/Placement"), Keybind()))) {
+	if (isPressingKeybind("Keybinds/Editing/Tools/Placement")) {
 		toolManagerManager.setTool("placement");
 		toolManagerManager.setMode("Single");
 	}
-	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Tools/Area Placement"), Keybind()))) {
+	if (isPressingKeybind("Keybinds/Editing/Tools/Area Placement")) {
 		toolManagerManager.setTool("placement");
 		toolManagerManager.setMode("Area");
 	}
-	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Editing/Tools/Selection Maker"), Keybind()))) {
+	if (isPressingKeybind("Keybinds/Editing/Tools/Selection Maker")) {
 		toolManagerManager.setTool("selection maker");
 	}
-	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Window/Toggle Fullscreen"), Keybind()))) {
+	if (isPressingKeybind("Keybinds/Window/Toggle Fullscreen")) {
 		toggleBorderlessFullscreen();
 	}
-	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Window/Increase UI Scale"), Keybind()))) {
+	if (isPressingKeybind("Keybinds/Window/Increase UI Scale")) {
 		offsetUiScale(kUiScaleStep);
 	}
-	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Window/Decrease UI Scale"), Keybind()))) {
+	if (isPressingKeybind("Keybinds/Window/Decrease UI Scale")) {
 		offsetUiScale(-kUiScaleStep);
 	}
-	if (isPressingKeybind(valueOr(Settings::get<SettingType::KEYBIND>("Keybinds/Window/Reset UI Scale"), Keybind()))) {
+	if (isPressingKeybind("Keybinds/Window/Reset UI Scale")) {
 		applyUiScale(1.0f);
 	}
 
@@ -90,6 +89,7 @@ void MainWindow::doUpdate() {
 		widget.second->doUpdate();
 	}
 	environment.getBlockRenderDataFeeder().doBlockTextureUpdates();
+	lastUpdatedFrame = frameIndex.load();
 }
 
 void MainWindow::processEvent(SDL_Event& event) {
@@ -115,6 +115,7 @@ void MainWindow::processEvent(SDL_Event& event) {
 }
 
 void MainWindow::render() {
+	frameIndex.fetch_add(1);
 	bool open = true;
 	ImGuiIO& io = ImGui::GetIO();
 

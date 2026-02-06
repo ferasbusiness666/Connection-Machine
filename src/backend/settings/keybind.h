@@ -42,7 +42,6 @@ private:
 	static std::map<std::string, ImGuiKey> stringToKeyId;
 
 	ImGuiKey transformKeyIdForLayout(ImGuiKey keyid) const;
-
 };
 
 template <> struct std::hash<Keybind> {

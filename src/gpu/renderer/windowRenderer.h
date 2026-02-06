@@ -23,7 +23,10 @@ public:
 	const ImGuiRenderer& getImGuiRenderer() const { return *imGuiRenderer; }
 	void setImGuiRenderFunc(std::function<void()> imGuiRenderFunc);
 
-	void addSemaphore(VkSemaphore semaphore) { semaphoreForThisFrame.push_back(semaphore); }
+	void addSemaphore(VkSemaphore semaphore, std::shared_ptr<void> lifetime) {
+		semaphoreForThisFrame.push_back(semaphore);
+		frames.getCurrentFrame()->lifetime.push(lifetime);
+	}
 	VulkanDevice* getDevice() { return device; }
 
 private:

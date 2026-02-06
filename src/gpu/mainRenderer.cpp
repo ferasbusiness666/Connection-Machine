@@ -186,7 +186,7 @@ VkDescriptorSet MainRenderer::startViewportRendering(ViewportId viewportId) {
 		return VK_NULL_HANDLE;
 	}
 	std::pair<VkDescriptorSet, VkSemaphore> pair = iter->second.startImageRender();
-	windowsIter->second.addSemaphore(pair.second);
+	windowsIter->second.addSemaphore(pair.second, iter->second.getCurrentFrame());
 	return pair.first;
 }
 

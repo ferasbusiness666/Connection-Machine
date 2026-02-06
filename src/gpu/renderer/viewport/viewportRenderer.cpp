@@ -520,7 +520,7 @@ std::pair<VkDescriptorSet, VkSemaphore> ViewportRenderer::startImageRender() {
 		// float alpha = 0.2f;
 		// fps.store((alpha * 1000000000. / (float)deltaTime.count()) + (1.0 - alpha) * fps);
 
-		Frame& frame = frames.getCurrentFrame();
+		std::shared_ptr<Frame> frame = frames.getCurrentFrame();
 
 		// Mark frame as started
 		// #ifdef TRACY_PROFILER
@@ -531,9 +531,9 @@ std::pair<VkDescriptorSet, VkSemaphore> ViewportRenderer::startImageRender() {
 		// Record command buffer
 		{
 			std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
-			vkResetCommandBuffer(frame.mainCommandBuffer, 0);
+			vkResetCommandBuffer(frame->mainCommandBuffer, 0);
 		}
-		renderToCommandBuffer(frame, currentFrameIndex);
+		renderToCommandBuffer(*frame, currentFrameIndex);
 
 		VkSemaphore semaphore = imageSwapchain.getImageSemaphores()[currentFrameIndex];
 
@@ -543,9 +543,9 @@ std::pair<VkDescriptorSet, VkSemaphore> ViewportRenderer::startImageRender() {
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = &semaphore;
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &frame.mainCommandBuffer;
+		submitInfo.pCommandBuffers = &frame->mainCommandBuffer;
 
-		if (device->submitGraphicsQueue(&submitInfo, frame.renderFence) != VK_SUCCESS) {
+		if (device->submitGraphicsQueue(&submitInfo, frame->renderFence) != VK_SUCCESS) {
 			// Handle error - submission failed
 			return {VK_NULL_HANDLE, VK_NULL_HANDLE};
 		}

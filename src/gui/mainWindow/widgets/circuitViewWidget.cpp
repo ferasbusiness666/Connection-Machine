@@ -51,7 +51,7 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 		if (state) {
 			if (!valueOr(getGUIValue<bool>("MouseInView"), false)) return;
 			// std::lock_guard lock(Settings::getSettingsMapReadLock()); // we will be running these on main thread
-			if (getMainWindow().isPressingKeybind("Keybinds/Editing/Pick Block")) {
+			if (getMainWindow().isPressingKeybind("Keybinds/Editing/Pick Block", true)) {
 				std::unique_ptr<CircuitView>& circuitView = this->circuitView;
 				Circuit* circuit = circuitView->getCircuit();
 				if (circuit) {
@@ -70,7 +70,7 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 					}
 				}
 			}
-			if (getMainWindow().isPressingKeybind("Keybinds/Camera/Pan")) {
+			if (getMainWindow().isPressingKeybind("Keybinds/Camera/Pan", true)) {
 				if (circuitView->getEventRegister().doEvent(PositionEvent("View Attach Anchor", circuitView->getViewManager().getPointerPosition()))) {
 					return;
 				}
@@ -126,7 +126,7 @@ void CircuitViewWidget::processEvent(SDL_Event& event) {
 			Vec2 movement(-event.wheel.x * getMainWindow().getWindowScalingSize(), event.wheel.y * getMainWindow().getWindowScalingSize());
 			if (!Settings::get<SettingType::BOOL>("Keybinds/Camera/Scroll Panning", false)) {
 				circuitView->getEventRegister().doEvent(DeltaEvent("view zoom", (float)(movement.y) / 15.f));
-			} else if (getMainWindow().isPressingKeybind("Keybinds/Camera/Zoom")) {
+			} else if (getMainWindow().isPressingKeybind("Keybinds/Camera/Zoom", true)) {
 				// do zoom
 				circuitView->getEventRegister().doEvent(DeltaEvent("view zoom", (float)(movement.y) / 15.f));
 			} else {

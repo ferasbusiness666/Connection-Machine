@@ -9,8 +9,8 @@ class VulkanDevice;
 constexpr unsigned int FRAMES_IN_FLIGHT = 2;
 
 struct Frame {
-	void init(VulkanDevice* device);
-	void cleanup();
+	Frame(VulkanDevice* device);
+	~Frame();
 
 	VkCommandPool commandPool;
 	VkCommandBuffer mainCommandBuffer;
@@ -32,13 +32,13 @@ public:
 	float waitForCurrentFrameCompletion();
 	void startCurrentFrame();
 
-	std::array<Frame, FRAMES_IN_FLIGHT>& getFrames() { return frames; }
+	std::array<std::shared_ptr<Frame>, FRAMES_IN_FLIGHT>& getFrames() { return frames; }
 
 	inline uint32_t getCurrentFrameIndex() { return frameIndex; }
-	inline Frame& getCurrentFrame() { return frames[frameIndex]; }
+	inline std::shared_ptr<Frame> getCurrentFrame() { return frames[frameIndex]; }
 
 private:
-	std::array<Frame, FRAMES_IN_FLIGHT> frames;
+	std::array<std::shared_ptr<Frame>, FRAMES_IN_FLIGHT> frames;
 	uint32_t frameNumber = 0;
 	uint32_t frameIndex = 0;
 };

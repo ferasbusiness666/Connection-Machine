@@ -66,6 +66,8 @@ public:
 	ElementId addHalfConnectionPreview(const HalfConnectionPreview& halfConnectionPreview);
 	void removeHalfConnectionPreview(ElementId halfConnectionPreview);
 
+	std::shared_ptr<Frame> getCurrentFrame() { return frames.getCurrentFrame(); }
+
 private:
 	void destroyImages();
 	void createImages();

@@ -14,7 +14,7 @@ WindowRenderer::WindowRenderer(WindowId windowId, SdlWindow* sdlWindow) : window
 	surface = sdlWindow->createVkSurface(MainRenderer::get().getVulkanInstance().getVkbInstance());
 	device = MainRenderer::get().getVulkanInstance().createOrGetDevice(surface);
 
-	// initialize frames
+	 // initialize frames
 	frames.init(device);
 
 	// set up swapchain and subrenderer
@@ -38,9 +38,10 @@ WindowRenderer::~WindowRenderer() {
 	// stop render thread (not completely sure if this is right for the destructor yet)
 	running.store(false);
 	while (!renderLoopStopped.load()) App::doRunOnMainForThread(renderThread.get_id()); // do all the work it needs till its done
-	if (renderThread.joinable()) renderThread.detach();
+	if (renderThread.joinable()) renderThread.join();
 
 	// start by deleting render pass
+	device->waitIdle();
 	vkDestroyRenderPass(device->getDevice(), renderPass, nullptr);
 	// now the swapchain can be deleted
 	swapchain.cleanup();
@@ -60,7 +61,7 @@ void WindowRenderer::resize(std::pair<uint32_t, uint32_t> windowSize) {
 
 void WindowRenderer::renderLoop() {
 	while(running.load()) {
-		Frame& frame = frames.getCurrentFrame();
+		std::shared_ptr<Frame> frame = frames.getCurrentFrame();
 
 		// wait for frame completion
 		frames.waitForCurrentFrameCompletion();
@@ -74,7 +75,7 @@ void WindowRenderer::renderLoop() {
 		// try to start rendering the frame
 		// get next swapchain image to render to (or fail and try again)
 		uint32_t imageIndex;
-		VkResult imageGetResult = vkAcquireNextImageKHR(device->getDevice(), swapchain.getSwapchain(), UINT64_MAX, frame.acquireSemaphore, VK_NULL_HANDLE, &imageIndex);
+		VkResult imageGetResult = vkAcquireNextImageKHR(device->getDevice(), swapchain.getSwapchain(), UINT64_MAX, frame->acquireSemaphore, VK_NULL_HANDLE, &imageIndex);
 		if (imageGetResult == VK_ERROR_OUT_OF_DATE_KHR || imageGetResult == VK_SUBOPTIMAL_KHR) {
 			// if the swapchain is not ideal, try again but recreate it this time (this happens in normal operation)
 			swapchainRecreationNeeded = true;
@@ -92,7 +93,7 @@ void WindowRenderer::renderLoop() {
 		// record command buffer
 		{
 			std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
-			vkResetCommandBuffer(frame.mainCommandBuffer, 0);
+			vkResetCommandBuffer(frame->mainCommandBuffer, 0);
 		}
 
 		// ImGui rendering
@@ -101,14 +102,14 @@ void WindowRenderer::renderLoop() {
 		MainRenderer::get().setCurrentlyRenderedWindow(windowId);
 		sdlWindow->doRendering();
 		MainRenderer::get().clearCurrentlyRenderedWindow();
-		renderToCommandBuffer(frame, imageIndex);
+		renderToCommandBuffer(*frame, imageIndex);
 
 		// start setting up graphics submission ====================================================
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
 		// wait semaphore
-		semaphoreForThisFrame.push_back(frame.acquireSemaphore);
+		semaphoreForThisFrame.push_back(frame->acquireSemaphore);
 		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 		submitInfo.waitSemaphoreCount = semaphoreForThisFrame.size();
 		submitInfo.pWaitSemaphores = semaphoreForThisFrame.data();
@@ -116,7 +117,7 @@ void WindowRenderer::renderLoop() {
 
 		// command buffers
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &frame.mainCommandBuffer;
+		submitInfo.pCommandBuffers = &frame->mainCommandBuffer;
 
 		// signal semaphores
 		VkSemaphore signalSemaphores[] = { swapchain.getImageSemaphores()[imageIndex] };
@@ -124,7 +125,7 @@ void WindowRenderer::renderLoop() {
 		submitInfo.pSignalSemaphores = signalSemaphores;
 
 		// submit to queue
-		if (device->submitGraphicsQueue(&submitInfo, frame.renderFence) != VK_SUCCESS){
+		if (device->submitGraphicsQueue(&submitInfo, frame->renderFence) != VK_SUCCESS){
 			logError("failed to submit draw command buffer!");
 		}
 
