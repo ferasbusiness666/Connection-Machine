@@ -2,11 +2,13 @@
 #define widget_h
 
 #include "util/id.h"
+#include <SDL3/SDL_events.h>
 
 DECLARE_ID_TYPE(WidgetId, unsigned int);
 
 class MainWindow;
-#include <SDL3/SDL_events.h>
+class Environment;
+class Backend;
 
 class Widget {
 	template<class ValueType> struct GuiValue;
@@ -52,6 +54,9 @@ public:
 		}
 	}
 	MainWindow& getMainWindow() const { return mainWindow; }
+	Environment& getEnvironment() const;
+	Backend& getBackend() const;
+
 	WidgetId getWidgetId() const { return widgetId; }
 	const std::string& getWidgetIdStr() const { return widgetIdStr; }
 	virtual void processEvent(SDL_Event& event) { }

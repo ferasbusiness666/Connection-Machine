@@ -104,7 +104,7 @@ void CircuitViewWidget::processEvent(SDL_Event& event) {
 				circuitView->getEventRegister().doEvent(DeltaEvent("view zoom", (float)(movement.y) / 15.f));
 			} else {
 				Vec2 size = valueOr(getGUIValue<Vec2>("CircuitViewSize"), Vec2(100, 100));
-				float scaleAmout = App::getDetlaTime() * 220.;
+				float scaleAmout = App::getDetlaTime() * 400.f;
 				circuitView->getEventRegister().doEvent(DeltaXYEvent(
 					"view pan",
 					movement.x / size.x * circuitView->getViewManager().getViewWidth() * scaleAmout,
@@ -114,7 +114,7 @@ void CircuitViewWidget::processEvent(SDL_Event& event) {
 		} else if (event.type == SDL_EVENT_DROP_FILE && event.drop.data != nullptr) {
 			std::string filePath(event.drop.data);
 			if (filePath.empty()) return;
-			std::vector<circuit_id_t> ids = getMainWindow().getEnvironment().getCircuitFileManager().loadFromFile(filePath);
+			std::vector<circuit_id_t> ids = getEnvironment().getCircuitFileManager().loadFromFile(filePath);
 			if (ids.empty()) {
 				// logError("Error", "Failed to load circuit file."); // Not a error! It is valid to load 0 circuits.
 			} else {
