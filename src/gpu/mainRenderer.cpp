@@ -132,8 +132,14 @@ void MainRenderer::regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDat
 	}
 }
 
-ViewportId MainRenderer::registerViewport(glm::vec2 size) {
-	viewportRenderers.try_emplace(getNewViewportId(), getVulkanInstance().getDevice());
+// window id is needed because we need to have it work with a particularly imgui context
+ViewportId MainRenderer::registerViewport(WindowId windowId, glm::vec2 size) {
+	auto iter = windowRenderers.find(windowId);
+	if (iter == windowRenderers.end()) {
+		logError("Failed to call registerViewport on non existent window {}.", "MainRenderer", windowId);
+		return 0;
+	}
+	viewportRenderers.try_emplace(getNewViewportId(), getVulkanInstance().getDevice(), iter->second.getImGuiRenderer());
 	return lastViewportId;
 }
 

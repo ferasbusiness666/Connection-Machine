@@ -5,12 +5,12 @@
 
 #include "backend/settings/settings.h"
 #include "environment/environment.h"
+#include "gui/helper/keybindHelpers.h"
 #include "gui/mainWindow/widgets/circuitViewWidget.h"
 #include "gui/mainWindow/widgets/selectorWidget.h"
-#include "gui/helper/keybindHelpers.h"
 #include "imgui/imgui_internal.h"
 
-MainWindow::MainWindow() : SdlWindow("Connection Machine"), environment(true), toolManagerManager(environment), widgetIdProvider(1)/*, popUpManager(*this)*/ {
+MainWindow::MainWindow() : SdlWindow("Connection Machine"), environment(true), toolManagerManager(environment), widgetIdProvider(1) /*, popUpManager(*this)*/ {
 	const double* initialUiScale = Settings::get<SettingType::DECIMAL>("Appearance/UI Scale");
 	applyUiScale(initialUiScale ? static_cast<float>(*initialUiScale) : 1.0f);
 	Settings::registerListener<SettingType::DECIMAL>("Appearance/UI Scale", [this](const double& value) { applyUiScale(static_cast<float>(value)); });
@@ -147,6 +147,32 @@ void MainWindow::render() {
 	ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
 	ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), 0);
 	ImGui::End();
+
+	if (ImGui::BeginMainMenuBar()) {
+		if (ImGui::BeginMenu("File")) {
+			if (ImGui::MenuItem("New Circuit", "Ctrl+N")) {
+				App::runOnMain([this]() { environment.getBackend().createCircuit(); });
+			}
+			if (ImGui::MenuItem("New Window")) {
+				App::runOnMain([this]() { App::makeWindow<MainWindow>(); });
+			}
+			ImGui::Separator();
+			if (ImGui::MenuItem("Open...", "Ctrl+O")) { }
+			if (ImGui::MenuItem("Save", "Ctrl+S")) { }
+			if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S")) { }
+			if (ImGui::MenuItem("Exit")) { }
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Help")) {
+			if (ImGui::MenuItem("About")) {
+				logInfo("ImGui branch!");
+			}
+			ImGui::EndMenu();
+		}
+
+		ImGui::EndMainMenuBar();
+	}
 
 	for (std::pair<const WidgetId, std::unique_ptr<Widget>>& widget : widgets) {
 		widget.second->doRendering();

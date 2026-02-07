@@ -55,7 +55,7 @@ public:
 	void regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDataId);
 
 	// Viewports ================================================================================================================================
-	ViewportId registerViewport(glm::vec2 size);
+	ViewportId registerViewport(WindowId windowId, glm::vec2 size);
 	void resizeViewport(ViewportId viewportId, glm::vec2 size);
 	void moveViewportView(ViewportId viewportId, FPosition topLeft, FPosition bottomRight);
 	void setViewportSimulator(ViewportId viewportId, const EvalLogicSimulator* simulator, Address address); // tmp circuit

@@ -55,6 +55,7 @@ public:
 	void viewChanged();
 
 private:
+	Environment& environment;
 	Backend& backend;
 
 	ViewportId viewportId;

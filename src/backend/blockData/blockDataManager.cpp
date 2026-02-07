@@ -280,6 +280,18 @@ void BlockDataManager::initializeDefaults() {
 	colorLightBlockData->setTextureSmallestCordTile({ 0, 0 });
 	colorLightBlockData->setTextureBlockStateOffset({ 8, 256 });
 	colorLightBlockData->setIsPlaceable(false);
+	// // TEXTURE_VIEWER
+	// BlockData* textureViewerBlockData = getBlockData(addBlock());
+	// textureViewerBlockData->setName("Texture Viewer");
+	// textureViewerBlockData->setPath("Debug");
+	// textureViewerBlockData->setDefaultData(false);
+	// textureViewerBlockData->setSize(Size(5));
+	// textureViewerBlockData->setTexturePath("null_path");
+	// textureViewerBlockData->setUsesTileMapTexture(true);
+	// textureViewerBlockData->setTextureTileSize({ 4096, 4096 });
+	// textureViewerBlockData->setTextureBlockTileSize({ 1, 1 });
+	// textureViewerBlockData->setTextureSmallestCordTile({ 0, 0 });
+	// textureViewerBlockData->setIsPlaceable(true);
 	logInfo("Default BlockData initialized", "BlockDataManager");
 }
 

@@ -11,6 +11,8 @@
 #include "elements/elementRenderer.h"
 #include "grid/gridRenderer.h"
 
+class ImGuiRenderer;
+
 struct ViewportViewData {
 	glm::mat4 viewportViewMat;
 	std::pair<FPosition, FPosition> viewBounds;
@@ -20,10 +22,11 @@ struct ViewportViewData {
 
 class ViewportRenderer {
 	struct ImGuiDescriptorSet {
-		ImGuiDescriptorSet(VkDescriptorSet descriptorSet, const std::vector<std::shared_ptr<void>>& lifetimeObjects = {});
+		ImGuiDescriptorSet(VkDescriptorSet descriptorSet, ImGuiRenderer& imGuiRenderer, const std::vector<std::shared_ptr<void>>& lifetimeObjects = {});
 		~ImGuiDescriptorSet();
 		VkDescriptorSet descriptorSet;
 		std::vector<std::shared_ptr<void>> lifetimeObjects;
+		ImGuiRenderer& imGuiRenderer;
 	};
 	struct Sampler {
 		Sampler(VkSampler sampler);
@@ -31,7 +34,7 @@ class ViewportRenderer {
 		VkSampler sampler;
 	};
 public:
-	ViewportRenderer(VulkanDevice* device);
+	ViewportRenderer(VulkanDevice* device, ImGuiRenderer& imGuiRenderer);
 	~ViewportRenderer();
 
 	ViewportViewData getViewData();
@@ -95,6 +98,7 @@ private:
 	// Vulkan
 	VulkanChunker chunker;
 	VulkanDevice* device;
+	ImGuiRenderer& imGuiRenderer;
 
 	// Elements
 	ElementId currentElementId = 0;

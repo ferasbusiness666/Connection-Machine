@@ -163,13 +163,12 @@ void ImGuiRenderer::endFrame(VkCommandBuffer cmd) {
 	mutex.unlock();
 
 	App::runOnMain_blocking([this]() {
+		std::lock_guard lock(mutex);
 		ImGui::SetCurrentContext(context);
 		ImGui::Render();
 	});
 
-
 	std::lock_guard lock(mutex);
-
 	ImGui::SetCurrentContext(context);
 
 	// Render main window
@@ -183,11 +182,21 @@ void ImGuiRenderer::endFrame(VkCommandBuffer cmd) {
 		ImGui::UpdatePlatformWindows();
 		ImGui::RenderPlatformWindowsDefault();
 	}
+
+	std::lock_guard workLock(postFrameWorkLock);
+	for (std::function<void()>& work : postFrameWork) work();
+	postFrameWork.clear();
 }
 
-std::mutex& ImGuiRenderer::setActiveContext() const {
-	return mutex;
+std::unique_lock<std::mutex> ImGuiRenderer::setActiveContext() const {
+	std::unique_lock lock(mutex);
 	ImGui::SetCurrentContext(context);
+	return std::move(lock);
+}
+
+void ImGuiRenderer::addPostFrameWork(std::function<void()> work) {
+	std::lock_guard workLock(postFrameWorkLock);
+	postFrameWork.push_back(work);
 }
 
 ImGuiRenderer* ImGuiRenderer::getImGuiRenderer(SDL_Window& sdlWindow) {

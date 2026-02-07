@@ -5,11 +5,12 @@
 #include "backend/circuit/circuitDefs.h"
 #include "gpu/mainRendererDefs.h"
 
+class Environment;
 class Backend;
 
 class CircuitRenderManager {
 public:
-	CircuitRenderManager(Backend& environment, circuit_id_t circuitId, ViewportId viewportId);
+	CircuitRenderManager(Environment& environment, circuit_id_t circuitId, ViewportId viewportId);
 	~CircuitRenderManager();
 	void addDifference(DifferenceSharedPtr diff);
 
@@ -23,6 +24,7 @@ private:
 
 	circuit_id_t circuitId;
 	ViewportId viewportId;
+	Environment& environment;
 	Backend& backend;
 
 	std::unordered_map<Position, RenderedBlock> renderedBlocks;

@@ -39,7 +39,7 @@ void LoadCallback(void* userData, const char* const* filePaths, int filter) {
 }
 
 CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) : Widget(widgetId, mainWindow) {
-	ViewportId viewportId = MainRenderer::get().registerViewport({ 100, 100 });
+	ViewportId viewportId = MainRenderer::get().registerViewport(getMainWindow().getWindowId(), { 100, 100 });
 	circuitView = std::make_unique<CircuitView>(mainWindow.getEnvironment(), viewportId);
 	getMainWindow().getToolManagerManager().addCircuitView(circuitView.get());
 	newCircuit();
@@ -267,7 +267,6 @@ void CircuitViewWidget::render() {
 				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
 				FPosition mouseGridPos = getGUIValue_rendering<FPosition>("MouseGridPos");
 				ImGui::Text("Mouse: (%.2f, %.2f)", mouseGridPos.x, mouseGridPos.y);
-
 				ImGui::Text("RTPS: %.2f", getGUIValue_rendering<double>("SimulatorRealTPS"));
 				ImGui::SameLine();
 				ImGui::PushItemWidth(50);

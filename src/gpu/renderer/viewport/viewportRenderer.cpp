@@ -12,14 +12,23 @@
 #include <tracy/Tracy.hpp>
 #endif
 
-ViewportRenderer::ImGuiDescriptorSet::ImGuiDescriptorSet(VkDescriptorSet descriptorSet, const std::vector<std::shared_ptr<void>>& lifetimeObjects) :
-	descriptorSet(descriptorSet), lifetimeObjects(lifetimeObjects) { }
-ViewportRenderer::ImGuiDescriptorSet::~ImGuiDescriptorSet() { ImGui_ImplVulkan_RemoveTexture(descriptorSet); }
+ViewportRenderer::ImGuiDescriptorSet::ImGuiDescriptorSet(
+	VkDescriptorSet descriptorSet,
+	ImGuiRenderer& imGuiRenderer,
+	const std::vector<std::shared_ptr<void>>& lifetimeObjects
+) : descriptorSet(descriptorSet), lifetimeObjects(lifetimeObjects), imGuiRenderer(imGuiRenderer) { }
+ViewportRenderer::ImGuiDescriptorSet::~ImGuiDescriptorSet(){
+	imGuiRenderer.addPostFrameWork(
+		[descriptorSet = this->descriptorSet]() {
+			ImGui_ImplVulkan_RemoveTexture(descriptorSet);
+		}
+	);
+}
 
 ViewportRenderer::Sampler::Sampler(VkSampler sampler) : sampler(sampler) { }
 ViewportRenderer::Sampler::~Sampler() { vkDestroySampler(MainRenderer::get().getVulkanInstance().getDevice()->getDevice(), sampler, nullptr); }
 
-ViewportRenderer::ViewportRenderer(VulkanDevice* device) : chunker(device), device(device) {
+ViewportRenderer::ViewportRenderer(VulkanDevice* device, ImGuiRenderer& imGuiRenderer) : imGuiRenderer(imGuiRenderer), chunker(device), device(device) {
 	createRenderPass();
 	gridRenderer.init(device, renderPass);
 	chunkRenderer.init(device, renderPass);
@@ -642,10 +651,13 @@ void ViewportRenderer::createImages() {
 	imageSwapchain.recreate(renderPass, { viewData.viewportSize.width, viewData.viewportSize.height }, *msaaImage);
 	imguiTextures.resize(FRAMES_IN_FLIGHT);
 	for (unsigned int i = 0; i < imguiTextures.size(); i++) {
+		// std::lock_guard lock(imGuiRenderer.setActiveContext()); // not needed this is only called from the render func of a widget
 		imguiTextures[i] = std::make_shared<ImGuiDescriptorSet>(
 			ImGui_ImplVulkan_AddTexture(sampler->sampler, imageSwapchain.getImages()[i]->imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
+			imGuiRenderer,
 			std::vector<std::shared_ptr<void>>{ imageSwapchain.getImages()[i], sampler }
 		);
+		logInfo("{} made {}", "", (unsigned long long)&imGuiRenderer, (unsigned long long)imguiTextures[i]->descriptorSet);
 	}
 
 	imageReady.store(true);

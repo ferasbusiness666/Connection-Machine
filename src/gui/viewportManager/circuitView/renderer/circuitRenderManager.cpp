@@ -6,9 +6,9 @@
 
 #include "backend/circuit/circuit.h"
 #include "gpu/mainRenderer.h"
-#include "backend/backend.h"
+#include "environment/environment.h"
 
-CircuitRenderManager::CircuitRenderManager(Backend& backend, circuit_id_t circuitId, ViewportId viewportId) : backend(backend), circuitId(circuitId), viewportId(viewportId) {
+CircuitRenderManager::CircuitRenderManager(Environment& environment, circuit_id_t circuitId, ViewportId viewportId) : environment(environment), backend(environment.getBackend()), circuitId(circuitId), viewportId(viewportId) {
 	SharedCircuit circuit = backend.getCircuit(circuitId);
 	if (!circuit) {
 		logError("Failed to find circuit with Id {}", "CircuitRenderManager", circuitId);
@@ -51,7 +51,7 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 		case Difference::ModificationType::PLACE_BLOCK:
 		{
 			const auto& [position, orientation, blockType] = std::get<Difference::block_modification_t>(modificationData);
-			MainRenderer::get().addBlock(viewportId, blockType, position, orientation);
+			MainRenderer::get().addBlock(viewportId, environment.getBlockRenderDataFeeder().getBlockRenderDataId(blockType), position, orientation);
 			renderedBlocks.emplace(position, RenderedBlock(blockType, orientation));
 			break;
 		}

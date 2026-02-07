@@ -7,7 +7,7 @@
 #include "gpu/mainRenderer.h"
 
 CircuitView::CircuitView(Environment& environment, ViewportId viewportId) :
-	backend(environment.getBackend()), dataUpdateEventManager(environment.getBackend().getDataUpdateEventManager()), viewportId(viewportId),
+	environment(environment), backend(environment.getBackend()), dataUpdateEventManager(environment.getBackend().getDataUpdateEventManager()), viewportId(viewportId),
 	toolManager(environment, &eventRegister, viewportId, this), tutorialManager(environment, *this) {
 	MainRenderer::get().moveViewportView(viewportId, viewManager.getTopLeft(), viewManager.getBottomRight());
 	viewManager.setUpEvents(eventRegister);
@@ -46,7 +46,7 @@ void CircuitView::setSimulator(simulator_id_t simulatorId, const Address& addres
 			this->circuitId = circuitId;
 			circuitRenderManager.reset();
 			MainRenderer::get().setViewportSimulator(viewportId, simulator, address);
-			circuitRenderManager.emplace(backend, this->circuitId, viewportId);
+			circuitRenderManager.emplace(environment, this->circuitId, viewportId);
 			toolManager.setCircuit(circuit.get());
 			viewManager.setCircuit(circuit.get());
 			dataUpdateEventManager.sendEvent("circuitViewChangeSimulator", this);
@@ -77,7 +77,7 @@ void CircuitView::setSimulator(const EvalLogicSimulator* simulator, const Addres
 		this->simulatorId = simulator->getSimulatorId();
 		this->address = address;
 		this->circuitId = circuit->getCircuitId();
-		circuitRenderManager.emplace(backend, circuit->getCircuitId(), viewportId);
+		circuitRenderManager.emplace(environment, circuit->getCircuitId(), viewportId);
 		MainRenderer::get().setViewportSimulator(viewportId, simulator, address);
 		toolManager.setCircuit(circuit.get());
 		viewManager.setCircuit(circuit.get());
@@ -103,7 +103,7 @@ void CircuitView::setCircuit(circuit_id_t circuitId) {
 		} else {
 			this->simulatorId = 0;
 			this->circuitId = circuit->getCircuitId();
-			circuitRenderManager.emplace(backend, circuit->getCircuitId(), viewportId);
+			circuitRenderManager.emplace(environment, circuit->getCircuitId(), viewportId);
 			MainRenderer::get().setViewportSimulator(viewportId, nullptr, Address());
 			toolManager.setCircuit(circuit.get());
 			viewManager.setCircuit(circuit.get());
@@ -128,7 +128,7 @@ void CircuitView::setCircuit(SharedCircuit circuit) {
 	} else {
 		this->simulatorId = 0;
 		this->circuitId = circuit->getCircuitId();
-		circuitRenderManager.emplace(backend, circuit->getCircuitId(), viewportId);
+		circuitRenderManager.emplace(environment, circuit->getCircuitId(), viewportId);
 		MainRenderer::get().setViewportSimulator(viewportId, nullptr, Address());
 		toolManager.setCircuit(circuit.get());
 		viewManager.setCircuit(circuit.get());

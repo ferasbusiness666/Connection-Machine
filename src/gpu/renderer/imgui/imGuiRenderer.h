@@ -21,7 +21,8 @@ public:
 	void endFrame(VkCommandBuffer cmd);
 
 	ImGuiContext* getContext() const { return context; }
-	std::mutex& setActiveContext() const;
+	std::unique_lock<std::mutex> setActiveContext() const;
+	void addPostFrameWork(std::function<void()>);
 
 	static ImGuiRenderer* getImGuiRenderer(SDL_Window& sdlWindow);
 	static void allProcessEvent(const SDL_Event& e);
@@ -33,6 +34,9 @@ private:
 	SDL_Window& mainWindow;
 	VkRenderPass renderPass;
 	uint32_t framesInFlight;
+
+	std::mutex postFrameWorkLock;
+	std::vector<std::function<void()>> postFrameWork;
 
 	ImGuiContext* context = nullptr;
 	VkDescriptorPool imguiDescriptorPool;
