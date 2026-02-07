@@ -22,8 +22,11 @@ circuit_id_t CircuitManager::createNewCircuit(const std::string& name, const std
 		if (simulatorId != 0) {
 			EvalLogicSimulator* simulator = simulatorManager.getSimulator(simulatorId);
 			simulator->setPause(false);
+			assert(!simulator->isPause());
 			simulator->setUseTickrate(true);
+			assert(simulator->getUseTickrate());
 			simulator->setTickrate(40);
+			assert(simulator->getTickrate() == 40);
 		}
 	}
 

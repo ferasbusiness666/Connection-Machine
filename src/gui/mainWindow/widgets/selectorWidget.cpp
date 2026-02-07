@@ -163,6 +163,7 @@ unsigned int fastStep = 10;
 
 SelectorWidget::~SelectorWidget() { }
 void SelectorWidget::render() {
+	ImGui::SetNextWindowDockID(getMainWindow().getDockLeftId(), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(100, 300), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin(getWidgetIdStr().c_str())) {
 		const std::string& selectedProceduralCircuitOrBus = getGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus");

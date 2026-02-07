@@ -42,10 +42,7 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 	ViewportId viewportId = MainRenderer::get().registerViewport({ 100, 100 });
 	circuitView = std::make_unique<CircuitView>(mainWindow.getEnvironment(), viewportId);
 	getMainWindow().getToolManagerManager().addCircuitView(circuitView.get());
-	circuit_id_t circuitId = mainWindow.getEnvironment().getBackend().createCircuit();
-	std::optional<simulator_id_t> simulatorId = mainWindow.getEnvironment().getBackend().createSimulator(circuitId);
-	circuitView->setSimulator(simulatorId.value(), Address());
-	SharedCircuit circuit = mainWindow.getEnvironment().getBackend().getCircuit(circuitId);
+	newCircuit();
 	setupGUIValue<float>("AspectRatio", 1, [&](const float& aspectRatio) { circuitView->getViewManager().setAspectRatio(aspectRatio); });
 	setupGUIValue<bool>("MouseLeftDown", false, [&](const bool& state) {
 		if (state) {
@@ -223,6 +220,7 @@ void CircuitViewWidget::load() {
 }
 
 void CircuitViewWidget::render() {
+	ImGui::SetNextWindowDockID(getMainWindow().getDockMainId(), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(400, 300), ImGuiCond_FirstUseEver);
 	bool isHovered = false;
 	bool isFocused = false;
@@ -267,7 +265,8 @@ void CircuitViewWidget::render() {
 			ImGui::SetCursorPos({ viewportWindowPos.x + padding + offset, viewportWindowPos.y + padding + offset });
 			ImGui::BeginGroup();
 				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-				ImGui::Text("Mouse: %s", fmt::to_string(getGUIValue_rendering<FPosition>("MouseGridPos")).c_str());
+				FPosition mouseGridPos = getGUIValue_rendering<FPosition>("MouseGridPos");
+				ImGui::Text("Mouse: (%.2f, %.2f)", mouseGridPos.x, mouseGridPos.y);
 
 				ImGui::Text("RTPS: %.2f", getGUIValue_rendering<double>("SimulatorRealTPS"));
 				ImGui::SameLine();

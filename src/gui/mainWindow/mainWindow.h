@@ -45,6 +45,11 @@ public:
 	bool isPressingKeybind(const std::string& settingKey, bool repeat = false) const;
 	const std::set<ImGuiKey>& getPressedKeys() const { return pressedKeys; }
 
+	ImGuiID getDockMainId() const { return dockMainId; }
+	ImGuiID getDockLeftId() const { return dockLeftId; }
+	ImGuiID getDockRightId() const { return dockRightId; }
+	ImGuiID getDockBottomId() const { return dockBottomId; }
+
 private:
 	void doUpdate() override final;
 	bool killWindow(bool forced) override final { widgets.clear(); return true; }
@@ -73,6 +78,11 @@ private:
 
 	std::unordered_map<WidgetId, std::unique_ptr<Widget>> widgets;
 	IdProvider<WidgetId> widgetIdProvider;
+
+	ImGuiID dockMainId;
+	ImGuiID dockLeftId;
+	ImGuiID dockRightId;
+	ImGuiID dockBottomId;
 
 	// widgets
 	// std::optional<SelectorWindow> selectorWindow;
