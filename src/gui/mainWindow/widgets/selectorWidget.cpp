@@ -74,9 +74,9 @@ SelectorWidget::SelectorWidget(WidgetId widgetId, MainWindow& mainWindow) :
 	});
 	setupGUIValue<bool>("doCreateBlock", false, [this](const bool& doCreateBlock) {
 		if (doCreateBlock) {
-			const std::string* selectedProceduralCircuitOrBus = getGUIValue<std::string>("selectedProceduralCircuitOrBus");
-			if (selectedProceduralCircuitOrBus == nullptr || *selectedProceduralCircuitOrBus == "") return;
-			if (*selectedProceduralCircuitOrBus == "Other/Bus") {
+			const std::string& selectedProceduralCircuitOrBus = getGUIValue<std::string>("selectedProceduralCircuitOrBus");
+			if (selectedProceduralCircuitOrBus == "") return;
+			if (selectedProceduralCircuitOrBus == "Other/Bus") {
 				std::lock_guard lock(proceduralCircuitOrBusParameterMux);
 				auto iter = proceduralCircuitOrBusParameter.find("Other/Bus");
 				assert(iter != proceduralCircuitOrBusParameter.end());
@@ -86,9 +86,9 @@ SelectorWidget::SelectorWidget(WidgetId widgetId, MainWindow& mainWindow) :
 				));
 			} else {
 				std::lock_guard lock(proceduralCircuitOrBusParameterMux);
-				auto iter = proceduralCircuitOrBusParameter.find(*selectedProceduralCircuitOrBus);
+				auto iter = proceduralCircuitOrBusParameter.find(selectedProceduralCircuitOrBus);
 				assert(iter != proceduralCircuitOrBusParameter.end());
-				const std::string* uuid = getBackend().getCircuitManager().getProceduralCircuitManager().getProceduralCircuitUUID(*selectedProceduralCircuitOrBus);
+				const std::string* uuid = getBackend().getCircuitManager().getProceduralCircuitManager().getProceduralCircuitUUID(selectedProceduralCircuitOrBus);
 				assert(uuid);
 				SharedProceduralCircuit proceduralCircuit = getBackend().getCircuitManager().getProceduralCircuitManager().getProceduralCircuit(*uuid);
 				assert(proceduralCircuit);
@@ -113,16 +113,16 @@ void SelectorWidget::createTree(const SelectorTreeNode& node, const std::string&
 			ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf;
 			if (std::holds_alternative<BlockType>(pair.second.data.value())) {
 				assert(rootString == "Blocks");
-				if (valueOr(getGUIValue_rendering<BlockType>("selectedBlockType"), BlockType::NONE) == std::get<BlockType>(pair.second.data.value())) {
+				if (getGUIValue_rendering<BlockType>("selectedBlockType") == std::get<BlockType>(pair.second.data.value())) {
 					flags |= ImGuiTreeNodeFlags_Selected;
 				}
 			} else if (rootString == "Blocks") {
-				if (valueOr(getGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus"), std::string()) == std::get<std::string>(pair.second.data.value())) {
+				if (getGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus") == std::get<std::string>(pair.second.data.value())) {
 					flags |= ImGuiTreeNodeFlags_Selected;
 				};
 			} else if (rootString == "Tools") {
 				assert(std::holds_alternative<std::string>(pair.second.data.value()));
-				if (valueOr(getGUIValue_rendering<std::string>("selectedTool"), std::string()) == std::get<std::string>(pair.second.data.value())) {
+				if (getGUIValue_rendering<std::string>("selectedTool") == std::get<std::string>(pair.second.data.value())) {
 					flags |= ImGuiTreeNodeFlags_Selected;
 				}
 			}
@@ -158,43 +158,43 @@ void SelectorWidget::createTree(const SelectorTreeNode& node, const std::string&
 	}
 }
 
+unsigned int slowStep = 1;
+unsigned int fastStep = 10;
+
 SelectorWidget::~SelectorWidget() { }
 void SelectorWidget::render() {
 	ImGui::SetNextWindowSize(ImVec2(100, 300), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin(getWidgetIdStr().c_str())) {
-		const std::string* selectedProceduralCircuitOrBus = getGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus");
-		if (selectedProceduralCircuitOrBus && *selectedProceduralCircuitOrBus != "") {
-			if (*selectedProceduralCircuitOrBus == "Other/Bus") {
+		const std::string& selectedProceduralCircuitOrBus = getGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus");
+		if (selectedProceduralCircuitOrBus != "") {
+			if (selectedProceduralCircuitOrBus == "Other/Bus") {
 				if (ImGui::BeginChild("Bus Creator", { 0, 0 }, ImGuiChildFlags_AutoResizeY)) {
 					std::lock_guard lock(proceduralCircuitOrBusParameterMux);
 					auto pair = proceduralCircuitOrBusParameter.try_emplace("Other/Bus");
 					auto numberOfPorts = pair.first->second.emplace("Number of Ports", (unsigned int)8);
 					assert(std::holds_alternative<unsigned int>(numberOfPorts.first->second));
-					if (ImGui::InputInt("Number of Ports", (int*)&std::get<unsigned int>(numberOfPorts.first->second), 1, 10))
-						numberOfPorts.first->second = (unsigned int)max(1, std::get<unsigned int>(numberOfPorts.first->second));
+					ImGui::InputScalar("Number of Ports", ImGuiDataType_U32, &std::get<unsigned int>(numberOfPorts.first->second), &slowStep, &fastStep);
 					auto portBitWidths = pair.first->second.emplace("Port Bit Widths", (unsigned int)1);
-					if (ImGui::InputInt("Port Bit Widths", (int*)&std::get<unsigned int>(portBitWidths.first->second), 1, 10))
-						portBitWidths.first->second = (unsigned int)max(1, std::get<unsigned int>(portBitWidths.first->second));
+					ImGui::InputScalar("Port Bit Widths", ImGuiDataType_U32, &std::get<unsigned int>(portBitWidths.first->second), &slowStep, &fastStep);
 					bool a = ImGui::Button("Create Bus");
 					setGUIValue_rendering<bool>("doCreateBlock", a);
 				}
 				ImGui::EndChild();
 			} else {
 				if (ImGui::BeginChild("Procedural Circuit", { 0, 0 }, ImGuiChildFlags_AutoResizeY)) {
-					ImGui::Text("(%s)", selectedProceduralCircuitOrBus->c_str());
+					ImGui::Text("(%s)", selectedProceduralCircuitOrBus.c_str());
 					std::lock_guard lock(proceduralCircuitOrBusParameterMux);
-					auto iter = proceduralCircuitOrBusParameter.find(*selectedProceduralCircuitOrBus);
+					auto iter = proceduralCircuitOrBusParameter.find(selectedProceduralCircuitOrBus);
 					if (iter == proceduralCircuitOrBusParameter.end()) {
 						logError("Could not find {} in proceduralCircuitOrBusParameter. This should have been setup before this code runs.", "SelectorWidget::render");
 					} else {
 						for (auto& parameter : iter->second) {
 							if (std::holds_alternative<int>(parameter.second)) {
-								ImGui::InputInt(parameter.first.c_str(), &std::get<int>(parameter.second), 1, 10);
+								ImGui::InputScalar(parameter.first.c_str(), ImGuiDataType_S32, &std::get<int>(parameter.second), &slowStep, &fastStep);
 							} else if (std::holds_alternative<unsigned int>(parameter.second)) {
-								if (ImGui::InputInt(parameter.first.c_str(), (int*)&std::get<unsigned int>(parameter.second), 1, 10))
-									parameter.second = max(1, std::get<int>(parameter.second));
+								ImGui::InputScalar(parameter.first.c_str(), ImGuiDataType_U32, (int*)&std::get<unsigned int>(parameter.second), &slowStep, &fastStep);
 							} else if (std::holds_alternative<float>(parameter.second)) {
-								ImGui::InputFloat(parameter.first.c_str(), &std::get<float>(parameter.second));
+								ImGui::InputScalar(parameter.first.c_str(), ImGuiDataType_Float, &std::get<float>(parameter.second), &slowStep, &fastStep);
 							} else if (std::holds_alternative<std::string>(parameter.second)) {
 								ImGui::InputText(parameter.first.c_str(), &std::get<std::string>(parameter.second));
 							}

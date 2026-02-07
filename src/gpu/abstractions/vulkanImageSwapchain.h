@@ -5,6 +5,11 @@
 
 class ImageSwapchain {
 public:
+	struct Semaphore {
+		Semaphore(VkSemaphore semaphore) : semaphore(semaphore) {}
+		~Semaphore();
+		VkSemaphore semaphore;
+	};
 	void init(VulkanDevice* device);
 	void cleanup();
 
@@ -13,12 +18,12 @@ public:
 
 	inline std::vector<std::shared_ptr<AllocatedImage>>& getImages() { return images; }
 	inline std::vector<VkFramebuffer>& getFramebuffers() { return framebuffers; }
-	inline std::vector<VkSemaphore>& getImageSemaphores() { return imageSemaphores; }
+	inline std::vector<std::shared_ptr<Semaphore>>& getImageSemaphores() { return imageSemaphores; }
 
 private:
 	std::vector<std::shared_ptr<AllocatedImage>> images;
 	std::vector<VkFramebuffer> framebuffers;
-	std::vector<VkSemaphore> imageSemaphores;
+	std::vector<std::shared_ptr<Semaphore>> imageSemaphores;
 
 	VulkanDevice* device;
 };

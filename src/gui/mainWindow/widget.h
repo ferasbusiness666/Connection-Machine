@@ -70,11 +70,11 @@ protected:
 	template<class ValueType>
 	void setupGUIValue(const std::string& key, const ValueType& initalValue, std::function<void(const ValueType&)> func);
 	template<class ValueType>
-	const ValueType* getGUIValue(const std::string& key) const;
+	const ValueType& getGUIValue(const std::string& key) const;
 	template<class ValueType>
 	void setGUIValue(const std::string& key, const ValueType& value);
 	template<class ValueType>
-	const ValueType* getGUIValue_rendering(const std::string& key) const;
+	const ValueType& getGUIValue_rendering(const std::string& key) const;
 	template<class ValueType>
 	void setGUIValue_rendering(const std::string& key, const ValueType& value);
 	template<class ValueType>
@@ -91,73 +91,49 @@ private:
 template<class ValueType>
 void Widget::setupGUIValue(const std::string& key, const ValueType& initalValue, std::function<void(const ValueType&)> func) {
 	std::lock_guard mux(guiValuesMux);
-	auto iter = guiValues.emplace(key, std::make_unique<GuiValue<ValueType>>(initalValue, func));
-	if (iter.second) return;
-	return;
+	auto pair = guiValues.emplace(key, std::make_unique<GuiValue<ValueType>>(initalValue, func));
+	assert(pair.second);
 }
 
 template<class ValueType>
-const ValueType* Widget::getGUIValue(const std::string& key) const {
+const ValueType& Widget::getGUIValue(const std::string& key) const {
 	std::lock_guard mux(guiValuesMux);
 	auto iter = guiValues.find(key);
-	if (iter == guiValues.end()) {
-		logError("Could not find {} in guiValues.", "Widget::getGUIValue", key);
-		return nullptr;
-	}
+	assert(iter != guiValues.end());
 	const GuiValue<ValueType>* guiValue = iter->second->cast<ValueType>();
-	if (guiValue == nullptr) {
-		logError("Could not cast value with key {}.", "Widget::getGUIValue", key);
-		return nullptr;
-	}
-	return &guiValue->value;
+	assert(guiValue);
+	return guiValue->value;
 }
 
 template<class ValueType>
 void Widget::setGUIValue(const std::string& key, const ValueType& value) {
 	std::lock_guard mux(guiValuesMux);
 	auto iter = guiValues.find(key);
-	if (iter == guiValues.end()) {
-		logError("Could not find {} in guiValues.", "Widget::setGUIValue", key);
-		return;
-	}
+	assert(iter != guiValues.end());
 	GuiValue<ValueType>* guiValue = iter->second->template cast<ValueType>();
-	if (guiValue == nullptr) {
-		logError("Trying to change type of key {}.", "Widget::setGUIValue", key);
-		return;
-	}
-	guiValue->updateFromRendering = false;
+	assert(guiValue);
+	if (guiValue->value == value) return;
 	guiValue->value = value;
+	guiValue->updateFromRendering = false;
 }
 
 template<class ValueType>
-const ValueType* Widget::getGUIValue_rendering(const std::string& key) const {
+const ValueType& Widget::getGUIValue_rendering(const std::string& key) const {
 	std::lock_guard mux(guiValuesMux);
 	auto iter = guiValues.find(key);
-	if (iter == guiValues.end()) {
-		logError("Could not find {} in guiValues.", "Widget::getGUIValue_rendering", key);
-		return nullptr;
-	}
+	assert(iter != guiValues.end());
 	const GuiValue<ValueType>* guiValue = iter->second->cast<ValueType>();
-	if (guiValue == nullptr) {
-		logError("Could not cast value with key {}.", "Widget::getGUIValue_rendering", key);
-		return nullptr;
-	}
-	return &guiValue->renderingValue;
+	assert(guiValue);
+	return guiValue->renderingValue;
 }
 
 template<class ValueType>
 void Widget::setGUIValue_rendering(const std::string& key, const ValueType& value) {
 	std::lock_guard mux(guiValuesMux);
 	auto iter = guiValues.find(key);
-	if (iter == guiValues.end()) {
-		logError("Could not find {} in guiValues.", "Widget::setGUIValue_rendering", key);
-		return;
-	}
+	assert(iter != guiValues.end());
 	GuiValue<ValueType>* guiValue = iter->second->cast<ValueType>();
-	if (guiValue == nullptr) {
-		logError("Trying to change type of key {}.", "Widget::setGUIValue_rendering", key);
-		return;
-	}
+	assert(guiValue);
 	guiValue->renderingValue = value;
 }
 
@@ -165,15 +141,9 @@ template<class ValueType>
 ValueType* Widget::getGUIValueForImGui_rendering(const std::string& key) {
 	std::lock_guard mux(guiValuesMux);
 	auto iter = guiValues.find(key);
-	if (iter == guiValues.end()) {
-		logError("Could not find {} in guiValues.", "Widget::getGUIValueForImGui_rendering", key);
-		return nullptr;
-	}
+	assert(iter != guiValues.end());
 	GuiValue<ValueType>* guiValue = iter->second->cast<ValueType>();
-	if (guiValue == nullptr) {
-		logError("Could not cast value with key {}.", "Widget::getGUIValueForImGui_rendering", key);
-		return nullptr;
-	}
+	assert(guiValue);
 	return &guiValue->renderingValue;
 }
 

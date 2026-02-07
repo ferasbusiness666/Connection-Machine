@@ -49,7 +49,7 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 	setupGUIValue<float>("AspectRatio", 1, [&](const float& aspectRatio) { circuitView->getViewManager().setAspectRatio(aspectRatio); });
 	setupGUIValue<bool>("MouseLeftDown", false, [&](const bool& state) {
 		if (state) {
-			if (!valueOr(getGUIValue<bool>("MouseInView"), false)) return;
+			if (!getGUIValue<bool>("MouseInView")) return;
 			// std::lock_guard lock(Settings::getSettingsMapReadLock()); // we will be running these on main thread
 			if (getMainWindow().isPressingKeybind("Keybinds/Editing/Pick Block", true)) {
 				std::unique_ptr<CircuitView>& circuitView = this->circuitView;
@@ -83,7 +83,7 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 	});
 	setupGUIValue<bool>("MouseRightDown", false, [&](const bool& state) {
 		if (state) {
-			if (!valueOr(getGUIValue<bool>("MouseInView"), false)) return;
+			if (!getGUIValue<bool>("MouseInView")) return;
 			circuitView->getEventRegister().doEvent(PositionEvent("Tool Secondary Activate", circuitView->getViewManager().getPointerPosition()));
 		} else {
 			circuitView->getEventRegister().doEvent(PositionEvent("Tool Secondary Deactivate", circuitView->getViewManager().getPointerPosition()));
@@ -104,10 +104,25 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 		}
 	});
 	setupGUIValue<Vec2>("CircuitViewSize", Vec2(1, 1), nullptr);
-	setupGUIValue<bool>("CircuitViewIsHovered", false, nullptr);
 	setupGUIValue<bool>("CircuitViewIsFocused", false, nullptr);
 	setupGUIValue<float>("WindowScalingSize", getMainWindow().getWindowScalingSize(), nullptr);
 	setupGUIValue<FPosition>("MouseGridPos", circuitView->getViewManager().getPointerPosition(), nullptr);
+	setupGUIValue<double>("SimulatorRealTPS", 0, nullptr);
+	setupGUIValue<double>("SimulatorTargetTPS", 40, [this](const double& tps) {
+		if (circuitView->getSimulator()) {
+			circuitView->getSimulator()->setTickrate(tps);
+		}
+	});
+	setupGUIValue<bool>("SimulatorLimitSpeed", true, [this](const bool& doLimit) {
+		if (circuitView->getSimulator()) {
+			circuitView->getSimulator()->setUseTickrate(doLimit);
+		}
+	});
+	setupGUIValue<bool>("SimulatorPaused", true, [this](const bool& isPaused) {
+		if (circuitView->getSimulator()) {
+			circuitView->getSimulator()->setPause(isPaused);
+		}
+	});
 }
 
 CircuitViewWidget::~CircuitViewWidget() {
@@ -118,10 +133,10 @@ CircuitViewWidget::~CircuitViewWidget() {
 }
 
 void CircuitViewWidget::processEvent(SDL_Event& event) {
-	if (valueOr(getGUIValue<bool>("CircuitViewIsFocused"), false)) {
+	if (getGUIValue<bool>("CircuitViewIsFocused")) {
 
 	}
-	if (valueOr(getGUIValue<bool>("CircuitViewIsHovered"), false)) {
+	if (getGUIValue<bool>("MouseInView")) {
 		if (event.type == SDL_EVENT_MOUSE_WHEEL) {
 			Vec2 movement(-event.wheel.x * getMainWindow().getWindowScalingSize(), event.wheel.y * getMainWindow().getWindowScalingSize());
 			if (!Settings::get<SettingType::BOOL>("Keybinds/Camera/Scroll Panning", false)) {
@@ -130,8 +145,8 @@ void CircuitViewWidget::processEvent(SDL_Event& event) {
 				// do zoom
 				circuitView->getEventRegister().doEvent(DeltaEvent("view zoom", (float)(movement.y) / 15.f));
 			} else {
-				Vec2 size = valueOr(getGUIValue<Vec2>("CircuitViewSize"), Vec2(100, 100));
-				float scaleAmout = App::getDetlaTime() * 1000.f;
+				Vec2 size = getGUIValue<Vec2>("CircuitViewSize");
+				float scaleAmout = App::getDetlaTime() * 750.f;
 				circuitView->getEventRegister().doEvent(DeltaXYEvent(
 					"view pan",
 					movement.x / size.x * circuitView->getViewManager().getViewWidth() * scaleAmout,
@@ -209,19 +224,15 @@ void CircuitViewWidget::load() {
 
 void CircuitViewWidget::render() {
 	ImGui::SetNextWindowSize(ImVec2(400, 300), ImGuiCond_FirstUseEver);
-	ImGui::Begin(getWidgetIdStr().c_str());
 	bool isHovered = false;
 	bool isFocused = false;
-	bool isActive = false;
-	bool leftClick = false;
-	bool rightClick = false;
 	ImVec2 mousePos;
-	if (ImGui::BeginChild("circuitView")) {
+	if (ImGui::Begin(getWidgetIdStr().c_str())) {
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 		ImVec2 viewportWindowScreenPos = ImGui::GetCursorScreenPos();
 		ImVec2 viewportWindowPos = ImGui::GetCursorPos();
 		{
-			float windowScalingSize = valueOr(getGUIValue_rendering<float>("WindowScalingSize"), 1.f);
+			float windowScalingSize = getGUIValue_rendering<float>("WindowScalingSize");
 			MainRenderer::get().resizeViewport(circuitView->getViewportId(), { viewportPanelSize.x * windowScalingSize, viewportPanelSize.y * windowScalingSize });
 			VkDescriptorSet descriptorSet = MainRenderer::get().startViewportRendering(circuitView->getViewportId());
 			if (descriptorSet != VK_NULL_HANDLE) {
@@ -231,11 +242,10 @@ void CircuitViewWidget::render() {
 			}
 		}
 		ImGui::SetCursorPos(viewportWindowPos);
+		ImGui::SetNextItemAllowOverlap();
 		ImGui::InvisibleButton("circuitViewInvisibleButton", viewportPanelSize, ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight);
 		isHovered = ImGui::IsItemHovered();
 		if (isHovered) ImGui::FocusItem();
-		isActive = ImGui::IsItemActive();
-		isFocused = ImGui::IsItemFocused();
 		mousePos = ImGui::GetMousePos();
 		mousePos = ImVec2(mousePos.x - viewportWindowScreenPos.x, mousePos.y - viewportWindowScreenPos.y);
 
@@ -245,30 +255,53 @@ void CircuitViewWidget::render() {
 		setGUIValue_rendering("MousePosition", Vec2(mousePos.x / viewportPanelSize.x, mousePos.y / viewportPanelSize.y));
 		setGUIValue_rendering("MouseInView", isHovered);
 		setGUIValue_rendering("CircuitViewSize", Vec2(viewportPanelSize.x, viewportPanelSize.y));
-		setGUIValue_rendering("CircuitViewIsHovered", isHovered);
-		setGUIValue_rendering("CircuitViewIsFocused", isFocused);
+		setGUIValue_rendering("CircuitViewIsFocused", ImGui::IsItemFocused());
 
-		ImGui::SetCursorPos(viewportWindowPos);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.0f, 2.0f));
-		ImGui::BeginChild("circuitView", {0, 0}, ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_NoInputs);
+		ImDrawList* draw_list = ImGui::GetWindowDrawList();
+		draw_list->ChannelsSplit(2);
+		ImVec2 simControlsSize;
+		const int offset = 2;
+		const int padding = 4;
 		{
-			ImGui::PopStyleVar();
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-			ImGui::Text("Mouse: %s", fmt::to_string(valueOr(getGUIValue_rendering<FPosition>("MouseGridPos"), FPosition::getInvalid())).c_str());
-			// ImGui::Text("%s", fmt::format("isFocused: {}", isFocused).c_str());
-			// ImGui::Text("%s", fmt::format("isActive: {}", isActive).c_str());
-			// ImGui::Text("%s", fmt::format("mousePos: ({}, {})", mousePos.x, mousePos.y).c_str());
-			// ImGui::Text("%s", fmt::format("ImGui {} fps", (int)ImGui::GetIO().Framerate).c_str());
-			ImGui::PopStyleColor();
+			draw_list->ChannelsSetCurrent(1);
+			ImGui::SetCursorPos({ viewportWindowPos.x + padding + offset, viewportWindowPos.y + padding + offset });
+			ImGui::BeginGroup();
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+				ImGui::Text("Mouse: %s", fmt::to_string(getGUIValue_rendering<FPosition>("MouseGridPos")).c_str());
+
+				ImGui::Text("RTPS: %.2f", getGUIValue_rendering<double>("SimulatorRealTPS"));
+				ImGui::SameLine();
+				ImGui::PushItemWidth(50);
+				ImGui::InputDouble("TTPS", getGUIValueForImGui_rendering<double>("SimulatorTargetTPS"), 0, 0, "%.2f");
+				ImGui::PopItemWidth();
+				ImGui::Checkbox("Paused", getGUIValueForImGui_rendering<bool>("SimulatorPaused"));
+				ImGui::SameLine();
+				ImGui::Checkbox("Limit Speed", getGUIValueForImGui_rendering<bool>("SimulatorLimitSpeed"));
+				ImGui::PopStyleColor();
+			ImGui::EndGroup();
+			simControlsSize = ImGui::GetItemRectSize();
 		}
-		ImGui::EndChild();
+		{
+			draw_list->ChannelsSetCurrent(0);
+			ImGui::GetWindowDrawList()->AddRectFilled(
+				{ viewportWindowScreenPos.x + offset, viewportWindowScreenPos.y + offset },
+				{ viewportWindowScreenPos.x + simControlsSize.x + padding * 2 + offset, viewportWindowScreenPos.y + simControlsSize.y + padding * 2 + offset },
+				ImColor(0.f, 0.f, 0.f, 0.2f),
+				5.f
+			);
+		}
+		draw_list->ChannelsMerge();
 	}
-	ImGui::EndChild();
 	ImGui::End();
 }
 
 void CircuitViewWidget::update() {
-	if (valueOr(getGUIValue<bool>("CircuitViewIsFocused"), false)) {
+	setGUIValue<FPosition>("MouseGridPos", circuitView->getViewManager().getPointerPosition());
+	setGUIValue<double>("SimulatorRealTPS", circuitView->getSimulator() ? circuitView->getSimulator()->getRealTickrate() : 0);
+	setGUIValue<double>("SimulatorTargetTPS", circuitView->getSimulator() ? circuitView->getSimulator()->getTickrate() : 0);
+	setGUIValue<bool>("SimulatorLimitSpeed", circuitView->getSimulator() ? circuitView->getSimulator()->getUseTickrate() : true);
+	setGUIValue<bool>("SimulatorPaused", circuitView->getSimulator() ? circuitView->getSimulator()->isPause() : true);
+	if (getGUIValue<bool>("CircuitViewIsFocused")) {
 		if (getMainWindow().isPressingKeybind("Keybinds/Camera/Home")) {
 			 circuitView->getViewManager().focus(); }
 		if (getMainWindow().isPressingKeybind("Keybinds/Editing/Undo")) {

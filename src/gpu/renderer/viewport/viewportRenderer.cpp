@@ -538,13 +538,13 @@ std::tuple<VkDescriptorSet, VkSemaphore, std::vector<std::shared_ptr<void>>> Vie
 	}
 	renderToCommandBuffer(*frame, currentFrameIndex);
 
-	VkSemaphore semaphore = imageSwapchain.getImageSemaphores()[currentFrameIndex];
+	std::shared_ptr<ImageSwapchain::Semaphore> semaphore = imageSwapchain.getImageSemaphores()[currentFrameIndex];
 
 	// Submit to graphics queue
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = &semaphore;
+	submitInfo.pSignalSemaphores = &semaphore->semaphore;
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &frame->mainCommandBuffer;
 
@@ -564,7 +564,7 @@ std::tuple<VkDescriptorSet, VkSemaphore, std::vector<std::shared_ptr<void>>> Vie
 	}
 	// }
 	// device->waitIdle();
-	return { imguiTextures[currentFrameIndex]->descriptorSet, semaphore, { frame, imguiTextures[currentFrameIndex] } };
+	return { imguiTextures[currentFrameIndex]->descriptorSet, semaphore->semaphore, { frame, imguiTextures[currentFrameIndex], semaphore } };
 }
 
 void ViewportRenderer::renderToCommandBuffer(Frame& frame, uint32_t imageIndex) {

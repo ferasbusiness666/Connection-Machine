@@ -1,5 +1,10 @@
 #include "vulkanImageSwapchain.h"
+#include "gpu/mainRenderer.h"
 #include "gpu/renderer/frameManager.h"
+
+ImageSwapchain::Semaphore::~Semaphore() {
+	vkDestroySemaphore(MainRenderer::get().getVulkanInstance().getDevice()->getDevice(), semaphore, nullptr);
+}
 
 void ImageSwapchain::init(VulkanDevice* device) {
 	this->device = device;
@@ -9,7 +14,9 @@ void ImageSwapchain::init(VulkanDevice* device) {
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 	imageSemaphores.resize(FRAMES_IN_FLIGHT);
 	for (uint32_t i = 0; i < imageSemaphores.size(); ++i) {
-		vkCreateSemaphore(device->getDevice(), &semaphoreInfo, nullptr, &imageSemaphores[i]);
+		VkSemaphore semaphore;
+		vkCreateSemaphore(device->getDevice(), &semaphoreInfo, nullptr, &semaphore);
+		imageSemaphores[i] = std::make_shared<Semaphore>(semaphore);
 	}
 }
 
@@ -20,9 +27,6 @@ void ImageSwapchain::cleanup() {
 	framebuffers.clear();
 	images.clear();
 
-	for (uint32_t i = 0; i < imageSemaphores.size(); ++i) {
-		vkDestroySemaphore(device->getDevice(), imageSemaphores[i], nullptr);
-	}
 	imageSemaphores.clear();
 }
 
