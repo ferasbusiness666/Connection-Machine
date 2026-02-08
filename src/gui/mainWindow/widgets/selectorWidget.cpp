@@ -14,34 +14,32 @@ SelectorWidget::SelectorWidget(WidgetId widgetId, MainWindow& mainWindow) :
 		for (unsigned int type = 0; type < blockDataManager.maxBlockId(); type++) {
 			const BlockData* blockData = blockDataManager.getBlockData((BlockType)type);
 			if (blockData) {
-				const std::string& path = "Blocks/" + blockData->getPath() + "/" + blockData->getName();
-				paths.emplace((BlockType)type, path);
-				root.updateWith(path, (BlockType)type);
+				addPath("Blocks/" + blockData->getPath() + "/" + blockData->getName(), (BlockType)type);
 			}
 		}
 		// Procedural Circuits
 		for (const auto& iter : getBackend().getCircuitManager().getProceduralCircuitManager().getProceduralCircuits()) {
-			root.updateWith("Blocks/" + iter.second->getPath(), iter.second->getPath());
+			addPath("Blocks/" + iter.second->getPath(), iter.second->getUUID());
 		}
-		root.updateWith("Blocks/Other/Bus", "Other/Bus");
+		addPath("Blocks/Other/Bus", "Other/Bus");
 		// Tools
 		for (const auto& iter : getMainWindow().getToolManagerManager().getAllTools()) {
-			root.updateWith("Tools/" + iter.first, iter.first);
+			addPath("Tools/" + iter.first, iter.first);
 		}
 	}
 
 	dataUpdateEventReceiver.linkFunction("blockDataUpdate", [this](const DataUpdateEventManager::EventData* event) {
 		const DataUpdateEventManager::EventDataWithValue<BlockType>* data = event->cast<BlockType>();
 		assert(data);
-		std::string path = getBackend().getBlockDataManager().getBlockData(data->get())->getPath();
+		const BlockData* blockData = getBackend().getBlockDataManager().getBlockData(data->get());
 		std::lock_guard mux(pathsMux);
-		paths.insert_or_assign(data->get(), path);
+		addPath("Blocks/" + blockData->getPath() + "/" +blockData->getName(), data->get());
 	});
 	dataUpdateEventReceiver.linkFunction("proceduralCircuitPathUpdate", [this](const DataUpdateEventManager::EventData* event) {
 		const DataUpdateEventManager::EventDataWithValue<std::string>* data = event->cast<std::string>();
 		assert(data);
 		SharedProceduralCircuit proceduralCircuit = getBackend().getCircuitManager().getProceduralCircuitManager().getProceduralCircuit(data->get());
-		root.updateWith("Blocks/" + proceduralCircuit->getPath(), proceduralCircuit->getPath());
+		addPath("Blocks/" + proceduralCircuit->getPath(), proceduralCircuit->getPath());
 	});
 	dataUpdateEventReceiver.linkFunction("setToolModeUpdate", [](const DataUpdateEventManager::EventData* event) {
 
@@ -104,6 +102,18 @@ SelectorWidget::SelectorWidget(WidgetId widgetId, MainWindow& mainWindow) :
 	// setupGUIValue<std::string>("selectedToolMode", BlockType::NONE, [this](const BlockType& blockType) {
 	// 	getMainWindow().getToolManagerManager().setBlock(blockType);
 	// });
+}
+
+void SelectorWidget::addPath(const std::string& path, const std::variant<BlockType, std::string>& data) {
+	if (std::holds_alternative<BlockType>(data)) logInfo("adding {}: {}", "", path, std::get<BlockType>(data));
+	else logInfo("adding {}: {}", "", path, std::get<std::string>(data));
+	auto pair = paths.emplace(data, path);
+	if (!pair.second) {
+		if (pair.first->second == path) return;
+		root.removePath(pair.first->second);
+		pair.first->second = path;
+	}
+	root.addPath(path, data);
 }
 
 void SelectorWidget::createTree(const SelectorTreeNode& node, const std::string& rootString) {

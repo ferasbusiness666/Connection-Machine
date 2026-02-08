@@ -7,14 +7,27 @@
 
 class SelectorWidget : public Widget {
 	struct SelectorTreeNode {
-		void updateWith(const std::string_view& path, std::variant<BlockType, std::string> data) {
+		void addPath(const std::string_view& path, const std::variant<BlockType, std::string>& data) {
 			size_t slashPos = path.find_first_of("/");
 			if (slashPos == std::string::npos) {
 				auto pair = children.emplace(path, SelectorTreeNode());
 				pair.first->second.data = data;
 			} else {
 				auto pair = children.emplace(path.substr(0, slashPos), SelectorTreeNode());
-				pair.first->second.updateWith(path.substr(slashPos + 1), data);
+				pair.first->second.addPath(path.substr(slashPos + 1), data);
+			}
+		}
+		void removePath(const std::string_view& path) {
+			size_t slashPos = path.find_first_of("/");
+			if (slashPos == std::string::npos) {
+				assert(children.at(std::string(path)).children.empty());
+				assert(children.at(std::string(path)).data.has_value());
+				bool deleted = children.erase(std::string(path));
+				assert(deleted);
+			} else {
+				auto iter = children.find(std::string(path.substr(0, slashPos)));
+				iter->second.removePath(path.substr(slashPos + 1));
+				if (iter->second.children.empty()) children.erase(iter);
 			}
 		}
 		std::optional<std::variant<BlockType, std::string>> data = std::nullopt;
@@ -24,6 +37,8 @@ public:
 	SelectorWidget(WidgetId widgetId, MainWindow& mainWindow);
 	~SelectorWidget();
 private:
+	void addPath(const std::string& path, const std::variant<BlockType, std::string>& data);
+
 	void createTree(const SelectorTreeNode& node, const std::string& rootString = "");
 	void render() override final;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
