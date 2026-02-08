@@ -657,7 +657,6 @@ void ViewportRenderer::createImages() {
 			imGuiRenderer,
 			std::vector<std::shared_ptr<void>>{ imageSwapchain.getImages()[i], sampler }
 		);
-		logInfo("{} made {}", "", (unsigned long long)&imGuiRenderer, (unsigned long long)imguiTextures[i]->descriptorSet);
 	}
 
 	imageReady.store(true);

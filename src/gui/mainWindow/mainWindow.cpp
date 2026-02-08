@@ -153,6 +153,12 @@ void MainWindow::render() {
 			if (ImGui::MenuItem("New Circuit", "Ctrl+N")) {
 				App::runOnMain([this]() { environment.getBackend().createCircuit(); });
 			}
+			if (ImGui::MenuItem("New Viewport")) {
+				App::runOnMain([this]() {
+					WidgetId widgetId = widgetIdProvider.getNewId();
+					widgets.emplace(widgetId, std::make_unique<CircuitViewWidget>(widgetId, *this));
+				});
+			}
 			if (ImGui::MenuItem("New Window")) {
 				App::runOnMain([this]() { App::makeWindow<MainWindow>(); });
 			}

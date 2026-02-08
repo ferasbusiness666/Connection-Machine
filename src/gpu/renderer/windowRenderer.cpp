@@ -108,10 +108,10 @@ void WindowRenderer::renderLoop() {
 
 		// wait semaphore
 		semaphoreForThisFrame.push_back(frame->acquireSemaphore);
-		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+		std::vector<VkPipelineStageFlags> waitStages(semaphoreForThisFrame.size(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 		submitInfo.waitSemaphoreCount = semaphoreForThisFrame.size();
 		submitInfo.pWaitSemaphores = semaphoreForThisFrame.data();
-		submitInfo.pWaitDstStageMask = waitStages;
+		submitInfo.pWaitDstStageMask = waitStages.data();
 
 		// command buffers
 		submitInfo.commandBufferCount = 1;
