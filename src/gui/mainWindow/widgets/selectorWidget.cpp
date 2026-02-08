@@ -12,9 +12,9 @@ SelectorWidget::SelectorWidget(WidgetId widgetId, MainWindow& mainWindow) :
 		// Blocks
 		const BlockDataManager& blockDataManager = getBackend().getBlockDataManager();
 		for (unsigned int type = 0; type < blockDataManager.maxBlockId(); type++) {
-			const BlockData* blockData = blockDataManager.getBlockData((BlockType)type);
+			const BlockData* blockData = blockDataManager.getBlockData((BlockType)(type + 1));
 			if (blockData) {
-				addPath("Blocks/" + blockData->getPath() + "/" + blockData->getName(), (BlockType)type);
+				addPath("Blocks/" + blockData->getPath() + "/" + blockData->getName(), (BlockType)(type + 1));
 			}
 		}
 		// Procedural Circuits
