@@ -74,14 +74,42 @@ AllocatedImage::AllocatedImage(VulkanDevice* device, VkExtent3D size, VkFormat f
     imageViewInfo.subresourceRange.layerCount = arrayLayers;
     imageViewInfo.subresourceRange.aspectMask = this->aspect;
 
-    VkResult r2 = vkCreateImageView(device->getDevice(), &imageViewInfo, nullptr, &this->imageView);
-    if (r2 != VK_SUCCESS) {
+    result = vkCreateImageView(device->getDevice(), &imageViewInfo, nullptr, &this->imageView);
+    if (result != VK_SUCCESS) {
         std::stringstream ss;
-        ss << "vkCreateImageView failed, VkResult = " << r2;
+        ss << "vkCreateImageView failed, VkResult = " << result;
         // cleanup image/allocation before throwing
         vmaDestroyImage(allocator, this->image, this->allocation);
         throwFatalError(ss.str());
     }
+
+	for (unsigned int i = 0; i < arrayLayers; i++) {
+		VkImageViewCreateInfo imageViewInfo{};
+		imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		imageViewInfo.pNext = nullptr;
+		imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		imageViewInfo.image = this->image;
+		imageViewInfo.format = format;
+		imageViewInfo.subresourceRange.baseMipLevel = 0;
+		imageViewInfo.subresourceRange.levelCount = this->mipLevels;
+		imageViewInfo.subresourceRange.baseArrayLayer = i;
+		imageViewInfo.subresourceRange.layerCount = 1;
+		imageViewInfo.subresourceRange.aspectMask = this->aspect;
+		layerViews.emplace_back();
+		result = vkCreateImageView(device->getDevice(), &imageViewInfo, nullptr, &layerViews.back());
+		if (result != VK_SUCCESS) if (result != VK_SUCCESS) {
+			layerViews.pop_back();
+			std::stringstream ss;
+			ss << "vkCreateImageView failed, VkResult = " << result;
+			// cleanup image/allocation before throwing
+			vkDestroyImageView(device->getDevice(), imageView, nullptr);
+			for (VkImageView layerView : layerViews) {
+				vkDestroyImageView(device->getDevice(), layerView, nullptr);
+			}
+			vmaDestroyImage(allocator, this->image, this->allocation);
+			throwFatalError(ss.str());
+		}
+	}
 }
 AllocatedImage::AllocatedImage(VulkanDevice* device, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped, VkSampleCountFlagBits samples) {
     this->device = device;
@@ -195,6 +223,9 @@ AllocatedImage::AllocatedImage(VulkanDevice* device, void* data, VkExtent3D size
 }
 AllocatedImage::~AllocatedImage() {
 	vkDestroyImageView(device->getDevice(), imageView, nullptr);
+	for (VkImageView layerView : layerViews) {
+		vkDestroyImageView(device->getDevice(), layerView, nullptr);
+	}
     vmaDestroyImage(device->getAllocator(), image, allocation);
 }
 

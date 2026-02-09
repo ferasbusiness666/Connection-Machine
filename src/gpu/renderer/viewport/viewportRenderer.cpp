@@ -12,19 +12,6 @@
 #include <tracy/Tracy.hpp>
 #endif
 
-ViewportRenderer::ImGuiDescriptorSet::ImGuiDescriptorSet(
-	VkDescriptorSet descriptorSet,
-	ImGuiRenderer& imGuiRenderer,
-	const std::vector<std::shared_ptr<void>>& lifetimeObjects
-) : descriptorSet(descriptorSet), lifetimeObjects(lifetimeObjects), imGuiRenderer(imGuiRenderer) { }
-ViewportRenderer::ImGuiDescriptorSet::~ImGuiDescriptorSet(){
-	imGuiRenderer.addPostFrameWork(
-		[descriptorSet = this->descriptorSet]() {
-			ImGui_ImplVulkan_RemoveTexture(descriptorSet);
-		}
-	);
-}
-
 ViewportRenderer::Sampler::Sampler(VkSampler sampler) : sampler(sampler) { }
 ViewportRenderer::Sampler::~Sampler() { vkDestroySampler(MainRenderer::get().getVulkanInstance().getDevice()->getDevice(), sampler, nullptr); }
 
@@ -652,7 +639,7 @@ void ViewportRenderer::createImages() {
 	imguiTextures.resize(FRAMES_IN_FLIGHT);
 	for (unsigned int i = 0; i < imguiTextures.size(); i++) {
 		// std::lock_guard lock(imGuiRenderer.setActiveContext()); // not needed this is only called from the render func of a widget
-		imguiTextures[i] = std::make_shared<ImGuiDescriptorSet>(
+		imguiTextures[i] = std::make_shared<ImGuiRenderer::ImGuiDescriptorSet>(
 			ImGui_ImplVulkan_AddTexture(sampler->sampler, imageSwapchain.getImages()[i]->imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
 			imGuiRenderer,
 			std::vector<std::shared_ptr<void>>{ imageSwapchain.getImages()[i], sampler }

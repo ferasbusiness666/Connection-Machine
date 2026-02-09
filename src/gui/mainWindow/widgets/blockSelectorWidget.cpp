@@ -1,4 +1,4 @@
-#include "selectorWidget.h"
+#include "blockSelectorWidget.h"
 
 #include "../mainWindow.h"
 
@@ -6,7 +6,7 @@
 #include "gui/mainWindow/widgets/circuitViewWidget.h"
 #include "imgui/imgui_stdlib.h"
 
-SelectorWidget::SelectorWidget(WidgetId widgetId, MainWindow& mainWindow) :
+BlockSelectorWidget::BlockSelectorWidget(WidgetId widgetId, MainWindow& mainWindow) :
 	Widget(widgetId, mainWindow), dataUpdateEventReceiver(getBackend().getDataUpdateEventManager()) {
 	{
 		// =================================== Init all tree data ===================================
@@ -31,9 +31,9 @@ SelectorWidget::SelectorWidget(WidgetId widgetId, MainWindow& mainWindow) :
 		}
 		addPath("Blocks/Other/Bus", "Other/Bus");
 		// Tools
-		for (const auto& iter : getMainWindow().getToolManagerManager().getAllTools()) {
-			addPath("Tools/" + iter.first, iter.first);
-		}
+		// for (const auto& iter : getMainWindow().getToolManagerManager().getAllTools()) {
+		// 	addPath("Tools/" + iter.first, iter.first);
+		// }
 	}
 
 	dataUpdateEventReceiver.linkFunction("blockDataUpdate", [this](const DataUpdateEventManager::EventData* event) {
@@ -114,7 +114,7 @@ SelectorWidget::SelectorWidget(WidgetId widgetId, MainWindow& mainWindow) :
 	// });
 }
 
-void SelectorWidget::addPath(const std::string& path, const std::variant<BlockType, std::string, std::pair<BlockType, circuit_id_t>>& data) {
+void BlockSelectorWidget::addPath(const std::string& path, const std::variant<BlockType, std::string, std::pair<BlockType, circuit_id_t>>& data) {
 	auto pair = paths.emplace(data, path);
 	if (!pair.second) {
 		if (pair.first->second == path) return;
@@ -124,75 +124,96 @@ void SelectorWidget::addPath(const std::string& path, const std::variant<BlockTy
 	root.addPath(path, data);
 }
 
-void SelectorWidget::createTree(const SelectorTreeNode& node, const std::string& rootString) {
-	for (auto& pair : node.children) {
-		if (pair.second.data.has_value()) {
-			// leaf (never children)
-			ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf;
-			if (std::holds_alternative<BlockType>(pair.second.data.value())) {
-				assert(rootString == "Blocks");
-				if (getGUIValue_rendering<BlockType>("selectedBlockType") == std::get<BlockType>(pair.second.data.value())) {
-					flags |= ImGuiTreeNodeFlags_Selected;
-				}
-			} else if (std::holds_alternative<std::pair<BlockType, circuit_id_t>>(pair.second.data.value())) {
-				assert(rootString == "Blocks");
-				const std::pair<BlockType, circuit_id_t>& blockTypeCircuitIdPair = std::get<std::pair<BlockType, circuit_id_t>>(pair.second.data.value());
-				if (getGUIValue_rendering<BlockType>("selectedBlockType") == blockTypeCircuitIdPair.second) {
-					flags |= ImGuiTreeNodeFlags_Selected;
-				}
-			} else if (rootString == "Blocks") {
-				if (getGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus") == std::get<std::string>(pair.second.data.value())) {
-					flags |= ImGuiTreeNodeFlags_Selected;
-				};
-			} else if (rootString == "Tools") {
-				assert(std::holds_alternative<std::string>(pair.second.data.value()));
-				if (getGUIValue_rendering<std::string>("selectedTool") == std::get<std::string>(pair.second.data.value())) {
-					flags |= ImGuiTreeNodeFlags_Selected;
-				}
-			}
+void BlockSelectorWidget::createTree(const SelectorTreeNode& node, const std::string& rootString) {
+	assert(!node.children.empty());
+	if (node.children.begin()->second.data.has_value()) {
 
-			if (ImGui::TreeNodeEx(pair.first.c_str(), flags)) {
-				if (ImGui::IsItemClicked()) {
-					if (std::holds_alternative<BlockType>(pair.second.data.value())) {
-						logInfo(std::get<BlockType>(pair.second.data.value()));
-						assert(rootString == "Blocks");
-						setGUIValue_rendering<BlockType>("selectedBlockType", std::get<BlockType>(pair.second.data.value()));
-						setGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus", "");
-					} else if (std::holds_alternative<std::pair<BlockType, circuit_id_t>>(pair.second.data.value())) {
-						logInfo(std::get<std::pair<BlockType, circuit_id_t>>(pair.second.data.value()).second);
-						assert(rootString == "Blocks");
-						const std::pair<BlockType, circuit_id_t>& blockTypeCircuitIdPair = std::get<std::pair<BlockType, circuit_id_t>>(pair.second.data.value());
-						setGUIValue_rendering<BlockType>("selectedBlockType", blockTypeCircuitIdPair.first);
-						setGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus", "");
-					} else if (rootString == "Blocks") {
-						logInfo(std::get<std::string>(pair.second.data.value()));
-						const std::string& data = std::get<std::string>(pair.second.data.value());
-						setGUIValue_rendering<BlockType>("selectedBlockType", BlockType::NONE);
-						setGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus", data);
-					} else if (rootString == "Tools") {
-						assert(std::holds_alternative<std::string>(pair.second.data.value()));
-						setGUIValue_rendering("selectedTool", std::get<std::string>(pair.second.data.value()));
+		// float buttonSize = 75.0f;
+		// float spacing = ImGui::GetStyle().ItemSpacing.x;
+		// float availWidth = ImGui::GetContentRegionAvail().x;
+
+		// int columns = (int)(availWidth / (buttonSize + spacing));
+		// columns = columns < 1 ? 1 : columns;
+
+		// if (ImGui::BeginTable("ButtonGrid", columns, ImGuiTableFlags_SizingStretchSame)) {
+			for (auto& pair : node.children) {
+				// ImGui::TableNextColumn();
+				// VkDescriptorSet descriptorSet = MainRenderer::get().getBlockTextureArrayLayer(getMainWindow().getWindowId(), 0);
+				// if (descriptorSet == VK_NULL_HANDLE) continue;
+				// ImGui::ImageButton(pair.first.c_str(), descriptorSet, { buttonSize , buttonSize });
+				// ImGui::Button(pair.first.c_str(), ImVec2(-FLT_MIN, 40));
+
+				// leaf (never children)
+				ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf;
+				if (std::holds_alternative<BlockType>(pair.second.data.value())) {
+					assert(rootString == "Blocks");
+					if (getGUIValue_rendering<BlockType>("selectedBlockType") == std::get<BlockType>(pair.second.data.value())) {
+						flags |= ImGuiTreeNodeFlags_Selected;
 					}
-				}
-				if (std::holds_alternative<std::pair<BlockType, circuit_id_t>>(pair.second.data.value())) {
-					ImGui::SameLine();
-					if (ImGui::Button("View")) {
-						const std::pair<BlockType, circuit_id_t>& blockTypeCircuitIdPair = std::get<std::pair<BlockType, circuit_id_t>>(pair.second.data.value());
-						App::runOnMain([this, circuitId = blockTypeCircuitIdPair.second]() {
-							CircuitViewWidget& circuitViewWidget = getMainWindow().createWidget<CircuitViewWidget>();
-							for (auto& sim : getMainWindow().getEnvironment().getBackend().getSimulatorManager().getSimulators()) {
-								if (sim.second->getCircuitId() == circuitId) {
-									circuitViewWidget.getCircuitView().setSimulator(sim.second->getSimulatorId());
-									return;
+				} else if (std::holds_alternative<std::pair<BlockType, circuit_id_t>>(pair.second.data.value())) {
+					assert(rootString == "Blocks");
+					const std::pair<BlockType, circuit_id_t>& blockTypeCircuitIdPair = std::get<std::pair<BlockType, circuit_id_t>>(pair.second.data.value());
+					if (getGUIValue_rendering<BlockType>("selectedBlockType") == blockTypeCircuitIdPair.second) {
+						flags |= ImGuiTreeNodeFlags_Selected;
+					}
+				} else if (rootString == "Blocks") {
+					if (getGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus") == std::get<std::string>(pair.second.data.value())) {
+						flags |= ImGuiTreeNodeFlags_Selected;
+					};
+				}/* else if (rootString == "Tools") {
+					assert(std::holds_alternative<std::string>(pair.second.data.value()));
+					if (getGUIValue_rendering<std::string>("selectedTool") == std::get<std::string>(pair.second.data.value())) {
+						flags |= ImGuiTreeNodeFlags_Selected;
+					}
+				}*/
+
+				if (ImGui::TreeNodeEx(pair.first.c_str(), flags)) {
+					if (ImGui::IsItemClicked()) {
+						if (std::holds_alternative<BlockType>(pair.second.data.value())) {
+							logInfo(std::get<BlockType>(pair.second.data.value()));
+							assert(rootString == "Blocks");
+							setGUIValue_rendering<BlockType>("selectedBlockType", std::get<BlockType>(pair.second.data.value()));
+							setGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus", "");
+						} else if (std::holds_alternative<std::pair<BlockType, circuit_id_t>>(pair.second.data.value())) {
+							logInfo(std::get<std::pair<BlockType, circuit_id_t>>(pair.second.data.value()).second);
+							assert(rootString == "Blocks");
+							const std::pair<BlockType, circuit_id_t>& blockTypeCircuitIdPair = std::get<std::pair<BlockType, circuit_id_t>>(pair.second.data.value());
+							setGUIValue_rendering<BlockType>("selectedBlockType", blockTypeCircuitIdPair.first);
+							setGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus", "");
+						} else if (rootString == "Blocks") {
+							logInfo(std::get<std::string>(pair.second.data.value()));
+							const std::string& data = std::get<std::string>(pair.second.data.value());
+							setGUIValue_rendering<BlockType>("selectedBlockType", BlockType::NONE);
+							setGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus", data);
+						}/* else if (rootString == "Tools") {
+							assert(std::holds_alternative<std::string>(pair.second.data.value()));
+							setGUIValue_rendering("selectedTool", std::get<std::string>(pair.second.data.value()));
+						}*/
+					}
+					if (std::holds_alternative<std::pair<BlockType, circuit_id_t>>(pair.second.data.value())) {
+						ImGui::SameLine();
+						if (ImGui::Button("View")) {
+							const std::pair<BlockType, circuit_id_t>& blockTypeCircuitIdPair = std::get<std::pair<BlockType, circuit_id_t>>(pair.second.data.value());
+							App::runOnMain([this, circuitId = blockTypeCircuitIdPair.second]() {
+								CircuitViewWidget& circuitViewWidget = getMainWindow().createWidget<CircuitViewWidget>();
+								for (auto& sim : getMainWindow().getEnvironment().getBackend().getSimulatorManager().getSimulators()) {
+									if (sim.second->getCircuitId() == circuitId) {
+										circuitViewWidget.getCircuitView().setSimulator(sim.second->getSimulatorId());
+										return;
+									}
 								}
-							}
-							circuitViewWidget.getCircuitView().setCircuit(circuitId);
-						});
+								circuitViewWidget.getCircuitView().setCircuit(circuitId);
+							});
+						}
 					}
+					ImGui::TreePop();
 				}
-				ImGui::TreePop();
 			}
-		} else {
+			// ImGui::EndTable();
+		// }
+	} else {
+		for (auto& pair : node.children) {
+			assert(!pair.second.data.has_value());
 			// non-leaf (sometimes children)
 			if (ImGui::TreeNodeEx(pair.first.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
 				if (rootString.empty()) {
@@ -209,8 +230,8 @@ void SelectorWidget::createTree(const SelectorTreeNode& node, const std::string&
 unsigned int slowStep = 1;
 unsigned int fastStep = 10;
 
-SelectorWidget::~SelectorWidget() { }
-void SelectorWidget::render() {
+BlockSelectorWidget::~BlockSelectorWidget() { }
+void BlockSelectorWidget::render() {
 	ImGui::SetNextWindowDockID(getMainWindow().getDockLeftId(), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(100, 300), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin(getWidgetIdStr().c_str())) {

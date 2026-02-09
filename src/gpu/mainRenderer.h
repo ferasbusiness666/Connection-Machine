@@ -75,6 +75,8 @@ public:
 	void resetCircuit(ViewportId viewportId);
 	void updateSimulatorIds(ViewportId viewportId, const std::vector<SimulatorMappingUpdate>& simulatorMappingUpdates);
 
+	VkDescriptorSet getBlockTextureArrayLayer(WindowId windowId, unsigned int layerIndex);
+
 	// elements
 	ElementId addSelectionObjectElement(ViewportId viewportId, const SelectionObjectElement& selection);
 	ElementId addSelectionElement(ViewportId viewportId, const SelectionElement& selection);

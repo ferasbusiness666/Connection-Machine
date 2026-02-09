@@ -17,6 +17,20 @@ static void check_vk_result(VkResult err) {
         abort();
 }
 
+ImGuiRenderer::ImGuiDescriptorSet::ImGuiDescriptorSet(
+	VkDescriptorSet descriptorSet,
+	ImGuiRenderer& imGuiRenderer,
+	const std::vector<std::shared_ptr<void>>& lifetimeObjects
+) : descriptorSet(descriptorSet), lifetimeObjects(lifetimeObjects), imGuiRenderer(imGuiRenderer) { }
+
+ImGuiRenderer::ImGuiDescriptorSet::~ImGuiDescriptorSet() {
+	imGuiRenderer.addPostFrameWork(
+		[descriptorSet = this->descriptorSet]() {
+			ImGui_ImplVulkan_RemoveTexture(descriptorSet);
+		}
+	);
+}
+
 ImGuiRenderer::ImGuiRenderer(SDL_Window& window, VkRenderPass renderPass, uint32_t framesInFlight) :
 	mainWindow(window), renderPass(renderPass), framesInFlight(framesInFlight), imguiDescriptorPool(VK_NULL_HANDLE) {
 	std::lock_guard<std::mutex> lock(mutex);

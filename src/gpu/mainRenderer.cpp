@@ -300,6 +300,18 @@ void MainRenderer::updateSimulatorIds(ViewportId viewportId, const std::vector<S
 	iter->second.getChunker().updateSimulatorIds(simulatorMappingUpdates);
 }
 
+VkDescriptorSet MainRenderer::getBlockTextureArrayLayer(WindowId windowId, unsigned int layerIndex) {
+	auto iter = windowRenderers.find(windowId);
+	if (iter == windowRenderers.end()) {
+		logError("Failed to call getBlockTextureArrayLayer on non existent window {}.", "MainRenderer", windowId);
+		return VK_NULL_HANDLE;
+	}
+	auto [descriptorSet, lifetimeObjects] = iter->second.getBlockTextureArrayLayer_ImGui(layerIndex);
+	iter->second.addLifetimeObjects(lifetimeObjects);
+	return descriptorSet;
+}
+
+
 ElementId MainRenderer::addSelectionObjectElement(ViewportId viewportId, const SelectionObjectElement& selection) {
 	auto iter = viewportRenderers.find(viewportId);
 	if (iter == viewportRenderers.end()) {

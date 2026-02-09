@@ -12,6 +12,7 @@ struct AllocatedImage {
 	~AllocatedImage();
     VkImage image;
     VkImageView imageView;
+	std::vector<VkImageView> layerViews;
     VmaAllocation allocation;
     VkExtent3D imageExtent;
     VkFormat imageFormat;

@@ -11,6 +11,14 @@ class VulkanDevice;
 
 class ImGuiRenderer {
 public:
+	struct ImGuiDescriptorSet {
+		ImGuiDescriptorSet(VkDescriptorSet descriptorSet, ImGuiRenderer& imGuiRenderer, const std::vector<std::shared_ptr<void>>& lifetimeObjects = {});
+		~ImGuiDescriptorSet();
+		VkDescriptorSet descriptorSet;
+		std::vector<std::shared_ptr<void>> lifetimeObjects;
+		ImGuiRenderer& imGuiRenderer;
+	};
+
 	ImGuiRenderer(SDL_Window& window, VkRenderPass renderPass, uint32_t framesInFlight);
 	~ImGuiRenderer();
 

@@ -7,7 +7,7 @@
 #include "environment/environment.h"
 #include "gui/helper/keybindHelpers.h"
 #include "gui/mainWindow/widgets/circuitViewWidget.h"
-#include "gui/mainWindow/widgets/selectorWidget.h"
+#include "gui/mainWindow/widgets/blockSelectorWidget.h"
 #include "imgui/imgui_internal.h"
 
 MainWindow::MainWindow() : SdlWindow("Connection Machine"), environment(true), toolManagerManager(environment), widgetIdProvider(1) /*, popUpManager(*this)*/ {
@@ -21,7 +21,7 @@ MainWindow::MainWindow() : SdlWindow("Connection Machine"), environment(true), t
 	});
 
 	createWidget<CircuitViewWidget>().newCircuit();
-	createWidget<SelectorWidget>();
+	createWidget<BlockSelectorWidget>();
 }
 
 MainWindow::~MainWindow() = default;

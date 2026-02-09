@@ -4,6 +4,7 @@
 #include <glm/ext/matrix_float4x4.hpp>
 
 #include "gpu/abstractions/vulkanImageSwapchain.h"
+#include "gpu/renderer/imgui/imGuiRenderer.h"
 #include "logic/chunking/vulkanChunker.h"
 #include "gpu/renderer/frameManager.h"
 #include "gpu/mainRendererDefs.h"
@@ -21,13 +22,6 @@ struct ViewportViewData {
 };
 
 class ViewportRenderer {
-	struct ImGuiDescriptorSet {
-		ImGuiDescriptorSet(VkDescriptorSet descriptorSet, ImGuiRenderer& imGuiRenderer, const std::vector<std::shared_ptr<void>>& lifetimeObjects = {});
-		~ImGuiDescriptorSet();
-		VkDescriptorSet descriptorSet;
-		std::vector<std::shared_ptr<void>> lifetimeObjects;
-		ImGuiRenderer& imGuiRenderer;
-	};
 	struct Sampler {
 		Sampler(VkSampler sampler);
 		~Sampler();
@@ -127,7 +121,7 @@ private:
 	std::atomic<int> currentBorrowedImage = -1;
 	std::optional<AllocatedImage> msaaImage;
 	ImageSwapchain imageSwapchain;
-	std::vector<std::shared_ptr<ImGuiDescriptorSet>> imguiTextures;  // ImGui descriptor sets
+	std::vector<std::shared_ptr<ImGuiRenderer::ImGuiDescriptorSet>> imguiTextures;  // ImGui descriptor sets
 	std::atomic<bool> imageReady = false;
 	std::atomic<unsigned int> imagesReady = 0;
 	std::atomic<bool> updateViewData = true;

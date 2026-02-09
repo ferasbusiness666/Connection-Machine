@@ -24,9 +24,22 @@ public:
 
 	void addSemaphore(VkSemaphore semaphore, const std::vector<std::shared_ptr<void>>& lifetimeObjects) {
 		semaphoreForThisFrame.push_back(semaphore);
+		addLifetimeObjects(lifetimeObjects);
+	}
+	void addLifetimeObjects(const std::vector<std::shared_ptr<void>>& lifetimeObjects) {
 		for (const std::shared_ptr<void>& obj : lifetimeObjects) frames.getCurrentFrame()->lifetime.push(obj);
 	}
 	VulkanDevice* getDevice() { return device; }
+
+	std::pair<VkDescriptorSet, std::vector<std::shared_ptr<void>>> getBlockTextureArrayLayer_ImGui(unsigned int layer) {
+		updateImGuiBlockTextureArrayLayers(); // just make sure its up to date
+		std::lock_guard lock(imGuiBlockTextureArrayLayersMux);
+		if (imGuiBlockTextureArrayLayers.size() <= layer) {
+			logError("layer index of {} out of range for imGuiBlockTextureArrayLayers with {} layers", "WindowRenderer::getBlockTextureArrayLayer_ImGui", layer, imGuiBlockTextureArrayLayers.size());
+			return { VK_NULL_HANDLE, {} };
+		}
+		return std::make_pair(imGuiBlockTextureArrayLayers[layer]->descriptorSet, std::vector<std::shared_ptr<void>>{ imGuiBlockTextureArrayLayers[layer] } );
+	}
 
 private:
 	void createColorResources();
@@ -58,6 +71,11 @@ private:
 	std::atomic<bool> running = false;
 	std::atomic<bool> renderLoopStopped = true;
 	void renderLoop();
+
+	void updateImGuiBlockTextureArrayLayers();
+	std::mutex imGuiBlockTextureArrayLayersMux;
+	std::vector<std::shared_ptr<ImGuiRenderer::ImGuiDescriptorSet>> imGuiBlockTextureArrayLayers;
+	std::shared_ptr<BlockTextureArray> blockTextureArrayImage;
 
 	// handles
 	SdlWindow* sdlWindow;

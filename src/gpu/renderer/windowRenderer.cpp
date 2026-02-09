@@ -1,5 +1,6 @@
 #include "windowRenderer.h"
 #include "app.h"
+#include "imgui/imgui_impl_vulkan.h"
 
 #ifdef TRACY_PROFILER
 #include <tracy/Tracy.hpp>
@@ -32,6 +33,7 @@ WindowRenderer::WindowRenderer(WindowId windowId, SdlWindow* sdlWindow) : window
 	running.store(true);
 	renderLoopStopped.store(false);
 	renderThread = std::thread(&WindowRenderer::renderLoop, this);
+
 }
 
 WindowRenderer::~WindowRenderer() {
@@ -296,4 +298,26 @@ void WindowRenderer::recreateSwapchain() {
 void WindowRenderer::setImGuiRenderFunc(std::function<void()> imGuiRenderFunc) {
 	std::lock_guard<std::mutex> lock(imGuiRenderFuncMux);
 	this->imGuiRenderFunc = imGuiRenderFunc;
+}
+
+void WindowRenderer::updateImGuiBlockTextureArrayLayers() {
+	std::lock_guard lock(imGuiBlockTextureArrayLayersMux);
+	if (blockTextureArrayImage == nullptr) {
+		assert(imGuiBlockTextureArrayLayers.empty());
+		blockTextureArrayImage = MainRenderer::get().getVulkanInstance().getDevice()->getBlockTextureManager().getTextureArray();
+	} else {
+		std::shared_ptr<BlockTextureArray> image = MainRenderer::get().getVulkanInstance().getDevice()->getBlockTextureManager().getTextureArray();
+		if (blockTextureArrayImage == image) return; // image has not changed
+		imGuiBlockTextureArrayLayers.clear();
+		blockTextureArrayImage = image;
+	}
+	if (blockTextureArrayImage == nullptr) return;
+	if (!blockTextureArrayImage->image.has_value()) return;
+	for (unsigned int i = 0; i < blockTextureArrayImage->image->arrayLayers; i++) {
+		imGuiBlockTextureArrayLayers.emplace_back(std::make_shared<ImGuiRenderer::ImGuiDescriptorSet>(
+			ImGui_ImplVulkan_AddTexture(blockTextureArrayImage->sampler, blockTextureArrayImage->image->layerViews[i], VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
+			imGuiRenderer.value(),
+			std::vector<std::shared_ptr<void>>{ blockTextureArrayImage }
+		));
+	}
 }

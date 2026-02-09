@@ -6,7 +6,7 @@
 #include "backend/container/block/blockDefs.h"
 #include "backend/dataUpdateEventManager.h"
 
-class SelectorWidget : public Widget {
+class BlockSelectorWidget : public Widget {
 	struct SelectorTreeNode {
 		void addPath(const std::string_view& path, const std::variant<BlockType, std::string, std::pair<BlockType, circuit_id_t>>& data) {
 			size_t slashPos = path.find_first_of("/");
@@ -35,8 +35,8 @@ class SelectorWidget : public Widget {
 		std::unordered_map<std::string, SelectorTreeNode> children;
 	};
 public:
-	SelectorWidget(WidgetId widgetId, MainWindow& mainWindow);
-	~SelectorWidget();
+	BlockSelectorWidget(WidgetId widgetId, MainWindow& mainWindow);
+	~BlockSelectorWidget();
 private:
 	void addPath(const std::string& path, const std::variant<BlockType, std::string, std::pair<BlockType, circuit_id_t>>& data);
 
