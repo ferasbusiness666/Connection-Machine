@@ -24,6 +24,15 @@ public:
 	ToolManagerManager& getToolManagerManager() { return toolManagerManager; }
 	const ToolManagerManager& getToolManagerManager() const { return toolManagerManager; }
 
+	template<class WidgetType, typename... Args>
+	WidgetType& createWidget(Args&&... args) {
+		WidgetId widgetId = widgetIdProvider.getNewId();
+		std::unique_ptr<WidgetType> widget = std::make_unique<WidgetType>(widgetId, *this, std::forward<Args>(args)...);
+		WidgetType& widgetRef = *widget;
+		auto pair = widgets.emplace(widgetId, std::move(widget));
+		return widgetRef;
+	}
+
 	// logging
 	// CornerLog& getCornerLog() { return cornerLog.value(); } // dont need this with the other functions here
 	void log(const std::string& message) { /*cornerLog->log(message);*/ }

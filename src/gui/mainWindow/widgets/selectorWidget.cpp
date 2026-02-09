@@ -2,6 +2,8 @@
 
 #include "../mainWindow.h"
 
+#include "app.h"
+#include "gui/mainWindow/widgets/circuitViewWidget.h"
 #include "imgui/imgui_stdlib.h"
 
 SelectorWidget::SelectorWidget(WidgetId widgetId, MainWindow& mainWindow) :
@@ -11,10 +13,16 @@ SelectorWidget::SelectorWidget(WidgetId widgetId, MainWindow& mainWindow) :
 		std::lock_guard mux(pathsMux);
 		// Blocks
 		const BlockDataManager& blockDataManager = getBackend().getBlockDataManager();
+		const CircuitBlockDataManager& circuitBlockDataManager = getBackend().getCircuitManager().getCircuitBlockDataManager();
 		for (unsigned int type = 0; type < blockDataManager.maxBlockId(); type++) {
 			const BlockData* blockData = blockDataManager.getBlockData((BlockType)(type + 1));
 			if (blockData) {
-				addPath("Blocks/" + blockData->getPath() + "/" + blockData->getName(), (BlockType)(type + 1));
+				circuit_id_t circuitId = circuitBlockDataManager.getCircuitId((BlockType)(type + 1));
+				if (circuitId == 0) {
+					addPath("Blocks/" + blockData->getPath() + "/" + blockData->getName(), (BlockType)(type + 1));
+				} else {
+					addPath("Blocks/" + blockData->getPath() + "/" + blockData->getName(), std::make_pair((BlockType)(type + 1), circuitId));
+				}
 			}
 		}
 		// Procedural Circuits
@@ -32,8 +40,10 @@ SelectorWidget::SelectorWidget(WidgetId widgetId, MainWindow& mainWindow) :
 		const DataUpdateEventManager::EventDataWithValue<BlockType>* data = event->cast<BlockType>();
 		assert(data);
 		const BlockData* blockData = getBackend().getBlockDataManager().getBlockData(data->get());
+		circuit_id_t circuitId = getBackend().getCircuitManager().getCircuitBlockDataManager().getCircuitId(data->get());
 		std::lock_guard mux(pathsMux);
-		addPath("Blocks/" + blockData->getPath() + "/" +blockData->getName(), data->get());
+		if (circuitId == 0) addPath("Blocks/" + blockData->getPath() + "/" +blockData->getName(), data->get());
+		else addPath("Blocks/" + blockData->getPath() + "/" +blockData->getName(), std::make_pair(data->get(), circuitId));
 	});
 	dataUpdateEventReceiver.linkFunction("proceduralCircuitPathUpdate", [this](const DataUpdateEventManager::EventData* event) {
 		const DataUpdateEventManager::EventDataWithValue<std::string>* data = event->cast<std::string>();
@@ -104,9 +114,7 @@ SelectorWidget::SelectorWidget(WidgetId widgetId, MainWindow& mainWindow) :
 	// });
 }
 
-void SelectorWidget::addPath(const std::string& path, const std::variant<BlockType, std::string>& data) {
-	if (std::holds_alternative<BlockType>(data)) logInfo("adding {}: {}", "", path, std::get<BlockType>(data));
-	else logInfo("adding {}: {}", "", path, std::get<std::string>(data));
+void SelectorWidget::addPath(const std::string& path, const std::variant<BlockType, std::string, std::pair<BlockType, circuit_id_t>>& data) {
 	auto pair = paths.emplace(data, path);
 	if (!pair.second) {
 		if (pair.first->second == path) return;
@@ -126,6 +134,12 @@ void SelectorWidget::createTree(const SelectorTreeNode& node, const std::string&
 				if (getGUIValue_rendering<BlockType>("selectedBlockType") == std::get<BlockType>(pair.second.data.value())) {
 					flags |= ImGuiTreeNodeFlags_Selected;
 				}
+			} else if (std::holds_alternative<std::pair<BlockType, circuit_id_t>>(pair.second.data.value())) {
+				assert(rootString == "Blocks");
+				const std::pair<BlockType, circuit_id_t>& blockTypeCircuitIdPair = std::get<std::pair<BlockType, circuit_id_t>>(pair.second.data.value());
+				if (getGUIValue_rendering<BlockType>("selectedBlockType") == blockTypeCircuitIdPair.second) {
+					flags |= ImGuiTreeNodeFlags_Selected;
+				}
 			} else if (rootString == "Blocks") {
 				if (getGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus") == std::get<std::string>(pair.second.data.value())) {
 					flags |= ImGuiTreeNodeFlags_Selected;
@@ -140,16 +154,40 @@ void SelectorWidget::createTree(const SelectorTreeNode& node, const std::string&
 			if (ImGui::TreeNodeEx(pair.first.c_str(), flags)) {
 				if (ImGui::IsItemClicked()) {
 					if (std::holds_alternative<BlockType>(pair.second.data.value())) {
+						logInfo(std::get<BlockType>(pair.second.data.value()));
 						assert(rootString == "Blocks");
 						setGUIValue_rendering<BlockType>("selectedBlockType", std::get<BlockType>(pair.second.data.value()));
 						setGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus", "");
+					} else if (std::holds_alternative<std::pair<BlockType, circuit_id_t>>(pair.second.data.value())) {
+						logInfo(std::get<std::pair<BlockType, circuit_id_t>>(pair.second.data.value()).second);
+						assert(rootString == "Blocks");
+						const std::pair<BlockType, circuit_id_t>& blockTypeCircuitIdPair = std::get<std::pair<BlockType, circuit_id_t>>(pair.second.data.value());
+						setGUIValue_rendering<BlockType>("selectedBlockType", blockTypeCircuitIdPair.first);
+						setGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus", "");
 					} else if (rootString == "Blocks") {
+						logInfo(std::get<std::string>(pair.second.data.value()));
 						const std::string& data = std::get<std::string>(pair.second.data.value());
 						setGUIValue_rendering<BlockType>("selectedBlockType", BlockType::NONE);
 						setGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus", data);
 					} else if (rootString == "Tools") {
 						assert(std::holds_alternative<std::string>(pair.second.data.value()));
 						setGUIValue_rendering("selectedTool", std::get<std::string>(pair.second.data.value()));
+					}
+				}
+				if (std::holds_alternative<std::pair<BlockType, circuit_id_t>>(pair.second.data.value())) {
+					ImGui::SameLine();
+					if (ImGui::Button("View")) {
+						const std::pair<BlockType, circuit_id_t>& blockTypeCircuitIdPair = std::get<std::pair<BlockType, circuit_id_t>>(pair.second.data.value());
+						App::runOnMain([this, circuitId = blockTypeCircuitIdPair.second]() {
+							CircuitViewWidget& circuitViewWidget = getMainWindow().createWidget<CircuitViewWidget>();
+							for (auto& sim : getMainWindow().getEnvironment().getBackend().getSimulatorManager().getSimulators()) {
+								if (sim.second->getCircuitId() == circuitId) {
+									circuitViewWidget.getCircuitView().setSimulator(sim.second->getSimulatorId());
+									return;
+								}
+							}
+							circuitViewWidget.getCircuitView().setCircuit(circuitId);
+						});
 					}
 				}
 				ImGui::TreePop();

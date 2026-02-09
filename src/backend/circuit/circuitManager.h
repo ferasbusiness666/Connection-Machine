@@ -71,19 +71,18 @@ public:
 		if (blockType == BlockType::NONE) {
 			blockType = blockDataManager.addBlock();
 		}
+
 		auto blockData = blockDataManager.getBlockData(blockType);
-		if (!blockData) {
-			logError("Did not find newly created block data with block type: {}", "CircuitManager", std::to_string(blockType));
-			return BlockType::NONE;
-		}
-		blockData->setDefaultData(false);
-		blockData->setPrimitive(false);
-		blockData->setPath("Custom");
-		blockData->setSize(Size(1));
+		assert(blockData);
 
 		// Circuit Block Data
 		circuitBlockDataManager.newCircuitBlockData(circuitId, blockType);
 		circuit->setBlockType(blockType);
+
+		blockData->setDefaultData(false);
+		blockData->setPrimitive(false);
+		blockData->setPath("Custom");
+		blockData->setSize(Size(1));
 
 		return blockType;
 	}

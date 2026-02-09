@@ -2,12 +2,13 @@
 #define selectorWidget_h
 
 #include "../widget.h"
+#include "backend/circuit/circuitDefs.h"
 #include "backend/container/block/blockDefs.h"
 #include "backend/dataUpdateEventManager.h"
 
 class SelectorWidget : public Widget {
 	struct SelectorTreeNode {
-		void addPath(const std::string_view& path, const std::variant<BlockType, std::string>& data) {
+		void addPath(const std::string_view& path, const std::variant<BlockType, std::string, std::pair<BlockType, circuit_id_t>>& data) {
 			size_t slashPos = path.find_first_of("/");
 			if (slashPos == std::string::npos) {
 				auto pair = children.emplace(path, SelectorTreeNode());
@@ -30,20 +31,20 @@ class SelectorWidget : public Widget {
 				if (iter->second.children.empty()) children.erase(iter);
 			}
 		}
-		std::optional<std::variant<BlockType, std::string>> data = std::nullopt;
+		std::optional<std::variant<BlockType, std::string, std::pair<BlockType, circuit_id_t>>> data = std::nullopt;
 		std::unordered_map<std::string, SelectorTreeNode> children;
 	};
 public:
 	SelectorWidget(WidgetId widgetId, MainWindow& mainWindow);
 	~SelectorWidget();
 private:
-	void addPath(const std::string& path, const std::variant<BlockType, std::string>& data);
+	void addPath(const std::string& path, const std::variant<BlockType, std::string, std::pair<BlockType, circuit_id_t>>& data);
 
 	void createTree(const SelectorTreeNode& node, const std::string& rootString = "");
 	void render() override final;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 	std::mutex pathsMux;
-	std::map<std::variant<BlockType, std::string>, std::string> paths;
+	std::map<std::variant<BlockType, std::string, std::pair<BlockType, circuit_id_t>>, std::string> paths;
 	SelectorTreeNode root;
 
 	std::mutex proceduralCircuitOrBusParameterMux;

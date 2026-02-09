@@ -20,10 +20,8 @@ MainWindow::MainWindow() : SdlWindow("Connection Machine"), environment(true), t
 		logInfo("loaded, {}", "", fontFilePath);
 	});
 
-	WidgetId widgetId1 = widgetIdProvider.getNewId();
-	widgets.emplace(widgetId1, std::make_unique<CircuitViewWidget>(widgetId1, *this));
-	WidgetId widgetId2 = widgetIdProvider.getNewId();
-	widgets.emplace(widgetId2, std::make_unique<SelectorWidget>(widgetId2, *this));
+	createWidget<CircuitViewWidget>().newCircuit();
+	createWidget<SelectorWidget>();
 }
 
 MainWindow::~MainWindow() = default;
