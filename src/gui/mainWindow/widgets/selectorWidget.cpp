@@ -109,8 +109,8 @@ SelectorWidget::SelectorWidget(WidgetId widgetId, MainWindow& mainWindow) :
 			}
 		}
 	});
-	// setupGUIValue<std::string>("selectedToolMode", BlockType::NONE, [this](const BlockType& blockType) {
-	// 	getMainWindow().getToolManagerManager().setBlock(blockType);
+	// setupGUIValue<std::string>("selectedToolMode", "", [this](const std::string& mode) {
+	// 	getMainWindow().getToolManagerManager().setMode(mode);
 	// });
 }
 
