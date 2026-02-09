@@ -119,6 +119,7 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 			circuitView->getSimulator()->setPause(isPaused);
 		}
 	});
+	setupGUIValue<std::string>("CircuitName", "NULL", nullptr);
 }
 
 CircuitViewWidget::~CircuitViewWidget() {
@@ -224,7 +225,8 @@ void CircuitViewWidget::render() {
 	bool isHovered = false;
 	bool isFocused = false;
 	ImVec2 mousePos;
-	if (ImGui::Begin(getWidgetIdStr().c_str())) {
+
+	if (ImGui::Begin((getGUIValue_rendering<std::string>("CircuitName") + "###" + getWidgetIdStr()).c_str())) {
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 		ImVec2 viewportWindowScreenPos = ImGui::GetCursorScreenPos();
 		ImVec2 viewportWindowPos = ImGui::GetCursorPos();
@@ -293,6 +295,11 @@ void CircuitViewWidget::render() {
 }
 
 void CircuitViewWidget::update() {
+	if (circuitView->getCircuit()) {
+		setGUIValue<std::string>("CircuitName", circuitView->getCircuit()->getCircuitName());
+	} else {
+		setGUIValue<std::string>("CircuitName", "NULL");
+	}
 	setGUIValue<FPosition>("MouseGridPos", circuitView->getViewManager().getPointerPosition());
 	setGUIValue<double>("SimulatorRealTPS", circuitView->getSimulator() ? circuitView->getSimulator()->getRealTickrate() : 0);
 	setGUIValue<double>("SimulatorTargetTPS", circuitView->getSimulator() ? circuitView->getSimulator()->getTickrate() : 0);

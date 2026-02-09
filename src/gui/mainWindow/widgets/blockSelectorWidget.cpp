@@ -234,7 +234,7 @@ BlockSelectorWidget::~BlockSelectorWidget() { }
 void BlockSelectorWidget::render() {
 	ImGui::SetNextWindowDockID(getMainWindow().getDockLeftId(), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(100, 300), ImGuiCond_FirstUseEver);
-	if (ImGui::Begin(getWidgetIdStr().c_str())) {
+	if (ImGui::Begin(("Blocks###" + getWidgetIdStr()).c_str())) {
 		const std::string& selectedProceduralCircuitOrBus = getGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus");
 		if (selectedProceduralCircuitOrBus != "") {
 			if (selectedProceduralCircuitOrBus == "Other/Bus") {
