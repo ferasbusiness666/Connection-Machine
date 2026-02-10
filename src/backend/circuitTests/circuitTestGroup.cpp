@@ -91,7 +91,7 @@ bool CircuitTestGroup::runTest(BlockType blockType, bool haltOnFailure, Environm
         if (commandIter->type == NOP_COMMAND) {
             continue;
         } else if (commandIter->type == SET_STATES) {
-            runSetStatesCommand(*commandIter, *sim, nameToConnectedBlockPosition);
+            isTestGroupSuccessful = runSetStatesCommand(*commandIter, *sim, nameToConnectedBlockPosition);
         } else if (commandIter->type == CHECK_STATES) {
             isTestGroupSuccessful = runCheckStatesCommand(*commandIter, *sim, nameToConnectedBlockPosition);
         } else if (commandIter->type == TICK_STEP) {
@@ -113,12 +113,17 @@ bool CircuitTestGroup::runTest(BlockType blockType, bool haltOnFailure, Environm
     return fullTestSucceedStatus;
 }
 
-void CircuitTestGroup::runSetStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition) {
+bool CircuitTestGroup::runSetStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition) {
     for (auto statesIter = testCommand.states.begin(); statesIter != testCommand.states.end(); statesIter++) {
         auto blockPosIter = nameToConnectedBlockPosition.find(statesIter->first);
+        if (blockPosIter == nameToConnectedBlockPosition.end()) {
+            logError("Port {} does not match any on circuit", "CircuitTestGroup", statesIter->first);
+            return false;
+        }
         simulator.setState((Address(blockPosIter->second)), statesIter->second);
         logInfo("Set port '{}' to state '{}'", "CircuitTestGroup - SET_STATES", statesIter->first, statesIter->second);
     }
+    return true;
 }
 
 bool CircuitTestGroup::runCheckStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition) {
@@ -126,6 +131,10 @@ bool CircuitTestGroup::runCheckStatesCommand(TestCommand testCommand, EvalLogicS
     bool testSucceeded = true;
     for (auto statesIter = testCommand.states.begin(); statesIter != testCommand.states.end(); statesIter++) {
         auto blockPosIter = nameToConnectedBlockPosition.find(statesIter->first);
+        if (blockPosIter == nameToConnectedBlockPosition.end()) {
+            logError("Port {} does not match any on circuit", "CircuitTestGroup", statesIter->first);
+            return false;
+        }
         logic_state_t actualState = simulator.getState((Address(blockPosIter->second)));
         if (actualState != statesIter->second) {
             testSucceeded = false;
