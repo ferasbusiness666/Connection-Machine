@@ -48,11 +48,13 @@ private:
         std::vector<TestCommand> testCommands;
     };
 
-    void generateTestCircuit();
+    bool generateTestCircuit(BlockType blockType, Environment& environment);
     bool runSetStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition);
     bool runCheckStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition);
 
     std::vector<TestCommand> testCommands;
+    NamePositionMap namePositionMap;
+    EvalLogicSimulator* simulator;
 };
 
 #endif

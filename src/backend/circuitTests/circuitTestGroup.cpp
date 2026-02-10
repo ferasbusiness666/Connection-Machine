@@ -2,6 +2,7 @@
 
 #include "backend/address.h"
 #include "backend/blockData/blockData.h"
+#include "backend/circuit/circuit.h"
 #include "backend/container/block/blockDefs.h"
 #include "backend/evaluator/evaluator.h"
 #include "backend/evaluator/simulator/evalLogicSimulator.h"
@@ -24,9 +25,7 @@ void CircuitTestGroup::addTickStepCommand(int ticks) {
     testCommands.push_back(testCommand);
 }
 
-bool CircuitTestGroup::runTest(BlockType blockType, bool haltOnFailure, Environment& environment) {
-    // retrieve necessary objects to run test
-    bool fullTestSucceedStatus = true;
+bool CircuitTestGroup::generateTestCircuit(BlockType blockType, Environment& environment) {
     Backend& backend = environment.getBackend();
     CircuitManager& cirManager = backend.getCircuitManager();
     SimulatorManager& evalManager = backend.getSimulatorManager();
@@ -35,14 +34,14 @@ bool CircuitTestGroup::runTest(BlockType blockType, bool haltOnFailure, Environm
     circuit_id_t cirId = cirManager.createNewCircuit(false);
     SharedCircuit cir = cirManager.getCircuit(cirId);
     simulator_id_t simID = backend.createSimulator(cirId).value();
-    EvalLogicSimulator* sim = evalManager.getSimulator(simID);
-    sim->setPause(true);
+    simulator = evalManager.getSimulator(simID);
+    simulator->setPause(true);
     const BlockContainer& blockContainer = cir->getBlockContainer();
 
     const BlockData* blockData = blockDataManager.getBlockData(blockType);
     std::unordered_map<connection_end_id_t, BlockData::ConnectionData> connections = blockData->getConnections();
     // change implementation of this when BlockData::getConnectionNameToId is implemented
-    NamePositionMap nameToConnectedBlockPosition;
+    namePositionMap.clear();
 
     // generate the test circuit
     if (!cir->tryInsertBlock(Position(0,0), Orientation(), blockType)) {
@@ -54,7 +53,7 @@ bool CircuitTestGroup::runTest(BlockType blockType, bool haltOnFailure, Environm
 
     for (auto iter = connections.begin(); iter != connections.end(); iter++) {
         if (iter->second.portType == BlockData::ConnectionData::PortType::INPUT || iter->second.portType == BlockData::ConnectionData::PortType::BIDIRECTIONAL) {
-            Position externalConnPos = Position(-1-nameToConnectedBlockPosition.size(), 0);
+            Position externalConnPos = Position(-1-namePositionMap.size(), 0);
             if (!cir->tryInsertBlock(externalConnPos, Orientation(), SWITCH)) {
                 logError("Couldn't insert switch test circuit block", "circuitTestGroup");
                 return false;
@@ -65,11 +64,11 @@ bool CircuitTestGroup::runTest(BlockType blockType, bool haltOnFailure, Environm
                 logError("Couldn't create switch test circuit connection, ext: {}", "circuitTestGroup", externalConnPos);
                 return false;
             }
-            nameToConnectedBlockPosition.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
+            namePositionMap.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
         }
         if (iter->second.portType == BlockData::ConnectionData::PortType::OUTPUT || iter->second.portType == BlockData::ConnectionData::PortType::BIDIRECTIONAL) {
             Position internalConnPos = Position(iter->second.positionOnBlock.dx, iter->second.positionOnBlock.dy);
-            Position externalConnPos = Position(-1-nameToConnectedBlockPosition.size(), 0);
+            Position externalConnPos = Position(-1-namePositionMap.size(), 0);
             if (!cir->tryInsertBlock(externalConnPos, Orientation(), LIGHT)) {
                 logError("Couldn't insert light test circuit block", "circuitTestGroup");
                 return false;
@@ -80,9 +79,16 @@ bool CircuitTestGroup::runTest(BlockType blockType, bool haltOnFailure, Environm
                 logError("Couldn't create light test circuit connection, ext: {} int: {}", "circuitTestGroup", externalConnPos, internalConnPos);
                 return false;
             }
-            nameToConnectedBlockPosition.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
+            namePositionMap.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
         }
     }
+    return true;
+}
+
+bool CircuitTestGroup::runTest(BlockType blockType, bool haltOnFailure, Environment& environment) {
+    // retrieve necessary objects to run test
+    generateTestCircuit(blockType, environment);
+    bool fullTestSucceedStatus = true;
 
     // run tests on the generated test circuit
     for (auto commandIter = testCommands.begin(); commandIter != testCommands.end(); commandIter++) {
@@ -91,12 +97,12 @@ bool CircuitTestGroup::runTest(BlockType blockType, bool haltOnFailure, Environm
         if (commandIter->type == NOP_COMMAND) {
             continue;
         } else if (commandIter->type == SET_STATES) {
-            isTestGroupSuccessful = runSetStatesCommand(*commandIter, *sim, nameToConnectedBlockPosition);
+            isTestGroupSuccessful = runSetStatesCommand(*commandIter, *simulator, namePositionMap);
         } else if (commandIter->type == CHECK_STATES) {
-            isTestGroupSuccessful = runCheckStatesCommand(*commandIter, *sim, nameToConnectedBlockPosition);
+            isTestGroupSuccessful = runCheckStatesCommand(*commandIter, *simulator, namePositionMap);
         } else if (commandIter->type == TICK_STEP) {
             logInfo("Stepping forward by {} ticks", "CircuitTestGroup - TICK_STEP", commandIter->ticks);
-            sim->tickStep(commandIter->ticks);
+            simulator->tickStep(commandIter->ticks);
         } else {
             logError("Unrecognized test command", "CircuitTestGroup");
             isTestGroupSuccessful = false;
