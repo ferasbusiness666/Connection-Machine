@@ -25,7 +25,7 @@ struct BlockTextureArray {
 	~BlockTextureArray();
 };
 
-typedef unsigned int BlockTextureId;
+typedef uint32_t BlockTextureId;
 
 struct BlockTexture {
 public:

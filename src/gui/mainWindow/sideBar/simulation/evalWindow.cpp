@@ -40,7 +40,8 @@ void EvalWindow::updateList() {
 
 void EvalWindow::refreshSidebar(bool rebuildItems) {
 	if (rebuildItems) updateList();
-	CircuitView* view = mainWindow.getActiveCircuitViewWidget() ? mainWindow.getActiveCircuitViewWidget()->getCircuitView() : nullptr;
+	if (!mainWindow.getActiveCircuitViewWidget()) return;
+	CircuitView* view = mainWindow.getActiveCircuitViewWidget()->getCircuitView();
 	if (!view) return;
 	EvalLogicSimulator* activeEval = view->getSimulator();
 	if (!activeEval) return;

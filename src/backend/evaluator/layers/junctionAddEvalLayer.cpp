@@ -26,7 +26,7 @@
 // addedConnectionCount:   92872
 // removedConnectionCount: 0
 
-bool isConnectionEndIdSinglePin(EvalGateType gateType, connection_end_id_t connectionEndId, const CircuitManager& circuitManager) {
+bool isConnectionEndIdInputSinglePin(EvalGateType gateType, connection_end_id_t connectionEndId, const CircuitManager& circuitManager) {
 	// ignore lights, junctions, busses, custom blocks
 	switch (getBlockType(gateType)) {
 	case BlockType::SWITCH:
@@ -39,18 +39,19 @@ bool isConnectionEndIdSinglePin(EvalGateType gateType, connection_end_id_t conne
 	case BlockType::CONSTANT_X:
 	case BlockType::CONSTANT_Z:
 	case BlockType::TRISTATE_BUFFER:
-		return true;
-	case BlockType::AND:
-	case BlockType::OR:
-	case BlockType::XOR:
-	case BlockType::NAND:
-	case BlockType::NOR:
-	case BlockType::XNOR:
-		return connectionEndId == 1;
+		return connectionEndId == 0;
+	// case BlockType::AND:
+	// case BlockType::OR:
+	// case BlockType::XOR:
+	// case BlockType::NAND:
+	// case BlockType::NOR:
+	// case BlockType::XNOR:
+	// 	return connectionEndId == 1;
 	default: {
-		const BlockData* blockData = circuitManager.getBlockDataManager().getBlockData(getBlockType(gateType));
-		assert(blockData);
-		return blockData->isBus();
+		return false;
+		// const BlockData* blockData = circuitManager.getBlockDataManager().getBlockData(getBlockType(gateType));
+		// assert(blockData);
+		// return blockData->isBus();
 	}
 	}
 }
@@ -64,7 +65,7 @@ void JunctionAddEvalLayer::run() {
 		assert(gateB);
 		eval_gate_id junctionAToRemove = 0;
 		eval_gate_id junctionBToRemove = 0;
-		if (isConnectionEndIdSinglePin(gateA->type, connection.connectionPointA.connectionEndId, circuitManager)) {
+		if (isConnectionEndIdInputSinglePin(gateA->type, connection.connectionPointA.connectionEndId, circuitManager)) {
 			auto connectionsIter = gateA->connections.find(connection.connectionPointA.connectionEndId);
 			assert(connectionsIter != gateA->connections.end());
 			eval_gate_id junctionId = connectionsIter->second.begin()->gateId;
@@ -76,7 +77,7 @@ void JunctionAddEvalLayer::run() {
 			}
 			connection.connectionPointA = EvalConnectionPoint(junctionId, 0);
 		}
-		if (isConnectionEndIdSinglePin(gateB->type, connection.connectionPointB.connectionEndId, circuitManager)) {
+		if (isConnectionEndIdInputSinglePin(gateB->type, connection.connectionPointB.connectionEndId, circuitManager)) {
 			auto connectionsIter = gateB->connections.find(connection.connectionPointB.connectionEndId);
 			assert(connectionsIter != gateB->connections.end());
 			eval_gate_id junctionId = connectionsIter->second.begin()->gateId;
@@ -114,7 +115,7 @@ void JunctionAddEvalLayer::run() {
 		assert(gateA);
 		const EvalGate* gateB = nextState.getGate(connection.connectionPointB.gateId);
 		assert(gateB);
-		if (isConnectionEndIdSinglePin(gateA->type, connection.connectionPointA.connectionEndId, circuitManager)) {
+		if (isConnectionEndIdInputSinglePin(gateA->type, connection.connectionPointA.connectionEndId, circuitManager)) {
 			auto connectionsIter = gateA->connections.find(connection.connectionPointA.connectionEndId);
 			if (connectionsIter == gateA->connections.end()) {
 				eval_gate_id junctionId = nextState.getUnusedEvalGateId();
@@ -128,7 +129,7 @@ void JunctionAddEvalLayer::run() {
 				connection.connectionPointA = *(connectionsIter->second.begin());
 			}
 		}
-		if (isConnectionEndIdSinglePin(gateB->type, connection.connectionPointB.connectionEndId, circuitManager)) {
+		if (isConnectionEndIdInputSinglePin(gateB->type, connection.connectionPointB.connectionEndId, circuitManager)) {
 			auto connectionsIter = gateB->connections.find(connection.connectionPointB.connectionEndId);
 			if (connectionsIter == gateB->connections.end()) {
 				eval_gate_id junctionId = nextState.getUnusedEvalGateId();

@@ -22,6 +22,9 @@ void ViewportRenderer::render(Frame& frame, ViewportRenderData* viewport) {
 #endif
 	// get view data
 	ViewportViewData viewData = viewport->getViewData();
+	if (viewData.viewport.height == 0 || viewData.viewport.width == 0) {
+		return; // sometimes it wont be the correct size immediately
+	}
 
 	// set dynamic state
 	vkCmdSetViewport(frame.mainCommandBuffer, 0, 1, &viewData.viewport);

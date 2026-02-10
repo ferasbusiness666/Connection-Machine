@@ -59,7 +59,7 @@ public:
 	}
 
 private:
-	void sendPortUpdate(connection_end_id_t connectionEndId, EvalConnectionPoint preConnectionPoint, EvalConnectionPoint postConnectionPoint) const;
+	void sendPortUpdate(connection_end_id_t connectionEndId, EvalConnectionPoint preConnectionPoint, EvalConnectionPoint postConnectionPoint);
 
 	// std::set<Position> positionsTo; nothing to do
 	IdProvider<eval_gate_id> evalGateIdProvider;

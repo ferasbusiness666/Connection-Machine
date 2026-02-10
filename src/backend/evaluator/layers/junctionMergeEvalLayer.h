@@ -10,7 +10,15 @@ public:
 	void run() override final;
 
 private:
-	std::tuple<std::vector<eval_gate_id>, std::unordered_map<EvalConnectionPoint, unsigned int>, EvalGateType> gatherJunctionGroup(eval_gate_id gateId, const EvalLayerState& evalLayerState) const;
+	std::tuple<
+		std::vector<eval_gate_id>,
+		std::unordered_set<EvalConnectionPoint>,
+		std::unordered_map<EvalConnectionPoint, unsigned int>,
+		EvalGateType
+	> gatherJunctionGroup(EvalConnectionPoint connectionPointToScanFrom, const EvalLayerState& evalLayerState) const;
+
+	std::unordered_map<EvalConnectionPoint, eval_gate_id> connectionPointRemapping;
+	std::unordered_multimap<eval_gate_id, EvalConnectionPoint> connectionPointReverseRemapping;
 };
 
 #endif /* junctionMergeEvalLayer_h */
