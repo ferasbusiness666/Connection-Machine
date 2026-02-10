@@ -1,14 +1,12 @@
-#ifndef blockSelectorWidget_h
-#define blockSelectorWidget_h
+#ifndef toolSelectorWidget_h
+#define toolSelectorWidget_h
 
 #include "../widget.h"
-#include "backend/circuit/circuitDefs.h"
-#include "backend/container/block/blockDefs.h"
 #include "backend/dataUpdateEventManager.h"
 
-class BlockSelectorWidget : public Widget {
+class ToolSelectorWidget : public Widget {
 	struct SelectorTreeNode {
-		void addPath(const std::string_view& path, const std::variant<BlockType, std::string, std::pair<BlockType, circuit_id_t>>& data) {
+		void addPath(const std::string_view& path, const std::string& data) {
 			size_t slashPos = path.find_first_of("/");
 			if (slashPos == std::string::npos) {
 				auto pair = children.emplace(path, SelectorTreeNode());
@@ -31,24 +29,21 @@ class BlockSelectorWidget : public Widget {
 				if (iter->second.children.empty()) children.erase(iter);
 			}
 		}
-		std::optional<std::variant<BlockType, std::string, std::pair<BlockType, circuit_id_t>>> data = std::nullopt;
+		std::optional<std::string> data = std::nullopt;
 		std::unordered_map<std::string, SelectorTreeNode> children;
 	};
 public:
-	BlockSelectorWidget(WidgetId widgetId, MainWindow& mainWindow);
-	~BlockSelectorWidget();
+	ToolSelectorWidget(WidgetId widgetId, MainWindow& mainWindow);
+	~ToolSelectorWidget();
 private:
-	void addPath(const std::string& path, const std::variant<BlockType, std::string, std::pair<BlockType, circuit_id_t>>& data);
+	void addPath(const std::string& path, const std::string& data);
 
 	void createTree(const SelectorTreeNode& node);
 	void render() override final;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 	std::mutex pathsMux;
-	std::map<std::variant<BlockType, std::string, std::pair<BlockType, circuit_id_t>>, std::string> paths;
+	std::map<std::string, std::string> paths;
 	SelectorTreeNode root;
-
-	std::mutex proceduralCircuitOrBusParameterMux;
-	std::map<std::string, std::map<std::string, std::variant<unsigned, int, float, std::string>>> proceduralCircuitOrBusParameter;
 };
 
-#endif /* blockSelectorWidget_h */
+#endif /* toolSelectorWidget_h */

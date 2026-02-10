@@ -131,6 +131,7 @@ void App::runLoop() {
 
 void App::startTryingToQuit() {
 	for (std::shared_ptr<SdlWindow> window : windows) {
+		if (window->isKilled()) continue;
 		if (!window->kill(false)) {
 			return; // window canceled quit
 		}

@@ -33,7 +33,6 @@ WindowRenderer::WindowRenderer(WindowId windowId, SdlWindow* sdlWindow) : window
 	running.store(true);
 	renderLoopStopped.store(false);
 	renderThread = std::thread(&WindowRenderer::renderLoop, this);
-
 }
 
 WindowRenderer::~WindowRenderer() {

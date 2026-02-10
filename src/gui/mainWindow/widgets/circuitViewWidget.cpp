@@ -225,8 +225,9 @@ void CircuitViewWidget::render() {
 	bool isHovered = false;
 	bool isFocused = false;
 	ImVec2 mousePos;
-
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 	if (ImGui::Begin((getGUIValue_rendering<std::string>("CircuitName") + "###" + getWidgetIdStr()).c_str())) {
+		ImGui::PopStyleVar();
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 		ImVec2 viewportWindowScreenPos = ImGui::GetCursorScreenPos();
 		ImVec2 viewportWindowPos = ImGui::GetCursorPos();
@@ -290,7 +291,7 @@ void CircuitViewWidget::render() {
 			);
 		}
 		draw_list->ChannelsMerge();
-	}
+	} else ImGui::PopStyleVar();
 	ImGui::End();
 }
 

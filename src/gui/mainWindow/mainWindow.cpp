@@ -7,6 +7,7 @@
 #include "environment/environment.h"
 #include "gui/helper/keybindHelpers.h"
 #include "gui/mainWindow/widgets/circuitViewWidget.h"
+#include "gui/mainWindow/widgets/toolSelectorWidget.h"
 #include "gui/mainWindow/widgets/blockSelectorWidget.h"
 #include "imgui/imgui_internal.h"
 
@@ -21,6 +22,7 @@ MainWindow::MainWindow() : SdlWindow("Connection Machine"), environment(true), t
 	});
 
 	createWidget<CircuitViewWidget>().newCircuit();
+	createWidget<ToolSelectorWidget>();
 	createWidget<BlockSelectorWidget>();
 }
 
@@ -96,9 +98,6 @@ void MainWindow::processEvent(SDL_Event& event) {
 	// 		settingsWindow->reloadContent();
 	// 	}
 	// }
-
-	// check if we want this event // done before the event is sent
-	// if (!isThisMyEvent(event)) return;// event.type == SDL_EVENT_KEYMAP_CHANGED;
 
 	// send event to RML
 	// RmlSDL::InputEventHandler(rmlContext, sdlWindow->getHandle(), event, getSdlWindowScalingSize());
@@ -177,7 +176,12 @@ void MainWindow::render() {
 			if (ImGui::MenuItem("Exit")) { }
 			ImGui::EndMenu();
 		}
-
+		if (ImGui::BeginMenu("Edit")) {
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("View")) {
+			ImGui::EndMenu();
+		}
 		if (ImGui::BeginMenu("Help")) {
 			ImGui::EndMenu();
 		}
