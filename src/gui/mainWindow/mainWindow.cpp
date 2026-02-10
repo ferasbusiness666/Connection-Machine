@@ -147,6 +147,16 @@ void MainWindow::render() {
 	ImGui::End();
 
 	if (ImGui::BeginMainMenuBar()) {
+		if (ImGui::BeginMenu("Connnection Machine")) {
+			if (ImGui::MenuItem("About")) {
+				logInfo("ImGui branch!");
+			}
+			ImGui::Separator();
+			if (ImGui::MenuItem("Quit Connnection Machine")) {
+				App::runOnMain([this]() { App::startTryingToQuit(); });
+			}
+			ImGui::EndMenu();
+		}
 		if (ImGui::BeginMenu("File")) {
 			if (ImGui::MenuItem("New Circuit", "Ctrl+N")) {
 				App::runOnMain([this]() { environment.getBackend().createCircuit(); });
@@ -169,9 +179,6 @@ void MainWindow::render() {
 		}
 
 		if (ImGui::BeginMenu("Help")) {
-			if (ImGui::MenuItem("About")) {
-				logInfo("ImGui branch!");
-			}
 			ImGui::EndMenu();
 		}
 

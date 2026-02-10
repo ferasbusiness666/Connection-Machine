@@ -97,16 +97,14 @@ bool SdlWindow::recieveEvent(SDL_Event& event) {
 		return false;
 	}
 	if (isThisMyEvent(event)) {
-		{
-			std::lock_guard mux(renderingMux);
-			processEvent(event);
-		}
 		if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
 			std::lock_guard mux(renderingMux);
 			MainRenderer::get().resizeWindow(windowId, { event.window.data1, event.window.data2 });
-		}
-		if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
+		} else if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
 			kill(false); // kill with lock renderingMux
+		} else {
+			std::lock_guard mux(renderingMux);
+			processEvent(event);
 		}
 		return true;
 	}
@@ -122,29 +120,6 @@ bool SdlWindow::isThisMyEvent(const SDL_Event& event) const {
 	if (!handle) return false;
 	if (event.type == 2050) return true; // the fuck is this? - jack quay jamison
 	return SDL_GetWindowFromEvent(&event) == handle;
-}
-
-void SdlWindow::sendKillEvent() {
-	if (killed) return;
-	SDL_Event e;
-	SDL_zero(e);
-
-	e.type = SDL_EVENT_WINDOW_CLOSE_REQUESTED;
-	e.window.windowID = SDL_GetWindowID(handle);
-
-	SDL_PushEvent(&e);
-}
-
-void SdlWindow::instantKillEvent() {
-	if (killed) return;
-	if (!handle) return;
-	SDL_Event e;
-	SDL_zero(e);
-
-	e.type = SDL_EVENT_WINDOW_CLOSE_REQUESTED;
-	e.window.windowID = SDL_GetWindowID(handle);
-
-	recieveEvent(e);
 }
 
 VkSurfaceKHR SdlWindow::createVkSurface(VkInstance instance) {
@@ -211,16 +186,16 @@ nlohmann::json SdlWindow::dumpWindowState() const {
 	return json;
 }
 
-void SdlWindow::kill(bool forced) {
+bool SdlWindow::kill(bool forced) {
 	if (killed) {
 		logError("Cant kill already killed window!", "SdlWindow::kill");
-		return;
+		return true;
 	}
 	{
 		std::lock_guard mux(renderingMux);
 		bool subclassKilled = killWindow(forced);
 		if (forced) assert(subclassKilled);
-		if (!(forced || subclassKilled)) return;
+		if (!(forced || subclassKilled)) return false;
 		killed = true; // set killed afterward to allow the subclasses to access values one last time
 	}
 	logInfo("Destroying SDL window...");
@@ -232,4 +207,5 @@ void SdlWindow::kill(bool forced) {
 	}
 	SDL_DestroyWindow(handle);
 	handle = nullptr;
+	return true;
 }

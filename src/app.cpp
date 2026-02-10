@@ -77,9 +77,16 @@ void App::runLoop() {
 
 		// first thing we need to do is run functions from other threads (mainly imgui rending)
 		{
-			std::lock_guard lock(runOnMainFunctionsMux);
-			for (auto func : runOnMainFunctions) func.second();
-			runOnMainFunctions.clear();
+			runOnMainFunctionsMux.lock();
+			while (!runOnMainFunctions.empty()) {
+				auto func = runOnMainFunctions.back();
+				runOnMainFunctions.pop_back();
+				runOnMainFunctionsMux.unlock();
+				func.second();
+				runOnMainFunctionsMux.lock();
+			}
+			runOnMainFunctionsMux.unlock();
+			assert(runOnMainFunctions.empty());
 		}
 
 		std::chrono::time_point<std::chrono::high_resolution_clock> updateTime = std::chrono::high_resolution_clock::now();
@@ -104,18 +111,9 @@ void App::runLoop() {
 				}
 				default: {
 					// Send event to all windows
-					std::vector<std::weak_ptr<SdlWindow>> windowsToSendEvents;
 					for (const std::shared_ptr<SdlWindow>& window : windows) {
-						windowsToSendEvents.push_back(window);
-					}
-					for (unsigned int i = 0; i < windowsToSendEvents.size(); ++i) {
-						std::shared_ptr<SdlWindow> thisWindow = windowsToSendEvents[i].lock();
-						if (!thisWindow) continue;
-						if (std::any_of(windows.begin(), windows.end(), [windowPtr = thisWindow.get()](const std::shared_ptr<SdlWindow>& a) {
-							return a.get() == windowPtr;
-						})) {
-							thisWindow->recieveEvent(event);
-						}
+						if (window->isKilled()) break;
+						window->recieveEvent(event);
 					}
 				}
 				}
@@ -132,6 +130,11 @@ void App::runLoop() {
 }
 
 void App::startTryingToQuit() {
+	for (std::shared_ptr<SdlWindow> window : windows) {
+		if (!window->kill(false)) {
+			return; // window canceled quit
+		}
+	}
 	// if (tryingToQuit) return;
 	// { // TEMPORARY
 	// 	// do dumpstate and into file

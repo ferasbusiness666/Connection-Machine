@@ -35,15 +35,13 @@ public:
 	bool isThisMyEvent(const SDL_Event& event) const;
 	void toggleBorderlessFullscreen();
 
-	void sendKillEvent();
-	void instantKillEvent();
+	bool kill(bool forced); // having this does not allow the use to forget to call killWindow on the sub class!
 	bool isKilled() const { return killed; }
 
 	VkSurfaceKHR createVkSurface(VkInstance instance);
 	void doRendering(); // called by vulkan
 
 	nlohmann::json dumpWindowState() const;
-
 
 protected:
 	// return false when the window does not want to close.
@@ -53,9 +51,7 @@ protected:
 	virtual void render() { }
 	virtual void processEvent(SDL_Event& event) { } // called by recieveEvent
 	virtual nlohmann::json dumpState() const { return "dumpState not overridden"; }
-
 private:
-	void kill(bool forced); // having this does not allow the use to forget to call killWindow on the sub class!
 
 	bool killed = false;
 	SDL_Window* handle = nullptr;
