@@ -4,6 +4,7 @@
 
 #include "app.h"
 #include "gui/mainWindow/widgets/circuitViewWidget.h"
+#include "imgui/imgui_internal.h"
 #include "imgui/imgui_stdlib.h"
 
 BlockSelectorWidget::BlockSelectorWidget(WidgetId widgetId, MainWindow& mainWindow) :
@@ -29,10 +30,6 @@ BlockSelectorWidget::BlockSelectorWidget(WidgetId widgetId, MainWindow& mainWind
 			addPath(iter.second->getPath(), iter.second->getUUID());
 		}
 		addPath("Other/Bus", "Other/Bus");
-		// Tools
-		// for (const auto& iter : getMainWindow().getToolManagerManager().getAllTools()) {
-		// 	addPath("Tools/" + iter.first, iter.first);
-		// }
 	}
 
 	dataUpdateEventReceiver.linkFunction("blockDataUpdate", [this](const DataUpdateEventManager::EventData* event) {
@@ -50,24 +47,12 @@ BlockSelectorWidget::BlockSelectorWidget(WidgetId widgetId, MainWindow& mainWind
 		SharedProceduralCircuit proceduralCircuit = getBackend().getCircuitManager().getProceduralCircuitManager().getProceduralCircuit(data->get());
 		addPath(proceduralCircuit->getPath(), proceduralCircuit->getPath());
 	});
-	dataUpdateEventReceiver.linkFunction("setToolModeUpdate", [](const DataUpdateEventManager::EventData* event) {
-
-	});
 	dataUpdateEventReceiver.linkFunction("setToolBlockTypeUpdate", [this](const DataUpdateEventManager::EventData* event) {
 		const DataUpdateEventManager::EventDataWithValue<BlockType>* data = event->cast<BlockType>();
 		assert(data);
 		setGUIValue<BlockType>("selectedBlockType", data->get());
 	});
-	// dataUpdateEventReceiver.linkFunction("setToolBlockOrientationUpdate", [](const DataUpdateEventManager::EventData* event) {
-
-	// });
-	dataUpdateEventReceiver.linkFunction("setToolUpdate", [this](const DataUpdateEventManager::EventData* event) {
-		const DataUpdateEventManager::EventDataWithValue<std::string>* data = event->cast<std::string>();
-		assert(data);
-		setGUIValue<std::string>("selectedTool", data->get());
-	});
 	setupGUIValue<BlockType>("selectedBlockType", BlockType::NONE, [this](const BlockType& blockType) { getMainWindow().getToolManagerManager().setBlock(blockType); });
-	setupGUIValue<std::string>("selectedTool", "", [this](const std::string& toolPath) { getMainWindow().getToolManagerManager().setTool(toolPath); });
 	setupGUIValue<std::string>("selectedProceduralCircuitOrBus", "", [this](const std::string& path) {
 		std::lock_guard lock(proceduralCircuitOrBusParameterMux);
 		auto pair = proceduralCircuitOrBusParameter.try_emplace(path);
@@ -108,9 +93,6 @@ BlockSelectorWidget::BlockSelectorWidget(WidgetId widgetId, MainWindow& mainWind
 			}
 		}
 	});
-	// setupGUIValue<std::string>("selectedToolMode", "", [this](const std::string& mode) {
-	// 	getMainWindow().getToolManagerManager().setMode(mode);
-	// });
 }
 
 void BlockSelectorWidget::addPath(const std::string& path, const std::variant<BlockType, std::string, std::pair<BlockType, circuit_id_t>>& data) {
@@ -123,90 +105,93 @@ void BlockSelectorWidget::addPath(const std::string& path, const std::variant<Bl
 	root.addPath(path, data);
 }
 
+bool ArrowButtonColor(const char* id, ImGuiDir dir) {
+	ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2(-1, -1));
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1, 1));
+    ImGui::InvisibleButton(id, ImVec2(ImGui::GetFrameHeight(), ImGui::GetFrameHeight()));
+	ImGui::PopStyleVar();
+
+    ImU32 col;
+    if (ImGui::IsItemActive()) col = ImGui::GetColorU32(ImGuiCol_ButtonActive);
+    else if (ImGui::IsItemHovered())col = ImGui::GetColorU32(ImGuiCol_ButtonHovered);
+    else col = ImGui::GetColorU32(ImGuiCol_Text);
+
+	ImVec2 pos = ImGui::GetItemRectMin() + ImGui::GetItemRectSize() / 2 - ImVec2(ImGui::GetFontSize() / 2, ImGui::GetFontSize() / 2);
+
+    ImGui::RenderArrow(
+        ImGui::GetWindowDrawList(),
+        pos,
+        col,
+        dir,
+        1
+    );
+
+    return ImGui::IsItemClicked();
+}
+
 void BlockSelectorWidget::createTree(const SelectorTreeNode& node) {
 	assert(!node.children.empty());
 	if (node.children.begin()->second.data.has_value()) {
-
-		// float buttonSize = 75.0f;
-		// float spacing = ImGui::GetStyle().ItemSpacing.x;
-		// float availWidth = ImGui::GetContentRegionAvail().x;
-
-		// int columns = (int)(availWidth / (buttonSize + spacing));
-		// columns = columns < 1 ? 1 : columns;
-
-		// if (ImGui::BeginTable("ButtonGrid", columns, ImGuiTableFlags_SizingStretchSame)) {
-			for (auto& pair : node.children) {
-				// ImGui::TableNextColumn();
-				// VkDescriptorSet descriptorSet = MainRenderer::get().getBlockTextureArrayLayer(getMainWindow().getWindowId(), 0);
-				// if (descriptorSet == VK_NULL_HANDLE) continue;
-				// ImGui::ImageButton(pair.first.c_str(), descriptorSet, { buttonSize , buttonSize });
-				// ImGui::Button(pair.first.c_str(), ImVec2(-FLT_MIN, 40));
-
-				// leaf (never children)
-				assert(pair.second.children.empty());
-				ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf;
-				if (std::holds_alternative<BlockType>(pair.second.data.value())) {
-					if (getGUIValue_rendering<BlockType>("selectedBlockType") == std::get<BlockType>(pair.second.data.value())) {
-						flags |= ImGuiTreeNodeFlags_Selected;
-					}
-				} else if (std::holds_alternative<std::pair<BlockType, circuit_id_t>>(pair.second.data.value())) {
-					const std::pair<BlockType, circuit_id_t>& blockTypeCircuitIdPair = std::get<std::pair<BlockType, circuit_id_t>>(pair.second.data.value());
-					if (getGUIValue_rendering<BlockType>("selectedBlockType") == blockTypeCircuitIdPair.second) {
-						flags |= ImGuiTreeNodeFlags_Selected;
-					}
-				} else {
-					if (getGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus") == std::get<std::string>(pair.second.data.value())) {
-						flags |= ImGuiTreeNodeFlags_Selected;
-					};
-				}/* else if (rootString == "Tools") {
-					assert(std::holds_alternative<std::string>(pair.second.data.value()));
-					if (getGUIValue_rendering<std::string>("selectedTool") == std::get<std::string>(pair.second.data.value())) {
-						flags |= ImGuiTreeNodeFlags_Selected;
-					}
-				}*/
-
-				if (ImGui::TreeNodeEx(pair.first.c_str(), flags)) {
-					if (ImGui::IsItemClicked()) {
-						if (std::holds_alternative<BlockType>(pair.second.data.value())) {
-							logInfo(std::get<BlockType>(pair.second.data.value()));
-							setGUIValue_rendering<BlockType>("selectedBlockType", std::get<BlockType>(pair.second.data.value()));
-							setGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus", "");
-						} else if (std::holds_alternative<std::pair<BlockType, circuit_id_t>>(pair.second.data.value())) {
-							logInfo(std::get<std::pair<BlockType, circuit_id_t>>(pair.second.data.value()).second);
-							const std::pair<BlockType, circuit_id_t>& blockTypeCircuitIdPair = std::get<std::pair<BlockType, circuit_id_t>>(pair.second.data.value());
-							setGUIValue_rendering<BlockType>("selectedBlockType", blockTypeCircuitIdPair.first);
-							setGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus", "");
-						} else {
-							logInfo(std::get<std::string>(pair.second.data.value()));
-							const std::string& data = std::get<std::string>(pair.second.data.value());
-							setGUIValue_rendering<BlockType>("selectedBlockType", BlockType::NONE);
-							setGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus", data);
-						}/* else if (rootString == "Tools") {
-							assert(std::holds_alternative<std::string>(pair.second.data.value()));
-							setGUIValue_rendering("selectedTool", std::get<std::string>(pair.second.data.value()));
-						}*/
-					}
-					if (std::holds_alternative<std::pair<BlockType, circuit_id_t>>(pair.second.data.value())) {
-						ImGui::SameLine();
-						if (ImGui::Button("View")) {
-							const std::pair<BlockType, circuit_id_t>& blockTypeCircuitIdPair = std::get<std::pair<BlockType, circuit_id_t>>(pair.second.data.value());
-							App::runOnMain([this, circuitId = blockTypeCircuitIdPair.second]() {
-								CircuitViewWidget& circuitViewWidget = getMainWindow().createWidget<CircuitViewWidget>();
-								for (auto& sim : getMainWindow().getEnvironment().getBackend().getSimulatorManager().getSimulators()) {
-									if (sim.second->getCircuitId() == circuitId) {
-										circuitViewWidget.getCircuitView().setSimulator(sim.second->getSimulatorId());
-										return;
-									}
-								}
-								circuitViewWidget.getCircuitView().setCircuit(circuitId);
-							});
-						}
-					}
-					ImGui::TreePop();
+		for (auto& pair : node.children) {
+			// leaf (never children)
+			assert(pair.second.children.empty());
+			ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf;
+			if (std::holds_alternative<BlockType>(pair.second.data.value())) {
+				if (getGUIValue_rendering<BlockType>("selectedBlockType") == std::get<BlockType>(pair.second.data.value())) {
+					flags |= ImGuiTreeNodeFlags_Selected;
 				}
+			} else if (std::holds_alternative<std::pair<BlockType, circuit_id_t>>(pair.second.data.value())) {
+				const std::pair<BlockType, circuit_id_t>& blockTypeCircuitIdPair = std::get<std::pair<BlockType, circuit_id_t>>(pair.second.data.value());
+				if (getGUIValue_rendering<BlockType>("selectedBlockType") == blockTypeCircuitIdPair.second) {
+					flags |= ImGuiTreeNodeFlags_Selected;
+				}
+			} else {
+				if (getGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus") == std::get<std::string>(pair.second.data.value())) {
+					flags |= ImGuiTreeNodeFlags_Selected;
+				};
 			}
-			// ImGui::EndTable();
-		// }
+
+			ImGui::SetNextItemAllowOverlap();
+			if (ImGui::TreeNodeEx(pair.first.c_str(), flags)) {
+				if (ImGui::IsItemClicked()) {
+					if (std::holds_alternative<BlockType>(pair.second.data.value())) {
+						logInfo(std::get<BlockType>(pair.second.data.value()));
+						setGUIValue_rendering<BlockType>("selectedBlockType", std::get<BlockType>(pair.second.data.value()));
+						setGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus", "");
+					} else if (std::holds_alternative<std::pair<BlockType, circuit_id_t>>(pair.second.data.value())) {
+						logInfo(std::get<std::pair<BlockType, circuit_id_t>>(pair.second.data.value()).second);
+						const std::pair<BlockType, circuit_id_t>& blockTypeCircuitIdPair = std::get<std::pair<BlockType, circuit_id_t>>(pair.second.data.value());
+						setGUIValue_rendering<BlockType>("selectedBlockType", blockTypeCircuitIdPair.first);
+						setGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus", "");
+					} else {
+						logInfo(std::get<std::string>(pair.second.data.value()));
+						const std::string& data = std::get<std::string>(pair.second.data.value());
+						setGUIValue_rendering<BlockType>("selectedBlockType", BlockType::NONE);
+						setGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus", data);
+					}
+				}
+				if (std::holds_alternative<std::pair<BlockType, circuit_id_t>>(pair.second.data.value())) {
+					ImGui::SameLine();
+					if (ArrowButtonColor("##ViewButton", ImGuiDir_Right)) {
+						const std::pair<BlockType, circuit_id_t>& blockTypeCircuitIdPair = std::get<std::pair<BlockType, circuit_id_t>>(pair.second.data.value());
+						App::runOnMain([this, circuitId = blockTypeCircuitIdPair.second]() {
+							CircuitViewWidget& circuitViewWidget = getMainWindow().createWidget<CircuitViewWidget>();
+							for (auto& sim : getMainWindow().getEnvironment().getBackend().getSimulatorManager().getSimulators()) {
+								if (sim.second->getCircuitId() == circuitId) {
+									circuitViewWidget.getCircuitView().setSimulator(sim.second->getSimulatorId());
+									return;
+								}
+							}
+							circuitViewWidget.getCircuitView().setCircuit(circuitId);
+						});
+					}
+					if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+						ImGui::SetTooltip("View");
+					}
+				}
+				ImGui::TreePop();
+			}
+		}
 	} else {
 		for (auto& pair : node.children) {
 			assert(!pair.second.data.has_value());
@@ -222,7 +207,6 @@ void BlockSelectorWidget::createTree(const SelectorTreeNode& node) {
 unsigned int slowStep = 1;
 unsigned int fastStep = 10;
 
-BlockSelectorWidget::~BlockSelectorWidget() { }
 void BlockSelectorWidget::render() {
 	ImGui::SetNextWindowDockID(getMainWindow().getDockLeftId(), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(100, 300), ImGuiCond_FirstUseEver);
@@ -274,287 +258,3 @@ void BlockSelectorWidget::render() {
 	} else ImGui::PopStyleVar();
 	ImGui::End();
 }
-
-/*
-SelectorWindow::SelectorWindow(
-	BlockDataManager& blockDataManager,
-	DataUpdateEventManager& dataUpdateEventManager,
-	ProceduralCircuitManager& proceduralCircuitManager,
-	ToolManagerManager& toolManagerManager,
-	Rml::ElementDocument* document
-) :
-	blockDataManager(blockDataManager), proceduralCircuitManager(proceduralCircuitManager), toolManagerManager(toolManagerManager),
-	dataUpdateEventReceiver(dataUpdateEventManager), document(document) {
-	Rml::Element* itemTreeParent = document->GetElementById("item-selection-tree");
-	menuTree.emplace(document, itemTreeParent, false);
-	menuTree->setListener(std::bind(&SelectorWindow::updateSelected, this, std::placeholders::_1));
-	// In Blocks/Tools tree, prevent selecting category dropdown parents ("Blocks" / "Tools")
-	menuTree->disallowParentSelection(true);
-	dataUpdateEventReceiver.linkFunction("blockDataUpdate", [this](const DataUpdateEventManager::EventData* event) { refreshSidebar(true); });
-	dataUpdateEventReceiver.linkFunction("proceduralCircuitPathUpdate", [this](const DataUpdateEventManager::EventData* event) { refreshSidebar(true); });
-
-	Rml::Element* modeTreeParent = document->GetElementById("mode-selection-tree");
-	modeList.emplace(document, modeTreeParent, [this](const std::string& item, Rml::Element* element) {
-		element->AppendChild(std::move(this->document->CreateTextNode(item)));
-	});
-	modeList->addEventListener(Rml::EventId::Click, std::bind(&SelectorWindow::updateSelectedMode, this, std::placeholders::_1));
-	dataUpdateEventReceiver.linkFunction("setToolModeUpdate", [this](const DataUpdateEventManager::EventData* event) { updateToolModeOptions(); });
-
-	dataUpdateEventReceiver.linkFunction("setToolUpdate", [this](const DataUpdateEventManager::EventData* event) { refreshSidebar(false); });
-
-	parameterMenu = document->GetElementById("parameter-menu");
-	parameterMenu->GetElementById("reset-parameters")->AddEventListener(Rml::EventId::Click, new EventPasser([this](Rml::Event& event) { setupParameterMenu(); }));
-	parameterMenu->GetElementById("create-block")->AddEventListener(Rml::EventId::Click, new EventPasser([this](Rml::Event& event) {
-		if (selectedProceduralCircuit) {
-			Rml::Element* parametersElement = parameterMenu->GetElementById("parameter-menu-parameters");
-
-			ProceduralCircuitParameters proceduralCircuitParameters;
-			for (unsigned int i = 0; i < parametersElement->GetNumChildren(); ++i) {
-				Rml::ElementList elements;
-				parametersElement->GetChild(i)->GetElementsByClassName(elements, "parameter-name");
-				std::string key = elements[0]->GetInnerRML();
-				key.pop_back();
-				elements.clear();
-				parametersElement->GetChild(i)->GetElementsByClassName(elements, "parameter-input");
-				Rml::ElementFormControlInput* parameterInput = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements[0]);
-				std::string str = parameterInput->GetValue();
-				try {
-					int value = std::stoi(str);
-					proceduralCircuitParameters.parameters.emplace(std::move(key), value);
-				} catch (std::exception const& ex) {
-					logError("Invalid parameter for {}: {}. {}", "", key, str, ex.what());
-					return;
-				}
-			}
-			this->toolManagerManager.setBlock(selectedProceduralCircuit->getBlockType(proceduralCircuitParameters));
-		} else if (selectedBus) {
-			Rml::Element* parametersElement = parameterMenu->GetElementById("parameter-menu-parameters");
-			assert(parametersElement->GetNumChildren() == 2);
-			Rml::ElementList elements;
-			parametersElement->GetChild(0)->GetElementsByClassName(elements, "parameter-input");
-			Rml::ElementFormControlInput* numInputsInput = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements[0]);
-			elements.clear();
-			parametersElement->GetChild(1)->GetElementsByClassName(elements, "parameter-input");
-			Rml::ElementFormControlInput* inputBitWidthInput = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(elements[0]);
-			std::string numInputsStr = numInputsInput->GetValue();
-			std::string inputBitWidthStr = inputBitWidthInput->GetValue();
-			try {
-				int numInputs = std::stoi(numInputsStr);
-				int inputBitWidth = std::stoi(inputBitWidthStr);
-				this->toolManagerManager.setBlock(this->blockDataManager.getBusBlock(numInputs, inputBitWidth));
-			} catch (std::exception const& ex) {
-				logError("Invalid bus parameters: {} inputs of {} bits each. {}", "", numInputsStr, inputBitWidthStr, ex.what());
-				return;
-			}
-		}
-	}));
-
-	refreshSidebar(true);
-}
-
-void SelectorWindow::updateList() {
-	std::vector<std::vector<std::string>> paths;
-	for (unsigned int blockType = 1; blockType <= blockDataManager.maxBlockId(); blockType++) {
-		if (!blockDataManager.isPlaceable((BlockType)blockType)) continue;
-		std::vector<std::string>& path = paths.emplace_back(1, "Blocks");
-		stringSplitInto(blockDataManager.getPath((BlockType)blockType), '/', path);
-		path.push_back(blockDataManager.getName((BlockType)blockType));
-	}
-	for (const auto& iter : toolManagerManager.getAllTools()) {
-		std::vector<std::string>& path = paths.emplace_back(1, "Tools");
-		stringSplitInto(iter.first, '/', path);
-	}
-	for (const auto& iter : proceduralCircuitManager.getProceduralCircuits()) {
-		std::vector<std::string>& path = paths.emplace_back(1, "Blocks");
-		stringSplitInto(iter.second->getPath(), '/', path);
-	}
-	{
-		std::vector<std::string>& path = paths.emplace_back(1, "Blocks");
-		stringSplitInto("Other/Bus", '/', path);
-	}
-	menuTree->setPaths(paths);
-}
-
-void SelectorWindow::updateToolModeOptions() {
-	auto modes = toolManagerManager.getActiveToolModes();
-	modeList->setItems(modes.value_or(std::vector<std::string>()));
-	highlightActiveMode();
-}
-
-void SelectorWindow::refreshSidebar(bool rebuildItems) {
-	if (rebuildItems) updateList();
-	highlightActiveToolInSidebar();
-	updateToolModeOptions();
-}
-
-void SelectorWindow::highlightActiveToolInSidebar() {
-	if (!menuTree) return;
-	const std::string& activeTool = toolManagerManager.getActiveTool();
-	if (activeTool.empty()) return;
-	std::string activeToolId = std::string("Tools/") + activeTool + "-menu";
-	if (Rml::Element* activeElement = document->GetElementById(activeToolId)) {
-		if (Rml::Element* itemRoot = document->GetElementById("item-selection-tree")) {
-			Rml::ElementList rows;
-			itemRoot->GetElementsByTagName(rows, "li");
-			for (auto* row : rows) row->SetClass("selected", false);
-		}
-		activeElement->SetClass("selected", true);
-		// Expand ancestors
-		Rml::Element* p = activeElement->GetParentNode();
-		while (p) {
-			if (p->GetTagName() == "li") p->SetClass("collapsed", false);
-			p = p->GetParentNode();
-		}
-	}
-	if (selectedBus) {
-		std::string elementId = std::string("Blocks/") + "Other/Bus" + "-menu";
-		Rml::Element* blockElement = document->GetElementById(elementId);
-		if (blockElement) {
-			blockElement->SetClass("selected", true);
-			Rml::Element* p = blockElement->GetParentNode();
-			while (p) {
-				if (p->GetTagName() == "li") p->SetClass("collapsed", false);
-				p = p->GetParentNode();
-			}
-		}
-	} else if (selectedProceduralCircuit) {
-		std::string elementId = std::string("Blocks/") + selectedProceduralCircuit->getPath() + "-menu";
-		Rml::Element* blockElement = document->GetElementById(elementId);
-		if (blockElement) {
-			blockElement->SetClass("selected", true);
-			Rml::Element* p = blockElement->GetParentNode();
-			while (p) {
-				if (p->GetTagName() == "li") p->SetClass("collapsed", false);
-				p = p->GetParentNode();
-			}
-		}
-	} else {
-		BlockType selectedBlock = toolManagerManager.getSelectedBlock();
-		if (selectedBlock != BlockType::NONE) {
-			std::string blockPath = blockDataManager.getPath(selectedBlock);
-			std::string blockName = blockDataManager.getName(selectedBlock);
-			std::string elementId = "Blocks/";
-			if (!blockPath.empty()) elementId += blockPath + "/";
-			elementId += blockName + "-menu";
-			Rml::Element* blockElement = document->GetElementById(elementId);
-			if (blockElement) {
-				blockElement->SetClass("selected", true);
-				Rml::Element* p = blockElement->GetParentNode();
-				while (p) {
-					if (p->GetTagName() == "li") p->SetClass("collapsed", false);
-					p = p->GetParentNode();
-				}
-			}
-		}
-	}
-}
-
-void SelectorWindow::highlightActiveMode() {
-	for (unsigned int i = 0; i < modeList->getSize(); i++) {
-		modeList->getItem(i)->SetClass("selected", false);
-	}
-	std::optional<std::string> mode = toolManagerManager.getActiveToolMode();
-	if (!mode) return;
-	Rml::Element* item = modeList->getItem(*mode);
-	if (item) item->SetClass("selected", true);
-}
-
-void SelectorWindow::updateSelected(const std::string& string) {
-	std::vector parts = stringSplit(string, '/');
-	if (parts.size() <= 1) return;
-	if (parts[0] == "Blocks") {
-		selectedProceduralCircuit = nullptr; // either it will be set or this should go away!
-		selectedBus = false;
-		std::string path = string.substr(7, string.size() - 7);
-		BlockType blockType = blockDataManager.getBlockType(path);
-		if (blockType == BlockType::NONE) {
-			const std::string* uuid = proceduralCircuitManager.getProceduralCircuitUUID(path);
-			if (uuid) {
-				selectedProceduralCircuit = proceduralCircuitManager.getProceduralCircuit(*uuid);
-				if (selectedProceduralCircuit) setupProceduralCircuitParameterMenu();
-				else logError("unknown block with path: {}", "SelectorWindow", path);
-			} else if (path == "Other/Bus") {
-				selectedBus = true;
-				setupBusParameterMenu();
-			}
-		}
-		toolManagerManager.setBlock(blockType);
-		if (!(selectedProceduralCircuit || selectedBus)) hideParameterMenu();
-	} else if (parts[0] == "Tools") {
-		std::string toolPath = string.substr(6, string.size() - 6);
-		toolManagerManager.setTool(toolPath);
-	} else {
-		logError("Do not recognize cadegory {}", "SelectorWindow", parts[0]);
-	}
-	refreshSidebar(false);
-}
-
-void SelectorWindow::updateSelectedMode(const std::string& string) { toolManagerManager.setMode(string); }
-
-void SelectorWindow::setupParameterMenu() {
-	if (selectedProceduralCircuit) {
-		setupProceduralCircuitParameterMenu();
-	} else if (selectedBus) {
-		setupBusParameterMenu();
-	} else {
-		hideParameterMenu();
-	}
-}
-
-void SelectorWindow::setupProceduralCircuitParameterMenu() {
-	if (!selectedProceduralCircuit) {
-		hideParameterMenu();
-		return;
-	}
-
-	addParametersToParameterMenu(selectedProceduralCircuit->getParameterDefaults(), selectedProceduralCircuit->getProceduralCircuitName());
-}
-
-void SelectorWindow::setupBusParameterMenu() {
-	if (!selectedBus) {
-		hideParameterMenu();
-		return;
-	}
-	ProceduralCircuitParameters parameters;
-	parameters.parameters.emplace("Number of Ports", 8);
-	parameters.parameters.emplace("Port Bit Widths", 1);
-	addParametersToParameterMenu(parameters, "Bus");
-}
-
-void SelectorWindow::addParametersToParameterMenu(const ProceduralCircuitParameters& parameters, const std::string& title) {
-	parameterMenu->SetClass("invisible", false);
-	parameterMenu->GetElementById("parameter-menu-active")->SetInnerRML(title);
-	Rml::Element* parametersElement = parameterMenu->GetElementById("parameter-menu-parameters");
-
-	while (parametersElement->GetNumChildren() > 0) parametersElement->RemoveChild(parametersElement->GetChild(0));
-
-	for (const std::pair<std::string, int>& pair : parameters.parameters) {
-		Rml::ElementPtr parameterDiv = makeParameterElement(pair.first, pair.second);
-		parametersElement->AppendChild(std::move(parameterDiv));
-	}
-}
-
-Rml::ElementPtr SelectorWindow::makeParameterElement(const std::string& name, int defaultValue) {
-	Rml::ElementPtr parameterDiv = document->CreateElement("div");
-	parameterDiv->SetClass("parameter", true);
-
-	Rml::ElementPtr parameterNameElement = document->CreateElement("span");
-	parameterNameElement->SetInnerRML(name + ":");
-	parameterNameElement->SetClass("parameter-name", true);
-
-	Rml::XMLAttributes parameterInputAttributes;
-	parameterInputAttributes["type"] = "text";
-	parameterInputAttributes["maxlength"] = "8";
-	parameterInputAttributes["size"] = "8";
-	Rml::ElementPtr parameterInputElement = Rml::Factory::InstanceElement(document, "input", "input", parameterInputAttributes);
-	parameterInputElement->SetClass("parameter-input", true);
-	Rml::ElementFormControlInput* parameterInput = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(parameterInputElement.get());
-	parameterInput->SetValue(std::to_string(defaultValue));
-
-	parameterDiv->AppendChild(std::move(parameterNameElement));
-	parameterDiv->AppendChild(std::move(parameterInputElement));
-	return parameterDiv;
-}
-
-void SelectorWindow::hideParameterMenu() { parameterMenu->SetClass("invisible", true); }
-*/

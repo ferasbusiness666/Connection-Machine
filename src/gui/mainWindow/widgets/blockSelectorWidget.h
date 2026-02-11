@@ -36,7 +36,6 @@ class BlockSelectorWidget : public Widget {
 	};
 public:
 	BlockSelectorWidget(WidgetId widgetId, MainWindow& mainWindow);
-	~BlockSelectorWidget();
 private:
 	void addPath(const std::string& path, const std::variant<BlockType, std::string, std::pair<BlockType, circuit_id_t>>& data);
 
