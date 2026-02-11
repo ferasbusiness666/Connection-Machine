@@ -74,29 +74,31 @@ ToolSelectorWidget::~ToolSelectorWidget() { }
 void ToolSelectorWidget::render() {
 	ImGui::SetNextWindowDockID(getMainWindow().getDockLeftId(), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(100, 300), ImGuiCond_FirstUseEver);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 4));
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
 	if (ImGui::Begin(("Tools###" + getWidgetIdStr()).c_str())) {
 		ImGui::PopStyleVar();
-		std::lock_guard mux(pathsMux);
-		createTree(root);
-	} else ImGui::PopStyleVar();
-	std::lock_guard lock(modesMux);
-	if (!toolModes.empty()) {
-		ImGui::Separator();
-		const char* items[] = { "Single", "Area", "Tensor" };
-
-		ImGui::BeginChild("Container");
-
-		if (ImGui::BeginTable("Grid", 3, ImGuiTableFlags_SizingStretchSame)) {
-			for (const std::string& mode : toolModes) {
-				ImGui::TableNextColumn();
-				if (ImGui::Selectable(mode.c_str(), mode == getGUIValue_rendering<std::string>("selectedToolMode"), ImGuiSelectableFlags_None)) {
-					setGUIValue_rendering<std::string>("selectedToolMode", mode);
-				}
-			}
-			ImGui::EndTable();
+		{
+			std::lock_guard mux(pathsMux);
+			createTree(root);
 		}
-		ImGui::EndChild();
-	}
+		std::lock_guard lock(modesMux);
+		if (!toolModes.empty()) {
+			ImGui::Separator();
+			ImGui::BeginChild("Container");
+			if (ImGui::BeginTable("Grid", 3, ImGuiTableFlags_SizingStretchSame)) {
+				ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 0.5f));
+				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+				for (const std::string& mode : toolModes) {
+					ImGui::TableNextColumn();
+					if (ImGui::Selectable(mode.c_str(), mode == getGUIValue_rendering<std::string>("selectedToolMode"), ImGuiSelectableFlags_None)) {
+						setGUIValue_rendering<std::string>("selectedToolMode", mode);
+					}
+				}
+				ImGui::PopStyleVar(2);
+				ImGui::EndTable();
+			}
+			ImGui::EndChild();
+		}
+	} else ImGui::PopStyleVar();
 	ImGui::End();
 }

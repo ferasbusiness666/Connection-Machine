@@ -210,7 +210,7 @@ unsigned int fastStep = 10;
 void BlockSelectorWidget::render() {
 	ImGui::SetNextWindowDockID(getMainWindow().getDockLeftId(), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(100, 300), ImGuiCond_FirstUseEver);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 4));
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
 	if (ImGui::Begin(("Blocks###" + getWidgetIdStr()).c_str())) {
 		ImGui::PopStyleVar();
 		const std::string& selectedProceduralCircuitOrBus = getGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus");

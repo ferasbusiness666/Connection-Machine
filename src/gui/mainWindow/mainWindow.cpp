@@ -128,6 +128,8 @@ void MainWindow::render() {
 	ImGuiStyle& style = ImGui::GetStyle();
 	{std::lock_guard lock(uiScaleMux);
 	style.FontScaleMain = uiScale;}
+	style.TreeLinesFlags = ImGuiTreeNodeFlags_DrawLinesFull;
+	ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 10);
 	{
 		frameIndex.fetch_add(1);
 		bool open = true;
@@ -213,9 +215,10 @@ void MainWindow::render() {
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 5.f);
 		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(43.f / 255.f, 43.f / 255.f, 43.f / 255.f, 100.f / 255.f));
 		ImGui::RenderNotifications();
-		ImGui::PopStyleColor(1);
-		ImGui::PopStyleVar(1);
+		ImGui::PopStyleColor();
+		ImGui::PopStyleVar();
 	}
+	ImGui::PopStyleVar();
 }
 
 void MainWindow::offsetUiScale(double delta) {

@@ -120,6 +120,7 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 		}
 	});
 	setupGUIValue<std::string>("CircuitName", "NULL", nullptr);
+	setupGUIValue<bool>("CircuitSaved", false, nullptr);
 }
 
 CircuitViewWidget::~CircuitViewWidget() {
@@ -232,7 +233,11 @@ void CircuitViewWidget::render() {
 	bool isFocused = false;
 	ImVec2 mousePos;
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-	if (ImGui::Begin((getGUIValue_rendering<std::string>("CircuitName") + "###" + getWidgetIdStr()).c_str())) {
+	ImGuiWindowFlags windowFlags = ImGuiWindowFlags_None;
+	if (!getGUIValue_rendering<bool>("CircuitSaved")) {
+		windowFlags |= ImGuiWindowFlags_UnsavedDocument;
+	}
+	if (ImGui::Begin((getGUIValue_rendering<std::string>("CircuitName") + "###" + getWidgetIdStr()).c_str(), nullptr, windowFlags)) {
 		ImGui::PopStyleVar();
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 		ImVec2 viewportWindowScreenPos = ImGui::GetCursorScreenPos();
@@ -304,7 +309,9 @@ void CircuitViewWidget::render() {
 void CircuitViewWidget::update() {
 	if (circuitView->getCircuit()) {
 		setGUIValue<std::string>("CircuitName", circuitView->getCircuit()->getCircuitName());
+		setGUIValue<bool>("CircuitSaved", getMainWindow().getEnvironment().getCircuitFileManager().isCircuitSaved(circuitView->getCircuit()->getUUID()));
 	} else {
+		setGUIValue<bool>("CircuitSaved", true);
 		setGUIValue<std::string>("CircuitName", "NULL");
 	}
 	setGUIValue<FPosition>("MouseGridPos", circuitView->getViewManager().getPointerPosition());
