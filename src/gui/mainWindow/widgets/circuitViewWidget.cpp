@@ -192,18 +192,24 @@ circuit_id_t CircuitViewWidget::newCircuit() {
 // save current circuit view widget we are viewing. Right now only works if it is the only widget in application.
 // Called via Ctrl-S keybind
 void CircuitViewWidget::save() {
-	// if (circuitView->getCircuit()) mainWindow.getPopUpManager().savePopUp(circuitView->getCircuit()->getUUID());
-	// else {
-	// 	logWarning("Could not save because non circuit was selected.", "CircuitViewWidget");
-	// 	mainWindow.log("Could not save because non circuit was selected.");
-	// }
+	if (circuitView->getCircuit()) {
+		if (getMainWindow().getEnvironment().getCircuitFileManager().save(circuitView->getCircuit()->getUUID())) {
+			getMainWindow().log("Saved circuit {}", circuitView->getCircuit()->getCircuitName());
+		} else {
+			getMainWindow().logError("Failed to save circuit {}.", circuitView->getCircuit()->getCircuitName());
+		}
+	} else {
+		logWarning("Could not save because non circuit was selected.", "CircuitViewWidget");
+		getMainWindow().log("Could not save because non circuit was selected.");
+	}
 }
 
 void CircuitViewWidget::asSave() {
-	// if (circuitView->getCircuit()) mainWindow.getPopUpManager().saveAsPopUp(circuitView->getCircuit()->getUUID());
+	getMainWindow().log("Not implemented.");
+	// if (circuitView->getCircuit()) getMainWindow().getPopUpManager().saveAsPopUp(circuitView->getCircuit()->getUUID());
 	// else {
 	// 	logWarning("Could not save because non circuit was selected.", "CircuitViewWidget");
-	// 	mainWindow.log("Could not save because non circuit was selected.");
+	// 	getMainWindow().log("Could not save because non circuit was selected.");
 	// }
 }
 

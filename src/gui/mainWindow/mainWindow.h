@@ -8,6 +8,7 @@
 
 #include "tools/toolManagerManager.h"
 #include "widget.h"
+// #include "widgets/cornerLogWidget.h"
 
 class MainWindow : public SdlWindow {
 public:
@@ -34,20 +35,19 @@ public:
 	}
 
 	// logging
-	// CornerLog& getCornerLog() { return cornerLog.value(); } // dont need this with the other functions here
-	void log(const std::string& message) { /*cornerLog->log(message);*/ }
+	void log(const std::string& message);
 	template <typename... Args>
 	void log(const fmt::format_string<Args...>& formatString, Args&&... args) {
 		std::ostringstream message;
 		message << fmt::format(formatString, std::forward<Args>(args)...);
-		// cornerLog->log(message.str());
+		log(message.str());
 	}
-	void logError(const std::string& message) { /*cornerLog->logError(message);*/ }
+	void logError(const std::string& message);
 	template <typename... Args>
 	void logError(const fmt::format_string<Args...>& formatString, Args&&... args) {
 		std::ostringstream message;
 		message << fmt::format(formatString, std::forward<Args>(args)...);
-		// cornerLog->logError(message.str());
+		logError(message.str());
 	}
 
 	bool isPressingKeybind(const Keybind& keybind, bool repeat = false) const;
@@ -79,8 +79,8 @@ private:
 	// inputs and tools
 	// KeybindHandler keybindHandler;
 	ToolManagerManager toolManagerManager;
+	std::mutex uiScaleMux;
 	float uiScale = 1.0f;
-	bool uiScaleSettingUpdateInProgress = false;
 	static constexpr double kUiScaleStep = 0.1;
 	static constexpr double kUiScaleMin = 0.5;
 	static constexpr double kUiScaleMax = 3.0;
@@ -93,14 +93,12 @@ private:
 	ImGuiID dockRightId;
 	ImGuiID dockBottomId;
 
+	// CornerLogWidget& cornerLog;
+
 	// widgets
-	// std::optional<SelectorWindow> selectorWindow;
 	// std::optional<EvalWindow> evalWindow;
 	// std::optional<BlockCreationWindow> blockCreationWindow;
-	// std::optional<SimControlsManager> simControlsManager;
 	// std::optional<SettingsWindow> settingsWindow;
-	// std::optional<MenuBar> menuBar;
-	// std::optional<CornerLog> cornerLog;
 };
 
 #endif /* window_h */

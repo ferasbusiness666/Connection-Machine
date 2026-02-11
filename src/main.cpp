@@ -13,7 +13,7 @@
 
 void registerSettings() {
 	logInfo("Registering settings", "Main");
-	Settings::registerSetting<SettingType::FILE_PATH>("Appearance/Font", (DirectoryManager::getResourceDirectory() / "gui/fonts/monaspace.otf").generic_string());
+	Settings::registerSetting<SettingType::FILE_PATH>("Appearance/Font", (DirectoryManager::getResourceDirectory() / "gui/fonts/Consolas.ttf").generic_string());
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/Save", Keybind(ImGuiKey::ImGuiKey_S | ImGuiKey::ImGuiMod_Ctrl));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/Save As", Keybind(ImGuiKey::ImGuiKey_S | ImGuiKey::ImGuiMod_Ctrl | ImGuiKey::ImGuiMod_Shift));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/Open", Keybind(ImGuiKey::ImGuiKey_O | ImGuiKey::ImGuiMod_Ctrl));
@@ -69,11 +69,6 @@ void registerSettings() {
 	Settings::registerSetting<SettingType::DECIMAL>("Appearance/Corner Log/Message Timeout", 3.f);
 	SaveSettings save;
 	save.load();
-	// set font again incase another font was loaded because other fonts wont work for now
-	Settings::set<SettingType::FILE_PATH>("Appearance/Font", (DirectoryManager::getResourceDirectory() / "gui/fonts/monaspace.otf").generic_string());
-
-	// std::shared_ptr<Font> font = Freetype::get().loadFont(*Settings::get<SettingType::FILE_PATH>("Appearance/Font"));
-	// logInfo(font->getFontFamily());
 
 	// stbi_uc w;
 	// stbi_loadf_from_memory(const stbi_uc *buffer, int len, int *x, int *y, int *channels_in_file, int desired_channels)

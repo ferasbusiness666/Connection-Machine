@@ -1,10 +1,14 @@
 #include "imGuiRenderer.h"
 
 #include "app.h"
+#include "computerAPI/directoryManager.h"
 #include "gpu/mainRenderer.h"
+#include "computerAPI/fileLoader.h"
+
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_sdl3.h"
 #include "imgui/imgui_impl_vulkan.h"
+#include "imgui/imgui_notify.h"
 
 std::map<SDL_Window*, ImGuiRenderer&> imGuiRenderers;
 std::mutex mutex;
@@ -140,6 +144,27 @@ ImGuiRenderer::ImGuiRenderer(SDL_Window& window, VkRenderPass renderPass, uint32
 	// std::array<VkFormat, 1> swapchainImageFormat = {VK_FORMAT_B8G8R8A8_UNORM};
 	// init_info.PipelineInfoForViewports.PipelineRenderingCreateInfo.pColorAttachmentFormats = swapchainImageFormat.data();
     ImGui_ImplVulkan_Init(&init_info);
+
+	const std::string* fontPath = Settings::get<SettingType::FILE_PATH>("Appearance/Font");
+	std::pair<char*, unsigned long long> fontData;
+	if (fontPath) {
+		fontData = readFileAsBytes_noVec(DirectoryManager::getResourceDirectory() / *fontPath);
+		if (fontData.second == 0) {
+			logError("Failed to read font from \"{}\"", "ImGuiRenderer::ImGuiRenderer", *fontPath);
+			fontData = readFileAsBytes_noVec(DirectoryManager::getResourceDirectory() / "gui/fonts/Consolas.ttf");
+		}
+	} else {
+		logError("Failed to load file path from setting.", "ImGuiRenderer::ImGuiRenderer");
+		fontData = readFileAsBytes_noVec(DirectoryManager::getResourceDirectory() / "gui/fonts/Consolas.ttf");
+	}
+
+	if (fontData.second == 0) {
+		logError("No font could be loaded! Popups may not work :/", "ImGuiRenderer::ImGuiRenderer");
+	} else {
+		ImFontConfig font_cfg;
+		io.Fonts->AddFontFromMemoryTTF(fontData.first, fontData.second, 17.f, &font_cfg);
+		ImGui::MergeIconsWithLatestFont(16.f, false);
+	}
 }
 
 ImGuiRenderer::~ImGuiRenderer() {
