@@ -43,6 +43,8 @@ private:
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 	std::mutex pathsMux;
 	std::map<std::string, std::string> paths;
+	std::mutex modesMux;
+	std::vector<std::string> toolModes;
 	SelectorTreeNode root;
 };
 

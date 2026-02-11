@@ -43,6 +43,7 @@ public:
 			}
 		}
 		dataUpdateEventManager.sendEvent<std::string>("setToolUpdate", activeTool);
+
 		sendChangedSignal();
 	}
 
@@ -59,7 +60,7 @@ public:
 
 		lastToolModes[activeTool] = mode;
 
-		dataUpdateEventManager.sendEvent("setToolModeUpdate");
+		dataUpdateEventManager.sendEvent<std::string>("setToolModeUpdate", mode);
 	}
 
 	void cycleActiveToolMode(int direction = 1);
