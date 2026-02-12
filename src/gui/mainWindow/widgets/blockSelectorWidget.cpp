@@ -17,6 +17,7 @@ BlockSelectorWidget::BlockSelectorWidget(WidgetId widgetId, MainWindow& mainWind
 		for (unsigned int type = 0; type < blockDataManager.maxBlockId(); type++) {
 			const BlockData* blockData = blockDataManager.getBlockData((BlockType)(type + 1));
 			if (blockData) {
+				if (!blockData->isPlaceable()) continue;;
 				circuit_id_t circuitId = circuitBlockDataManager.getCircuitId((BlockType)(type + 1));
 				if (circuitId == 0) {
 					addPath(blockData->getPath() + "/" + blockData->getName(), (BlockType)(type + 1));
@@ -38,18 +39,33 @@ BlockSelectorWidget::BlockSelectorWidget(WidgetId widgetId, MainWindow& mainWind
 		const BlockData* blockData = getBackend().getBlockDataManager().getBlockData(data->get());
 		circuit_id_t circuitId = getBackend().getCircuitManager().getCircuitBlockDataManager().getCircuitId(data->get());
 		std::lock_guard mux(pathsMux);
-		if (circuitId == 0) addPath(blockData->getPath() + "/" +blockData->getName(), data->get());
-		else addPath(blockData->getPath() + "/" +blockData->getName(), std::make_pair(data->get(), circuitId));
+		if (!blockData->isPlaceable()) {
+			if (circuitId == 0) removePath(blockData->getPath() + "/" + blockData->getName(), data->get());
+			removePath(blockData->getPath() + "/" + blockData->getName(), std::make_pair(data->get(), circuitId));
+			return;
+		}
+		if (circuitId == 0) addPath(blockData->getPath() + "/" + blockData->getName(), data->get());
+		else addPath(blockData->getPath() + "/" + blockData->getName(), std::make_pair(data->get(), circuitId));
 	});
 	dataUpdateEventReceiver.linkFunction("proceduralCircuitPathUpdate", [this](const DataUpdateEventManager::EventData* event) {
 		const DataUpdateEventManager::EventDataWithValue<std::string>* data = event->cast<std::string>();
 		assert(data);
 		SharedProceduralCircuit proceduralCircuit = getBackend().getCircuitManager().getProceduralCircuitManager().getProceduralCircuit(data->get());
+		std::lock_guard mux(pathsMux);
 		addPath(proceduralCircuit->getPath(), proceduralCircuit->getPath());
 	});
 	dataUpdateEventReceiver.linkFunction("setToolBlockTypeUpdate", [this](const DataUpdateEventManager::EventData* event) {
 		const DataUpdateEventManager::EventDataWithValue<BlockType>* data = event->cast<BlockType>();
 		assert(data);
+		circuit_id_t circuitId = getBackend().getCircuitManager().getCircuitBlockDataManager().getCircuitId(data->get());
+		if (circuitId != 0) {
+			const CircuitBlockData* circuitBlockData = getBackend().getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
+			if (circuitBlockData->getProceduralCircuitUUID().has_value()) {
+				setGUIValue<std::string>("selectedProceduralCircuitOrBus", circuitBlockData->getProceduralCircuitUUID().value());
+				setGUIValue<BlockType>("selectedBlockType", BlockType::NONE);
+			}
+		}
+		setGUIValue<std::string>("selectedProceduralCircuitOrBus", "");
 		setGUIValue<BlockType>("selectedBlockType", data->get());
 	});
 	setupGUIValue<BlockType>("selectedBlockType", BlockType::NONE, [this](const BlockType& blockType) { getMainWindow().getToolManagerManager().setBlock(blockType); });
@@ -101,8 +117,28 @@ void BlockSelectorWidget::addPath(const std::string& path, const std::variant<Bl
 		if (pair.first->second == path) return;
 		root.removePath(pair.first->second);
 		pair.first->second = path;
+	} else if (std::holds_alternative<std::pair<BlockType, circuit_id_t>>(data)) {
+		auto iter = paths.find(std::get<std::pair<BlockType, circuit_id_t>>(data).first);
+		if (iter != paths.end()) {
+			root.removePath(iter->second);
+			paths.erase(iter);
+		}
 	}
 	root.addPath(path, data);
+}
+
+void BlockSelectorWidget::removePath(const std::string& path, const std::variant<BlockType, std::string, std::pair<BlockType, circuit_id_t>>& data) {
+	auto iter = paths.find(data);
+	if (iter != paths.end()) {
+		root.removePath(iter->second);
+		paths.erase(iter);
+	} else if (std::holds_alternative<std::pair<BlockType, circuit_id_t>>(data)) {
+		iter = paths.find(std::get<std::pair<BlockType, circuit_id_t>>(data).first);
+		if (iter != paths.end()) {
+			root.removePath(iter->second);
+			paths.erase(iter);
+		}
+	}
 }
 
 bool ArrowButtonColor(const char* id, ImGuiDir dir) {

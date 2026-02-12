@@ -34,6 +34,7 @@ public:
 	bool recieveEvent(SDL_Event& event);
 	bool isThisMyEvent(const SDL_Event& event) const;
 	void toggleBorderlessFullscreen();
+	void focus() const { SDL_RaiseWindow(handle); }
 
 	bool kill(bool forced); // having this does not allow the use to forget to call killWindow on the sub class!
 	bool isKilled() const { return killed; }

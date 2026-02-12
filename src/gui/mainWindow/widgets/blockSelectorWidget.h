@@ -38,6 +38,7 @@ public:
 	BlockSelectorWidget(WidgetId widgetId, MainWindow& mainWindow);
 private:
 	void addPath(const std::string& path, const std::variant<BlockType, std::string, std::pair<BlockType, circuit_id_t>>& data);
+	void removePath(const std::string& path, const std::variant<BlockType, std::string, std::pair<BlockType, circuit_id_t>>& data);
 
 	void createTree(const SelectorTreeNode& node);
 	void render() override final;

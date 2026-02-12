@@ -9,35 +9,6 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
 
-void LoadCallback(void* userData, const char* const* filePaths, int filter) {
-	CircuitViewWidget* circuitViewWidget = (CircuitViewWidget*)userData;
-	if (filePaths && filePaths[0]) {
-		std::string filePath = filePaths[0];
-		std::vector<circuit_id_t> ids = circuitViewWidget->getMainWindow().getEnvironment().getCircuitFileManager().loadFromFile(filePath);
-		logInfo("Requested load from '{}' produced {} circuit(s)", "CircuitViewWidget:LoadCallback", filePath, ids.size());
-		if (ids.empty()) {
-			logInfo("No circuits found in '{}'", "CircuitViewWidget:LoadCallback", filePath);
-			// logError("Failed to load circuit file."); // Not a error! It is valid to load 0 circuits.
-			return;
-		}
-		circuit_id_t id = ids.back();
-		bool doSetCir = true;
-		// circuitViewWidget->getCircuitView()->getBackend()->linkCircuitViewWithCircuit(circuitViewWidget->getCircuitView(), id);
-		for (auto& iter : circuitViewWidget->getBackend().getSimulatorManager().getSimulators()) {
-			if (iter.second->getCircuitId() == id) {
-				doSetCir = false;
-				circuitViewWidget->getCircuitView().setSimulator(iter.first);
-				// circuitViewWidget->getCircuitView()->getBackend()->linkCircuitViewWithSimulator(circuitViewWidget->getCircuitView(), iter.first, Address());
-				return;
-			}
-		}
-		if (doSetCir) circuitViewWidget->getCircuitView().setCircuit(id);
-		logInfo("Circuit view switched to loaded circuit {}", "CircuitViewWidget:LoadCallback", id);
-	} else {
-		logInfo("File dialog canceled.");
-	}
-}
-
 CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) : Widget(widgetId, mainWindow) {
 	ViewportId viewportId = MainRenderer::get().registerViewport(getMainWindow().getWindowId(), { 100, 100 });
 	circuitView = std::make_unique<CircuitView>(mainWindow.getEnvironment(), viewportId);
@@ -124,7 +95,7 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 }
 
 CircuitViewWidget::~CircuitViewWidget() {
-	getMainWindow().getToolManagerManager().addCircuitView(circuitView.get());
+	getMainWindow().getToolManagerManager().removeCircuitView(circuitView.get());
 	ViewportId viewportId = circuitView->getViewportId();
 	circuitView.reset();
 	MainRenderer::get().deregisterViewport(viewportId);
@@ -150,26 +121,6 @@ void CircuitViewWidget::processEvent(SDL_Event& event) {
 					movement.x / size.x * circuitView->getViewManager().getViewWidth() * scaleAmout,
 					movement.y / size.y * circuitView->getViewManager().getViewHeight() * scaleAmout
 				));
-			}
-		} else if (event.type == SDL_EVENT_DROP_FILE && event.drop.data != nullptr) {
-			std::string filePath(event.drop.data);
-			if (filePath.empty()) return;
-			std::vector<circuit_id_t> ids = getEnvironment().getCircuitFileManager().loadFromFile(filePath);
-			if (ids.empty()) {
-				// logError("Error", "Failed to load circuit file."); // Not a error! It is valid to load 0 circuits.
-			} else {
-				circuit_id_t id = ids.back();
-				if (id == 0) {
-					logError("Error", "Failed to load circuit file.");
-					getMainWindow().logError("Failed to load circuit.");
-				} else {
-					circuitView->setCircuit(id);
-					for (auto& iter : circuitView->getBackend().getSimulatorManager().getSimulators()) {
-						if (iter.second->getCircuitId() == id) {
-							circuitView->setSimulator(iter.first);
-						}
-					}
-				}
 			}
 		}
 	}
@@ -212,18 +163,6 @@ void CircuitViewWidget::asSave() {
 	// 	logWarning("Could not save because non circuit was selected.", "CircuitViewWidget");
 	// 	getMainWindow().log("Could not save because non circuit was selected.");
 	// }
-}
-
-// for drag and drop load directly onto this circuit view widget
-void CircuitViewWidget::load() {
-	static const SDL_DialogFileFilter filters[] = {
-		{ "Circuit Files", "cir" },
-		{ "BLIF Files", "blif" },
-		{ "WASM Files", "wasm" },
-	};
-
-	logInfo("Opening load dialog for circuit import", "CircuitViewWidget::load");
-	SDL_ShowOpenFileDialog(LoadCallback, this, nullptr, filters, 3, nullptr, true);
 }
 
 void CircuitViewWidget::render() {
@@ -338,9 +277,6 @@ void CircuitViewWidget::update() {
 		}
 		if (getMainWindow().isPressingKeybind("Keybinds/File/Save As")) {
 			asSave();
-		}
-		if (getMainWindow().isPressingKeybind("Keybinds/File/Open")) {
-			load();
 		}
 		if (getMainWindow().isPressingKeybind("Keybinds/Simulation/Start Stop")) {
 			if (!circuitView->getSimulator()) {

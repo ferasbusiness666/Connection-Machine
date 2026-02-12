@@ -2,6 +2,7 @@
 
 #include <SDL3/SDL_video.h>
 
+#include "SDL3/SDL_dialog.h"
 #include "imgui/imgui_internal.h"
 #include "imgui/imgui_notify.h"
 
@@ -68,6 +69,50 @@ void MainWindow::setNextWindowSideBarDockable() const {
 	ImGui::SetNextWindowClass(&wc);
 }
 
+std::chrono::time_point<std::chrono::high_resolution_clock> lastOpenCommand = std::chrono::high_resolution_clock::now();
+
+void LoadCallback(void* userData, const char* const* filePaths, int filter) {
+	MainWindow* mainWindow = (MainWindow*)userData;
+	if (filePaths && filePaths[0]) {
+		std::string filePath = filePaths[0];
+		std::vector<circuit_id_t> ids = mainWindow->getEnvironment().getCircuitFileManager().loadFromFile(filePath);
+		logInfo("Requested load from '{}' produced {} circuit(s)", "MainWindow::LoadCallback", filePath, ids.size());
+		if (ids.empty()) {
+			logInfo("No circuits found in '{}'", "MainWindow::LoadCallback", filePath);
+			return;
+		}
+		circuit_id_t id = ids.back();
+		bool doSetCir = true;
+		CircuitViewWidget& circuitViewWidget = mainWindow->createWidget<CircuitViewWidget>();
+		for (auto& iter : mainWindow->getEnvironment().getBackend().getSimulatorManager().getSimulators()) {
+			if (iter.second->getCircuitId() == id) {
+				doSetCir = false;
+				logInfo("Loaded circuit {}", "MainWindow::LoadCallback", id);
+				circuitViewWidget.getCircuitView().setSimulator(iter.first);
+				return;
+			}
+		}
+		logInfo("Loaded circuit {}", "MainWindow::LoadCallback", id);
+		circuitViewWidget.getCircuitView().setCircuit(id);
+	} else {
+		logInfo("File dialog canceled.", "MainWindow::LoadCallback");
+	}
+}
+
+void MainWindow::loadDialog() {
+	if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - lastOpenCommand).count() < 100) return;
+	static const SDL_DialogFileFilter filters[] = {
+		{ "Circuit Files", "cir" },
+		{ "BLIF Files", "blif" },
+		{ "WASM Files", "wasm" },
+	};
+
+	logInfo("Opening load dialog for circuit import", "CircuitViewWidget::load");
+	SDL_ShowOpenFileDialog(LoadCallback, this, nullptr, filters, 3, nullptr, true);
+	lastOpenCommand = std::chrono::high_resolution_clock::now();
+	focus();
+}
+
 void MainWindow::doUpdate() {
 	std::unordered_set<WidgetId> widgetsToDestroyMoved;
 	{
@@ -76,9 +121,13 @@ void MainWindow::doUpdate() {
 		widgetsToDestroy.clear();
 	}
 	for (WidgetId widgetId : widgetsToDestroyMoved) {
+		std::lock_guard lock(widgetsMux);
 		widgets.erase(widgetId);
 	}
 	pressedKeys = ::getPressedKeys(getHandle());
+	if (isPressingKeybind("Keybinds/File/Open")) {
+		loadDialog();
+	}
 	if (isPressingKeybind("Keybinds/Editing/Paste")) {
 		toolManagerManager.setTool("paste tool");
 	}
@@ -137,15 +186,33 @@ void MainWindow::processEvent(SDL_Event& event) {
 	// 	}
 	// }
 
-	// send event to RML
-	// RmlSDL::InputEventHandler(rmlContext, sdlWindow->getHandle(), event, getSdlWindowScalingSize());
-
-	for (std::pair<const WidgetId, std::unique_ptr<Widget>>& widget : widgets) {
-		widget.second->processEvent(event);
-	}
-
-	if (event.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
+	if (event.type == SDL_EVENT_DROP_FILE && event.drop.data != nullptr) {
+		std::string filePath(event.drop.data);
+		if (filePath.empty()) return;
+		std::vector<circuit_id_t> ids = getEnvironment().getCircuitFileManager().loadFromFile(filePath);
+		if (ids.empty()) {
+			// logError("Error", "Failed to load circuit file."); // Not a error! It is valid to load 0 circuits.
+		} else {
+			circuit_id_t id = ids.back();
+			if (id == 0) {
+				logError("Error", "Failed to load circuit file.");
+				this->logError("Failed to load circuit.");
+			} else {
+				CircuitViewWidget& circuitViewWidget = createWidget<CircuitViewWidget>();
+				circuitViewWidget.getCircuitView().setCircuit(id);
+				for (auto& iter : environment.getBackend().getSimulatorManager().getSimulators()) {
+					if (iter.second->getCircuitId() == id) {
+						circuitViewWidget.getCircuitView().setSimulator(iter.first);
+					}
+				}
+			}
+		}
+	} else if (event.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
 		applyUiScale(uiScale);
+	} else {
+		for (std::pair<const WidgetId, std::unique_ptr<Widget>>& widget : widgets) {
+			widget.second->processEvent(event);
+		}
 	}
 }
 
@@ -301,8 +368,11 @@ void MainWindow::render() {
 			ImGui::EndMainMenuBar();
 		}
 
-		for (std::pair<const WidgetId, std::unique_ptr<Widget>>& widget : widgets) {
-			widget.second->doRendering();
+		{
+			std::lock_guard lock(widgetsMux);
+			for (std::pair<const WidgetId, std::unique_ptr<Widget>>& widget : widgets) {
+				widget.second->doRendering();
+			}
 		}
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 5.f);

@@ -30,6 +30,7 @@ public:
 		WidgetId widgetId = widgetIdProvider.getNewId();
 		std::unique_ptr<WidgetType> widget = std::make_unique<WidgetType>(widgetId, *this, std::forward<Args>(args)...);
 		WidgetType& widgetRef = *widget;
+		std::lock_guard lock(widgetsMux);
 		auto pair = widgets.emplace(widgetId, std::move(widget));
 		return widgetRef;
 	}
@@ -63,6 +64,8 @@ public:
 	void setNextWindowMainDockable() const;
 	void setNextWindowSideBarDockable() const;
 
+	void loadDialog();
+
 private:
 	void doUpdate() override final;
 	bool killWindow(bool forced) override final { widgets.clear(); return true; }
@@ -90,6 +93,7 @@ private:
 	static constexpr double kUiScaleMax = 3.0;
 
 
+	std::mutex widgetsMux;
 	std::unordered_map<WidgetId, std::unique_ptr<Widget>> widgets;
 	IdProvider<WidgetId> widgetIdProvider;
 	std::mutex widgetsToDestroyMux;

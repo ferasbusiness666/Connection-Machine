@@ -109,8 +109,8 @@ circuit_id_t ProceduralCircuit::getCircuitId(const ProceduralCircuitParameters& 
 	GeneratedCircuit generatedCircuit;
 	this->makeCircuit(realParameters, generatedCircuit);
 	generatedCircuit.markAsCustom();
+	generatedCircuit.setName(getProceduralCircuitName() + " : " + realParameters.toString());
 	GeneratedCircuitValidator validator(generatedCircuit, circuitManager.getBlockDataManager());
-
 	if (!(generatedCircuit.isValid())) return 0;
 
 	// Create the circuit if it has not been generated
