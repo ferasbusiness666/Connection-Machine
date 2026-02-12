@@ -33,6 +33,7 @@ public:
 		auto pair = widgets.emplace(widgetId, std::move(widget));
 		return widgetRef;
 	}
+	void destroyWidget(WidgetId widgetId);
 
 	// logging
 	void log(const std::string& message);
@@ -58,6 +59,9 @@ public:
 	ImGuiID getDockLeftId() const { return dockLeftId; }
 	ImGuiID getDockRightId() const { return dockRightId; }
 	ImGuiID getDockBottomId() const { return dockBottomId; }
+
+	void setNextWindowMainDockable() const;
+	void setNextWindowSideBarDockable() const;
 
 private:
 	void doUpdate() override final;
@@ -85,9 +89,13 @@ private:
 	static constexpr double kUiScaleMin = 0.5;
 	static constexpr double kUiScaleMax = 3.0;
 
+
 	std::unordered_map<WidgetId, std::unique_ptr<Widget>> widgets;
 	IdProvider<WidgetId> widgetIdProvider;
+	std::mutex widgetsToDestroyMux;
+	std::unordered_set<WidgetId> widgetsToDestroy;
 
+	ImGuiID docRootId;
 	ImGuiID dockMainId;
 	ImGuiID dockLeftId;
 	ImGuiID dockRightId;

@@ -229,6 +229,7 @@ void CircuitViewWidget::load() {
 void CircuitViewWidget::render() {
 	ImGui::SetNextWindowDockID(getMainWindow().getDockMainId(), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(400, 300), ImGuiCond_FirstUseEver);
+	getMainWindow().setNextWindowMainDockable();
 	bool isHovered = false;
 	bool isFocused = false;
 	ImVec2 mousePos;
@@ -237,7 +238,8 @@ void CircuitViewWidget::render() {
 	if (!getGUIValue_rendering<bool>("CircuitSaved")) {
 		windowFlags |= ImGuiWindowFlags_UnsavedDocument;
 	}
-	if (ImGui::Begin((getGUIValue_rendering<std::string>("CircuitName") + "###" + getWidgetIdStr()).c_str(), nullptr, windowFlags)) {
+	bool open = true;
+	if (ImGui::Begin((getGUIValue_rendering<std::string>("CircuitName") + "###" + getWidgetIdStr()).c_str(), &open, windowFlags)) {
 		ImGui::PopStyleVar();
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 		ImVec2 viewportWindowScreenPos = ImGui::GetCursorScreenPos();
@@ -303,6 +305,9 @@ void CircuitViewWidget::render() {
 		}
 		draw_list->ChannelsMerge();
 	} else ImGui::PopStyleVar();
+	if (!open) {
+		getMainWindow().destroyWidget(this->getWidgetId());
+	}
 	ImGui::End();
 }
 

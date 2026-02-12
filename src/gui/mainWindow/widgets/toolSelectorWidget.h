@@ -34,7 +34,6 @@ class ToolSelectorWidget : public Widget {
 	};
 public:
 	ToolSelectorWidget(WidgetId widgetId, MainWindow& mainWindow);
-	~ToolSelectorWidget();
 private:
 	void addPath(const std::string& path, const std::string& data);
 

@@ -70,12 +70,13 @@ void ToolSelectorWidget::createTree(const SelectorTreeNode& node) {
 	}
 }
 
-ToolSelectorWidget::~ToolSelectorWidget() { }
 void ToolSelectorWidget::render() {
 	ImGui::SetNextWindowDockID(getMainWindow().getDockLeftId(), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(100, 300), ImGuiCond_FirstUseEver);
+	getMainWindow().setNextWindowSideBarDockable();
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
-	if (ImGui::Begin(("Tools###" + getWidgetIdStr()).c_str())) {
+	bool open = true;
+	if (ImGui::Begin(("Tools###" + getWidgetIdStr()).c_str(), &open)) {
 		ImGui::PopStyleVar();
 		{
 			std::lock_guard mux(pathsMux);
@@ -100,5 +101,8 @@ void ToolSelectorWidget::render() {
 			ImGui::EndChild();
 		}
 	} else ImGui::PopStyleVar();
+	if (!open) {
+		getMainWindow().destroyWidget(this->getWidgetId());
+	}
 	ImGui::End();
 }

@@ -210,8 +210,10 @@ unsigned int fastStep = 10;
 void BlockSelectorWidget::render() {
 	ImGui::SetNextWindowDockID(getMainWindow().getDockLeftId(), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(100, 300), ImGuiCond_FirstUseEver);
+	getMainWindow().setNextWindowSideBarDockable();
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
-	if (ImGui::Begin(("Blocks###" + getWidgetIdStr()).c_str())) {
+	bool open = true;
+	if (ImGui::Begin(("Blocks###" + getWidgetIdStr()).c_str(), &open)) {
 		ImGui::PopStyleVar();
 		const std::string& selectedProceduralCircuitOrBus = getGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus");
 		if (selectedProceduralCircuitOrBus != "") {
@@ -256,5 +258,8 @@ void BlockSelectorWidget::render() {
 		std::lock_guard mux(pathsMux);
 		createTree(root);
 	} else ImGui::PopStyleVar();
+	if (!open) {
+		getMainWindow().destroyWidget(this->getWidgetId());
+	}
 	ImGui::End();
 }

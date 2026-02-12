@@ -32,6 +32,11 @@ MainWindow::MainWindow() : SdlWindow("Connection Machine"), environment(true), t
 
 MainWindow::~MainWindow() = default;
 
+void MainWindow::destroyWidget(WidgetId widgetId) {
+	std::lock_guard lock(widgetsToDestroyMux);
+	widgetsToDestroy.insert(widgetId);
+}
+
 void MainWindow::log(const std::string& message) {
 	ImGui::InsertNotification({ ImGuiToastType_Info, 3000, "%s", message.c_str() });
 }
@@ -51,7 +56,28 @@ bool MainWindow::isPressingKeybind(const std::string& settingKey, bool repeat) c
 	return isPressingKeybind(*keybind, repeat);
 }
 
+void MainWindow::setNextWindowMainDockable() const {
+	ImGuiWindowClass wc;
+	wc.ClassId = 1;
+	ImGui::SetNextWindowClass(&wc);
+}
+
+void MainWindow::setNextWindowSideBarDockable() const {
+	ImGuiWindowClass wc;
+	wc.ClassId = 2;
+	ImGui::SetNextWindowClass(&wc);
+}
+
 void MainWindow::doUpdate() {
+	std::unordered_set<WidgetId> widgetsToDestroyMoved;
+	{
+		std::lock_guard lock(widgetsToDestroyMux);
+		widgetsToDestroyMoved = std::move(widgetsToDestroy);
+		widgetsToDestroy.clear();
+	}
+	for (WidgetId widgetId : widgetsToDestroyMoved) {
+		widgets.erase(widgetId);
+	}
 	pressedKeys = ::getPressedKeys(getHandle());
 	if (isPressingKeybind("Keybinds/Editing/Paste")) {
 		toolManagerManager.setTool("paste tool");
@@ -129,7 +155,10 @@ void MainWindow::render() {
 	{std::lock_guard lock(uiScaleMux);
 	style.FontScaleMain = uiScale;}
 	style.TreeLinesFlags = ImGuiTreeNodeFlags_DrawLinesFull;
+	style.TabCloseButtonMinWidthSelected = 0;
+	style.TabRounding = 0;
 	ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 10);
+	// ImGui::PushStyleVar(ImGuiStyleVar_tab, 10);
 	{
 		frameIndex.fetch_add(1);
 		bool open = true;
@@ -147,22 +176,86 @@ void MainWindow::render() {
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 		ImGui::Begin("DockSpace", &open, window_flags);
 		ImGui::PopStyleVar(2);
+		ImGuiWindowClass mainClass;
+		mainClass.ClassId = 1;
+		mainClass.DockingAllowUnclassed = false;
+		ImGuiWindowClass sideBarClass;
+		sideBarClass.ClassId = 2;
+		sideBarClass.DockingAllowUnclassed = false;
+		float leftWidth = ImGui::GetContentRegionAvail().x * 0.25f;
+		ImGui::BeginChild("LeftRegion", ImVec2(leftWidth, 0), false);
+		{
+			dockLeftId = ImGui::GetID("LeftDock");
+			if (ImGui::DockBuilderGetNode(dockLeftId) == NULL) {
+				ImGui::DockBuilderRemoveNode(dockLeftId);
+				ImGui::DockBuilderAddNode(
+					dockLeftId,
+					ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton
+				);
+			}
+			ImGui::DockSpace(dockLeftId, ImVec2(0,0), 0, &sideBarClass);
+		}
+		ImGui::EndChild();
+		ImGui::SameLine();
+		ImGui::BeginChild("MainRegion", ImVec2(0, 0), false);
+		{
+			dockMainId = ImGui::GetID("MainDock");
+			if (ImGui::DockBuilderGetNode(dockMainId) == NULL) {
+				ImGui::DockBuilderRemoveNode(dockMainId);
+				ImGui::DockBuilderAddNode(
+					dockMainId,
+					ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton
+				);
+			}
+			ImGui::DockSpace(dockMainId, ImVec2(0,0), 0, &mainClass);
+		}
+		ImGui::EndChild();
+		ImGui::End();
+		ImGuiDockNode* node = ImGui::DockBuilderGetNode(dockMainId);
+		if (node && node->IsSplitNode()) {
+			ImGuiDockNode* child0 = node->ChildNodes[0];
+			ImGuiDockNode* child1 = node->ChildNodes[1];
+			if (child0 && child1) {
+				if (child0->Windows.Size == 0)
+					ImGui::DockBuilderRemoveNode(child0->ID);
 
-		if (ImGui::DockBuilderGetNode(ImGui::GetID("MyDockspace")) == NULL) {
-			ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
-			ImGui::DockBuilderRemoveNode(dockspace_id);
-			ImGui::DockBuilderAddNode(dockspace_id);
+				if (child1->Windows.Size == 0)
+					ImGui::DockBuilderRemoveNode(child1->ID);
+			}
+		}
+		node = ImGui::DockBuilderGetNode(dockLeftId);
+		if (node && node->IsSplitNode()) {
+			ImGuiDockNode* child0 = node->ChildNodes[0];
+			ImGuiDockNode* child1 = node->ChildNodes[1];
+			if (child0 && child1) {
+				if (child0->Windows.Size == 0)
+					ImGui::DockBuilderRemoveNode(child0->ID);
 
-			dockMainId = dockspace_id; // This variable will track the document node, however we are not using it here as we aren't docking anything into it.
-			dockLeftId = ImGui::DockBuilderSplitNode(dockMainId, ImGuiDir_Left, 0.25f, NULL, &dockMainId);
-			dockRightId = ImGui::DockBuilderSplitNode(dockMainId, ImGuiDir_Right, 0.25f, NULL, &dockMainId);
-			dockBottomId = ImGui::DockBuilderSplitNode(dockMainId, ImGuiDir_Down, 0.25f, NULL, &dockMainId);
-			ImGui::DockBuilderFinish(dockspace_id);
+				if (child1->Windows.Size == 0)
+					ImGui::DockBuilderRemoveNode(child1->ID);
+			}
 		}
 
-		ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
-		ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), 0);
-		ImGui::End();
+
+		// ImGui::Begin("DockSpace", &open, window_flags);
+		// ImGui::PopStyleVar(2);
+		// docRootId = ImGui::GetID("MyDockspace");
+		// if (ImGui::DockBuilderGetNode(docRootId) == NULL) {
+		// 	ImGui::DockBuilderRemoveNode(docRootId);
+		// 	ImGui::DockBuilderAddNode(
+		// 		docRootId,
+		// 		ImGuiDockNodeFlags_NoWindowMenuButton // ImGuiDockNodeFlags_NoDockingSplit
+		// 	);
+		// 	ImGui::DockBuilderSplitNode(docRootId, ImGuiDir_Left, 0.25f, &dockLeftId, &dockMainId);
+		// 	ImGui::DockBuilderGetNode(dockLeftId)->LocalFlags |= ImGuiDockNodeFlags_NoWindowMenuButton;
+		// 	ImGui::DockBuilderGetNode(dockMainId)->LocalFlags |= ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_CentralNode;
+		// 	// dockRightId = ImGui::DockBuilderSplitNode(dockMainId, ImGuiDir_Right, 0.25f, NULL, &dockMainId);
+		// 	// dockBottomId = ImGui::DockBuilderSplqitNode(dockMainId, ImGuiDir_Down, 0.25f, NULL, &dockMainId);
+		// 	ImGui::DockBuilderGetNode(docRootId)->LocalFlags |= ImGuiDockNodeFlags_NoDockingSplit;
+		// 	ImGui::DockBuilderFinish(docRootId);
+		// }
+		// ImGui::DockSpace(docRootId, ImVec2(0.0f, 0.0f), 0);
+		// ImGui::End();
 
 		if (ImGui::BeginMainMenuBar()) {
 			if (ImGui::BeginMenu("Connnection Machine")) {
