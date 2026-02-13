@@ -371,9 +371,10 @@ void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vect
 						// 	assert(otherSimulatorToThisSimulatorIdMappingIter != subcircuitDataAIter->second.otherSimulatorToThisSimulatorIdMapping.end());
 						// 	otherConnectionPoint = EvalConnectionPoint(otherSimulatorToThisSimulatorIdMappingIter->second, internalBottomPoint.connectionEndId);
 						// }
+						EvalConnectionPoint otherConnectionPointMapped = otherConnectionPoint;
 						auto remappingIter = nextState.getConnectionPointRemapping().find(otherConnectionPoint);
 						if (remappingIter != nextState.getConnectionPointRemapping().end()) {
-							otherConnectionPoint = remappingIter->second;
+							otherConnectionPointMapped = remappingIter->second;
 						} else {
 							if (nextState.getConnectionPointRemappingToNothing().contains(otherConnectionPoint)) continue;
 						}
@@ -384,7 +385,7 @@ void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vect
 						assert(weight);
 						nextState.addConnection(EvalConnection(
 							connectionPoint,
-							otherConnectionPoint
+							otherConnectionPointMapped
 						), weight);
 					}
 				}

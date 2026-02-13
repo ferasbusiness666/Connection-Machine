@@ -325,6 +325,10 @@ TEST_P(BasicFuzzingEvaluatorTest, FuzzInteractions) {
 		ASSERT_NE(block, nullptr);
 		Position pos = block->getPosition();
 		blockIdToPosition[blockId] = pos;
+		if (std::holds_alternative<std::vector<simulator_gate_id_t>>(tSimulator->getVirtualConnectionSimulatorId(Address(pos), 0))) {
+			ASSERT_TRUE(std::holds_alternative<std::vector<simulator_gate_id_t>>(rSimulator->getVirtualConnectionSimulatorId(Address(pos), 0)));
+			continue;
+		}
 		simulatorIdsTest.push_back(std::get<simulator_gate_id_t>(tSimulator->getVirtualConnectionSimulatorId(Address(pos), 0)));
 		simulatorIdsRef.push_back(std::get<simulator_gate_id_t>(rSimulator->getVirtualConnectionSimulatorId(Address(pos), 0)));
 		ps.push_back("B " + pos.toString());

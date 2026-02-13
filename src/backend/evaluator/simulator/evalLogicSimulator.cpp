@@ -257,7 +257,7 @@ SimulatorStateIndexVecVariant EvalLogicSimulator::getVirtualConnectionSimulatorI
 		outputSimulatorIds.push_back(iter2->second);
 	}
 	return outputSimulatorIds;
-	}
+}
 
 SimulatorStateIndexVecVariant EvalLogicSimulator::getPinSimulatorId(const Address& address) const {
 	std::lock_guard lock(mux);

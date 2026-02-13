@@ -141,6 +141,10 @@ std::unique_ptr<FuzzTestcase> TestcaseMinifier::tryRemoveEditActions(const FuzzT
 		if (block == nullptr) continue;
 		Position pos = block->getPosition();
 		blockIdToPosition[blockId] = pos;
+		if (std::holds_alternative<std::vector<simulator_gate_id_t>>(tSimulator->getVirtualConnectionSimulatorId(Address(pos), 0))) {
+			assert(std::holds_alternative<std::vector<simulator_gate_id_t>>(rSimulator.getVirtualConnectionSimulatorId(Address(pos), 0)));
+			continue;
+		}
 		simulatorIdsTest.push_back(std::get<simulator_gate_id_t>(tSimulator->getVirtualConnectionSimulatorId(Address(pos), 0)));
 		simulatorIdsRef.push_back(std::get<simulator_gate_id_t>(tSimulator->getVirtualConnectionSimulatorId(Address(pos), 0)));
 		const BlockData* blockData = blockDataManager.getBlockData(block->type());
