@@ -3,7 +3,7 @@
 
 #include <vulkan/vulkan_core.h>
 
-class SDL_Window;
+struct SDL_Window;
 union SDL_Event;
 class ImGuiContext;
 class VulkanInstance;
