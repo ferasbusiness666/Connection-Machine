@@ -108,6 +108,12 @@ bool CircuitTestGroup::generateTestCircuit(BlockType blockType, Environment& env
     return true;
 }
 
+bool CircuitTestGroup::runAllTests(BlockType blockType, bool haltOnFailure, Environment& environment) {
+    std::vector<int> testIDs;
+    for (int i =0; i < testCases.size(); i++) testIDs.push_back(i);
+    return runTests(testIDs, blockType, haltOnFailure, environment);
+}
+
 bool CircuitTestGroup::runTests(std::vector<std::string>& testsToRun, BlockType blockType, bool haltOnFailure, Environment& environment) {
     // converts strings to their IDs and runs them by ID
     std::vector<int> testIDs;

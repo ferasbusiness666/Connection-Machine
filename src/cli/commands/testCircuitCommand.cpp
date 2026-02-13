@@ -36,8 +36,7 @@ void TestCircuitCommand::run(const std::vector<std::string>& args, Environment& 
         return;
     }
 
-    std::vector<int> tests = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
-    if (!testCase.value().runTests(tests, circuitBlock, false, environment)) {
+    if (!testCase.value().runAllTests(circuitBlock, false, environment)) {
         logInfo("Test failed.", "TestCircuitCommand");
     }
     else {

@@ -13,6 +13,7 @@ class CircuitTestGroup {
 public:
     CircuitTestGroup() {}
     void addTestCase(std::string name);
+    bool runAllTests(BlockType blockType, bool haltOnFailure, Environment& environment);
     bool runTests(std::vector<std::string>& testsToRun, BlockType blockType, bool haltOnFailure, Environment& environment);
     bool runTests(std::vector<int>& testsToRun, BlockType blockType, bool haltOnFailure, Environment& environment);
     bool addSetStatesCommand(std::string testCase, std::vector<std::pair<std::string, logic_state_t>> states);
