@@ -49,6 +49,7 @@ std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestFromFilePa
             std::string portName;
             inputFile >> std::quoted(portName);
             portNames.insert(portName);
+            logInfo("New port name {}", "CircuitTestFileManager", portName);
             inputFile >> std::ws;
         }
     } else {
@@ -56,45 +57,76 @@ std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestFromFilePa
         return std::nullopt;
     }
 
+    inputFile >> token;
+    if (token == "Cases:") {
+        inputFile >> std::ws;
+    } else {
+        logError("Invalid file format, expected 'Cases:' on line 4", "CircuitTestFileManager");
+        return std::nullopt;
+    }
+
     CircuitTestGroup testGroup;
 
-    while (inputFile >> token) {
-        if (token[0] == '>') {
-            if (token.substr(1) == "Set:" || token.substr(1) == "Check:") {
-                std::vector<std::pair<std::string, logic_state_t>> states = {};
-                inputFile >> std::ws;
-                while (inputFile.peek() != '>' && !inputFile.eof()) {
-                    std::string portName;
-                    inputFile >> std::quoted(portName);
-                    if (!portNames.contains(portName)) {
-                        logError("Unrecognized port name '{}', be sure to include it at the top of the file", "CircuitTestFileManager", portName);
-                        return std::nullopt;
-                    }
+    inputFile >> std::ws;
+    std::string groupName = "";
+    while (inputFile.peek() == '"' && !inputFile.eof()) {
+        inputFile >> std::ws;
+        inputFile >> std::quoted(groupName);
+        testGroup.addTestCase(groupName);
+        logInfo("New group {}", "CircuitTestFileManager", groupName);
+        inputFile >> std::ws;
+        char curly;
+        inputFile >> curly;
+        if (curly != '{') {
+            logError("Error parsing test file: unable to find curly brace after group name", "circuitTestFileManager");
+            return std::nullopt;
+        }
+        inputFile >> std::ws;
+        // adjust logic here to better handle grouping maybe
+        while (inputFile.peek() != '}' && !inputFile.eof()) {
+            inputFile >> token;
+            if (token[0] == '>') {
+                if (token.substr(1) == "Set:" || token.substr(1) == "Check:") {
+                    std::vector<std::pair<std::string, logic_state_t>> states = {};
                     inputFile >> std::ws;
-                    char colon;
-                    inputFile >> colon;
-                    int portState;
-                    inputFile >> portState;
-                    if (portState < 0 || portState > 3) {
-                        logWarning("Unrecognized state {} for port {}", "CircuitTestFileManager", portState, portName);
+                    while (inputFile.peek() != '>' && inputFile.peek() != '}' && !inputFile.eof()) {
+                        std::string portName;
+                        inputFile >> std::quoted(portName);
+                        if (!portNames.contains(portName)) {
+                            logError("Error parsing test file: unrecognized port name '{}', be sure to include it at the top of the file", "CircuitTestFileManager", portName);
+                            return std::nullopt;
+                        }
+                        inputFile >> std::ws;
+                        char colon;
+                        inputFile >> colon;
+                        int portState;
+                        inputFile >> portState;
+                        if (portState < 0 || portState > 3) {
+                            logWarning("Warning parsing test file: unrecognized state {} for port {}", "CircuitTestFileManager", portState, portName);
+                        }
+                        inputFile >> std::ws;
+                        states.push_back(std::make_pair(portName, (logic_state_t)portState));
                     }
-                    inputFile >> std::ws;
-                    states.push_back(std::make_pair(portName, (logic_state_t)portState));
-                }
-                if (token.substr(1) == "Set:") {
-                    testGroup.addSetStatesCommand(states);
+                    if (token.substr(1) == "Set:") {
+                        testGroup.addSetStatesCommand(groupName, states);
+                    } else {
+                        testGroup.addCheckStatesCommand(groupName, states);
+                    }
+                } else if (token.substr(1) == "Step") {
+                    int ticks;
+                    inputFile >> ticks;
+                    testGroup.addTickStepCommand(groupName, ticks);
                 } else {
-                    testGroup.addCheckStatesCommand(states);
+                    logError("Error parsing test file: unknown command '{}'", "CircuitTestFileManager", token.substr(1));
+                    return std::nullopt;
                 }
-            } else if (token.substr(1) == "Step") {
-                int ticks;
-                inputFile >> ticks;
-                testGroup.addTickStepCommand(ticks);
             } else {
-                logError("Error parsing test file: Unknown command '{}'", "CircuitTestFileManager", token.substr(1));
+                logError("Error parsing test file: looking for '>', did not find", "CircuitTestFileManager");
                 return std::nullopt;
             }
         }
+        inputFile >> curly;
+        inputFile >> std::ws;
     }
 
     logInfo("Loaded test", "CircuitTestFileManager");

@@ -9,20 +9,44 @@
 #include "backend/evaluator/simulator/logicState.h"
 #include "backend/position/position.h"
 #include "logging/logging.h"
+#include <utility>
 
-void CircuitTestGroup::addSetStatesCommand(std::vector<std::pair<std::string, logic_state_t>> states) {
+void CircuitTestGroup::addTestCase(std::string name) {
+    testCases.emplace_back(TestCase(name, {}));
+    testCaseNameToID.emplace(std::make_pair(name, testCases.size()-1));
+}
+
+bool CircuitTestGroup::addSetStatesCommand(std::string testCase, std::vector<std::pair<std::string, logic_state_t>> states) {
     TestCommand testCommand = TestCommand(SET_STATES, 0, states);
-    testCommands.push_back(testCommand);
+    auto idIter = testCaseNameToID.find(testCase);
+    if (idIter == testCaseNameToID.end()) {
+        logError("Unrecognized test case {}", "CircuitTestGroup", testCase);
+        return false;
+    }
+    testCases[idIter->second].testCommands.push_back(testCommand);
+    return true;
 }
 
-void CircuitTestGroup::addCheckStatesCommand(std::vector<std::pair<std::string, logic_state_t>> states) {
+bool CircuitTestGroup::addCheckStatesCommand(std::string testCase, std::vector<std::pair<std::string, logic_state_t>> states) {
     TestCommand testCommand = TestCommand(CHECK_STATES, 0, states);
-    testCommands.push_back(testCommand);
+    auto idIter = testCaseNameToID.find(testCase);
+    if (idIter == testCaseNameToID.end()) {
+        logError("Unrecognized test case {}", "CircuitTestGroup", testCase);
+        return false;
+    }
+    testCases[idIter->second].testCommands.push_back(testCommand);
+    return true;
 }
 
-void CircuitTestGroup::addTickStepCommand(int ticks) {
+bool CircuitTestGroup::addTickStepCommand(std::string testCase, int ticks) {
     TestCommand testCommand = TestCommand(TICK_STEP, ticks, {});
-    testCommands.push_back(testCommand);
+    auto idIter = testCaseNameToID.find(testCase);
+    if (idIter == testCaseNameToID.end()) {
+        logError("Unrecognized test case {}", "CircuitTestGroup", testCase);
+        return false;
+    }
+    testCases[idIter->second].testCommands.push_back(testCommand);
+    return true;
 }
 
 bool CircuitTestGroup::generateTestCircuit(BlockType blockType, Environment& environment) {
@@ -43,7 +67,6 @@ bool CircuitTestGroup::generateTestCircuit(BlockType blockType, Environment& env
     // change implementation of this when BlockData::getConnectionNameToId is implemented
     namePositionMap.clear();
 
-    // generate the test circuit
     if (!cir->tryInsertBlock(Position(0,0), Orientation(), blockType)) {
         logError("Couldn't insert test circuit block {}", "circuitTestCase", "blockType");
         return false;
@@ -85,34 +108,51 @@ bool CircuitTestGroup::generateTestCircuit(BlockType blockType, Environment& env
     return true;
 }
 
-bool CircuitTestGroup::runTest(BlockType blockType, bool haltOnFailure, Environment& environment) {
-    // retrieve necessary objects to run test
+bool CircuitTestGroup::runTests(std::vector<std::string>& testsToRun, BlockType blockType, bool haltOnFailure, Environment& environment) {
+    // converts strings to their IDs and runs them by ID
+    std::vector<int> testIDs;
+    for (auto stringIter = testsToRun.begin(); stringIter != testsToRun.end(); stringIter++) {
+        auto idIter = testCaseNameToID.find(*stringIter);
+        if (idIter == testCaseNameToID.end()) {
+            logError("Unrecognized test case {}", "CircuitTestGroup", *stringIter);
+            return false;
+        }
+        testIDs.push_back(idIter->second);
+    }
+    return runTests(testIDs, blockType, haltOnFailure, environment);
+}
+
+bool CircuitTestGroup::runTests(std::vector<int>& testsToRun, BlockType blockType, bool haltOnFailure, Environment& environment) {
     generateTestCircuit(blockType, environment);
     bool fullTestSucceedStatus = true;
 
-    // run tests on the generated test circuit
-    for (auto commandIter = testCommands.begin(); commandIter != testCommands.end(); commandIter++) {
-        logInfo("Performing a test command of type {}", "CircuitTestGroup", getTestCommandTypeString(commandIter->type));
-        bool isTestGroupSuccessful = true;
-        if (commandIter->type == NOP_COMMAND) {
-            continue;
-        } else if (commandIter->type == SET_STATES) {
-            isTestGroupSuccessful = runSetStatesCommand(*commandIter, *simulator, namePositionMap);
-        } else if (commandIter->type == CHECK_STATES) {
-            isTestGroupSuccessful = runCheckStatesCommand(*commandIter, *simulator, namePositionMap);
-        } else if (commandIter->type == TICK_STEP) {
-            logInfo("Stepping forward by {} ticks", "CircuitTestGroup - TICK_STEP", commandIter->ticks);
-            simulator->tickStep(commandIter->ticks);
-        } else {
-            logError("Unrecognized test command", "CircuitTestGroup");
-            isTestGroupSuccessful = false;
-        }
+    for (auto testCaseIndexIter = testsToRun.begin(); testCaseIndexIter != testsToRun.end(); testCaseIndexIter++) {
+        simulator->resetStates();
+        simulator->setPause(true); //don't know if this is necessary but playing it safe
+        logInfo("Running test case '{}'", "CircuitTestGroup", testCases[*testCaseIndexIter].name);
+        for (auto commandIter = testCases[*testCaseIndexIter].testCommands.begin(); commandIter != testCases[*testCaseIndexIter].testCommands.end(); commandIter++) {
+            logInfo("Performing a test command of type {}", "CircuitTestGroup", getTestCommandTypeString(commandIter->type));
+            bool isTestGroupSuccessful = true;
+            if (commandIter->type == NOP_COMMAND) {
+                continue;
+            } else if (commandIter->type == SET_STATES) {
+                isTestGroupSuccessful = runSetStatesCommand(*commandIter, *simulator, namePositionMap);
+            } else if (commandIter->type == CHECK_STATES) {
+                isTestGroupSuccessful = runCheckStatesCommand(*commandIter, *simulator, namePositionMap);
+            } else if (commandIter->type == TICK_STEP) {
+                logInfo("Stepping forward by {} ticks", "CircuitTestGroup - TICK_STEP", commandIter->ticks);
+                simulator->tickStep(commandIter->ticks);
+            } else {
+                logError("Unrecognized test command", "CircuitTestGroup");
+                isTestGroupSuccessful = false;
+            }
 
-        if (!isTestGroupSuccessful) {
-            logError("Test group failed.", "CircuitTestGroup");
-            fullTestSucceedStatus = false;
-            if (haltOnFailure) {
-                return false;
+            if (!isTestGroupSuccessful) {
+                logError("Test group failed.", "CircuitTestGroup");
+                fullTestSucceedStatus = false;
+                if (haltOnFailure) {
+                    return false;
+                }
             }
         }
     }

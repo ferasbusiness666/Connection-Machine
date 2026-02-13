@@ -1,6 +1,7 @@
 version_0
 Test: "Tri State Buffer Test"
-Ports: "Input", "Enable", "Output"
+Ports: "Input" "Enable" "Output"
+Cases:
 "0 0 Z" {
     >Set:
         "Enable":0

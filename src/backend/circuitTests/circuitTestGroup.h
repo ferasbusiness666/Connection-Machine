@@ -1,18 +1,23 @@
 #ifndef circuitTestGroup_h
 #define circuitTestGroup_h
 
+#include "backend/container/block/block.h"
+#include "backend/container/block/blockDefs.h"
 #include "backend/evaluator/evalDefs.h"
 #include "environment/environment.h"
 #include "backend/evaluator/simulator/logicState.h"
+#include <unordered_map>
 
 class CircuitTestGroup {
     typedef std::unordered_multimap<std::string, Position> NamePositionMap;
 public:
     CircuitTestGroup() {}
-    bool runTest(BlockType blockType, bool haltOnFailure, Environment& environment);
-    void addSetStatesCommand(std::vector<std::pair<std::string, logic_state_t>> states);
-    void addCheckStatesCommand(std::vector<std::pair<std::string, logic_state_t>> states);
-    void addTickStepCommand(int ticks);
+    void addTestCase(std::string name);
+    bool runTests(std::vector<std::string>& testsToRun, BlockType blockType, bool haltOnFailure, Environment& environment);
+    bool runTests(std::vector<int>& testsToRun, BlockType blockType, bool haltOnFailure, Environment& environment);
+    bool addSetStatesCommand(std::string testCase, std::vector<std::pair<std::string, logic_state_t>> states);
+    bool addCheckStatesCommand(std::string testCase, std::vector<std::pair<std::string, logic_state_t>> states);
+    bool addTickStepCommand(std::string testCase, int ticks);
 
 private:
     enum TestCommandType {
@@ -52,7 +57,8 @@ private:
     bool runSetStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition);
     bool runCheckStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition);
 
-    std::vector<TestCommand> testCommands;
+    std::unordered_map<std::string, int> testCaseNameToID;
+    std::vector<TestCase> testCases;
     NamePositionMap namePositionMap;
     EvalLogicSimulator* simulator;
 };
