@@ -65,7 +65,7 @@ std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestFromFilePa
         return std::nullopt;
     }
 
-    CircuitTestGroup testGroup;
+    CircuitTestGroup testGroup(testName);
 
     inputFile >> std::ws;
     std::string groupName = "";

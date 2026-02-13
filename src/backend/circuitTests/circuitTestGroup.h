@@ -4,14 +4,17 @@
 #include "backend/container/block/block.h"
 #include "backend/container/block/blockDefs.h"
 #include "backend/evaluator/evalDefs.h"
-#include "environment/environment.h"
 #include "backend/evaluator/simulator/logicState.h"
-#include <unordered_map>
+#include <vector>
+
+class Environment;
+class EvalLogicSimulator;
 
 class CircuitTestGroup {
     typedef std::unordered_multimap<std::string, Position> NamePositionMap;
 public:
-    CircuitTestGroup() {}
+    CircuitTestGroup(std::string name) : name(name) {}
+    std::string getName() {return name;}
     void addTestCase(std::string name);
     bool runAllTests(BlockType blockType, bool haltOnFailure, Environment& environment);
     bool runTests(std::vector<std::string>& testsToRun, BlockType blockType, bool haltOnFailure, Environment& environment);
@@ -50,6 +53,7 @@ private:
     };
 
     struct TestCase {
+        TestCase(const std::string& name, const std::vector<TestCommand>& testCommands = {}) : name(name), testCommands(testCommands) {}
         std::string name;
         std::vector<TestCommand> testCommands;
     };
@@ -58,6 +62,7 @@ private:
     bool runSetStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition);
     bool runCheckStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition);
 
+    std::string name;
     std::unordered_map<std::string, int> testCaseNameToID;
     std::vector<TestCase> testCases;
     NamePositionMap namePositionMap;

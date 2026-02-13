@@ -9,10 +9,10 @@
 #include "backend/evaluator/simulator/logicState.h"
 #include "backend/position/position.h"
 #include "logging/logging.h"
-#include <utility>
+#include "environment/environment.h"
 
 void CircuitTestGroup::addTestCase(std::string name) {
-    testCases.emplace_back(TestCase(name, {}));
+    testCases.emplace_back(name);
     testCaseNameToID.emplace(std::make_pair(name, testCases.size()-1));
 }
 
