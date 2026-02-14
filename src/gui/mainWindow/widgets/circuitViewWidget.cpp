@@ -1,7 +1,6 @@
 #include "circuitViewWidget.h"
 
 #include "../mainWindow.h"
-#include "SDL3/SDL_dialog.h"
 #include "app.h"
 #include "gpu/mainRenderer.h"
 #include "gui/viewportManager/circuitView/circuitView.h"
