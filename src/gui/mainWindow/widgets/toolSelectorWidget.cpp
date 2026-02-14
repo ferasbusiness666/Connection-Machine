@@ -74,10 +74,10 @@ void ToolSelectorWidget::render() {
 	ImGui::SetNextWindowDockID(getMainWindow().getDockLeftId(), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(100, 300), ImGuiCond_FirstUseEver);
 	getMainWindow().setNextWindowSideBarDockable();
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
 	bool open = true;
+	getMainWindow().pushWindowStyling();
 	if (ImGui::Begin(("Tools###" + getWidgetIdStr()).c_str(), &open)) {
-		ImGui::PopStyleVar();
+		getMainWindow().popWindowStyling();
 		{
 			std::lock_guard mux(pathsMux);
 			createTree(root);
@@ -100,7 +100,7 @@ void ToolSelectorWidget::render() {
 			}
 			ImGui::EndChild();
 		}
-	} else ImGui::PopStyleVar();
+	} else getMainWindow().popWindowStyling();
 	if (!open) {
 		getMainWindow().destroyWidget(this->getWidgetId());
 	}

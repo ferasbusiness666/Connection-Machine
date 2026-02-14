@@ -58,13 +58,15 @@ public:
 
 	ImGuiID getDockMainId() const { return dockMainId; }
 	ImGuiID getDockLeftId() const { return dockLeftId; }
-	ImGuiID getDockRightId() const { return dockRightId; }
-	ImGuiID getDockBottomId() const { return dockBottomId; }
+	// ImGuiID getDockRightId() const { return dockRightId; }
+	// ImGuiID getDockBottomId() const { return dockBottomId; }
 
 	void setNextWindowMainDockable() const;
 	void setNextWindowSideBarDockable() const;
 
 	void loadDialog();
+	void pushWindowStyling() const;
+	void popWindowStyling() const;
 
 private:
 	void doUpdate() override final;
@@ -102,8 +104,10 @@ private:
 	ImGuiID docRootId;
 	ImGuiID dockMainId;
 	ImGuiID dockLeftId;
-	ImGuiID dockRightId;
-	ImGuiID dockBottomId;
+	// ImGuiID dockRightId;
+	// ImGuiID dockBottomId;
+
+	float leftWidth = 150;
 
 	// CornerLogWidget& cornerLog;
 

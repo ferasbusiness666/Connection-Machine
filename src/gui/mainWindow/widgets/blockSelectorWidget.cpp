@@ -247,10 +247,10 @@ void BlockSelectorWidget::render() {
 	ImGui::SetNextWindowDockID(getMainWindow().getDockLeftId(), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(100, 300), ImGuiCond_FirstUseEver);
 	getMainWindow().setNextWindowSideBarDockable();
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
 	bool open = true;
+	getMainWindow().pushWindowStyling();
 	if (ImGui::Begin(("Blocks###" + getWidgetIdStr()).c_str(), &open)) {
-		ImGui::PopStyleVar();
+		getMainWindow().popWindowStyling();
 		const std::string& selectedProceduralCircuitOrBus = getGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus");
 		if (selectedProceduralCircuitOrBus != "") {
 			if (selectedProceduralCircuitOrBus == "Other/Bus") {
@@ -293,7 +293,7 @@ void BlockSelectorWidget::render() {
 		}
 		std::lock_guard mux(pathsMux);
 		createTree(root);
-	} else ImGui::PopStyleVar();
+	} else getMainWindow().popWindowStyling();
 	if (!open) {
 		getMainWindow().destroyWidget(this->getWidgetId());
 	}

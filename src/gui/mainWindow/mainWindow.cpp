@@ -113,6 +113,13 @@ void MainWindow::loadDialog() {
 	focus();
 }
 
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
+}
+
+void MainWindow::popWindowStyling() const {
+	ImGui::PopStyleVar(1);
+}
+
 void MainWindow::doUpdate() {
 	std::unordered_set<WidgetId> widgetsToDestroyMoved;
 	{
@@ -225,7 +232,6 @@ void MainWindow::render() {
 	style.TabCloseButtonMinWidthSelected = 0;
 	style.TabRounding = 0;
 	ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 10);
-	// ImGui::PushStyleVar(ImGuiStyleVar_tab, 10);
 	{
 		frameIndex.fetch_add(1);
 		bool open = true;
@@ -238,92 +244,81 @@ void MainWindow::render() {
 		ImGui::SetNextWindowViewport(viewport->ID);
 		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
 		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-		ImGui::Begin("DockSpace", &open, window_flags);
-		ImGui::PopStyleVar(2);
-		ImGuiWindowClass mainClass;
-		mainClass.ClassId = 1;
-		mainClass.DockingAllowUnclassed = false;
-		ImGuiWindowClass sideBarClass;
-		sideBarClass.ClassId = 2;
-		sideBarClass.DockingAllowUnclassed = false;
-		float leftWidth = ImGui::GetContentRegionAvail().x * 0.25f;
-		ImGui::BeginChild("LeftRegion", ImVec2(leftWidth, 0), false);
-		{
-			dockLeftId = ImGui::GetID("LeftDock");
-			if (ImGui::DockBuilderGetNode(dockLeftId) == NULL) {
-				ImGui::DockBuilderRemoveNode(dockLeftId);
-				ImGui::DockBuilderAddNode(
-					dockLeftId,
-					ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton
-				);
+		if (ImGui::Begin("DockSpace", &open, window_flags)) {
+
+			// setup window classes
+			ImGuiWindowClass mainClass;
+			mainClass.ClassId = 1;
+			mainClass.DockingAllowUnclassed = false;
+			ImGuiWindowClass sideBarClass;
+			sideBarClass.ClassId = 2;
+			sideBarClass.DockingAllowUnclassed = false;
+
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
+			ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 5);
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+			ImGui::SetNextWindowSizeConstraints(ImVec2(40, 0), ImVec2(ImGui::GetContentRegionAvail().x - 40, FLT_MAX));
+			ImGui::BeginChild("LeftRegion", ImVec2(150, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX);
+			{
+				dockLeftId = ImGui::GetID("LeftDock");
+				if (ImGui::DockBuilderGetNode(dockLeftId) == NULL) {
+					ImGui::DockBuilderRemoveNode(dockLeftId);
+					ImGui::DockBuilderAddNode(
+						dockLeftId,
+						ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton
+					);
+				}
+				ImGui::DockSpace(dockLeftId, ImVec2(0,0), 0, &sideBarClass);
+				// kill split nodes with one window
+				ImGuiDockNode* node = ImGui::DockBuilderGetNode(dockMainId);
+				if (node && node->IsSplitNode()) {
+					ImGuiDockNode* child0 = node->ChildNodes[0];
+					ImGuiDockNode* child1 = node->ChildNodes[1];
+					if (child0 && child1) {
+						if (child0->Windows.Size == 0)
+							ImGui::DockBuilderRemoveNode(child0->ID);
+
+						if (child1->Windows.Size == 0)
+							ImGui::DockBuilderRemoveNode(child1->ID);
+					}
+				}
 			}
-			ImGui::DockSpace(dockLeftId, ImVec2(0,0), 0, &sideBarClass);
-		}
-		ImGui::EndChild();
-		ImGui::SameLine();
-		ImGui::BeginChild("MainRegion", ImVec2(0, 0), false);
-		{
-			dockMainId = ImGui::GetID("MainDock");
-			if (ImGui::DockBuilderGetNode(dockMainId) == NULL) {
-				ImGui::DockBuilderRemoveNode(dockMainId);
-				ImGui::DockBuilderAddNode(
-					dockMainId,
-					ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton
-				);
+			ImGui::EndChild();
+			ImGui::SameLine();
+			ImGui::SetNextWindowSizeConstraints(ImVec2(40, 0), ImVec2(FLT_MAX, FLT_MAX));
+			ImGui::BeginChild("MainRegion", ImVec2(0, 0), false);
+			{
+				dockMainId = ImGui::GetID("MainDock");
+				if (ImGui::DockBuilderGetNode(dockMainId) == NULL) {
+					ImGui::DockBuilderRemoveNode(dockMainId);
+					ImGui::DockBuilderAddNode(
+						dockMainId,
+						ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton
+					);
+				}
+				ImGui::DockSpace(dockMainId, ImVec2(0,0), 0, &mainClass);
+				// kill split nodes with one window
+				ImGuiDockNode* node = ImGui::DockBuilderGetNode(dockLeftId);
+				if (node && node->IsSplitNode()) {
+					ImGuiDockNode* child0 = node->ChildNodes[0];
+					ImGuiDockNode* child1 = node->ChildNodes[1];
+					if (child0 && child1) {
+						if (child0->Windows.Size == 0)
+							ImGui::DockBuilderRemoveNode(child0->ID);
+
+						if (child1->Windows.Size == 0)
+							ImGui::DockBuilderRemoveNode(child1->ID);
+					}
+				}
 			}
-			ImGui::DockSpace(dockMainId, ImVec2(0,0), 0, &mainClass);
+			ImGui::EndChild();
+			ImGui::PopStyleVar(3);
 		}
-		ImGui::EndChild();
+		ImGui::PopStyleVar(3);
 		ImGui::End();
-		ImGuiDockNode* node = ImGui::DockBuilderGetNode(dockMainId);
-		if (node && node->IsSplitNode()) {
-			ImGuiDockNode* child0 = node->ChildNodes[0];
-			ImGuiDockNode* child1 = node->ChildNodes[1];
-			if (child0 && child1) {
-				if (child0->Windows.Size == 0)
-					ImGui::DockBuilderRemoveNode(child0->ID);
-
-				if (child1->Windows.Size == 0)
-					ImGui::DockBuilderRemoveNode(child1->ID);
-			}
-		}
-		node = ImGui::DockBuilderGetNode(dockLeftId);
-		if (node && node->IsSplitNode()) {
-			ImGuiDockNode* child0 = node->ChildNodes[0];
-			ImGuiDockNode* child1 = node->ChildNodes[1];
-			if (child0 && child1) {
-				if (child0->Windows.Size == 0)
-					ImGui::DockBuilderRemoveNode(child0->ID);
-
-				if (child1->Windows.Size == 0)
-					ImGui::DockBuilderRemoveNode(child1->ID);
-			}
-		}
-
-
-		// ImGui::Begin("DockSpace", &open, window_flags);
-		// ImGui::PopStyleVar(2);
-		// docRootId = ImGui::GetID("MyDockspace");
-		// if (ImGui::DockBuilderGetNode(docRootId) == NULL) {
-		// 	ImGui::DockBuilderRemoveNode(docRootId);
-		// 	ImGui::DockBuilderAddNode(
-		// 		docRootId,
-		// 		ImGuiDockNodeFlags_NoWindowMenuButton // ImGuiDockNodeFlags_NoDockingSplit
-		// 	);
-		// 	ImGui::DockBuilderSplitNode(docRootId, ImGuiDir_Left, 0.25f, &dockLeftId, &dockMainId);
-		// 	ImGui::DockBuilderGetNode(dockLeftId)->LocalFlags |= ImGuiDockNodeFlags_NoWindowMenuButton;
-		// 	ImGui::DockBuilderGetNode(dockMainId)->LocalFlags |= ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_CentralNode;
-		// 	// dockRightId = ImGui::DockBuilderSplitNode(dockMainId, ImGuiDir_Right, 0.25f, NULL, &dockMainId);
-		// 	// dockBottomId = ImGui::DockBuilderSplqitNode(dockMainId, ImGuiDir_Down, 0.25f, NULL, &dockMainId);
-		// 	ImGui::DockBuilderGetNode(docRootId)->LocalFlags |= ImGuiDockNodeFlags_NoDockingSplit;
-		// 	ImGui::DockBuilderFinish(docRootId);
-		// }
-		// ImGui::DockSpace(docRootId, ImVec2(0.0f, 0.0f), 0);
-		// ImGui::End();
-
 		if (ImGui::BeginMainMenuBar()) {
 			if (ImGui::BeginMenu("Connnection Machine")) {
 				if (ImGui::MenuItem("About")) {
