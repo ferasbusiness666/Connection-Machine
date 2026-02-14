@@ -113,6 +113,7 @@ void MainWindow::loadDialog() {
 	focus();
 }
 
+void MainWindow::pushWindowStyling() const {
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
 }
 
