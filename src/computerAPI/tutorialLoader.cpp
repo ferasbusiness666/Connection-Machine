@@ -1,29 +1,97 @@
 #include "tutorialLoader.h"
 #include "computerAPI/circuits/textParser.h"
+#include "gui/viewportManager/circuitView/tutorial.h"
 #include "logging/logging.h"
+#include <cctype>
+#include <string>
+#include <unordered_map>
+#include <regex>
 
 Position getPositionFromString(const std::string str1, const std::string str2) {
 	return Position(std::stoi(str1.substr(str1.find('(') + 1)), std::stoi(str2.substr(0, str2.size() - 1)));
 }
 
-std::vector<TutorialStep> parseTutorialFile(std::string fileName) {
-    logInfo("Loading tutorial '" + fileName + "'", "TutorialLoader");
-	std::ifstream istream("TutorialLib/" + fileName);
-    if (!istream.is_open()) {
-        logInfo("Failed to open file '" + fileName + "'", "TutorialLoader");
+void parsePreSteps(std::vector<std::string>& info, std::unordered_map<std::string, std::string>& macros, const std::vector<std::string>& lines) {
+	info.clear();
+	macros.clear();
+	for (int i = 0; i < lines.size(); i++) {
+		std::stringstream ss(lines[i]);
+		std::string tok;
+		ss >> tok;
+		if (tok == "version_0") {
+			// use version_0
+		} else if ((tok == "Tutorial:")) {
+			// Tutorial:
+			if (!(ss >> info[0])) {
+				logError("Invalid name on line {}, name must exist.", "TutorialLoader", i);
+				continue;
+			}
+		} else if (tok.starts_with("$")) {
+			// Macro (i.e. '$p1 (2, 5)')
+			if (tok.size() == 1) {
+				logError("Invalid macro on line {}, macro must contain a variable name.", "TutorialLoader", i);
+				continue;
+			}
+			std::string value;
+			if (!(ss >> value)) {
+				logError("Invalid macro on line {}, macro must contain a value.", "TutorialLoader", i);
+				continue;
+			}
+			value = ss.str().substr(ss.str().find(value));
+			logInfo(value);
+			if (!macros.emplace(tok, value).second) {
+				logError("Warning: Duplicate macro definition on line {}.", "TutorialLoader", i);
+				continue;
+			}
+		} else if (tok.starts_with("#")) {
+			// ignore comments
+			continue;
+		}
+	}
+}
+
+void macroReplace(std::vector<std::string>& lines, std::unordered_map<std::string, std::string>& macros) {
+    for (int i = 0; i < lines.size(); i++) {
+        for (auto& macro : macros) {
+            lines[i] = std::regex_replace(lines[i], (std::regex)macro.first, macro.second);
+        }
     }
+}
+
+void parseSteps(std::vector<TutorialStep>& steps, const std::vector<std::string>& lines) {
+	for (int i = 0; i < lines.size(); i++) {
+        
+    }
+}
+
+std::vector<TutorialStep> parseTutorialFile(std::string fileName) {
+	logInfo("Loading tutorial '" + fileName + "'", "TutorialLoader");
+	std::ifstream istream("TutorialLib/" + fileName);
+	if (!istream.is_open()) {
+		logInfo("Failed to open file '" + fileName + "'", "TutorialLoader");
+	}
+	std::vector<std::string> lines;
+	std::string buffer;
+	while (std::getline(istream, buffer)) {
+		lines.push_back(buffer);
+	}
+	std::vector<std::string> info(2, "");
+	std::unordered_map<std::string, std::string> macros;
+	parsePreSteps(info, macros, lines);
 	std::vector<TutorialStep> steps;
 	std::string cur;
 	int line = 0;
 	istream >> cur;
 	line++;
 	if (cur != "version_0") {
-		throw std::string("tutorial/parser version mismatch\nError on line: " + std::to_string(line) + "\n");
+		logError("tutorial/parser version mismatch\nError on line: {}", "parseTutorialFile", line);
+		return {};
 	}
 	istream >> cur;
 	line++;
 	if (cur != "Tutorial:") {
-		throw std::string("tutorial missing name\nError on line: " + std::to_string(line) + "\n");
+		logError("tutorial missing name\nError on line: {}", "parseTutorialFile", line);
+		return {};
 	}
 	std::string name;
 
@@ -89,7 +157,8 @@ std::vector<TutorialStep> parseTutorialFile(std::string fileName) {
 						c.logicStates.clear();
 						break;
 					} else {
-						throw std::string("incorrectly formatted condition\nError on line: " + std::to_string(line) + "\n");
+						logError("incorrectly formatted condition\nError on line: {}", "parseTutorialFile", line);
+						return {};
 					}
 				}
 
@@ -135,14 +204,17 @@ std::vector<TutorialStep> parseTutorialFile(std::string fileName) {
 							step.action = a;
 							break;
 						} else {
-							throw std::string("incorrectly formatted action\nError on line: " + std::to_string(line) + "\n");
+							logError("incorrectly formatted action\nError on line: {}", "parseTutorialFile", line);
+							return {};
 						}
 					}
 				} else {
-					throw std::string("incorrect format (missing 'Action:' or 'Condition:')\nError on line: " + std::to_string(line) + "\n");
+					logError("incorrect format (missing 'Action:' or 'Condition:'\nError on line: {}", "parseTutorialFile", line);
+					return {};
 				}
 			} else {
-				throw std::string("incorrect format (missing 'Step:')\nError on line: " + std::to_string(line) + "\n");
+				logError("incorrect format (missing 'Step:'\nError on line: {}", "parseTutorialFile", line);
+				return {};
 			}
 		}
 		steps.push_back(step);
