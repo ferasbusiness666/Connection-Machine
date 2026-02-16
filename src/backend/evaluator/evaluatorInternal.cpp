@@ -323,7 +323,6 @@ void EvaluatorInternal::endEdit() {
 	if (!blockData) return;
 	const CircuitBlockData* circuitBlockData = circuitManager.getCircuitBlockDataManager().getCircuitBlockData(circuit.getCircuitId());
 	assert(circuitBlockData);
-	assert(!blockData->isDefaultData());
 	std::vector<std::tuple<connection_end_id_t, EvalConnectionPoint, EvalConnectionPoint>> connectionEndIdsToUpdate;
 	for (const std::pair<connection_end_id_t, BlockData::ConnectionData>& connectionData : blockData->getConnections()) {
 		const Position* internalPortPosition = circuitBlockData->getConnectionIdToPosition(connectionData.first);

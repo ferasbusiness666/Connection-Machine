@@ -150,7 +150,7 @@ ImGuiRenderer::ImGuiRenderer(SDL_Window& window, VkRenderPass renderPass, uint32
 	if (fontPath) {
 		fontData = readFileAsBytes_noVec(DirectoryManager::getResourceDirectory() / *fontPath);
 		if (fontData.second == 0) {
-			logError("Failed to read font from \"{}\"", "ImGuiRenderer::ImGuiRenderer", *fontPath);
+			logError("Failed to read font from \"{}\". Falling back to \"{}\"", "ImGuiRenderer::ImGuiRenderer", *fontPath, (DirectoryManager::getResourceDirectory() / "gui/fonts/Consolas.ttf").string());
 			fontData = readFileAsBytes_noVec(DirectoryManager::getResourceDirectory() / "gui/fonts/Consolas.ttf");
 		}
 	} else {

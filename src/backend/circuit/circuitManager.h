@@ -79,7 +79,6 @@ public:
 		circuitBlockDataManager.newCircuitBlockData(circuitId, blockType);
 		circuit->setBlockType(blockType);
 
-		blockData->setDefaultData(false);
 		blockData->setPrimitive(false);
 		blockData->setPath("Custom");
 		blockData->setSize(Size(1));
@@ -100,7 +99,6 @@ public:
 				logError("Did not find newly created block data with block type: {}", "CircuitManager", std::to_string(blockType));
 				return BlockType::NONE;
 			}
-			blockData->setDefaultData(false);
 			blockData->setPrimitive(false);
 			blockData->setPath("Custom");
 			blockData->setSize(Size(1));

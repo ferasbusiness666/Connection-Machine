@@ -13,7 +13,13 @@ void BlockDataManager::initializeDefaults() {
 	// AND
 	BlockData* andBlockData = getBlockData(BlockType::AND);
 	andBlockData->setName("And");
+	andBlockData->setConnectionInput(Vector(0), 0);
+	andBlockData->setConnectionPortOffset(0, FVector(0.5f - edgeDistance, 0.5f - sideShift));
+	andBlockData->setConnectionOutput(Vector(0), 1);
+	andBlockData->setConnectionPortOffset(1, FVector(0.5f + edgeDistance, 0.5f + sideShift));
+	andBlockData->setVirtualConnection(0, 1);
 	andBlockData->setTexturePath(mainTexturePath);
+	andBlockData->setTextureVirtualConnection(0);
 	andBlockData->setUsesTileMapTexture(true);
 	andBlockData->setTextureTileSize({ 256, 256 });
 	andBlockData->setTextureBlockTileSize({ 1, 1 });
@@ -21,7 +27,13 @@ void BlockDataManager::initializeDefaults() {
 	// OR
 	BlockData* orBlockData = getBlockData(BlockType::OR);
 	orBlockData->setName("Or");
+	orBlockData->setConnectionInput(Vector(0), 0);
+	orBlockData->setConnectionPortOffset(0, FVector(0.5f - edgeDistance, 0.5f - sideShift));
+	orBlockData->setConnectionOutput(Vector(0), 1);
+	orBlockData->setConnectionPortOffset(1, FVector(0.5f + edgeDistance, 0.5f + sideShift));
+	orBlockData->setVirtualConnection(0, 1);
 	orBlockData->setTexturePath(mainTexturePath);
+	orBlockData->setTextureVirtualConnection(0);
 	orBlockData->setUsesTileMapTexture(true);
 	orBlockData->setTextureTileSize({ 256, 256 });
 	orBlockData->setTextureBlockTileSize({ 1, 1 });
@@ -29,7 +41,13 @@ void BlockDataManager::initializeDefaults() {
 	// XOR
 	BlockData* xorBlockData = getBlockData(BlockType::XOR);
 	xorBlockData->setName("Xor");
+	xorBlockData->setConnectionInput(Vector(0), 0);
+	xorBlockData->setConnectionPortOffset(0, FVector(0.5f - edgeDistance, 0.5f - sideShift));
+	xorBlockData->setConnectionOutput(Vector(0), 1);
+	xorBlockData->setConnectionPortOffset(1, FVector(0.5f + edgeDistance, 0.5f + sideShift));
+	xorBlockData->setVirtualConnection(0, 1);
 	xorBlockData->setTexturePath(mainTexturePath);
+	xorBlockData->setTextureVirtualConnection(0);
 	xorBlockData->setUsesTileMapTexture(true);
 	xorBlockData->setTextureTileSize({ 256, 256 });
 	xorBlockData->setTextureBlockTileSize({ 1, 1 });
@@ -37,7 +55,13 @@ void BlockDataManager::initializeDefaults() {
 	// NAND
 	BlockData* nandBlockData = getBlockData(BlockType::NAND);
 	nandBlockData->setName("Nand");
+	nandBlockData->setConnectionInput(Vector(0), 0);
+	nandBlockData->setConnectionPortOffset(0, FVector(0.5f - edgeDistance, 0.5f - sideShift));
+	nandBlockData->setConnectionOutput(Vector(0), 1);
+	nandBlockData->setConnectionPortOffset(1, FVector(0.5f + edgeDistance, 0.5f + sideShift));
+	nandBlockData->setVirtualConnection(0, 1);
 	nandBlockData->setTexturePath(mainTexturePath);
+	nandBlockData->setTextureVirtualConnection(0);
 	nandBlockData->setUsesTileMapTexture(true);
 	nandBlockData->setTextureTileSize({ 256, 256 });
 	nandBlockData->setTextureBlockTileSize({ 1, 1 });
@@ -45,7 +69,13 @@ void BlockDataManager::initializeDefaults() {
 	// NOR
 	BlockData* norBlockData = getBlockData(BlockType::NOR);
 	norBlockData->setName("Nor");
+	norBlockData->setConnectionInput(Vector(0), 0);
+	norBlockData->setConnectionPortOffset(0, FVector(0.5f - edgeDistance, 0.5f - sideShift));
+	norBlockData->setConnectionOutput(Vector(0), 1);
+	norBlockData->setConnectionPortOffset(1, FVector(0.5f + edgeDistance, 0.5f + sideShift));
+	norBlockData->setVirtualConnection(0, 1);
 	norBlockData->setTexturePath(mainTexturePath);
+	norBlockData->setTextureVirtualConnection(0);
 	norBlockData->setUsesTileMapTexture(true);
 	norBlockData->setTextureTileSize({ 256, 256 });
 	norBlockData->setTextureBlockTileSize({ 1, 1 });
@@ -53,7 +83,13 @@ void BlockDataManager::initializeDefaults() {
 	// XNOR
 	BlockData* xnorBlockData = getBlockData(BlockType::XNOR);
 	xnorBlockData->setName("Xnor");
+	xnorBlockData->setConnectionInput(Vector(0), 0);
+	xnorBlockData->setConnectionPortOffset(0, FVector(0.5f - edgeDistance, 0.5f - sideShift));
+	xnorBlockData->setConnectionOutput(Vector(0), 1);
+	xnorBlockData->setConnectionPortOffset(1, FVector(0.5f + edgeDistance, 0.5f + sideShift));
+	xnorBlockData->setVirtualConnection(0, 1);
 	xnorBlockData->setTexturePath(mainTexturePath);
+	xnorBlockData->setTextureVirtualConnection(0);
 	xnorBlockData->setUsesTileMapTexture(true);
 	xnorBlockData->setTextureTileSize({ 256, 256 });
 	xnorBlockData->setTextureBlockTileSize({ 1, 1 });
@@ -61,7 +97,13 @@ void BlockDataManager::initializeDefaults() {
 	// BUFFER
 	BlockData* bufferBlockData = getBlockData(BlockType::BUFFER);
 	bufferBlockData->setName("Buffer");
+	bufferBlockData->setConnectionInput(Vector(0), 0);
+	bufferBlockData->setConnectionPortOffset(0, FVector(0.5f - edgeDistance, 0.5f - sideShift));
+	bufferBlockData->setConnectionOutput(Vector(0), 1);
+	bufferBlockData->setConnectionPortOffset(1, FVector(0.5f + edgeDistance, 0.5f + sideShift));
+	bufferBlockData->setVirtualConnection(0, 1);
 	bufferBlockData->setTexturePath(mainTexturePath);
+	bufferBlockData->setTextureVirtualConnection(0);
 	bufferBlockData->setUsesTileMapTexture(true);
 	bufferBlockData->setTextureTileSize({ 256, 256 });
 	bufferBlockData->setTextureBlockTileSize({ 1, 1 });
@@ -69,7 +111,13 @@ void BlockDataManager::initializeDefaults() {
 	// NOT
 	BlockData* notBlockData = getBlockData(BlockType::NOT);
 	notBlockData->setName("Not");
+	notBlockData->setConnectionInput(Vector(0), 0);
+	notBlockData->setConnectionPortOffset(0, FVector(0.5f - edgeDistance, 0.5f - sideShift));
+	notBlockData->setConnectionOutput(Vector(0), 1);
+	notBlockData->setConnectionPortOffset(1, FVector(0.5f + edgeDistance, 0.5f + sideShift));
+	notBlockData->setVirtualConnection(0, 1);
 	notBlockData->setTexturePath(mainTexturePath);
+	notBlockData->setTextureVirtualConnection(0);
 	notBlockData->setUsesTileMapTexture(true);
 	notBlockData->setTextureTileSize({ 256, 256 });
 	notBlockData->setTextureBlockTileSize({ 1, 1 });
@@ -77,7 +125,6 @@ void BlockDataManager::initializeDefaults() {
 	// BUTTON
 	BlockData* buttonBlockData = getBlockData(BlockType::BUTTON);
 	buttonBlockData->setName("Button");
-	buttonBlockData->setDefaultData(false);
 	buttonBlockData->setConnectionOutput(Vector(0), 0);
 	buttonBlockData->setConnectionPortOffset(0, FVector(0.5f + edgeDistance, 0.5f + sideShift));
 	buttonBlockData->setVirtualConnection(0, 1);
@@ -90,7 +137,6 @@ void BlockDataManager::initializeDefaults() {
 	// TICK_BUTTON
 	BlockData* tickButtonBlockData = getBlockData(BlockType::TICK_BUTTON);
 	tickButtonBlockData->setName("Tick Button");
-	tickButtonBlockData->setDefaultData(false);
 	tickButtonBlockData->setConnectionOutput(Vector(0), 0);
 	tickButtonBlockData->setConnectionPortOffset(0, FVector(0.5f + edgeDistance, 0.5f + sideShift));
 	tickButtonBlockData->setVirtualConnection(0, 1);
@@ -103,7 +149,6 @@ void BlockDataManager::initializeDefaults() {
 	// SWITCH
 	BlockData* switchBlockData = getBlockData(BlockType::SWITCH);
 	switchBlockData->setName("Switch");
-	switchBlockData->setDefaultData(false);
 	switchBlockData->setConnectionOutput(Vector(0), 0);
 	switchBlockData->setConnectionPortOffset(0, FVector(0.5f + edgeDistance, 0.5f + sideShift));
 	switchBlockData->setVirtualConnection(0, 1);
@@ -116,7 +161,6 @@ void BlockDataManager::initializeDefaults() {
 	// CONSTANT OFF
 	BlockData* constantOffBlockData = getBlockData(BlockType::CONSTANT_OFF);
 	constantOffBlockData->setName("Constant");
-	constantOffBlockData->setDefaultData(false);
 	constantOffBlockData->setConnectionOutput(Vector(0), 0);
 	constantOffBlockData->setConnectionPortOffset(0, FVector(0.5f + edgeDistance, 0.5f + sideShift));
 	constantOffBlockData->setVirtualConnection(0, 1);
@@ -129,7 +173,6 @@ void BlockDataManager::initializeDefaults() {
 	// CONSTANT ON
 	BlockData* constantOnBlockData = getBlockData(BlockType::CONSTANT_ON);
 	constantOnBlockData->setName("Constant");
-	constantOnBlockData->setDefaultData(false);
 	constantOnBlockData->setIsPlaceable(false);
 	constantOnBlockData->setConnectionOutput(Vector(0), 0);
 	constantOnBlockData->setConnectionPortOffset(0, FVector(0.5f + edgeDistance, 0.5f + sideShift));
@@ -143,7 +186,6 @@ void BlockDataManager::initializeDefaults() {
 	// CONSTANT Z
 	BlockData* constantZBlockData = getBlockData(BlockType::CONSTANT_Z);
 	constantZBlockData->setName("Constant");
-	constantZBlockData->setDefaultData(false);
 	constantZBlockData->setIsPlaceable(false);
 	constantZBlockData->setConnectionOutput(Vector(0), 0);
 	constantZBlockData->setConnectionPortOffset(0, FVector(0.5f + edgeDistance, 0.5f + sideShift));
@@ -157,7 +199,6 @@ void BlockDataManager::initializeDefaults() {
 	// CONSTANT X
 	BlockData* constantXBlockData = getBlockData(BlockType::CONSTANT_X);
 	constantXBlockData->setName("Constant");
-	constantXBlockData->setDefaultData(false);
 	constantXBlockData->setIsPlaceable(false);
 	constantXBlockData->setConnectionOutput(Vector(0), 0);
 	constantXBlockData->setConnectionPortOffset(0, FVector(0.5f + edgeDistance, 0.5f + sideShift));
@@ -171,7 +212,6 @@ void BlockDataManager::initializeDefaults() {
 	// LIGHT
 	BlockData* lightBlockData = getBlockData(BlockType::LIGHT);
 	lightBlockData->setName("Light");
-	lightBlockData->setDefaultData(false);
 	lightBlockData->setConnectionInput(Vector(0), 0);
 	lightBlockData->setConnectionPortOffset(0, FVector(0.5f - edgeDistance, 0.5f - sideShift));
 	lightBlockData->setVirtualConnection(0, 1);
@@ -184,7 +224,6 @@ void BlockDataManager::initializeDefaults() {
 	// JUNCTION
 	BlockData* junctionBlockData = getBlockData(BlockType::JUNCTION);
 	junctionBlockData->setName("Junction");
-	junctionBlockData->setDefaultData(false);
 	junctionBlockData->setConnectionBidirectional(Vector(0), 0);
 	junctionBlockData->setVirtualConnection(0, 1);
 	junctionBlockData->setTexturePath(mainTexturePath);
@@ -198,7 +237,6 @@ void BlockDataManager::initializeDefaults() {
 	BlockData* junctionLBlockData = getBlockData(BlockType::JUNCTION_L);
 	junctionLBlockData->setName("Pull-down Resistor");
 	junctionLBlockData->setPath("Hi-Z");
-	junctionLBlockData->setDefaultData(false);
 	junctionLBlockData->setSize(Size(1, 3));
 	junctionLBlockData->setConnectionBidirectional(Vector(0, 2), 0);
 	junctionLBlockData->setVirtualConnection(0, 1);
@@ -213,7 +251,6 @@ void BlockDataManager::initializeDefaults() {
 	BlockData* junctionHBlockData = getBlockData(BlockType::JUNCTION_H);
 	junctionHBlockData->setName("Pull-up Resistor");
 	junctionHBlockData->setPath("Hi-Z");
-	junctionHBlockData->setDefaultData(false);
 	junctionHBlockData->setSize(Size(1, 3));
 	junctionHBlockData->setConnectionBidirectional(Vector(0, 2), 0);
 	junctionHBlockData->setVirtualConnection(0, 1);
@@ -228,7 +265,6 @@ void BlockDataManager::initializeDefaults() {
 	BlockData* junctionXBlockData = getBlockData(BlockType::JUNCTION_X);
 	junctionXBlockData->setName("Pull-X Resistor");
 	junctionXBlockData->setPath("Hi-Z");
-	junctionXBlockData->setDefaultData(false);
 	junctionXBlockData->setSize(Size(1, 3));
 	junctionXBlockData->setConnectionBidirectional(Vector(0, 2), 0);
 	junctionXBlockData->setVirtualConnection(0, 1);
@@ -244,7 +280,6 @@ void BlockDataManager::initializeDefaults() {
 	BlockData* tristateBufferBlockData = getBlockData(BlockType::TRISTATE_BUFFER);
 	tristateBufferBlockData->setName("Tristate Buffer");
 	tristateBufferBlockData->setPath("Hi-Z");
-	tristateBufferBlockData->setDefaultData(false);
 	tristateBufferBlockData->setConnectionInput(Vector(0, 1), 0);
 	tristateBufferBlockData->setConnectionPortOffset(0, FVector(0.5f - edgeDistance, 0.5f - sideShift));
 	tristateBufferBlockData->setConnectionIdName(0, "Data");
@@ -267,7 +302,6 @@ void BlockDataManager::initializeDefaults() {
 	BlockData* colorLightBlockData = getBlockData(BlockType::COLOR_LIGHT);
 	colorLightBlockData->setName("Color Light (6 bits)");
 	colorLightBlockData->setPath("Other");
-	colorLightBlockData->setDefaultData(false);
 	colorLightBlockData->setConnectionInput(Vector(0), 0);
 	colorLightBlockData->setConnectionPortOffset(0, FVector(0.5f - edgeDistance, 0.5f - sideShift));
 	colorLightBlockData->setConnectionBitConfiguration(0, std::vector<unsigned int>{ 0, 1, 2, 3, 4, 5 });
@@ -284,7 +318,6 @@ void BlockDataManager::initializeDefaults() {
 	// BlockData* textureViewerBlockData = getBlockData(addBlock());
 	// textureViewerBlockData->setName("Texture Viewer");
 	// textureViewerBlockData->setPath("Debug");
-	// textureViewerBlockData->setDefaultData(false);
 	// textureViewerBlockData->setSize(Size(5));
 	// textureViewerBlockData->setTexturePath("null_path");
 	// textureViewerBlockData->setUsesTileMapTexture(true);
@@ -353,7 +386,6 @@ BlockType BlockDataManager::getBusBlock(std::vector<BusConnectionData> busConnec
 	BlockType blockType = addBlock();
 	createdBuses[busConnections] = blockType;
 	BlockData* busInterfaceBlockData = getBlockData(blockType);
-	busInterfaceBlockData->setDefaultData(false);
 	busInterfaceBlockData->setIsBus(true);
 	busInterfaceBlockData->setSize(blockSize);
 	busInterfaceBlockData->setIsPlaceable(false);

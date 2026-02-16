@@ -95,7 +95,6 @@ circuit_id_t CircuitManager::createNewCircuit(const ParsedCircuit& parsedCircuit
 		logError("Did not find newly created block data with block type: {}", "CircuitManager", std::to_string(blockType));
 		return id;
 	}
-	blockData->setDefaultData(false);
 	blockData->setPrimitive(false);
 	blockData->setPath("Custom");
 	blockData->setSize(parsedCircuit.getSize());
@@ -168,7 +167,6 @@ circuit_id_t CircuitManager::createNewCircuit(const GeneratedCircuit& generatedC
 		logError("Did not find newly created block data with block type: {}", "CircuitManager", std::to_string(blockType));
 		return id;
 	}
-	blockData->setDefaultData(false);
 	blockData->setPrimitive(false);
 	blockData->setPath("Custom");
 	blockData->setSize(generatedCircuit.getSize());
@@ -241,7 +239,6 @@ void CircuitManager::updateExistingCircuit(circuit_id_t id, const GeneratedCircu
 		logError("Did not find newly created block data with block type: {}", "CircuitManager", std::to_string(blockType));
 		return;
 	}
-	blockData->setDefaultData(false);
 	blockData->setPrimitive(false);
 	blockData->setPath("Custom");
 	blockData->setSize(generatedCircuit->getSize());

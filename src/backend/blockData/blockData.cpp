@@ -2,49 +2,6 @@
 
 BlockData::BlockData(BlockType blockType, DataUpdateEventManager& dataUpdateEventManager) : blockType(blockType), dataUpdateEventManager(dataUpdateEventManager) { }
 
-void BlockData::setDefaultData(bool defaultData) {
-	if (defaultData == this->defaultData) return;
-	bool sentPre = false;
-	if (defaultData) {
-		for (auto connection : connections) {
-			if (connection.first == 0 || connection.first == 1) continue;
-			dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("preBlockDataRemoveConnection", { blockType, connection.first });
-			// dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, BlockData::ConnectionData::PortType>>("preBlockDataSetConnection", { blockType,
-			// connection.first, connection.second.portType });
-		}
-		if (getSize() != Size(1)) {
-			dataUpdateEventManager.sendEvent<std::pair<BlockType, Size>>("preBlockSizeChange", { blockType, Size(1) });
-			sentPre = true;
-		}
-		dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, BlockData::ConnectionData::PortType>>(
-			"preBlockDataSetConnection",
-			{ blockType, 0, BlockData::ConnectionData::PortType::INPUT }
-		);
-		dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, BlockData::ConnectionData::PortType>>(
-			"preBlockDataSetConnection",
-			{ blockType, 1, BlockData::ConnectionData::PortType::OUTPUT }
-		);
-	}
-	this->defaultData = defaultData;
-	blockSize = Size(1);
-
-	if (defaultData) {
-		if (sentPre) {
-			dataUpdateEventManager.sendEvent<std::pair<BlockType, Size>>("postBlockSizeChange", { blockType, Size(1) });
-		}
-		for (auto connection : connections) {
-			dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataRemoveConnection", { blockType, connection.first });
-			dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connection.first });
-		}
-		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, 0 });
-		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, 1 });
-		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataConnectionNameSet", { blockType, 0 });
-		dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataConnectionNameSet", { blockType, 1 });
-		connections.clear();
-	}
-	sendBlockDataUpdate();
-}
-
 void BlockData::setPrimitive(bool primitive) {
 	this->primitive = primitive;
 	sendBlockDataUpdate();
@@ -134,7 +91,6 @@ void BlockData::setConnectionIdName(connection_end_id_t connectionId, const std:
 }
 
 std::optional<std::string> BlockData::getConnectionIdToName(connection_end_id_t connectionId) const {
-	if (defaultData) return connectionId == 1 ? "Out" : "In";
 	const std::string* str = connectionIdNames.get(connectionId);
 	if (str) return *str;
 	return std::nullopt;
@@ -176,7 +132,6 @@ void BlockData::setConnectionBitConfiguration(connection_end_id_t connectionId, 
 nlohmann::json BlockData::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	nlohmann::json blockJson;
 	blockJson["blockType"] = blocktype_to_string(blockType);
-	blockJson["defaultData"] = defaultData;
 	blockJson["primitive"] = primitive;
 	blockJson["placeable"] = placeable;
 	blockJson["bus"] = bus;

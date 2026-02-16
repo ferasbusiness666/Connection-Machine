@@ -149,31 +149,29 @@ std::unique_ptr<FuzzTestcase> TestcaseMinifier::tryRemoveEditActions(const FuzzT
 		simulatorIdsRef.push_back(std::get<simulator_gate_id_t>(tSimulator->getVirtualConnectionSimulatorId(Address(pos), 0)));
 		const BlockData* blockData = blockDataManager.getBlockData(block->type());
 		if (blockData == nullptr) continue;
-		if (blockData->isDefaultData()) {
-			std::unordered_map<connection_end_id_t, BlockData::ConnectionData> connections = blockData->getConnectionsSafe();
-			for (const auto& [connectionId, connectionData] : connections) {
-				if (connectionData.portType == BlockData::ConnectionData::PortType::INPUT) {
-					continue;
-				}
-				std::optional<Position> portPositionOpt = block->getConnectionPosition(connectionId);
-				Position portPosition = portPositionOpt.value();
-				std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> simIdTest = tSimulator->getPinSimulatorId(portPosition);
-				std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> simIdRef = rSimulator.getPinSimulatorId(portPosition);
-				if (std::holds_alternative<simulator_gate_id_t>(simIdTest) && std::holds_alternative<simulator_gate_id_t>(simIdRef)) {
-					simulatorIdsTest.push_back(std::get<simulator_gate_id_t>(simIdTest));
-					simulatorIdsRef.push_back(std::get<simulator_gate_id_t>(simIdRef));
-				} else if (std::holds_alternative<std::vector<simulator_gate_id_t>>(simIdTest) && std::holds_alternative<std::vector<simulator_gate_id_t>>(simIdRef)) {
-					std::vector<simulator_gate_id_t>& vecTest = std::get<std::vector<simulator_gate_id_t>>(simIdTest);
-					std::vector<simulator_gate_id_t>& vecRef = std::get<std::vector<simulator_gate_id_t>>(simIdRef);
-					if (vecTest.size() != vecRef.size()) {
-						return outputTestcase;
-					}
-					simulatorIdsTest.insert(simulatorIdsTest.end(), vecTest.begin(), vecTest.end());
-					simulatorIdsRef.insert(simulatorIdsRef.end(), vecRef.begin(), vecRef.end());
-
-				} else {
+		std::unordered_map<connection_end_id_t, BlockData::ConnectionData> connections = blockData->getConnectionsSafe();
+		for (const auto& [connectionId, connectionData] : connections) {
+			if (connectionData.portType == BlockData::ConnectionData::PortType::INPUT) {
+				continue;
+			}
+			std::optional<Position> portPositionOpt = block->getConnectionPosition(connectionId);
+			Position portPosition = portPositionOpt.value();
+			std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> simIdTest = tSimulator->getPinSimulatorId(portPosition);
+			std::variant<simulator_gate_id_t, std::vector<simulator_gate_id_t>> simIdRef = rSimulator.getPinSimulatorId(portPosition);
+			if (std::holds_alternative<simulator_gate_id_t>(simIdTest) && std::holds_alternative<simulator_gate_id_t>(simIdRef)) {
+				simulatorIdsTest.push_back(std::get<simulator_gate_id_t>(simIdTest));
+				simulatorIdsRef.push_back(std::get<simulator_gate_id_t>(simIdRef));
+			} else if (std::holds_alternative<std::vector<simulator_gate_id_t>>(simIdTest) && std::holds_alternative<std::vector<simulator_gate_id_t>>(simIdRef)) {
+				std::vector<simulator_gate_id_t>& vecTest = std::get<std::vector<simulator_gate_id_t>>(simIdTest);
+				std::vector<simulator_gate_id_t>& vecRef = std::get<std::vector<simulator_gate_id_t>>(simIdRef);
+				if (vecTest.size() != vecRef.size()) {
 					return outputTestcase;
 				}
+				simulatorIdsTest.insert(simulatorIdsTest.end(), vecTest.begin(), vecTest.end());
+				simulatorIdsRef.insert(simulatorIdsRef.end(), vecRef.begin(), vecRef.end());
+
+			} else {
+				return outputTestcase;
 			}
 		}
 	}

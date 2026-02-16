@@ -42,7 +42,6 @@ circuit_id_t EvaluatorICTest::createPassThroughIC(const std::string& name) {
     BlockType icType = cm.setupBlockData(childId);
 
     BlockData* bd = cm.getBlockDataManager().getBlockData(icType);
-    bd->setDefaultData(false);
     bd->setPrimitive(false);
     bd->setPath("Custom");
     bd->setSize(Size(1, 1));
@@ -97,7 +96,6 @@ TEST_F(EvaluatorICTest, NestedICs_PropagateThroughLevels) {
     ASSERT_NE(outerICType, BlockType::NONE);
     BlockData* bd = cm.getBlockDataManager().getBlockData(outerICType);
     ASSERT_TRUE(bd);
-    bd->setDefaultData(false);
     bd->setPrimitive(false);
     bd->setPath("Custom");
     bd->setSize(Size(1, 1));
