@@ -191,16 +191,13 @@ void BlockSelectorWidget::createTree(const SelectorTreeNode& node) {
 			if (ImGui::TreeNodeEx(pair.first.c_str(), flags)) {
 				if (ImGui::IsItemClicked()) {
 					if (std::holds_alternative<BlockType>(pair.second.data.value())) {
-						logInfo(std::get<BlockType>(pair.second.data.value()));
 						setGUIValue_rendering<BlockType>("selectedBlockType", std::get<BlockType>(pair.second.data.value()));
 						setGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus", "");
 					} else if (std::holds_alternative<std::pair<BlockType, circuit_id_t>>(pair.second.data.value())) {
-						logInfo(std::get<std::pair<BlockType, circuit_id_t>>(pair.second.data.value()).second);
 						const std::pair<BlockType, circuit_id_t>& blockTypeCircuitIdPair = std::get<std::pair<BlockType, circuit_id_t>>(pair.second.data.value());
 						setGUIValue_rendering<BlockType>("selectedBlockType", blockTypeCircuitIdPair.first);
 						setGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus", "");
 					} else {
-						logInfo(std::get<std::string>(pair.second.data.value()));
 						const std::string& data = std::get<std::string>(pair.second.data.value());
 						setGUIValue_rendering<BlockType>("selectedBlockType", BlockType::NONE);
 						setGUIValue_rendering<std::string>("selectedProceduralCircuitOrBus", data);

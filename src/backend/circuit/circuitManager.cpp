@@ -99,11 +99,18 @@ circuit_id_t CircuitManager::createNewCircuit(const ParsedCircuit& parsedCircuit
 	blockData->setPath("Custom");
 	blockData->setSize(parsedCircuit.getSize());
 
-	blockData->setTexturePath(parsedCircuit.getTexturePath());
-	blockData->setUsesTileMapTexture(parsedCircuit.getUsesTileMapTexture());
-	blockData->setTextureTileSize(parsedCircuit.getTextureTileSize());
-	blockData->setTextureSmallestCordTile(parsedCircuit.getTextureSmallestCordTile());
-	blockData->setTextureBlockTileSize(parsedCircuit.getTextureBlockTileSize());
+	blockData->newRenderData<BlockData::BlockTextureData>();
+	blockData->setBlockTexturePath(0, parsedCircuit.getTexturePath());
+	if (parsedCircuit.getUsesTileMapTexture()) {
+		blockData->setBlockTextureSize(0, {
+			parsedCircuit.getTextureTileSize().x * parsedCircuit.getTextureBlockTileSize().x,
+			parsedCircuit.getTextureTileSize().y * parsedCircuit.getTextureBlockTileSize().y
+		});
+		blockData->setBlockTextureTopLeft(0, {
+			parsedCircuit.getTextureTileSize().x * parsedCircuit.getTextureSmallestCordTile().x,
+			parsedCircuit.getTextureTileSize().y * parsedCircuit.getTextureSmallestCordTile().y
+		});
+	}
 
 	// Circuit Block Data
 	circuitBlockDataManager.newCircuitBlockData(id, blockType);

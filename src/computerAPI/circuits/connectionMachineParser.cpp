@@ -343,13 +343,13 @@ bool ConnectionMachineParser::save(const CircuitFileManager::FileData& fileData,
 		outputFile << "UUID: " << circuit->getUUID() << "\n";
 		if (circuitBlockData) {
 			BlockData* blockData = circuitManager.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
-			if (blockData->getTexturePath() != "") {
-				outputFile << "texture: " << std::quoted(blockData->getTexturePath()) << "\n";
-				if (blockData->getUsesTileMapTexture()) {
-					outputFile << "textureTileData: " << blockData->getTextureTileSize().toString() << ", " << blockData->getTextureSmallestCordTile().toString() << ", "
-							   << blockData->getTextureBlockTileSize().toString() << "\n";
-				}
-			}
+			// if (blockData->getTexturePath() != "") {
+			// 	outputFile << "texture: " << std::quoted(blockData->getTexturePath()) << "\n";
+			// 	if (blockData->getUsesTileMapTexture()) {
+			// 		outputFile << "textureTileData: " << blockData->getTextureTileSize().toString() << ", " << blockData->getTextureSmallestCordTile().toString() << ", "
+			// 				   << blockData->getTextureBlockTileSize().toString() << "\n";
+			// 	}
+			// }
 			outputFile << "size: " << blockData->getSize().toString() << "\n";
 			outputFile << "ports:\n";
 			for (auto pair : blockData->getConnections()) {

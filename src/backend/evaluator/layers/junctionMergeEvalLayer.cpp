@@ -367,6 +367,7 @@ void JunctionMergeEvalLayer::run() {
 		}
 		for (std::pair<EvalConnectionPoint, unsigned int> connectionPoint : nonJunctionConnectionPoints) {
 			connectionPointsToScan.erase(connectionPoint.first);
+			nextState.addConnectionPointRemappingsUpdated(connectionPoint.first);
 			if (singlePinConnectionPoints.contains(connectionPoint.first)) {
 				auto suc = connectionPointRemapping.emplace(connectionPoint.first, mergedGateId);
 				assert(suc.second);

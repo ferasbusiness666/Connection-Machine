@@ -6,20 +6,19 @@
 #include "gpu/mainRenderer.h"
 
 BlockRenderDataFeeder::BlockRenderDataFeeder(Backend& backend) : backend(backend), dataUpdateEventReceiver(backend.getDataUpdateEventManager()) {
-	dataUpdateEventReceiver.linkFunction("newBlockType", std::bind(&BlockRenderDataFeeder::newBlockTypeUpdate, this, std::placeholders::_1));
-	dataUpdateEventReceiver.linkFunction("postBlockSizeChange", std::bind(&BlockRenderDataFeeder::postBlockSizeChangeUpdate, this, std::placeholders::_1));
-	dataUpdateEventReceiver.linkFunction("blockNameChange", std::bind(&BlockRenderDataFeeder::blockNameChangeUpdate, this, std::placeholders::_1));
+	dataUpdateEventReceiver.linkFunction("newBlockType", std::bind(&BlockRenderDataFeeder::newBlockType_event, this, std::placeholders::_1));
+	dataUpdateEventReceiver.linkFunction("postBlockSizeChange", std::bind(&BlockRenderDataFeeder::postBlockSizeChange_event, this, std::placeholders::_1));
+	dataUpdateEventReceiver.linkFunction("blockNameChange", std::bind(&BlockRenderDataFeeder::blockNameChange_event, this, std::placeholders::_1));
 
-	dataUpdateEventReceiver.linkFunction("blockDataSetConnection", std::bind(&BlockRenderDataFeeder::blockDataSetConnectionUpdate, this, std::placeholders::_1));
-	dataUpdateEventReceiver.linkFunction("blockDataRemoveConnection", std::bind(&BlockRenderDataFeeder::blockDataRemoveConnectionUpdate, this, std::placeholders::_1));
-	dataUpdateEventReceiver.linkFunction("blockDataConnectionNameSet", std::bind(&BlockRenderDataFeeder::blockDataConnectionNameSetUpdate, this, std::placeholders::_1));
-	dataUpdateEventReceiver.linkFunction("blockDataTextureChange", std::bind(&BlockRenderDataFeeder::blockDataTextureChangeUpdate, this, std::placeholders::_1));
-	dataUpdateEventReceiver.linkFunction("blockDataTextureVirtualConnectionChange", std::bind(&BlockRenderDataFeeder::blockDataTextureVirtualConnectionUpdate, this, std::placeholders::_1));
-	dataUpdateEventReceiver.linkFunction("blockDataUsesTileMapTextureChange", std::bind(&BlockRenderDataFeeder::blockDataUsesTileMapTextureChangeUpdate, this, std::placeholders::_1));
-	dataUpdateEventReceiver.linkFunction("blockDataTextureTileSizeChange", std::bind(&BlockRenderDataFeeder::blockDataTextureTileChangeUpdate, this, std::placeholders::_1));
-	dataUpdateEventReceiver.linkFunction("blockDataTextureSmallestCordTileChange", std::bind(&BlockRenderDataFeeder::blockDataTextureTileChangeUpdate, this, std::placeholders::_1));
-	dataUpdateEventReceiver.linkFunction("blockDataTextureBlockTileSizeChange", std::bind(&BlockRenderDataFeeder::blockDataTextureTileChangeUpdate, this, std::placeholders::_1));
-	dataUpdateEventReceiver.linkFunction("blockDataTextureBlockStateOffsetChange", std::bind(&BlockRenderDataFeeder::blockDataTextureTileChangeUpdate, this, std::placeholders::_1));
+	dataUpdateEventReceiver.linkFunction("blockDataSetConnection", std::bind(&BlockRenderDataFeeder::blockDataSetConnection_event, this, std::placeholders::_1));
+	dataUpdateEventReceiver.linkFunction("blockDataRemoveConnection", std::bind(&BlockRenderDataFeeder::blockDataRemoveConnection_event, this, std::placeholders::_1));
+	dataUpdateEventReceiver.linkFunction("blockDataConnectionNameSet", std::bind(&BlockRenderDataFeeder::blockDataConnectionNameSet_event, this, std::placeholders::_1));
+
+	dataUpdateEventReceiver.linkFunction("blockDataTexturePathChange", std::bind(&BlockRenderDataFeeder::blockDataTexturePathChange_event, this, std::placeholders::_1));
+	dataUpdateEventReceiver.linkFunction("blockDataTextureTopLeftChange", std::bind(&BlockRenderDataFeeder::blockDataTextureTopLeftChange_event, this, std::placeholders::_1));
+	dataUpdateEventReceiver.linkFunction("blockDataTextureSizeChange", std::bind(&BlockRenderDataFeeder::blockDataTextureSizeChange_event, this, std::placeholders::_1));
+	dataUpdateEventReceiver.linkFunction("blockDataTextureVirtualConnectionChange", std::bind(&BlockRenderDataFeeder::blockDataTextureVirtualConnectionChange_event, this, std::placeholders::_1));
+	dataUpdateEventReceiver.linkFunction("blockDataTextureStateOffsetChange", std::bind(&BlockRenderDataFeeder::blockDataTextureStateOffsetChange_event, this, std::placeholders::_1));
 
 	font = Freetype::get().loadFont(*Settings::get<SettingType::FILE_PATH>("Appearance/Font"), 64);
 	blockTextureGenerator = std::make_unique<BlockTextureGenerator>(font);
@@ -34,22 +33,19 @@ BlockRenderDataId BlockRenderDataFeeder::getBlockRenderDataId(BlockType blockTyp
 	return iter->second.blockRenderDataId;
 }
 
-void BlockRenderDataFeeder::newBlockTypeUpdate(const DataUpdateEventManager::EventData* event) {
+void BlockRenderDataFeeder::newBlockType_event(const DataUpdateEventManager::EventData* event) {
 	const auto* data = event->cast<BlockType>();
-	if (!data) return;
-
+	assert(data);
 	BlockRenderDataId blockRenderDataId = MainRenderer::get().registerBlockRenderData();
 	blockTypeToRenderData.emplace(data->get(), blockRenderDataId);
-
 	blockTexturesToUpdate.insert(data->get());
-
 	const BlockData* blockData = backend.getBlockDataManager().getBlockData(data->get());
 	MainRenderer::get().setTextureVirtualConnection(blockRenderDataId, 0);
 }
 
-void BlockRenderDataFeeder::postBlockSizeChangeUpdate(const DataUpdateEventManager::EventData* event) {
+void BlockRenderDataFeeder::postBlockSizeChange_event(const DataUpdateEventManager::EventData* event) {
 	const auto* data = event->cast<std::pair<BlockType, Size>>();
-	if (!data) return;
+	assert(data);
 	auto iter = blockTypeToRenderData.find(data->get().first);
 	if (iter == blockTypeToRenderData.end()) {
 		logError("Failed to find RenderData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
@@ -59,9 +55,9 @@ void BlockRenderDataFeeder::postBlockSizeChangeUpdate(const DataUpdateEventManag
 	blockTexturesToUpdate.insert(data->get().first);
 }
 
-void BlockRenderDataFeeder::blockNameChangeUpdate(const DataUpdateEventManager::EventData* event) {
+void BlockRenderDataFeeder::blockNameChange_event(const DataUpdateEventManager::EventData* event) {
 	const auto* data = event->cast<std::pair<BlockType, std::string>>();
-	if (!data) return;
+	assert(data);
 	auto iter = blockTypeToRenderData.find(data->get().first);
 	if (iter == blockTypeToRenderData.end()) {
 		logError("Failed to find RenderData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
@@ -71,9 +67,9 @@ void BlockRenderDataFeeder::blockNameChangeUpdate(const DataUpdateEventManager::
 	blockTexturesToUpdate.insert(data->get().first);
 }
 
-void BlockRenderDataFeeder::blockDataSetConnectionUpdate(const DataUpdateEventManager::EventData* event) {
+void BlockRenderDataFeeder::blockDataSetConnection_event(const DataUpdateEventManager::EventData* event) {
 	const auto* data = event->cast<std::pair<BlockType, connection_end_id_t>>();
-	if (!data) return;
+	assert(data);
 	auto iter = blockTypeToRenderData.find(data->get().first);
 	if (iter == blockTypeToRenderData.end()) {
 		logError("Failed to find RenderData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
@@ -100,9 +96,9 @@ void BlockRenderDataFeeder::blockDataSetConnectionUpdate(const DataUpdateEventMa
 	);
 }
 
-void BlockRenderDataFeeder::blockDataRemoveConnectionUpdate(const DataUpdateEventManager::EventData* event) {
+void BlockRenderDataFeeder::blockDataRemoveConnection_event(const DataUpdateEventManager::EventData* event) {
 	const auto* data = event->cast<std::pair<BlockType, connection_end_id_t>>();
-	if (!data) return;
+	assert(data);
 	auto iter = blockTypeToRenderData.find(data->get().first);
 	if (iter == blockTypeToRenderData.end()) {
 		logError("Failed to find RenderData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
@@ -117,9 +113,9 @@ void BlockRenderDataFeeder::blockDataRemoveConnectionUpdate(const DataUpdateEven
 	iter->second.blockPortRenderDataIds.erase(portIter);
 }
 
-void BlockRenderDataFeeder::blockDataConnectionNameSetUpdate(const DataUpdateEventManager::EventData* event) {
+void BlockRenderDataFeeder::blockDataConnectionNameSet_event(const DataUpdateEventManager::EventData* event) {
 	const auto* data = event->cast<std::pair<BlockType, connection_end_id_t>>();
-	if (!data) return;
+	assert(data);
 	auto iter = blockTypeToRenderData.find(data->get().first);
 	if (iter == blockTypeToRenderData.end()) {
 		logError("Failed to find RenderData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
@@ -134,61 +130,65 @@ void BlockRenderDataFeeder::blockDataConnectionNameSetUpdate(const DataUpdateEve
 	MainRenderer::get().setBlockPortName(iter->second.blockRenderDataId, portIter->second, *blockData->getConnectionIdToName(data->get().second));
 }
 
-void BlockRenderDataFeeder::blockDataTextureChangeUpdate(const DataUpdateEventManager::EventData* event) {
-	const auto* data = event->cast<std::pair<BlockType, std::string>>();
-	if (!data) return;
-	blockTexturesToUpdate.insert(data->get().first);
+void BlockRenderDataFeeder::blockDataTexturePathChange_event(const DataUpdateEventManager::EventData* event) {
+	const auto* data = event->cast<std::tuple<BlockType, unsigned int, std::string>>();
+	assert(data);
+	refreshBlockTexture(std::get<0>(data->get()));
 }
 
-void BlockRenderDataFeeder::blockDataTextureVirtualConnectionUpdate(const DataUpdateEventManager::EventData* event) {
-	const auto* data = event->cast<std::pair<BlockType, std::optional<virtual_connection_id_t>>>();
-	if (!data) return;
-	auto iter = blockTypeToRenderData.find(data->get().first);
+void BlockRenderDataFeeder::blockDataTextureTopLeftChange_event(const DataUpdateEventManager::EventData* event) {
+	const auto* data = event->cast<std::tuple<BlockType, unsigned int, Vec2Int>>();
+	assert(data);
+	refreshBlockTexture(std::get<0>(data->get()));
+}
+
+void BlockRenderDataFeeder::blockDataTextureSizeChange_event(const DataUpdateEventManager::EventData* event) {
+	const auto* data = event->cast<std::tuple<BlockType, unsigned int, Vec2Int>>();
+	assert(data);
+	refreshBlockTexture(std::get<0>(data->get()));
+}
+
+void BlockRenderDataFeeder::blockDataTextureVirtualConnectionChange_event(const DataUpdateEventManager::EventData* event) {
+	const auto* data = event->cast<std::tuple<BlockType, unsigned int, std::optional<virtual_connection_id_t>>>();
+	assert(data);
+	auto iter = blockTypeToRenderData.find(std::get<0>(data->get()));
 	if (iter == blockTypeToRenderData.end()) {
-		logError("Failed to find RenderData for BlockType {}", "BlockRenderDataFeeder", data->get().first);
+		logError("Failed to find RenderData for BlockType {}", "BlockRenderDataFeeder", std::get<0>(data->get()));
 		return;
 	}
-	MainRenderer::get().setTextureVirtualConnection(iter->second.blockRenderDataId, data->get().second);
+	MainRenderer::get().setTextureVirtualConnection(iter->second.blockRenderDataId, std::get<2>(data->get()));
 }
 
-void BlockRenderDataFeeder::blockDataUsesTileMapTextureChangeUpdate(const DataUpdateEventManager::EventData* event) {
-	const auto* data = event->cast<std::pair<BlockType, bool>>();
-	if (!data) return;
-	blockTexturesToUpdate.insert(data->get().first);
-}
-
-void BlockRenderDataFeeder::blockDataTextureTileChangeUpdate(const DataUpdateEventManager::EventData* event) {
-	const auto* data = event->cast<std::pair<BlockType, Vec2Int>>();
-	if (!data) return;
-	blockTexturesToUpdate.insert(data->get().first);
+void BlockRenderDataFeeder::blockDataTextureStateOffsetChange_event(const DataUpdateEventManager::EventData* event) {
+	const auto* data = event->cast<std::tuple<BlockType, unsigned int, Vec2Int>>();
+	assert(data);
+	refreshBlockTexture(std::get<0>(data->get()));
 }
 
 void BlockRenderDataFeeder::refreshBlockTexture(BlockType blockType) {
 	blockTexturesToUpdate.insert(blockType);
 }
 
-BlockTextureId BlockRenderDataFeeder::getBlockTextureId(const BlockData* blockData, RenderData* renderData) {
-	if (!blockData || !renderData) return 0;
-
+BlockTextureId BlockRenderDataFeeder::getBlockTextureId(const BlockData& blockData, RenderData& renderData) {
 	BlockTextureId blockTextureId = 0;
-	if (blockData->getTexturePath().empty()) {
+	if (blockData.getRenderDataSize() == 0) {
 		// create new block texture
 		int scale = 256;
-		int width = blockData->getSize().w * scale;
-		int height = blockData->getSize().h * scale;
+		int width = blockData.getSize().w * scale;
+		int height = blockData.getSize().h * scale;
 		auto [xPadding, yPadding] = calculatePadding(width, height);
 		int paddedWidth = width + xPadding * 2;
 		int paddedHeight = height + yPadding * 2;
 		if (paddedWidth > BLOCK_TEXTURE_SIZE || paddedHeight > BLOCK_TEXTURE_SIZE) {
 			if (paddedWidth > paddedHeight) {
-				scale = (BLOCK_TEXTURE_SIZE - xPadding * 2) / blockData->getSize().w;
+				scale = (BLOCK_TEXTURE_SIZE - xPadding * 2) / blockData.getSize().w;
 			} else {
-				scale = (BLOCK_TEXTURE_SIZE - yPadding * 2) / blockData->getSize().h;
+				scale = (BLOCK_TEXTURE_SIZE - yPadding * 2) / blockData.getSize().h;
 			}
 		}
-		CpuImage img({ blockData->getSize().w * scale, blockData->getSize().h * scale }, { 0, 0, 0, 255 });
+		CpuImage img({ blockData.getSize().w * scale, blockData.getSize().h * scale }, { 0, 0, 0, 255 });
 		assert(blockTextureGenerator && "BlockTextureGenerator is not initialized");
-		if (blockData->isBus()) {
+		if (blockData.isBus()) {
 			blockTextureGenerator->createBusBlockTexture(blockData, img, scale);
 		} else {
 			blockTextureGenerator->createCustomBlockTexture(blockData, img, scale);
@@ -196,19 +196,19 @@ BlockTextureId BlockRenderDataFeeder::getBlockTextureId(const BlockData* blockDa
 		CpuImage paddedImg = padTexture(img);
 		blockTextureId = MainRenderer::get().addBlockTexture(paddedImg.getData(), paddedImg.getSize().x, paddedImg.getSize().y);
 	} else {
-		blockTextureId = MainRenderer::get().addBlockTexture(blockData->getTexturePath());
+		blockTextureId = MainRenderer::get().addBlockTexture(std::get<BlockData::BlockTextureData>(blockData.getRenderData(0)).path);
 	}
-	if (renderData->blockTextureId == blockTextureId) return blockTextureId;
-	if (renderData->blockTextureId != 0) {
-		auto iter = blockTextureIdUsage.find(renderData->blockTextureId);
+	if (renderData.blockTextureId == blockTextureId) return blockTextureId;
+	if (renderData.blockTextureId != 0) {
+		auto iter = blockTextureIdUsage.find(renderData.blockTextureId);
 		if (iter->second <= 1) {
 			blockTextureIdUsage.erase(iter);
-			MainRenderer::get().removeBlockTexture(renderData->blockTextureId);
+			MainRenderer::get().removeBlockTexture(renderData.blockTextureId);
 		} else {
 			iter->second--;
 		}
 	}
-	renderData->blockTextureId = blockTextureId;
+	renderData.blockTextureId = blockTextureId;
 	blockTextureIdUsage[blockTextureId]++;
 	return blockTextureId;
 }
@@ -259,20 +259,22 @@ void BlockRenderDataFeeder::doBlockTextureUpdates() {
 			continue;
 		}
 
-		if (!blockData->getUsesTileMapTexture()) {
-			BlockTextureId blockTextureId = getBlockTextureId(blockData, &iter->second);
+		if (!blockData->getRenderDataSize()) {
+			BlockTextureId blockTextureId = getBlockTextureId(*blockData, iter->second);
 			if (blockTextureId == 0) continue;
 			MainRenderer::get().setBlockTexture(iter->second.blockRenderDataId, blockTextureId);
 		} else {
-			BlockTextureId blockTextureId = getBlockTextureId(blockData, &iter->second);
+			BlockTextureId blockTextureId = getBlockTextureId(*blockData, iter->second);
 			if (blockTextureId == 0) continue;
+			assert(blockData->isRenderDataOfType<BlockData::BlockTextureData>(0));
+			const auto& textureData = std::get<BlockData::BlockTextureData>(blockData->getRenderData(0));
 			MainRenderer::get().setBlockTexture(
 				iter->second.blockRenderDataId,
 				blockTextureId,
-				blockData->getTextureTileSize(),
-				blockData->getTextureSmallestCordTile(),
-				blockData->getTextureBlockTileSize(),
-				blockData->getTextureBlockStateOffset()
+				{1, 1},
+				textureData.topLeft,
+				textureData.size,
+				textureData.stateOffset
 			);
 		}
 	}
