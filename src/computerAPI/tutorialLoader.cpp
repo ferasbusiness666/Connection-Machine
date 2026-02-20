@@ -3,9 +3,9 @@
 #include "gui/viewportManager/circuitView/tutorial.h"
 #include "logging/logging.h"
 #include <cctype>
+#include <regex>
 #include <string>
 #include <unordered_map>
-#include <regex>
 
 Position getPositionFromString(const std::string str1, const std::string str2) {
 	return Position(std::stoi(str1.substr(str1.find('(') + 1)), std::stoi(str2.substr(0, str2.size() - 1)));
@@ -33,35 +33,79 @@ void parsePreSteps(std::vector<std::string>& info, std::unordered_map<std::strin
 				continue;
 			}
 			std::string value;
-			if (!(ss >> value)) {
-				logError("Invalid macro on line {}, macro must contain a value.", "TutorialLoader", i);
-				continue;
-			}
 			value = ss.str().substr(ss.str().find(value));
 			logInfo(value);
-			if (!macros.emplace(tok, value).second) {
+			if (!macros.emplace("(" + tok + ")", value).second) {
 				logError("Warning: Duplicate macro definition on line {}.", "TutorialLoader", i);
 				continue;
 			}
-		} else if (tok.starts_with("#")) {
-			// ignore comments
-			continue;
 		}
 	}
 }
 
 void macroReplace(std::vector<std::string>& lines, std::unordered_map<std::string, std::string>& macros) {
-    for (int i = 0; i < lines.size(); i++) {
-        for (auto& macro : macros) {
-            lines[i] = std::regex_replace(lines[i], (std::regex)macro.first, macro.second);
-        }
-    }
+	for (int i = 0; i < lines.size(); i++) {
+		for (auto& macro : macros) {
+			lines[i] = std::regex_replace(lines[i], (std::regex)macro.first, macro.second);
+		}
+	}
+}
+
+void parseCondition(TutorialCondition& condition, const std::vector<std::string>& lines, int& line) {
+	for (int i = line; i < lines.size(); i++) {
+		std::stringstream ss(lines[i]);
+		std::string tok;
+		ss >> tok;
+		if (tok == "Step:" || tok == "Action:") {
+			line = i - 1;
+			return;
+		} else if (tok == "Block:") {
+            ss >> tok;
+			BlockType blockName(stringToBlockType(tok));
+			std::string tmp;
+			ss >> tmp;
+			ss >> tok;
+			tmp.pop_back();
+			Position p = getPositionFromString(tmp, tok);
+			ss >> tok;
+			Orientation orietnation(stringToOrientation((tok)));
+			condition.blocks.emplace_back(p, blockName, orietnation);
+		} else if (tok == "Connection:") {
+
+		} else if (tok == "State:") {
+
+		}
+	}
+}
+
+void parseStep(std::vector<TutorialStep>& steps, const std::vector<std::string>& lines, int& line) {
+	TutorialStep step;
+	TutorialAction action;
+	TutorialCondition condition;
+	for (int i = line; i < lines.size(); i++) {
+		std::stringstream ss(lines[i]);
+		std::string tok;
+		ss >> tok;
+		if (tok == "Step:") {
+			line = i - 1;
+			return;
+		} else if (tok == "Action:") {
+
+		} else if (tok == "Condition:") {
+			parseCondition(condition, lines, i);
+		}
+	}
 }
 
 void parseSteps(std::vector<TutorialStep>& steps, const std::vector<std::string>& lines) {
 	for (int i = 0; i < lines.size(); i++) {
-        
-    }
+		std::stringstream ss(lines[i]);
+		std::string tok;
+		ss >> tok;
+		if (tok == "Step:") {
+			parseStep(steps, lines, i);
+		}
+	}
 }
 
 std::vector<TutorialStep> parseTutorialFile(std::string fileName) {
@@ -78,26 +122,11 @@ std::vector<TutorialStep> parseTutorialFile(std::string fileName) {
 	std::vector<std::string> info(2, "");
 	std::unordered_map<std::string, std::string> macros;
 	parsePreSteps(info, macros, lines);
+	macroReplace(lines, macros);
 	std::vector<TutorialStep> steps;
+	parseSteps(steps, lines);
 	std::string cur;
-	int line = 0;
-	istream >> cur;
-	line++;
-	if (cur != "version_0") {
-		logError("tutorial/parser version mismatch\nError on line: {}", "parseTutorialFile", line);
-		return {};
-	}
-	istream >> cur;
-	line++;
-	if (cur != "Tutorial:") {
-		logError("tutorial missing name\nError on line: {}", "parseTutorialFile", line);
-		return {};
-	}
-	std::string name;
-
-	istream >> std::quoted(name);
-	istream >> cur;
-	line++;
+	int line;
 	for (;;) {
 		TutorialStep step;
 		if (cur == "Step:") {
@@ -109,16 +138,7 @@ std::vector<TutorialStep> parseTutorialFile(std::string fileName) {
 					istream >> cur;
 					line++;
 					if (cur == "Block:") {
-						istream >> cur;
-						BlockType blockName(stringToBlockType(cur));
-						std::string tmp;
-						istream >> tmp;
-						istream >> cur;
-						tmp.pop_back();
-						Position p = getPositionFromString(tmp, cur);
-						istream >> cur;
-						Orientation orietnation(stringToOrientation((cur)));
-						c.blocks.emplace_back(p, blockName, orietnation);
+						
 					} else if (cur == "Connection:") {
 						std::string px;
 						std::string py;

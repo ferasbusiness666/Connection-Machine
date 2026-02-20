@@ -1,5 +1,6 @@
 version_0
 Tutorial: "AND Tutorial"
+
 Step:
 	Condition:
 		Block: SWITCH (0, 0) ZERO
