@@ -82,7 +82,7 @@ void BlockTextureManager::refreshBlockTexture(const std::string& path) {
 	int textureWidth, texHeight, texChannels;
 	stbi_uc* pixels = stbi_load(path.c_str(), &textureWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 	if (!pixels) {
-		logError("Failed to load texture: {}", "", path);
+		logError("Failed to load texture: {}", "BlockTextureManager", path);
 		return;
 	}
 
@@ -231,7 +231,7 @@ BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId block
 }
 
 BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId blockTextureId, Vec2Int smallestTextureCord, Vec2Int textureSize) const {
-	return getBlockTextureCords(blockTextureId, smallestTextureCord, textureSize, Vec2Int(0, textureSize.y));
+	return getBlockTextureCords(blockTextureId, smallestTextureCord, textureSize, Vec2Int(0, 0));
 }
 
 BlockTextureCords BlockTextureManager::getBlockTextureCords(

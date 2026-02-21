@@ -178,7 +178,7 @@ void BlockSelectorWidget::createTree(const SelectorTreeNode& node) {
 				}
 			} else if (std::holds_alternative<std::pair<BlockType, circuit_id_t>>(pair.second.data.value())) {
 				const std::pair<BlockType, circuit_id_t>& blockTypeCircuitIdPair = std::get<std::pair<BlockType, circuit_id_t>>(pair.second.data.value());
-				if (getGUIValue_rendering<BlockType>("selectedBlockType") == blockTypeCircuitIdPair.second) {
+				if (getGUIValue_rendering<BlockType>("selectedBlockType") == blockTypeCircuitIdPair.first) {
 					flags |= ImGuiTreeNodeFlags_Selected;
 				}
 			} else {

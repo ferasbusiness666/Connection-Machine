@@ -210,7 +210,7 @@ BlockTextureId BlockRenderDataFeeder::getBlockTextureId(const BlockData& blockDa
 		}
 		CpuImage paddedImg = padTexture(img);
 		blockTextureId = MainRenderer::get().addBlockTexture(paddedImg.getData(), paddedImg.getSize().x, paddedImg.getSize().y);
-	} else {
+	} else if (!std::get<BlockData::BlockTextureData>(blockData.getRenderData(0)).path.empty()) {
 		blockTextureId = MainRenderer::get().addBlockTexture(std::get<BlockData::BlockTextureData>(blockData.getRenderData(0)).path);
 	}
 	if (renderData.blockTextureId == blockTextureId) return blockTextureId;
