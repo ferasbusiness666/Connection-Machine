@@ -1,18 +1,22 @@
 #ifndef app_h
 #define app_h
 
+#include <SDL3/SDL_init.h>
+
 class SdlWindow;
 class SDL_Window;
 
 namespace App {
+	void init();
 	void kill();
 	template<class WindowType, class... Args>
 	requires std::derived_from<WindowType, SdlWindow>
 	std::shared_ptr<SdlWindow> makeWindow(Args&&... args);
 	void registerWindow(std::shared_ptr<SdlWindow>& window);
 
-	float getDetlaTime();
-	void runLoop();
+	double getDetlaTime();
+	void handleEvent(SDL_Event& event);
+	SDL_AppResult iterate();
 	void startTryingToQuit();
 	void stopTryingToQuit();
 

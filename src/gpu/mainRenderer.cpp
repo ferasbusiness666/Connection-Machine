@@ -98,12 +98,12 @@ void MainRenderer::setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTex
 	blockRenderDataManager.setBlockTexture(blockRenderDataId, blockTextureId);
 }
 
-void MainRenderer::setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize) {
-	blockRenderDataManager.setBlockTexture(blockRenderDataId, blockTextureId, tileSize, smallestCordTile, blockSize);
+void MainRenderer::setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId, Vec2Int smallestTextureCord, Vec2Int textureSize) {
+	blockRenderDataManager.setBlockTexture(blockRenderDataId, blockTextureId, smallestTextureCord, textureSize);
 }
 
-void MainRenderer::setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize, Vec2Int textureStepSize) {
-	blockRenderDataManager.setBlockTexture(blockRenderDataId, blockTextureId, tileSize, smallestCordTile, blockSize, textureStepSize);
+void MainRenderer::setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId, Vec2Int smallestTextureCord, Vec2Int textureSize, Vec2Int textureStepSize) {
+	blockRenderDataManager.setBlockTexture(blockRenderDataId, blockTextureId, smallestTextureCord, textureSize, textureStepSize);
 }
 
 BlockPortRenderDataId MainRenderer::addBlockPort(BlockRenderDataId blockRenderDataId, bool isInput, FVector positionOnBlock) {

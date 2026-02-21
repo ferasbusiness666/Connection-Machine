@@ -22,6 +22,7 @@ void BlockDataManager::initializeDefaults() {
 	assert(andBlockData->getRenderDataSize() == 1);							  // just to make sure at least once
 	assert(andBlockData->isRenderDataOfType<BlockData::BlockTextureData>(0)); // just to make sure at least once
 	andBlockData->setBlockTexturePath(0, mainTexturePath);
+	andBlockData->setBlockUseFullTexture(0, false);
 	andBlockData->setBlockTextureTopLeft(0, { 256, 0 });
 	andBlockData->setBlockTextureSize(0, { 256, 256 });
 	andBlockData->setBlockTextureVirtualConnection(0, 0);
@@ -36,6 +37,7 @@ void BlockDataManager::initializeDefaults() {
 	orBlockData->setVirtualConnection(0, 1);
 	orBlockData->newRenderData<BlockData::BlockTextureData>();
 	orBlockData->setBlockTexturePath(0, mainTexturePath);
+	orBlockData->setBlockUseFullTexture(0, false);
 	orBlockData->setBlockTextureTopLeft(0, { 2 * 256, 0 });
 	orBlockData->setBlockTextureSize(0, { 256, 256 });
 	orBlockData->setBlockTextureVirtualConnection(0, 0);
@@ -50,6 +52,7 @@ void BlockDataManager::initializeDefaults() {
 	xorBlockData->setVirtualConnection(0, 1);
 	xorBlockData->newRenderData<BlockData::BlockTextureData>();
 	xorBlockData->setBlockTexturePath(0, mainTexturePath);
+	xorBlockData->setBlockUseFullTexture(0, false);
 	xorBlockData->setBlockTextureTopLeft(0, { 3 * 256, 0 });
 	xorBlockData->setBlockTextureSize(0, { 256, 256 });
 	xorBlockData->setBlockTextureVirtualConnection(0, 0);
@@ -64,6 +67,7 @@ void BlockDataManager::initializeDefaults() {
 	nandBlockData->setVirtualConnection(0, 1);
 	nandBlockData->newRenderData<BlockData::BlockTextureData>();
 	nandBlockData->setBlockTexturePath(0, mainTexturePath);
+	nandBlockData->setBlockUseFullTexture(0, false);
 	nandBlockData->setBlockTextureTopLeft(0, { 4 * 256, 0 });
 	nandBlockData->setBlockTextureSize(0, { 256, 256 });
 	nandBlockData->setBlockTextureVirtualConnection(0, 0);
@@ -78,6 +82,7 @@ void BlockDataManager::initializeDefaults() {
 	norBlockData->setVirtualConnection(0, 1);
 	norBlockData->newRenderData<BlockData::BlockTextureData>();
 	norBlockData->setBlockTexturePath(0, mainTexturePath);
+	norBlockData->setBlockUseFullTexture(0, false);
 	norBlockData->setBlockTextureTopLeft(0, { 5 * 256, 0 });
 	norBlockData->setBlockTextureSize(0, { 256, 256 });
 	norBlockData->setBlockTextureVirtualConnection(0, 0);
@@ -92,6 +97,7 @@ void BlockDataManager::initializeDefaults() {
 	xnorBlockData->setVirtualConnection(0, 1);
 	xnorBlockData->newRenderData<BlockData::BlockTextureData>();
 	xnorBlockData->setBlockTexturePath(0, mainTexturePath);
+	xnorBlockData->setBlockUseFullTexture(0, false);
 	xnorBlockData->setBlockTextureTopLeft(0, { 6 * 256, 0 });
 	xnorBlockData->setBlockTextureSize(0, { 256, 256 });
 	xnorBlockData->setBlockTextureVirtualConnection(0, 0);
@@ -106,6 +112,7 @@ void BlockDataManager::initializeDefaults() {
 	bufferBlockData->setVirtualConnection(0, 1);
 	bufferBlockData->newRenderData<BlockData::BlockTextureData>();
 	bufferBlockData->setBlockTexturePath(0, mainTexturePath);
+	bufferBlockData->setBlockUseFullTexture(0, false);
 	bufferBlockData->setBlockTextureTopLeft(0, { 7 * 256, 0 });
 	bufferBlockData->setBlockTextureSize(0, { 256, 256 });
 	bufferBlockData->setBlockTextureVirtualConnection(0, 0);
@@ -120,6 +127,7 @@ void BlockDataManager::initializeDefaults() {
 	notBlockData->setVirtualConnection(0, 1);
 	notBlockData->newRenderData<BlockData::BlockTextureData>();
 	notBlockData->setBlockTexturePath(0, mainTexturePath);
+	notBlockData->setBlockUseFullTexture(0, false);
 	notBlockData->setBlockTextureTopLeft(0, { 8 * 256, 0 });
 	notBlockData->setBlockTextureSize(0, { 256, 256 });
 	notBlockData->setBlockTextureVirtualConnection(0, 0);
@@ -132,6 +140,7 @@ void BlockDataManager::initializeDefaults() {
 	buttonBlockData->setVirtualConnection(0, 1);
 	buttonBlockData->newRenderData<BlockData::BlockTextureData>();
 	buttonBlockData->setBlockTexturePath(0, mainTexturePath);
+	buttonBlockData->setBlockUseFullTexture(0, false);
 	buttonBlockData->setBlockTextureTopLeft(0, { 9 * 256, 0 });
 	buttonBlockData->setBlockTextureSize(0, { 256, 256 });
 	buttonBlockData->setBlockTextureVirtualConnection(0, 0);
@@ -144,6 +153,7 @@ void BlockDataManager::initializeDefaults() {
 	tickButtonBlockData->setVirtualConnection(0, 1);
 	tickButtonBlockData->newRenderData<BlockData::BlockTextureData>();
 	tickButtonBlockData->setBlockTexturePath(0, mainTexturePath);
+	tickButtonBlockData->setBlockUseFullTexture(0, false);
 	tickButtonBlockData->setBlockTextureTopLeft(0, { 10 * 256, 0 });
 	tickButtonBlockData->setBlockTextureSize(0, { 256, 256 });
 	tickButtonBlockData->setBlockTextureVirtualConnection(0, 0);
@@ -156,6 +166,7 @@ void BlockDataManager::initializeDefaults() {
 	switchBlockData->setVirtualConnection(0, 1);
 	switchBlockData->newRenderData<BlockData::BlockTextureData>();
 	switchBlockData->setBlockTexturePath(0, mainTexturePath);
+	switchBlockData->setBlockUseFullTexture(0, false);
 	switchBlockData->setBlockTextureTopLeft(0, { 11 * 256, 0 });
 	switchBlockData->setBlockTextureSize(0, { 256, 256 });
 	switchBlockData->setBlockTextureVirtualConnection(0, 0);
@@ -168,6 +179,7 @@ void BlockDataManager::initializeDefaults() {
 	constantOffBlockData->setVirtualConnection(0, 1);
 	constantOffBlockData->newRenderData<BlockData::BlockTextureData>();
 	constantOffBlockData->setBlockTexturePath(0, mainTexturePath);
+	constantOffBlockData->setBlockUseFullTexture(0, false);
 	constantOffBlockData->setBlockTextureTopLeft(0, { 12 * 256, 0 });
 	constantOffBlockData->setBlockTextureSize(0, { 256, 256 });
 	constantOffBlockData->setBlockTextureVirtualConnection(0, 0);
@@ -181,6 +193,7 @@ void BlockDataManager::initializeDefaults() {
 	constantOnBlockData->setVirtualConnection(0, 1);
 	constantOnBlockData->newRenderData<BlockData::BlockTextureData>();
 	constantOnBlockData->setBlockTexturePath(0, mainTexturePath);
+	constantOnBlockData->setBlockUseFullTexture(0, false);
 	constantOnBlockData->setBlockTextureTopLeft(0, { 12 * 256, 0 });
 	constantOnBlockData->setBlockTextureSize(0, { 256, 256 });
 	constantOnBlockData->setBlockTextureVirtualConnection(0, 0);
@@ -194,6 +207,7 @@ void BlockDataManager::initializeDefaults() {
 	constantZBlockData->setVirtualConnection(0, 1);
 	constantZBlockData->newRenderData<BlockData::BlockTextureData>();
 	constantZBlockData->setBlockTexturePath(0, mainTexturePath);
+	constantZBlockData->setBlockUseFullTexture(0, false);
 	constantZBlockData->setBlockTextureTopLeft(0, { 12 * 256, 0 });
 	constantZBlockData->setBlockTextureSize(0, { 256, 256 });
 	constantZBlockData->setBlockTextureVirtualConnection(0, 0);
@@ -207,6 +221,7 @@ void BlockDataManager::initializeDefaults() {
 	constantXBlockData->setVirtualConnection(0, 1);
 	constantXBlockData->newRenderData<BlockData::BlockTextureData>();
 	constantXBlockData->setBlockTexturePath(0, mainTexturePath);
+	constantXBlockData->setBlockUseFullTexture(0, false);
 	constantXBlockData->setBlockTextureTopLeft(0, { 12 * 256, 0 });
 	constantXBlockData->setBlockTextureSize(0, { 256, 256 });
 	constantXBlockData->setBlockTextureVirtualConnection(0, 0);
@@ -219,6 +234,7 @@ void BlockDataManager::initializeDefaults() {
 	lightBlockData->setVirtualConnection(0, 1);
 	lightBlockData->newRenderData<BlockData::BlockTextureData>();
 	lightBlockData->setBlockTexturePath(0, mainTexturePath);
+	lightBlockData->setBlockUseFullTexture(0, false);
 	lightBlockData->setBlockTextureTopLeft(0, { 13 * 256, 0 });
 	lightBlockData->setBlockTextureSize(0, { 256, 256 });
 	lightBlockData->setBlockTextureVirtualConnection(0, 0);
@@ -230,6 +246,7 @@ void BlockDataManager::initializeDefaults() {
 	junctionBlockData->setVirtualConnection(0, 1);
 	junctionBlockData->newRenderData<BlockData::BlockTextureData>();
 	junctionBlockData->setBlockTexturePath(0, mainTexturePath);
+	junctionBlockData->setBlockUseFullTexture(0, false);
 	junctionBlockData->setBlockTextureTopLeft(0, { 8 * 256, 6 * 256 });
 	junctionBlockData->setBlockTextureSize(0, { 256, 256 });
 	junctionBlockData->setBlockTextureVirtualConnection(0, 0);
@@ -244,6 +261,7 @@ void BlockDataManager::initializeDefaults() {
 	junctionLBlockData->setVirtualConnection(0, 1);
 	junctionLBlockData->newRenderData<BlockData::BlockTextureData>();
 	junctionLBlockData->setBlockTexturePath(0, mainTexturePath);
+	junctionLBlockData->setBlockUseFullTexture(0, false);
 	junctionLBlockData->setBlockTextureTopLeft(0, { 0, 4 * 256 });
 	junctionLBlockData->setBlockTextureSize(0, { 256, 3 * 256 });
 	junctionLBlockData->setBlockTextureVirtualConnection(0, 0);
@@ -257,6 +275,7 @@ void BlockDataManager::initializeDefaults() {
 	junctionHBlockData->setVirtualConnection(0, 1);
 	junctionHBlockData->newRenderData<BlockData::BlockTextureData>();
 	junctionHBlockData->setBlockTexturePath(0, mainTexturePath);
+	junctionHBlockData->setBlockUseFullTexture(0, false);
 	junctionHBlockData->setBlockTextureTopLeft(0, { 4 * 256, 4 * 256 });
 	junctionHBlockData->setBlockTextureSize(0, { 256, 3 * 256 });
 	junctionHBlockData->setBlockTextureVirtualConnection(0, 0);
@@ -270,6 +289,7 @@ void BlockDataManager::initializeDefaults() {
 	junctionXBlockData->setVirtualConnection(0, 1);
 	junctionXBlockData->newRenderData<BlockData::BlockTextureData>();
 	junctionXBlockData->setBlockTexturePath(0, mainTexturePath);
+	junctionXBlockData->setBlockUseFullTexture(0, false);
 	junctionXBlockData->setBlockTextureTopLeft(0, { 0, 3 * 256 });
 	junctionXBlockData->setBlockTextureSize(0, { 256, 3 * 256 });
 	junctionXBlockData->setBlockTextureVirtualConnection(0, 0);
@@ -292,43 +312,17 @@ void BlockDataManager::initializeDefaults() {
 	tristateBufferBlockData->setVirtualConnection(0, 1);
 	tristateBufferBlockData->newRenderData<BlockData::BlockTextureData>();
 	tristateBufferBlockData->setBlockTexturePath(0, mainTexturePath);
+	tristateBufferBlockData->setBlockUseFullTexture(0, false);
 	tristateBufferBlockData->setBlockTextureTopLeft(0, { 8 * 256, 4 * 256 });
 	tristateBufferBlockData->setBlockTextureSize(0, { 256, 2 * 256 });
 	tristateBufferBlockData->setBlockTextureVirtualConnection(0, 0);
 	tristateBufferBlockData->setBlockTextureStateOffset(0, { 256, 0 });
-	// tristateBufferBlockData->setTexturePath(mainTexturePath);
-	// tristateBufferBlockData->setTextureVirtualConnection(0);
-	// tristateBufferBlockData->setUsesTileMapTexture(true);
-	// tristateBufferBlockData->setTextureTileSize({ 256, 256 });
-	// tristateBufferBlockData->setTextureBlockTileSize({ 1, 2 });
-	// tristateBufferBlockData->setTextureSmallestCordTile({ 8, 4 });
-	// tristateBufferBlockData->setTextureBlockStateOffset({ 256, 0 });
-	// COLOR_LIGHT
-	// BlockData* colorLightBlockData = getBlockData(BlockType::COLOR_LIGHT);
-	// colorLightBlockData->setName("Color Light (6 bits)");
-	// colorLightBlockData->setPath("Other");
-	// colorLightBlockData->setConnectionInput(Vector(0), 0);
-	// colorLightBlockData->setConnectionPortOffset(0, FVector(0.5f - edgeDistance, 0.5f - sideShift));
-	// colorLightBlockData->setConnectionBitConfiguration(0, std::vector<unsigned int>{ 0, 1, 2, 3, 4, 5 });
-	// colorLightBlockData->setVirtualConnection(0, 6);
-	// colorLightBlockData->setTexturePath((DirectoryManager::getResourceDirectory() / "colorLight.png").string());
-	// colorLightBlockData->setTextureVirtualConnection(0);
-	// colorLightBlockData->setUsesTileMapTexture(true);
-	// colorLightBlockData->setTextureTileSize({ 256, 256 });
-	// colorLightBlockData->setTextureBlockTileSize({ 1, 1 });
-	// colorLightBlockData->setTextureSmallestCordTile({ 0, 0 });
-	// colorLightBlockData->setTextureBlockStateOffset({ 8, 256 });
-	// colorLightBlockData->setIsPlaceable(false);
-	// // TEXTURE_VIEWER
+	// TEXTURE_VIEWER
 	// BlockData* textureViewerBlockData = getBlockData(addBlock());
 	// textureViewerBlockData->setName("Texture Viewer");
 	// textureViewerBlockData->setPath("Debug");
 	// textureViewerBlockData->setSize(Size(5));
 	// textureViewerBlockData->setTexturePath("null_path");
-	// textureViewerBlockData->setUsesTileMapTexture(true);
-	// textureViewerBlockData->setTextureTileSize({ 4096, 4096 });
-	// textureViewerBlockData->setTextureBlockTileSize({ 1, 1 });
-	// textureViewerBlockData->setTextureSmallestCordTile({ 0, 0 });
 	// textureViewerBlockData->setIsPlaceable(true);
 	logInfo("Default BlockData initialized", "BlockDataManager");
 }

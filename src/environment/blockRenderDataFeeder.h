@@ -35,8 +35,10 @@ private:
 	void blockDataConnectionNameSet_event(const DataUpdateEventManager::EventData* event);
 
 	void blockDataTexturePathChange_event(const DataUpdateEventManager::EventData* event);
+	void blockDataTextureUseFullTextureChange_event(const DataUpdateEventManager::EventData* event);
 	void blockDataTextureTopLeftChange_event(const DataUpdateEventManager::EventData* event);
 	void blockDataTextureSizeChange_event(const DataUpdateEventManager::EventData* event);
+	void blockDataTextureRenderStateChange_event(const DataUpdateEventManager::EventData* event);
 	void blockDataTextureVirtualConnectionChange_event(const DataUpdateEventManager::EventData* event);
 	void blockDataTextureStateOffsetChange_event(const DataUpdateEventManager::EventData* event);
 

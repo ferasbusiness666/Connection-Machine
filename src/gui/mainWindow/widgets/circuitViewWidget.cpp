@@ -1,7 +1,6 @@
 #include "circuitViewWidget.h"
 
 #include "../mainWindow.h"
-#include "app.h"
 #include "gpu/mainRenderer.h"
 #include "gui/viewportManager/circuitView/circuitView.h"
 #include "gui/viewportManager/circuitView/events/customEvents.h"
@@ -16,7 +15,6 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 	setupGUIValue<bool>("MouseLeftDown", false, [&](const bool& state) {
 		if (state) {
 			if (!getGUIValue<bool>("MouseInView")) return;
-			// std::lock_guard lock(Settings::getSettingsMapReadLock()); // we will be running these on main thread
 			if (getMainWindow().isPressingKeybind("Keybinds/Editing/Pick Block", true)) {
 				std::unique_ptr<CircuitView>& circuitView = this->circuitView;
 				Circuit* circuit = circuitView->getCircuit();
@@ -114,7 +112,7 @@ void CircuitViewWidget::processEvent(SDL_Event& event) {
 				circuitView->getEventRegister().doEvent(DeltaEvent("view zoom", (float)(movement.y) / 15.f));
 			} else {
 				Vec2 size = getGUIValue<Vec2>("CircuitViewSize");
-				float scaleAmout = App::getDetlaTime() * 750.f;
+				float scaleAmout = 5; //App::getDetlaTime() * 750.f;
 				circuitView->getEventRegister().doEvent(DeltaXYEvent(
 					"view pan",
 					movement.x / size.x * circuitView->getViewManager().getViewWidth() * scaleAmout,

@@ -46,11 +46,15 @@ public:
 
 	struct BlockTextureData {
 		std::string path;
+		bool useFullTexture = true;
 		Vec2Int topLeft = { 0, 0 };
-		Vec2Int size = { 0, 0 }; // if size is 0 then it just uses the whole texture
-		std::optional<virtual_connection_id_t> virtualConnectionId = std::nullopt;
-		Vec2Int stateOffset = { 0, 256 }; // only does anything if virtualConnection is set
+		Vec2Int size = { 0, 0 };
+		bool renderState = false;
+		virtual_connection_id_t virtualConnectionId = 0;
+		Vec2Int stateOffset = { 0, 256 };
 	};
+
+	typedef std::variant<BlockTextureData> RenderDataType;
 
 	BlockData(BlockType blockType, DataUpdateEventManager& dataUpdateEventManager);
 
@@ -129,38 +133,24 @@ public:
 	inline const VirtualConnectionData* getVirtualConnectionData(virtual_connection_id_t virtualConnectionId) const noexcept;
 	inline unsigned int getVirtualConnectionBitWidth(virtual_connection_id_t virtualConnectionId) const noexcept;
 
-	// Render Block Data
-	// void setTexturePath(const std::string& texturePath);
-	// inline const std::string& getTexturePath() const noexcept { return texturePath; }
-	// void setTextureVirtualConnection(std::optional<virtual_connection_id_t> textureVirtualConnection);
-	// inline std::optional<virtual_connection_id_t> getTextureVirtualConnection() const noexcept { return textureVirtualConnection; }
-	// void setUsesTileMapTexture(bool usesTileMapTexture);
-	// inline bool getUsesTileMapTexture() const noexcept { return usesTileMapTexture; }
-	// void setTextureTileSize(Vec2Int tileSize);
-	// inline Vec2Int getTextureTileSize() const noexcept { return textureTileSize; }
-	// void setTextureSmallestCordTile(Vec2Int smallestCordTile);
-	// inline Vec2Int getTextureSmallestCordTile() const noexcept { return textureSmallestCordTile; }
-	// void setTextureBlockTileSize(Vec2Int blockSizeInTiles);
-	// inline Vec2Int getTextureBlockTileSize() const noexcept { return textureBlockTileSize; }
-	// void setTextureBlockStateOffset(Vec2Int textureBlockStateOffset);
-	// inline Vec2Int getTextureBlockStateOffset() const noexcept { return textureBlockStateOffset; }
-
 	// render data
 	template <class T>
 	void newRenderData(unsigned int index = std::numeric_limits<unsigned int>::max());
 	void moveRenderData(unsigned int before, unsigned int after);
 	void removeRenderData(unsigned int index);
 	unsigned int getRenderDataSize() const noexcept { return renderData.size(); }
-	const std::vector<std::variant<BlockTextureData>>& getRenderData() const noexcept { return renderData; }
-	const std::variant<BlockTextureData>& getRenderData(unsigned int index) const noexcept;
+	const std::vector<RenderDataType>& getRenderData() const noexcept { return renderData; }
+	const RenderDataType& getRenderData(unsigned int index) const noexcept;
 	template<class T>
 	const bool isRenderDataOfType(unsigned int index) const noexcept;
 
 	// BlockTextureData
 	void setBlockTexturePath(unsigned int index, const std::string& texturePath);
+	void setBlockUseFullTexture(unsigned int index, bool useFullTexture);
 	void setBlockTextureTopLeft(unsigned int index, Vec2Int topLeft);
 	void setBlockTextureSize(unsigned int index, Vec2Int size);
-	void setBlockTextureVirtualConnection(unsigned int index, std::optional<virtual_connection_id_t> virtualConnectionId);
+	void setBlockRenderState(unsigned int index, bool renderState);
+	void setBlockTextureVirtualConnection(unsigned int index, virtual_connection_id_t virtualConnectionId);
 	void setBlockTextureStateOffset(unsigned int index, Vec2Int stateOffset);
 
 private:
@@ -180,7 +170,7 @@ private:
 	DataUpdateEventManager& dataUpdateEventManager;
 
 	// first renders on the bottom, last on the top.
-	std::vector<std::variant<BlockTextureData>>	renderData;
+	std::vector<RenderDataType>	renderData;
 };
 
 // defaults for good connection pos
@@ -426,9 +416,10 @@ void BlockData::newRenderData(unsigned int index) {
 		renderData.emplace(renderData.begin() + index, std::in_place_type<T>);
 	}
 	dataUpdateEventManager.sendEvent<std::pair<BlockType, unsigned int>>("blockDataNewRenderData", { blockType, index });
+	sendBlockDataUpdate();
 }
 
-inline const std::variant<BlockData::BlockTextureData>& BlockData::getRenderData(unsigned int index) const noexcept {
+inline const BlockData::RenderDataType& BlockData::getRenderData(unsigned int index) const noexcept {
 	assert(index < renderData.size());
 	return renderData[index];
 }

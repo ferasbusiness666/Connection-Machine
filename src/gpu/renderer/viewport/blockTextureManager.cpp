@@ -230,15 +230,14 @@ BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId block
 	}
 }
 
-BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize) const {
-	return getBlockTextureCords(blockTextureId, tileSize, smallestCordTile, blockSize, Vec2Int(0, tileSize.y * blockSize.y));
+BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId blockTextureId, Vec2Int smallestTextureCord, Vec2Int textureSize) const {
+	return getBlockTextureCords(blockTextureId, smallestTextureCord, textureSize, Vec2Int(0, textureSize.y));
 }
 
 BlockTextureCords BlockTextureManager::getBlockTextureCords(
 	BlockTextureId blockTextureId,
-	Vec2Int tileSize,
-	Vec2Int smallestCordTile,
-	Vec2Int blockSize,
+	Vec2Int smallestTextureCord,
+	Vec2Int textureSize,
 	Vec2Int textureStepSize
 ) const {
 	auto blockTextureIter = blockTextures.find(blockTextureId);
@@ -246,13 +245,13 @@ BlockTextureCords BlockTextureManager::getBlockTextureCords(
 		logError("Could not find block texture with id {}", "BlockTextureManager", blockTextureId);
 		return { glm::vec2(0, 0), glm::vec2(0, 0), 0, glm::vec2(0, 0) };
 	}
-	unsigned int pixelsWidth = blockSize.x * tileSize.x;
-	unsigned int pixelsHeight = blockSize.y * tileSize.y;
+	unsigned int pixelsWidth = textureSize.x;
+	unsigned int pixelsHeight = textureSize.y;
 	if (pixelsWidth == pixelsHeight) {
 		return BlockTextureCords(
 			glm::vec2(
-				(double)(blockTextureIter->second.textureOrigin.x + smallestCordTile.x * tileSize.x + pixelInset) / (double)textureArray->textureSize.width,
-				(double)(blockTextureIter->second.textureOrigin.y + smallestCordTile.y * tileSize.y + pixelInset) / (double)textureArray->textureSize.height
+				(double)(blockTextureIter->second.textureOrigin.x + smallestTextureCord.x + pixelInset) / (double)textureArray->textureSize.width,
+				(double)(blockTextureIter->second.textureOrigin.y + smallestTextureCord.y + pixelInset) / (double)textureArray->textureSize.height
 			),
 			glm::vec2(
 				(double)(pixelsWidth - pixelInset * 2) / (double)textureArray->textureSize.width,
@@ -265,8 +264,8 @@ BlockTextureCords BlockTextureManager::getBlockTextureCords(
 		double otherPixelInset = (double)pixelInset * ((double)pixelsWidth / (double)pixelsHeight);
 		return BlockTextureCords(
 			glm::vec2(
-				((double)(blockTextureIter->second.textureOrigin.x + smallestCordTile.x * tileSize.x) + otherPixelInset) / (double)textureArray->textureSize.width,
-				(double)(blockTextureIter->second.textureOrigin.y + smallestCordTile.y * tileSize.y + pixelInset) / (double)textureArray->textureSize.height
+				((double)(blockTextureIter->second.textureOrigin.x + smallestTextureCord.x) + otherPixelInset) / (double)textureArray->textureSize.width,
+				(double)(blockTextureIter->second.textureOrigin.y + smallestTextureCord.y + pixelInset) / (double)textureArray->textureSize.height
 			),
 			glm::vec2(
 				((double)pixelsWidth - otherPixelInset * 2.) / (double)textureArray->textureSize.width,
@@ -279,8 +278,8 @@ BlockTextureCords BlockTextureManager::getBlockTextureCords(
 		double otherPixelInset = (double)pixelInset * ((double)pixelsHeight / (double)pixelsWidth);
 		return BlockTextureCords(
 			glm::vec2(
-				(double)(blockTextureIter->second.textureOrigin.x + smallestCordTile.x * tileSize.x + pixelInset) / (double)textureArray->textureSize.width,
-				((double)(blockTextureIter->second.textureOrigin.y + smallestCordTile.y * tileSize.y) + otherPixelInset) / (double)textureArray->textureSize.height
+				(double)(blockTextureIter->second.textureOrigin.x + smallestTextureCord.x + pixelInset) / (double)textureArray->textureSize.width,
+				((double)(blockTextureIter->second.textureOrigin.y + smallestTextureCord.y) + otherPixelInset) / (double)textureArray->textureSize.height
 			),
 			glm::vec2(
 				(double)(pixelsWidth - pixelInset * 2) / (double)textureArray->textureSize.width,

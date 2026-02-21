@@ -26,15 +26,24 @@ std::chrono::time_point<std::chrono::high_resolution_clock> lastUpdateTime;
 std::chrono::nanoseconds detlaTime;
 std::atomic<bool> killingApp = false;
 
+void App::init() {
+	assert(mainThreadId == std::this_thread::get_id());
+	running = true;
+	// Network::get().checkForUpdates(windows[0]->getPopUpManager());
+	lastUpdateTime = std::chrono::high_resolution_clock::now();
+	SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "120");
+}
+
 void App::kill() {
+	assert(mainThreadId == std::this_thread::get_id());
 	logInfo("Killing App", "App");
 	for (std::shared_ptr<SdlWindow> window : windows) {
 		if (!window->isKilled()) {
 			logError("SDL window \"{}\" was not killed.", "App", window->getName());
 		}
 	}
-	killingApp.store(true);
 	windows.clear();
+	killingApp.store(true);
 	MainRenderer::kill();
 	Network::kill();
 	sdl.reset();
@@ -44,92 +53,62 @@ void App::kill() {
 }
 
 void App::registerWindow(std::shared_ptr<SdlWindow>& window) {
+	assert(mainThreadId == std::this_thread::get_id());
 	windows.emplace(window);
 	window->renderingMux.unlock();
 }
 
-float App::getDetlaTime() {
+double App::getDetlaTime() {
+	assert(mainThreadId == std::this_thread::get_id());
 	return ((double)detlaTime.count()) / 1000000000.;
 }
 
-#ifdef TRACY_PROFILER
-const char* const mainAppLoop_Tracy = "AppLoop";
-#endif
-
-void App::runLoop() {
-	logInfo("Starting App loop", "App");
-	if (windows.empty()) {
-		logError("Killing App loop. No windows Found!", "App");
-		App::kill();
-		return;
+void App::handleEvent(SDL_Event& event) {
+	assert(mainThreadId == std::this_thread::get_id());
+	ImGuiRenderer::allProcessEvent(event);
+	switch (event.type) {
+	case SDL_EVENT_QUIT: {
+		// Main application quit (eg. ctrl-c in terminal)
+		startTryingToQuit();
+		break;
 	}
-	// Network::get().checkForUpdates(get().windows[0]->getPopUpManager());
-	running = true;
-	lastUpdateTime = std::chrono::high_resolution_clock::now();
-	while (running) {
-		if (windows.empty()) {
-			App::kill(); // Ff there are not more windows kill the app!
-			return;
-		}
-
-		// Wait for the next event (so we don't broork the cpu)
-		bool gotEvent = SDL_WaitEventTimeout(nullptr, 8);
-
-		// first thing we need to do is run functions from other threads (mainly imgui rending)
-		{
-			runOnMainFunctionsMux.lock();
-			while (!runOnMainFunctions.empty()) {
-				auto func = runOnMainFunctions.back();
-				runOnMainFunctions.pop_back();
-				runOnMainFunctionsMux.unlock();
-				func.second();
-				runOnMainFunctionsMux.lock();
-			}
-			runOnMainFunctionsMux.unlock();
-			assert(runOnMainFunctions.empty());
-		}
-
-		std::chrono::time_point<std::chrono::high_resolution_clock> updateTime = std::chrono::high_resolution_clock::now();
-		detlaTime = updateTime - lastUpdateTime;
-		lastUpdateTime = updateTime;
-#ifdef TRACY_PROFILER
-		FrameMarkStart(mainAppLoop_Tracy);
-#endif
-		// clean up killed windows
-		std::erase_if(windows, [](const std::shared_ptr<SdlWindow>& window){ return window->isKilled(); });
-
-		if (gotEvent) {
-			// process events (TODO - should probably just have a map of window ids to windows)
-			SDL_Event event;
-			while (SDL_PollEvent(&event)) {
-				ImGuiRenderer::allProcessEvent(event);
-				switch (event.type) {
-				case SDL_EVENT_QUIT: {
-					// Main application quit (eg. ctrl-c in terminal)
-					startTryingToQuit();
-					break;
-				}
-				default: {
-					// Send event to all windows
-					for (const std::shared_ptr<SdlWindow>& window : windows) {
-						if (window->isKilled()) break;
-						window->recieveEvent(event);
-					}
-				}
-				}
-			}
-		}
+	default: {
+		// Send event to all windows
 		for (const std::shared_ptr<SdlWindow>& window : windows) {
-			if (window->isKilled()) continue;
-			window->doUpdate();
+			if (window->isKilled()) break;
+			window->recieveEvent(event);
 		}
-#ifdef TRACY_PROFILER
-		FrameMarkEnd(mainAppLoop_Tracy);
-#endif
+	}
 	}
 }
 
+unsigned int i = 0;
+
+SDL_AppResult App::iterate() {
+	assert(mainThreadId == std::this_thread::get_id());
+	for (const std::shared_ptr<SdlWindow>& window : windows) {
+		if (window->isKilled()) continue;
+		window->doUpdate();
+	}
+	{
+		runOnMainFunctionsMux.lock();
+		while (!runOnMainFunctions.empty()) {
+			auto func = runOnMainFunctions.back();
+			runOnMainFunctions.pop_back();
+			runOnMainFunctionsMux.unlock();
+			func.second();
+			runOnMainFunctionsMux.lock();
+		}
+		runOnMainFunctionsMux.unlock();
+		assert(runOnMainFunctions.empty());
+	}
+	std::erase_if(windows, [](const std::shared_ptr<SdlWindow>& window){ return window->isKilled(); });
+	if (windows.empty()) return SDL_AppResult::SDL_APP_FAILURE;
+	return SDL_AppResult::SDL_APP_CONTINUE;
+}
+
 void App::startTryingToQuit() {
+	assert(mainThreadId == std::this_thread::get_id());
 	for (std::shared_ptr<SdlWindow> window : windows) {
 		if (window->isKilled()) continue;
 		if (!window->kill(false)) {
@@ -234,7 +213,10 @@ void App::startTryingToQuit() {
 	// if (tasksToFinishToQuit == 0) running = false;
 }
 
-void App::stopTryingToQuit() { tryingToQuit = false; }
+void App::stopTryingToQuit() {
+	assert(mainThreadId == std::this_thread::get_id());
+	tryingToQuit = false;
+}
 
 void App::doRunOnMainForThread(std::thread::id threadId) {
 	std::lock_guard lock(runOnMainFunctionsMux);
@@ -266,6 +248,7 @@ bool App::runOnMain_blocking(std::function<void()> func) {
 		std::stringstream ss;
 		ss << std::this_thread::get_id();
 		logWarning("runOnMain_blocking called from thread {} while app was closing! This may be a error.", "App::runOnMain_blocking", ss.str());
+
 		return false;
 	}
 	std::atomic<bool> isDone{false};
@@ -291,6 +274,7 @@ void App::runOnMain(std::function<void()> func) {
 }
 
 nlohmann::json App::dumpState() /* GCOVR_EXCL_FUNCTION */ {
+	assert(mainThreadId == std::this_thread::get_id());
 	nlohmann::json stateJson;
 	stateJson["windows"] = nlohmann::json::array();
 	for (const std::shared_ptr<SdlWindow>& window : windows) {

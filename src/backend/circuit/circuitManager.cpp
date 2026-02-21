@@ -101,15 +101,18 @@ circuit_id_t CircuitManager::createNewCircuit(const ParsedCircuit& parsedCircuit
 
 	blockData->newRenderData<BlockData::BlockTextureData>();
 	blockData->setBlockTexturePath(0, parsedCircuit.getTexturePath());
-	if (parsedCircuit.getUsesTileMapTexture()) {
+	if (!parsedCircuit.getUseFullTexture()) {
 		blockData->setBlockTextureSize(0, {
-			parsedCircuit.getTextureTileSize().x * parsedCircuit.getTextureBlockTileSize().x,
-			parsedCircuit.getTextureTileSize().y * parsedCircuit.getTextureBlockTileSize().y
+			parsedCircuit.getTextureSize().x,
+			parsedCircuit.getTextureSize().y
 		});
 		blockData->setBlockTextureTopLeft(0, {
-			parsedCircuit.getTextureTileSize().x * parsedCircuit.getTextureSmallestCordTile().x,
-			parsedCircuit.getTextureTileSize().y * parsedCircuit.getTextureSmallestCordTile().y
+			parsedCircuit.getSmallestTextureCord().x,
+			parsedCircuit.getSmallestTextureCord().y
 		});
+	}
+	if (parsedCircuit.getRenderSate()) {
+
 	}
 
 	// Circuit Block Data

@@ -5,17 +5,18 @@
 #include <SDL3/SDL_video.h>
 #include <SDL3/SDL_vulkan.h>
 
+#include "SDL3/SDL_init.h"
 #include "gpu/mainRendererDefs.h"
 
 class SdlWindow;
 
 namespace App {
-	void runLoop();
+	SDL_AppResult iterate();
 	void registerWindow(std::shared_ptr<SdlWindow>& window);
 }
 
 class SdlWindow {
-	friend void App::runLoop();
+	friend SDL_AppResult App::iterate();
 	friend void App::registerWindow(std::shared_ptr<SdlWindow>& window);
 	friend bool resizingEventWatcher(void* data, SDL_Event* event);
 public:

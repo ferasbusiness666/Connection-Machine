@@ -3,6 +3,7 @@
 #include <SDL3/SDL_video.h>
 
 #include "SDL3/SDL_dialog.h"
+#include "gui/mainWindow/widgets/blockCreationWidget.h"
 #include "imgui/imgui_internal.h"
 #include "imgui/imgui_notify.h"
 
@@ -336,10 +337,7 @@ void MainWindow::render() {
 					App::runOnMain([this]() { environment.getBackend().createCircuit(); });
 				}
 				if (ImGui::MenuItem("New Viewport")) {
-					App::runOnMain([this]() {
-						WidgetId widgetId = widgetIdProvider.getNewId();
-						widgets.emplace(widgetId, std::make_unique<CircuitViewWidget>(widgetId, *this));
-					});
+					App::runOnMain([this]() { createWidget<CircuitViewWidget>(); });
 				}
 				if (ImGui::MenuItem("New Window")) {
 					App::runOnMain([this]() { App::makeWindow<MainWindow>(); });
@@ -355,6 +353,9 @@ void MainWindow::render() {
 				ImGui::EndMenu();
 			}
 			if (ImGui::BeginMenu("View")) {
+				if (ImGui::MenuItem("Block Creation Window")) {
+					App::runOnMain([this]() { createWidget<BlockCreationWidget>(); });
+				}
 				ImGui::EndMenu();
 			}
 			if (ImGui::BeginMenu("Help")) {

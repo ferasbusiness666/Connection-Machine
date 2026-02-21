@@ -31,7 +31,6 @@ bool isConnectionEndIdSinglePin(EvalGateType gateType, connection_end_id_t conne
 	}
 }
 
-
 bool isOutputConnectionPort(EvalGateType gateType, connection_end_id_t connectionEndId) {
 	// ignore lights, junctions, busses, custom blocks
 	switch (getBlockType(gateType)) {
@@ -58,7 +57,6 @@ bool isOutputConnectionPort(EvalGateType gateType, connection_end_id_t connectio
 		return false;
 	}
 }
-
 
 void JunctionMergeEvalLayer::run() {
 	#ifdef TRACY_PROFILER

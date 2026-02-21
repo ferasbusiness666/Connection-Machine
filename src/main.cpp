@@ -1,4 +1,6 @@
+#include "gui/mainWindow/mainWindow.h"
 #include <SDL3/SDL_init.h>
+#define SDL_MAIN_USE_CALLBACKS 1
 #include <SDL3/SDL_main.h>
 
 #include "app.h"
@@ -8,7 +10,6 @@
 #include "backend/settings/settingsMap.h"
 #include "computerAPI/directoryManager.h"
 #include "computerAPI/saveSettings.h"
-#include "gui/mainWindow/mainWindow.h"
 #include "util/version.h"
 
 void registerSettings() {
@@ -75,7 +76,7 @@ void registerSettings() {
 
 }
 
-int main(int argc, char* argv[]) {
+SDL_AppResult SDL_AppInit(void**, int argc, char* argv[]) {
 #ifdef MAIN_TRY_CATCH
 	try {
 #endif
@@ -90,13 +91,13 @@ int main(int argc, char* argv[]) {
 				logInfo("Starting Connection Machine in CLI mode...");
 				CliApp cliApp;
 				logInfo("Exiting Connection Machine CLI...");
-				return EXIT_SUCCESS;
+				return SDL_AppResult::SDL_APP_SUCCESS;
 			} else if (firstArg == "--version") {
 				logInfo("Connection Machine Version: {}", "", getCurrentVersion().toString());
-				return EXIT_SUCCESS;
+				return SDL_AppResult::SDL_APP_SUCCESS;
 			} else {
 				logInfo("Unknown command argument \"{}\". Use '--cli' or '--version'", "", firstArg);
-				return EXIT_FAILURE;
+				return SDL_AppResult::SDL_APP_FAILURE;
 			}
 		}
 
@@ -104,16 +105,51 @@ int main(int argc, char* argv[]) {
 		registerSettings();
 
 		App::makeWindow<MainWindow>();
-		App::runLoop();
+		App::init();
+		return SDL_AppResult::SDL_APP_CONTINUE;
+#ifdef MAIN_TRY_CATCH
+	} catch (const std::exception& e) {
+		logFatalError("Exiting Connection Machine because of fatal error: '{}'", "", e.what());
+		return SDL_AppResult::SDL_APP_FAILURE;
+	}
+#endif
+}
+
+SDL_AppResult SDL_AppEvent(void* s, SDL_Event* event) {
+#ifdef MAIN_TRY_CATCH
+	try {
+#endif
+		App::handleEvent(*event);
+		return SDL_AppResult::SDL_APP_CONTINUE;
+#ifdef MAIN_TRY_CATCH
+	} catch (const std::exception& e) {
+		logFatalError("Exiting Connection Machine because of fatal error: '{}'", "", e.what());
+		return SDL_AppResult::SDL_APP_FAILURE;
+	}
+#endif
+}
+
+SDL_AppResult SDL_AppIterate(void*) {
+#ifdef MAIN_TRY_CATCH
+	try {
+#endif
+		return App::iterate();
+#ifdef MAIN_TRY_CATCH
+	} catch (const std::exception& e) {
+		logFatalError("Exiting Connection Machine because of fatal error: '{}'", "", e.what());
+		return SDL_AppResult::SDL_APP_FAILURE;
+	}
+#endif
+}
+
+void SDL_AppQuit(void* s, SDL_AppResult result) {
+#ifdef MAIN_TRY_CATCH
+	try {
+#endif
 		App::kill();
 #ifdef MAIN_TRY_CATCH
 	} catch (const std::exception& e) {
-		// Top level fatal error catcher, logs issue
 		logFatalError("Exiting Connection Machine because of fatal error: '{}'", "", e.what());
-		return EXIT_FAILURE;
 	}
 #endif
-
-	logInfo("Exiting Connection Machine...");
-	return EXIT_SUCCESS;
 }
