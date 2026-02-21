@@ -280,10 +280,10 @@ void MainWindow::render() {
 					ImGuiDockNode* child0 = node->ChildNodes[0];
 					ImGuiDockNode* child1 = node->ChildNodes[1];
 					if (child0 && child1) {
-						if (child0->Windows.Size == 0)
+						if (child0->Windows.Size == 0 && child0->ChildNodes[0] == nullptr && child0->ChildNodes[1] == nullptr)
 							ImGui::DockBuilderRemoveNode(child0->ID);
 
-						if (child1->Windows.Size == 0)
+						if (child1->Windows.Size == 0 && child1->ChildNodes[0] == nullptr && child1->ChildNodes[1] == nullptr)
 							ImGui::DockBuilderRemoveNode(child1->ID);
 					}
 				}

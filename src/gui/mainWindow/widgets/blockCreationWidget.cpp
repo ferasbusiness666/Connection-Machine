@@ -66,7 +66,9 @@ void BlockCreationWidget::render() {
 	getMainWindow().setNextWindowMainDockable();
 	bool open = true;
 	getMainWindow().pushWindowStyling();
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(6, 6));
 	if (ImGui::Begin(("Block Creation###" + getWidgetIdStr()).c_str(), &open)) {
+		ImGui::PopStyleVar();
 		getMainWindow().popWindowStyling();
 		circuit_id_t circuitId = getGUIValue_rendering<circuit_id_t>("circuitId");
 		auto iter = circuits.find(circuitId);
@@ -93,12 +95,14 @@ void BlockCreationWidget::render() {
 			}
 		}
 		{ // renderDataList
+			ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 4);
 			ImGui::PushStyleColor(ImGuiCol_ChildBg, GUIColors::WIDGET_BACKGROUND);
 			if (ImGui::BeginChild("Render Data", ImVec2(ImGui::GetContentRegionAvail().x, 400), ImGuiChildFlags_ResizeY, ImGuiWindowFlags_MenuBar)) {
 				ImGui::PopStyleColor();
+				ImGui::PopStyleVar();
 				{
 					if (ImGui::BeginMenuBar()) {
-						if (ImGui::BeginMenu("Add")) {
+						if (ImGui::BeginMenu("New")) {
 							if (ImGui::MenuItem("Texture")) {
 								App::runOnMain([this, circuitId](){
 									Backend& backend = getMainWindow().getEnvironment().getBackend();
@@ -118,134 +122,151 @@ void BlockCreationWidget::render() {
 					}
 
 					std::lock_guard mux(renderDataRowsMux);
-
 					for (unsigned int index = 0; index < renderDataRows.size(); index++) {
 						BlockData::RenderDataType& renderData = renderDataRows[index];
-						if (std::holds_alternative<BlockData::BlockTextureData>(renderData)) {
-							BlockData::BlockTextureData& blockTextureData = std::get<BlockData::BlockTextureData>(renderData);
-							ImGui::PushID(index);
-							if (ImGui::TreeNodeEx("BlockTexture", ImGuiTreeNodeFlags_DefaultOpen)) {
-								if (ImGui::InputText("Path", &blockTextureData.path)) {
-									App::runOnMain([this, circuitId, index, path = blockTextureData.path](){
-										Backend& backend = getMainWindow().getEnvironment().getBackend();
-										const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
-										if (!circuitBlockData) return;
-										BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
-										assert(blockData);
-										if (!blockData->isRenderDataOfType<BlockData::BlockTextureData>(index)) return;
-										blockData->setBlockTexturePath(index, path);
-									});
-								}
-								if (ImGui::Checkbox("Use full texture", &blockTextureData.useFullTexture)) {
-									App::runOnMain([this, circuitId, index, useFullTexture = blockTextureData.useFullTexture](){
-										Backend& backend = getMainWindow().getEnvironment().getBackend();
-										const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
-										if (!circuitBlockData) return;
-										BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
-										assert(blockData);
-										if (!blockData->isRenderDataOfType<BlockData::BlockTextureData>(index)) return;
-										blockData->setBlockUseFullTexture(index, useFullTexture);
-									});
-								}
-								if (!blockTextureData.useFullTexture) {
-									{
-										ImGui::Text("Size");
-										ImGui::SameLine();
-										ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x/2, 100));
-										bool sizeUpdated = ImGui::InputScalar("##xSize", ImGuiDataType_U32, &blockTextureData.size.x);
-										ImGui::SameLine();
-										ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x, 100));
-										sizeUpdated |= ImGui::InputScalar("##ySize", ImGuiDataType_U32, &blockTextureData.size.y);
-										if (sizeUpdated) {
-											App::runOnMain([this, circuitId, index, size = blockTextureData.size](){
-												Backend& backend = getMainWindow().getEnvironment().getBackend();
-												const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
-												if (!circuitBlockData) return;
-												BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
-												assert(blockData);
-												if (!blockData->isRenderDataOfType<BlockData::BlockTextureData>(index)) return;
-												blockData->setBlockTextureSize(index, size);
-											});
-										}
-									}
-									{
-										ImGui::Text("Top Left");
-										ImGui::SameLine();
-										ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x/2, 100));
-										bool topLeftUpdated = ImGui::InputScalar("##xTopLeft", ImGuiDataType_U32, &blockTextureData.topLeft.x);
-										ImGui::SameLine();
-										ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x, 100));
-										topLeftUpdated |= ImGui::InputScalar("##yTopLeft", ImGuiDataType_U32, &blockTextureData.topLeft.y);
-										if (topLeftUpdated) {
-											App::runOnMain([this, circuitId, index, topLeft = blockTextureData.topLeft](){
-												Backend& backend = getMainWindow().getEnvironment().getBackend();
-												const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
-												if (!circuitBlockData) return;
-												BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
-												assert(blockData);
-												if (!blockData->isRenderDataOfType<BlockData::BlockTextureData>(index)) return;
-												blockData->setBlockTextureTopLeft(index, topLeft);
-											});
-										}
-									}
-									if (ImGui::Checkbox("Display state", &blockTextureData.renderState)) {
-										App::runOnMain([this, circuitId, index, renderState = blockTextureData.renderState](){
+						ImGui::PushID(index);
+						ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2, 2));
+						ImGui::PushStyleColor(ImGuiCol_ChildBg, (index % 2 ==0) ? GUIColors::WIDGET_ALTERNATING_BACKGROUND_1 : GUIColors::WIDGET_ALTERNATING_BACKGROUND_2);
+						if (ImGui::BeginChild("Render Data Row", ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysUseWindowPadding)) {
+							ImGui::PopStyleColor();
+							ImGui::PopStyleVar();
+							if (std::holds_alternative<BlockData::BlockTextureData>(renderData)) {
+								BlockData::BlockTextureData& blockTextureData = std::get<BlockData::BlockTextureData>(renderData);
+								if (ImGui::TreeNodeEx("BlockTexture", ImGuiTreeNodeFlags_DefaultOpen)) {
+									ImGui::TreePop();
+									ImGui::Indent();
+									if (ImGui::InputText("Path", &blockTextureData.path)) {
+										App::runOnMain([this, circuitId, index, path = blockTextureData.path](){
 											Backend& backend = getMainWindow().getEnvironment().getBackend();
 											const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
 											if (!circuitBlockData) return;
 											BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
 											assert(blockData);
 											if (!blockData->isRenderDataOfType<BlockData::BlockTextureData>(index)) return;
-											blockData->setBlockRenderState(index, renderState);
+											blockData->setBlockTexturePath(index, path);
 										});
 									}
-									if (blockTextureData.renderState) {
+									if (ImGui::Checkbox("Use full texture", &blockTextureData.useFullTexture)) {
+										App::runOnMain([this, circuitId, index, useFullTexture = blockTextureData.useFullTexture](){
+											Backend& backend = getMainWindow().getEnvironment().getBackend();
+											const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
+											if (!circuitBlockData) return;
+											BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
+											assert(blockData);
+											if (!blockData->isRenderDataOfType<BlockData::BlockTextureData>(index)) return;
+											blockData->setBlockUseFullTexture(index, useFullTexture);
+										});
+									}
+									if (!blockTextureData.useFullTexture) {
 										{
+											ImGui::Text("Size");
+											ImGui::SameLine();
+											ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x/2, 100));
+											bool sizeUpdated = ImGui::InputScalar("##xSize", ImGuiDataType_U32, &blockTextureData.size.x);
+											ImGui::SameLine();
 											ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x, 100));
-											if (ImGui::InputScalar("Virtual connection id##virtutal", ImGuiDataType_S32, &blockTextureData.virtualConnectionId)) {
-												App::runOnMain([this, circuitId, index, virtualConnectionId = blockTextureData.virtualConnectionId](){
+											sizeUpdated |= ImGui::InputScalar("##ySize", ImGuiDataType_U32, &blockTextureData.size.y);
+											if (sizeUpdated) {
+												App::runOnMain([this, circuitId, index, size = blockTextureData.size](){
 													Backend& backend = getMainWindow().getEnvironment().getBackend();
 													const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
 													if (!circuitBlockData) return;
 													BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
 													assert(blockData);
 													if (!blockData->isRenderDataOfType<BlockData::BlockTextureData>(index)) return;
-													blockData->setBlockTextureVirtualConnection(index, virtualConnectionId);
+													blockData->setBlockTextureSize(index, size);
 												});
 											}
 										}
 										{
-											ImGui::Text("State Offset");
+											ImGui::Text("Top Left");
 											ImGui::SameLine();
 											ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x/2, 100));
-											bool stateOffsetUpdated = ImGui::InputScalar("##xStateOffset", ImGuiDataType_S32, &blockTextureData.stateOffset.x);
+											bool topLeftUpdated = ImGui::InputScalar("##xTopLeft", ImGuiDataType_U32, &blockTextureData.topLeft.x);
 											ImGui::SameLine();
 											ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x, 100));
-											stateOffsetUpdated |= ImGui::InputScalar("##yStateOffset", ImGuiDataType_S32, &blockTextureData.stateOffset.y);
-											if (stateOffsetUpdated) {
-												App::runOnMain([this, circuitId, index, stateOffset = blockTextureData.stateOffset](){
+											topLeftUpdated |= ImGui::InputScalar("##yTopLeft", ImGuiDataType_U32, &blockTextureData.topLeft.y);
+											if (topLeftUpdated) {
+												App::runOnMain([this, circuitId, index, topLeft = blockTextureData.topLeft](){
 													Backend& backend = getMainWindow().getEnvironment().getBackend();
 													const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
 													if (!circuitBlockData) return;
 													BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
 													assert(blockData);
 													if (!blockData->isRenderDataOfType<BlockData::BlockTextureData>(index)) return;
-													blockData->setBlockTextureStateOffset(index, stateOffset);
+													blockData->setBlockTextureTopLeft(index, topLeft);
 												});
+											}
+										}
+										if (ImGui::Checkbox("Display state", &blockTextureData.renderState)) {
+											App::runOnMain([this, circuitId, index, renderState = blockTextureData.renderState](){
+												Backend& backend = getMainWindow().getEnvironment().getBackend();
+												const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
+												if (!circuitBlockData) return;
+												BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
+												assert(blockData);
+												if (!blockData->isRenderDataOfType<BlockData::BlockTextureData>(index)) return;
+												blockData->setBlockRenderState(index, renderState);
+											});
+										}
+										if (blockTextureData.renderState) {
+											{
+												ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x, 100));
+												if (ImGui::InputScalar("Virtual connection id##virtutal", ImGuiDataType_S32, &blockTextureData.virtualConnectionId)) {
+													App::runOnMain([this, circuitId, index, virtualConnectionId = blockTextureData.virtualConnectionId](){
+														Backend& backend = getMainWindow().getEnvironment().getBackend();
+														const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
+														if (!circuitBlockData) return;
+														BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
+														assert(blockData);
+														if (!blockData->isRenderDataOfType<BlockData::BlockTextureData>(index)) return;
+														blockData->setBlockTextureVirtualConnection(index, virtualConnectionId);
+													});
+												}
+											}
+											{
+												ImGui::Text("State Offset");
+												ImGui::SameLine();
+												ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x/2, 100));
+												bool stateOffsetUpdated = ImGui::InputScalar("##xStateOffset", ImGuiDataType_S32, &blockTextureData.stateOffset.x);
+												ImGui::SameLine();
+												ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x, 100));
+												stateOffsetUpdated |= ImGui::InputScalar("##yStateOffset", ImGuiDataType_S32, &blockTextureData.stateOffset.y);
+												if (stateOffsetUpdated) {
+													App::runOnMain([this, circuitId, index, stateOffset = blockTextureData.stateOffset](){
+														Backend& backend = getMainWindow().getEnvironment().getBackend();
+														const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
+														if (!circuitBlockData) return;
+														BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
+														assert(blockData);
+														if (!blockData->isRenderDataOfType<BlockData::BlockTextureData>(index)) return;
+														blockData->setBlockTextureStateOffset(index, stateOffset);
+													});
+												}
 											}
 										}
 									}
+									ImGui::Unindent();
 								}
-								ImGui::TreePop();
 							}
-							ImGui::PopID();
+							ImGui::EndChild();
+						} else {
+							ImGui::PopStyleColor();
+							ImGui::PopStyleVar();
 						}
+						ImGui::PopID();
 					}
 				}
 				ImGui::EndChild();
-			} else ImGui::PopStyleColor();
+			} else {
+				ImGui::PopStyleColor();
+				ImGui::PopStyleVar();
+			}
 		}
-	} else getMainWindow().popWindowStyling();
+	} else {
+		ImGui::PopStyleVar();
+		getMainWindow().popWindowStyling();
+	}
 	if (!open) {
 		getMainWindow().destroyWidget(this->getWidgetId());
 	}
