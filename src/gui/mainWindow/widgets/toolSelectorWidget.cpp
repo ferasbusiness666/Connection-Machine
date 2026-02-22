@@ -1,5 +1,6 @@
 #include "toolSelectorWidget.h"
 
+#include "util/preprocessors.h"
 #include "../mainWindow.h"
 
 ToolSelectorWidget::ToolSelectorWidget(WidgetId widgetId, MainWindow& mainWindow) :
@@ -76,8 +77,9 @@ void ToolSelectorWidget::render() {
 	getMainWindow().setNextWindowSideBarDockable();
 	bool open = true;
 	getMainWindow().pushWindowStyling();
-	if (ImGui::Begin(("Tools###" + getWidgetIdStr()).c_str(), &open)) {
+	ifGui (ImGui::Begin(("Tools###" + getWidgetIdStr()).c_str(), &open),
 		getMainWindow().popWindowStyling();
+	) {
 		{
 			std::lock_guard mux(pathsMux);
 			createTree(root);
@@ -100,7 +102,7 @@ void ToolSelectorWidget::render() {
 			}
 			ImGui::EndChild();
 		}
-	} else getMainWindow().popWindowStyling();
+	}
 	if (!open) {
 		getMainWindow().destroyWidget(this->getWidgetId());
 	}

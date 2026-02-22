@@ -3,7 +3,7 @@
 #include <SDL3/SDL_video.h>
 
 #include "SDL3/SDL_dialog.h"
-#include "gui/mainWindow/widgets/blockCreationWidget.h"
+#include "widgets/blockCreation/blockCreationWidget.h"
 #include "imgui/imgui_internal.h"
 #include "imgui/imgui_notify.h"
 

@@ -1,7 +1,7 @@
 #ifndef blockCreationWidget_h
 #define blockCreationWidget_h
 
-#include "../widget.h"
+#include "gui/mainWindow/widget.h"
 #include "backend/blockData/blockData.h"
 #include "backend/circuit/circuitDefs.h"
 #include "backend/dataUpdateEventManager.h"

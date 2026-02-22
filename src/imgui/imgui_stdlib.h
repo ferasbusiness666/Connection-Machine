@@ -23,6 +23,7 @@
 
 #ifndef IMGUI_DISABLE
 
+#include "imgui/imgui.h"
 #include <string>
 
 namespace ImGui

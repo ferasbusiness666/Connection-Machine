@@ -1,5 +1,6 @@
 #include "circuitViewWidget.h"
 
+#include "util/preprocessors.h"
 #include "../mainWindow.h"
 #include "gpu/mainRenderer.h"
 #include "gui/viewportManager/circuitView/circuitView.h"
@@ -176,9 +177,10 @@ void CircuitViewWidget::render() {
 	bool open = true;
 	getMainWindow().pushWindowStyling();
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-	if (ImGui::Begin((getGUIValue_rendering<std::string>("CircuitName") + "###" + getWidgetIdStr()).c_str(), &open, windowFlags)) {
+	ifGui (ImGui::Begin((getGUIValue_rendering<std::string>("CircuitName") + "###" + getWidgetIdStr()).c_str(), &open, windowFlags),
 		ImGui::PopStyleVar();
 		getMainWindow().popWindowStyling();
+	) {
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 		ImVec2 viewportWindowScreenPos = ImGui::GetCursorScreenPos();
 		ImVec2 viewportWindowPos = ImGui::GetCursorPos();
@@ -242,9 +244,6 @@ void CircuitViewWidget::render() {
 			);
 		}
 		draw_list->ChannelsMerge();
-	} else {
-		ImGui::PopStyleVar();
-		getMainWindow().popWindowStyling();
 	}
 	if (!open) {
 		getMainWindow().destroyWidget(this->getWidgetId());
