@@ -353,7 +353,13 @@ void MainWindow::render() {
 				ImGui::EndMenu();
 			}
 			if (ImGui::BeginMenu("View")) {
-				if (ImGui::MenuItem("Block Creation Window")) {
+				if (ImGui::MenuItem("Block Selector")) {
+					App::runOnMain([this]() { createWidget<BlockSelectorWidget>(); });
+				}
+				if (ImGui::MenuItem("Tool Selector")) {
+					App::runOnMain([this]() { createWidget<ToolSelectorWidget>(); });
+				}
+				if (ImGui::MenuItem("Block Creator")) {
 					App::runOnMain([this]() { createWidget<BlockCreationWidget>(); });
 				}
 				ImGui::EndMenu();

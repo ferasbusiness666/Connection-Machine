@@ -2,6 +2,26 @@
 
 BlockData::BlockData(BlockType blockType, DataUpdateEventManager& dataUpdateEventManager) : blockType(blockType), dataUpdateEventManager(dataUpdateEventManager) { }
 
+BlockData::BlockDataCopy BlockData::getBlockDataCopy() const {
+	BlockData::BlockDataCopy copy;
+	copy.blockType = blockType;
+	copy.primitive = primitive;
+	copy.placeable = placeable;
+	copy.bus = bus;
+	copy.name = name;
+	copy.path = path;
+	copy.blockSize = blockSize;
+	copy.inputConnectionCount = inputConnectionCount;
+	copy.outputConnectionCount = outputConnectionCount;
+	copy.connections = connections;
+	copy.virtualConnections = virtualConnections;
+	copy.connectionIdNames = connectionIdNames;
+	copy.renderData = renderData;
+	return copy;
+}
+
+void BlockData::sendBlockDataUpdate() { dataUpdateEventManager.sendEvent("blockDataUpdate", blockType); }
+
 void BlockData::setPrimitive(bool primitive) {
 	this->primitive = primitive;
 	sendBlockDataUpdate();

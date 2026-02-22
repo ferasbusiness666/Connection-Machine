@@ -18,8 +18,8 @@ private:
 
 	std::mutex circuitsMux;
 	std::map<circuit_id_t, std::string> circuits;
-	std::mutex renderDataRowsMux;
-	std::vector<BlockData::RenderDataType> renderDataRows;
+	std::mutex blockDataCopyMux;
+	std::optional<BlockData::BlockDataCopy> blockDataCopy;
 };
 
 #endif /* blockCreationWidget_h */

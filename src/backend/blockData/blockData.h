@@ -56,9 +56,26 @@ public:
 
 	typedef std::variant<BlockTextureData> RenderDataType;
 
-	BlockData(BlockType blockType, DataUpdateEventManager& dataUpdateEventManager);
+	struct BlockDataCopy {
+		BlockType blockType;
+		bool primitive;
+		bool placeable;
+		bool bus;
+		std::string name;
+		std::string path;
+		Size blockSize;
+		unsigned int inputConnectionCount;
+		unsigned int outputConnectionCount;
+		std::unordered_map<connection_end_id_t, ConnectionData> connections;
+		std::unordered_map<virtual_connection_id_t, VirtualConnectionData> virtualConnections;
+		BidirectionalMultiSecondKeyMap<connection_end_id_t, std::string> connectionIdNames;
+		std::vector<RenderDataType>	renderData;
+	};
 
-	inline void sendBlockDataUpdate() { dataUpdateEventManager.sendEvent("blockDataUpdate", blockType); }
+	BlockData(BlockType blockType, DataUpdateEventManager& dataUpdateEventManager);
+	BlockDataCopy getBlockDataCopy() const;
+
+	void sendBlockDataUpdate();
 
 	void setPrimitive(bool primitive);
 	inline bool isPrimitive() const noexcept { return primitive; }
@@ -167,10 +184,8 @@ private:
 	std::unordered_map<connection_end_id_t, ConnectionData> connections;
 	std::unordered_map<virtual_connection_id_t, VirtualConnectionData> virtualConnections;
 	BidirectionalMultiSecondKeyMap<connection_end_id_t, std::string> connectionIdNames;
+	std::vector<RenderDataType>	renderData; // first renders on the bottom, last on the top.
 	DataUpdateEventManager& dataUpdateEventManager;
-
-	// first renders on the bottom, last on the top.
-	std::vector<RenderDataType>	renderData;
 };
 
 // defaults for good connection pos
