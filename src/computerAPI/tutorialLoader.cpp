@@ -7,8 +7,32 @@
 #include <string>
 #include <unordered_map>
 
-Position getPositionFromString(const std::string str1, const std::string str2) {
-	return Position(std::stoi(str1.substr(str1.find('(') + 1)), std::stoi(str2.substr(0, str2.size() - 1)));
+Position getPositionFromString(std::string& str1, std::string& str2, int line) {
+	int num1;
+	int num2;
+	if (isdigit(str1[1])) {
+		num1 = std::stoi(str1.substr(1));
+	} else {
+		logError("Invalid position on line {}.", "TutorialLoader", line);
+		num1 = 0;
+	}
+	if (str1.ends_with(')')) {
+		int index = str1.find(',') + 1;
+		if (isdigit(str1[index])) {
+			num2 = std::stoi(str1.substr(index));
+		} else {
+			logError("Invalid position on line {}.", "TutorialLoader", line);
+			num2 = 0;
+		}
+	} else {
+		if (isdigit(str2[0])) {
+			num2 = std::stoi(str1);
+		} else {
+			logError("Invalid position on line {}.", "TutorialLoader", line);
+			num2 = 0;
+		}
+	}
+	return Position(num1, num2);
 }
 
 void parsePreSteps(std::vector<std::string>& info, std::unordered_map<std::string, std::string>& macros, const std::vector<std::string>& lines) {
@@ -60,20 +84,18 @@ void parseCondition(TutorialCondition& condition, const std::vector<std::string>
 			line = i - 1;
 			return;
 		} else if (tok == "Block:") {
-            ss >> tok;
+			ss >> tok;
 			BlockType blockName(stringToBlockType(tok));
 			std::string tmp;
 			ss >> tmp;
 			ss >> tok;
-			tmp.pop_back();
-			Position p = getPositionFromString(tmp, tok);
+			Position p = getPositionFromString(tmp, tok, line);
 			ss >> tok;
 			Orientation orietnation(stringToOrientation((tok)));
 			condition.blocks.emplace_back(p, blockName, orietnation);
 		} else if (tok == "Connection:") {
 
 		} else if (tok == "State:") {
-
 		}
 	}
 }
@@ -138,18 +160,18 @@ std::vector<TutorialStep> parseTutorialFile(std::string fileName) {
 					istream >> cur;
 					line++;
 					if (cur == "Block:") {
-						
+
 					} else if (cur == "Connection:") {
 						std::string px;
 						std::string py;
 						istream >> px;
 						istream >> py;
 						px.pop_back();
-						Position p1 = getPositionFromString(px, py);
+						Position p1 = getPositionFromString(px, py, line);
 						istream >> px;
 						istream >> py;
 						px.pop_back();
-						Position p2 = getPositionFromString(px, py);
+						Position p2 = getPositionFromString(px, py, line);
 						c.connections.emplace_back(p1, p2);
 					} else if (cur == "State:") {
 						std::string stateStr;
@@ -165,7 +187,7 @@ std::vector<TutorialStep> parseTutorialFile(std::string fileName) {
 						istream >> px;
 						istream >> py;
 						px.pop_back();
-						Position pos = getPositionFromString(px, py);
+						Position pos = getPositionFromString(px, py, line);
 						int numSteps;
 						istream >> numSteps;
 						c.logicStates.emplace_back(pos, state, numSteps);
@@ -202,7 +224,7 @@ std::vector<TutorialStep> parseTutorialFile(std::string fileName) {
 							istream >> tmp;
 							istream >> cur;
 							tmp.pop_back();
-							Position p = getPositionFromString(tmp, cur);
+							Position p = getPositionFromString(tmp, cur, line);
 							istream >> cur;
 							Orientation orientation(stringToOrientation(cur));
 							a.blockPreviews.emplace_back(p, blockName, orientation);
@@ -213,11 +235,11 @@ std::vector<TutorialStep> parseTutorialFile(std::string fileName) {
 							istream >> px;
 							istream >> py;
 							px.pop_back();
-							Position p1 = getPositionFromString(px, py);
+							Position p1 = getPositionFromString(px, py, line);
 							istream >> px;
 							istream >> py;
 							px.pop_back();
-							Position p2 = getPositionFromString(px, py);
+							Position p2 = getPositionFromString(px, py, line);
 							a.connectionPreviews.emplace_back(p1, p2);
 						} else if (cur == "Step:") {
 							// do nothing and let it go back to Step:
