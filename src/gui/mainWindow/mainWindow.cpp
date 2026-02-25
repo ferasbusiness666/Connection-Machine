@@ -3,7 +3,7 @@
 #include <SDL3/SDL_video.h>
 
 #include "SDL3/SDL_dialog.h"
-#include "widgets/blockCreation/blockCreationWidget.h"
+#include "widgets/blockCreationWidget.h"
 #include "imgui/imgui_internal.h"
 #include "imgui/imgui_notify.h"
 
@@ -263,8 +263,7 @@ void MainWindow::render() {
 			ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 5);
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 			ImGui::SetNextWindowSizeConstraints(ImVec2(40, 0), ImVec2(ImGui::GetContentRegionAvail().x - 40, FLT_MAX));
-			ImGui::BeginChild("LeftRegion", ImVec2(150, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX);
-			{
+			if (ImGui::BeginChild("LeftRegion", ImVec2(150, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX)) {
 				dockLeftId = ImGui::GetID("LeftDock");
 				if (ImGui::DockBuilderGetNode(dockLeftId) == NULL) {
 					ImGui::DockBuilderRemoveNode(dockLeftId);

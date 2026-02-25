@@ -167,9 +167,6 @@ void CircuitViewWidget::render() {
 	ImGui::SetNextWindowDockID(getMainWindow().getDockMainId(), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(400, 300), ImGuiCond_FirstUseEver);
 	getMainWindow().setNextWindowMainDockable();
-	bool isHovered = false;
-	bool isFocused = false;
-	ImVec2 mousePos;
 	ImGuiWindowFlags windowFlags = ImGuiWindowFlags_None;
 	if (!getGUIValue_rendering<bool>("CircuitSaved")) {
 		windowFlags |= ImGuiWindowFlags_UnsavedDocument;
@@ -197,9 +194,9 @@ void CircuitViewWidget::render() {
 		ImGui::SetCursorPos(viewportWindowPos);
 		ImGui::SetNextItemAllowOverlap();
 		ImGui::InvisibleButton("circuitViewInvisibleButton", viewportPanelSize, ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight);
-		isHovered = ImGui::IsItemHovered();
+		bool isHovered = ImGui::IsItemHovered();
 		if (isHovered) ImGui::FocusItem();
-		mousePos = ImGui::GetMousePos();
+		ImVec2 mousePos = ImGui::GetMousePos();
 		mousePos = ImVec2(mousePos.x - viewportWindowScreenPos.x, mousePos.y - viewportWindowScreenPos.y);
 
 		setGUIValue_rendering("AspectRatio", viewportPanelSize.x / viewportPanelSize.y);

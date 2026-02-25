@@ -87,18 +87,19 @@ void ToolSelectorWidget::render() {
 		std::lock_guard lock(modesMux);
 		if (!toolModes.empty()) {
 			ImGui::Separator();
-			ImGui::BeginChild("Container");
-			if (ImGui::BeginTable("Grid", 3, ImGuiTableFlags_SizingStretchSame)) {
-				ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 0.5f));
-				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-				for (const std::string& mode : toolModes) {
-					ImGui::TableNextColumn();
-					if (ImGui::Selectable(mode.c_str(), mode == getGUIValue_rendering<std::string>("selectedToolMode"), ImGuiSelectableFlags_None)) {
-						setGUIValue_rendering<std::string>("selectedToolMode", mode);
+			if (ImGui::BeginChild("Container")) {
+				if (ImGui::BeginTable("Grid", 3, ImGuiTableFlags_SizingStretchSame)) {
+					ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 0.5f));
+					ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+					for (const std::string& mode : toolModes) {
+						ImGui::TableNextColumn();
+						if (ImGui::Selectable(mode.c_str(), mode == getGUIValue_rendering<std::string>("selectedToolMode"), ImGuiSelectableFlags_None)) {
+							setGUIValue_rendering<std::string>("selectedToolMode", mode);
+						}
 					}
+					ImGui::PopStyleVar(2);
+					ImGui::EndTable();
 				}
-				ImGui::PopStyleVar(2);
-				ImGui::EndTable();
 			}
 			ImGui::EndChild();
 		}
