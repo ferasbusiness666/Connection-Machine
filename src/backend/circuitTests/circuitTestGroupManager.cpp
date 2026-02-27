@@ -3,5 +3,6 @@
 
 bool CircuitTestGroupManager::addCircuitTestGroup(CircuitTestGroup&& testGroup) {
     std::string name = testGroup.getName();
-    testGroups.emplace(name, std::move(testGroup));
+    bool ret = testGroups.emplace(name, std::move(testGroup)).second;
+    return ret;
 }

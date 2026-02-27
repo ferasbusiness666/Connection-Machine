@@ -1,17 +1,17 @@
 #include "runTestCommand.h"
 
 #include "backend/circuit/circuit.h"
+#include "environment/environment.h"
 #include "util/runAtStartup.h"
 #include "../commandManager.h"
 #include "backend/circuitTests/circuitTestGroup.h"
 #include "backend/container/block/blockDefs.h"
-#include "computerAPI/circuitTestFileManager.h"
 
 runAtStartup(CommandManager::get().registerCommand(std::make_unique<RunTestCommand>());)
 
 void RunTestCommand::run(const std::vector<std::string>& args, Environment& environment) {
 	if (args.size() != 3) {
-		logError("Wrong number of arguments passed to test_circuit. Proper usage is 'test_circuit {test_file_path} {circuit_id}'", "LoadTestCommand");
+		logError("Wrong number of arguments passed to test_circuit. Proper usage is 'test_circuit {test_id} {circuit_id}'", "RunTestCommand");
 		return;
 	}
 
@@ -20,26 +20,27 @@ void RunTestCommand::run(const std::vector<std::string>& args, Environment& envi
         cirID = std::stoi(args[2]);
     }
     catch (...) {
-        logError("Exception occured. Check the circuit_id parameter, it should be a reasonably-sized integer.", "LoadTestCommand");
+        logError("Exception occured. Check the circuit_id parameter, it should be a reasonably-sized integer.", "RunTestCommand");
         return;
     }
     
     BlockType circuitBlock = environment.getBackend().getCircuitManager().setupBlockData(cirID);
     if (circuitBlock == 0) {
-        logError("Invalid circuit ID. Run list_circuits to get a list of circuit IDs.", "LoadTestCommand");
+        logError("Invalid circuit ID. Run list_circuits to get a list of circuit IDs.", "RunTestCommand");
         return;
     }
 
-    std::optional<CircuitTestGroup> testCase = CircuitTestFileManager::getCircuitTestFromFilePath(args[1]);
-    if (testCase == std::nullopt) {
-        logInfo("No tests run", "LoadTestCommand");
+    CircuitTestGroupManager& testGroupManager = environment.getBackend().getCircuitTestGroupManager();
+    CircuitTestGroup * testCase = testGroupManager.getCircuitTestGroup(args[1]);
+    if (testCase == NULL) {
+        logError("Invalid test group name {}.", "RunTestCommand", args[1]);
         return;
     }
 
-    if (!testCase.value().runAllTests(circuitBlock, false, environment)) {
-        logInfo("Test failed.", "LoadTestCommand");
+    if (!testCase->runAllTests(circuitBlock, false, environment)) {
+        logInfo("Test failed.", "RunTestCommand");
     }
     else {
-        logInfo("Test succeeded.", "LoadTestCommand");
+        logInfo("Test succeeded.", "RunTestCommand");
     }
 }

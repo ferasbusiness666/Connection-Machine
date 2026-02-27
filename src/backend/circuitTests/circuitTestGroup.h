@@ -5,7 +5,6 @@
 #include "backend/container/block/blockDefs.h"
 #include "backend/evaluator/evalDefs.h"
 #include "backend/evaluator/simulator/logicState.h"
-#include <vector>
 
 class Environment;
 class EvalLogicSimulator;
