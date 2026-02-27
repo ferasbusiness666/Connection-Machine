@@ -5,6 +5,8 @@
 
 namespace CircuitTestFileManager {
     std::optional<CircuitTestGroup> getCircuitTestFromFilePath(const std::string& path);
+
+    bool saveToFile(const std::string& path, CircuitTestGroup& testGroup);
 }
 
 #endif /* circuitTestFileManager_h */

@@ -21,6 +21,7 @@ public:
     bool addSetStatesCommand(std::string testCase, std::vector<std::pair<std::string, logic_state_t>> states);
     bool addCheckStatesCommand(std::string testCase, std::vector<std::pair<std::string, logic_state_t>> states);
     bool addTickStepCommand(std::string testCase, int ticks);
+    
 
 private:
     enum TestCommandType {

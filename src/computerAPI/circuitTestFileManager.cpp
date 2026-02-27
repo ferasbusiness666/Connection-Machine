@@ -132,3 +132,17 @@ std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestFromFilePa
     logInfo("Loaded test", "CircuitTestFileManager");
     return testGroup;
 }
+
+bool CircuitTestFileManager::saveToFile(const std::string& path, CircuitTestGroup& testGroup){
+	std::ofstream outputFile(path);
+	if (!outputFile.is_open()) {
+		logError("Couldn't open file at path: {}", "CircuitTestFileManager", path);
+		return false;
+	}
+
+    outputFile << "version_0\n";
+    outputFile << "Test: \"" << testGroup.getName() << "\"\n";
+    std::vector<std::string> ports;
+
+    return true;
+}
