@@ -18,11 +18,11 @@ EvalLogicSimulator::EvalLogicSimulator(
 	circuit->getEvaluator().addSimulator(*this);
 	const EvalLayerState& evalLayerState = circuit->getEvaluator().getEvaluatorInternal().getLayerRunner().getOutputLayer();
 
-	for (std::pair<eval_gate_id, EvalGate> pair : evalLayerState.getGates()) {
+	for (auto pair : evalLayerState.getGates()) {
 		simulator_gate_id_t simulatorId = logicSimulator.addGate(getBlockType(pair.second.type));
 		gateIdMapping.try_emplace(pair.first, simulatorId);
 	}
-	for (std::pair<eval_gate_id, EvalGate> pair : evalLayerState.getGates()) {
+	for (auto pair : evalLayerState.getGates()) {
 		for (std::pair<connection_end_id_t, std::unordered_set<EvalConnectionPoint>> connectionsPair : pair.second.connections) {
 			for (EvalConnectionPoint otherConnectionPoint : connectionsPair.second) {
 				// need to add some logic to not double make connections

@@ -28,7 +28,7 @@ public:
 		return &iter->second;
 	}
 
-	const std::unordered_map<eval_gate_id, EvalGate>& getGates() const { return gates; }
+	const IdMap<eval_gate_id, EvalGate>& getGates() const { return gates; }
 
 	const std::unordered_map<eval_gate_id, EvalGateType>& getAddedGates() const { return addedGates; }
 
@@ -126,7 +126,7 @@ private:
 	std::unique_ptr<EvalLayerState> nextLayerState;
 	const EvalLayerState* lastLayerState;
 
-	std::unordered_map<eval_gate_id, EvalGate> gates;
+	IdMap<eval_gate_id, EvalGate> gates;
 	std::unordered_map<EvalConnection, unsigned int> connectionWeights;
 
 	// all remappings will be eval_gate_id or EvalConnectionPoint
