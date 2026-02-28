@@ -6,9 +6,16 @@
 #include "scrapMechanicParser.h"
 #include "wasmCompiler.h"
 
+#ifdef TRACY_PROFILER
+#include <tracy/Tracy.hpp>
+#endif
+
 CircuitFileManager::CircuitFileManager(CircuitManager& circuitManager) : circuitManager(circuitManager) { }
 
 std::vector<circuit_id_t> CircuitFileManager::loadFromFile(const std::string& path) {
+	#ifdef TRACY_PROFILER
+	ZoneScoped;
+	#endif
 	auto iter = filePathToFile.find(path);
 	if (iter != filePathToFile.end()) {
 		if (!(

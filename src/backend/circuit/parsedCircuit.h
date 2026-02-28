@@ -156,6 +156,7 @@ private:
 
 	std::vector<ConnectionPort> ports; // connection id is the index in the vector
 
+	unsigned int unpositionedBlockCount = 0;
 	std::unordered_map<block_id_t, BlockData> blocks;
 	std::vector<ConnectionData> connections;
 

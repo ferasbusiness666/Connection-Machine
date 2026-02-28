@@ -30,7 +30,8 @@ struct SimulatorMappingUpdateListener {
 };
 
 struct EvalConnectionPoint {
-	EvalConnectionPoint(eval_gate_id gateId, connection_end_id_t connectionEndId) : gateId(gateId), connectionEndId(connectionEndId) { }
+	// defaults to null
+	EvalConnectionPoint(eval_gate_id gateId = 0, connection_end_id_t connectionEndId = 0) : gateId(gateId), connectionEndId(connectionEndId) { }
 	static inline EvalConnectionPoint null() { return EvalConnectionPoint(0, 0); }
 	bool isNull() const { return gateId == 0; }
 

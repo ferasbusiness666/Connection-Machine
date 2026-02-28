@@ -3,7 +3,14 @@
 #include "util/uuid.h"
 #include "textParser.h"
 
+#ifdef TRACY_PROFILER
+#include <tracy/Tracy.hpp>
+#endif
+
 std::vector<circuit_id_t> ConnectionMachineParser::load(const std::string& path) {
+	#ifdef TRACY_PROFILER
+	ZoneScoped;
+	#endif
 	logInfo("Parsing Connection Machine Circuit File (.cir)", "ConnectionMachineParser");
 
 	std::ifstream inputFile(path, std::ios::in | std::ios::binary);

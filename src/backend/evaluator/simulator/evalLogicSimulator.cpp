@@ -507,7 +507,7 @@ void EvalLogicSimulator::processEdits() {
 
 	if (simulatorMappingUpdateListeners.empty()) return;
 
-	std::unordered_set<eval_gate_id> idsToUpdate = evalLayerState.getGateIdRemappingsUpdateds();
+	IdSet<eval_gate_id> idsToUpdate = evalLayerState.getGateIdRemappingsUpdateds();
 	// for (simulator_gate_id_t simId : dirtySimulatorIds) { // I dont think I need this yet
 	// 	idsToUpdate.insert()
 	// }

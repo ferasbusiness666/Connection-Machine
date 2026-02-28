@@ -332,7 +332,6 @@ template <IdType IdT, class T>
 class IdMap {
 public:
 	static const unsigned int PageSize = IdMapTraits<IdT>::PageSize;
-
 	using id_type = std::remove_cv_t<IdT>;
 	using tag = typename id_traits<id_type>::tag;
 	using rep = typename id_traits<id_type>::rep;
@@ -435,7 +434,7 @@ public:
 			const PageData& page = idMap->storage[pageIndex];
 			assert(page.size != 0);
 			for (unsigned short relIndex = index % PageSize + 1; relIndex < PageSize; ++relIndex) {
-				if (page.mask[relIndex]) {
+				if (page.check(relIndex)) {
 					index = pageIndex * PageSize + relIndex;
 					return *this;
 				}
@@ -444,9 +443,9 @@ public:
 			while (pageIndex < idMap->storage.size()) {
 				const PageData& page = idMap->storage[pageIndex];
 				if (page.size != 0) {
-					// find first valid in mask
+					// find first valid
 					unsigned short relIndex = 0;
-					while (!page.mask[relIndex]) {
+					while (!page.check(relIndex)) {
 						++relIndex;
 						assert(relIndex < PageSize);
 					}
@@ -487,7 +486,7 @@ public:
 			const PageData& page = idMap->storage[pageIndex];
 			assert(page.size != 0);
 			for (unsigned short relIndex = index % PageSize + 1; relIndex < PageSize; ++relIndex) {
-				if (page.mask[relIndex]) {
+				if (page.check(relIndex)) {
 					index = pageIndex * PageSize + relIndex;
 					return *this;
 				}
@@ -496,9 +495,9 @@ public:
 			while (pageIndex < idMap->storage.size()) {
 				const PageData& page = idMap->storage[pageIndex];
 				if (page.size != 0) {
-					// find first valid in mask
+					// find first valid
 					unsigned short relIndex = 0;
-					while (!page.mask[relIndex]) {
+					while (!page.check(relIndex)) {
 						++relIndex;
 						assert(relIndex < PageSize);
 					}
@@ -609,9 +608,9 @@ public:
 		while (pageIndex < storage.size()) {
 			const PageData& page = storage[pageIndex];
 			if (page.size != 0) {
-				// find first valid in mask
+				// find first valid
 				unsigned short relIndex = 0;
-				while (!page.mask[relIndex]) {
+				while (!page.check(relIndex)) {
 					++relIndex;
 					assert(relIndex < PageSize);
 				}
@@ -627,9 +626,9 @@ public:
 		while (pageIndex < storage.size()) {
 			const PageData& page = storage[pageIndex];
 			if (page.size != 0) {
-				// find first valid in mask
+				// find first valid
 				unsigned short relIndex = 0;
-				while (!page.mask[relIndex]) {
+				while (!page.check(relIndex)) {
 					++relIndex;
 					assert(relIndex < PageSize);
 				}
@@ -702,12 +701,16 @@ private:
 	size_t cur_size = 0;
 	std::vector<PageData> storage;
 };
-#elif defined(ID_MAP_BAD)
-template <IdType IdT, class T>
-class IdMap {
-public:
-	static const unsigned int PageSize = 256;
+#else
+#define IdMap std::unordered_map
+#endif
 
+#define ID_MULTI_MAP
+#ifdef ID_MULTI_MAP
+template <IdType IdT, class T>
+class IdMultiMap {
+public:
+	static const unsigned int PageSize = IdMapTraits<IdT>::PageSize;
 	using id_type = std::remove_cv_t<IdT>;
 	using tag = typename id_traits<id_type>::tag;
 	using rep = typename id_traits<id_type>::rep;
@@ -715,11 +718,64 @@ public:
 
 private:
 	struct PageData {
-		rep first;
-		std::vector<std::optional<T>> second;
+		template<class... Args>
+		void emplace(unsigned short index, Args&&... args) {
+			data[index].emplace_back(std::forward<Args>(args)...);
+			++size;
+		}
+		void destroy(unsigned short index, size_t vecIndex) {
+			if (!data[index].empty()) data[index][vecIndex] = std::move(data[index].back());
+			data[index].pop_back();
+			--size;
+			assert(size != 0 && "You should just clear this page.");
+		}
+		size_t destroyRest(unsigned short index, size_t vecIndex) {
+			if (vecIndex + 1 == data[index].size()) return 0;
+			size_t removed = data[index].size() - vecIndex;
+			size -= removed;
+			data[index].resize(vecIndex);
+			assert(size != 0 && "You should just clear this page.");
+			return removed;
+		}
+		size_t destroyBefore(unsigned short index, size_t vecIndex) {
+			if (vecIndex == 0) return 0;
+			std::move(data[index].begin() + vecIndex, data[index].end(), data[index].begin());
+			size -= vecIndex;
+			data[index].resize(data[index].size() - vecIndex);
+			assert(size != 0);
+			return vecIndex;
+		}
+		size_t destroyRange(unsigned short index, size_t vecStart, size_t vecEnd) {
+			if (vecStart == vecEnd) return 0;
+			std::move(data[index].begin() + vecEnd, data[index].end(), data[index].begin() + vecStart);
+			size -= vecStart - vecEnd;
+			data[index].resize(data[index].size() + vecStart - vecEnd);
+			assert(size != 0);
+			return vecStart - vecEnd;
+		}
+		size_t destroyAll(unsigned short index) {
+			size_t removed = data[index].size();
+			size -= removed;
+			data[index].clear();
+			return removed;
+		}
+		std::vector<T>& get(unsigned short index) { return data[index]; }
+		const std::vector<T>& get(unsigned short index) const { return data[index]; }
+		bool check(unsigned short index) const { return data[index].size() != 0; }
+		void init() {
+			assert(size == 0); // size should not stay 0
+			data = std::vector<std::vector<T>>(PageSize);
+		}
+		void clear() {
+			assert(size != 0);
+			size = 0;
+			data.clear();
+		}
+		size_t size = 0;
+		std::vector<std::vector<T>> data;
 	};
-public:
 
+public:
 	struct reference {
 		const id_type first;
 		T& second;
@@ -743,34 +799,45 @@ public:
 	static_assert(std::is_integral_v<rep>, "Id::rep must be an integral type");
 
 	class iterator {
-		friend class IdMap<IdT, T>;
+		friend class IdMultiMap<IdT, T>;
 	public:
 		iterator& operator++() {
 			if (index == std::numeric_limits<rep>::max()) return *this;
-			// search rest of page
-			const pageData& page = idMap->storage[index / PageSize];
-			assert(!page.second.empty());
-			unsigned int relIndex = index - page.first;
-			if (page.second.size() - 1 == relIndex) { // at end of block
-				size_t blockIndex = index / PageSize + 1;
-				// search blocks
-				while (blockIndex < idMap->storage.size()) {
-					if (!idMap->storage[blockIndex].second.empty()) { // if we find a non empty block the first item will be valid
-						index = idMap->storage[blockIndex].first;
-						return *this;
-					}
-					blockIndex += 1;
-				}
-				// at end
-				index = std::numeric_limits<rep>::max();
+			rep pageIndex = index / PageSize;
+			const PageData& page = idMultiMap->storage[pageIndex];
+			// search rest of vec
+			unsigned short relIndex = index % PageSize;
+			const std::vector<T>& vec = page.get(relIndex);
+			if (vec.size() != vecIndex + 1) {
+				++vecIndex;
 				return *this;
 			}
-			// if not at end of block then there is more data in this block
-			do {
-				relIndex++;
-				assert(page.second.size() > relIndex);
-			} while (page.second[relIndex] == std::nullopt);
-			index = page.first + relIndex;
+			vecIndex = 0;
+			// search rest of page
+			assert(page.size != 0);
+			for (++relIndex; relIndex < PageSize; ++relIndex) {
+				if (page.check(relIndex)) {
+					index = pageIndex * PageSize + relIndex;
+					return *this;
+				}
+			}
+			++pageIndex;
+			while (pageIndex < idMultiMap->storage.size()) {
+				const PageData& page = idMultiMap->storage[pageIndex];
+				if (page.size != 0) {
+					// find first valid
+					unsigned short relIndex = 0;
+					while (!page.check(relIndex)) {
+						++relIndex;
+						assert(relIndex < PageSize);
+					}
+					index = pageIndex * PageSize + relIndex;
+					return *this;
+				}
+				++pageIndex;
+			}
+			// at end
+			index = std::numeric_limits<rep>::max();
 			return *this;
 		}
 		iterator operator++(int) {
@@ -779,48 +846,59 @@ public:
 			return tmp;
 		}
 		reference operator*() const {
-			pageData& page = idMap->storage[index / PageSize];
-			return reference{ index, page.second[index - page.first].value() };
+			return reference{ index, idMultiMap->storage[index / PageSize].get(index % PageSize)[vecIndex] };
 		}
 		pointer operator->() const { return pointer{ operator*() }; }
 		bool operator==(const iterator other) const {
-			assert(this->idMap == other.idMap);
-			return this->index == other.index;
+			assert(this->idMultiMap == other.idMultiMap);
+			return this->index == other.index && this->vecIndex == other.vecIndex;
 		}
 	private:
-		iterator(IdMap<IdT, T>& idMap, rep index) : idMap(&idMap), index(index) {}
-		IdMap<IdT, T>* idMap;
+		iterator(IdMultiMap<IdT, T>& idMultiMap, rep index, size_t vecIndex) : idMultiMap(&idMultiMap), index(index), vecIndex(vecIndex) {}
+		IdMultiMap<IdT, T>* idMultiMap;
 		rep index;
+		size_t vecIndex;
 	};
 	class const_iterator {
-		friend class IdMap<IdT, T>;
+		friend class IdMultiMap<IdT, T>;
 	public:
 		const_iterator& operator++() {
 			if (index == std::numeric_limits<rep>::max()) return *this;
-			// search rest of page
-			const PageData& page = idMap->storage[index / PageSize];
-			assert(!page.second.empty());
-			unsigned int relIndex = index - page.first;
-			if (page.second.size() - 1 == relIndex) { // at end of block
-				size_t blockIndex = index / PageSize + 1;
-				// search blocks
-				while (blockIndex < idMap->storage.size()) {
-					if (!idMap->storage[blockIndex].second.empty()) { // if we find a non empty block the first item will be valid
-						index = idMap->storage[blockIndex].first;
-						return *this;
-					}
-					blockIndex += 1;
-				}
-				// at end
-				index = std::numeric_limits<rep>::max();
+			rep pageIndex = index / PageSize;
+			const PageData& page = idMultiMap->storage[pageIndex];
+			// search rest of vec
+			unsigned short relIndex = index % PageSize;
+			const std::vector<T>& vec = page.get(relIndex);
+			if (vec.size() != vecIndex + 1) {
+				++vecIndex;
 				return *this;
 			}
-			// if not at end of block then there is more data in this block
-			do {
-				relIndex++;
-				assert(page.second.size() > relIndex);
-			} while (page.second[relIndex] == std::nullopt);
-			index = page.first + relIndex;
+			vecIndex = 0;
+			// search rest of page
+			assert(page.size != 0);
+			for (++relIndex; relIndex < PageSize; ++relIndex) {
+				if (page.check(relIndex)) {
+					index = pageIndex * PageSize + relIndex;
+					return *this;
+				}
+			}
+			++pageIndex;
+			while (pageIndex < idMultiMap->storage.size()) {
+				const PageData& page = idMultiMap->storage[pageIndex];
+				if (page.size != 0) {
+					// find first valid
+					unsigned short relIndex = 0;
+					while (!page.check(relIndex)) {
+						++relIndex;
+						assert(relIndex < PageSize);
+					}
+					index = pageIndex * PageSize + relIndex;
+					return *this;
+				}
+				++pageIndex;
+			}
+			// at end
+			index = std::numeric_limits<rep>::max();
 			return *this;
 		}
 		const_iterator operator++(int) {
@@ -829,8 +907,8 @@ public:
 			return tmp;
 		}
 		const_reference operator*() const {
-			const PageData& page = idMap->storage[index / PageSize];
-			return const_reference{ index, page.second[index - page.first].value() };
+			const PageData& page = idMultiMap->storage[index / PageSize];
+			return const_reference{ index, idMultiMap->storage[index / PageSize].get(index % PageSize)[vecIndex] };
 		}
 		const_pointer operator->() const { return const_pointer{ operator*() }; }
 		bool operator==(const const_iterator other) const {
@@ -838,156 +916,443 @@ public:
 			return this->index == other.index;
 		}
 	private:
-		const_iterator(const IdMap<IdT, T>& idMap, rep index) : idMap(&idMap), index(index) {}
-		const IdMap<IdT, T>* idMap;
+		const_iterator(const IdMultiMap<IdT, T>& idMultiMap, rep index, size_t vecIndex) : idMultiMap(&idMultiMap), index(index), vecIndex(vecIndex) {}
+		const IdMultiMap<IdT, T>* idMultiMap;
 		rep index;
+		size_t vecIndex;
 	};
 
-	constexpr IdMap() = default;
+	constexpr IdMultiMap() = default;
 
 	inline size_t size() const noexcept { return cur_size; }
 	inline bool empty() const noexcept { return cur_size == 0; }
 
 	inline void clear() noexcept { storage.clear(); }
 
-	inline T& operator[](id_type id) { return *emplaceWithKey(id).first; }
+	// inline bool contains(id_type id) const noexcept { return find(id) != end(); }
 
-	inline T& at(id_type id) { return *find(id); }
-	inline const T& at(id_type id) const { return *find(id); }
-
-	inline bool contains(id_type id) const noexcept { return find(id) != end(); }
-
-	std::pair<iterator, bool> insert(const value_type& value) { return emplaceWithKey(value.first, value.second); }
-	// iterator insert(iterator pos, const value_type& value) { return emplaceWithKey(pos.index, value.second); }
-	// iterator insert(const_iterator pos, const value_type& value) { return emplaceWithKey(pos.index, value.second); }
 	template <class... Args>
-	std::pair<iterator, bool> try_emplace(id_type id, Args&&... args) { return emplaceWithKey(id, std::forward<Args>(args)...); }
+	iterator try_emplace(id_type id, Args&&... args) { return emplaceWithKey(id, std::forward<Args>(args)...); }
+	template <class... Args>
+	iterator emplace(id_type id, Args&&... args) { return emplaceWithKey(id, std::forward<Args>(args)...); }
+	template <class... Args>
+	iterator try_emplace(iterator pos, Args&&... args) { return emplaceWithKey(pos.index, std::forward<Args>(args)...); }
+	template <class... Args>
+	iterator emplace(iterator pos, Args&&... args) { return emplaceWithKey(pos.index, std::forward<Args>(args)...); }
 
-	iterator erase(iterator pos) { // assume iter valid
+	// assume iter valid
+	// if anyone need the iter they can go get it them selves
+	void erase(iterator pos) {
 		cur_size--;
 		rep index = pos.index;
 		PageData& page = storage[index / PageSize];
-		if (index == page.first) { // start of page
-			if (page.second.size() == 1) {
-				if (storage.size() - 1 == index / PageSize) {
-					storage.resize(storage.size() - 1);
-					return end();
-				}
-				++pos;
-				page.second.clear();
-				return pos;
+		if (page.size == 1) {
+			if (storage.size() - 1 == index / PageSize) {
+				storage.resize(storage.size() - 1);
+				return;
 			}
-			++pos;
-			assert(pos != end());
-			std::move(page.second.begin() + (pos.index - page.first), page.second.end(), page.second.begin());
-			page.second.resize(page.second.size() - (pos.index - index));
-			page.first = pos.index;
-			return pos;
+			page.clear();
+			return;
 		}
-		++pos;
-		rep relIndex = index - page.first;
-		if (relIndex == page.second.size() - 1) { // end of page
-			do {
-				assert(relIndex != 0);
-				--relIndex;
-			} while(!page.second[relIndex].has_value());
-			page.second.resize(relIndex + 1);
-			return pos;
+		assert(page.check(index % PageSize));
+		page.destroy(index % PageSize, pos.vecIndex);
+	}
+	void erase(iterator start, iterator end) {
+		PageData& firstPage = storage[start.index / PageSize];
+		if (start.index == end.index) { // if only sub block
+			cur_size -= firstPage.destroyRange(start.index, start.vecIndex, end.vecIndex);
+			return;
 		}
-		// in page
-		assert(pos != end());
-		// std::move(page.second.begin() + (pos.index - page.first), page.second.end(), page.second.begin() + relIndex);
-		// page.second.resize(page.second.size() - (pos.index - index));
-		page.second[relIndex] = std::nullopt;
-		return pos;
+		if (start.vecIndex == 0 && firstPage.size == firstPage.get(start.index % PageSize).size()) {
+			if (end == this->end()) {
+				for (unsigned int pageIndex = start.index / PageSize; pageIndex < storage.size(); ++pageIndex) {
+					cur_size -= storage[pageIndex].size;
+				}
+				storage.resize(start.index / PageSize);
+				return;
+			}
+			firstPage.clear();
+		} else {
+			unsigned short relIndex = start.index % PageSize;
+			cur_size -= firstPage.destroyRest(relIndex, start.vecIndex);
+			if (end.index / PageSize == start.index / PageSize) {
+				unsigned short endRelIndex = end.index / PageSize;
+				for (++relIndex; relIndex < endRelIndex; ++relIndex) {
+					cur_size -= firstPage.destroyAll(relIndex);
+				}
+				cur_size -= firstPage.destroyBefore(endRelIndex, end.vecIndex);
+				return;
+			}
+			for (++relIndex; relIndex < PageSize ; ++relIndex) {
+				cur_size -= firstPage.destroyAll(relIndex);
+				if (firstPage.size == 0) {
+					if (end == this->end()) {
+						for (unsigned int pageIndex = start.index / PageSize; pageIndex < storage.size(); ++pageIndex) {
+							cur_size -= storage[pageIndex].size;
+						}
+						storage.resize(start.index / PageSize);
+						return;
+					}
+					firstPage.clear();
+					break;
+				}
+			}
+		}
+		if (end == this->end()) {
+			for (unsigned int pageIndex = start.index / PageSize + 1; pageIndex < storage.size(); ++pageIndex) {
+				cur_size -= storage[pageIndex].size;
+			}
+			storage.resize(start.index / PageSize + 1);
+			return;
+		}
+		for (rep pageIndex = start.index / PageSize + 1; pageIndex < end.index / PageSize; ++pageIndex) {
+			PageData& page = storage[pageIndex];
+			if (page.size != 0) {
+				cur_size -= page.size;
+				page.clear();
+			}
+		}
+		PageData& endPage = storage[end.index / PageSize];
+		unsigned short relIndexEnd = end.index % PageSize;
+		cur_size -= endPage.destroyBefore(relIndexEnd, end.vecIndex);
+		for (unsigned short relIndex = 0; relIndex < relIndexEnd ; ++relIndex) {
+			cur_size -= endPage.destroyAll(relIndex);
+			if (endPage.size == 0) {
+				endPage.clear();
+				break;
+			}
+		}
+	}
+	size_t erase(IdT id) {
+		// check if exists
+		rep index = id.get();
+		rep pageIndex = index / PageSize;
+		if (pageIndex >= storage.size()) return 0;
+		PageData& page = storage[pageIndex];
+		unsigned short relIndex = index % PageSize;
+		if (page.size == 0 || !page.check(relIndex)) return 0;
+		// remove
+		cur_size--;
+		if (page.size == 1) {
+			if (storage.size() - 1 == pageIndex) {
+				storage.resize(storage.size() - 1);
+				return 1;
+			}
+			page.clear();
+			return 1;
+		}
+		page.destroyAll(relIndex);
+		return 1;
 	}
 
 	inline iterator find(id_type id) {
 		rep index = id.get();
 		if (storage.size() <= index / PageSize) return end();
 		const PageData& page = storage[index / PageSize];
-		if (page.second.empty() || page.first > index || page.first + page.second.size() <= index) return end();
-		if (page.second[index - page.first].has_value()) return iterator(*this, index);
+		if (page.size != 0 && page.check(index % PageSize)) return iterator(*this, index, 0);
 		return end();
 	}
 	inline const_iterator find(id_type id) const {
 		rep index = id.get();
 		if (storage.size() <= index / PageSize) return end();
 		const PageData& page = storage[index / PageSize];
-		if (page.second.empty() || page.first > index || page.first + page.second.size() <= index) return end();
-		if (page.second[index - page.first].has_value()) return const_iterator(*this, index);
+		if (page.size != 0 && page.check(index % PageSize)) return const_iterator(*this, index, 0);
 		return end();
+	}
+	inline std::pair<iterator, iterator> equal_range(id_type id) {
+		rep index = id.get();
+		if (storage.size() <= index / PageSize) return { end(), end()};
+		const PageData& page = storage[index / PageSize];
+		if (page.size != 0 && page.check(index % PageSize)) {
+			return { iterator(*this, index, 0), ++iterator(*this, index, page.get(index % PageSize).size() - 1) };
+		}
+		return { end(), end() };
+	}
+	inline std::pair<const_iterator, const_iterator> equal_range(id_type id) const {
+		rep index = id.get();
+		if (storage.size() <= index / PageSize) return { end(), end() };
+		const PageData& page = storage[index / PageSize];
+		if (page.size != 0 && page.check(index % PageSize)) {
+			return { const_iterator(*this, index, 0), ++const_iterator(*this, index, page.get(index % PageSize).size() - 1) };
+		}
+		return { end(), end() };
 	}
 
 	inline iterator begin() noexcept {
-		for (unsigned int blockIndex = 0; blockIndex < storage.size(); blockIndex++) {
-			const PageData& page = storage[blockIndex];
-			if (!page.second.empty()) {
-				return iterator(*this, page.first); // guaranteed to be a value
+		rep pageIndex = 0;
+		while (pageIndex < storage.size()) {
+			const PageData& page = storage[pageIndex];
+			if (page.size != 0) {
+				// find first valid
+				unsigned short relIndex = 0;
+				while (!page.check(relIndex)) {
+					++relIndex;
+					assert(relIndex < PageSize);
+				}
+				return iterator(*this, pageIndex * PageSize + relIndex, 0);
 			}
+			++pageIndex;
 		}
 		return end();
 	}
-	inline iterator end() noexcept { return iterator(*this, std::numeric_limits<rep>::max()); }
+	inline iterator end() noexcept { return iterator(*this, std::numeric_limits<rep>::max(), 0); }
 	inline const_iterator begin() const noexcept {
-		for (unsigned int blockIndex = 0; blockIndex < storage.size(); blockIndex++) {
-			const PageData& page = storage[blockIndex];
-			if (!page.second.empty()) {
-				return const_iterator(*this, page.first); // guaranteed to be a value
+		rep pageIndex = 0;
+		while (pageIndex < storage.size()) {
+			const PageData& page = storage[pageIndex];
+			if (page.size != 0) {
+				// find first valid
+				unsigned short relIndex = 0;
+				while (!page.check(relIndex)) {
+					++relIndex;
+					assert(relIndex < PageSize);
+				}
+				return const_iterator(*this, pageIndex * PageSize + relIndex, 0);
 			}
+			++pageIndex;
 		}
 		return end();
 	}
-	inline const_iterator end() const noexcept { return const_iterator(*this, std::numeric_limits<rep>::max()); }
+	inline const_iterator end() const noexcept { return const_iterator(*this, std::numeric_limits<rep>::max(), 0); }
 
 private:
 	template <class... Args>
-	std::pair<iterator, bool> emplaceWithKey(id_type id, Args&&... args) {
+	iterator emplaceWithKey(id_type id, Args&&... args) {
 		rep index = id.get();
-		if (storage.size() <= index / PageSize) {
-			storage.resize(index / PageSize + 1);
+		rep pageIndex = index / PageSize;
+		unsigned short relIndex = index % PageSize;
+		if (storage.size() <= pageIndex) {
+			storage.resize(pageIndex + 1);
 			PageData& page = storage[index / PageSize];
-			page.first = index;
-			page.second.emplace_back(std::in_place, std::forward<Args>(args)...);
+			page.init();
+			page.emplace(relIndex, std::forward<Args>(args)...);
 			cur_size++;
-			return { iterator(*this, index), true };
+			return iterator(*this, index, page.data[relIndex].size());
 		}
 		PageData& page = storage[index / PageSize];
-		if (page.second.empty()) {
-			page.first = index;
-			page.second.emplace_back(std::in_place, std::forward<Args>(args)...);
+		if (page.size == 0) {
+			page.init();
+			page.emplace(relIndex, std::forward<Args>(args)...);
 			cur_size++;
-			return { iterator(*this, index), true };
+			return iterator(*this, index, page.data[relIndex].size());
 		}
-		if (page.first > index) {
-			size_t sizeBefore = page.second.size();
-			size_t newSpaceNeeded = page.first - index;
-			page.second.resize(newSpaceNeeded + sizeBefore);
-			std::move_backward(page.second.begin(), page.second.begin() + sizeBefore, page.second.end());
-			page.second[0].emplace(std::forward<Args>(args)...);
-			std::fill(page.second.begin() + 1, page.second.begin() + newSpaceNeeded, std::nullopt);
-			page.first = index;
-			cur_size++;
-			return { iterator(*this, index), true };
-		}
-		size_t relIndex = index - page.first;
-		if (relIndex >= page.second.size()) {
-			page.second.resize(relIndex + 1, std::nullopt);
-			page.second[relIndex].emplace(std::forward<Args>(args)...);
-			cur_size++;
-			return { iterator(*this, index), true };
-		}
-		if (page.second[relIndex] != std::nullopt) return { iterator(*this, index), false };
-		page.second[relIndex].emplace(std::forward<Args>(args)...);
+		page.emplace(relIndex, std::forward<Args>(args)...);
 		cur_size++;
-		return { iterator(*this, index), true };
+		return iterator(*this, index, page.data[relIndex].size());
 	}
 
 	size_t cur_size = 0;
 	std::vector<PageData> storage;
 };
 #else
-#define IdMap std::unordered_map
+#define IdMultiMap std::unordered_map
+#endif
+
+#define ID_SET
+#ifdef ID_SET
+template <IdType IdT>
+class IdSet {
+public:
+	static const unsigned int PageSize = IdMapTraits<IdT>::PageSize;
+	using id_type = std::remove_cv_t<IdT>;
+	using tag = typename id_traits<id_type>::tag;
+	using rep = typename id_traits<id_type>::rep;
+	using value_type = id_type;
+
+private:
+	struct PageData {
+		void emplace(unsigned short index) {
+			mask[index] = true;
+			++size;
+		}
+		void destroy(unsigned short index) {
+			assert(mask[index]);
+			mask[index] = false;
+			--size;
+			assert(size != 0 && "You should just clear this page.");
+		}
+		bool check(unsigned short index) const { return mask[index]; }
+		void init() {
+			assert(size == 0); // size should not stay 0
+			mask = std::vector<bool>(PageSize, false);
+		}
+		void clear() {
+			assert(size != 0);
+			size = 0;
+			mask.clear();
+		}
+		size_t size = 0;
+		std::vector<bool> mask;
+	};
+
+public:
+	struct pointer {
+		id_type id;
+		id_type* operator->() { return &id; }
+	};
+
+	static_assert(std::is_integral_v<rep>, "Id::rep must be an integral type");
+
+	class iterator {
+		friend class IdSet<IdT>;
+	public:
+		iterator& operator++() {
+			if (index == std::numeric_limits<rep>::max()) return *this;
+			// search rest of page
+			rep pageIndex = index / PageSize;
+			const PageData& page = idSet->storage[pageIndex];
+			assert(page.size != 0);
+			for (unsigned short relIndex = index % PageSize + 1; relIndex < PageSize; ++relIndex) {
+				if (page.check(relIndex)) {
+					index = pageIndex * PageSize + relIndex;
+					return *this;
+				}
+			}
+			++pageIndex;
+			while (pageIndex < idSet->storage.size()) {
+				const PageData& page = idSet->storage[pageIndex];
+				if (page.size != 0) {
+					// find first valid
+					unsigned short relIndex = 0;
+					while (!page.check(relIndex)) {
+						++relIndex;
+						assert(relIndex < PageSize);
+					}
+					index = pageIndex * PageSize + relIndex;
+					return *this;
+				}
+				++pageIndex;
+			}
+			// at end
+			index = std::numeric_limits<rep>::max();
+			return *this;
+		}
+		iterator operator++(int) {
+			iterator tmp = *this;
+			this->operator++();
+			return tmp;
+		}
+		id_type operator*() const { return index; }
+		pointer operator->() const { return pointer{ index }; }
+		bool operator==(const iterator other) const {
+			assert(this->idSet == other.idSet);
+			return this->index == other.index;
+		}
+	private:
+		iterator(const IdSet<IdT>& idSet, rep index) : idSet(&idSet), index(index) {}
+		const IdSet<IdT>* idSet;
+		rep index;
+	};
+
+	constexpr IdSet() = default;
+
+	inline size_t size() const noexcept { return cur_size; }
+	inline bool empty() const noexcept { return cur_size == 0; }
+
+	inline void clear() noexcept { storage.clear(); }
+
+	inline bool contains(id_type id) const noexcept { return find(id) != end(); }
+
+	std::pair<iterator, bool> insert(id_type id) { return emplace(id); }
+	std::pair<iterator, bool> emplace(id_type id) {
+		rep index = id.get();
+		rep pageIndex = index / PageSize;
+		unsigned short relIndex = index % PageSize;
+		if (storage.size() <= pageIndex) {
+			storage.resize(pageIndex + 1);
+			PageData& page = storage[index / PageSize];
+			page.init();
+			page.emplace(relIndex);
+			cur_size++;
+			return { iterator(*this, index), true };
+		}
+		PageData& page = storage[index / PageSize];
+		if (page.size == 0) {
+			page.init();
+			page.emplace(relIndex);
+			cur_size++;
+			return { iterator(*this, index), true };
+		}
+		if (page.check(relIndex)) {
+			return { iterator(*this, index), false };
+		}
+		page.emplace(relIndex);
+		cur_size++;
+		return { iterator(*this, index), true };
+	}
+
+	// assume iter valid
+	// if anyone need the iter they can go get it them selves
+	void erase(iterator pos) {
+		cur_size--;
+		rep index = pos.index;
+		PageData& page = storage[index / PageSize];
+		if (page.size == 1) {
+			if (storage.size() - 1 == index / PageSize) {
+				storage.resize(storage.size() - 1);
+				return;
+			}
+			page.clear();
+			return;
+		}
+		assert(page.check(index % PageSize));
+		page.destroy(index % PageSize);
+	}
+	size_t erase(IdT id) {
+		// check if exists
+		rep index = id.get();
+		rep pageIndex = index / PageSize;
+		if (pageIndex >= storage.size()) return 0;
+		PageData& page = storage[pageIndex];
+		unsigned short relIndex = index % PageSize;
+		if (page.size == 0 || !page.check(relIndex)) return 0;
+		// remove
+		cur_size--;
+		if (page.size == 1) {
+			if (storage.size() - 1 == pageIndex) {
+				storage.resize(storage.size() - 1);
+				return 1;
+			}
+			page.clear();
+			return 1;
+		}
+		page.destroy(relIndex);
+		return 1;
+	}
+
+	inline iterator find(id_type id) const {
+		rep index = id.get();
+		if (storage.size() <= index / PageSize) return end();
+		const PageData& page = storage[index / PageSize];
+		if (page.size != 0 && page.check(index % PageSize)) return iterator(*this, index);
+		return end();
+	}
+
+	inline iterator begin() const noexcept {
+		rep pageIndex = 0;
+		while (pageIndex < storage.size()) {
+			const PageData& page = storage[pageIndex];
+			if (page.size != 0) {
+				// find first valid
+				unsigned short relIndex = 0;
+				while (!page.check(relIndex)) {
+					++relIndex;
+					assert(relIndex < PageSize);
+				}
+				return iterator(*this, pageIndex * PageSize + relIndex);
+			}
+			++pageIndex;
+		}
+		return end();
+	}
+	inline iterator end() const noexcept { return iterator(*this, std::numeric_limits<rep>::max()); }
+
+private:
+	size_t cur_size = 0;
+	std::vector<PageData> storage;
+};
+#else
+#define IdSet std::unordered_set
 #endif
 
 #endif /* id_h */
