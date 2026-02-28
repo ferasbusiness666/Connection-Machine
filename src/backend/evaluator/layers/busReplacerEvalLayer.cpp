@@ -203,7 +203,7 @@ void BusReplacerEvalLayer::run() {
 			}
 		} else {
 			nextState.getGateIdRemapping().try_emplace(iter.first, iter.first);
-			nextState.getGateIdReverseRemapping().try_emplace(iter.first, iter.first);
+			nextState.getGateIdReverseRemapping().emplace(iter.first, iter.first);
 			nextState.addGate(iter.first, iter.second);
 		}
 	}
@@ -249,7 +249,7 @@ void BusReplacerEvalLayer::run() {
 						busJunctionsIterPair.first->second.push_back(junctionId);
 						nextState.addGate(junctionId, gateB->type);
 						assert(currentState.getGate(iter.first.connectionPointA.gateId));
-						nextState.getGateIdReverseRemapping().try_emplace(junctionId, iter.first.connectionPointB.gateId);
+						nextState.getGateIdReverseRemapping().emplace(junctionId, iter.first.connectionPointB.gateId);
 						nextState.addGateIdRemappingsUpdated(junctionId);
 					}
 				}

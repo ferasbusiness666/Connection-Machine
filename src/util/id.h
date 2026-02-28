@@ -201,14 +201,15 @@ public:
 	using id_type = std::remove_cv_t<IdT>;
 	using rep = typename id_traits<id_type>::rep;
 
-	constexpr LinearIdProvider(rep initialValue) : nextId(initialValue) { }
+	constexpr LinearIdProvider(rep initialValue) : initialValue(initialValue), nextId(initialValue) { }
 
 	constexpr id_type getNewId() { return id_type(nextId++); }
 	constexpr id_type peekNext() const { return id_type(nextId); }
 	constexpr id_type lastIdProvided() const { return id_type(nextId - 1); }
-	void reset() { nextId = 0; }
+	void reset() { nextId = initialValue; }
 
 private:
+	rep initialValue;
 	rep nextId;
 };
 
@@ -349,7 +350,7 @@ private:
 		}
 		PageData(PageData&& other) : size(other.size), data(std::move(other.data)), mask(std::move(other.mask)) { other.size = 0; }
 		PageData& operator=(PageData&& other) {
-			if (*this == other) return *this;
+			if (this == &other) return *this;
 			if (size != 0) {
 				for (unsigned short index = 0; index < PageSize; ++index) {
 					if (mask[index]) std::launder(reinterpret_cast<T*>(&data[index]))->~T();
@@ -535,7 +536,7 @@ public:
 	inline size_t size() const noexcept { return cur_size; }
 	inline bool empty() const noexcept { return cur_size == 0; }
 
-	inline void clear() noexcept { storage.clear(); }
+	inline void clear() noexcept { cur_size = 0; storage.clear(); }
 
 	inline T& operator[](id_type id) { return emplaceWithKey(id).first->second; }
 
@@ -729,8 +730,8 @@ private:
 			--size;
 			assert(size != 0 && "You should just clear this page.");
 		}
+		// this also destroys at vecIndex
 		size_t destroyRest(unsigned short index, size_t vecIndex) {
-			if (vecIndex + 1 == data[index].size()) return 0;
 			size_t removed = data[index].size() - vecIndex;
 			size -= removed;
 			data[index].resize(vecIndex);
@@ -748,10 +749,10 @@ private:
 		size_t destroyRange(unsigned short index, size_t vecStart, size_t vecEnd) {
 			if (vecStart == vecEnd) return 0;
 			std::move(data[index].begin() + vecEnd, data[index].end(), data[index].begin() + vecStart);
-			size -= vecStart - vecEnd;
+			size -= vecEnd - vecStart;
 			data[index].resize(data[index].size() + vecStart - vecEnd);
 			assert(size != 0);
-			return vecStart - vecEnd;
+			return vecEnd - vecStart;
 		}
 		size_t destroyAll(unsigned short index) {
 			size_t removed = data[index].size();
@@ -912,8 +913,8 @@ public:
 		}
 		const_pointer operator->() const { return const_pointer{ operator*() }; }
 		bool operator==(const const_iterator other) const {
-			assert(this->idMap == other.idMap);
-			return this->index == other.index;
+			assert(this->idMultiMap == other.idMultiMap);
+			return this->index == other.index && this->vecIndex == other.vecIndex;
 		}
 	private:
 		const_iterator(const IdMultiMap<IdT, T>& idMultiMap, rep index, size_t vecIndex) : idMultiMap(&idMultiMap), index(index), vecIndex(vecIndex) {}
@@ -927,16 +928,12 @@ public:
 	inline size_t size() const noexcept { return cur_size; }
 	inline bool empty() const noexcept { return cur_size == 0; }
 
-	inline void clear() noexcept { storage.clear(); }
+	inline void clear() noexcept { cur_size = 0; storage.clear(); }
 
 	// inline bool contains(id_type id) const noexcept { return find(id) != end(); }
 
 	template <class... Args>
-	iterator try_emplace(id_type id, Args&&... args) { return emplaceWithKey(id, std::forward<Args>(args)...); }
-	template <class... Args>
 	iterator emplace(id_type id, Args&&... args) { return emplaceWithKey(id, std::forward<Args>(args)...); }
-	template <class... Args>
-	iterator try_emplace(iterator pos, Args&&... args) { return emplaceWithKey(pos.index, std::forward<Args>(args)...); }
 	template <class... Args>
 	iterator emplace(iterator pos, Args&&... args) { return emplaceWithKey(pos.index, std::forward<Args>(args)...); }
 
@@ -971,12 +968,13 @@ public:
 				storage.resize(start.index / PageSize);
 				return;
 			}
+			cur_size -= firstPage.size;
 			firstPage.clear();
 		} else {
 			unsigned short relIndex = start.index % PageSize;
 			cur_size -= firstPage.destroyRest(relIndex, start.vecIndex);
 			if (end.index / PageSize == start.index / PageSize) {
-				unsigned short endRelIndex = end.index / PageSize;
+				unsigned short endRelIndex = end.index % PageSize;
 				for (++relIndex; relIndex < endRelIndex; ++relIndex) {
 					cur_size -= firstPage.destroyAll(relIndex);
 				}
@@ -1032,17 +1030,18 @@ public:
 		unsigned short relIndex = index % PageSize;
 		if (page.size == 0 || !page.check(relIndex)) return 0;
 		// remove
-		cur_size--;
-		if (page.size == 1) {
+		size_t vecSize = page.get(relIndex).size();
+		cur_size -= vecSize;
+		if (page.size == vecSize) {
 			if (storage.size() - 1 == pageIndex) {
 				storage.resize(storage.size() - 1);
-				return 1;
+				return vecSize;
 			}
 			page.clear();
-			return 1;
+			return vecSize;
 		}
 		page.destroyAll(relIndex);
-		return 1;
+		return vecSize;
 	}
 
 	inline iterator find(id_type id) {
@@ -1127,25 +1126,25 @@ private:
 			page.init();
 			page.emplace(relIndex, std::forward<Args>(args)...);
 			cur_size++;
-			return iterator(*this, index, page.data[relIndex].size());
+			return iterator(*this, index, page.data[relIndex].size() - 1);
 		}
 		PageData& page = storage[index / PageSize];
 		if (page.size == 0) {
 			page.init();
 			page.emplace(relIndex, std::forward<Args>(args)...);
 			cur_size++;
-			return iterator(*this, index, page.data[relIndex].size());
+			return iterator(*this, index, page.data[relIndex].size() - 1);
 		}
 		page.emplace(relIndex, std::forward<Args>(args)...);
 		cur_size++;
-		return iterator(*this, index, page.data[relIndex].size());
+		return iterator(*this, index, page.data[relIndex].size() - 1);
 	}
 
 	size_t cur_size = 0;
 	std::vector<PageData> storage;
 };
 #else
-#define IdMultiMap std::unordered_map
+#define IdMultiMap std::unordered_multimap
 #endif
 
 #define ID_SET
@@ -1249,7 +1248,7 @@ public:
 	inline size_t size() const noexcept { return cur_size; }
 	inline bool empty() const noexcept { return cur_size == 0; }
 
-	inline void clear() noexcept { storage.clear(); }
+	inline void clear() noexcept { cur_size = 0; storage.clear(); }
 
 	inline bool contains(id_type id) const noexcept { return find(id) != end(); }
 
