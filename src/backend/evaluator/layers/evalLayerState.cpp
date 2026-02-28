@@ -151,7 +151,7 @@ void EvalLayerState::changeGateType(eval_gate_id gateId, EvalGateType newType) {
 	auto addedGatesPair = addedGates.insert_or_assign(gateId, newType);
 	if (!addedGatesPair.second) return;
 	removedGates.try_emplace(gateId, oldType);
-	for (const std::pair<connection_end_id_t, std::unordered_set<EvalConnectionPoint>>& connectionsPair : gatesIter->second.connections) {
+	for (const auto& connectionsPair : gatesIter->second.connections) {
 		for (const EvalConnectionPoint& otherConnectionPoint : connectionsPair.second) {
 			EvalConnection evalConnection(EvalConnectionPoint(gateId, connectionsPair.first), otherConnectionPoint);
 			auto weightIter = connectionWeights.find(evalConnection);
@@ -236,13 +236,13 @@ void EvalLayerState::visualize() const {
 		logInfo("({}, {}) -> ({}, {})", "", pair.first.gateId, pair.first.connectionEndId, pair.second.gateId, pair.second.connectionEndId);
 	}
 	tmpBuf.clear();
-	for (std::pair<eval_gate_id, EvalGateType> pair : addedGates) {
+	for (auto pair : addedGates) {
 		if (tmpBuf.size() != 0) tmpBuf += ", ";
 		tmpBuf += "[" + fmt::to_string(pair.first) + " " + fmt::to_string((unsigned int)pair.second) + "]";
 	}
 	logInfo("{} addedGates: {}", "", addedGates.size(), tmpBuf);
 	tmpBuf.clear();
-	for (std::pair<eval_gate_id, EvalGateType> pair : removedGates) {
+	for (auto pair : removedGates) {
 		if (tmpBuf.size() != 0) tmpBuf += ", ";
 		tmpBuf += "[" + fmt::to_string(pair.first) + " " + fmt::to_string((unsigned int)pair.second) + "]";
 	}

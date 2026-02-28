@@ -1,9 +1,11 @@
 #ifndef id_h
 #define id_h
 
-#define DECLARE_ID_TYPE(TypeName, RepType)                                                                                                                               \
-	struct TypeName##__TAG__;                                                                                                                                            \
+#define DECLARE_ID_TYPE(TypeName, RepType)\
+	struct TypeName##__TAG__;\
 	using TypeName = Id<TypeName##__TAG__, RepType>
+#define DECLARE_ID_ID_MAP_PAGE_SIZE(TypeName, Size)\
+	template <> struct IdMapTraits<TypeName>{ static const size_t PageSize = Size; }
 
 template <class Tag, class Rep>
 class Id {
@@ -318,12 +320,18 @@ private:
 
 	std::vector<T> storage;
 };
+
+template <IdType IdT>
+struct IdMapTraits {
+    static const size_t PageSize = 1024;
+};
+
 #define ID_MAP
 #ifdef ID_MAP
 template <IdType IdT, class T>
 class IdMap {
 public:
-	static const unsigned int PageSize = 1024;
+	static const unsigned int PageSize = IdMapTraits<IdT>::PageSize;
 
 	using id_type = std::remove_cv_t<IdT>;
 	using tag = typename id_traits<id_type>::tag;
@@ -332,13 +340,41 @@ public:
 
 private:
 	struct PageData {
+		PageData() = default;
+		~PageData() {
+			if (size != 0) {
+				for (unsigned short index = 0; index < PageSize; ++index) {
+					if (mask[index]) std::launder(reinterpret_cast<T*>(&data[index]))->~T();
+				}
+			}
+		}
+		PageData(PageData&& other) : size(other.size), data(std::move(other.data)), mask(std::move(other.mask)) { other.size = 0; }
+		PageData& operator=(PageData&& other) {
+			if (*this == other) return *this;
+			if (size != 0) {
+				for (unsigned short index = 0; index < PageSize; ++index) {
+					if (mask[index]) std::launder(reinterpret_cast<T*>(&data[index]))->~T();
+				}
+			}
+			size = other.size;
+			data = std::move(other.data);
+			mask = std::move(other.mask);
+			other.size = 0;
+		}
 		template<class... Args>
 		void emplace(unsigned short index, Args&&... args) {
 			::new(&data[index]) T(std::forward<Args>(args)...);
 			mask[index] = true;
 			++size;
 		}
+		template<class... Args>
+		void assign(unsigned short index, Args&&... args) {
+			assert(mask[index]);
+			std::launder(reinterpret_cast<T*>(&data[index]))->~T();
+			::new(&data[index]) T(std::forward<Args>(args)...);
+		}
 		void destroy(unsigned short index) {
+			assert(mask[index]);
 			std::launder(reinterpret_cast<T*>(&data[index]))->~T();
 			mask[index] = false;
 			--size;
@@ -360,13 +396,6 @@ private:
 			size = 0;
 			data.clear();
 			mask.clear();
-		}
-		~PageData() {
-			if (size != 0) {
-				for (unsigned short index = 0; index < PageSize; ++index) {
-					if (mask[index]) std::launder(reinterpret_cast<T*>(&data[index]))->~T();
-				}
-			}
 		}
 		size_t size = 0;
 		std::vector<std::aligned_storage_t<sizeof(T), alignof(T)>> data;
@@ -509,49 +538,69 @@ public:
 
 	inline void clear() noexcept { storage.clear(); }
 
-	inline T& operator[](id_type id) { return *emplaceWithKey(id).first; }
+	inline T& operator[](id_type id) { return emplaceWithKey(id).first->second; }
 
-	inline T& at(id_type id) { return *find(id); }
-	inline const T& at(id_type id) const { return *find(id); }
+	inline T& at(id_type id) { return find(id)->second; }
+	inline const T& at(id_type id) const { return find(id)->second; }
 
 	inline bool contains(id_type id) const noexcept { return find(id) != end(); }
 
-	std::pair<iterator, bool> insert(const value_type& value) { return emplaceWithKey(value.first, value.second); }
-	// iterator insert(iterator pos, const value_type& value) { return emplaceWithKey(pos.index, value.second); }
-	// iterator insert(const_iterator pos, const value_type& value) { return emplaceWithKey(pos.index, value.second); }
 	template <class... Args>
 	std::pair<iterator, bool> try_emplace(id_type id, Args&&... args) { return emplaceWithKey(id, std::forward<Args>(args)...); }
+	template <class... Args>
+	std::pair<iterator, bool> insert_or_assign(id_type id, Args&&... args) { return emplaceOrAssignWithKey(id, std::forward<Args>(args)...); }
 
-	iterator erase(iterator pos) { // assume iter valid
+	// assume iter valid
+	// if anyone need the iter they can go get it them selves
+	void erase(iterator pos) {
 		cur_size--;
 		rep index = pos.index;
 		PageData& page = storage[index / PageSize];
 		if (page.size == 1) {
 			if (storage.size() - 1 == index / PageSize) {
 				storage.resize(storage.size() - 1);
-				return end();
+				return;
 			}
-			++pos;
 			page.clear();
-			return pos;
+			return;
 		}
-		++pos;
+		assert(page.check(index % PageSize));
 		page.destroy(index % PageSize);
-		return pos;
+	}
+	size_t erase(IdT id) {
+		// check if exists
+		rep index = id.get();
+		rep pageIndex = index / PageSize;
+		if (pageIndex >= storage.size()) return 0;
+		PageData& page = storage[pageIndex];
+		unsigned short relIndex = index % PageSize;
+		if (page.size == 0 || !page.check(relIndex)) return 0;
+		// remove
+		cur_size--;
+		if (page.size == 1) {
+			if (storage.size() - 1 == pageIndex) {
+				storage.resize(storage.size() - 1);
+				return 1;
+			}
+			page.clear();
+			return 1;
+		}
+		page.destroy(relIndex);
+		return 1;
 	}
 
 	inline iterator find(id_type id) {
 		rep index = id.get();
 		if (storage.size() <= index / PageSize) return end();
 		const PageData& page = storage[index / PageSize];
-		if (page.check(index % PageSize)) return iterator(*this, index);
+		if (page.size != 0 && page.check(index % PageSize)) return iterator(*this, index);
 		return end();
 	}
 	inline const_iterator find(id_type id) const {
 		rep index = id.get();
 		if (storage.size() <= index / PageSize) return end();
 		const PageData& page = storage[index / PageSize];
-		if (page.check(index % PageSize)) return const_iterator(*this, index);
+		if (page.size != 0 && page.check(index % PageSize)) return const_iterator(*this, index);
 		return end();
 	}
 
@@ -614,6 +663,35 @@ private:
 			return { iterator(*this, index), true };
 		}
 		if (page.check(relIndex)) {
+			return { iterator(*this, index), false };
+		}
+		page.emplace(relIndex, std::forward<Args>(args)...);
+		cur_size++;
+		return { iterator(*this, index), true };
+	}
+
+	template <class... Args>
+	std::pair<iterator, bool> emplaceOrAssignWithKey(id_type id, Args&&... args) {
+		rep index = id.get();
+		rep pageIndex = index / PageSize;
+		unsigned short relIndex = index % PageSize;
+		if (storage.size() <= pageIndex) {
+			storage.resize(pageIndex + 1);
+			PageData& page = storage[index / PageSize];
+			page.init();
+			page.emplace(relIndex, std::forward<Args>(args)...);
+			cur_size++;
+			return { iterator(*this, index), true };
+		}
+		PageData& page = storage[index / PageSize];
+		if (page.size == 0) {
+			page.init();
+			page.emplace(relIndex, std::forward<Args>(args)...);
+			cur_size++;
+			return { iterator(*this, index), true };
+		}
+		if (page.check(relIndex)) {
+			page.assign(relIndex, std::forward<Args>(args)...);
 			return { iterator(*this, index), false };
 		}
 		page.emplace(relIndex, std::forward<Args>(args)...);

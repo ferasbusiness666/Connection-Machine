@@ -184,7 +184,7 @@ void JunctionMergeEvalLayer::run() {
 		if (isJunctionType(iter.second)) {
 			connectionPointsToScan.emplace(iter.first, 0);
 		} else {
-			auto suc = nextState.getGateIdRemapping().emplace(iter.first, iter.first);
+			auto suc = nextState.getGateIdRemapping().try_emplace(iter.first, iter.first);
 			assert(suc.second);
 			nextState.getGateIdReverseRemapping().emplace(iter.first, iter.first);
 			assert(nextState.getGateIdReverseRemapping().size() == nextState.getGateIdRemapping().size());
@@ -385,7 +385,7 @@ void JunctionMergeEvalLayer::run() {
 			}
 		}
 		for (eval_gate_id junctionId : junctions) {
-			auto suc = nextState.getGateIdRemapping().emplace(junctionId, mergedGateId);
+			auto suc = nextState.getGateIdRemapping().try_emplace(junctionId, mergedGateId);
 			assert(suc.second);
 			nextState.getGateIdReverseRemapping().emplace(mergedGateId, junctionId);
 			assert(nextState.getGateIdReverseRemapping().size() == nextState.getGateIdRemapping().size());

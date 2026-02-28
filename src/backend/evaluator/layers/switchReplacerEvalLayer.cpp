@@ -61,7 +61,7 @@ void SwitchReplacerEvalLayer::run() {
 		nextState.removeGate(iter.first);
 	}
 	for (auto iter : currentState.getAddedGates()) {
-		nextState.getGateIdRemapping().emplace(iter.first, iter.first);
+		nextState.getGateIdRemapping().try_emplace(iter.first, iter.first);
 		nextState.getGateIdReverseRemapping().emplace(iter.first, iter.first);
 		nextState.addGate(iter.first, iter.second);
 	}

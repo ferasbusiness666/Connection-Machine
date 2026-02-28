@@ -23,7 +23,7 @@ EvalLogicSimulator::EvalLogicSimulator(
 		gateIdMapping.try_emplace(pair.first, simulatorId);
 	}
 	for (auto pair : evalLayerState.getGates()) {
-		for (std::pair<connection_end_id_t, std::unordered_set<EvalConnectionPoint>> connectionsPair : pair.second.connections) {
+		for (const auto& connectionsPair : pair.second.connections) {
 			for (EvalConnectionPoint otherConnectionPoint : connectionsPair.second) {
 				// need to add some logic to not double make connections
 				if (

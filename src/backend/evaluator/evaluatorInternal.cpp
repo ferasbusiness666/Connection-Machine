@@ -42,7 +42,7 @@ EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, Evaluator& evaluato
 		auto portToInternalPointMappingIter = portToInternalPointMapping.find(connectionEndId);
 		if (!block) {
 			if (portToInternalPointMappingIter == portToInternalPointMapping.end()) {
-				portToInternalPointMapping.emplace(connectionEndId, InternalPointData(portType, bitWidth));
+				portToInternalPointMapping.try_emplace(connectionEndId, InternalPointData(portType, bitWidth));
 			} else if (portToInternalPointMappingIter->second.connectionPoint.has_value()) {
 				EvalConnectionPoint connectionPoint = portToInternalPointMappingIter->second.connectionPoint.value();
 				portToInternalPointMappingIter->second.connectionPoint = std::nullopt;
@@ -58,7 +58,7 @@ EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, Evaluator& evaluato
 				internalConnectionEndId = 0;
 			} else {
 				if (portToInternalPointMappingIter == portToInternalPointMapping.end()) {
-					portToInternalPointMapping.emplace(connectionEndId, InternalPointData(portType, bitWidth));
+					portToInternalPointMapping.try_emplace(connectionEndId, InternalPointData(portType, bitWidth));
 				} else if (portToInternalPointMappingIter->second.connectionPoint.has_value()) {
 					EvalConnectionPoint connectionPoint = portToInternalPointMappingIter->second.connectionPoint.value();
 					portToInternalPointMappingIter->second.connectionPoint = std::nullopt;
@@ -72,7 +72,7 @@ EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, Evaluator& evaluato
 		case BlockType::TICK_BUTTON: {
 			if (bitWidth != 1) {
 				if (portToInternalPointMappingIter == portToInternalPointMapping.end()) {
-					portToInternalPointMapping.emplace(connectionEndId, InternalPointData(portType, bitWidth));
+					portToInternalPointMapping.try_emplace(connectionEndId, InternalPointData(portType, bitWidth));
 				} else if (portToInternalPointMappingIter->second.connectionPoint.has_value()) {
 					EvalConnectionPoint connectionPoint = portToInternalPointMappingIter->second.connectionPoint.value();
 					portToInternalPointMappingIter->second.connectionPoint = std::nullopt;
@@ -85,7 +85,7 @@ EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, Evaluator& evaluato
 		case BlockType::LIGHT: {
 			if (bitWidth != 1) {
 				if (portToInternalPointMappingIter == portToInternalPointMapping.end()) {
-					portToInternalPointMapping.emplace(connectionEndId, InternalPointData(portType, bitWidth));
+					portToInternalPointMapping.try_emplace(connectionEndId, InternalPointData(portType, bitWidth));
 				} else if (portToInternalPointMappingIter->second.connectionPoint.has_value()) {
 					EvalConnectionPoint connectionPoint = portToInternalPointMappingIter->second.connectionPoint.value();
 					portToInternalPointMappingIter->second.connectionPoint = std::nullopt;
@@ -106,7 +106,7 @@ EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, Evaluator& evaluato
 			}
 			if (!optInternalConnectionEndId.has_value() || bitWidth != internalBlockData->getConnectionBitWidth(optInternalConnectionEndId.value())) {
 				if (portToInternalPointMappingIter == portToInternalPointMapping.end()) {
-					portToInternalPointMapping.emplace(connectionEndId, InternalPointData(portType, bitWidth));
+					portToInternalPointMapping.try_emplace(connectionEndId, InternalPointData(portType, bitWidth));
 				} else if (portToInternalPointMappingIter->second.connectionPoint.has_value()) {
 					EvalConnectionPoint connectionPoint = portToInternalPointMappingIter->second.connectionPoint.value();
 					portToInternalPointMappingIter->second.connectionPoint = std::nullopt;
@@ -123,7 +123,7 @@ EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, Evaluator& evaluato
 			return;
 		}
 		if (portToInternalPointMappingIter == portToInternalPointMapping.end()) {
-			portToInternalPointMapping.emplace(connectionEndId, InternalPointData(EvalConnectionPoint(positionRemappingIter->second.first, internalConnectionEndId), portType, bitWidth));
+			portToInternalPointMapping.try_emplace(connectionEndId, InternalPointData(EvalConnectionPoint(positionRemappingIter->second.first, internalConnectionEndId), portType, bitWidth));
 		} else if (portToInternalPointMappingIter->second.connectionPoint != EvalConnectionPoint(positionRemappingIter->second.first, internalConnectionEndId)) {
 			EvalConnectionPoint connectionPoint = portToInternalPointMappingIter->second.connectionPoint.value_or(EvalConnectionPoint::null());
 			portToInternalPointMappingIter->second.connectionPoint = EvalConnectionPoint(positionRemappingIter->second.first, internalConnectionEndId);
