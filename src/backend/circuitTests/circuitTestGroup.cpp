@@ -11,6 +11,16 @@
 #include "logging/logging.h"
 #include "environment/environment.h"
 
+const CircuitTestGroup::TestCase* CircuitTestGroup::getTestCase(int id) {
+    if (id > testCases.size()) return nullptr;
+    return &testCases[id];
+}
+
+const CircuitTestGroup::TestCase* CircuitTestGroup::getTestCase(std::string name) {
+    if (!testCaseNameToID.contains(name)) return nullptr;
+    return &testCases[testCaseNameToID[name]];
+}
+
 void CircuitTestGroup::addTestCase(std::string name) {
     testCases.emplace_back(name);
     testCaseNameToID.emplace(std::make_pair(name, testCases.size()-1));

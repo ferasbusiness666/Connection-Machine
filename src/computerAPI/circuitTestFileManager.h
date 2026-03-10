@@ -4,7 +4,7 @@
 #include "backend/circuitTests/circuitTestGroup.h"
 
 namespace CircuitTestFileManager {
-    std::optional<CircuitTestGroup> getCircuitTestFromFilePath(const std::string& path);
+    std::optional<CircuitTestGroup> getCircuitTestGroupFromFilePath(const std::string& path);
 
     bool saveToFile(const std::string& path, CircuitTestGroup& testGroup);
 }

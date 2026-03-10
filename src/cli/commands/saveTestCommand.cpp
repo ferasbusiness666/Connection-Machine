@@ -15,13 +15,13 @@ void SaveTestCommand::run(const std::vector<std::string>& args, Environment& env
 	}
 
     CircuitTestGroupManager& testGroupManager = environment.getBackend().getCircuitTestGroupManager();
-    CircuitTestGroup * testCase = testGroupManager.getCircuitTestGroup(args[1]);
-    if (testCase == NULL) {
+    CircuitTestGroup * testGroup = testGroupManager.getCircuitTestGroup(args[1]);
+    if (testGroup == NULL) {
         logError("Invalid test group name {}.", "SaveTestCommand", args[1]);
         return;
     }
 
-    if (!CircuitTestFileManager::saveToFile(args[2], *testCase)) {
+    if (!CircuitTestFileManager::saveToFile(args[2], *testGroup)) {
         logInfo("Not saved", "SaveTestCommand");
     } else {
         logInfo("Test Saved", "SaveTestCommand");

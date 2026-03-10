@@ -31,13 +31,13 @@ void RunTestCommand::run(const std::vector<std::string>& args, Environment& envi
     }
 
     CircuitTestGroupManager& testGroupManager = environment.getBackend().getCircuitTestGroupManager();
-    CircuitTestGroup * testCase = testGroupManager.getCircuitTestGroup(args[1]);
-    if (testCase == NULL) {
+    CircuitTestGroup * testGroup = testGroupManager.getCircuitTestGroup(args[1]);
+    if (testGroup == NULL) {
         logError("Invalid test group name {}.", "RunTestCommand", args[1]);
         return;
     }
 
-    if (!testCase->runAllTests(circuitBlock, false, environment)) {
+    if (!testGroup->runAllTests(circuitBlock, false, environment)) {
         logInfo("Test failed.", "RunTestCommand");
     }
     else {

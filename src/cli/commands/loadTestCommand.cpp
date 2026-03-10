@@ -15,13 +15,13 @@ void LoadTestCommand::run(const std::vector<std::string>& args, Environment& env
 	}
 
     CircuitTestGroupManager& testGroupManager = environment.getBackend().getCircuitTestGroupManager();
-    std::optional<CircuitTestGroup> testCase = CircuitTestFileManager::getCircuitTestFromFilePath(args[1]);
-    if (testCase == std::nullopt) {
+    std::optional<CircuitTestGroup> testGroup = CircuitTestFileManager::getCircuitTestGroupFromFilePath(args[1]);
+    if (testGroup == std::nullopt) {
         logInfo("No tests loaded", "LoadTestCommand");
         return;
     }
 
-    if (testGroupManager.addCircuitTestGroup(std::move(testCase.value()))) {
+    if (testGroupManager.addCircuitTestGroup(std::move(testGroup.value()))) {
         logInfo("Loaded test", "LoadTestCommand");
     } else {
         logError("Unable to load test", "LoadTestCommand");

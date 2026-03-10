@@ -12,18 +12,6 @@ class EvalLogicSimulator;
 class CircuitTestGroup {
     typedef std::unordered_multimap<std::string, Position> NamePositionMap;
 public:
-    CircuitTestGroup(std::string name) : name(name) {}
-    std::string getName() {return name;}
-    void addTestCase(std::string name);
-    bool runAllTests(BlockType blockType, bool haltOnFailure, Environment& environment);
-    bool runTests(std::vector<std::string>& testsToRun, BlockType blockType, bool haltOnFailure, Environment& environment);
-    bool runTests(std::vector<int>& testsToRun, BlockType blockType, bool haltOnFailure, Environment& environment);
-    bool addSetStatesCommand(std::string testCase, std::vector<std::pair<std::string, logic_state_t>> states);
-    bool addCheckStatesCommand(std::string testCase, std::vector<std::pair<std::string, logic_state_t>> states);
-    bool addTickStepCommand(std::string testCase, int ticks);
-    
-
-private:
     enum TestCommandType {
         NOP_COMMAND,
         SET_STATES,
@@ -58,10 +46,24 @@ private:
         std::vector<TestCommand> testCommands;
     };
 
+    CircuitTestGroup(std::string name) : name(name) {}
+    std::string getName() {return name;}
+    void addTestCase(std::string name);
+    const TestCase* getTestCase(int id);
+    const TestCase* getTestCase(std::string name);
+    bool runAllTests(BlockType blockType, bool haltOnFailure, Environment& environment);
+    bool runTests(std::vector<std::string>& testsToRun, BlockType blockType, bool haltOnFailure, Environment& environment);
+    bool runTests(std::vector<int>& testsToRun, BlockType blockType, bool haltOnFailure, Environment& environment);
+    bool addSetStatesCommand(std::string testCase, std::vector<std::pair<std::string, logic_state_t>> states);
+    bool addCheckStatesCommand(std::string testCase, std::vector<std::pair<std::string, logic_state_t>> states);
+    bool addTickStepCommand(std::string testCase, int ticks);
+
+ private:
     bool generateTestCircuit(BlockType blockType, Environment& environment);
     bool runSetStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition);
     bool runCheckStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition);
 
+    bool isTruthTable = false;
     std::string name;
     std::unordered_map<std::string, int> testCaseNameToID;
     std::vector<TestCase> testCases;

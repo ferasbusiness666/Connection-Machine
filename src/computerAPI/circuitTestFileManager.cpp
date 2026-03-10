@@ -12,7 +12,7 @@ std::optional<logic_state_t> stringToLogicState(const std::string& str) {
     return std::nullopt;
 }
 
-std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestFromFilePath(const std::string &path) {
+std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestGroupFromFilePath(const std::string &path) {
     logInfo("Parsing test file (.tst)", "CircuitTestFileManager");
 	std::ifstream inputFile(path, std::ios::in | std::ios::binary);
 	if (!inputFile.is_open()) {
