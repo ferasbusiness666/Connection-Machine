@@ -40,10 +40,10 @@ Orientation stringToOrientation(const std::string& str) {
 }
 
 std::optional<logic_state_t> stringToLogicState(const std::string& str) {
-	if (str == "LOW" || str == "L") return (logic_state_t)0;
-	if (str == "HIGH" || str == "H") return (logic_state_t)1;
-	if (str == "FLOATING" || str == "Z") return (logic_state_t)2;
-	if (str == "UNDEFINED" || str == "X") return (logic_state_t)3;
+	if (str == "LOW" || str == "L" || str == "l") return (logic_state_t)0;
+	if (str == "HIGH" || str == "H" || str == "h") return (logic_state_t)1;
+	if (str == "FLOATING" || str == "Z" || str == "z") return (logic_state_t)2;
+	if (str == "UNDEFINED" || str == "X" || str == "x") return (logic_state_t)3;
 	return std::nullopt;
 }
 

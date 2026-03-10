@@ -15,7 +15,7 @@ Position getPositionFromString(std::string& str1, std::string& str2, int line) {
 	if (isdigit(str1[1])) {
 		num1 = std::stoi(str1.substr(1));
 	} else {
-		logError("Invalid position on line {}.", "TutorialLoader", line);
+		logError("Invalid position on line {}.", "TutorialLoader", line + 1);
 		num1 = 0;
 	}
 	if (str1.ends_with(')')) {
@@ -23,14 +23,14 @@ Position getPositionFromString(std::string& str1, std::string& str2, int line) {
 		if (isdigit(str1[index])) {
 			num2 = std::stoi(str1.substr(index));
 		} else {
-			logError("Invalid position on line {}.", "TutorialLoader", line);
+			logError("Invalid position on line {}.", "TutorialLoader", line + 1);
 			num2 = 0;
 		}
 	} else {
 		if (isdigit(str2[0])) {
 			num2 = std::stoi(str2);
 		} else {
-			logError("Invalid position on line {}.", "TutorialLoader", line);
+			logError("Invalid position on line {}.", "TutorialLoader", line + 1);
 			num2 = 0;
 		}
 	}
@@ -48,20 +48,20 @@ void parsePreSteps(std::vector<std::string>& info, std::unordered_map<std::strin
 		} else if ((tok == "Tutorial:")) {
 			// Tutorial:
 			if (!(ss >> info[0])) {
-				logError("Invalid name on line {}, name must exist.", "TutorialLoader", i);
+				logError("Invalid name on line {}, name must exist.", "TutorialLoader", i + 1);
 				continue;
 			}
 		} else if (tok.starts_with("$")) {
 			// Macro (i.e. '$p1 (2, 5)')
 			if (tok.size() == 1) {
-				logError("Invalid macro on line {}, macro must contain a variable name.", "TutorialLoader", i);
+				logError("Invalid macro on line {}, macro must contain a variable name.", "TutorialLoader", i + 1);
 				continue;
 			}
 			std::string value;
 			value = ss.str().substr(tok.length() + 1);
 			logInfo(value);
 			if (!macros.emplace("(" + tok + ")", value).second) {
-				logError("Warning: Duplicate macro definition on line {}.", "TutorialLoader", i);
+				logError("Warning: Duplicate macro definition on line {}.", "TutorialLoader", i + 1);
 				continue;
 			}
 		}
@@ -126,7 +126,7 @@ void parseCondition(TutorialCondition& condition, const std::vector<std::string>
 			ss >> tok;
 			std::optional<logic_state_t> state = stringToLogicState(tok);
 			if (!state.has_value()) {
-				logError("Incorrectly formatted state on line {}.", "TutorialLoader", i);
+				logError("Incorrectly formatted state on line {}.", "TutorialLoader", i + 1);
 			}
 			ss >> tok;
 			ss >> tmp;
@@ -154,6 +154,7 @@ void parseAction(TutorialAction& action, const std::vector<std::string>& lines, 
 			action.messages.emplace_back(message);
 		} else if (tok == "Block") {
 			// (name) (x,y) (orientation-optional)
+			ss >> tok; // throw out 'Preview:'
 			BlockType blockName;
 			Position p;
 			Orientation orientation;
@@ -161,6 +162,7 @@ void parseAction(TutorialAction& action, const std::vector<std::string>& lines, 
 			action.blockPreviews.emplace_back(p, blockName, orientation);
 		} else if (tok == "Connection") {
 			// (x,y) (x,y)
+			ss >> tok; // throw out 'Preview:'
 			Position connectionOutput;
 			Position connectionInput;
 			parseConnection(ss, i, connectionOutput, connectionInput);
@@ -176,7 +178,7 @@ void parseStep(std::vector<TutorialStep>& steps, const std::vector<std::string>&
 		std::stringstream ss(lines[i]);
 		std::string tok;
 		ss >> tok;
-		if (tok == "Step:") {
+		if (tok == "Step:" || i + 1 == lines.size()) {
 			line = i - 1;
 			steps.emplace_back(condition, action);
 			return;
