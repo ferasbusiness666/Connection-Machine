@@ -12,7 +12,7 @@
 #include "environment/environment.h"
 
 const CircuitTestGroup::TestCase* CircuitTestGroup::getTestCase(int id) {
-    if (id > testCases.size()) return nullptr;
+    if (id >= testCases.size()) return nullptr;
     return &testCases[id];
 }
 
