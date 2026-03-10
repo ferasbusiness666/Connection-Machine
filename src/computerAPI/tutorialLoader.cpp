@@ -43,8 +43,8 @@ void parsePreSteps(std::vector<std::string>& info, std::unordered_map<std::strin
 		std::stringstream ss(lines[i]);
 		std::string tok;
 		ss >> tok;
-		if (tok == "version_0") {
-			// use version_0
+		if (tok == "version_0" || tok == "version_1") {
+			// do something with versions once there is not backwards compatibility
 		} else if ((tok == "Tutorial:")) {
 			// Tutorial:
 			if (!(ss >> info[0])) {
@@ -58,7 +58,7 @@ void parsePreSteps(std::vector<std::string>& info, std::unordered_map<std::strin
 				continue;
 			}
 			std::string value;
-			value = ss.str().substr(tok.length() + 1);
+			value = ss.str().substr(ss.str().find(tok) + tok.length() + 1);
 			logInfo(value);
 			if (!macros.emplace("(" + tok + ")", value).second) {
 				logError("Warning: Duplicate macro definition on line {}.", "TutorialLoader", i + 1);
@@ -150,7 +150,10 @@ void parseAction(TutorialAction& action, const std::vector<std::string>& lines, 
 		} else if (tok == "Message:") {
 			// name (x,y) orientation (optional)
 			std::string message;
-			message = ss.str().substr(tok.length() + 1);
+			message = ss.str().substr(ss.str().find(tok) + tok.length() + 1);
+			if (message.starts_with("\"") && message.ends_with("\"")) {
+				message = message.substr(1, message.length() - 2);
+			}
 			action.messages.emplace_back(message);
 		} else if (tok == "Block") {
 			// (name) (x,y) (orientation-optional)
