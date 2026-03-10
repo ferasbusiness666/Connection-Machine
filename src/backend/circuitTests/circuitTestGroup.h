@@ -19,7 +19,7 @@ public:
         TICK_STEP
     };
 
-    std::string getTestCommandTypeString(TestCommandType type) {
+    static std::string getTestCommandTypeString(TestCommandType type) {
         switch (type) {
             case 0:
                 return "NOP_COMMAND";
@@ -47,18 +47,24 @@ public:
     };
 
     CircuitTestGroup(std::string name) : name(name) {}
-    std::string getName() {return name;}
     void addTestCase(std::string name);
-    const TestCase* getTestCase(int id);
-    const TestCase* getTestCase(std::string name);
-    bool runAllTests(BlockType blockType, bool haltOnFailure, Environment& environment);
-    bool runTests(std::vector<std::string>& testsToRun, BlockType blockType, bool haltOnFailure, Environment& environment);
-    bool runTests(std::vector<int>& testsToRun, BlockType blockType, bool haltOnFailure, Environment& environment);
+    bool addInput(std::string input);
+    bool addOutput(std::string output);
     bool addSetStatesCommand(std::string testCase, std::vector<std::pair<std::string, logic_state_t>> states);
     bool addCheckStatesCommand(std::string testCase, std::vector<std::pair<std::string, logic_state_t>> states);
     bool addTickStepCommand(std::string testCase, int ticks);
+    std::string getName() {return name;}
+    const TestCase* getTestCase(int id);
+    const TestCase* getTestCase(std::string name);
+    std::set<std::string>::const_iterator getInputIterator() {return inputs.cbegin();} // TODO: is this okay?
+    std::set<std::string>::const_iterator getOutputIterator() {return outputs.cbegin();}
+    std::set<std::string>::const_iterator getInputIteratorEnd() {return inputs.cend();}
+    std::set<std::string>::const_iterator getOutputIteratorEnd() {return outputs.cend();}
+    bool runAllTests(BlockType blockType, bool haltOnFailure, Environment& environment);
+    bool runTests(std::vector<std::string>& testsToRun, BlockType blockType, bool haltOnFailure, Environment& environment);
+    bool runTests(std::vector<int>& testsToRun, BlockType blockType, bool haltOnFailure, Environment& environment);
 
- private:
+private:
     bool generateTestCircuit(BlockType blockType, Environment& environment);
     bool runSetStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition);
     bool runCheckStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition);
@@ -69,6 +75,9 @@ public:
     std::vector<TestCase> testCases;
     NamePositionMap namePositionMap;
     EvalLogicSimulator* simulator;
+    std::set<std::string> inputs; // TODO: actually make use of these somehow
+    std::set<std::string> outputs;
+
 };
 
 #endif

@@ -41,19 +41,39 @@ std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestGroupFromF
         return std::nullopt;
     }
 
-    std::unordered_set<std::string> portNames = {};
+    CircuitTestGroup testGroup(testName);
+
+    std::set<std::string> inputs;
     inputFile >> token;
-    if (token == "Ports:") {
+    if (token == "Inputs:") {
         inputFile >> std::ws;
         while(inputFile.peek() == '"') {
             std::string portName;
             inputFile >> std::quoted(portName);
-            portNames.insert(portName);
-            logInfo("New port name {}", "CircuitTestFileManager", portName);
+            testGroup.addInput(portName);
+            inputs.insert(portName);
+            logInfo("New input name {}", "CircuitTestFileManager", portName);
             inputFile >> std::ws;
         }
     } else {
-        logError("Invalid file format, expected 'Ports:' on line 3", "CircuitTestFileManager");
+        logError("Invalid file format, expected 'Inputs:' on line 3", "CircuitTestFileManager");
+        return std::nullopt;
+    }
+
+    std::set<std::string> outputs;
+    inputFile >> token;
+    if (token == "Outputs:") {
+        inputFile >> std::ws;
+        while(inputFile.peek() == '"') {
+            std::string portName;
+            inputFile >> std::quoted(portName);
+            testGroup.addOutput(portName);
+            outputs.insert(portName);
+            logInfo("New output name {}", "CircuitTestFileManager", portName);
+            inputFile >> std::ws;
+        }
+    } else {
+        logError("Invalid file format, expected 'Outputs:' on line 4", "CircuitTestFileManager");
         return std::nullopt;
     }
 
@@ -61,11 +81,9 @@ std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestGroupFromF
     if (token == "Cases:") {
         inputFile >> std::ws;
     } else {
-        logError("Invalid file format, expected 'Cases:' on line 4", "CircuitTestFileManager");
+        logError("Invalid file format, expected 'Cases:' on line 5", "CircuitTestFileManager");
         return std::nullopt;
     }
-
-    CircuitTestGroup testGroup(testName);
 
     inputFile >> std::ws;
     std::string groupName = "";
@@ -92,8 +110,12 @@ std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestGroupFromF
                     while (inputFile.peek() != '>' && inputFile.peek() != '}' && !inputFile.eof()) {
                         std::string portName;
                         inputFile >> std::quoted(portName);
-                        if (!portNames.contains(portName)) {
-                            logError("Error parsing test file: unrecognized port name '{}', be sure to include it at the top of the file", "CircuitTestFileManager", portName);
+                        if (token.substr(1) == "Set:" && !inputs.contains(portName)) {
+                            logError("Error parsing test file: unrecognized input port name '{}', be sure to include it at the top of the file", "CircuitTestFileManager", portName);
+                            return std::nullopt;
+                        }
+                        if (token.substr(1) == "Check:" && !outputs.contains(portName)) {
+                            logError("Error parsing test file: unrecognized input port name '{}', be sure to include it at the top of the file", "CircuitTestFileManager", portName);
                             return std::nullopt;
                         }
                         inputFile >> std::ws;
@@ -142,7 +164,52 @@ bool CircuitTestFileManager::saveToFile(const std::string& path, CircuitTestGrou
 
     outputFile << "version_0\n";
     outputFile << "Test: \"" << testGroup.getName() << "\"\n";
-    std::vector<std::string> ports;
+
+    outputFile << "Inputs: ";
+    for (auto it = testGroup.getInputIterator(); it != testGroup.getInputIteratorEnd(); it++) {
+        outputFile << "\"" << *it << "\" ";
+    }
+
+    outputFile << "\nOutputs: ";
+    for (auto it = testGroup.getOutputIterator(); it != testGroup.getOutputIteratorEnd(); it++) {
+        outputFile << "\"" << *it << "\"";
+    }
+
+    outputFile << "\nCases:\n";
+
+    int i = 0;
+    const CircuitTestGroup::TestCase* testCase = testGroup.getTestCase(i);
+    while (testCase != nullptr) {
+        outputFile << "\"" << testCase->name << "\" {\n";
+        for (int j=0; j<testCase->testCommands.size(); j++) {
+            const CircuitTestGroup::TestCommand testCommand = testCase->testCommands[j];
+            if (testCommand.type == CircuitTestGroup::TestCommandType::NOP_COMMAND) {
+                logInfo(">Command NOP", "CircuitTestFileManager");
+            } else if (testCommand.type == CircuitTestGroup::TestCommandType::SET_STATES) {
+                logInfo(">Command SET", "CircuitTestFileManager");
+                outputFile << "\t>Set:\n";
+                for (int x=0; x<testCommand.states.size(); x++) {
+                    outputFile << "\t\t\"" << testCommand.states[x].first << "\":" << (unsigned int)testCommand.states[x].second << "\n";
+                    logInfo(">>Port {}: {}", "CircuitTestFileManager", testCommand.states[x].first, (unsigned int)testCommand.states[x].second);
+                }
+            } else if (testCommand.type == CircuitTestGroup::TestCommandType::CHECK_STATES) {
+                logInfo(">Command CHECK", "CircuitTestFileManager");
+                outputFile << "\t>Check:\n";
+                for (int x=0; x<testCommand.states.size(); x++) {
+                    outputFile << "\t\t\"" << testCommand.states[x].first << "\":" << (unsigned int)testCommand.states[x].second << "\n";
+                    logInfo(">>Port {}: {}", "CircuitTestFileManager", testCommand.states[x].first, (unsigned int)testCommand.states[x].second);
+                }
+            } else if (testCommand.type == CircuitTestGroup::TestCommandType::TICK_STEP) {
+                logInfo(">Command STEP {}", "CircuitTestFileManager", testCommand.ticks);
+                outputFile << "\t>Step " << testCommand.ticks << "\n";
+            } else {
+                logInfo(">Command UNKNOWN");
+            }
+        }
+        outputFile << "}\n";
+        i++;
+        testCase = testGroup.getTestCase(i);
+    }
 
     return true;
 }

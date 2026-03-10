@@ -11,19 +11,21 @@
 #include "logging/logging.h"
 #include "environment/environment.h"
 
-const CircuitTestGroup::TestCase* CircuitTestGroup::getTestCase(int id) {
-    if (id >= testCases.size()) return nullptr;
-    return &testCases[id];
-}
-
-const CircuitTestGroup::TestCase* CircuitTestGroup::getTestCase(std::string name) {
-    if (!testCaseNameToID.contains(name)) return nullptr;
-    return &testCases[testCaseNameToID[name]];
-}
-
 void CircuitTestGroup::addTestCase(std::string name) {
     testCases.emplace_back(name);
     testCaseNameToID.emplace(std::make_pair(name, testCases.size()-1));
+}
+
+bool CircuitTestGroup::addInput(std::string input) {
+    if (inputs.contains(input)) return false;
+    else inputs.insert(input);
+    return true;
+}
+
+bool CircuitTestGroup::addOutput(std::string output) {
+    if (outputs.contains(output)) return false;
+    else outputs.insert(output);
+    return true;
 }
 
 bool CircuitTestGroup::addSetStatesCommand(std::string testCase, std::vector<std::pair<std::string, logic_state_t>> states) {
@@ -59,7 +61,18 @@ bool CircuitTestGroup::addTickStepCommand(std::string testCase, int ticks) {
     return true;
 }
 
+const CircuitTestGroup::TestCase* CircuitTestGroup::getTestCase(int id) {
+    if (id >= testCases.size()) return nullptr;
+    return &testCases[id];
+}
+
+const CircuitTestGroup::TestCase* CircuitTestGroup::getTestCase(std::string name) {
+    if (!testCaseNameToID.contains(name)) return nullptr;
+    return &testCases[testCaseNameToID[name]];
+}
+
 bool CircuitTestGroup::generateTestCircuit(BlockType blockType, Environment& environment) {
+    // TODO: validate that the ports used in the test group match the block type
     Backend& backend = environment.getBackend();
     CircuitManager& cirManager = backend.getCircuitManager();
     SimulatorManager& evalManager = backend.getSimulatorManager();
