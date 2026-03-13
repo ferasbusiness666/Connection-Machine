@@ -10,6 +10,7 @@
 #include "backend/position/position.h"
 #include "logging/logging.h"
 #include "environment/environment.h"
+#include <optional>
 
 void CircuitTestGroup::addTestCase(std::string name) {
     testCases.emplace_back(name);
@@ -72,7 +73,6 @@ const CircuitTestGroup::TestCase* CircuitTestGroup::getTestCase(std::string name
 }
 
 bool CircuitTestGroup::generateTestCircuit(BlockType blockType, Environment& environment) {
-    // TODO: validate that the ports used in the test group match the block type
     Backend& backend = environment.getBackend();
     CircuitManager& cirManager = backend.getCircuitManager();
     SimulatorManager& evalManager = backend.getSimulatorManager();
@@ -97,35 +97,65 @@ bool CircuitTestGroup::generateTestCircuit(BlockType blockType, Environment& env
 
 	const Block* testedBlock = cir->getBlockContainer().getBlock(Position(0, 0));
 
+    // iterate through the connections on the block type and create a switch/light to represent each input/output on a test circuit
     for (auto iter = connections.begin(); iter != connections.end(); iter++) {
         if (iter->second.portType == BlockData::ConnectionData::PortType::INPUT || iter->second.portType == BlockData::ConnectionData::PortType::BIDIRECTIONAL) {
             Position externalConnPos = Position(-1-namePositionMap.size(), 0);
-            if (!cir->tryInsertBlock(externalConnPos, Orientation(), SWITCH)) {
-                logError("Couldn't insert switch test circuit block", "circuitTestGroup");
+
+            std::optional<std::string> blockNameOpt = blockData->getConnectionIdToName(iter->first);
+            if (blockNameOpt == std::nullopt) {
+                logError("Unable to resolve block name for id {}", "CircuitTestGroup", iter->first);
                 return false;
             }
-            const Block* block = blockContainer.getBlock(externalConnPos);
+            std::string blockName = blockNameOpt.value();
+            if (!inputs.contains(blockName)) {
+                logWarning("Tested circuit's port '{}' does not match any inputs expected by test, this may cause errors", "CircuitTestGroup", blockName);
+            }
+            if (!cir->tryInsertBlock(externalConnPos, Orientation(), SWITCH)) {
+                logError("Couldn't insert switch test circuit block", "CircuitTestGroup");
+                return false;
+            }
 
+            const Block* block = blockContainer.getBlock(externalConnPos);
             if (!cir->tryCreateConnection(ConnectionEnd(testedBlock->id(), iter->first), ConnectionEnd(block->id(), 0))) {
-                logError("Couldn't create switch test circuit connection, ext: {}", "circuitTestGroup", externalConnPos);
+                logError("Couldn't create switch test circuit connection, ext: {}", "CircuitTestGroup", externalConnPos);
                 return false;
             }
             namePositionMap.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
         }
         if (iter->second.portType == BlockData::ConnectionData::PortType::OUTPUT || iter->second.portType == BlockData::ConnectionData::PortType::BIDIRECTIONAL) {
-            Position internalConnPos = Position(iter->second.positionOnBlock.dx, iter->second.positionOnBlock.dy);
             Position externalConnPos = Position(-1-namePositionMap.size(), 0);
-            if (!cir->tryInsertBlock(externalConnPos, Orientation(), LIGHT)) {
-                logError("Couldn't insert light test circuit block", "circuitTestGroup");
+
+            std::optional<std::string> blockNameOpt = blockData->getConnectionIdToName(iter->first);
+            if (blockNameOpt == std::nullopt) {
+                logError("Unable to resolve block name for id {}", "CircuitTestGroup", iter->first);
                 return false;
             }
-            const Block* block = blockContainer.getBlock(externalConnPos);
+            std::string blockName = blockNameOpt.value();
+            if (!outputs.contains(blockName)) {
+                logWarning("Tested circuit's port '{}' does not match any outputs expected by test, this may cause errors", "CircuitTestGroup", blockName);
+            }
+            if (!cir->tryInsertBlock(externalConnPos, Orientation(), LIGHT)) {
+                logError("Couldn't insert light test circuit block", "CircuitTestGroup");
+                return false;
+            }
 
+            const Block* block = blockContainer.getBlock(externalConnPos);
             if (!cir->tryCreateConnection(ConnectionEnd(testedBlock->id(), iter->first), ConnectionEnd(block->id(), 0))) {
-                logError("Couldn't create light test circuit connection, ext: {} int: {}", "circuitTestGroup", externalConnPos, internalConnPos);
+                logError("Couldn't create light test circuit connection, ext: {}", "CircuitTestGroup", externalConnPos);
                 return false;
             }
             namePositionMap.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
+        }
+    }
+    for (auto iter = inputs.begin(); iter != inputs.end(); iter++) {
+        if (namePositionMap.find(*iter) == namePositionMap.end()) {
+            logWarning("Input '{}' expected by test not found on tested circuit, this may cause errors", "CircuitTestGroup", *iter);
+        }
+    }
+    for (auto iter = outputs.begin(); iter != outputs.end(); iter++) {
+        if (namePositionMap.find(*iter) == namePositionMap.end()) {
+            logWarning("Output '{}' expected by test not found on tested circuit, this may cause errors", "CircuitTestGroup", *iter);
         }
     }
     return true;
