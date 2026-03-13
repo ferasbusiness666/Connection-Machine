@@ -5,36 +5,36 @@
 #include "gui/viewportManager/circuitView/tutorial.h"
 #include "logging/logging.h"
 #include <cctype>
-#include <regex>
 #include <string>
 #include <unordered_map>
 
-Position getPositionFromString(std::string& str1, std::string& str2, int line) {
-	int num1;
-	int num2;
-	if (isdigit(str1[1])) {
-		num1 = std::stoi(str1.substr(1));
-	} else {
-		logError("Invalid position on line {}.", "TutorialLoader", line + 1);
-		num1 = 0;
+bool parsePosition(std::stringstream& ss, int line, Position& out) {
+	char ch;
+	int x;
+	int y;
+	if (!(ss >> ch) || ch != '(') {
+		logError("Invalid position. Expected '(' on line {}.", "TutorialLoader", line);
+		return false;
 	}
-	if (str1.ends_with(')')) {
-		int index = str1.find(',') + 1;
-		if (isdigit(str1[index])) {
-			num2 = std::stoi(str1.substr(index));
-		} else {
-			logError("Invalid position on line {}.", "TutorialLoader", line + 1);
-			num2 = 0;
-		}
-	} else {
-		if (isdigit(str2[0])) {
-			num2 = std::stoi(str2);
-		} else {
-			logError("Invalid position on line {}.", "TutorialLoader", line + 1);
-			num2 = 0;
-		}
+	if (!(ss >> x)) {
+		logError("Invalid position. Expected x coordinate on line {}.", "TutorialLoader", line);
+		return false;
 	}
-	return Position(num1, num2);
+	if (!(ss >> ch) || ch != ',') {
+		logError("Invalid position. Expected ',' on line {}.", "TutorialLoader", line);
+		return false;
+	}
+	if (!(ss >> y)) {
+		logError("Invalid position. Expected y coordinate on line {}.", "TutorialLoader", line);
+		return false;
+	}
+	if (!(ss >> ch) || ch != ')') {
+		logError("Invalid position. Expected ')' on line {}.", "TutorialLoader", line);
+		return false;
+	}
+
+	out = Position(x, y);
+	return true;
 }
 
 void parsePreSteps(std::vector<std::string>& info, std::unordered_map<std::string, std::string>& macros, const std::vector<std::string>& lines) {
@@ -48,7 +48,7 @@ void parsePreSteps(std::vector<std::string>& info, std::unordered_map<std::strin
 		} else if ((tok == "Tutorial:")) {
 			// Tutorial:
 			if (!(ss >> info[0])) {
-				logError("Invalid name on line {}, name must exist.", "TutorialLoader", i + 1);
+				logError("Invalid name on line {}, name should exist.", "TutorialLoader", i + 1);
 				continue;
 			}
 		} else if (tok.starts_with("$")) {
@@ -59,7 +59,6 @@ void parsePreSteps(std::vector<std::string>& info, std::unordered_map<std::strin
 			}
 			std::string value;
 			value = ss.str().substr(ss.str().find(tok) + tok.length() + 1);
-			logInfo(value);
 			if (!macros.emplace("(" + tok + ")", value).second) {
 				logError("Warning: Duplicate macro definition on line {}.", "TutorialLoader", i + 1);
 				continue;
@@ -69,9 +68,13 @@ void parsePreSteps(std::vector<std::string>& info, std::unordered_map<std::strin
 }
 
 void macroReplace(std::vector<std::string>& lines, std::unordered_map<std::string, std::string>& macros) {
-	for (int i = 0; i < lines.size(); i++) {
+	for (std::string& line : lines) {
 		for (auto& macro : macros) {
-			lines[i] = std::regex_replace(lines[i], (std::regex)macro.first, macro.second);
+			size_t pos = 0;
+			while ((pos = line.find(macro.first, pos)) != std::string::npos) {
+				line.replace(pos, macro.first.length(), macro.second);
+				pos += macro.second.length();
+			}
 		}
 	}
 }
@@ -82,23 +85,15 @@ void parseBlock(std::stringstream& ss, int line, BlockType& blockTypeOut, Positi
 	std::string tmp;
 	ss >> tok;
 	blockTypeOut = stringToBlockType(tok);
-	ss >> tmp;
-	ss >> tok;
-	posOut = getPositionFromString(tmp, tok, line);
+	parsePosition(ss, line, posOut);
 	ss >> tok;
 	orientationOut = stringToOrientation((tok));
 }
 
 void parseConnection(std::stringstream& ss, int line, Position& p1out, Position& p2out) {
 	// (x,y) (x,y)
-	std::string tok;
-	std::string tmp;
-	ss >> tok;
-	ss >> tmp;
-	p1out = getPositionFromString(tok, tmp, line);
-	ss >> tok;
-	ss >> tmp;
-	p2out = getPositionFromString(tok, tmp, line);
+	parsePosition(ss, line, p1out);
+	parsePosition(ss, line, p2out);
 }
 
 void parseCondition(TutorialCondition& condition, const std::vector<std::string>& lines, int& line) {
@@ -128,9 +123,8 @@ void parseCondition(TutorialCondition& condition, const std::vector<std::string>
 			if (!state.has_value()) {
 				logError("Incorrectly formatted state on line {}.", "TutorialLoader", i + 1);
 			}
-			ss >> tok;
-			ss >> tmp;
-			Position pos = getPositionFromString(tok, tmp, i);
+			Position pos;
+			parsePosition(ss, i, pos);
 			int numSteps;
 			ss >> numSteps;
 			condition.logicStates.emplace_back(pos, state.value(), numSteps);
@@ -208,7 +202,7 @@ std::vector<TutorialStep> parseTutorialFile(std::string fileName) {
 	logInfo("Loading tutorial '" + fileName + "'", "TutorialLoader");
 	std::ifstream istream("TutorialLib/" + fileName);
 	if (!istream.is_open()) {
-		logInfo("Failed to open file '" + fileName + "'", "TutorialLoader");
+		logError("Failed to open file '" + fileName + "'", "TutorialLoader");
 		return {};
 	}
 	std::vector<std::string> lines;
