@@ -46,7 +46,7 @@ public:
         std::vector<TestCommand> testCommands;
     };
 
-    CircuitTestGroup(std::string name) : name(name) {}
+    CircuitTestGroup(std::string name, bool isTruthTable) : name(name), isTruthTable(isTruthTable) {}
     void addTestCase(std::string name);
     bool addInput(std::string input);
     bool addOutput(std::string output);

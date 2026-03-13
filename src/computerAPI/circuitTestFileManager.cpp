@@ -2,13 +2,14 @@
 #include "backend/circuitTests/circuitTestGroup.h"
 #include "backend/evaluator/simulator/logicState.h"
 #include "logging/logging.h"
+#include <optional>
 #include <utility>
 
 std::optional<logic_state_t> stringToLogicState(const std::string& str) {
-    if (str == "LOW" || str == "L") return (logic_state_t)0;
-    if (str == "HIGH" || str == "H") return (logic_state_t)1;
-    if (str == "FLOATING" || str == "Z") return (logic_state_t)2;
-    if (str == "UNDEFINED" || str == "X") return (logic_state_t)3;
+    if (str == "LOW" || str == "L" || str == "0") return (logic_state_t)0;
+    if (str == "HIGH" || str == "H" || str == "1") return (logic_state_t)1;
+    if (str == "FLOATING" || str == "Z" || str == "2") return (logic_state_t)2;
+    if (str == "UNDEFINED" || str == "X" || str == "3") return (logic_state_t)3;
     return std::nullopt;
 }
 
@@ -41,7 +42,7 @@ std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestGroupFromF
         return std::nullopt;
     }
 
-    CircuitTestGroup testGroup(testName);
+    CircuitTestGroup testGroup(testName, false);
 
     std::set<std::string> inputs;
     inputFile >> token;
@@ -121,13 +122,15 @@ std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestGroupFromF
                         inputFile >> std::ws;
                         char colon;
                         inputFile >> colon;
-                        int portState;
-                        inputFile >> portState;
-                        if (portState < 0 || portState > 3) {
-                            logWarning("Warning parsing test file: unrecognized state {} for port {}", "CircuitTestFileManager", portState, portName);
+                        std::string portStateStr;
+                        inputFile >> portStateStr;
+                        std::optional<logic_state_t> portState = stringToLogicState(portStateStr);
+                        if (portState == std::nullopt) {
+                            logError("Error parsing test file: Unrecognized port state '{}'", "CircuitTestFileManager", portStateStr);
+                            return std::nullopt;
                         }
                         inputFile >> std::ws;
-                        states.push_back(std::make_pair(portName, (logic_state_t)portState));
+                        states.push_back(std::make_pair(portName, portState.value()));
                     }
                     if (token.substr(1) == "Set:") {
                         testGroup.addSetStatesCommand(groupName, states);
