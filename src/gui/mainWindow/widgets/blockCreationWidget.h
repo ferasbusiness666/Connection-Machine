@@ -24,6 +24,7 @@ private:
 
 	BlockType blockType = BlockType::NONE;
 
+	circuit_id_t renderingCircuitId = 0;
 	std::unique_ptr<CircuitView> circuitView;
 	std::mutex circuitsMux;
 	std::map<circuit_id_t, std::string> circuits;

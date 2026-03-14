@@ -236,6 +236,12 @@ void EvalLayerState::visualize() const {
 		logInfo("({}, {}) -> ({}, {})", "", pair.first.gateId, pair.first.connectionEndId, pair.second.gateId, pair.second.connectionEndId);
 	}
 	tmpBuf.clear();
+	for (auto pair : connectionPointRemappingToNothing) {
+		if (tmpBuf.size() != 0) tmpBuf += ", ";
+		tmpBuf += "[" + fmt::to_string(pair.gateId) + " " + fmt::to_string(pair.connectionEndId) + "]";
+	}
+	logInfo("{} Remapping to Nothing: {}", "", connectionPointRemappingToNothing.size(), tmpBuf);
+	tmpBuf.clear();
 	for (auto pair : addedGates) {
 		if (tmpBuf.size() != 0) tmpBuf += ", ";
 		tmpBuf += "[" + fmt::to_string(pair.first) + " " + fmt::to_string((unsigned int)pair.second) + "]";

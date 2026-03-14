@@ -130,6 +130,28 @@ EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, Evaluator& evaluato
 			sendPortUpdate(connectionEndId, connectionPoint, EvalConnectionPoint(positionRemappingIter->second.first, internalConnectionEndId));
 		}
 	});
+	receiver.linkFunction("blockDataSetConnection", [&](const DataUpdateEventManager::EventData* event) {
+		const auto* data = event->cast<std::pair<BlockType, connection_end_id_t>>();
+		if (!data) return;
+		BlockType blockType = data->get().first;
+		if (blockType != circuit.getBlockType()) return;
+		connection_end_id_t connectionEndId = data->get().second;
+		auto portToInternalPointMappingIter = portToInternalPointMapping.find(connectionEndId);
+		if (portToInternalPointMappingIter == portToInternalPointMapping.end()) {
+			const BlockData* blockData = circuitManager.getBlockDataManager().getBlockData(blockType);
+			const BlockData::ConnectionData* connectionData = blockData->getConnectionData(connectionEndId);
+			if (connectionData == nullptr) return;
+			assert(connectionData->portType != BlockData::ConnectionData::PortType::BIDIRECTIONAL); // can not happen and if it does some things are undefined
+			portToInternalPointMapping.try_emplace(connectionEndId, InternalPointData(connectionData->portType, connectionData->getBitWidth()));
+			const CircuitBlockData* circuitBlockData = circuitManager.getCircuitBlockDataManager().getCircuitBlockData(circuit.getCircuitId());
+			const Position* portPosition = circuitBlockData->getConnectionIdToPosition(connectionEndId);
+			if (portPosition != nullptr) { // I think this is correct
+				logError("Port position on block was set which is unexpected.", "EvaluatorInternal");
+				return;
+			}
+			sendPortUpdate(connectionEndId, EvalConnectionPoint::null(), EvalConnectionPoint::null());
+		}
+	});
 	receiver.linkFunction("blockDataPortBitConfigurationSet", [&](const DataUpdateEventManager::EventData* event) {
 		const auto* data = event->cast<std::tuple<BlockType, connection_end_id_t, unsigned int>>();
 		if (!data) return;

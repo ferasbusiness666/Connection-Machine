@@ -56,6 +56,15 @@ void BlockData::setPath(const std::string& path) {
 	sendBlockDataUpdate();
 }
 
+connection_end_id_t BlockData::getNewConnectionId() const {
+	connection_end_id_t maxId = 0;
+	for (auto connection : connections) {
+		if (maxId < connection.first)
+			maxId = connection.first;
+	}
+	return maxId.get() + 1;
+}
+
 void BlockData::removeConnection(connection_end_id_t connectionId) {
 	auto iter = connections.find(connectionId);
 	if (iter == connections.end()) return;

@@ -1,5 +1,6 @@
 #include "blockCreationWidget.h"
 
+#include "gui/viewportManager/circuitView/tools/other/portAdder.h"
 #include "gui/viewportManager/circuitView/events/customEvents.h"
 #include "imgui/imgui_stdlib.h"
 
@@ -54,10 +55,27 @@ BlockCreationWidget::BlockCreationWidget(WidgetId widgetId, MainWindow& mainWind
 		setupGUIValue<std::string>("CircuitName", "NULL", nullptr);
 	}
 	{
+		// =================================== Init rendering circuit ===================================
+		renderingCircuitId = getBackend().getCircuitManager().createNewCircuit(true);
+		assert(renderingCircuitId);
+		Circuit* circuit = getBackend().getCircuitManager().getCircuit(renderingCircuitId).get();
+		assert(circuit);
+		circuit->setEditable(false);
+		BlockData* blockData = getBackend().getBlockDataManager().getBlockData(circuit->getBlockType());
+		assert(blockData);
+		blockData->setIsPlaceable(false);
+		circuitView->setCircuit(renderingCircuitId);
+		for (auto& iter : circuitView->getBackend().getSimulatorManager().getSimulators()) {
+			if (iter.second->getCircuitId() == renderingCircuitId) {
+				circuitView->setSimulator(iter.second.get());
+			}
+		}
+	}
+	{
 		// =================================== Init all data ===================================
-		const CircuitBlockData* circuitBlockData = getMainWindow().getEnvironment().getBackend().getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
+		const CircuitBlockData* circuitBlockData = getBackend().getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
 		if (circuitBlockData) {
-			const BlockData* blockData = getMainWindow().getEnvironment().getBackend().getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
+			const BlockData* blockData = getBackend().getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
 			assert(blockData);
 			blockType = blockData->getBlockType();
 			std::lock_guard mux(blockDataCopyMux);
@@ -65,8 +83,8 @@ BlockCreationWidget::BlockCreationWidget(WidgetId widgetId, MainWindow& mainWind
 		}
 		{
 			std::lock_guard mux(circuitsMux);
-			for (const auto& circuit : getMainWindow().getEnvironment().getBackend().getCircuitManager().getCircuits()) {
-				circuits.emplace(circuit.first, circuit.second->getCircuitName());
+			for (const auto& circuit : getBackend().getCircuitManager().getCircuits()) {
+				if (circuit.second->isEditable()) circuits.emplace(circuit.first, circuit.second->getCircuitName());
 			}
 		}
 	}
@@ -75,8 +93,8 @@ BlockCreationWidget::BlockCreationWidget(WidgetId widgetId, MainWindow& mainWind
 		{
 			std::lock_guard mux(circuitsMux);
 			circuits.clear();
-			for (const auto& circuit : getMainWindow().getEnvironment().getBackend().getCircuitManager().getCircuits()) {
-				circuits.emplace(circuit.first, circuit.second->getCircuitName());
+			for (const auto& circuit : getBackend().getCircuitManager().getCircuits()) {
+				if (circuit.second->isEditable()) circuits.emplace(circuit.first, circuit.second->getCircuitName());
 			}
 		}
 		// update renderData
@@ -91,7 +109,7 @@ BlockCreationWidget::BlockCreationWidget(WidgetId widgetId, MainWindow& mainWind
 		}
 	});
 	setupGUIValue<circuit_id_t>("circuitId", circuitId, [this](const circuit_id_t& circuitId) {
-		const CircuitBlockData* circuitBlockData = getMainWindow().getEnvironment().getBackend().getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
+		const CircuitBlockData* circuitBlockData = getBackend().getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
 		if (circuitBlockData == nullptr) {
 			std::lock_guard mux(blockDataCopyMux);
 			blockDataCopy = std::nullopt;
@@ -103,12 +121,10 @@ BlockCreationWidget::BlockCreationWidget(WidgetId widgetId, MainWindow& mainWind
 		blockType = blockData->getBlockType();
 		std::lock_guard mux(blockDataCopyMux);
 		blockDataCopy = blockData->getBlockDataCopy();
-		circuitView->setCircuit(circuitId);
-		for (auto& iter : circuitView->getBackend().getSimulatorManager().getSimulators()) {
-			if (iter.second->getCircuitId() == circuitId) {
-				circuitView->setSimulator(iter.second.get());
-			}
-		}
+		Circuit* circuit = getBackend().getCircuit(renderingCircuitId).get();
+		circuit->clear();
+		circuit->tryInsertBlock(Position(), Orientation(), blockData->getBlockType());
+		circuitView->getViewManager().focus();
 	});
 }
 
@@ -181,7 +197,7 @@ void BlockCreationWidget::render() {
 		}
 		std::lock_guard mux(blockDataCopyMux);
 		ImGui::PushStyleColor(ImGuiCol_ChildBg, GUIColors::BACKGROUND);
-		ifGui (ImGui::BeginChild("##mainView", ImVec2(ImGui::GetContentRegionAvail().x - 400, ImGui::GetContentRegionAvail().y), ImGuiChildFlags_ResizeX), ImGui::PopStyleColor()) {
+		ifGui (ImGui::BeginChild("##mainView", ImVec2(ImGui::GetContentRegionAvail().x - 200, ImGui::GetContentRegionAvail().y), ImGuiChildFlags_ResizeX), ImGui::PopStyleColor()) {
 			ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 			ImVec2 viewportWindowScreenPos = ImGui::GetCursorScreenPos();
 			ImVec2 viewportWindowPos = ImGui::GetCursorPos();
@@ -210,6 +226,84 @@ void BlockCreationWidget::render() {
 			setGUIValue_rendering("MouseInView", isHovered);
 			setGUIValue_rendering("CircuitViewSize", Vec2(viewportPanelSize.x, viewportPanelSize.y));
 			setGUIValue_rendering("CircuitViewIsFocused", ImGui::IsItemFocused());
+
+			ImDrawList* draw_list = ImGui::GetWindowDrawList();
+			draw_list->ChannelsSplit(2);
+			ImVec2 simControlsSize;
+			const int offset = 2;
+			const int padding = 4;
+			{
+				draw_list->ChannelsSetCurrent(1);
+				ImGui::SetCursorPos({ viewportWindowPos.x + padding + offset, viewportWindowPos.y + padding + offset });
+				ImGui::BeginGroup();
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+					FPosition mouseGridPos = getGUIValue_rendering<FPosition>("MouseGridPos");
+					ImGui::Text("Mouse: (%.2f, %.2f)", mouseGridPos.x, mouseGridPos.y);
+					if (ImGui::Button("Add Port"))
+						ImGui::OpenPopup("port_popup");
+
+					if (blockType != BlockType::NONE) {
+						ImGui::SameLine();
+						ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.6f, 0.6f, 0.6f, 0.8f));
+						ifGui (ImGui::BeginPopup("port_popup"), ImGui::PopStyleColor();) {
+							if (ImGui::Selectable("Input")) {
+								App::runOnMain([this, circuitId, name = blockDataCopy->name](){
+									auto tool = std::dynamic_pointer_cast<PortAdder>(
+										circuitView->getToolManager().selectTool(std::make_shared<PortAdder>(getEnvironment()))
+									);
+									if (tool) {
+										tool->setup(true, [this](Position position){
+											BlockData* blockData = getBackend().getBlockDataManager().getBlockData(blockType);
+											if (blockData == nullptr) return;
+											blockData->setConnectionInput(position - Position(), blockData->getNewConnectionId());
+										});
+									} else {
+										logError("Failed to set tool to PortAdder", "BlockCreationWidget");
+									}
+								});
+							}
+							if (ImGui::Selectable("Output")) {
+								App::runOnMain([this, circuitId, name = blockDataCopy->name](){
+									auto tool = std::dynamic_pointer_cast<PortAdder>(
+										circuitView->getToolManager().selectTool(std::make_shared<PortAdder>(getEnvironment()))
+									);
+									if (tool) {
+										tool->setup(false, [this](Position position){
+											BlockData* blockData = getBackend().getBlockDataManager().getBlockData(blockType);
+											if (blockData == nullptr) return;
+											blockData->setConnectionOutput(position - Position(), blockData->getNewConnectionId());
+										});
+									} else {
+										logError("Failed to set tool to PortAdder", "BlockCreationWidget");
+									}
+								});
+							}
+							ImGui::EndPopup();
+						}
+					}
+					ImGui::PopStyleColor();
+				ImGui::EndGroup();
+				simControlsSize = ImGui::GetItemRectSize();
+			}
+			{
+				draw_list->ChannelsSetCurrent(0);
+				if (blockType != BlockType::NONE) {
+					ImGui::GetWindowDrawList()->AddRectFilled(
+						{ viewportWindowScreenPos.x + offset, viewportWindowScreenPos.y + offset },
+						{ viewportWindowScreenPos.x + simControlsSize.x + padding * 2 + offset, viewportWindowScreenPos.y + simControlsSize.y + padding * 2 + offset },
+						ImColor(0.f, 0.f, 0.f, 0.1f),
+						5.f
+					);
+				} else {
+					ImGui::GetWindowDrawList()->AddRectFilled(
+						{ viewportWindowScreenPos.x + offset, viewportWindowScreenPos.y + offset },
+						{ viewportWindowScreenPos.x + simControlsSize.x + padding * 2 + offset, viewportWindowScreenPos.y + simControlsSize.y + padding * 2 + offset },
+						ImColor(0.f, 0.f, 0.f, 0.2f),
+						5.f
+					);
+				}
+			}
+			draw_list->ChannelsMerge();
 		}
 		ImGui::EndChild();
 		ImGui::SameLine();
@@ -239,7 +333,7 @@ void BlockCreationWidget::renderSideBar(circuit_id_t circuitId) {
 			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
 			if (ImGui::InputText("##Name", &blockDataCopy->name)) {
 				App::runOnMain([this, circuitId, name = blockDataCopy->name](){
-					Backend& backend = getMainWindow().getEnvironment().getBackend();
+					Backend& backend = getEnvironment().getBackend();
 					Circuit* circuit = backend.getCircuit(circuitId).get();
 					if (!circuit) return;
 					circuit->setCircuitName(name);

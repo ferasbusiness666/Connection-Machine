@@ -259,7 +259,12 @@ void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vect
 	for (auto subcircuitsPair : subcircuits) {
 		if (subcircuitsPair.second.circuitId == circuitId) {
 			for (auto& [connectionEndId, preConnectionPoint, postConnectionPoint] : updatedPortIds) {
-				if (preConnectionPoint.isNull()) { assert(!postConnectionPoint.isNull()); continue; }
+				if (preConnectionPoint.isNull()) {
+					if (postConnectionPoint.isNull()) {
+						nextState.getConnectionPointRemappingToNothing().emplace(subcircuitsPair.first, connectionEndId);
+					}
+					continue;
+				}
 				auto connectionPointRemappingIter = nextState.getConnectionPointRemapping().find(EvalConnectionPoint(subcircuitsPair.first, connectionEndId));
 				assert(connectionPointRemappingIter != nextState.getConnectionPointRemapping().end());
 				assert(!connectionPointRemappingIter->second.isNull());
@@ -335,7 +340,7 @@ void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vect
 
 			// post port updates
 			for (auto [connectionEndId, preConnectionPoint, postConnectionPoint] : updatedPortIds) {
-				if (postConnectionPoint.isNull()) { assert(!preConnectionPoint.isNull()); continue; }
+				if (postConnectionPoint.isNull()) { continue; }
 				assert(evaluatorInternal.getPortToInternalPointMapping().contains(connectionEndId));
 				const EvalConnectionPoint& bottomConnectionPoint = evaluatorInternal.mapFromTopConnectionPointToBottomConnectionPointForOtherEvals(postConnectionPoint);
 				eval_gate_id thisGateId = subcircuitsPair.second.otherSimulatorToThisSimulatorIdMapping.at(bottomConnectionPoint.gateId);

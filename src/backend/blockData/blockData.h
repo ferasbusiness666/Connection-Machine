@@ -97,6 +97,8 @@ public:
 	void setPath(const std::string& path);
 	inline const std::string& getPath() const noexcept { return path; }
 
+	// just gives what a id a new connection port should use
+	connection_end_id_t getNewConnectionId() const;
 	void removeConnection(connection_end_id_t connectionId);
 	// trys to set a input connection in the block.
 	void setConnectionInput(Vector positionOnBlock, connection_end_id_t connectionId);
