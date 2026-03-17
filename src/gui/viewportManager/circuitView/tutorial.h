@@ -40,6 +40,7 @@ struct TutorialAction {
 	std::vector<std::string> messages;
 	std::vector<BlockPreviewInfo> blockPreviews;
 	std::vector<ConnectionPreviewInfo> connectionPreviews;
+	std::optional<FPosition> viewCenter;
 };
 
 struct TutorialStep {
@@ -56,7 +57,7 @@ public:
 	void setTutorial(const std::vector<TutorialStep>& steps);
 	void forceCompleteStep();
 
-    std::string selectTutorial();
+	std::string selectTutorial();
 
 private:
 	void checkTutorial(DifferenceSharedPtr diff, circuit_id_t circuitId);
@@ -66,12 +67,13 @@ private:
 	bool isCurrentStepComplete() const;
 	void advanceTutorial();
 
-	CircuitView* circuitView;
+	CircuitView& circuitView;
 	ElementCreator elementCreator;
 	Environment& environment;
 	EvalLogicSimulator* simulator;
-	SharedCircuit curentCircuit;
-	ViewManager viewManager;
+	SharedCircuit currentCircuit = nullptr;
+	ViewManager& viewManager;
+	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReciever;
 
 	bool tutorialRunning;
 	int tutorialState;

@@ -1,12 +1,5 @@
 #include "tutorialLoader.h"
-#include "backend/container/block/blockDefs.h"
-#include "backend/position/position.h"
 #include "computerAPI/circuits/textParser.h"
-#include "gui/viewportManager/circuitView/tutorial.h"
-#include "logging/logging.h"
-#include <cctype>
-#include <string>
-#include <unordered_map>
 
 bool parsePosition(std::stringstream& ss, int line, Position& out) {
 	char ch;
@@ -34,6 +27,35 @@ bool parsePosition(std::stringstream& ss, int line, Position& out) {
 	}
 
 	out = Position(x, y);
+	return true;
+}
+
+bool parseFPosition(std::stringstream& ss, int line, FPosition& out) {
+	char ch;
+	float x;
+	float y;
+	if (!(ss >> ch) || ch != '(') {
+		logError("Invalid position. Expected '(' on line {}.", "TutorialLoader", line);
+		return false;
+	}
+	if (!(ss >> x)) {
+		logError("Invalid position. Expected x coordinate on line {}.", "TutorialLoader", line);
+		return false;
+	}
+	if (!(ss >> ch) || ch != ',') {
+		logError("Invalid position. Expected ',' on line {}.", "TutorialLoader", line);
+		return false;
+	}
+	if (!(ss >> y)) {
+		logError("Invalid position. Expected y coordinate on line {}.", "TutorialLoader", line);
+		return false;
+	}
+	if (!(ss >> ch) || ch != ')') {
+		logError("Invalid position. Expected ')' on line {}.", "TutorialLoader", line);
+		return false;
+	}
+
+	out = FPosition(x, y);
 	return true;
 }
 
@@ -164,6 +186,12 @@ void parseAction(TutorialAction& action, const std::vector<std::string>& lines, 
 			Position connectionInput;
 			parseConnection(ss, i, connectionOutput, connectionInput);
 			action.connectionPreviews.emplace_back(connectionOutput, connectionInput);
+		} else if (tok == "View") {
+			// Center:
+			ss >> tok;
+			FPosition viewCenter;
+			parseFPosition(ss, i, viewCenter);
+			action.viewCenter = viewCenter;
 		}
 	}
 }

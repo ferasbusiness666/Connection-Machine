@@ -1,8 +1,8 @@
 #ifndef viewManager_h
 #define viewManager_h
 
-#include "backend/position/position.h"
 #include "backend/circuit/circuit.h"
+#include "backend/position/position.h"
 #include "util/vec2.h"
 
 class EventRegister;
@@ -11,13 +11,15 @@ class Event;
 class ViewManager {
 private:
 	struct ViewPositioningData {
-		ViewPositioningData(FPosition viewCenter, float viewScale) : viewCenter(viewCenter), viewScale(viewScale) {}
+		ViewPositioningData(FPosition viewCenter, float viewScale) : viewCenter(viewCenter), viewScale(viewScale) { }
 		FPosition viewCenter;
 		float viewScale;
 	};
 public:
 	// initialization
-	ViewManager() : viewCenter(), viewScale(8.0f), aspectRatio(16.0f / 9.0f), pointerViewPosition(0.5f, 0.5f) {}
+	ViewManager() : viewCenter(), viewScale(8.0f), aspectRatio(16.0f / 9.0f), pointerViewPosition(0.5f, 0.5f) { }
+	ViewManager(const ViewManager&) = delete;
+	void operator=(const ViewManager&) = delete;
 	void setUpEvents(EventRegister& eventRegister);
 
 	// event output
@@ -25,8 +27,15 @@ public:
 
 	// setters
 	void setCircuit(Circuit* circuit);
-	inline void setAspectRatio(float value) { if (value > 10000.f || value < 0.0001f) return; aspectRatio = value; viewChanged(); }
-	inline void setViewCenter(FPosition value) { viewCenter = value; viewChanged(); }
+	inline void setAspectRatio(float value) {
+		if (value > 10000.f || value < 0.0001f) return;
+		aspectRatio = value;
+		viewChanged();
+	}
+	inline void setViewCenter(FPosition value) {
+		viewCenter = value;
+		viewChanged();
+	}
 
 	// getters
 	inline float getViewScale() const { return viewScale; }

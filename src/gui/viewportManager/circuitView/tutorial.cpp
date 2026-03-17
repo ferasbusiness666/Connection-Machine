@@ -1,64 +1,72 @@
 #include "tutorial.h"
 
-#include "backend/position/position.h"
 #include "circuitView.h"
-#include <filesystem>
 
 #include "environment/environment.h"
 #include "events/customEvents.h"
-#include "logging/logging.h"
 
 Tutorial::Tutorial(Environment& environment, CircuitView& circuitView) :
-	circuitView(&circuitView), elementCreator(circuitView.getViewportId()), environment(environment), tutorialRunning(false), tutorialState(0) { }
+	circuitView(circuitView), elementCreator(circuitView.getViewportId()), viewManager(circuitView.getViewManager()), environment(environment),
+	dataUpdateEventReciever(environment.getBackend().getDataUpdateEventManager()), tutorialRunning(false), tutorialState(0) {
+	this->circuitView.getEventRegister().registerFunction("CircuitStateSet", [this](const Event* event) -> bool {
+		if (!tutorialRunning) return false;
+		const StateSetEvent* stateSetEvent = event->cast<StateSetEvent>();
+		if (!stateSetEvent) return false;
+		this->checkTutorialState(stateSetEvent->getPosition(), stateSetEvent->getState());
+		return false;
+	});
+	dataUpdateEventReciever.linkFunction("circuitViewChangeCircuit", [this](const DataUpdateEventManager::EventData* event) -> bool {
+		elementCreator.clear();
+		if (currentCircuit && this->circuitView.getCircuit()->getCircuitId() == currentCircuit->getCircuitId()) {
+			runCurrentStep();
+		}
+		return false;
+	});
+}
 
 void Tutorial::StartTutorial() {
 	if (tutorialRunning) return;
 	if (tutorialSteps.empty()) return;
 	tutorialRunning = true;
 	tutorialState = 0;
-	circuit_id_t circuitId = circuitView->getBackend().getCircuitManager().createNewCircuit(false);
-	std::optional<simulator_id_t> simulatorId = circuitView->getBackend().createSimulator(circuitId);
-	if (!simulatorId) return;
-	circuitView->setSimulatoruator(simulatorId.value());
-
-	simulator = circuitView->getBackend().getSimulator(simulatorId.value());
-	SharedCircuit circuit = circuitView->getBackend().getCircuitManager().getCircuit(circuitId);
-	curentCircuit = circuitView->getBackend().getCircuitManager().getCircuit(circuitId);
-	curentCircuit->connectListener(this, std::bind(&Tutorial::checkTutorial, this, std::placeholders::_1, std::placeholders::_2));
-	circuitView->getEventRegister().registerFunction("CircuitStateSet", [this](const Event* event) -> bool {
-		const StateSetEvent* stateSetEvent = event->cast<StateSetEvent>();
-		if (!stateSetEvent) return false;
-		this->checkTutorialState(stateSetEvent->getPosition(), stateSetEvent->getState());
-		return false;
-	});
+	circuit_id_t circuitId = circuitView.getBackend().getCircuitManager().createNewCircuit(false);
+	std::optional<simulator_id_t> simulatorId = circuitView.getBackend().createSimulator(circuitId);
+	if (!simulatorId) {
+		logError("Failed to create simulator.", "Tutorial::StartTutorial");
+		return;
+	}
+	circuitView.setSimulatoruator(simulatorId.value());
+	simulator = circuitView.getBackend().getSimulator(simulatorId.value());
+	currentCircuit = circuitView.getBackend().getCircuitManager().getCircuit(circuitId);
+	currentCircuit->connectListener(this, std::bind(&Tutorial::checkTutorial, this, std::placeholders::_1, std::placeholders::_2));
 	runCurrentStep();
 }
 
 std::string Tutorial::selectTutorial() {
-    // change to text and buttons on screen later
-    std::vector<std::string> filenames;
-    logInfo("Select a tutorial");
-    for (const auto& file : std::filesystem::directory_iterator("TutorialLib/")) {
-        filenames.push_back(file.path().filename().string());
-        logInfo("  [" + std::to_string(filenames.size()) + "] " + file.path().filename().string());
-    }
-    const char* in;
-    char* p;
-    long converted;
-    do {
-        logInfo("Enter number 1-" +std::to_string(filenames.size()) + ": ");
-        std::string num;
-        std::cin >> num;
-        in = num.c_str();
-        converted = strtol(in, &p, 10);
-    } while (*p || converted < 1 || converted > filenames.size());
-    return filenames[converted - 1];
+	// change to text and buttons on screen later
+	std::vector<std::string> filenames;
+	logInfo("Select a tutorial");
+	for (const auto& file : std::filesystem::directory_iterator("TutorialLib/")) {
+		filenames.push_back(file.path().filename().string());
+		logInfo("  [" + std::to_string(filenames.size()) + "] " + file.path().filename().string());
+	}
+	const char* in;
+	char* p;
+	long converted;
+	do {
+		logInfo("Enter number 1-" + std::to_string(filenames.size()) + ": ");
+		std::string num;
+		std::cin >> num;
+		in = num.c_str();
+		converted = strtol(in, &p, 10);
+	} while (*p || converted < 1 || converted > filenames.size());
+	return filenames[converted - 1];
 }
 
 void Tutorial::Stop() {
 	if (!tutorialRunning) return;
-	if (curentCircuit) {
-		curentCircuit->disconnectListener(this);
+	if (currentCircuit) {
+		currentCircuit->disconnectListener(this);
 	}
 	elementCreator.clear();
 	tutorialRunning = false;
@@ -85,7 +93,7 @@ void Tutorial::advanceTutorial() {
 bool Tutorial::isCurrentStepComplete() const {
 	if (tutorialState >= tutorialSteps.size()) return false;
 	const TutorialStep& currentStep = tutorialSteps[tutorialState];
-	const BlockContainer& blockContainer = curentCircuit->getBlockContainer();
+	const BlockContainer& blockContainer = currentCircuit->getBlockContainer();
 
 	for (const TutorialCondition::BlockRequirement& blockCondition : currentStep.condition.blocks) {
 		const Block* currentBlock = blockContainer.getBlock(blockCondition.pos);
@@ -118,7 +126,7 @@ bool Tutorial::isCurrentStepComplete() const {
 void Tutorial::runCurrentStep() {
 	if (tutorialState >= tutorialSteps.size()) return;
 	const TutorialStep& currentStep = tutorialSteps[tutorialState];
-	const BlockContainer& blockContainer = curentCircuit->getBlockContainer();
+	const BlockContainer& blockContainer = currentCircuit->getBlockContainer();
 	// change this later to real popups or something
 	for (const std::string& message : currentStep.action.messages) {
 		logInfo(message);
@@ -174,32 +182,36 @@ void Tutorial::runCurrentStep() {
 			FPosition(connectionPreview.pos2.x, connectionPreview.pos2.y) + optionalPos2Offset.value()
 		));
 	}
+	if (currentStep.action.viewCenter.has_value()) {
+		viewManager.setViewCenter(currentStep.action.viewCenter.value());
+	}
 }
 
 void Tutorial::forceCompleteStep() {
 	if (!tutorialRunning) return;
 	if (tutorialState >= tutorialSteps.size()) return;
+
 	const TutorialStep& currentStep = tutorialSteps[tutorialState];
-	const BlockContainer& blockContainer = curentCircuit->getBlockContainer();
+	const BlockContainer& blockContainer = currentCircuit->getBlockContainer();
 
 	for (const TutorialCondition::BlockRequirement& block : currentStep.condition.blocks) {
 		const Block* currentBlock = blockContainer.getBlock(block.pos);
 		if (currentBlock != nullptr) {
-			curentCircuit->tryRemoveBlock(block.pos);
+			currentCircuit->tryRemoveBlock(block.pos);
 		}
-		curentCircuit->tryInsertBlock(block.pos, block.orientation, block.type);
+		currentCircuit->tryInsertBlock(block.pos, block.orientation, block.type);
 	}
 
 	for (const TutorialCondition::ConnectionRequirement& connection : currentStep.condition.connections) {
 		const Block* currentBlock1 = blockContainer.getBlock(connection.pos1);
 		const Block* currentBlock2 = blockContainer.getBlock(connection.pos2);
 		if (currentBlock1 == nullptr) {
-			curentCircuit->tryInsertBlock(connection.pos1, Rotation::ZERO, BlockType::JUNCTION);
+			currentCircuit->tryInsertBlock(connection.pos1, Rotation::ZERO, BlockType::JUNCTION);
 		}
 		if (currentBlock2 == nullptr) {
-			curentCircuit->tryInsertBlock(connection.pos2, Rotation::ZERO, BlockType::JUNCTION);
+			currentCircuit->tryInsertBlock(connection.pos2, Rotation::ZERO, BlockType::JUNCTION);
 		}
-		curentCircuit->tryCreateConnection(connection.pos1, connection.pos2);
+		currentCircuit->tryCreateConnection(connection.pos1, connection.pos2);
 	}
 
 	for (const TutorialCondition::LogicStateRequirement stateCondition : currentStep.condition.logicStates) {

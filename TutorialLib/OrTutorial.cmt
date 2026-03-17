@@ -55,29 +55,30 @@ Step:
 		Block: LIGHT ($p4)
 Step:
 	Action:
-        Message: "Now, connect the blocks."
-        Connection Preview: ($p1) ($p3)
-        Connection Preview: ($p2) ($p3)
-        Connection Preview: ($p3) ($p4)
-    Condition:
-        Connection: ($p1) ($p3)
-        Connection: ($p2) ($p3)
-        Connection: ($p3) ($p4)
+		Message: "Now, connect the blocks."
+		Connection Preview: ($p1) ($p3)
+		Connection Preview: ($p2) ($p3)
+		Connection Preview: ($p3) ($p4)
+	Condition:
+		Connection: ($p1) ($p3)
+		Connection: ($p2) ($p3)
+		Connection: ($p3) ($p4)
 Step:
-    Action:
-        Message: "Now, flick the switches to test how the 'OR' block reacts."
-    Condition:
-        State: h ($p1) 3
+	Action:
+		View Center: (0.0, -10.5)
+		Message: "Now, flick the switches to test how the 'OR' block reacts."
+	Condition:
+		State: h ($p1) 3
 Step:
-    Condition:
-        State: l ($p1) 3
+	Condition:
+		State: l ($p1) 3
 Step:
-    Action:
-        Message: "Congrats, you completed this tutorial."
-        Message: "The OR block has the following truth table for 2 inputs:"
-        Message: "A | B | OR"
-        Message: "--+---+---"
-        Message: "0 | 0 |  0"
-        Message: "0 | 1 |  1"
-        Message: "1 | 0 |  1"
-        Message: "1 | 1 |  1"
+	Action:
+		Message: "Congrats, you completed this tutorial."
+		Message: "The OR block has the following truth table for 2 inputs:"
+		Message: "A | B | OR"
+		Message: "--+---+---"
+		Message: "0 | 0 |  0"
+		Message: "0 | 1 |  1"
+		Message: "1 | 0 |  1"
+		Message: "1 | 1 |  1"
