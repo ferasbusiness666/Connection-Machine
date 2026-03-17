@@ -59,6 +59,8 @@ public:
     std::string getName() {return name;}
     const TestCase* getTestCase(int id);
     const TestCase* getTestCase(std::string name);
+    int getTruthTableTicks() {return truthTableTicks;}
+    bool truthTable() {return isTruthTable;}
     std::set<std::string>::const_iterator getInputIterator() {return inputs.cbegin();} // TODO: is this okay?
     std::set<std::string>::const_iterator getOutputIterator() {return outputs.cbegin();}
     std::set<std::string>::const_iterator getInputIteratorEnd() {return inputs.cend();}

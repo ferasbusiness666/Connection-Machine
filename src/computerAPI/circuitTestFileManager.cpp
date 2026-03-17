@@ -294,7 +294,90 @@ std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestGroupFromF
     return testGroup;
 }
 
+bool CircuitTestFileManager::saveToTruthTableFile(const std::string& path, CircuitTestGroup& testGroup) {
+    // TODO: since the input/output members are sets, they have no order, which could result in a change
+    // in the truth table after saving with no changes. maybe look into a fix.
+    if (!testGroup.truthTable()) {
+        logError("Can't save non-truth table test as a truth table", "CircuitTestFileManager");
+        return false;
+    }
+	std::ofstream outputFile(path);
+	if (!outputFile.is_open()) {
+		logError("Couldn't open file at path: {}", "CircuitTestFileManager", path);
+		return false;
+	}
+
+    outputFile << "version_0\n";
+    outputFile << "Test: \"" << testGroup.getName() << "\"\n";
+    if (testGroup.getTruthTableTicks() > -1) {
+        outputFile << "Ticks: " << testGroup.getTruthTableTicks() << '\n';
+    }
+
+    outputFile << '|';
+    std::vector<std::string> inputs;
+    for (auto it = testGroup.getInputIterator(); it != testGroup.getInputIteratorEnd(); it++) {
+        inputs.push_back(*it);
+        outputFile << ' ' << *it << ' ' << '|';
+    }
+    outputFile << '|';
+    std::vector<std::string> outputs;
+    for (auto it = testGroup.getOutputIterator(); it != testGroup.getOutputIteratorEnd(); it++) {
+        outputs.push_back(*it);
+        outputFile << ' ' << *it << ' ' << '|';
+    }
+    outputFile << '\n' << '|';
+    for (int i = 0; i < inputs.size(); i++){
+        std::string str;
+        str.assign(inputs[i].size() + 2, '-');
+        outputFile << str << '|';
+    }
+    outputFile << '|';
+    for (int i = 0; i < outputs.size(); i++){
+        std::string str;
+        str.assign(outputs[i].size() + 2, '-');
+        outputFile << str << '|';
+    }
+
+    int testID = 0;
+    const CircuitTestGroup::TestCase* testCase = testGroup.getTestCase(testID);
+    while (testCase != nullptr) {
+        outputFile << '\n' << '|';
+        for (int i = 0; i < inputs.size(); i++) {
+            std::string input = inputs[i];
+            for (int j = 0; j < testCase->testCommands[0].states.size(); j++) {
+                std::pair<std::string, logic_state_t> statesPair = testCase->testCommands[0].states[j];
+                if (statesPair.first != input) continue;
+                std::string str;
+                str.assign(input.size(), ' ');
+                outputFile << ' ' << (unsigned int)statesPair.second << str << '|';
+            }
+        }
+        outputFile << '|';
+        for (int i = 0; i < outputs.size(); i++) {
+            std::string output = outputs[i];
+            for (int j = 0; j < testCase->testCommands[2].states.size(); j++) {
+                std::pair<std::string, logic_state_t> statesPair = testCase->testCommands[2].states[j];
+                if (statesPair.first != output) continue;
+                std::string str;
+                str.assign(output.size(), ' ');
+                outputFile << ' ' << (unsigned int)statesPair.second << str << '|';
+            }
+        }
+        testID++;
+        testCase = testGroup.getTestCase(testID);
+    }
+    return true;
+}
+
 bool CircuitTestFileManager::saveToFile(const std::string& path, CircuitTestGroup& testGroup){
+    if (path.substr(path.size()-3) == ".tt"){
+        return saveToTruthTableFile(path, testGroup);
+    }
+    else if (path.substr(path.size()-4) != ".tst") {
+        logError("Unrecognized file extension, valid options are '.tst' for full test or '.tt' for a truth table");
+        return false;
+    }
+
 	std::ofstream outputFile(path);
 	if (!outputFile.is_open()) {
 		logError("Couldn't open file at path: {}", "CircuitTestFileManager", path);
