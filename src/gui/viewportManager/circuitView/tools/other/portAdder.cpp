@@ -30,7 +30,9 @@ bool PortAdder::press(const Event* event) {
 void PortAdder::updateElements() {
 	elementCreator.clear();
 	bool can = true;
-	if (isInput) {
+	if (!circuit->getBlockContainer().checkCollision(lastPointerPosition)) {
+		can = false;
+	} else if (isInput) {
 		if (circuit->getBlockContainer().getInputOrBidirectionalConnectionEnd(lastPointerPosition).has_value()) {
 			can = false;
 		}
@@ -39,5 +41,5 @@ void PortAdder::updateElements() {
 			can = false;
 		}
 	}
-	elementCreator.addSelectionElement(SelectionElement(lastPointerPosition, can));
+	elementCreator.addSelectionElement(SelectionElement(lastPointerPosition, !can));
 }

@@ -40,7 +40,7 @@ void BlockRenderDataFeeder::newBlockType_event(const DataUpdateEventManager::Eve
 	assert(data);
 	BlockRenderDataId blockRenderDataId = MainRenderer::get().registerBlockRenderData();
 	blockTypeToRenderData.emplace(data->get(), blockRenderDataId);
-	blockTexturesToUpdate.insert(data->get());
+	refreshBlockTexture(data->get());
 	const BlockData* blockData = backend.getBlockDataManager().getBlockData(data->get());
 	MainRenderer::get().setTextureVirtualConnection(blockRenderDataId, 0);
 }
@@ -54,7 +54,7 @@ void BlockRenderDataFeeder::postBlockSizeChange_event(const DataUpdateEventManag
 		return;
 	}
 	MainRenderer::get().setBlockSize(iter->second.blockRenderDataId, data->get().second);
-	blockTexturesToUpdate.insert(data->get().first);
+	refreshBlockTexture(data->get().first);
 }
 
 void BlockRenderDataFeeder::blockNameChange_event(const DataUpdateEventManager::EventData* event) {
@@ -66,7 +66,7 @@ void BlockRenderDataFeeder::blockNameChange_event(const DataUpdateEventManager::
 		return;
 	}
 	MainRenderer::get().setBlockName(iter->second.blockRenderDataId, data->get().second);
-	blockTexturesToUpdate.insert(data->get().first);
+	refreshBlockTexture(data->get().first);
 }
 
 void BlockRenderDataFeeder::blockDataSetConnection_event(const DataUpdateEventManager::EventData* event) {
@@ -88,6 +88,7 @@ void BlockRenderDataFeeder::blockDataSetConnection_event(const DataUpdateEventMa
 				(isInput ? blockData->getConnectionPortOffset(data->get().second).value() : blockData->getConnectionPortOffset(data->get().second).value())
 		);
 		iter->second.blockPortRenderDataIds.try_emplace(data->get().second, blockPortRenderDataId);
+		refreshBlockTexture(data->get().first);
 		return;
 	}
 	MainRenderer::get().moveBlockPort(
@@ -96,6 +97,7 @@ void BlockRenderDataFeeder::blockDataSetConnection_event(const DataUpdateEventMa
 		blockData->getConnectionVector(data->get().second)->free() +
 			(isInput ? blockData->getConnectionPortOffset(data->get().second).value() : blockData->getConnectionPortOffset(data->get().second).value())
 	);
+	refreshBlockTexture(data->get().first);
 }
 
 void BlockRenderDataFeeder::blockDataRemoveConnection_event(const DataUpdateEventManager::EventData* event) {
@@ -113,6 +115,7 @@ void BlockRenderDataFeeder::blockDataRemoveConnection_event(const DataUpdateEven
 	}
 	MainRenderer::get().removeBlockPort(iter->second.blockRenderDataId, portIter->second);
 	iter->second.blockPortRenderDataIds.erase(portIter);
+	refreshBlockTexture(data->get().first);
 }
 
 void BlockRenderDataFeeder::blockDataConnectionNameSet_event(const DataUpdateEventManager::EventData* event) {
@@ -130,6 +133,7 @@ void BlockRenderDataFeeder::blockDataConnectionNameSet_event(const DataUpdateEve
 	}
 	const BlockData* blockData = backend.getBlockDataManager().getBlockData(data->get().first);
 	MainRenderer::get().setBlockPortName(iter->second.blockRenderDataId, portIter->second, *blockData->getConnectionIdToName(data->get().second));
+	refreshBlockTexture(data->get().first);
 }
 
 void BlockRenderDataFeeder::blockDataTexturePathChange_event(const DataUpdateEventManager::EventData* event) {
