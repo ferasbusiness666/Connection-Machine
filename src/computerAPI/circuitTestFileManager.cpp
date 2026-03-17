@@ -4,6 +4,7 @@
 #include "logging/logging.h"
 #include <optional>
 #include <utility>
+#include <vector>
 
 std::optional<logic_state_t> stringToLogicState(const std::string& str) {
     if (str == "LOW" || str == "L" || str == "0") return (logic_state_t)0;
@@ -13,7 +14,143 @@ std::optional<logic_state_t> stringToLogicState(const std::string& str) {
     return std::nullopt;
 }
 
+std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestGroupFromTruthTableFilePath(const std::string &path) {
+    logInfo("Parsing truth table (.tt)");
+	std::ifstream inputFile(path, std::ios::in | std::ios::binary);
+	if (!inputFile.is_open()) {
+		logError("Couldn't open file at path: " + path, "CircuitTestFileManager");
+		return std::nullopt;
+	}
+
+    std::string token;
+    inputFile >> token;
+    unsigned int version;
+    const unsigned int latestVersion = 0;
+    if (token == "version_0") {
+        version = 0;
+    } else {
+        logError("Invalid truth table file version: {}", "CircuitTestFileManager", token);
+        return std::nullopt;
+    }
+
+    std::string testName;
+    inputFile >> token;
+    if (token == "Test:") {
+        inputFile >> std::quoted(testName);
+    } else {
+        logError("Invalid file format, expected 'Test:' on line 2", "CircuitTestFileManager");
+        return std::nullopt;
+    }
+    inputFile >> std::ws;
+
+    int ticks = 10; // change to -1 later 
+    inputFile >> token;
+    if (token == "Ticks:") {
+        std::string ticksStr;
+        inputFile >> ticksStr;
+        try {
+            ticks = std::stoi(ticksStr);
+        } catch (...) {
+            logError("Invalid tick count, it should be a reasonably sized integer", "CircuitTestFileManager");
+            return std::nullopt;
+        }
+        inputFile >> std::ws;
+        inputFile >> token;
+    }
+
+    CircuitTestGroup testGroup(testName, true, ticks);
+
+    std::string line;
+    std::getline(inputFile, line);
+    std::stringstream lineStream;
+    lineStream << line;
+
+    std::vector<std::string> inputs;
+    while (token != "||") {
+        lineStream >> std::ws;
+        std::string portName;
+        lineStream >> portName;
+        testGroup.addInput(portName);
+        inputs.push_back(portName);
+        logInfo("New input name {}", "CircuitTestFileManager", portName);
+        lineStream >> std::ws;
+        lineStream >> token;
+    }
+
+    std::vector<std::string> outputs;
+    while (true) {
+        lineStream >> std::ws;
+        if (lineStream.eof()) break;
+        std::string portName;
+        lineStream >> portName;
+        testGroup.addOutput(portName);
+        outputs.push_back(portName);
+        logInfo("New output name {}", "CircuitTestFileManager", portName);
+        lineStream >> std::ws;
+        lineStream >> token;
+    }
+
+    std::getline(inputFile, line); // ignore line below the input/output names
+
+    while (!inputFile.eof()) {
+        std::getline(inputFile, line);
+        std::stringstream lineStream;
+        lineStream << line;
+        std::string nameStr = "";
+        lineStream >> token;
+
+        //TODO: maybe add a special "?" state to denote that the state is irrelevant
+        int inputCount = 0;
+        std::vector<std::pair<std::string, logic_state_t>> inputStates = {};
+        while (token != "||") {
+            lineStream >> std::ws;
+            std::string portStateStr;
+            lineStream >> portStateStr;
+            std::optional<logic_state_t> portState = stringToLogicState(portStateStr);
+            if (portState == std::nullopt) {
+                logError("Error parsing test file: Unrecognized port state '{}'", "CircuitTestFileManager", portStateStr);
+                return std::nullopt;
+            }
+            inputStates.push_back(std::make_pair(inputs[inputCount], portState.value()));
+            nameStr += portStateStr;
+            lineStream >> std::ws;
+            lineStream >> token;
+            inputCount++;
+        }
+
+        int outputCount = 0;
+        std::vector<std::pair<std::string, logic_state_t>> outputStates = {};
+        while (true) {
+            lineStream >> std::ws;
+            if (lineStream.eof()) break;
+            std::string portStateStr;
+            lineStream >> portStateStr;
+            std::optional<logic_state_t> portState = stringToLogicState(portStateStr);
+            if (portState == std::nullopt) {
+                logError("Error parsing test file: Unrecognized port state '{}'", "CircuitTestFileManager", portStateStr);
+                return std::nullopt;
+            }
+            outputStates.push_back(std::make_pair(outputs[outputCount], portState.value()));
+            nameStr += portStateStr;
+            lineStream >> std::ws;
+            lineStream >> token;
+            outputCount++;
+        }
+        testGroup.addSimpleTestCase(nameStr, inputStates, outputStates);
+    }
+
+    return testGroup;
+}
+
 std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestGroupFromFilePath(const std::string &path) {
+    if (path.substr(path.size()-3) == ".tt"){
+        return getCircuitTestGroupFromTruthTableFilePath(path);
+    }
+    else if (path.substr(path.size()-4) != ".tst") {
+        logError("Unrecognized file extension, valid options are '.tst' for full test or '.tt' for a truth table");
+        return std::nullopt;
+    }
+
     logInfo("Parsing test file (.tst)", "CircuitTestFileManager");
 	std::ifstream inputFile(path, std::ios::in | std::ios::binary);
 	if (!inputFile.is_open()) {
@@ -23,7 +160,6 @@ std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestGroupFromF
 
     std::string token;
     inputFile >> token;
-
     unsigned int version;
     const unsigned int latestVersion = 0;
     if (token == "version_0") {
@@ -42,7 +178,7 @@ std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestGroupFromF
         return std::nullopt;
     }
 
-    CircuitTestGroup testGroup(testName, false);
+    CircuitTestGroup testGroup(testName, false, 0);
 
     std::set<std::string> inputs;
     inputFile >> token;

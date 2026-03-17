@@ -12,9 +12,11 @@
 #include "environment/environment.h"
 #include <optional>
 
-void CircuitTestGroup::addTestCase(std::string name) {
+bool CircuitTestGroup::addTestCase(std::string name) {
+    if (testCaseNameToID.contains(name)) return false;
     testCases.emplace_back(name);
     testCaseNameToID.emplace(std::make_pair(name, testCases.size()-1));
+    return true;
 }
 
 bool CircuitTestGroup::addInput(std::string input) {
@@ -30,37 +32,61 @@ bool CircuitTestGroup::addOutput(std::string output) {
 }
 
 bool CircuitTestGroup::addSetStatesCommand(std::string testCase, std::vector<std::pair<std::string, logic_state_t>> states) {
-    TestCommand testCommand = TestCommand(SET_STATES, 0, states);
+    if (isTruthTable) {
+        logError("Method addSetStatesCommand disallowed on truth table, use addSimpleTestCase", "CircuitTestGroup");
+        return false;
+    }
     auto idIter = testCaseNameToID.find(testCase);
     if (idIter == testCaseNameToID.end()) {
         logError("Unrecognized test case {}", "CircuitTestGroup", testCase);
         return false;
     }
-    testCases[idIter->second].testCommands.push_back(testCommand);
+    testCases[idIter->second].testCommands.emplace_back(SET_STATES, 0, states);
     return true;
 }
 
 bool CircuitTestGroup::addCheckStatesCommand(std::string testCase, std::vector<std::pair<std::string, logic_state_t>> states) {
-    TestCommand testCommand = TestCommand(CHECK_STATES, 0, states);
+    if (isTruthTable) {
+        logError("Method addCheckStatesCommand disallowed on truth table, use addSimpleTestCase", "CircuitTestGroup");
+        return false;
+    }
     auto idIter = testCaseNameToID.find(testCase);
     if (idIter == testCaseNameToID.end()) {
         logError("Unrecognized test case {}", "CircuitTestGroup", testCase);
         return false;
     }
-    testCases[idIter->second].testCommands.push_back(testCommand);
+    testCases[idIter->second].testCommands.emplace_back(CHECK_STATES, 0, states);
     return true;
 }
 
 bool CircuitTestGroup::addTickStepCommand(std::string testCase, int ticks) {
-    TestCommand testCommand = TestCommand(TICK_STEP, ticks, {});
+    if (isTruthTable) {
+        logError("Method addTickStepCommand disallowed on truth table, use addSimpleTestCase", "CircuitTestGroup");
+        return false;
+    }
     auto idIter = testCaseNameToID.find(testCase);
     if (idIter == testCaseNameToID.end()) {
         logError("Unrecognized test case {}", "CircuitTestGroup", testCase);
         return false;
     }
-    testCases[idIter->second].testCommands.push_back(testCommand);
+    testCases[idIter->second].testCommands.emplace_back(TICK_STEP, ticks);
     return true;
 }
+
+bool CircuitTestGroup::addSimpleTestCase(std::string name, std::vector<std::pair<std::string, logic_state_t>> inputStates, std::vector<std::pair<std::string, logic_state_t>> outputStates){
+    if (!isTruthTable) {
+        logWarning("Action not recommended on non-truth table, performing anyways", "CircuitTestGroup");
+    }
+    if (testCaseNameToID.contains(name)) return false;
+    testCaseNameToID.emplace(std::make_pair(name, testCases.size()-1));
+    std::vector<TestCommand> testCommands;
+    testCommands.emplace_back(SET_STATES, 0, inputStates);
+    testCommands.emplace_back(TICK_STEP, truthTableTicks);
+    testCommands.emplace_back(CHECK_STATES, 0, outputStates);
+    testCases.emplace_back(name, testCommands);
+    return true;
+}
+
 
 const CircuitTestGroup::TestCase* CircuitTestGroup::getTestCase(int id) {
     if (id >= testCases.size()) return nullptr;
