@@ -139,5 +139,7 @@ void CircuitView::setCircuit(SharedCircuit circuit) {
 
 void CircuitView::viewChanged() {
 	eventRegister.doEvent(PositionEvent("Pointer Move", viewManager.getPointerPosition()));
+	eventRegister.doEvent(PositionEvent("ViewCenterMove", viewManager.getViewCenter()));
+	eventRegister.doEvent(VectorEvent("ViewSizeChange", FVector(viewManager.getViewWidth(), viewManager.getViewHeight())));
 	MainRenderer::get().moveViewportView(viewportId, viewManager.getTopLeft(), viewManager.getBottomRight());
 }

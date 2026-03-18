@@ -53,6 +53,18 @@ BlockCreationWidget::BlockCreationWidget(WidgetId widgetId, MainWindow& mainWind
 		setupGUIValue<float>("WindowScalingSize", getMainWindow().getWindowScalingSize(), nullptr);
 		setupGUIValue<FPosition>("MouseGridPos", circuitView->getViewManager().getPointerPosition(), nullptr);
 		setupGUIValue<std::string>("CircuitName", "NULL", nullptr);
+		setupGUIValue<FPosition>("ViewportCenter", circuitView->getViewManager().getViewCenter(), nullptr);
+		setupGUIValue<FVector>("ViewportCellSize", FVector(circuitView->getViewManager().getViewHeight(), circuitView->getViewManager().getViewWidth()), nullptr);
+		circuitView->getEventRegister().registerFunction("ViewCenterMove", [this](const Event* event) -> bool {
+			const PositionEvent* positionEvent = event->cast<PositionEvent>();
+			if (positionEvent) setGUIValue<FPosition>("ViewportCenter", positionEvent->getFPosition());
+			return false;
+		});
+		circuitView->getEventRegister().registerFunction("ViewSizeChange", [this](const Event* event) -> bool {
+			const VectorEvent* vectorEvent = event->cast<VectorEvent>();
+			if (vectorEvent) setGUIValue<FVector>("ViewportCellSize", vectorEvent->getFVector());
+			return false;
+		});
 	}
 	{
 		// =================================== Init rendering circuit ===================================
@@ -198,112 +210,7 @@ void BlockCreationWidget::render() {
 		std::lock_guard mux(blockDataCopyMux);
 		ImGui::PushStyleColor(ImGuiCol_ChildBg, GUIColors::BACKGROUND);
 		ifGui (ImGui::BeginChild("##mainView", ImVec2(ImGui::GetContentRegionAvail().x - 200, ImGui::GetContentRegionAvail().y), ImGuiChildFlags_ResizeX), ImGui::PopStyleColor()) {
-			ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-			ImVec2 viewportWindowScreenPos = ImGui::GetCursorScreenPos();
-			ImVec2 viewportWindowPos = ImGui::GetCursorPos();
-			{
-				float windowScalingSize = getGUIValue_rendering<float>("WindowScalingSize");
-				MainRenderer::get().resizeViewport(circuitView->getViewportId(), { viewportPanelSize.x * windowScalingSize, viewportPanelSize.y * windowScalingSize });
-				VkDescriptorSet descriptorSet = MainRenderer::get().startViewportRendering(circuitView->getViewportId());
-				if (descriptorSet != VK_NULL_HANDLE) {
-					ImGui::Image(descriptorSet, ImVec2{ viewportPanelSize.x, viewportPanelSize.y });
-				} else {
-					ImGui::Text("RENDERING BROKEN!! :(");
-				}
-			}
-			ImGui::SetCursorPos(viewportWindowPos);
-			ImGui::SetNextItemAllowOverlap();
-			ImGui::InvisibleButton("circuitViewInvisibleButton", viewportPanelSize, ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight);
-			bool isHovered = ImGui::IsItemHovered();
-			// if (isHovered) ImGui::FocusItem();
-			ImVec2 mousePos = ImGui::GetMousePos();
-			mousePos = ImVec2(mousePos.x - viewportWindowScreenPos.x, mousePos.y - viewportWindowScreenPos.y);
-
-			setGUIValue_rendering("AspectRatio", viewportPanelSize.x / viewportPanelSize.y);
-			setGUIValue_rendering("MouseLeftDown", ImGui::IsMouseDown(ImGuiMouseButton_Left));
-			setGUIValue_rendering("MouseRightDown", ImGui::IsMouseDown(ImGuiMouseButton_Right));
-			setGUIValue_rendering("MousePosition", Vec2(mousePos.x / viewportPanelSize.x, mousePos.y / viewportPanelSize.y));
-			setGUIValue_rendering("MouseInView", isHovered);
-			setGUIValue_rendering("CircuitViewSize", Vec2(viewportPanelSize.x, viewportPanelSize.y));
-			setGUIValue_rendering("CircuitViewIsFocused", ImGui::IsItemFocused());
-
-			ImDrawList* draw_list = ImGui::GetWindowDrawList();
-			draw_list->ChannelsSplit(2);
-			ImVec2 simControlsSize;
-			const int offset = 2;
-			const int padding = 4;
-			{
-				draw_list->ChannelsSetCurrent(1);
-				ImGui::SetCursorPos({ viewportWindowPos.x + padding + offset, viewportWindowPos.y + padding + offset });
-				ImGui::BeginGroup();
-					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-					FPosition mouseGridPos = getGUIValue_rendering<FPosition>("MouseGridPos");
-					ImGui::Text("Mouse: (%.2f, %.2f)", mouseGridPos.x, mouseGridPos.y);
-					if (ImGui::Button("Add Port"))
-						ImGui::OpenPopup("port_popup");
-
-					if (blockType != BlockType::NONE) {
-						ImGui::SameLine();
-						ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.6f, 0.6f, 0.6f, 0.8f));
-						ifGui (ImGui::BeginPopup("port_popup"), ImGui::PopStyleColor();) {
-							if (ImGui::Selectable("Input")) {
-								App::runOnMain([this, circuitId, name = blockDataCopy->name](){
-									auto tool = std::dynamic_pointer_cast<PortAdder>(
-										circuitView->getToolManager().selectTool(std::make_shared<PortAdder>(getEnvironment()))
-									);
-									if (tool) {
-										tool->setup(true, [this](Position position){
-											BlockData* blockData = getBackend().getBlockDataManager().getBlockData(blockType);
-											if (blockData == nullptr) return;
-											blockData->setConnectionInput(position - Position(), blockData->getNewConnectionId());
-										});
-									} else {
-										logError("Failed to set tool to PortAdder", "BlockCreationWidget");
-									}
-								});
-							}
-							if (ImGui::Selectable("Output")) {
-								App::runOnMain([this, circuitId, name = blockDataCopy->name](){
-									auto tool = std::dynamic_pointer_cast<PortAdder>(
-										circuitView->getToolManager().selectTool(std::make_shared<PortAdder>(getEnvironment()))
-									);
-									if (tool) {
-										tool->setup(false, [this](Position position){
-											BlockData* blockData = getBackend().getBlockDataManager().getBlockData(blockType);
-											if (blockData == nullptr) return;
-											blockData->setConnectionOutput(position - Position(), blockData->getNewConnectionId());
-										});
-									} else {
-										logError("Failed to set tool to PortAdder", "BlockCreationWidget");
-									}
-								});
-							}
-							ImGui::EndPopup();
-						}
-					}
-					ImGui::PopStyleColor();
-				ImGui::EndGroup();
-				simControlsSize = ImGui::GetItemRectSize();
-			}
-			{
-				draw_list->ChannelsSetCurrent(0);
-				if (blockType != BlockType::NONE) {
-					ImGui::GetWindowDrawList()->AddRectFilled(
-						{ viewportWindowScreenPos.x + offset, viewportWindowScreenPos.y + offset },
-						{ viewportWindowScreenPos.x + simControlsSize.x + padding * 2 + offset, viewportWindowScreenPos.y + simControlsSize.y + padding * 2 + offset },
-						ImColor(0.f, 0.f, 0.f, 0.1f),
-						5.f
-					);
-				} else {
-					ImGui::GetWindowDrawList()->AddRectFilled(
-						{ viewportWindowScreenPos.x + offset, viewportWindowScreenPos.y + offset },
-						{ viewportWindowScreenPos.x + simControlsSize.x + padding * 2 + offset, viewportWindowScreenPos.y + simControlsSize.y + padding * 2 + offset },
-						ImColor(0.f, 0.f, 0.f, 0.2f),
-						5.f
-					);
-				}
-			}
-			draw_list->ChannelsMerge();
+			renderViewport(circuitId);
 		}
 		ImGui::EndChild();
 		ImGui::SameLine();
@@ -317,6 +224,120 @@ void BlockCreationWidget::render() {
 		getMainWindow().destroyWidget(this->getWidgetId());
 	}
 	ImGui::End();
+}
+
+void BlockCreationWidget::renderViewport(circuit_id_t circuitId) {
+	ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+	ImVec2 viewportWindowScreenPos = ImGui::GetCursorScreenPos();
+	ImVec2 viewportWindowPos = ImGui::GetCursorPos();
+	{
+		float windowScalingSize = getGUIValue_rendering<float>("WindowScalingSize");
+		MainRenderer::get().resizeViewport(circuitView->getViewportId(), { viewportPanelSize.x * windowScalingSize, viewportPanelSize.y * windowScalingSize });
+		VkDescriptorSet descriptorSet = MainRenderer::get().startViewportRendering(circuitView->getViewportId());
+		if (descriptorSet != VK_NULL_HANDLE) {
+			ImGui::Image(descriptorSet, ImVec2{ viewportPanelSize.x, viewportPanelSize.y });
+		} else {
+			ImGui::Text("RENDERING BROKEN!! :(");
+		}
+	}
+	ImGui::SetCursorPos(viewportWindowPos);
+	ImGui::SetNextItemAllowOverlap();
+	ImGui::InvisibleButton("circuitViewInvisibleButton", viewportPanelSize, ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight);
+	bool isHovered = ImGui::IsItemHovered();
+	ImVec2 mousePos = ImGui::GetMousePos();
+	mousePos = ImVec2(mousePos.x - viewportWindowScreenPos.x, mousePos.y - viewportWindowScreenPos.y);
+
+	setGUIValue_rendering("AspectRatio", viewportPanelSize.x / viewportPanelSize.y);
+	setGUIValue_rendering("MouseLeftDown", ImGui::IsMouseDown(ImGuiMouseButton_Left));
+	setGUIValue_rendering("MouseRightDown", ImGui::IsMouseDown(ImGuiMouseButton_Right));
+	setGUIValue_rendering("MousePosition", Vec2(mousePos.x / viewportPanelSize.x, mousePos.y / viewportPanelSize.y));
+	setGUIValue_rendering("MouseInView", isHovered);
+	setGUIValue_rendering("CircuitViewSize", Vec2(viewportPanelSize.x, viewportPanelSize.y));
+	setGUIValue_rendering("CircuitViewIsFocused", ImGui::IsItemFocused());
+
+	ImDrawList* draw_list = ImGui::GetWindowDrawList();
+
+	getGUIValue_rendering<FPosition>("ViewportCenter");
+	getGUIValue_rendering<FVector>("ViewportCellSize");
+	ImGui::SetCursorPos(viewportWindowPos + );
+	ImGui::SmallButton("Edit");
+
+	draw_list->ChannelsSplit(2);
+	ImVec2 simControlsSize;
+	const int offset = 2;
+	const int padding = 4;
+	{
+		draw_list->ChannelsSetCurrent(1);
+		ImGui::SetCursorPos({ viewportWindowPos.x + padding + offset, viewportWindowPos.y + padding + offset });
+		ImGui::BeginGroup();
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+			FPosition mouseGridPos = getGUIValue_rendering<FPosition>("MouseGridPos");
+			ImGui::Text("Mouse: (%.2f, %.2f)", mouseGridPos.x, mouseGridPos.y);
+			if (ImGui::Button("Add Port"))
+				ImGui::OpenPopup("port_popup");
+
+			if (blockDataCopy.has_value()) {
+				ImGui::SameLine();
+				ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.6f, 0.6f, 0.6f, 0.8f));
+				ifGui (ImGui::BeginPopup("port_popup"), ImGui::PopStyleColor();) {
+					if (ImGui::Selectable("Input")) {
+						App::runOnMain([this, circuitId, name = blockDataCopy->name](){
+							auto tool = std::dynamic_pointer_cast<PortAdder>(
+								circuitView->getToolManager().selectTool(std::make_shared<PortAdder>(getEnvironment()))
+							);
+							if (tool) {
+								tool->setup(true, [this](Position position){
+									BlockData* blockData = getBackend().getBlockDataManager().getBlockData(blockType);
+									if (blockData == nullptr) return;
+									blockData->setConnectionInput(position - Position(), blockData->getNewConnectionId());
+								});
+							} else {
+								logError("Failed to set tool to PortAdder", "BlockCreationWidget");
+							}
+						});
+					}
+					if (ImGui::Selectable("Output")) {
+						App::runOnMain([this, circuitId, name = blockDataCopy->name](){
+							auto tool = std::dynamic_pointer_cast<PortAdder>(
+								circuitView->getToolManager().selectTool(std::make_shared<PortAdder>(getEnvironment()))
+							);
+							if (tool) {
+								tool->setup(false, [this](Position position){
+									BlockData* blockData = getBackend().getBlockDataManager().getBlockData(blockType);
+									if (blockData == nullptr) return;
+									blockData->setConnectionOutput(position - Position(), blockData->getNewConnectionId());
+								});
+							} else {
+								logError("Failed to set tool to PortAdder", "BlockCreationWidget");
+							}
+						});
+					}
+					ImGui::EndPopup();
+				}
+			}
+			ImGui::PopStyleColor();
+		ImGui::EndGroup();
+		simControlsSize = ImGui::GetItemRectSize();
+	}
+	{
+		draw_list->ChannelsSetCurrent(0);
+		if (blockDataCopy.has_value()) {
+			ImGui::GetWindowDrawList()->AddRectFilled(
+				{ viewportWindowScreenPos.x + offset, viewportWindowScreenPos.y + offset },
+				{ viewportWindowScreenPos.x + simControlsSize.x + padding * 2 + offset, viewportWindowScreenPos.y + simControlsSize.y + padding * 2 + offset },
+				ImColor(0.f, 0.f, 0.f, 0.1f),
+				5.f
+			);
+		} else {
+			ImGui::GetWindowDrawList()->AddRectFilled(
+				{ viewportWindowScreenPos.x + offset, viewportWindowScreenPos.y + offset },
+				{ viewportWindowScreenPos.x + simControlsSize.x + padding * 2 + offset, viewportWindowScreenPos.y + simControlsSize.y + padding * 2 + offset },
+				ImColor(0.f, 0.f, 0.f, 0.2f),
+				5.f
+			);
+		}
+	}
+	draw_list->ChannelsMerge();
 }
 
 void BlockCreationWidget::renderSideBar(circuit_id_t circuitId) {

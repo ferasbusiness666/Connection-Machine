@@ -18,6 +18,7 @@ public:
 private:
 	void render() override final;
 	void update() override final;
+	void renderViewport(circuit_id_t circuitId);
 	void renderSideBar(circuit_id_t circuitId);
 
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
