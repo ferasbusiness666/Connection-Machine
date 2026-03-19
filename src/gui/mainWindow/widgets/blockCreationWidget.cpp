@@ -209,7 +209,7 @@ void BlockCreationWidget::render() {
 		}
 		std::lock_guard mux(blockDataCopyMux);
 		ImGui::PushStyleColor(ImGuiCol_ChildBg, GUIColors::BACKGROUND);
-		ifGui (ImGui::BeginChild("##mainView", ImVec2(ImGui::GetContentRegionAvail().x - 200, ImGui::GetContentRegionAvail().y), ImGuiChildFlags_ResizeX), ImGui::PopStyleColor()) {
+		ifGui (ImGui::BeginChild("##mainView", ImVec2(ImGui::GetContentRegionAvail().x - 200, ImGui::GetContentRegionAvail().y), ImGuiChildFlags_ResizeX, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse), ImGui::PopStyleColor()) {
 			renderViewport(circuitId);
 		}
 		ImGui::EndChild();
@@ -227,6 +227,8 @@ void BlockCreationWidget::render() {
 }
 
 void BlockCreationWidget::renderViewport(circuit_id_t circuitId) {
+	ImGui::SetScrollX(0);
+	ImGui::SetScrollY(0);
 	ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 	ImVec2 viewportWindowScreenPos = ImGui::GetCursorScreenPos();
 	ImVec2 viewportWindowPos = ImGui::GetCursorPos();
@@ -257,10 +259,21 @@ void BlockCreationWidget::renderViewport(circuit_id_t circuitId) {
 
 	ImDrawList* draw_list = ImGui::GetWindowDrawList();
 
-	getGUIValue_rendering<FPosition>("ViewportCenter");
-	getGUIValue_rendering<FVector>("ViewportCellSize");
-	ImGui::SetCursorPos(viewportWindowPos + );
-	ImGui::SmallButton("Edit");
+	FPosition viewportCenter = getGUIValue_rendering<FPosition>("ViewportCenter");
+	FVector viewportCellSize = getGUIValue_rendering<FVector>("ViewportCellSize");
+	ImVec2 pixPerCell = ImVec2(viewportPanelSize.x / viewportCellSize.dx, viewportPanelSize.y / viewportCellSize.dy);
+	for (const auto& connection : blockDataCopy->connections) {
+		ImGui::SetCursorPos(viewportWindowPos + viewportPanelSize / 2 - ImVec2(
+			pixPerCell.x * (viewportCenter.x - connection.second.positionOnBlock.dx),
+			pixPerCell.y * (viewportCenter.y - connection.second.positionOnBlock.dy) + (
+				(connection.second.portType == BlockData::ConnectionData::OUTPUT) ? -(ImGui::CalcTextSize("Edit Input").y + 5) : 0
+			)
+		) + ImVec2(5, 5));
+		ImGui::PushID(connection.first.get());
+		if (connection.second.portType == BlockData::ConnectionData::OUTPUT) ImGui::SmallButton("Edit Out");
+		else ImGui::SmallButton("Edit In");
+		ImGui::PopID();
+	}
 
 	draw_list->ChannelsSplit(2);
 	ImVec2 simControlsSize;
