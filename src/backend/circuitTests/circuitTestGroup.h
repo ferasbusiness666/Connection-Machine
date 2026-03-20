@@ -48,8 +48,13 @@ public:
         std::vector<TestCommand> testCommands;
     };
 
+    //TODO: add deletion, reordering, modification
     CircuitTestGroup(std::string name, bool isTruthTable, int truthTableTicks) : name(name), isTruthTable(isTruthTable), truthTableTicks(truthTableTicks) {}
     bool addTestCase(std::string name);
+    bool removeTestCase(std::string name);
+    bool removeTestCase(int id);
+    bool swapTestCases(std::string testCase1, std::string testCase2);
+    bool swapTestCases(int id1, int id2);
     bool addInput(std::string input);
     bool addOutput(std::string output);
     bool addSetStatesCommand(std::string testCase, std::vector<std::pair<std::string, logic_state_t>> states);

@@ -11,11 +11,46 @@
 #include "logging/logging.h"
 #include "environment/environment.h"
 #include <optional>
+#include <utility>
 
 bool CircuitTestGroup::addTestCase(std::string name) {
     if (testCaseNameToID.contains(name)) return false;
     testCases.emplace_back(name);
     testCaseNameToID.emplace(std::make_pair(name, testCases.size()-1));
+    return true;
+}
+
+bool CircuitTestGroup::removeTestCase(std::string name) {
+    if (!testCaseNameToID.contains(name)) return false;
+    int id = testCaseNameToID[name];
+    return removeTestCase(id);
+}
+
+bool CircuitTestGroup::removeTestCase(int id) {
+    if (testCases.size() <= id) return false;
+    testCases.erase(testCases.begin() + id);
+    testCaseNameToID.clear();
+    for (int i=0; i<testCases.size(); i++) {
+        std::string name = testCases[i].name;
+        testCaseNameToID.emplace(std::make_pair(name, i));
+    }
+    return true;
+}
+
+bool CircuitTestGroup::swapTestCases(std::string testCase1, std::string testCase2){
+    if (!testCaseNameToID.contains(testCase1)) return false;
+    if (!testCaseNameToID.contains(testCase2)) return false;
+    if (testCase1 == testCase2) return false;
+    return swapTestCases(testCaseNameToID[testCase1], testCaseNameToID[testCase2]);
+}
+
+bool CircuitTestGroup::swapTestCases(int id1, int id2) {
+    if (testCases.size() <= id1) return false;
+    if (testCases.size() <= id2) return false;
+    if (id1 == id2) return false;
+    std::swap(testCases[id1], testCases[id2]);
+    testCaseNameToID[testCases[id1].name] = id1;
+    testCaseNameToID[testCases[id2].name] = id2;
     return true;
 }
 
