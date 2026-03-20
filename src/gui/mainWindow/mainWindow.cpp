@@ -252,7 +252,6 @@ void MainWindow::render() {
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 		if (ImGui::Begin("DockSpace", &open, window_flags)) {
-
 			// setup window classes
 			ImGuiWindowClass mainClass;
 			mainClass.ClassId = 1;
