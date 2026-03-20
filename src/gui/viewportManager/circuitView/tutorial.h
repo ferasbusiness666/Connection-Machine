@@ -22,9 +22,16 @@ struct TutorialCondition {
 		logic_state_t state;
 		int numSteps;
 	};
+	struct TruthTable {
+		std::vector<Position> force;
+		std::vector<Position> expect;
+		std::vector<logic_state_t> states;
+		int numSteps;
+	};
 	std::vector<BlockRequirement> blocks;
 	std::vector<ConnectionRequirement> connections;
 	std::vector<LogicStateRequirement> logicStates;
+	TruthTable truthTable;
 };
 
 struct TutorialAction {

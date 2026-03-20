@@ -118,6 +118,10 @@ void parseConnection(std::stringstream& ss, int line, Position& p1out, Position&
 	parsePosition(ss, line, p2out);
 }
 
+void parseTruthTable() {
+
+}
+
 void parseCondition(TutorialCondition& condition, const std::vector<std::string>& lines, int& line) {
 	for (int i = line; i < lines.size(); i++) {
 		std::stringstream ss(lines[i]);
@@ -150,6 +154,23 @@ void parseCondition(TutorialCondition& condition, const std::vector<std::string>
 			int numSteps;
 			ss >> numSteps;
 			condition.logicStates.emplace_back(pos, state.value(), numSteps);
+		} else if (tok == "TruthTable") {
+			// force positions \ expect \ num steps \ table xxx -> xx
+			while (!ss.eof()) {
+				Position pos;
+				parsePosition(ss, i, pos);
+				condition.truthTable.force.emplace_back(pos);
+			}
+			i++;
+			std::stringstream line_2(lines[i]);
+			while (!ss.eof()) {
+				Position pos;
+				parsePosition(line_2, i, pos);
+				condition.truthTable.expect.emplace_back(pos);
+			}
+            i++;
+			std::stringstream line_3(lines[i]);
+			line_3 >> condition.truthTable.numSteps;
 		}
 	}
 }

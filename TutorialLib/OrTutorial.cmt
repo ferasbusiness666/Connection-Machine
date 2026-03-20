@@ -38,6 +38,7 @@ $p1 (0, 0)
 $p2 (0, 2)
 $p3 (2, 1)
 $p4 (4, 1)
+$view View Center: (2, 1)
 # steps
 Step:
 	Action:
@@ -48,6 +49,7 @@ Step:
 		Block Preview: SWITCH ($p2)
 		Block Preview: OR ($p3)
 		Block Preview: LIGHT ($p4)
+		($view)
 	Condition:
 		Block: SWITCH ($p1)
 		Block: SWITCH ($p2)
@@ -59,13 +61,13 @@ Step:
 		Connection Preview: ($p1) ($p3)
 		Connection Preview: ($p2) ($p3)
 		Connection Preview: ($p3) ($p4)
+		($view)
 	Condition:
 		Connection: ($p1) ($p3)
 		Connection: ($p2) ($p3)
 		Connection: ($p3) ($p4)
 Step:
 	Action:
-		View Center: (0.0, -10.5)
 		Message: "Now, flick the switches to test how the 'OR' block reacts."
 	Condition:
 		State: h ($p1) 3
