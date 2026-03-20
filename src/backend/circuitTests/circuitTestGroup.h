@@ -61,7 +61,7 @@ public:
     const TestCase* getTestCase(std::string name);
     int getTruthTableTicks() {return truthTableTicks;}
     bool truthTable() {return isTruthTable;}
-    std::vector<std::string>::const_iterator getInputIterator() {return inputs.cbegin();} // TODO: is this okay?
+    std::vector<std::string>::const_iterator getInputIterator() {return inputs.cbegin();}
     std::vector<std::string>::const_iterator getOutputIterator() {return outputs.cbegin();}
     std::vector<std::string>::const_iterator getInputIteratorEnd() {return inputs.cend();}
     std::vector<std::string>::const_iterator getOutputIteratorEnd() {return outputs.cend();}
@@ -78,7 +78,7 @@ private:
     // truth tables follow a strict format of every test case having a set state, a tick step (universal across all test cases,
     // stored in the truthTableTicks value), and a get state. it only allows adding commands via the addSimpleTestCase method.
     bool isTruthTable;
-    int truthTableTicks;
+    int truthTableTicks; // setting this to -1 should make the timing automatic
     std::unordered_map<std::string, int> testCaseNameToID;
     std::vector<TestCase> testCases;
     NamePositionMap namePositionMap;
@@ -89,5 +89,3 @@ private:
 };
 
 #endif
-
-// change things: make test cases as structs, make each test case have a name, have some info about whether it's a truth table
