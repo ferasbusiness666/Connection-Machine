@@ -233,6 +233,8 @@ void MainWindow::render() {
 	style.TreeLinesFlags = ImGuiTreeNodeFlags_DrawLinesFull;
 	style.TabCloseButtonMinWidthSelected = 0;
 	style.TabRounding = 0;
+	ImGui::StyleColorsDark();
+
 	ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 10);
 	{
 		frameIndex.fetch_add(1);

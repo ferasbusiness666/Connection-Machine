@@ -12,7 +12,9 @@ bool PortAdder::press(const Event* event) {
 	const PositionEvent* positionEvent = event->cast<PositionEvent>();
 	if (!positionEvent) return false;
 	bool can = true;
-	if (isInput) {
+	if (!circuit->getBlockContainer().checkCollision(lastPointerPosition)) {
+		can = false;
+	} else if (isInput) {
 		if (circuit->getBlockContainer().getInputOrBidirectionalConnectionEnd(lastPointerPosition).has_value()) {
 			can = false;
 		}
