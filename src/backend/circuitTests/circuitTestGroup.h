@@ -61,10 +61,10 @@ public:
     const TestCase* getTestCase(std::string name);
     int getTruthTableTicks() {return truthTableTicks;}
     bool truthTable() {return isTruthTable;}
-    std::set<std::string>::const_iterator getInputIterator() {return inputs.cbegin();} // TODO: is this okay?
-    std::set<std::string>::const_iterator getOutputIterator() {return outputs.cbegin();}
-    std::set<std::string>::const_iterator getInputIteratorEnd() {return inputs.cend();}
-    std::set<std::string>::const_iterator getOutputIteratorEnd() {return outputs.cend();}
+    std::vector<std::string>::const_iterator getInputIterator() {return inputs.cbegin();} // TODO: is this okay?
+    std::vector<std::string>::const_iterator getOutputIterator() {return outputs.cbegin();}
+    std::vector<std::string>::const_iterator getInputIteratorEnd() {return inputs.cend();}
+    std::vector<std::string>::const_iterator getOutputIteratorEnd() {return outputs.cend();}
     bool runAllTests(BlockType blockType, bool haltOnFailure, Environment& environment);
     bool runTests(std::vector<std::string>& testsToRun, BlockType blockType, bool haltOnFailure, Environment& environment);
     bool runTests(std::vector<int>& testsToRun, BlockType blockType, bool haltOnFailure, Environment& environment);
@@ -83,8 +83,8 @@ private:
     std::vector<TestCase> testCases;
     NamePositionMap namePositionMap;
     EvalLogicSimulator* simulator;
-    std::set<std::string> inputs;
-    std::set<std::string> outputs;
+    std::vector<std::string> inputs;
+    std::vector<std::string> outputs;
 
 };
 

@@ -43,7 +43,7 @@ std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestGroupFromT
     }
     inputFile >> std::ws;
 
-    int ticks = 10; // change to -1 later 
+    int ticks = 10; // change to -1 later to indicate automatic waiting
     inputFile >> token;
     if (token == "Ticks:") {
         std::string ticksStr;
@@ -70,7 +70,10 @@ std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestGroupFromT
         lineStream >> std::ws;
         std::string portName;
         lineStream >> portName;
-        testGroup.addInput(portName);
+        if (!testGroup.addInput(portName)) {
+            logError("Duplicated input port {}", "CircuitTestFileManager", portName);
+            return std::nullopt;
+        }
         inputs.push_back(portName);
         logInfo("New input name {}", "CircuitTestFileManager", portName);
         lineStream >> std::ws;
@@ -83,7 +86,10 @@ std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestGroupFromT
         if (lineStream.eof()) break;
         std::string portName;
         lineStream >> portName;
-        testGroup.addOutput(portName);
+        if (!testGroup.addOutput(portName)) {
+            logError("Duplicated output port {}", "CircuitTestFileManager", portName);
+            return std::nullopt;
+        }
         outputs.push_back(portName);
         logInfo("New output name {}", "CircuitTestFileManager", portName);
         lineStream >> std::ws;
@@ -99,7 +105,7 @@ std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestGroupFromT
         std::string nameStr = "";
         lineStream >> token;
 
-        //TODO: maybe add a special "?" state to denote that the state is irrelevant
+        //TODO: maybe add a special "?" state to denote that the state could be anything
         int inputCount = 0;
         std::vector<std::pair<std::string, logic_state_t>> inputStates = {};
         while (token != "||") {
@@ -295,8 +301,6 @@ std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestGroupFromF
 }
 
 bool CircuitTestFileManager::saveToTruthTableFile(const std::string& path, CircuitTestGroup& testGroup) {
-    // TODO: since the input/output members are sets, they have no order, which could result in a change
-    // in the truth table after saving with no changes. maybe look into a fix.
     if (!testGroup.truthTable()) {
         logError("Can't save non-truth table test as a truth table", "CircuitTestFileManager");
         return false;

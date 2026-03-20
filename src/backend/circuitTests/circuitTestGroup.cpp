@@ -20,14 +20,18 @@ bool CircuitTestGroup::addTestCase(std::string name) {
 }
 
 bool CircuitTestGroup::addInput(std::string input) {
-    if (inputs.contains(input)) return false;
-    else inputs.insert(input);
+    for (auto it = inputs.begin(); it != inputs.end(); it++) {
+        if (*it == input) return false;
+    }
+    inputs.push_back(input);
     return true;
 }
 
 bool CircuitTestGroup::addOutput(std::string output) {
-    if (outputs.contains(output)) return false;
-    else outputs.insert(output);
+    for (auto it = outputs.begin(); it != outputs.end(); it++) {
+        if (*it == output) return false;
+    }
+    outputs.push_back(output);
     return true;
 }
 
@@ -134,7 +138,7 @@ bool CircuitTestGroup::generateTestCircuit(BlockType blockType, Environment& env
                 return false;
             }
             std::string blockName = blockNameOpt.value();
-            if (!inputs.contains(blockName)) {
+            if (std::find(inputs.begin(), inputs.end(), blockName) == inputs.end()) {
                 logWarning("Tested circuit's port '{}' does not match any inputs expected by test, this may cause errors", "CircuitTestGroup", blockName);
             }
             if (!cir->tryInsertBlock(externalConnPos, Orientation(), SWITCH)) {
@@ -158,7 +162,7 @@ bool CircuitTestGroup::generateTestCircuit(BlockType blockType, Environment& env
                 return false;
             }
             std::string blockName = blockNameOpt.value();
-            if (!outputs.contains(blockName)) {
+            if (std::find(outputs.begin(), outputs.end(), blockName) == outputs.end()) {
                 logWarning("Tested circuit's port '{}' does not match any outputs expected by test, this may cause errors", "CircuitTestGroup", blockName);
             }
             if (!cir->tryInsertBlock(externalConnPos, Orientation(), LIGHT)) {
