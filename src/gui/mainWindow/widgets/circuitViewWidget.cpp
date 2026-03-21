@@ -90,6 +90,13 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 	});
 	setupGUIValue<std::string>("CircuitName", "NULL", nullptr);
 	setupGUIValue<bool>("CircuitSaved", false, nullptr);
+	setupGUIValue<std::string>("StatusBar", "", nullptr);
+	circuitView->getEventRegister().registerFunction("status bar changed", [this](const Event* event) -> bool {
+		const EventWithValue<std::string>* data = event->cast2<std::string>();
+		if (!data) return false;
+		setGUIValue<std::string>("StatusBar", data->get());
+		return true;
+	});
 }
 
 CircuitViewWidget::~CircuitViewWidget() {
@@ -233,7 +240,7 @@ void CircuitViewWidget::render() {
 		}
 		{
 			draw_list->ChannelsSetCurrent(0);
-			ImGui::GetWindowDrawList()->AddRectFilled(
+			draw_list->AddRectFilled(
 				{ viewportWindowScreenPos.x + offset, viewportWindowScreenPos.y + offset },
 				{ viewportWindowScreenPos.x + simControlsSize.x + padding * 2 + offset, viewportWindowScreenPos.y + simControlsSize.y + padding * 2 + offset },
 				ImColor(0.f, 0.f, 0.f, 0.2f),
@@ -241,6 +248,21 @@ void CircuitViewWidget::render() {
 			);
 		}
 		draw_list->ChannelsMerge();
+
+		std::string statusBarText = getGUIValue_rendering<std::string>("StatusBar");
+		if (!statusBarText.empty()) {
+			ImVec2 textSize = ImGui::CalcTextSize(statusBarText.data());
+			draw_list->AddRectFilled(
+				ImVec2(viewportPanelSize.x / 2.f, viewportPanelSize.y) + viewportWindowScreenPos - textSize / 2.f - ImVec2(padding, 50 +padding),
+				ImVec2(viewportPanelSize.x / 2.f, viewportPanelSize.y) + viewportWindowScreenPos + textSize / 2.f - ImVec2(-padding, 50 -padding),
+				ImColor(0.9f, 0.9f, 0.9f, 0.9f),
+				5.f
+			);
+			ImGui::SetCursorScreenPos(ImVec2(viewportPanelSize.x / 2.f, viewportPanelSize.y) + viewportWindowScreenPos - textSize / 2.f - ImVec2(0, 50));
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+			ImGui::Text("%s", statusBarText.data());
+			ImGui::PopStyleColor();
+		}
 	}
 	if (!open) {
 		getMainWindow().destroyWidget(this->getWidgetId());
