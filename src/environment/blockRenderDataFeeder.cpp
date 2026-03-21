@@ -11,6 +11,7 @@ BlockRenderDataFeeder::BlockRenderDataFeeder(Backend& backend) : backend(backend
 	dataUpdateEventReceiver.linkFunction("blockNameChange", std::bind(&BlockRenderDataFeeder::blockNameChange_event, this, std::placeholders::_1));
 
 	dataUpdateEventReceiver.linkFunction("blockDataSetConnection", std::bind(&BlockRenderDataFeeder::blockDataSetConnection_event, this, std::placeholders::_1));
+	dataUpdateEventReceiver.linkFunction("blockDataPortBitConfigurationSet", std::bind(&BlockRenderDataFeeder::blockDataPortBitConfigurationSet_event, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("blockDataRemoveConnection", std::bind(&BlockRenderDataFeeder::blockDataRemoveConnection_event, this, std::placeholders::_1));
 	dataUpdateEventReceiver.linkFunction("blockDataConnectionNameSet", std::bind(&BlockRenderDataFeeder::blockDataConnectionNameSet_event, this, std::placeholders::_1));
 
@@ -98,6 +99,25 @@ void BlockRenderDataFeeder::blockDataSetConnection_event(const DataUpdateEventMa
 			(isInput ? blockData->getConnectionPortOffset(data->get().second).value() : blockData->getConnectionPortOffset(data->get().second).value())
 	);
 	refreshBlockTexture(data->get().first);
+}
+
+void BlockRenderDataFeeder::blockDataPortBitConfigurationSet_event(const DataUpdateEventManager::EventData* event) {
+	const auto* data = event->cast<std::tuple<BlockType, connection_end_id_t, unsigned int>>();
+	assert(data);
+
+	// auto iter = blockTypeToRenderData.find(std::get<0>(data->get()));
+	// if (iter == blockTypeToRenderData.end()) {
+	// 	logError("Failed to find RenderData for BlockType {}", "BlockRenderDataFeeder", std::get<0>(data->get()));
+	// 	return;
+	// }
+	// auto portIter = iter->second.blockPortRenderDataIds.find(std::get<1>(data->get()));
+	// const BlockData* blockData = backend.getBlockDataManager().getBlockData(std::get<0>(data->get()));
+	// bool isInput = blockData->isConnectionInput(std::get<1>(data->get()));
+	// if (portIter == iter->second.blockPortRenderDataIds.end()) {
+	// 	logError("Failed to find BlockPortRenderDataId for BlockType {}, connection_end_id {}", "BlockRenderDataFeeder", std::get<0>(data->get()), std::get<1>(data->get()));
+	// 	return;
+	// }
+	refreshBlockTexture(std::get<0>(data->get()));
 }
 
 void BlockRenderDataFeeder::blockDataRemoveConnection_event(const DataUpdateEventManager::EventData* event) {

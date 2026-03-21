@@ -167,7 +167,7 @@ EvaluatorInternal::EvaluatorInternal(const Circuit& circuit, Evaluator& evaluato
 				assert(circuitBlockData);
 				const Position* internalPortPosition = circuitBlockData->getConnectionIdToPosition(connectionEndId);
 				if (!internalPortPosition) {
-					logError("No internalPortPosition for for connectionEndId {}", "EvaluatorInternal::blockDataPortBitConfigurationSet", connectionEndId);
+					logError("No internalPortPosition for connectionEndId {}", "EvaluatorInternal::blockDataPortBitConfigurationSet", connectionEndId);
 					if (portToInternalPointMappingIter->second.connectionPoint.has_value()) {
 						EvalConnectionPoint connectionPoint = portToInternalPointMappingIter->second.connectionPoint.value();
 						portToInternalPointMappingIter->second.connectionPoint = std::nullopt;

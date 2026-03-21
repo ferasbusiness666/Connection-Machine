@@ -31,6 +31,7 @@ private:
 	void blockNameChange_event(const DataUpdateEventManager::EventData* event);
 
 	void blockDataSetConnection_event(const DataUpdateEventManager::EventData* event);
+	void blockDataPortBitConfigurationSet_event(const DataUpdateEventManager::EventData* event);
 	void blockDataRemoveConnection_event(const DataUpdateEventManager::EventData* event);
 	void blockDataConnectionNameSet_event(const DataUpdateEventManager::EventData* event);
 
