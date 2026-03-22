@@ -17,7 +17,7 @@ Step:
 		Block: LIGHT ($carry)
 		View Center: (3, 3)
 	Condition:
-		TruthTable:
+		Truth Table:
 			($switch_1) ($switch_2) ($switch_3)
 			($res) ($carry)
 			000 -> 00
