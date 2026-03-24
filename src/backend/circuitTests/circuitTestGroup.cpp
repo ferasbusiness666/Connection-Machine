@@ -13,13 +13,26 @@
 #include <optional>
 #include <utility>
 
-bool CircuitTestGroup::addTestCase(std::string name) {
+bool CircuitTestGroup::addTestCase(std::string name, int id) {
     if (testCaseNameToID.contains(name)) {
         logError("Cannot add test case '{}' due to one with the same name already existing", "CircuitTestGroup", name);
         return false;
     }
-    testCases.emplace_back(name);
-    testCaseNameToID.emplace(std::make_pair(name, testCases.size()-1));
+    if (id >= testCases.size()) {
+        logError("Attempted insertion at position {} in test case vector exceeds its bounds ({})", "CircuitTestGroup", id, testCases.size());
+        return false;
+    }
+    if (id <= -1) {
+        testCases.emplace_back(name);
+        testCaseNameToID.emplace(std::make_pair(name, testCases.size()-1));
+    }
+    else {
+        testCases.insert(testCases.begin() + id, TestCase(name));
+        for (int i=0; i<testCases.size(); i++) {
+            std::string name = testCases[i].name;
+            testCaseNameToID.emplace(std::make_pair(name, i));
+        }
+    }
     return true;
 }
 
@@ -60,8 +73,12 @@ bool CircuitTestGroup::swapTestCases(std::string testCase1, std::string testCase
 }
 
 bool CircuitTestGroup::swapTestCases(int id1, int id2) {
-    if (testCases.size() <= id1 || testCases.size() <= id2) {
-        logError("Cannot swap test cases with ids {} and {} due to one or more exceeding bounds of test cases vector ({})", "CircuitTestGroup", id1, id2, testCases.size());
+    if (id1 >= testCases.size() || id1 < 0) {
+        logError("Attempted swap at position {} in test case vector exceeds its bounds ({})", "CircuitTestGroup", id1, testCases.size());
+        return false;
+    }
+    if (id2 >= testCases.size() || id2 < 0) {
+        logError("Attempted swap at position {} in test case vector exceeds its bounds ({})", "CircuitTestGroup", id2, testCases.size());
         return false;
     }
     if (id1 == id2) return false;
@@ -173,7 +190,7 @@ bool CircuitTestGroup::addCheckStatesCommand(std::string testCaseName, std::vect
     return true;
 }
 
-bool CircuitTestGroup::addTickStepCommand(std::string testCaseName, int ticks) {
+bool CircuitTestGroup::addTickStepCommand(std::string testCaseName, int ticks, int id) {
     if (isTruthTable) {
         logError("Method addTickStepCommand disallowed on truth table, use addSimpleTestCase", "CircuitTestGroup");
         return false;
@@ -183,13 +200,21 @@ bool CircuitTestGroup::addTickStepCommand(std::string testCaseName, int ticks) {
         logError("Unable to find test case with name '{}'", "CircuitTestGroup", testCaseName);
         return false;
     }
-    testCases[idIter->second].testCommands.emplace_back(TICK_STEP, ticks);
+    TestCase* testCase = &testCases[idIter->second];
+    if (id >= testCase->testCommands.size()) {
+        logError("Attempted insertion at position {} in test command vector of test case '{}' exceeds its bounds ({})", "CircuitTestGroup", id, testCaseName, testCase->testCommands.size());
+        return false;
+    }
+    if (id <= -1) testCase->testCommands.emplace_back(TICK_STEP, ticks);
+    else {
+        testCase->testCommands.insert(testCase->testCommands.begin() + id, TestCommand(TICK_STEP, 0, {}));
+    }
     return true;
 }
 
 bool CircuitTestGroup::removeTestCommand(std::string testCaseName, int id) {
     if (isTruthTable) {
-        logError("Method swapTestCommands disallowed on truth table", "CircuitTestGroup");
+        logError("Method removeTestCommand disallowed on truth table", "CircuitTestGroup");
         return false;
     }
     if (!testCaseNameToID.contains(testCaseName)) {
@@ -212,11 +237,11 @@ bool CircuitTestGroup::swapTestCommands(std::string testCaseName, int id1, int i
         return false;
     }
     TestCase* testCase = &testCases[testCaseNameToID[testCaseName]];
-    if (id1 >= testCase->testCommands.size()) {
+    if (id1 >= testCase->testCommands.size() || id1 < 0) {
         logError("Attempted swap at position {} in test command vector of test case '{}' exceeds its bounds ({})", "CircuitTestGroup", id1, testCaseName, testCase->testCommands.size());
         return false;
     }
-    if (id2 >= testCase->testCommands.size()) {
+    if (id2 >= testCase->testCommands.size() || id2 < 0) {
         logError("Attempted swap at position {} in test command vector of test case '{}' exceeds its bounds ({})", "CircuitTestGroup", id2, testCaseName, testCase->testCommands.size());
         return false;
     }

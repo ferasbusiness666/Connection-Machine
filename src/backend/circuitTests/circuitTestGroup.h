@@ -53,7 +53,7 @@ public:
     int getTruthTableTicks() {return truthTableTicks;}
     bool truthTable() {return isTruthTable;}
 
-    bool addTestCase(std::string name);
+    bool addTestCase(std::string name, int id=-1);
     bool removeTestCase(std::string name);
     bool removeTestCase(int id);
     bool swapTestCases(std::string testCase1, std::string testCase2);
@@ -66,7 +66,7 @@ public:
 
     bool addSetStatesCommand(std::string testCaseName, std::vector<std::pair<std::string, logic_state_t>> states, int id=-1);
     bool addCheckStatesCommand(std::string testCaseName, std::vector<std::pair<std::string, logic_state_t>> states, int id=-1);
-    bool addTickStepCommand(std::string testCaseName, int ticks);
+    bool addTickStepCommand(std::string testCaseName, int ticks, int id=-1);
     bool removeTestCommand(std::string testCaseName, int id);
     bool swapTestCommands(std::string testCaseName, int id1, int id2);
 
