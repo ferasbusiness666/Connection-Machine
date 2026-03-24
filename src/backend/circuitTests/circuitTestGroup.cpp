@@ -14,20 +14,29 @@
 #include <utility>
 
 bool CircuitTestGroup::addTestCase(std::string name) {
-    if (testCaseNameToID.contains(name)) return false;
+    if (testCaseNameToID.contains(name)) {
+        logError("Cannot add test case '{}' due to one with the same name already existing", "CircuitTestGroup", name);
+        return false;
+    }
     testCases.emplace_back(name);
     testCaseNameToID.emplace(std::make_pair(name, testCases.size()-1));
     return true;
 }
 
 bool CircuitTestGroup::removeTestCase(std::string name) {
-    if (!testCaseNameToID.contains(name)) return false;
+    if (!testCaseNameToID.contains(name)) {
+        logError("Unable to find test case with name '{}'", "CircuitTestGroup", name);
+        return false;
+    }
     int id = testCaseNameToID[name];
     return removeTestCase(id);
 }
 
 bool CircuitTestGroup::removeTestCase(int id) {
-    if (testCases.size() <= id) return false;
+    if (testCases.size() <= id) {
+        logError("ID {} is out of the bounds of the test cases vector ({})", "CircuitTestGroup", id, testCases.size());
+        return false;
+    }
     testCases.erase(testCases.begin() + id);
     testCaseNameToID.clear();
     for (int i=0; i<testCases.size(); i++) {
@@ -39,11 +48,11 @@ bool CircuitTestGroup::removeTestCase(int id) {
 
 bool CircuitTestGroup::swapTestCases(std::string testCase1, std::string testCase2){
     if (!testCaseNameToID.contains(testCase1)) {
-        logError("Unable to find test case with name {}", "CircuitTestGroup", testCase1);
+        logError("Unable to find test case with name '{}'", "CircuitTestGroup", testCase1);
         return false;
     }
     if (!testCaseNameToID.contains(testCase2)) {
-        logError("Unable to find test case with name {}", "CircuitTestGroup", testCase2);
+        logError("Unable to find test case with name '{}'", "CircuitTestGroup", testCase2);
         return false;
     }
     if (testCase1 == testCase2) return false;
@@ -64,12 +73,22 @@ bool CircuitTestGroup::swapTestCases(int id1, int id2) {
 
 bool CircuitTestGroup::renameTestCase(std::string oldName, std::string newName) {
     if (oldName == newName) return false;
-    if (!testCaseNameToID.contains(oldName)) return false;
+    if (!testCaseNameToID.contains(oldName)) {
+        logError("Unable to find test case with name '{}'", "CircuitTestGroup", oldName);
+        return false;
+    }
     return renameTestCase(testCaseNameToID[oldName], newName);
 }
 
 bool CircuitTestGroup::renameTestCase(int id, std::string newName) {
-    if (testCases.size() <= id) return false;
+    if (testCases.size() <= id) {
+        logError("ID {} is out of the bounds of the test cases vector ({})", "CircuitTestGroup", id, testCases.size());
+        return false;
+    }
+    if (testCaseNameToID.contains(newName)) {
+        logError("Cannot rename test case to '{}' due to one of the same name already existing", "CircuitTestGroup", newName);
+        return false;
+    }
     std::string oldName = testCases[id].name;
     testCases[id].name = newName;
     testCaseNameToID.erase(testCaseNameToID.find(oldName));
@@ -81,7 +100,10 @@ bool CircuitTestGroup::addSimpleTestCase(std::string name, std::vector<std::pair
     if (!isTruthTable) {
         logWarning("Action not recommended on non-truth table, performing anyways", "CircuitTestGroup");
     }
-    if (testCaseNameToID.contains(name)) return false;
+    if (testCaseNameToID.contains(name)) {
+        logError("Cannot add simple test case '{}' due to one with the same name already existing", "CircuitTestGroup", name);
+        return false;
+    }
     testCaseNameToID.emplace(std::make_pair(name, testCases.size()-1));
     std::vector<TestCommand> testCommands;
     testCommands.emplace_back(SET_STATES, 0, inputStates);
@@ -92,12 +114,18 @@ bool CircuitTestGroup::addSimpleTestCase(std::string name, std::vector<std::pair
 }
 
 const CircuitTestGroup::TestCase* CircuitTestGroup::getTestCase(int id) {
-    if (id >= testCases.size()) return nullptr;
+    if (id >= testCases.size()) {
+        logError("Unable to find test case with id {}", "CircuitTestGroup", id);
+        return nullptr;
+    }
     return &testCases[id];
 }
 
 const CircuitTestGroup::TestCase* CircuitTestGroup::getTestCase(std::string name) {
-    if (!testCaseNameToID.contains(name)) return nullptr;
+    if (!testCaseNameToID.contains(name)) {
+        logError("Unable to find test case with name {}", "CircuitTestGroup", name);
+        return nullptr;
+    }
     return &testCases[testCaseNameToID[name]];
 }
 
@@ -108,12 +136,12 @@ bool CircuitTestGroup::addSetStatesCommand(std::string testCaseName, std::vector
     }
     auto idIter = testCaseNameToID.find(testCaseName);
     if (idIter == testCaseNameToID.end()) {
-        logError("Unrecognized test case '{}'", "CircuitTestGroup", testCaseName);
+        logError("Unable to find test case with name '{}'", "CircuitTestGroup", testCaseName);
         return false;
     }
     TestCase* testCase = &testCases[idIter->second];
     if (id >= testCase->testCommands.size()) {
-        logError("Cannot insert test command at position {} in test command vector with size {} in test case '{}'", "CircuitTestGroup", id, testCase->testCommands.size(), testCaseName);
+        logError("Attempted insertion at position {} in test command vector of test case '{}' exceeds its bounds ({})", "CircuitTestGroup", id, testCaseName, testCase->testCommands.size());
         return false;
     }
     if (id <= -1) testCase->testCommands.emplace_back(SET_STATES, 0, states);
@@ -130,12 +158,12 @@ bool CircuitTestGroup::addCheckStatesCommand(std::string testCaseName, std::vect
     }
     auto idIter = testCaseNameToID.find(testCaseName);
     if (idIter == testCaseNameToID.end()) {
-        logError("Unrecognized test case '{}'", "CircuitTestGroup", testCaseName);
+        logError("Unable to find test case with name '{}'", "CircuitTestGroup", testCaseName);
         return false;
     }
     TestCase* testCase = &testCases[idIter->second];
     if (id >= testCase->testCommands.size()) {
-        logError("Cannot insert test command at position {} in test command vector with size {} in test case '{}'", "CircuitTestGroup", id, testCase->testCommands.size(), testCaseName);
+        logError("Attempted insertion at position {} in test command vector of test case '{}' exceeds its bounds ({})", "CircuitTestGroup", id, testCaseName, testCase->testCommands.size());
         return false;
     }
     if (id <= -1) testCase->testCommands.emplace_back(CHECK_STATES, 0, states);
@@ -145,14 +173,14 @@ bool CircuitTestGroup::addCheckStatesCommand(std::string testCaseName, std::vect
     return true;
 }
 
-bool CircuitTestGroup::addTickStepCommand(std::string testCase, int ticks) {
+bool CircuitTestGroup::addTickStepCommand(std::string testCaseName, int ticks) {
     if (isTruthTable) {
         logError("Method addTickStepCommand disallowed on truth table, use addSimpleTestCase", "CircuitTestGroup");
         return false;
     }
-    auto idIter = testCaseNameToID.find(testCase);
+    auto idIter = testCaseNameToID.find(testCaseName);
     if (idIter == testCaseNameToID.end()) {
-        logError("Unrecognized test case {}", "CircuitTestGroup", testCase);
+        logError("Unable to find test case with name '{}'", "CircuitTestGroup", testCaseName);
         return false;
     }
     testCases[idIter->second].testCommands.emplace_back(TICK_STEP, ticks);
@@ -164,7 +192,10 @@ bool CircuitTestGroup::removeTestCommand(std::string testCaseName, int id) {
         logError("Method swapTestCommands disallowed on truth table", "CircuitTestGroup");
         return false;
     }
-    if (!testCaseNameToID.contains(testCaseName)) return false;
+    if (!testCaseNameToID.contains(testCaseName)) {
+        logError("Unable to find test case with name '{}'", "CircuitTestGroup", testCaseName);
+        return false;
+    }
     TestCase* testCase = &testCases[testCaseNameToID[testCaseName]];
     if (id >= testCase->testCommands.size()) return false;
     testCase->testCommands.erase(testCase->testCommands.begin() + id);
@@ -176,16 +207,29 @@ bool CircuitTestGroup::swapTestCommands(std::string testCaseName, int id1, int i
         logError("Method swapTestCommands disallowed on truth table", "CircuitTestGroup");
         return false;
     }
-    if (!testCaseNameToID.contains(testCaseName)) return false;
+    if (!testCaseNameToID.contains(testCaseName)) {
+        logError("Unable to find test case with name '{}'", "CircuitTestGroup", testCaseName);
+        return false;
+    }
     TestCase* testCase = &testCases[testCaseNameToID[testCaseName]];
-    if (id1 >= testCase->testCommands.size() || id2 >= testCase->testCommands.size()) return false;
+    if (id1 >= testCase->testCommands.size()) {
+        logError("Attempted swap at position {} in test command vector of test case '{}' exceeds its bounds ({})", "CircuitTestGroup", id1, testCaseName, testCase->testCommands.size());
+        return false;
+    }
+    if (id2 >= testCase->testCommands.size()) {
+        logError("Attempted swap at position {} in test command vector of test case '{}' exceeds its bounds ({})", "CircuitTestGroup", id2, testCaseName, testCase->testCommands.size());
+        return false;
+    }
     std::swap(testCase->testCommands[id1], testCase->testCommands[id2]);
     return true;
 }
 
 bool CircuitTestGroup::addInput(std::string input) {
     for (auto it = inputs.begin(); it != inputs.end(); it++) {
-        if (*it == input) return false;
+        if (*it == input) {
+            logError("Input {} already exists in this test group", "CircuitTestGroup", input);
+            return false;
+        }
     }
     inputs.push_back(input);
     return true;
@@ -193,7 +237,10 @@ bool CircuitTestGroup::addInput(std::string input) {
 
 bool CircuitTestGroup::addOutput(std::string output) {
     for (auto it = outputs.begin(); it != outputs.end(); it++) {
-        if (*it == output) return false;
+        if (*it == output) {
+            logError("Output {} already exists in this test group", "CircuitTestGroup", output);
+            return false;
+        }
     }
     outputs.push_back(output);
     return true;
