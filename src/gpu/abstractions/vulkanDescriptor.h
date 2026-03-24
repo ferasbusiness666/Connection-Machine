@@ -66,4 +66,4 @@ private:
 	VulkanDevice* device;
 };
 
-#endif
+#endif /* vulkanDescriptor_h */

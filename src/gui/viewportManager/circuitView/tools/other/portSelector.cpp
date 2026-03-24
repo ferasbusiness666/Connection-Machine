@@ -4,7 +4,7 @@
 void PortSelector::activate() {
 	CircuitTool::activate();
 	registerFunction("Tool Primary Activate", std::bind(&PortSelector::press, this, std::placeholders::_1));
-	setStatusBar("Left click to set the location a port connects to.");
+	setStatusBar("Left click to set the location the port connects to.");
 }
 
 bool PortSelector::press(const Event* event) {

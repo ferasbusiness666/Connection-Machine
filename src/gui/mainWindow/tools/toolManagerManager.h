@@ -17,6 +17,7 @@ public:
 		for (auto view : circuitViews) {
 			view->getToolManager().selectBlock(blockType);
 		}
+		dataUpdateEventManager.sendEvent<BlockType>("setToolBlockTypeUpdate", selectedBlock);
 		sendChangedSignal();
 	}
 
@@ -24,6 +25,7 @@ public:
 		for (auto view : circuitViews) {
 			view->getToolManager().setOrientation(orientation);
 		}
+		dataUpdateEventManager.sendEvent<Orientation>("setToolBlockOrientationUpdate", orientation);
 		sendChangedSignal();
 	}
 
@@ -40,6 +42,8 @@ public:
 				view->getToolManager().selectBlock(selectedBlock);
 			}
 		}
+		dataUpdateEventManager.sendEvent<std::string>("setToolUpdate", activeTool);
+
 		sendChangedSignal();
 	}
 
@@ -56,7 +60,7 @@ public:
 
 		lastToolModes[activeTool] = mode;
 
-		dataUpdateEventManager.sendEvent("setToolModeUpdate");
+		dataUpdateEventManager.sendEvent<std::string>("setToolModeUpdate", mode);
 	}
 
 	void cycleActiveToolMode(int direction = 1);
@@ -113,7 +117,6 @@ private:
 	};
 
 	inline void sendChangedSignal() {
-		dataUpdateEventManager.sendEvent("setToolUpdate");
 		for (auto pair : listenerFunctions) pair.second(*this);
 	}
 

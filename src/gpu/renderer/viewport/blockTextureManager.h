@@ -14,7 +14,7 @@ class VulkanDevice;
 struct BlockTextureArray {
 	DescriptorAllocator descriptorAllocator;
 	VulkanDevice* device;
-	AllocatedImage image;
+	std::optional<AllocatedImage> image;
 	VkSampler sampler;
 	VkDescriptorSet descriptor;
 	VkExtent3D textureSize;
@@ -61,8 +61,8 @@ public:
 	void removeBlockTexture(const std::string& path);
 	void removeBlockTexture(BlockTextureId blockTextureId);
 	BlockTextureCords getBlockTextureCords(BlockTextureId blockTextureId) const;
-	BlockTextureCords getBlockTextureCords(BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize) const;
-	BlockTextureCords getBlockTextureCords(BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize, Vec2Int textureStepSize) const;
+	BlockTextureCords getBlockTextureCords(BlockTextureId blockTextureId, Vec2Int smallestTextureCord, Vec2Int textureSize) const;
+	BlockTextureCords getBlockTextureCords(BlockTextureId blockTextureId, Vec2Int smallestTextureCord, Vec2Int textureSize, Vec2Int textureStepSize) const;
 	void update();
 	void cleanup();
 

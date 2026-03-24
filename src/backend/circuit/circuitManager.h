@@ -40,10 +40,10 @@ public:
 	}
 	inline const std::map<circuit_id_t, SharedCircuit>& getCircuits() const { return circuits; }
 
-	inline circuit_id_t createNewCircuit(bool createEval = true) {
-		return createNewCircuit("circuit" + std::to_string(lastId + 1), generate_uuid_v4(), createEval);
+	inline circuit_id_t createNewCircuit(bool createSim = true) {
+		return createNewCircuit("circuit" + std::to_string(lastId + 1), generate_uuid_v4(), createSim);
 	}
-	circuit_id_t createNewCircuit(const std::string& name, const std::string& uuid = generate_uuid_v4(), bool createEval = true);
+	circuit_id_t createNewCircuit(const std::string& name, const std::string& uuid = generate_uuid_v4(), bool createSim = true);
 	inline void destroyCircuit(circuit_id_t id) {
 		auto iter = circuits.find(id);
 		if (iter != circuits.end()) {
@@ -71,19 +71,17 @@ public:
 		if (blockType == BlockType::NONE) {
 			blockType = blockDataManager.addBlock();
 		}
+
 		auto blockData = blockDataManager.getBlockData(blockType);
-		if (!blockData) {
-			logError("Did not find newly created block data with block type: {}", "CircuitManager", std::to_string(blockType));
-			return BlockType::NONE;
-		}
-		blockData->setDefaultData(false);
-		blockData->setPrimitive(false);
-		blockData->setPath("Custom");
-		blockData->setSize(Size(1));
+		assert(blockData);
 
 		// Circuit Block Data
 		circuitBlockDataManager.newCircuitBlockData(circuitId, blockType);
 		circuit->setBlockType(blockType);
+
+		blockData->setPrimitive(false);
+		blockData->setPath("Custom");
+		blockData->setSize(Size(1));
 
 		return blockType;
 	}
@@ -101,7 +99,6 @@ public:
 				logError("Did not find newly created block data with block type: {}", "CircuitManager", std::to_string(blockType));
 				return BlockType::NONE;
 			}
-			blockData->setDefaultData(false);
 			blockData->setPrimitive(false);
 			blockData->setPath("Custom");
 			blockData->setSize(Size(1));

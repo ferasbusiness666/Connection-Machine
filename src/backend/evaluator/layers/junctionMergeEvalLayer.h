@@ -18,7 +18,7 @@ private:
 	> gatherJunctionGroup(EvalConnectionPoint connectionPointToScanFrom, const EvalLayerState& evalLayerState) const;
 
 	std::unordered_map<EvalConnectionPoint, eval_gate_id> connectionPointRemapping;
-	std::unordered_multimap<eval_gate_id, EvalConnectionPoint> connectionPointReverseRemapping;
+	IdMultiMap<eval_gate_id, EvalConnectionPoint> connectionPointReverseRemapping;
 };
 
 #endif /* junctionMergeEvalLayer_h */

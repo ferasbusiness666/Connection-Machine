@@ -22,8 +22,11 @@ circuit_id_t CircuitManager::createNewCircuit(const std::string& name, const std
 		if (simulatorId != 0) {
 			EvalLogicSimulator* simulator = simulatorManager.getSimulator(simulatorId);
 			simulator->setPause(false);
+			assert(!simulator->isPause());
 			simulator->setUseTickrate(true);
+			assert(simulator->getUseTickrate());
 			simulator->setTickrate(40);
+			assert(simulator->getTickrate() == 40);
 		}
 	}
 
@@ -92,16 +95,25 @@ circuit_id_t CircuitManager::createNewCircuit(const ParsedCircuit& parsedCircuit
 		logError("Did not find newly created block data with block type: {}", "CircuitManager", std::to_string(blockType));
 		return id;
 	}
-	blockData->setDefaultData(false);
 	blockData->setPrimitive(false);
 	blockData->setPath("Custom");
 	blockData->setSize(parsedCircuit.getSize());
 
-	blockData->setTexturePath(parsedCircuit.getTexturePath());
-	blockData->setUsesTileMapTexture(parsedCircuit.getUsesTileMapTexture());
-	blockData->setTextureTileSize(parsedCircuit.getTextureTileSize());
-	blockData->setTextureSmallestCordTile(parsedCircuit.getTextureSmallestCordTile());
-	blockData->setTextureBlockTileSize(parsedCircuit.getTextureBlockTileSize());
+	blockData->newRenderData<BlockData::BlockTextureData>();
+	blockData->setBlockTexturePath(0, parsedCircuit.getTexturePath());
+	if (!parsedCircuit.getUseFullTexture()) {
+		blockData->setBlockTextureSize(0, {
+			parsedCircuit.getTextureSize().x,
+			parsedCircuit.getTextureSize().y
+		});
+		blockData->setBlockTextureTopLeft(0, {
+			parsedCircuit.getSmallestTextureCord().x,
+			parsedCircuit.getSmallestTextureCord().y
+		});
+	}
+	if (parsedCircuit.getRenderSate()) {
+
+	}
 
 	// Circuit Block Data
 	circuitBlockDataManager.newCircuitBlockData(id, blockType);
@@ -135,7 +147,7 @@ circuit_id_t CircuitManager::createNewCircuit(const ParsedCircuit& parsedCircuit
 		blockData->setConnectionPortOffset(port.connectionEndId, port.portOffset);
 	}
 
-	dataUpdateEventManager.sendEvent("blockDataUpdate");
+	dataUpdateEventManager.sendEvent<BlockType>("blockDataUpdate", blockType);
 
 	return id;
 }
@@ -165,7 +177,6 @@ circuit_id_t CircuitManager::createNewCircuit(const GeneratedCircuit& generatedC
 		logError("Did not find newly created block data with block type: {}", "CircuitManager", std::to_string(blockType));
 		return id;
 	}
-	blockData->setDefaultData(false);
 	blockData->setPrimitive(false);
 	blockData->setPath("Custom");
 	blockData->setSize(generatedCircuit.getSize());
@@ -202,7 +213,7 @@ circuit_id_t CircuitManager::createNewCircuit(const GeneratedCircuit& generatedC
 		}
 	}
 
-	dataUpdateEventManager.sendEvent("blockDataUpdate");
+	dataUpdateEventManager.sendEvent<BlockType>("blockDataUpdate", blockType);
 
 	return id;
 }
@@ -238,7 +249,6 @@ void CircuitManager::updateExistingCircuit(circuit_id_t id, const GeneratedCircu
 		logError("Did not find newly created block data with block type: {}", "CircuitManager", std::to_string(blockType));
 		return;
 	}
-	blockData->setDefaultData(false);
 	blockData->setPrimitive(false);
 	blockData->setPath("Custom");
 	blockData->setSize(generatedCircuit->getSize());
@@ -316,7 +326,7 @@ void CircuitManager::updateExistingCircuit(circuit_id_t id, const GeneratedCircu
 		}
 	}
 
-	dataUpdateEventManager.sendEvent("blockDataUpdate");
+	dataUpdateEventManager.sendEvent<BlockType>("blockDataUpdate", blockType);
 }
 
 nlohmann::json CircuitManager::dumpState() const /* GCOVR_EXCL_FUNCTION */ {

@@ -5,7 +5,6 @@
 #include <VkBootstrap.h>
 #include <vk_mem_alloc.h>
 
-#include "gpu/renderer/rml/rmlResourceManager.h"
 #include "gpu/renderer/viewport/blockTextureManager.h"
 
 class BlockTextureManager;
@@ -22,10 +21,13 @@ public:
 
 	// queue submission functions
 	void waitIdle();
+	void waitIdleNoMux();
 	VkResult submitGraphicsQueue(VkSubmitInfo* submitInfo, VkFence fence);
 	VkResult submitPresent(VkPresentInfoKHR* presentInfo);
 	void immediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function);
 
+	inline std::mutex& getGraphicsQueueLock() { return queueMux; }
+	inline const QueueInfo& getGraphicsQueue() const { return graphicsQueue; }
 	inline uint32_t getGraphicsQueueIndex() const { return graphicsQueue.index; }
 	inline uint32_t getPresentQueueIndex() const { return presentQueue.index; }
 
@@ -35,7 +37,6 @@ public:
 	inline const VmaAllocator getAllocator() const { return vmaAllocator; }
 
 	inline BlockTextureManager& getBlockTextureManager() { return blockTextureManager; }
-	inline RmlResourceManager& getRmlResourceManager() { return rmlResourceManager; }
 
 	VkSampleCountFlagBits getMaxUsableSampleCount() const { return msaaSamples; }
 
@@ -61,9 +62,8 @@ private:
 	std::mutex immediateSubmitMux;
 
 	// Texture
-	RmlResourceManager rmlResourceManager;
 	BlockTextureManager blockTextureManager;
 	VkSampleCountFlagBits msaaSamples;
 };
 
-#endif
+#endif /* vulkanDevice_h */

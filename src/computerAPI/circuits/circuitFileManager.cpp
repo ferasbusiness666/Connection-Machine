@@ -6,9 +6,16 @@
 #include "scrapMechanicParser.h"
 #include "wasmCompiler.h"
 
+#ifdef TRACY_PROFILER
+#include <tracy/Tracy.hpp>
+#endif
+
 CircuitFileManager::CircuitFileManager(CircuitManager& circuitManager) : circuitManager(circuitManager) { }
 
 std::vector<circuit_id_t> CircuitFileManager::loadFromFile(const std::string& path) {
+	#ifdef TRACY_PROFILER
+	ZoneScoped;
+	#endif
 	auto iter = filePathToFile.find(path);
 	if (iter != filePathToFile.end()) {
 		if (!(
@@ -106,9 +113,7 @@ bool CircuitFileManager::save(const std::string& UUID) {
 	FileData& fileData = filePathToFile.at(iter->second);
 	SharedCircuit circuit = circuitManager.getCircuit(UUID);
 	if (circuit) {
-		unsigned long long currentEditCount = circuit->getEditCount();
-		unsigned long long lastSaved = fileData.lastSavedEdit.at(UUID);
-		if (lastSaved >= currentEditCount) {
+		if (fileData.lastSavedEdit.at(UUID) >= circuit->getEditCount()) {
 			logInfo("No changes to save ({}). Saving anyways", "CircuitFileManager", iter->second);
 			// return true;
 		}
@@ -166,6 +171,15 @@ bool CircuitFileManager::saveFile(const std::string& path) {
 		return true;
 	}
 	return false;
+}
+
+bool CircuitFileManager::isCircuitSaved(const std::string& UUID) {
+	std::map<std::string, std::string>::iterator iter = UUIDToFilePath.find(UUID);
+	if (iter == UUIDToFilePath.end()) return false;
+	FileData& fileData = filePathToFile.at(iter->second);
+	SharedCircuit circuit = circuitManager.getCircuit(UUID);
+	assert(circuit);
+	return fileData.lastSavedEdit.at(UUID) >= circuit->getEditCount();
 }
 
 // bool CircuitFileManager::saveAllDependencies(const std::string& UUID) {

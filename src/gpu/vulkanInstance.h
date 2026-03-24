@@ -49,4 +49,4 @@ private:
 // Anti aliasing
 // Chunk size?
 
-#endif
+#endif /* vulkanInstance_h */

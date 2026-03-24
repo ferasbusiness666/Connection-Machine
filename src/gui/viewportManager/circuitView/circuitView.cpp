@@ -7,7 +7,7 @@
 #include "gpu/mainRenderer.h"
 
 CircuitView::CircuitView(Environment& environment, ViewportId viewportId) :
-	backend(environment.getBackend()), dataUpdateEventManager(environment.getBackend().getDataUpdateEventManager()), viewportId(viewportId),
+	environment(environment), backend(environment.getBackend()), dataUpdateEventManager(environment.getBackend().getDataUpdateEventManager()), viewportId(viewportId),
 	toolManager(environment, &eventRegister, viewportId, this), tutorialManager(environment, *this) {
 	MainRenderer::get().moveViewportView(viewportId, viewManager.getTopLeft(), viewManager.getBottomRight());
 	viewManager.setUpEvents(eventRegister);
@@ -20,12 +20,12 @@ const Circuit* CircuitView::getCircuit() const { return backend.getCircuit(circu
 EvalLogicSimulator* CircuitView::getSimulator() { return backend.getSimulator(simulatorId); }
 const EvalLogicSimulator* CircuitView::getSimulator() const { return backend.getSimulator(simulatorId); }
 
-void CircuitView::setSimulatoruator(simulator_id_t simulatorId, const Address& address) {
+void CircuitView::setSimulator(simulator_id_t simulatorId, const Address& address) {
 	if (simulatorId == 0) {
 		this->simulatorId = 0;
 		this->circuitId = 0;
 		circuitRenderManager.reset();
-		MainRenderer::get().setViewportSimulatoruator(viewportId, nullptr, Address());
+		MainRenderer::get().setViewportSimulator(viewportId, nullptr, Address());
 		toolManager.setCircuit(nullptr);
 		viewManager.setCircuit(nullptr);
 		dataUpdateEventManager.sendEvent("circuitViewChangeSimulator", this);
@@ -45,8 +45,8 @@ void CircuitView::setSimulatoruator(simulator_id_t simulatorId, const Address& a
 			this->address = address;
 			this->circuitId = circuitId;
 			circuitRenderManager.reset();
-			MainRenderer::get().setViewportSimulatoruator(viewportId, simulator, address);
-			circuitRenderManager.emplace(backend, this->circuitId, viewportId);
+			MainRenderer::get().setViewportSimulator(viewportId, simulator, address);
+			circuitRenderManager.emplace(environment, this->circuitId, viewportId);
 			toolManager.setCircuit(circuit.get());
 			viewManager.setCircuit(circuit.get());
 			dataUpdateEventManager.sendEvent("circuitViewChangeSimulator", this);
@@ -55,12 +55,12 @@ void CircuitView::setSimulatoruator(simulator_id_t simulatorId, const Address& a
 	}
 }
 
-void CircuitView::setSimulatoruator(const EvalLogicSimulator* simulator, const Address& address) {
+void CircuitView::setSimulator(const EvalLogicSimulator* simulator, const Address& address) {
 	if (simulator == nullptr) {
 		this->simulatorId = 0;
 		this->circuitId = 0;
 		circuitRenderManager.reset();
-		MainRenderer::get().setViewportSimulatoruator(viewportId, nullptr, Address());
+		MainRenderer::get().setViewportSimulator(viewportId, nullptr, Address());
 		toolManager.setCircuit(nullptr);
 		viewManager.setCircuit(nullptr);
 		dataUpdateEventManager.sendEvent("circuitViewChangeSimulator", this);
@@ -77,8 +77,8 @@ void CircuitView::setSimulatoruator(const EvalLogicSimulator* simulator, const A
 		this->simulatorId = simulator->getSimulatorId();
 		this->address = address;
 		this->circuitId = circuit->getCircuitId();
-		circuitRenderManager.emplace(backend, circuit->getCircuitId(), viewportId);
-		MainRenderer::get().setViewportSimulatoruator(viewportId, simulator, address);
+		circuitRenderManager.emplace(environment, circuit->getCircuitId(), viewportId);
+		MainRenderer::get().setViewportSimulator(viewportId, simulator, address);
 		toolManager.setCircuit(circuit.get());
 		viewManager.setCircuit(circuit.get());
 		dataUpdateEventManager.sendEvent("circuitViewChangeSimulator", this);
@@ -91,7 +91,7 @@ void CircuitView::setCircuit(circuit_id_t circuitId) {
 		this->simulatorId = 0;
 		this->circuitId = 0;
 		circuitRenderManager.reset();
-		MainRenderer::get().setViewportSimulatoruator(viewportId, nullptr, Address());
+		MainRenderer::get().setViewportSimulator(viewportId, nullptr, Address());
 		toolManager.setCircuit(nullptr);
 		viewManager.setCircuit(nullptr);
 		dataUpdateEventManager.sendEvent("circuitViewChangeSimulator", this);
@@ -103,8 +103,8 @@ void CircuitView::setCircuit(circuit_id_t circuitId) {
 		} else {
 			this->simulatorId = 0;
 			this->circuitId = circuit->getCircuitId();
-			circuitRenderManager.emplace(backend, circuit->getCircuitId(), viewportId);
-			MainRenderer::get().setViewportSimulatoruator(viewportId, nullptr, Address());
+			circuitRenderManager.emplace(environment, circuit->getCircuitId(), viewportId);
+			MainRenderer::get().setViewportSimulator(viewportId, nullptr, Address());
 			toolManager.setCircuit(circuit.get());
 			viewManager.setCircuit(circuit.get());
 			dataUpdateEventManager.sendEvent("circuitViewChangeSimulator", this);
@@ -118,7 +118,7 @@ void CircuitView::setCircuit(SharedCircuit circuit) {
 		this->simulatorId = 0;
 		this->circuitId = 0;
 		circuitRenderManager.reset();
-		MainRenderer::get().setViewportSimulatoruator(viewportId, nullptr, Address());
+		MainRenderer::get().setViewportSimulator(viewportId, nullptr, Address());
 		toolManager.setCircuit(nullptr);
 		viewManager.setCircuit(nullptr);
 		dataUpdateEventManager.sendEvent("circuitViewChangeSimulator", this);
@@ -128,8 +128,8 @@ void CircuitView::setCircuit(SharedCircuit circuit) {
 	} else {
 		this->simulatorId = 0;
 		this->circuitId = circuit->getCircuitId();
-		circuitRenderManager.emplace(backend, circuit->getCircuitId(), viewportId);
-		MainRenderer::get().setViewportSimulatoruator(viewportId, nullptr, Address());
+		circuitRenderManager.emplace(environment, circuit->getCircuitId(), viewportId);
+		MainRenderer::get().setViewportSimulator(viewportId, nullptr, Address());
 		toolManager.setCircuit(circuit.get());
 		viewManager.setCircuit(circuit.get());
 		dataUpdateEventManager.sendEvent("circuitViewChangeSimulator", this);
@@ -139,5 +139,7 @@ void CircuitView::setCircuit(SharedCircuit circuit) {
 
 void CircuitView::viewChanged() {
 	eventRegister.doEvent(PositionEvent("Pointer Move", viewManager.getPointerPosition()));
+	eventRegister.doEvent(PositionEvent("ViewCenterMove", viewManager.getViewCenter()));
+	eventRegister.doEvent(VectorEvent("ViewSizeChange", FVector(viewManager.getViewWidth(), viewManager.getViewHeight())));
 	MainRenderer::get().moveViewportView(viewportId, viewManager.getTopLeft(), viewManager.getBottomRight());
 }

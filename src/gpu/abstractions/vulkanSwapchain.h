@@ -28,4 +28,4 @@ private:
 	VulkanDevice* device;
 };
 
-#endif
+#endif /* vulkanSwapchain_h */

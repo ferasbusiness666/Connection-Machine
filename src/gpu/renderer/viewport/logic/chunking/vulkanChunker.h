@@ -229,7 +229,7 @@ public:
 	void regenerateAllChunksWithBlock(BlockRenderDataId blockRenderDataId);
 
 	void updateSimulatorIds(const std::vector<SimulatorMappingUpdate>& simulatorMappingUpdates);
-	void setSimulatoruator(const EvalLogicSimulator* simulator, const Address& address);
+	void setSimulator(const EvalLogicSimulator* simulator, const Address& address);
 
 	std::vector<std::shared_ptr<VulkanLogicAllocation>> getAllocations(Position min, Position max);
 

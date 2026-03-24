@@ -8,7 +8,7 @@ typedef unsigned int block_id_t;
 
 enum BlockType : std::uint16_t {
 	NONE=0,
-	AND=1, // needed
+	AND=1,
 	OR=2,
 	XOR=3,
 	NAND=4,

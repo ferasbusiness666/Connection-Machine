@@ -1,183 +1,399 @@
 #include "mainWindow.h"
 
-#include <RmlUi/Core.h>
-#include <RmlUi/Debugger.h>
 #include <SDL3/SDL_video.h>
 
-#include "gpu/mainRenderer.h"
-
-#include "gui/mainWindow/circuitView/circuitViewWidget.h"
-#include "gui/rml/rmlRenderInterface.h"
-#include "gui/rml/rmlSystemInterface.h"
+#include "SDL3/SDL_dialog.h"
+#include "widgets/blockCreationWidget.h"
+#include "imgui/imgui_internal.h"
+#include "imgui/imgui_notify.h"
 
 #include "app.h"
-
 #include "backend/settings/settings.h"
-#include "computerAPI/directoryManager.h"
 #include "environment/environment.h"
+#include "gui/helper/keybindHelpers.h"
 
-MainWindow::MainWindow(Environment& environment) :
-	sdlWindow(App::get().registerWindow("Connection Machine")), environment(environment), toolManagerManager(environment), popUpManager(*this) {
-	sdlWindow->setRecieveEventFunction(std::bind(&MainWindow::recieveEvent, this, std::placeholders::_1));
-	sdlWindow->setRenderFunction(std::bind(&MainWindow::updateRml, this));
+// widgets
+#include "widgets/blockSelectorWidget.h"
+#include "widgets/circuitViewWidget.h"
+#include "widgets/toolSelectorWidget.h"
 
-	windowId = MainRenderer::get().registerWindow(sdlWindow.get());
-
-	// create rmlUI context
-	rmlContext = Rml::CreateContext("mainWindow_" + std::to_string(windowId), Rml::Vector2i(sdlWindow->getSize().first, sdlWindow->getSize().second)); // ptr managed by rmlUi (I think)
-
-	// create rmlUI document
-	rmlDocument = rmlContext->LoadDocument(DirectoryManager::getResourceDirectory().generic_string() + "/gui/mainWindow/mainWindow.rml");
-
-	// get widget for circuit view
-	Rml::Element* circuitViewWidgetElement = rmlDocument->GetElementById("circuit-view-rendering-area");
-	createCircuitViewWidget(circuitViewWidgetElement);
-
-	// eval menutree
-	Rml::Element* evalTreeParent = rmlDocument->GetElementById("eval-tree");
-	evalWindow.emplace(
-		environment.getBackend().getSimulatorManager(),
-		environment.getBackend().getCircuitManager(),
-		*this,
-		environment.getBackend().getDataUpdateEventManager(),
-		rmlDocument,
-		evalTreeParent
-	);
-
-	//  blocks/tools menutree
-	selectorWindow.emplace(
-		environment.getBackend().getBlockDataManager(),
-		environment.getBackend().getDataUpdateEventManager(),
-		environment.getBackend().getCircuitManager().getProceduralCircuitManager(),
-		toolManagerManager,
-		rmlDocument
-	);
-
-	Rml::Element* blockCreationMenu = rmlDocument->GetElementById("block-creation-form");
-	blockCreationWindow.emplace(environment.getBackend().getCircuitManager(), environment, *this, environment.getBackend().getDataUpdateEventManager(), toolManagerManager, rmlDocument, blockCreationMenu);
-
-	simControlsManager.emplace(rmlDocument, getCircuitViewWidget(0), environment.getBackend().getDataUpdateEventManager());
-
-	settingsWindow.emplace(rmlDocument);
-
-	menuBar.emplace(rmlDocument, &settingsWindow.value(), this);
-
-	cornerLog.emplace(rmlDocument);
-
-	// keybind handling
-	rmlDocument->AddEventListener(Rml::EventId::Keydown, &keybindHandler);
-	keybindHandler.addListener("Keybinds/Editing/Paste", [this]() { toolManagerManager.setTool("paste tool"); });
-	keybindHandler.addListener("Keybinds/Editing/Tools/State Changer", [this]() { toolManagerManager.setTool("state changer"); });
-	keybindHandler.addListener("Keybinds/Editing/Tools/Connection", [this]() {
-		toolManagerManager.setTool("connection");
-		toolManagerManager.setMode("Single");
-	});
-	keybindHandler.addListener("Keybinds/Editing/Tools/Tensor Connect", [this]() {
-		toolManagerManager.setTool("connection");
-		toolManagerManager.setMode("Tensor");
-	});
-	keybindHandler.addListener("Keybinds/Editing/Tools/Move", [this]() { toolManagerManager.setTool("move"); });
-	keybindHandler.addListener("Keybinds/Editing/Tools/Mode Changer", [this]() { toolManagerManager.setTool("mode changer"); });
-	keybindHandler.addListener("Keybinds/Editing/Tools/Placement", [this]() {
-		toolManagerManager.setTool("placement");
-		toolManagerManager.setMode("Single");
-	});
-	keybindHandler.addListener("Keybinds/Editing/Tools/Area Placement", [this]() {
-		toolManagerManager.setTool("placement");
-		toolManagerManager.setMode("Area");
-	});
-	keybindHandler.addListener("Keybinds/Editing/Tools/Selection Maker", [this]() { toolManagerManager.setTool("selection maker"); });
-	keybindHandler.addListener("Keybinds/Window/Toggle Fullscreen", [this]() { sdlWindow->toggleBorderlessFullscreen(); });
-	keybindHandler.addListener("Keybinds/Window/Increase UI Scale", [this]() { offsetUiScale(kUiScaleStep); });
-	keybindHandler.addListener("Keybinds/Window/Decrease UI Scale", [this]() { offsetUiScale(-kUiScaleStep); });
-	keybindHandler.addListener("Keybinds/Window/Reset UI Scale", [this]() { applyUiScale(1.0f); });
-
+MainWindow::MainWindow() : SdlWindow("Connection Machine"), environment(true), toolManagerManager(environment), widgetIdProvider(1) {
 	const double* initialUiScale = Settings::get<SettingType::DECIMAL>("Appearance/UI Scale");
 	applyUiScale(initialUiScale ? static_cast<float>(*initialUiScale) : 1.0f);
 	Settings::registerListener<SettingType::DECIMAL>("Appearance/UI Scale", [this](const double& value) { applyUiScale(static_cast<float>(value)); });
-
-	// show rmlUi document
-	rmlDocument->Show();
 
 	Settings::registerListener<SettingType::FILE_PATH>("Appearance/Font", [this](const std::string& fontFilePath) {
 		// Rml::LoadFontFace(fontFilePath);
 		logInfo("loaded, {}", "", fontFilePath);
 	});
 
+	createWidget<CircuitViewWidget>().newCircuit();
+	createWidget<ToolSelectorWidget>();
+	createWidget<BlockSelectorWidget>();
 }
 
-MainWindow::~MainWindow() {
-	if (rmlContext) Rml::RemoveContext(rmlContext->GetName());
-	if (windowId != 0) MainRenderer::get().deregisterWindow(windowId);
-	if (sdlWindow) App::get().deregisterWindow(*sdlWindow);
+MainWindow::~MainWindow() = default;
+
+void MainWindow::destroyWidget(WidgetId widgetId) {
+	std::lock_guard lock(widgetsToDestroyMux);
+	widgetsToDestroy.insert(widgetId);
 }
 
-bool MainWindow::recieveEvent(SDL_Event& event) {
-	if (event.type == SDL_EVENT_KEYMAP_CHANGED) {
-		if (settingsWindow) {
-			settingsWindow->reloadContent();
+void MainWindow::log(const std::string& message) {
+	ImGui::InsertNotification({ ImGuiToastType_Info, 3000, "%s", message.c_str() });
+}
+
+void MainWindow::logError(const std::string& message) {
+	ImGui::InsertNotification({ ImGuiToastType_Error, 3000, "%s", message.c_str() });
+}
+
+bool MainWindow::isPressingKeybind(const Keybind& keybind, bool repeat) const {
+	if (lastUpdatedFrame >= frameIndex.load() && (keybind.getKeybind() & (~ImGuiKey::ImGuiMod_Mask_)) != ImGuiKey::ImGuiKey_None) return false;
+	return ::isPressingKeybind(keybind, pressedKeys);
+}
+
+bool MainWindow::isPressingKeybind(const std::string& settingKey, bool repeat) const {
+	const Keybind* keybind = Settings::get<SettingType::KEYBIND>(settingKey);
+	if (!keybind) return false;
+	return isPressingKeybind(*keybind, repeat);
+}
+
+void MainWindow::setNextWindowMainDockable() const {
+	ImGuiWindowClass wc;
+	wc.ClassId = 1;
+	ImGui::SetNextWindowClass(&wc);
+}
+
+void MainWindow::setNextWindowSideBarDockable() const {
+	ImGuiWindowClass wc;
+	wc.ClassId = 2;
+	ImGui::SetNextWindowClass(&wc);
+}
+
+std::chrono::time_point<std::chrono::high_resolution_clock> lastOpenCommand = std::chrono::high_resolution_clock::now();
+
+void LoadCallback(void* userData, const char* const* filePaths, int filter) {
+	MainWindow* mainWindow = (MainWindow*)userData;
+	if (filePaths && filePaths[0]) {
+		std::string filePath = filePaths[0];
+		std::vector<circuit_id_t> ids = mainWindow->getEnvironment().getCircuitFileManager().loadFromFile(filePath);
+		logInfo("Requested load from '{}' produced {} circuit(s)", "MainWindow::LoadCallback", filePath, ids.size());
+		if (ids.empty()) {
+			logInfo("No circuits found in '{}'", "MainWindow::LoadCallback", filePath);
+			return;
 		}
+		circuit_id_t id = ids.back();
+		bool doSetCir = true;
+		CircuitViewWidget& circuitViewWidget = mainWindow->createWidget<CircuitViewWidget>();
+		for (auto& iter : mainWindow->getEnvironment().getBackend().getSimulatorManager().getSimulators()) {
+			if (iter.second->getCircuitId() == id) {
+				doSetCir = false;
+				logInfo("Loaded circuit {}", "MainWindow::LoadCallback", id);
+				circuitViewWidget.getCircuitView().setSimulator(iter.first);
+				return;
+			}
+		}
+		logInfo("Loaded circuit {}", "MainWindow::LoadCallback", id);
+		circuitViewWidget.getCircuitView().setCircuit(id);
+	} else {
+		logInfo("File dialog canceled.", "MainWindow::LoadCallback");
+	}
+}
+
+void MainWindow::loadDialog() {
+	if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - lastOpenCommand).count() < 100) return;
+	static const SDL_DialogFileFilter filters[] = {
+		{ "Circuit Files", "cir" },
+		{ "BLIF Files", "blif" },
+		{ "WASM Files", "wasm" },
+	};
+
+	logInfo("Opening load dialog for circuit import", "CircuitViewWidget::load");
+	SDL_ShowOpenFileDialog(LoadCallback, this, nullptr, filters, 3, nullptr, true);
+	lastOpenCommand = std::chrono::high_resolution_clock::now();
+	focus();
+}
+
+void MainWindow::pushWindowStyling() const {
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
+}
+
+void MainWindow::popWindowStyling() const {
+	ImGui::PopStyleVar(1);
+}
+
+void MainWindow::doUpdate() {
+	std::unordered_set<WidgetId> widgetsToDestroyMoved;
+	{
+		std::lock_guard lock(widgetsToDestroyMux);
+		widgetsToDestroyMoved = std::move(widgetsToDestroy);
+		widgetsToDestroy.clear();
+	}
+	for (WidgetId widgetId : widgetsToDestroyMoved) {
+		std::lock_guard lock(widgetsMux);
+		widgets.erase(widgetId);
+	}
+	pressedKeys = ::getPressedKeys(getHandle());
+	if (isPressingKeybind("Keybinds/File/Open")) {
+		loadDialog();
+	}
+	if (isPressingKeybind("Keybinds/Editing/Paste")) {
+		toolManagerManager.setTool("paste tool");
+	}
+	if (isPressingKeybind("Keybinds/Editing/Tools/State Changer")) {
+		toolManagerManager.setTool("state changer");
+	}
+	if (isPressingKeybind("Keybinds/Editing/Tools/Connection")) {
+		toolManagerManager.setTool("connection");
+		toolManagerManager.setMode("Single");
+	}
+	if (isPressingKeybind("Keybinds/Editing/Tools/Tensor Connect")) {
+		toolManagerManager.setTool("connection");
+		toolManagerManager.setMode("Tensor");
+	}
+	if (isPressingKeybind("Keybinds/Editing/Tools/Move")) {
+		toolManagerManager.setTool("move");
+	}
+	if (isPressingKeybind("Keybinds/Editing/Tools/Mode Changer")) {
+		toolManagerManager.setTool("mode changer");
+	}
+	if (isPressingKeybind("Keybinds/Editing/Tools/Placement")) {
+		toolManagerManager.setTool("placement");
+		toolManagerManager.setMode("Single");
+	}
+	if (isPressingKeybind("Keybinds/Editing/Tools/Area Placement")) {
+		toolManagerManager.setTool("placement");
+		toolManagerManager.setMode("Area");
+	}
+	if (isPressingKeybind("Keybinds/Editing/Tools/Selection Maker")) {
+		toolManagerManager.setTool("selection maker");
+	}
+	if (isPressingKeybind("Keybinds/Window/Toggle Fullscreen")) {
+		toggleBorderlessFullscreen();
+	}
+	if (isPressingKeybind("Keybinds/Window/Increase UI Scale")) {
+		offsetUiScale(kUiScaleStep);
+	}
+	if (isPressingKeybind("Keybinds/Window/Decrease UI Scale")) {
+		offsetUiScale(-kUiScaleStep);
+	}
+	if (isPressingKeybind("Keybinds/Window/Reset UI Scale")) {
+		applyUiScale(1.0f);
 	}
 
-	// check if we want this event
-	if (!sdlWindow->isThisMyEvent(event)) return event.type == SDL_EVENT_KEYMAP_CHANGED;
-
-	if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
-		if (App::get().closeMainWindow(this)) {
-			Rml::RemoveContext(rmlContext->GetName());
-			rmlContext = nullptr;
-			MainRenderer::get().deregisterWindow(windowId);
-			windowId = 0;
-			App::get().deregisterWindow(*sdlWindow);
-			sdlWindow = nullptr;
-		}
-		return true;
+	for (std::pair<const WidgetId, std::unique_ptr<Widget>>& widget : widgets) {
+		widget.second->doUpdate();
 	}
+	environment.getBlockRenderDataFeeder().doBlockTextureUpdates();
+	lastUpdatedFrame = frameIndex.load();
+}
 
-	// send event to RML
-	RmlSDL::InputEventHandler(rmlContext, sdlWindow->getHandle(), event, getSdlWindowScalingSize());
+void MainWindow::processEvent(SDL_Event& event) {
+	// if (event.type == SDL_EVENT_KEYMAP_CHANGED) {
+	// 	if (settingsWindow) {
+	// 		settingsWindow->reloadContent();
+	// 	}
+	// }
 
-	if (event.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
+	if (event.type == SDL_EVENT_DROP_FILE && event.drop.data != nullptr) {
+		std::string filePath(event.drop.data);
+		if (filePath.empty()) return;
+		std::vector<circuit_id_t> ids = getEnvironment().getCircuitFileManager().loadFromFile(filePath);
+		if (ids.empty()) {
+			// logError("Error", "Failed to load circuit file."); // Not a error! It is valid to load 0 circuits.
+		} else {
+			circuit_id_t id = ids.back();
+			if (id == 0) {
+				logError("Error", "Failed to load circuit file.");
+				this->logError("Failed to load circuit.");
+			} else {
+				CircuitViewWidget& circuitViewWidget = createWidget<CircuitViewWidget>();
+				circuitViewWidget.getCircuitView().setCircuit(id);
+				for (auto& iter : environment.getBackend().getSimulatorManager().getSimulators()) {
+					if (iter.second->getCircuitId() == id) {
+						circuitViewWidget.getCircuitView().setSimulator(iter.first);
+					}
+				}
+			}
+		}
+	} else if (event.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
 		applyUiScale(uiScale);
-	}
-
-	// let renderer know we if resized the window
-	if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
-		MainRenderer::get().resizeWindow(windowId, { event.window.data1, event.window.data2 });
-		rmlContext->Update();
-		for (auto circuitViewWidget : circuitViewWidgets) {
-			circuitViewWidget->handleResize();
+	} else {
+		for (std::pair<const WidgetId, std::unique_ptr<Widget>>& widget : widgets) {
+			widget.second->processEvent(event);
 		}
 	}
-
-	return true;
 }
 
-void MainWindow::updateRml() {
-	RmlRenderInterface* rmlRenderInterface = dynamic_cast<RmlRenderInterface*>(Rml::GetRenderInterface());
-	if (rmlRenderInterface) {
-		rmlContext->Update();
-		rmlRenderInterface->setWindowToRenderOn(windowId);
-		MainRenderer::get().prepareForRmlRender(windowId);
-		rmlContext->Render();
-		MainRenderer::get().endRmlRender(windowId);
-	}
-	// update circuit view widget UI components like TPS display
-	for (auto& circuitViewWidget : circuitViewWidgets) {
-		circuitViewWidget->updateTps();
-	}
-	cornerLog->updateMessages();
-}
+void MainWindow::render() {
+	// global styling
+	ImGuiStyle& style = ImGui::GetStyle();
+	{std::lock_guard lock(uiScaleMux);
+	style.FontScaleMain = uiScale;}
+	style.TreeLinesFlags = ImGuiTreeNodeFlags_DrawLinesFull;
+	style.TabCloseButtonMinWidthSelected = 0;
+	style.TabRounding = 0;
+	ImGui::StyleColorsDark();
 
-void MainWindow::createCircuitViewWidget(Rml::Element* element) {
-	circuitViewWidgets.push_back(std::make_shared<CircuitViewWidget>(environment, rmlDocument, *this, windowId, element));
-	toolManagerManager.addCircuitView(circuitViewWidgets.back()->getCircuitView());
-	activeCircuitViewWidget = circuitViewWidgets.back(); // if it is created, it should be used
+	ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 10);
+	{
+		frameIndex.fetch_add(1);
+		bool open = true;
+		ImGuiIO& io = ImGui::GetIO();
+
+		ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+		ImGuiViewport* viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(viewport->Pos);
+		ImGui::SetNextWindowSize(viewport->Size);
+		ImGui::SetNextWindowViewport(viewport->ID);
+		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		if (ImGui::Begin("DockSpace", &open, window_flags)) {
+			// setup window classes
+			ImGuiWindowClass mainClass;
+			mainClass.ClassId = 1;
+			mainClass.DockingAllowUnclassed = false;
+			ImGuiWindowClass sideBarClass;
+			sideBarClass.ClassId = 2;
+			sideBarClass.DockingAllowUnclassed = false;
+
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
+			ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 5);
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+			ImGui::SetNextWindowSizeConstraints(ImVec2(40, 0), ImVec2(ImGui::GetContentRegionAvail().x - 40, FLT_MAX));
+			if (ImGui::BeginChild("LeftRegion", ImVec2(150, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX)) {
+				dockLeftId = ImGui::GetID("LeftDock");
+				if (ImGui::DockBuilderGetNode(dockLeftId) == NULL) {
+					ImGui::DockBuilderRemoveNode(dockLeftId);
+					ImGui::DockBuilderAddNode(
+						dockLeftId,
+						ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton
+					);
+				}
+				ImGui::DockSpace(dockLeftId, ImVec2(0,0), 0, &sideBarClass);
+				// kill split nodes with one window
+				ImGuiDockNode* node = ImGui::DockBuilderGetNode(dockMainId);
+				if (node && node->IsSplitNode()) {
+					ImGuiDockNode* child0 = node->ChildNodes[0];
+					ImGuiDockNode* child1 = node->ChildNodes[1];
+					if (child0 && child1) {
+						if (child0->Windows.Size == 0 && child0->ChildNodes[0] == nullptr && child0->ChildNodes[1] == nullptr)
+							ImGui::DockBuilderRemoveNode(child0->ID);
+
+						if (child1->Windows.Size == 0 && child1->ChildNodes[0] == nullptr && child1->ChildNodes[1] == nullptr)
+							ImGui::DockBuilderRemoveNode(child1->ID);
+					}
+				}
+			}
+			ImGui::EndChild();
+			ImGui::SameLine();
+			ImGui::SetNextWindowSizeConstraints(ImVec2(40, 0), ImVec2(FLT_MAX, FLT_MAX));
+			ImGui::BeginChild("MainRegion", ImVec2(0, 0), false);
+			{
+				dockMainId = ImGui::GetID("MainDock");
+				if (ImGui::DockBuilderGetNode(dockMainId) == NULL) {
+					ImGui::DockBuilderRemoveNode(dockMainId);
+					ImGui::DockBuilderAddNode(
+						dockMainId,
+						ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton
+					);
+				}
+				ImGui::DockSpace(dockMainId, ImVec2(0,0), 0, &mainClass);
+				// kill split nodes with one window
+				ImGuiDockNode* node = ImGui::DockBuilderGetNode(dockLeftId);
+				if (node && node->IsSplitNode()) {
+					ImGuiDockNode* child0 = node->ChildNodes[0];
+					ImGuiDockNode* child1 = node->ChildNodes[1];
+					if (child0 && child1) {
+						if (child0->Windows.Size == 0)
+							ImGui::DockBuilderRemoveNode(child0->ID);
+
+						if (child1->Windows.Size == 0)
+							ImGui::DockBuilderRemoveNode(child1->ID);
+					}
+				}
+			}
+			ImGui::EndChild();
+			ImGui::PopStyleVar(3);
+		}
+		ImGui::PopStyleVar(3);
+		ImGui::End();
+		if (ImGui::BeginMainMenuBar()) {
+			if (ImGui::BeginMenu("Connnection Machine")) {
+				if (ImGui::MenuItem("About")) {
+					logInfo("ImGui branch!");
+				}
+				ImGui::Separator();
+				if (ImGui::MenuItem("Quit Connnection Machine")) {
+					App::runOnMain([this]() { App::startTryingToQuit(); });
+				}
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu("File")) {
+				if (ImGui::MenuItem("New Circuit", "Ctrl+N")) {
+					App::runOnMain([this]() { environment.getBackend().createCircuit(); });
+				}
+				if (ImGui::MenuItem("New Viewport")) {
+					App::runOnMain([this]() { createWidget<CircuitViewWidget>(); });
+				}
+				if (ImGui::MenuItem("New Window")) {
+					App::runOnMain([this]() { App::makeWindow<MainWindow>(); });
+				}
+				ImGui::Separator();
+				if (ImGui::MenuItem("Open...", "Ctrl+O")) { }
+				if (ImGui::MenuItem("Save", "Ctrl+S")) { }
+				if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S")) { }
+				if (ImGui::MenuItem("Exit")) { }
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu("Edit")) {
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu("View")) {
+				if (ImGui::MenuItem("Block Selector")) {
+					App::runOnMain([this]() { createWidget<BlockSelectorWidget>(); });
+				}
+				if (ImGui::MenuItem("Tool Selector")) {
+					App::runOnMain([this]() { createWidget<ToolSelectorWidget>(); });
+				}
+				if (ImGui::MenuItem("Block Creator")) {
+					App::runOnMain([this]() { createWidget<BlockCreationWidget>(); });
+				}
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu("Help")) {
+				ImGui::EndMenu();
+			}
+
+			ImGui::EndMainMenuBar();
+		}
+
+		{
+			std::lock_guard lock(widgetsMux);
+			for (std::pair<const WidgetId, std::unique_ptr<Widget>>& widget : widgets) {
+				widget.second->doRendering();
+			}
+		}
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 5.f);
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(43.f / 255.f, 43.f / 255.f, 43.f / 255.f, 100.f / 255.f));
+		ImGui::RenderNotifications();
+		ImGui::PopStyleColor();
+		ImGui::PopStyleVar();
+	}
+	ImGui::PopStyleVar();
 }
 
 void MainWindow::offsetUiScale(double delta) {
 	const double* storedScale = Settings::get<SettingType::DECIMAL>("Appearance/UI Scale");
-	const double currentScale = storedScale ? *storedScale : static_cast<double>(uiScale);
+	double currentScale;
+	{
+		std::lock_guard lock(uiScaleMux);
+		currentScale = storedScale ? *storedScale : static_cast<double>(uiScale);
+	}
 	const double targetScale = std::clamp(currentScale + delta, kUiScaleMin, kUiScaleMax);
 	if (std::abs(targetScale - currentScale) < 1e-6) {
 		applyUiScale(static_cast<float>(targetScale));
@@ -190,45 +406,14 @@ void MainWindow::offsetUiScale(double delta) {
 
 void MainWindow::applyUiScale(float scale) {
 	const float clamped = std::clamp(scale, static_cast<float>(kUiScaleMin), static_cast<float>(kUiScaleMax));
-	if (std::abs(static_cast<double>(clamped) - static_cast<double>(scale)) > 1e-6 && !uiScaleSettingUpdateInProgress) {
+	if (std::abs(static_cast<double>(clamped) - static_cast<double>(scale)) > 1e-6) {
 		const double* storedScale = Settings::get<SettingType::DECIMAL>("Appearance/UI Scale");
 		if (!storedScale || std::abs(*storedScale - clamped) > 1e-6) {
-			uiScaleSettingUpdateInProgress = true;
 			Settings::set<SettingType::DECIMAL>("Appearance/UI Scale", clamped);
-			uiScaleSettingUpdateInProgress = false;
 		}
 	}
-	uiScale = clamped;
-	if (!rmlContext) return;
-	float displayScale = 1.0f;
-	if (sdlWindow) {
-		displayScale = SDL_GetWindowDisplayScale(sdlWindow->getHandle());
-		if (!(displayScale > 0.0f)) {
-			displayScale = 1.0f;
-		}
+	{
+		std::lock_guard lock(uiScaleMux);
+		uiScale = clamped;
 	}
-	rmlContext->SetDensityIndependentPixelRatio(displayScale * uiScale);
-
-	if (settingsWindow) {
-		settingsWindow->reloadContent();
-	}
-
-	rmlContext->Update();
-	for (auto circuitViewWidget : circuitViewWidgets) {
-		circuitViewWidget->handleResize();
-	}
-}
-
-void setGlobalCssPropertyRec(Rml::Element* element, const std::string& property, const std::string& value) {
-	if (!element) return;
-
-	element->SetProperty(property, value);
-	for (int i = 0; i < element->GetNumChildren(); i++) {
-		setGlobalCssPropertyRec(element->GetChild(i), property, value);
-	}
-}
-
-void MainWindow::setGlobalCssProperty(const std::string& property, const std::string& value) {
-	logInfo("Setting {} to {}", "", property, value);
-	setGlobalCssPropertyRec(rmlDocument, property, value);
 }
