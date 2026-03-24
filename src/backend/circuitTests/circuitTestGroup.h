@@ -48,28 +48,35 @@ public:
         std::vector<TestCommand> testCommands;
     };
 
-    //TODO: add deletion, reordering, modification
     CircuitTestGroup(std::string name, bool isTruthTable, int truthTableTicks) : name(name), isTruthTable(isTruthTable), truthTableTicks(truthTableTicks) {}
+    std::string getName() {return name;}
+    int getTruthTableTicks() {return truthTableTicks;}
+    bool truthTable() {return isTruthTable;}
+
     bool addTestCase(std::string name);
     bool removeTestCase(std::string name);
     bool removeTestCase(int id);
     bool swapTestCases(std::string testCase1, std::string testCase2);
     bool swapTestCases(int id1, int id2);
-    bool addInput(std::string input);
-    bool addOutput(std::string output);
-    bool addSetStatesCommand(std::string testCase, std::vector<std::pair<std::string, logic_state_t>> states);
-    bool addCheckStatesCommand(std::string testCase, std::vector<std::pair<std::string, logic_state_t>> states);
-    bool addTickStepCommand(std::string testCase, int ticks);
+    bool renameTestCase(std::string oldName, std::string newName);
+    bool renameTestCase(int id, std::string newName);
     bool addSimpleTestCase(std::string name, std::vector<std::pair<std::string, logic_state_t>> inputStates, std::vector<std::pair<std::string, logic_state_t>> outputStates);
-    std::string getName() {return name;}
     const TestCase* getTestCase(int id);
     const TestCase* getTestCase(std::string name);
-    int getTruthTableTicks() {return truthTableTicks;}
-    bool truthTable() {return isTruthTable;}
+
+    bool addSetStatesCommand(std::string testCaseName, std::vector<std::pair<std::string, logic_state_t>> states, int id=-1);
+    bool addCheckStatesCommand(std::string testCaseName, std::vector<std::pair<std::string, logic_state_t>> states, int id=-1);
+    bool addTickStepCommand(std::string testCaseName, int ticks);
+    bool removeTestCommand(std::string testCaseName, int id);
+    bool swapTestCommands(std::string testCaseName, int id1, int id2);
+
+    bool addInput(std::string input);
+    bool addOutput(std::string output);
     std::vector<std::string>::const_iterator getInputIterator() {return inputs.cbegin();}
     std::vector<std::string>::const_iterator getOutputIterator() {return outputs.cbegin();}
     std::vector<std::string>::const_iterator getInputIteratorEnd() {return inputs.cend();}
     std::vector<std::string>::const_iterator getOutputIteratorEnd() {return outputs.cend();}
+
     bool runAllTests(BlockType blockType, bool haltOnFailure, Environment& environment);
     bool runTests(std::vector<std::string>& testsToRun, BlockType blockType, bool haltOnFailure, Environment& environment);
     bool runTests(std::vector<int>& testsToRun, BlockType blockType, bool haltOnFailure, Environment& environment);
