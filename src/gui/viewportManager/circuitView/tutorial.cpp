@@ -35,7 +35,7 @@ void Tutorial::StartTutorial() {
 		logError("Failed to create simulator.", "Tutorial::StartTutorial");
 		return;
 	}
-	circuitView.setSimulatoruator(simulatorId.value());
+	circuitView.setSimulator(simulatorId.value());
 	simulator = circuitView.getBackend().getSimulator(simulatorId.value());
 	currentCircuit = circuitView.getBackend().getCircuitManager().getCircuit(circuitId);
 	currentCircuit->connectListener(this, std::bind(&Tutorial::checkTutorial, this, std::placeholders::_1, std::placeholders::_2));
@@ -63,7 +63,7 @@ std::string Tutorial::selectTutorial() {
 	return filenames[converted - 1];
 }
 
-void Tutorial::Stop() {
+void Tutorial::stop() {
 	if (!tutorialRunning) return;
 	if (currentCircuit) {
 		currentCircuit->disconnectListener(this);
@@ -83,7 +83,7 @@ void Tutorial::advanceTutorial() {
 		tutorialState++;
 		elementCreator.clear();
 		if (tutorialState == tutorialSteps.size()) {
-			Stop();
+			stop();
 			return;
 		}
 		runCurrentStep();

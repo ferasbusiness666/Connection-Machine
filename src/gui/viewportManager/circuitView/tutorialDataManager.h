@@ -6,4 +6,4 @@
 
 std::vector<TutorialStep> loadTutorialFromFile(std::string filename);
 
-#endif
+#endif /* tutorialDataManager_h */

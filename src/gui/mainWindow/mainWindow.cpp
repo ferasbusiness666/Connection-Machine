@@ -3,14 +3,18 @@
 #include <SDL3/SDL_video.h>
 
 #include "SDL3/SDL_dialog.h"
-#include "widgets/blockCreationWidget.h"
+#include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
 #include "imgui/imgui_notify.h"
+#include "logging/logging.h"
+#include "widgets/blockCreationWidget.h"
 
 #include "app.h"
 #include "backend/settings/settings.h"
 #include "environment/environment.h"
 #include "gui/helper/keybindHelpers.h"
+
+#include "computerAPI/directoryManager.h"
 
 // widgets
 #include "widgets/blockSelectorWidget.h"
@@ -39,13 +43,9 @@ void MainWindow::destroyWidget(WidgetId widgetId) {
 	widgetsToDestroy.insert(widgetId);
 }
 
-void MainWindow::log(const std::string& message) {
-	ImGui::InsertNotification({ ImGuiToastType_Info, 3000, "%s", message.c_str() });
-}
+void MainWindow::log(const std::string& message) { ImGui::InsertNotification({ ImGuiToastType_Info, 3000, "%s", message.c_str() }); }
 
-void MainWindow::logError(const std::string& message) {
-	ImGui::InsertNotification({ ImGuiToastType_Error, 3000, "%s", message.c_str() });
-}
+void MainWindow::logError(const std::string& message) { ImGui::InsertNotification({ ImGuiToastType_Error, 3000, "%s", message.c_str() }); }
 
 bool MainWindow::isPressingKeybind(const Keybind& keybind, bool repeat) const {
 	if (lastUpdatedFrame >= frameIndex.load() && (keybind.getKeybind() & (~ImGuiKey::ImGuiMod_Mask_)) != ImGuiKey::ImGuiKey_None) return false;
@@ -114,13 +114,9 @@ void MainWindow::loadDialog() {
 	focus();
 }
 
-void MainWindow::pushWindowStyling() const {
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
-}
+void MainWindow::pushWindowStyling() const { ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2)); }
 
-void MainWindow::popWindowStyling() const {
-	ImGui::PopStyleVar(1);
-}
+void MainWindow::popWindowStyling() const { ImGui::PopStyleVar(1); }
 
 void MainWindow::doUpdate() {
 	std::unordered_set<WidgetId> widgetsToDestroyMoved;
@@ -180,7 +176,13 @@ void MainWindow::doUpdate() {
 	if (isPressingKeybind("Keybinds/Window/Reset UI Scale")) {
 		applyUiScale(1.0f);
 	}
-
+	if (isPressingKeybind("Keybinds/Tutorial/Start")) {
+		CircuitViewWidget& circuitViewWidget = createWidget<CircuitViewWidget>();
+		circuitViewWidget.getCircuitView().getTutorialManager().setTutorial(
+			loadTutorialFromFile(circuitViewWidget.getCircuitView().getTutorialManager().selectTutorial())
+		);
+		circuitViewWidget.getCircuitView().getTutorialManager().StartTutorial();
+	}
 	for (std::pair<const WidgetId, std::unique_ptr<Widget>>& widget : widgets) {
 		widget.second->doUpdate();
 	}
@@ -228,8 +230,10 @@ void MainWindow::processEvent(SDL_Event& event) {
 void MainWindow::render() {
 	// global styling
 	ImGuiStyle& style = ImGui::GetStyle();
-	{std::lock_guard lock(uiScaleMux);
-	style.FontScaleMain = uiScale;}
+	{
+		std::lock_guard lock(uiScaleMux);
+		style.FontScaleMain = uiScale;
+	}
 	style.TreeLinesFlags = ImGuiTreeNodeFlags_DrawLinesFull;
 	style.TabCloseButtonMinWidthSelected = 0;
 	style.TabRounding = 0;
@@ -268,23 +272,18 @@ void MainWindow::render() {
 				dockLeftId = ImGui::GetID("LeftDock");
 				if (ImGui::DockBuilderGetNode(dockLeftId) == NULL) {
 					ImGui::DockBuilderRemoveNode(dockLeftId);
-					ImGui::DockBuilderAddNode(
-						dockLeftId,
-						ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton
-					);
+					ImGui::DockBuilderAddNode(dockLeftId, ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton);
 				}
-				ImGui::DockSpace(dockLeftId, ImVec2(0,0), 0, &sideBarClass);
+				ImGui::DockSpace(dockLeftId, ImVec2(0, 0), 0, &sideBarClass);
 				// kill split nodes with one window
 				ImGuiDockNode* node = ImGui::DockBuilderGetNode(dockMainId);
 				if (node && node->IsSplitNode()) {
 					ImGuiDockNode* child0 = node->ChildNodes[0];
 					ImGuiDockNode* child1 = node->ChildNodes[1];
 					if (child0 && child1) {
-						if (child0->Windows.Size == 0 && child0->ChildNodes[0] == nullptr && child0->ChildNodes[1] == nullptr)
-							ImGui::DockBuilderRemoveNode(child0->ID);
+						if (child0->Windows.Size == 0 && child0->ChildNodes[0] == nullptr && child0->ChildNodes[1] == nullptr) ImGui::DockBuilderRemoveNode(child0->ID);
 
-						if (child1->Windows.Size == 0 && child1->ChildNodes[0] == nullptr && child1->ChildNodes[1] == nullptr)
-							ImGui::DockBuilderRemoveNode(child1->ID);
+						if (child1->Windows.Size == 0 && child1->ChildNodes[0] == nullptr && child1->ChildNodes[1] == nullptr) ImGui::DockBuilderRemoveNode(child1->ID);
 					}
 				}
 			}
@@ -296,23 +295,18 @@ void MainWindow::render() {
 				dockMainId = ImGui::GetID("MainDock");
 				if (ImGui::DockBuilderGetNode(dockMainId) == NULL) {
 					ImGui::DockBuilderRemoveNode(dockMainId);
-					ImGui::DockBuilderAddNode(
-						dockMainId,
-						ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton
-					);
+					ImGui::DockBuilderAddNode(dockMainId, ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton);
 				}
-				ImGui::DockSpace(dockMainId, ImVec2(0,0), 0, &mainClass);
+				ImGui::DockSpace(dockMainId, ImVec2(0, 0), 0, &mainClass);
 				// kill split nodes with one window
 				ImGuiDockNode* node = ImGui::DockBuilderGetNode(dockLeftId);
 				if (node && node->IsSplitNode()) {
 					ImGuiDockNode* child0 = node->ChildNodes[0];
 					ImGuiDockNode* child1 = node->ChildNodes[1];
 					if (child0 && child1) {
-						if (child0->Windows.Size == 0)
-							ImGui::DockBuilderRemoveNode(child0->ID);
+						if (child0->Windows.Size == 0) ImGui::DockBuilderRemoveNode(child0->ID);
 
-						if (child1->Windows.Size == 0)
-							ImGui::DockBuilderRemoveNode(child1->ID);
+						if (child1->Windows.Size == 0) ImGui::DockBuilderRemoveNode(child1->ID);
 					}
 				}
 			}
@@ -365,6 +359,27 @@ void MainWindow::render() {
 				ImGui::EndMenu();
 			}
 			if (ImGui::BeginMenu("Help")) {
+				if (ImGui::BeginMenu("Tutorial")) {
+					// ; // gather
+					std::vector<std::string> filenames;
+					logInfo("Tutorials Loaded:", "MainWindow");
+					logInfo((DirectoryManager::getResourceDirectory() / "tutorials" / "").string());
+					for (const auto& file : std::filesystem::directory_iterator((DirectoryManager::getResourceDirectory() / "tutorials" / "").string())) {
+						filenames.push_back(file.path().filename().string());
+						logInfo("  [" + std::to_string(filenames.size()) + "] " + file.path().filename().string());
+					}
+					for (const std::string& tutorial : filenames) {
+						if (ImGui::MenuItem(tutorial.c_str())) {
+							App::runOnMain([this, tutorial]() {
+								CircuitViewWidget& circuitViewWidget = createWidget<CircuitViewWidget>();
+								circuitViewWidget.getCircuitView().getTutorialManager().setTutorial(loadTutorialFromFile(tutorial));
+								circuitViewWidget.getCircuitView().getTutorialManager().StartTutorial();
+								circuitViewWidget.getCircuitView().getCircuit()->setCircuitName(tutorial);
+							});
+						}
+					}
+					ImGui::EndMenu();
+				}
 				ImGui::EndMenu();
 			}
 

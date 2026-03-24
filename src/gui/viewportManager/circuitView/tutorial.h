@@ -60,7 +60,7 @@ public:
 
 	Tutorial(Environment& environment, CircuitView& circuitView);
 	void StartTutorial();
-	void Stop();
+	void stop();
 	void setTutorial(const std::vector<TutorialStep>& steps);
 	void forceCompleteStep();
 
