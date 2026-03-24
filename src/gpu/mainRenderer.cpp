@@ -401,3 +401,30 @@ void MainRenderer::removeHalfConnectionPreview(ViewportId viewportId, ElementId 
 	}
 	iter->second.removeHalfConnectionPreview(id);
 }
+
+ElementId MainRenderer::addTextOnViewport(ViewportId viewportId, const TextRenderData& textRenderData) {
+	auto iter = viewportRenderers.find(viewportId);
+	if (iter == viewportRenderers.end()) {
+		logError("Failed to call addTextOnViewport on non existent viewport {}", "MainRenderer", viewportId);
+		return 0;
+	}
+	return iter->second.addText(textRenderData);
+}
+
+void MainRenderer::removeTextOnViewport(ViewportId viewportId, ElementId id) {
+	auto iter = viewportRenderers.find(viewportId);
+	if (iter == viewportRenderers.end()) {
+		logError("Failed to call removeTextOnViewport on non existent viewport {}", "MainRenderer", viewportId);
+		return;
+	}
+	iter->second.removeText(id);
+}
+
+const std::unordered_map<ElementId, TextRenderData>* MainRenderer::getTextOnViewport(ViewportId viewportId) const {
+	auto iter = viewportRenderers.find(viewportId);
+	if (iter == viewportRenderers.end()) {
+		logError("Failed to call getTextOnViewport on non existent viewport {}", "MainRenderer", viewportId);
+		return nullptr;
+	}
+	return &iter->second.getTextOnViewport();
+}

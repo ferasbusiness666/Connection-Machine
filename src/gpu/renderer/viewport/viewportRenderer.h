@@ -74,6 +74,10 @@ public:
 	ElementId addHalfConnectionPreview(const HalfConnectionPreview& halfConnectionPreview);
 	void removeHalfConnectionPreview(ElementId halfConnectionPreview);
 
+	ElementId addText(const TextRenderData& textRenderData);
+	void removeText(ElementId id);
+	const std::unordered_map<ElementId, TextRenderData>& getTextOnViewport() const;
+
 	std::shared_ptr<Frame> getCurrentFrame() { return frames.getCurrentFrame(); }
 
 private:
@@ -100,6 +104,7 @@ private:
 	std::unordered_map<ElementId, std::vector<BoxSelectionRenderData>> boxSelections;
 	std::unordered_map<ElementId, ConnectionPreviewRenderData> connectionPreviews;
 	std::unordered_map<ElementId, std::vector<ArrowRenderData>> arrows;
+	std::unordered_map<ElementId, TextRenderData> renderText;
 	std::mutex elementsMux;
 
 	// View data

@@ -58,7 +58,7 @@ private:
 	Environment& environment;
 	Backend& backend;
 
-	ViewportId viewportId;
+	const ViewportId viewportId;
 	circuit_id_t circuitId;
 	simulator_id_t simulatorId;
 	Address address;

@@ -97,6 +97,18 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 		setGUIValue<std::string>("StatusBar", data->get());
 		return true;
 	});
+	setupGUIValue<FPosition>("ViewportCenter", circuitView->getViewManager().getViewCenter(), nullptr);
+	setupGUIValue<FVector>("ViewportCellSize", FVector(circuitView->getViewManager().getViewHeight(), circuitView->getViewManager().getViewWidth()), nullptr);
+	circuitView->getEventRegister().registerFunction("ViewCenterMove", [this](const Event* event) -> bool {
+		const PositionEvent* positionEvent = event->cast<PositionEvent>();
+		if (positionEvent) setGUIValue<FPosition>("ViewportCenter", positionEvent->getFPosition());
+		return false;
+	});
+	circuitView->getEventRegister().registerFunction("ViewSizeChange", [this](const Event* event) -> bool {
+		const VectorEvent* vectorEvent = event->cast<VectorEvent>();
+		if (vectorEvent) setGUIValue<FVector>("ViewportCellSize", vectorEvent->getFVector());
+		return false;
+	});
 }
 
 CircuitViewWidget::~CircuitViewWidget() {
@@ -174,7 +186,7 @@ void CircuitViewWidget::render() {
 	ImGui::SetNextWindowDockID(getMainWindow().getDockMainId(), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(400, 300), ImGuiCond_FirstUseEver);
 	getMainWindow().setNextWindowMainDockable();
-	ImGuiWindowFlags windowFlags = ImGuiWindowFlags_None;
+	ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 	if (!getGUIValue_rendering<bool>("CircuitSaved")) {
 		windowFlags |= ImGuiWindowFlags_UnsavedDocument;
 	}
@@ -214,13 +226,43 @@ void CircuitViewWidget::render() {
 		setGUIValue_rendering("CircuitViewSize", Vec2(viewportPanelSize.x, viewportPanelSize.y));
 		setGUIValue_rendering("CircuitViewIsFocused", ImGui::IsItemFocused());
 
-		ImDrawList* draw_list = ImGui::GetWindowDrawList();
-		draw_list->ChannelsSplit(2);
+		ImDrawList* drawlist = ImGui::GetWindowDrawList();
+
+		FPosition viewportCenter = getGUIValue_rendering<FPosition>("ViewportCenter");
+		FVector viewportCellSize = getGUIValue_rendering<FVector>("ViewportCellSize");
+		ImVec2 pixPerCell = ImVec2(viewportPanelSize.x / viewportCellSize.dx, viewportPanelSize.y / viewportCellSize.dy);
+		{
+			const auto* renderText = MainRenderer::get().getTextOnViewport(circuitView->getViewportId());
+			if (renderText) {
+				for (const auto& pair : *renderText) {
+					ImVec2 textPos = viewportWindowPos + viewportPanelSize / 2 - ImVec2(
+						pixPerCell.x * (viewportCenter.x - pair.second.pos.x),
+						pixPerCell.y * (viewportCenter.y - pair.second.pos.y)
+					);
+					ImGui::SetCursorPos(textPos);
+					float curScale = ImGui::GetCurrentWindow()->FontWindowScale;
+					if (pair.second.scale != 0) {
+						if (pair.second.scale > 0) {
+							ImGui::SetWindowFontScale(pair.second.scale * pixPerCell.x * 0.02);
+						}
+						if (pair.second.scale < 0) {
+							ImGui::SetWindowFontScale(-pair.second.scale * curScale);
+						}
+						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+						ImGui::Text("%s", pair.second.text.c_str());
+						ImGui::PopStyleColor();
+					}
+					ImGui::SetWindowFontScale(curScale);
+				}
+			}
+		}
+
+		drawlist->ChannelsSplit(2);
 		ImVec2 simControlsSize;
 		const int offset = 2;
 		const int padding = 4;
 		{
-			draw_list->ChannelsSetCurrent(1);
+			drawlist->ChannelsSetCurrent(1);
 			ImGui::SetCursorPos({ viewportWindowPos.x + padding + offset, viewportWindowPos.y + padding + offset });
 			ImGui::BeginGroup();
 				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
@@ -239,20 +281,20 @@ void CircuitViewWidget::render() {
 			simControlsSize = ImGui::GetItemRectSize();
 		}
 		{
-			draw_list->ChannelsSetCurrent(0);
-			draw_list->AddRectFilled(
+			drawlist->ChannelsSetCurrent(0);
+			drawlist->AddRectFilled(
 				{ viewportWindowScreenPos.x + offset, viewportWindowScreenPos.y + offset },
 				{ viewportWindowScreenPos.x + simControlsSize.x + padding * 2 + offset, viewportWindowScreenPos.y + simControlsSize.y + padding * 2 + offset },
 				ImColor(0.f, 0.f, 0.f, 0.2f),
 				5.f
 			);
 		}
-		draw_list->ChannelsMerge();
+		drawlist->ChannelsMerge();
 
 		std::string statusBarText = getGUIValue_rendering<std::string>("StatusBar");
 		if (!statusBarText.empty()) {
 			ImVec2 textSize = ImGui::CalcTextSize(statusBarText.data());
-			draw_list->AddRectFilled(
+			drawlist->AddRectFilled(
 				ImVec2(viewportPanelSize.x / 2.f, viewportPanelSize.y) + viewportWindowScreenPos - textSize / 2.f - ImVec2(padding, 50 +padding),
 				ImVec2(viewportPanelSize.x / 2.f, viewportPanelSize.y) + viewportWindowScreenPos + textSize / 2.f - ImVec2(-padding, 50 -padding),
 				ImColor(0.9f, 0.9f, 0.9f, 0.9f),

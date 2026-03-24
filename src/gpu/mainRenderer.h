@@ -92,6 +92,9 @@ public:
 	ElementId addHalfConnectionPreview(ViewportId viewportId, const HalfConnectionPreview& halfConnectionPreview);
 	void removeHalfConnectionPreview(ViewportId viewportId, ElementId id);
 
+	ElementId addTextOnViewport(ViewportId viewportId, const TextRenderData& textRenderData);
+	void removeTextOnViewport(ViewportId viewportId, ElementId id);
+	const std::unordered_map<ElementId, TextRenderData>* getTextOnViewport(ViewportId viewportId) const;
 private:
 	inline WindowId getNewWindowId() { return ++lastWindowId; }
 	inline ViewportId getNewViewportId() { return ++lastViewportId; }

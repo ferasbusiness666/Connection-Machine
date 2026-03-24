@@ -2,6 +2,7 @@
 
 #include "gui/viewportManager/circuitView/tools/other/portAdder.h"
 #include "gui/viewportManager/circuitView/events/customEvents.h"
+#include "imgui/imgui_internal.h"
 #include "imgui/imgui_stdlib.h"
 
 #include "gui/viewportManager/circuitView/circuitView.h"
@@ -53,6 +54,13 @@ BlockCreationWidget::BlockCreationWidget(WidgetId widgetId, MainWindow& mainWind
 		setupGUIValue<float>("WindowScalingSize", getMainWindow().getWindowScalingSize(), nullptr);
 		setupGUIValue<FPosition>("MouseGridPos", circuitView->getViewManager().getPointerPosition(), nullptr);
 		setupGUIValue<std::string>("CircuitName", "NULL", nullptr);
+		setupGUIValue<std::string>("StatusBar", "", nullptr);
+		circuitView->getEventRegister().registerFunction("status bar changed", [this](const Event* event) -> bool {
+			const EventWithValue<std::string>* data = event->cast2<std::string>();
+			if (!data) return false;
+			setGUIValue<std::string>("StatusBar", data->get());
+			return true;
+		});
 		setupGUIValue<FPosition>("ViewportCenter", circuitView->getViewManager().getViewCenter(), nullptr);
 		setupGUIValue<FVector>("ViewportCellSize", FVector(circuitView->getViewManager().getViewHeight(), circuitView->getViewManager().getViewWidth()), nullptr);
 		circuitView->getEventRegister().registerFunction("ViewCenterMove", [this](const Event* event) -> bool {
@@ -266,6 +274,31 @@ void BlockCreationWidget::renderViewport(circuit_id_t circuitId) {
 	FPosition viewportCenter = getGUIValue_rendering<FPosition>("ViewportCenter");
 	FVector viewportCellSize = getGUIValue_rendering<FVector>("ViewportCellSize");
 	ImVec2 pixPerCell = ImVec2(viewportPanelSize.x / viewportCellSize.dx, viewportPanelSize.y / viewportCellSize.dy);
+	{
+		const auto* renderText = MainRenderer::get().getTextOnViewport(circuitView->getViewportId());
+		if (renderText) {
+			for (const auto& pair : *renderText) {
+				ImVec2 textPos = viewportWindowPos + viewportPanelSize / 2 - ImVec2(
+					pixPerCell.x * (viewportCenter.x - pair.second.pos.x),
+					pixPerCell.y * (viewportCenter.y - pair.second.pos.y)
+				);
+				ImGui::SetCursorPos(textPos);
+				float curScale = ImGui::GetCurrentWindow()->FontWindowScale;
+				if (pair.second.scale != 0) {
+					if (pair.second.scale > 0) {
+						ImGui::SetWindowFontScale(pair.second.scale * pixPerCell.x * 0.02);
+					}
+					if (pair.second.scale < 0) {
+						ImGui::SetWindowFontScale(-pair.second.scale * curScale);
+					}
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+					ImGui::Text("%s", pair.second.text.c_str());
+					ImGui::PopStyleColor();
+				}
+				ImGui::SetWindowFontScale(curScale);
+			}
+		}
+	}
 	std::optional<connection_end_id_t> currentlyEditingPort = getGUIValue<std::optional<connection_end_id_t>>("currentlyEditingPort");
 	if (currentlyEditingPort.has_value()) {
 		auto connectionIter = blockDataCopy->connections.find(currentlyEditingPort.value());
@@ -518,6 +551,20 @@ void BlockCreationWidget::renderViewport(circuit_id_t circuitId) {
 		}
 	}
 	drawList->ChannelsMerge();
+	std::string statusBarText = getGUIValue_rendering<std::string>("StatusBar");
+	if (!statusBarText.empty()) {
+		ImVec2 textSize = ImGui::CalcTextSize(statusBarText.data());
+		drawList->AddRectFilled(
+			ImVec2(viewportPanelSize.x / 2.f, viewportPanelSize.y) + viewportWindowScreenPos - textSize / 2.f - ImVec2(padding, 50 +padding),
+			ImVec2(viewportPanelSize.x / 2.f, viewportPanelSize.y) + viewportWindowScreenPos + textSize / 2.f - ImVec2(-padding, 50 -padding),
+			ImColor(0.9f, 0.9f, 0.9f, 0.9f),
+			5.f
+		);
+		ImGui::SetCursorScreenPos(ImVec2(viewportPanelSize.x / 2.f, viewportPanelSize.y) + viewportWindowScreenPos - textSize / 2.f - ImVec2(0, 50));
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+		ImGui::Text("%s", statusBarText.data());
+		ImGui::PopStyleColor();
+	}
 }
 
 void BlockCreationWidget::renderSideBar(circuit_id_t circuitId) {

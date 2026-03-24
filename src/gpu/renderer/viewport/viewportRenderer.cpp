@@ -339,6 +339,24 @@ std::vector<ConnectionPreviewRenderData> ViewportRenderer::getConnectionPreviews
 	return returnConnectionPreviews;
 }
 
+ElementId ViewportRenderer::addText(const TextRenderData& textRenderData) {
+	std::lock_guard<std::mutex> lock(elementsMux);
+
+	ElementId newElement = ++currentElementId;
+	renderText.emplace(newElement, textRenderData);
+
+	return newElement;
+}
+
+void ViewportRenderer::removeText(ElementId id) {
+	std::lock_guard<std::mutex> lock(elementsMux);
+	renderText.erase(id);
+}
+
+const std::unordered_map<ElementId, TextRenderData>& ViewportRenderer::getTextOnViewport() const {
+	return renderText;
+}
+
 void ViewportRenderer::render(Frame& frame) {
 #ifdef TRACY_PROFILER
 	ZoneScoped;
