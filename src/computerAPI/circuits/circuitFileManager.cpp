@@ -97,6 +97,10 @@ bool CircuitFileManager::saveToFile(const std::string& path, const std::string& 
 		return false;
 	}
 	if (saver.save(iter->second, true)) {
+		for (auto& pair : iter->second.lastSavedEdit) {
+			SharedCircuit savedCircuit = circuitManager.getCircuit(pair.first);
+			if (savedCircuit) pair.second = savedCircuit->getEditCount();
+		}
 		logInfo("Successfully saved to: {}", "CircuitFileManager", path);
 		return true;
 	}

@@ -61,6 +61,8 @@ public:
 	// ImGuiID getDockRightId() const { return dockRightId; }
 	// ImGuiID getDockBottomId() const { return dockBottomId; }
 
+	void createPopup(std::string message, const std::vector<std::pair<std::string, std::function<void()>>>& buttons);
+
 	void setNextWindowMainDockable() const;
 	void setNextWindowSideBarDockable() const;
 
@@ -70,12 +72,13 @@ public:
 
 private:
 	void doUpdate() override final;
-	bool killWindow(bool forced) override final { widgets.clear(); return true; }
+	bool killWindow(bool forced) override final;
 	void render() override final;
 	void processEvent(SDL_Event& event) override final;
 	nlohmann::json dumpState() const override final { return "Main Window"; }
 
 private:
+	bool tryClose();
 	void offsetUiScale(double delta);
 	void applyUiScale(float scale);
 

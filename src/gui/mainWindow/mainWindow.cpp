@@ -1,21 +1,23 @@
 #include "mainWindow.h"
 
 #include <SDL3/SDL_video.h>
-
 #include "SDL3/SDL_dialog.h"
-#include "widgets/blockCreationWidget.h"
+
 #include "imgui/imgui_internal.h"
 #include "imgui/imgui_notify.h"
 
 #include "app.h"
-#include "backend/settings/settings.h"
 #include "environment/environment.h"
+#include "backend/settings/settings.h"
 #include "gui/helper/keybindHelpers.h"
+#include "gui/helper/saveCallback.h"
 
 // widgets
+#include "widgets/blockCreationWidget.h"
 #include "widgets/blockSelectorWidget.h"
 #include "widgets/circuitViewWidget.h"
 #include "widgets/toolSelectorWidget.h"
+#include "widgets/popupWidget.h"
 
 MainWindow::MainWindow() : SdlWindow("Connection Machine"), environment(true), toolManagerManager(environment), widgetIdProvider(1) {
 	const double* initialUiScale = Settings::get<SettingType::DECIMAL>("Appearance/UI Scale");
@@ -56,6 +58,10 @@ bool MainWindow::isPressingKeybind(const std::string& settingKey, bool repeat) c
 	const Keybind* keybind = Settings::get<SettingType::KEYBIND>(settingKey);
 	if (!keybind) return false;
 	return isPressingKeybind(*keybind, repeat);
+}
+
+void MainWindow::createPopup(std::string message, const std::vector<std::pair<std::string, std::function<void()>>>& buttons) {
+	createWidget<PopupWidget>(message, buttons);
 }
 
 void MainWindow::setNextWindowMainDockable() const {
@@ -186,6 +192,14 @@ void MainWindow::doUpdate() {
 	}
 	environment.getBlockRenderDataFeeder().doBlockTextureUpdates();
 	lastUpdatedFrame = frameIndex.load();
+}
+
+bool MainWindow::killWindow(bool forced) {
+	if (tryClose() || forced) {
+		widgets.clear();
+		return true;
+	}
+	return false;
 }
 
 void MainWindow::processEvent(SDL_Event& event) {
@@ -385,6 +399,91 @@ void MainWindow::render() {
 		ImGui::PopStyleVar();
 	}
 	ImGui::PopStyleVar();
+}
+
+bool MainWindow::tryClose() {
+	// if (tryingToQuit) return;
+	// { // TEMPORARY
+	// 	// do dumpstate and into file
+	// 	std::string dumpStateStr = dumpState().dump(1, '\t');
+	// 	std::string path = (DirectoryManager::getConfigDirectory() / ("dumpstate.json")).string();
+	// 	std::ofstream file(path);
+	// 	if (file.is_open()) {
+	// 		file << dumpStateStr;
+	// 		file.close();
+	// 		logInfo("Dumped state to {}", "App", path);
+	// 	} else {
+	// 		logError("Could not open {} to dump state!", "App", path);
+	// 	}
+	// }
+	for (auto& fileData : environment.getCircuitFileManager().getAllFiles()) {
+		if (fileData.second.lastSavedEdit.empty()) continue;
+		std::string message = "Do you want to save:\n";
+		std::vector<const std::string*> toSave;
+		for (auto lastSavedEdit : fileData.second.lastSavedEdit) {
+			const SharedCircuit& circuit = environment.getBackend().getCircuitManager().getCircuit(lastSavedEdit.first);
+			if (!circuit->isEditable()) continue;
+			if (lastSavedEdit.second == circuit->getEditCount()) continue;
+			message += circuit->getCircuitName() + "\n";
+			toSave.emplace_back(&circuit->getUUID());
+		}
+		if (toSave.size() == 0) continue;
+
+		createPopup(
+			message,
+			{
+				std::make_pair("Save",[filePath = fileData.second.fileLocation, this]() {
+					logInfo("Saving {}", "", filePath);
+					environment.getCircuitFileManager().saveFile(filePath);
+					kill(false);
+				}),
+				// std::make_pair("Dont Save",[this]() {
+				// 	logInfo("\"Dont Save\" option picked.");
+				// 	kill(false);
+				// }),
+				std::make_pair("Cancel", [this]() {
+					logInfo("Canceling close.");
+					App::stopTryingToQuit();
+				})
+			}
+		);
+		return false;
+	}
+	for (auto& circuit : environment.getBackend().getCircuitManager().getCircuits()) {
+		if (environment.getCircuitFileManager().getSavePath(circuit.second->getUUID())) continue;
+		if (circuit.second->isEmpty() || circuit.second->getEditCount() == 0 || !circuit.second->isEditable()) continue;
+		createPopup(
+			"Do you want to save: " + circuit.second->getCircuitName(),
+			{
+				std::make_pair( "Save", [uuid = circuit.second->getUUID(), this]() {
+					logInfo("Saving circuit {}", "", uuid);
+					static const SDL_DialogFileFilter filters[] = { { "Circuit Files", "cir" } };
+					typedef std::pair<std::pair<CircuitFileManager&, std::string>, MainWindow&> DataType;
+					DataType* data = new DataType(
+						std::piecewise_construct,
+						std::forward_as_tuple(environment.getCircuitFileManager(), uuid),
+						std::forward_as_tuple(*this)
+					);
+					SDL_ShowSaveFileDialog([](void* userData, const char* const* filePaths, int filter) {
+						DataType* data = (DataType*)userData;
+						SaveCallback_NoDelete(&data->first, filePaths, filter); // deletes data
+						data->second.kill(false);
+						delete data;
+					}, data, nullptr, filters, 1, nullptr);
+				}),
+				// std::make_pair("Dont Save", [this]() {
+				// 	logInfo("\"Dont Save\" option picked.");
+				// 	kill(false);
+				// }),
+				std::make_pair("Cancel", [this]() {
+					logInfo("Canceling close.");
+					App::stopTryingToQuit();
+				})
+			}
+		);
+		return false;
+	}
+	return true;
 }
 
 void MainWindow::offsetUiScale(double delta) {
