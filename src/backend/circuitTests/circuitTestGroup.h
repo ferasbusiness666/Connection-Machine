@@ -66,7 +66,9 @@ public:
 
     bool addSetStatesCommand(std::string testCaseName, std::vector<std::pair<std::string, logic_state_t>> states, int id=-1);
     bool addCheckStatesCommand(std::string testCaseName, std::vector<std::pair<std::string, logic_state_t>> states, int id=-1);
+    bool modifyStatesCommand(std::string testCaseName, std::vector<std::pair<std::string, logic_state_t>> states, int id);
     bool addTickStepCommand(std::string testCaseName, int ticks, int id=-1);
+    bool modifyTickStepCommand(std::string testCaseName, int ticks, int id);
     bool removeTestCommand(std::string testCaseName, int id);
     bool swapTestCommands(std::string testCaseName, int id1, int id2);
 

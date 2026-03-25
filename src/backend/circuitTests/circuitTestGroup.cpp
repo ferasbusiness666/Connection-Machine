@@ -190,6 +190,52 @@ bool CircuitTestGroup::addCheckStatesCommand(std::string testCaseName, std::vect
     return true;
 }
 
+bool CircuitTestGroup::modifyStatesCommand(std::string testCaseName, std::vector<std::pair<std::string, logic_state_t>> states, int id) {
+    if (isTruthTable) {
+        logError("Method modifyStatesCommand disallowed on truth table, use addSimpleTestCase", "CircuitTestGroup");
+        return false;
+    }
+    auto idIter = testCaseNameToID.find(testCaseName);
+    if (idIter == testCaseNameToID.end()) {
+        logError("Unable to find test case with name '{}'", "CircuitTestGroup", testCaseName);
+        return false;
+    }
+    TestCase* testCase = &testCases[idIter->second];
+    if (id >= testCase->testCommands.size() || id < 0) {
+        logError("Attempted modification at position {} in test command vector of test case '{}' exceeds its bounds ({})", "CircuitTestGroup", id, testCaseName, testCase->testCommands.size());
+        return false;
+    }
+    if (testCase->testCommands[id].type != CHECK_STATES || testCase->testCommands[id].type != SET_STATES) {
+        logError("Test command at position {} in test command vector of test case '{}' is not a state-related command", "CircuitTestGroup", id, testCaseName);
+        return false;
+    }
+    testCase->testCommands[id].states = states;
+    return true;
+}
+
+bool CircuitTestGroup::modifyTickStepCommand(std::string testCaseName, int ticks, int id) {
+    if (isTruthTable) {
+        logError("Method modifyStatesCommand disallowed on truth table, use addSimpleTestCase", "CircuitTestGroup");
+        return false;
+    }
+    auto idIter = testCaseNameToID.find(testCaseName);
+    if (idIter == testCaseNameToID.end()) {
+        logError("Unable to find test case with name '{}'", "CircuitTestGroup", testCaseName);
+        return false;
+    }
+    TestCase* testCase = &testCases[idIter->second];
+    if (id >= testCase->testCommands.size() || id < 0) {
+        logError("Attempted modification at position {} in test command vector of test case '{}' exceeds its bounds ({})", "CircuitTestGroup", id, testCaseName, testCase->testCommands.size());
+        return false;
+    }
+    if (testCase->testCommands[id].type != TICK_STEP) {
+        logError("Test command at position {} in test command vector of test case '{}' is not a state-related command", "CircuitTestGroup", id, testCaseName);
+        return false;
+    }
+    testCase->testCommands[id].ticks = ticks;
+    return true;
+}
+
 bool CircuitTestGroup::addTickStepCommand(std::string testCaseName, int ticks, int id) {
     if (isTruthTable) {
         logError("Method addTickStepCommand disallowed on truth table, use addSimpleTestCase", "CircuitTestGroup");
