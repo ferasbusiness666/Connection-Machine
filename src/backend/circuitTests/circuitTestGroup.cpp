@@ -46,7 +46,7 @@ bool CircuitTestGroup::removeTestCase(std::string name) {
 }
 
 bool CircuitTestGroup::removeTestCase(int id) {
-    if (testCases.size() <= id) {
+    if (testCases.size() <= id || id < 0) {
         logError("ID {} is out of the bounds of the test cases vector ({})", "CircuitTestGroup", id, testCases.size());
         return false;
     }
@@ -98,7 +98,7 @@ bool CircuitTestGroup::renameTestCase(std::string oldName, std::string newName) 
 }
 
 bool CircuitTestGroup::renameTestCase(int id, std::string newName) {
-    if (testCases.size() <= id) {
+    if (testCases.size() <= id || id < 0) {
         logError("ID {} is out of the bounds of the test cases vector ({})", "CircuitTestGroup", id, testCases.size());
         return false;
     }
@@ -131,8 +131,8 @@ bool CircuitTestGroup::addSimpleTestCase(std::string name, std::vector<std::pair
 }
 
 const CircuitTestGroup::TestCase* CircuitTestGroup::getTestCase(int id) {
-    if (id >= testCases.size()) {
-        logError("Unable to find test case with id {}", "CircuitTestGroup", id);
+    if (id >= testCases.size() || id < 0) {
+        logError("ID {} is out of the bounds of the test cases vector ({})", "CircuitTestGroup", id, testCases.size());
         return nullptr;
     }
     return &testCases[id];
@@ -140,7 +140,7 @@ const CircuitTestGroup::TestCase* CircuitTestGroup::getTestCase(int id) {
 
 const CircuitTestGroup::TestCase* CircuitTestGroup::getTestCase(std::string name) {
     if (!testCaseNameToID.contains(name)) {
-        logError("Unable to find test case with name {}", "CircuitTestGroup", name);
+        logError("Unable to find test case with name '{}'", "CircuitTestGroup", name);
         return nullptr;
     }
     return &testCases[testCaseNameToID[name]];
@@ -179,7 +179,7 @@ bool CircuitTestGroup::addCheckStatesCommand(std::string testCaseName, std::vect
         return false;
     }
     TestCase* testCase = &testCases[idIter->second];
-    if (id >= testCase->testCommands.size()) {
+    if (id >= testCase->testCommands.size() || id < 0) {
         logError("Attempted insertion at position {} in test command vector of test case '{}' exceeds its bounds ({})", "CircuitTestGroup", id, testCaseName, testCase->testCommands.size());
         return false;
     }
@@ -201,7 +201,7 @@ bool CircuitTestGroup::addTickStepCommand(std::string testCaseName, int ticks, i
         return false;
     }
     TestCase* testCase = &testCases[idIter->second];
-    if (id >= testCase->testCommands.size()) {
+    if (id >= testCase->testCommands.size() || id < 0) {
         logError("Attempted insertion at position {} in test command vector of test case '{}' exceeds its bounds ({})", "CircuitTestGroup", id, testCaseName, testCase->testCommands.size());
         return false;
     }
@@ -252,7 +252,7 @@ bool CircuitTestGroup::swapTestCommands(std::string testCaseName, int id1, int i
 bool CircuitTestGroup::addInput(std::string input) {
     for (auto it = inputs.begin(); it != inputs.end(); it++) {
         if (*it == input) {
-            logError("Input {} already exists in this test group", "CircuitTestGroup", input);
+            logError("Input '{}' already exists in this test group", "CircuitTestGroup", input);
             return false;
         }
     }
@@ -263,7 +263,7 @@ bool CircuitTestGroup::addInput(std::string input) {
 bool CircuitTestGroup::addOutput(std::string output) {
     for (auto it = outputs.begin(); it != outputs.end(); it++) {
         if (*it == output) {
-            logError("Output {} already exists in this test group", "CircuitTestGroup", output);
+            logError("Output '{}' already exists in this test group", "CircuitTestGroup", output);
             return false;
         }
     }
@@ -290,7 +290,7 @@ bool CircuitTestGroup::generateTestCircuit(BlockType blockType, Environment& env
     namePositionMap.clear();
 
     if (!cir->tryInsertBlock(Position(0,0), Orientation(), blockType)) {
-        logError("Couldn't insert test circuit block {}", "circuitTestCase", "blockType");
+        logError("Couldn't insert test circuit block '{}'", "circuitTestCase", blockType);
         return false;
     }
 
@@ -372,7 +372,7 @@ bool CircuitTestGroup::runTests(std::vector<std::string>& testsToRun, BlockType 
     for (auto stringIter = testsToRun.begin(); stringIter != testsToRun.end(); stringIter++) {
         auto idIter = testCaseNameToID.find(*stringIter);
         if (idIter == testCaseNameToID.end()) {
-            logError("Unrecognized test case {}", "CircuitTestGroup", *stringIter);
+            logError("Unable to find test case with name '{}'", "CircuitTestGroup", *stringIter);
             return false;
         }
         testIDs.push_back(idIter->second);
@@ -401,7 +401,7 @@ bool CircuitTestGroup::runTests(std::vector<int>& testsToRun, BlockType blockTyp
                 logInfo("Stepping forward by {} ticks", "CircuitTestGroup - TICK_STEP", commandIter->ticks);
                 simulator->tickStep(commandIter->ticks);
             } else {
-                logError("Unrecognized test command", "CircuitTestGroup");
+                logError("Unrecognized test command type", "CircuitTestGroup");
                 isTestGroupSuccessful = false;
             }
 
@@ -421,7 +421,7 @@ bool CircuitTestGroup::runSetStatesCommand(TestCommand testCommand, EvalLogicSim
     for (auto statesIter = testCommand.states.begin(); statesIter != testCommand.states.end(); statesIter++) {
         auto blockPosIter = nameToConnectedBlockPosition.find(statesIter->first);
         if (blockPosIter == nameToConnectedBlockPosition.end()) {
-            logError("Port {} does not match any on circuit", "CircuitTestGroup", statesIter->first);
+            logError("Port '{}' does not match any on circuit", "CircuitTestGroup", statesIter->first);
             return false;
         }
         simulator.setState((Address(blockPosIter->second)), statesIter->second);
@@ -436,7 +436,7 @@ bool CircuitTestGroup::runCheckStatesCommand(TestCommand testCommand, EvalLogicS
     for (auto statesIter = testCommand.states.begin(); statesIter != testCommand.states.end(); statesIter++) {
         auto blockPosIter = nameToConnectedBlockPosition.find(statesIter->first);
         if (blockPosIter == nameToConnectedBlockPosition.end()) {
-            logError("Port {} does not match any on circuit", "CircuitTestGroup", statesIter->first);
+            logError("Port '{}' does not match any on circuit", "CircuitTestGroup", statesIter->first);
             return false;
         }
         logic_state_t actualState = simulator.getState((Address(blockPosIter->second)));
