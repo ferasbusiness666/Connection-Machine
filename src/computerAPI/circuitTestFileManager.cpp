@@ -2,17 +2,7 @@
 #include "backend/circuitTests/circuitTestGroup.h"
 #include "backend/evaluator/simulator/logicState.h"
 #include "logging/logging.h"
-#include <optional>
-#include <utility>
-#include <vector>
-
-std::optional<logic_state_t> stringToLogicState(const std::string& str) {
-    if (str == "LOW" || str == "L" || str == "0") return (logic_state_t)0;
-    if (str == "HIGH" || str == "H" || str == "1") return (logic_state_t)1;
-    if (str == "FLOATING" || str == "Z" || str == "2") return (logic_state_t)2;
-    if (str == "UNDEFINED" || str == "X" || str == "3") return (logic_state_t)3;
-    return std::nullopt;
-}
+#include "computerAPI/circuits/textParser.h"
 
 std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestGroupFromTruthTableFilePath(const std::string &path) {
     logInfo("Parsing truth table (.tt)");

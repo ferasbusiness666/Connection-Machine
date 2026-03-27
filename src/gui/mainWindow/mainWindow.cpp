@@ -3,6 +3,7 @@
 #include <SDL3/SDL_video.h>
 
 #include "SDL3/SDL_dialog.h"
+#include "gui/mainWindow/widgets/circuitTestWidget.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
 #include "imgui/imgui_notify.h"
@@ -355,6 +356,9 @@ void MainWindow::render() {
 				}
 				if (ImGui::MenuItem("Block Creator")) {
 					App::runOnMain([this]() { createWidget<BlockCreationWidget>(); });
+				}
+				if (ImGui::MenuItem("Block Tester")) {
+					App::runOnMain([this]() { createWidget<CircuitTestWidget>(); });
 				}
 				ImGui::EndMenu();
 			}
