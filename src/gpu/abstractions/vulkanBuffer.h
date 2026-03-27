@@ -16,4 +16,4 @@ struct AllocatedBuffer {
 AllocatedBuffer createBuffer(VulkanDevice* device, size_t allocSize, VkBufferUsageFlags usage, VmaAllocationCreateFlags flags);
 void destroyBuffer(AllocatedBuffer& buffer);
 
-#endif
+#endif /* vulkanBuffer_h */

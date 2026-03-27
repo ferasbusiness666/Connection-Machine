@@ -3,6 +3,7 @@ include(ExternalProject)
 
 function(add_main_dependencies)
 	message("adding main dependencies")
+
 	if (APPLE)
 		find_library(COREFOUNDATION_FRAMEWORK CoreFoundation)
 		list(APPEND EXTERNAL_LINKS ${COREFOUNDATION_FRAMEWORK})
@@ -59,12 +60,15 @@ function(add_main_dependencies)
 	CPMAddPackage(
 		NAME fmt
 		GITHUB_REPOSITORY fmtlib/fmt
-		GIT_TAG 11.2.0
+		GIT_TAG 12.1.0
 		EXCLUDE_FROM_ALL YES
+		# DOWNLOAD_ONLY YES
 		OPTIONS
 			"FMT_INSTALL OFF"
 		SOURCE_DIR "${EXTERNAL_DIR}/fmt"
 	)
+	# add_library(fmt INTERFACE)
+	# target_include_directories(fmt INTERFACE "${EXTERNAL_DIR}/fmt/include")
 	list(APPEND EXTERNAL_LINKS fmt)
 
 	# CPPLocate (they have extreme cmake goofyness)

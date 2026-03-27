@@ -5,6 +5,7 @@
 #include "renderer/circuitRenderManager.h"
 #include "tools/toolManager.h"
 #include "tutorial.h"
+#include "tutorialDataManager.h"
 #include "viewManager/viewManager.h"
 #include "backend/address.h"
 
@@ -36,6 +37,8 @@ public:
 	Tutorial& getTutorialManager() { return tutorialManager; }
 	const Tutorial& getTutorialManager() const { return tutorialManager; }
 
+	void initializeTutorial() { tutorialManager.setTutorial(std::move(loadTutorialFromFile(tutorialManager.selectTutorial()))); }
+
 	ViewManager& getViewManager() { return viewManager; }
 	const ViewManager& getViewManager() const { return viewManager; }
 
@@ -47,17 +50,18 @@ public:
 	const Address& getAddress() const { return address; }
 
 	// void setBackend(Backend* backend);
-	void setSimulatoruator(simulator_id_t simulatorId, const Address& address = Address());
-	void setSimulatoruator(const EvalLogicSimulator* simulator, const Address& address = Address());
+	void setSimulator(simulator_id_t simulatorId, const Address& address = Address());
+	void setSimulator(const EvalLogicSimulator* simulator, const Address& address = Address());
 	void setCircuit(std::shared_ptr<Circuit> circuit);
 	void setCircuit(circuit_id_t circuitId);
 
 	void viewChanged();
 
 private:
+	Environment& environment;
 	Backend& backend;
 
-	ViewportId viewportId;
+	const ViewportId viewportId;
 	circuit_id_t circuitId;
 	simulator_id_t simulatorId;
 	Address address;

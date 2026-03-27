@@ -2,13 +2,11 @@
 
 #include "gpu/vulkanDevice.h"
 
-#ifdef TRACY_PROFILER
-#include <tracy/Tracy.hpp>
-#endif
+// #ifdef TRACY_PROFILER
+// #include <tracy/Tracy.hpp>
+// #endif
 
-void Frame::init(VulkanDevice* device) {
-	this->device = device;
-
+Frame::Frame(VulkanDevice* device) : device(device) {
 	// command pool
 	VkCommandPoolCreateInfo commandPoolInfo = {};
 	commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -16,7 +14,7 @@ void Frame::init(VulkanDevice* device) {
 	commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 	commandPoolInfo.queueFamilyIndex = device->getGraphicsQueueIndex();
 	vkCreateCommandPool(device->getDevice(), &commandPoolInfo, nullptr, &commandPool);
-	
+
 	// allocate the default command buffer that we will use for rendering
 	VkCommandBufferAllocateInfo commandBufferInfo = {};
 	commandBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -39,7 +37,7 @@ void Frame::init(VulkanDevice* device) {
 	vkCreateSemaphore(device->getDevice(), &semaphoreInfo, nullptr, &acquireSemaphore);
 }
 
-void Frame::cleanup() {
+Frame::~Frame() {
 	vkDestroyCommandPool(device->getDevice(), commandPool, nullptr);
 
 	vkDestroyFence(device->getDevice(), renderFence, nullptr);
@@ -47,14 +45,14 @@ void Frame::cleanup() {
 }
 
 void FrameManager::init(VulkanDevice* device) {
-	for (Frame& frame : frames) {
-		frame.init(device);
+	for (std::shared_ptr<Frame>& frame : frames) {
+		frame = std::make_shared<Frame>(device);
 	}
 }
 
 void FrameManager::cleanup() {
-	for (Frame& frame : frames) {
-		frame.cleanup();
+	for (std::shared_ptr<Frame>& frame : frames) {
+		frame = nullptr; // let go of frames
 	}
 }
 
@@ -64,27 +62,27 @@ void FrameManager::incrementFrame() {
 }
 
 float FrameManager::waitForCurrentFrameCompletion() {
-#ifdef TRACY_PROFILER
-	ZoneScoped;
-#endif
+// #ifdef TRACY_PROFILER
+// 	ZoneScoped;
+// #endif
 
 	// wait until current frame has finished rendering
-	vkWaitForFences(frames[frameIndex].device->getDevice(), 1, &frames[frameIndex].renderFence, VK_TRUE, UINT64_MAX);
+	vkWaitForFences(frames[frameIndex]->device->getDevice(), 1, &frames[frameIndex]->renderFence, VK_TRUE, UINT64_MAX);
 
 	// update frame time with newest frame completion
-	auto time = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - frames[frameIndex].lastStartTime).count() / 1000.0f;
+	auto time = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - frames[frameIndex]->lastStartTime).count() / 1000.0f;
 
 	// clear used allocations
-	frames[frameIndex].lifetime.flush();
+	frames[frameIndex]->lifetime.flush();
 
 	return time;
 }
 
 void FrameManager::startCurrentFrame() {
 	// reset render fence (we are actually rendering this frame)
-	vkResetFences(frames[frameIndex].device->getDevice(), 1, &frames[frameIndex].renderFence);
+	vkResetFences(frames[frameIndex]->device->getDevice(), 1, &frames[frameIndex]->renderFence);
 
 	// update start time
-	frames[frameIndex].lastStartTime = std::chrono::system_clock::now();
+	frames[frameIndex]->lastStartTime = std::chrono::system_clock::now();
 }
 

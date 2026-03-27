@@ -18,12 +18,12 @@ EvalLogicSimulator::EvalLogicSimulator(
 	circuit->getEvaluator().addSimulator(*this);
 	const EvalLayerState& evalLayerState = circuit->getEvaluator().getEvaluatorInternal().getLayerRunner().getOutputLayer();
 
-	for (std::pair<eval_gate_id, EvalGate> pair : evalLayerState.getGates()) {
+	for (auto pair : evalLayerState.getGates()) {
 		simulator_gate_id_t simulatorId = logicSimulator.addGate(getBlockType(pair.second.type));
 		gateIdMapping.try_emplace(pair.first, simulatorId);
 	}
-	for (std::pair<eval_gate_id, EvalGate> pair : evalLayerState.getGates()) {
-		for (std::pair<connection_end_id_t, std::unordered_set<EvalConnectionPoint>> connectionsPair : pair.second.connections) {
+	for (auto pair : evalLayerState.getGates()) {
+		for (const auto& connectionsPair : pair.second.connections) {
 			for (EvalConnectionPoint otherConnectionPoint : connectionsPair.second) {
 				// need to add some logic to not double make connections
 				if (
@@ -257,7 +257,7 @@ SimulatorStateIndexVecVariant EvalLogicSimulator::getVirtualConnectionSimulatorI
 		outputSimulatorIds.push_back(iter2->second);
 	}
 	return outputSimulatorIds;
-	}
+}
 
 SimulatorStateIndexVecVariant EvalLogicSimulator::getPinSimulatorId(const Address& address) const {
 	std::lock_guard lock(mux);
@@ -403,6 +403,9 @@ std::pair<SimulatorStateIndexVecVariant, SimulatorStateIndexVecVariant> EvalLogi
 }
 
 std::vector<SimulatorStateIndexVecVariant> EvalLogicSimulator::getVirtualConnectionSimulatorIds(const Address& addressOrigin, const std::vector<std::pair<Position, virtual_connection_id_t>>& virtualConnections) const {
+	#ifdef TRACY_PROFILER
+	ZoneScoped;
+	#endif
 	std::lock_guard lock(mux);
 	std::vector<SimulatorStateIndexVecVariant> output;
 	for (std::pair<Position, virtual_connection_id_t> virtualConnection : virtualConnections) {
@@ -414,6 +417,9 @@ std::vector<SimulatorStateIndexVecVariant> EvalLogicSimulator::getVirtualConnect
 }
 
 std::vector<SimulatorStateIndexVecVariant> EvalLogicSimulator::getPinSimulatorIds(const Address& addressOrigin, const std::vector<Position>& positions) const {
+	#ifdef TRACY_PROFILER
+	ZoneScoped;
+	#endif
 	std::lock_guard lock(mux);
 	std::vector<SimulatorStateIndexVecVariant> output;
 	for (Position position : positions) {
@@ -437,6 +443,9 @@ std::vector<SimulatorStateIndexVecVariant> EvalLogicSimulator::getPinSimulatorId
 // }
 
 void EvalLogicSimulator::processEdits() {
+	#ifdef TRACY_PROFILER
+	ZoneScoped;
+	#endif
 	std::lock_guard lock(mux);
 	const EvalLayerState& evalLayerState = evaluatorInternal.getLayerRunner().getOutputLayer();
 	// addedGateCount += evalLayerState.getAddedGates().size();
@@ -446,6 +455,9 @@ void EvalLogicSimulator::processEdits() {
 	// printCounts();
 	{
 		SimPauseGuard simPauseGuard(logicSimulator);
+		#ifdef TRACY_PROFILER
+		ZoneScopedN("Apply edits to sim");
+		#endif
 		for (auto iter : evalLayerState.getRemovedConnections()) {
 			auto gateAIdIter = gateIdMapping.find(iter.first.connectionPointA.gateId);
 			if (gateAIdIter == gateIdMapping.end()) {
@@ -495,7 +507,7 @@ void EvalLogicSimulator::processEdits() {
 
 	if (simulatorMappingUpdateListeners.empty()) return;
 
-	std::unordered_set<eval_gate_id> idsToUpdate = evalLayerState.getGateIdRemappingsUpdateds();
+	IdSet<eval_gate_id> idsToUpdate = evalLayerState.getGateIdRemappingsUpdateds();
 	// for (simulator_gate_id_t simId : dirtySimulatorIds) { // I dont think I need this yet
 	// 	idsToUpdate.insert()
 	// }

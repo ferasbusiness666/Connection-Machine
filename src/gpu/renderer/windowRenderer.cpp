@@ -1,4 +1,6 @@
 #include "windowRenderer.h"
+#include "app.h"
+#include "imgui/imgui_impl_vulkan.h"
 
 #ifdef TRACY_PROFILER
 #include <tracy/Tracy.hpp>
@@ -6,14 +8,14 @@
 
 #include "gpu/mainRenderer.h"
 
-WindowRenderer::WindowRenderer(SdlWindow* sdlWindow) : sdlWindow(sdlWindow) {
+WindowRenderer::WindowRenderer(WindowId windowId, SdlWindow* sdlWindow) : windowId(windowId), sdlWindow(sdlWindow) {
 	logInfo("Initializing window renderer...");
 
 	// create surface and use it to make sure a vulkan device has been created
 	surface = sdlWindow->createVkSurface(MainRenderer::get().getVulkanInstance().getVkbInstance());
 	device = MainRenderer::get().getVulkanInstance().createOrGetDevice(surface);
 
-	// initialize frames
+	 // initialize frames
 	frames.init(device);
 
 	// set up swapchain and subrenderer
@@ -22,35 +24,30 @@ WindowRenderer::WindowRenderer(SdlWindow* sdlWindow) : sdlWindow(sdlWindow) {
 	swapchain.init(device, surface, windowSize);
 	createRenderPass();
 	createColorResources();
-	swapchain.createFramebuffers(renderPass, colorImage);
+	swapchain.createFramebuffers(renderPass, *colorImage);
 
 	// subrenderers
-	rmlRenderer.init(device, renderPass);
-	viewportRenderer.init(device, renderPass);
+	imGuiRenderer.emplace(sdlWindow->getHandle(), renderPass, FRAMES_IN_FLIGHT);
 
 	// start render loop
-	running = true;
+	running.store(true);
+	renderLoopStopped.store(false);
 	renderThread = std::thread(&WindowRenderer::renderLoop, this);
 }
 
 WindowRenderer::~WindowRenderer() {
 	// stop render thread (not completely sure if this is right for the destructor yet)
-	running = false;
+	running.store(false);
+	while (!renderLoopStopped.load()) App::doRunOnMainForThread(renderThread.get_id()); // do all the work it needs till its done
 	if (renderThread.joinable()) renderThread.join();
 
 	// start by deleting render pass
+	device->waitIdle();
 	vkDestroyRenderPass(device->getDevice(), renderPass, nullptr);
 	// now the swapchain can be deleted
 	swapchain.cleanup();
 	// now the frames are free!
 	frames.cleanup();
-	// clean up color image for multisampled
-	destroyImage(colorImage);
-
-	// delete rml renderer
-	rmlRenderer.cleanup();
-	// delete viewport renderer
-	viewportRenderer.cleanup();
 }
 
 void WindowRenderer::resize(std::pair<uint32_t, uint32_t> windowSize) {
@@ -62,8 +59,8 @@ void WindowRenderer::resize(std::pair<uint32_t, uint32_t> windowSize) {
 }
 
 void WindowRenderer::renderLoop() {
-	while(running) {
-		Frame& frame = frames.getCurrentFrame();
+	while(running.load()) {
+		std::shared_ptr<Frame> frame = frames.getCurrentFrame();
 
 		// wait for frame completion
 		frames.waitForCurrentFrameCompletion();
@@ -77,7 +74,7 @@ void WindowRenderer::renderLoop() {
 		// try to start rendering the frame
 		// get next swapchain image to render to (or fail and try again)
 		uint32_t imageIndex;
-		VkResult imageGetResult = vkAcquireNextImageKHR(device->getDevice(), swapchain.getSwapchain(), UINT64_MAX, frame.acquireSemaphore, VK_NULL_HANDLE, &imageIndex);
+		VkResult imageGetResult = vkAcquireNextImageKHR(device->getDevice(), swapchain.getSwapchain(), UINT64_MAX, frame->acquireSemaphore, VK_NULL_HANDLE, &imageIndex);
 		if (imageGetResult == VK_ERROR_OUT_OF_DATE_KHR || imageGetResult == VK_SUBOPTIMAL_KHR) {
 			// if the swapchain is not ideal, try again but recreate it this time (this happens in normal operation)
 			swapchainRecreationNeeded = true;
@@ -93,23 +90,33 @@ void WindowRenderer::renderLoop() {
 		frames.startCurrentFrame();
 
 		// record command buffer
-		vkResetCommandBuffer(frame.mainCommandBuffer, 0);
-		renderToCommandBuffer(frame, imageIndex);
+		{
+			std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
+			vkResetCommandBuffer(frame->mainCommandBuffer, 0);
+		}
+
+		// ImGui rendering
+		imGuiRenderer->beginFrame();
+		semaphoreForThisFrame.clear();
+		MainRenderer::get().setCurrentlyRenderedWindow(windowId);
+		sdlWindow->doRendering();
+		MainRenderer::get().clearCurrentlyRenderedWindow();
+		renderToCommandBuffer(*frame, imageIndex);
 
 		// start setting up graphics submission ====================================================
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
 		// wait semaphore
-		VkSemaphore waitSemaphores[] = { frame.acquireSemaphore };
-		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-		submitInfo.waitSemaphoreCount = 1;
-		submitInfo.pWaitSemaphores = waitSemaphores;
-		submitInfo.pWaitDstStageMask = waitStages;
+		semaphoreForThisFrame.push_back(frame->acquireSemaphore);
+		std::vector<VkPipelineStageFlags> waitStages(semaphoreForThisFrame.size(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+		submitInfo.waitSemaphoreCount = semaphoreForThisFrame.size();
+		submitInfo.pWaitSemaphores = semaphoreForThisFrame.data();
+		submitInfo.pWaitDstStageMask = waitStages.data();
 
 		// command buffers
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &frame.mainCommandBuffer;
+		submitInfo.pCommandBuffers = &frame->mainCommandBuffer;
 
 		// signal semaphores
 		VkSemaphore signalSemaphores[] = { swapchain.getImageSemaphores()[imageIndex] };
@@ -117,7 +124,7 @@ void WindowRenderer::renderLoop() {
 		submitInfo.pSignalSemaphores = signalSemaphores;
 
 		// submit to queue
-		if (device->submitGraphicsQueue(&submitInfo, frame.renderFence) != VK_SUCCESS){
+		if (device->submitGraphicsQueue(&submitInfo, frame->renderFence) != VK_SUCCESS){
 			logError("failed to submit draw command buffer!");
 		}
 
@@ -146,8 +153,8 @@ void WindowRenderer::renderLoop() {
 		FrameMark;
 #endif
 	}
-
-	device->waitIdle();
+	renderLoopStopped.store(true);
+	renderLoopStopped.notify_all();
 }
 
 void WindowRenderer::renderToCommandBuffer(Frame& frame, uint32_t imageIndex) {
@@ -180,14 +187,8 @@ void WindowRenderer::renderToCommandBuffer(Frame& frame, uint32_t imageIndex) {
 
 	// do actual rendering...
 	{
-		// viewports
-		std::lock_guard<std::mutex> lock(viewportRenderersMux);
-		for (ViewportRenderData* viewport : viewportRenderDatas) {
-			viewportRenderer.render(frame, viewport);
-		}
-
-		// rml rendering
-		rmlRenderer.render(frame, windowSize);
+		// imgui
+		imGuiRenderer->endFrame(frame.mainCommandBuffer);
 	}
 
 	// end render pass
@@ -268,7 +269,7 @@ void WindowRenderer::createColorResources() {
     VkFormat colorFormat = swapchain.getSwapchain().image_format;
     VkSampleCountFlagBits msaaSamples = device->getMaxUsableSampleCount();
 
-    colorImage = createImage(
+    colorImage.emplace(
         device,
         size,
         colorFormat,
@@ -279,29 +280,43 @@ void WindowRenderer::createColorResources() {
 }
 
 void WindowRenderer::recreateSwapchain() {
-	device->waitIdle();
+
+	std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
+	device->waitIdleNoMux();
 
 	std::lock_guard<std::mutex> lock(windowSizeMux);
 
-	destroyImage(colorImage);
+	colorImage.reset();
 	swapchain.recreate(surface, windowSize);
 	createColorResources();
-	swapchain.createFramebuffers(renderPass, colorImage);
+	swapchain.createFramebuffers(renderPass, *colorImage);
 
 	swapchainRecreationNeeded = false;
 }
 
-void WindowRenderer::registerViewportRenderData(ViewportRenderData *viewportRenderData) {
-	std::lock_guard<std::mutex> lock(viewportRenderersMux);
-	viewportRenderDatas.insert(viewportRenderData);
+void WindowRenderer::setImGuiRenderFunc(std::function<void()> imGuiRenderFunc) {
+	std::lock_guard<std::mutex> lock(imGuiRenderFuncMux);
+	this->imGuiRenderFunc = imGuiRenderFunc;
 }
 
-void WindowRenderer::deregisterViewportRenderData(ViewportRenderData* viewportRenderData) {
-	std::lock_guard<std::mutex> lock(viewportRenderersMux);
-	viewportRenderDatas.erase(viewportRenderData);
-}
-
-bool WindowRenderer::hasViewportRenderData(ViewportRenderData* viewportRenderData) {
-	std::lock_guard<std::mutex> lock(viewportRenderersMux);
-	return viewportRenderDatas.contains(viewportRenderData);
+void WindowRenderer::updateImGuiBlockTextureArrayLayers() {
+	std::lock_guard lock(imGuiBlockTextureArrayLayersMux);
+	if (blockTextureArrayImage == nullptr) {
+		assert(imGuiBlockTextureArrayLayers.empty());
+		blockTextureArrayImage = MainRenderer::get().getVulkanInstance().getDevice()->getBlockTextureManager().getTextureArray();
+	} else {
+		std::shared_ptr<BlockTextureArray> image = MainRenderer::get().getVulkanInstance().getDevice()->getBlockTextureManager().getTextureArray();
+		if (blockTextureArrayImage == image) return; // image has not changed
+		imGuiBlockTextureArrayLayers.clear();
+		blockTextureArrayImage = image;
+	}
+	if (blockTextureArrayImage == nullptr) return;
+	if (!blockTextureArrayImage->image.has_value()) return;
+	for (unsigned int i = 0; i < blockTextureArrayImage->image->arrayLayers; i++) {
+		imGuiBlockTextureArrayLayers.emplace_back(std::make_shared<ImGuiRenderer::ImGuiDescriptorSet>(
+			ImGui_ImplVulkan_AddTexture(blockTextureArrayImage->sampler, blockTextureArrayImage->image->layerViews[i], VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
+			imGuiRenderer.value(),
+			std::vector<std::shared_ptr<void>>{ blockTextureArrayImage }
+		));
+	}
 }

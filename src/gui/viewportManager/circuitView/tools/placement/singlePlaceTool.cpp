@@ -4,9 +4,9 @@
 void SinglePlaceTool::activate() {
 	BaseBlockPlacementTool::activate();
 	registerFunction("Tool Primary Activate", std::bind(&SinglePlaceTool::startPlaceBlock, this, std::placeholders::_1));
-	registerFunction("tool primary deactivate", std::bind(&SinglePlaceTool::stopPlaceBlock, this, std::placeholders::_1));
+	registerFunction("Tool Primary Deactivate", std::bind(&SinglePlaceTool::stopPlaceBlock, this, std::placeholders::_1));
 	registerFunction("Tool Secondary Activate", std::bind(&SinglePlaceTool::startDeleteBlocks, this, std::placeholders::_1));
-	registerFunction("tool secondary deactivate", std::bind(&SinglePlaceTool::stopDeleteBlocks, this, std::placeholders::_1));
+	registerFunction("Tool Secondary Deactivate", std::bind(&SinglePlaceTool::stopDeleteBlocks, this, std::placeholders::_1));
 	registerFunction("Pointer Move", std::bind(&SinglePlaceTool::pointerMove, this, std::placeholders::_1));
 	setStatusBar("Left Click to Place. Right Click to Remove.");
 }

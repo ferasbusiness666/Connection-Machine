@@ -1,5 +1,5 @@
 #include "network.h"
-#include "gui/mainWindow/popUps/popUpManager.h"
+// #include "gui/mainWindow/popUps/popUpManager.h"
 #include "util/version.h"
 #include <httplib.h>
 #include <SDL3/SDL.h>
@@ -65,14 +65,14 @@ void Network::sendFeedback(PopUpManager& popUpManager, const std::string& title,
 		}
 		if ((res && res->status / 100 != 2) || !res) {
 			if (Network::get().checkConnectedToInternet()) {
-				popUpManager.addOptionsPopUp("Feedback sending failed.", { {"OK", []() {}} }, true);
+				// popUpManager.addOptionsPopUp("Feedback sending failed.", { {"OK", []() {}} }, true);
 			} else {
-				popUpManager.addOptionsPopUp("No internet connection.", { {"OK", []() {}} }, true);
+				// popUpManager.addOptionsPopUp("No internet connection.", { {"OK", []() {}} }, true);
 			}
 			return;
 		}
 		if (attachments.empty()) {
-			popUpManager.addOptionsPopUp("Feedback submitted successfully!", { {"OK", []() {}} }, true);
+			// popUpManager.addOptionsPopUp("Feedback submitted successfully!", { {"OK", []() {}} }, true);
 			return;
 		}
 		nlohmann::json jsonResponse;
@@ -80,7 +80,7 @@ void Network::sendFeedback(PopUpManager& popUpManager, const std::string& title,
 			jsonResponse = nlohmann::json::parse(res->body);
 		} catch (const std::exception& e) {
 			logError("Failed to parse feedback response JSON: {}", "Network", e.what());
-			popUpManager.addOptionsPopUp("Feedback submission failed (invalid server response).", { {"OK", []() {}} }, true);
+			// popUpManager.addOptionsPopUp("Feedback submission failed (invalid server response).", { {"OK", []() {}} }, true);
 			return;
 		}
 		sendAttachments(popUpManager, attachments, jsonResponse["uuid"].get<std::string>());
@@ -124,9 +124,9 @@ void Network::sendAttachments(PopUpManager& popUpManager, const std::vector<Netw
 			}
 		}
 		if (!attachmentsFailed.empty()) {
-			popUpManager.addOptionsPopUp("Some or all attachments failed to upload.", { {"OK", []() {}} }, true);
+			// popUpManager.addOptionsPopUp("Some or all attachments failed to upload.", { {"OK", []() {}} }, true);
 		} else {
-			popUpManager.addOptionsPopUp("Feedback submitted successfully!", { {"OK", []() {}} }, true);
+			// popUpManager.addOptionsPopUp("Feedback submitted successfully!", { {"OK", []() {}} }, true);
 		}
 	});
 	t.detach();
@@ -176,15 +176,15 @@ void Network::checkForUpdates(PopUpManager& popUpManager) {
 					std::string smallMessage = "Current version: " + currentVersion.toString() + "\n";
 					smallMessage += "Latest version: " + latestVersion.toString() + "\n";
 					smallMessage += "Changes:\n" + body;
-					popUpManager.addOptionsPopUp(message, smallMessage, {
-						{"Close", []() {}},
-						{"Open Github", [html_url]() {
-							SDL_OpenURL(html_url.c_str());
-						}},
-						{"Ignore Version", [this, latestVersion]() {
-							kvStore->set<KVType::STRING>("ignored_version", latestVersion.toString());
-						}}
-					}, true);
+					// popUpManager.addOptionsPopUp(message, smallMessage, {
+					// 	{"Close", []() {}},
+					// 	{"Open Github", [html_url]() {
+					// 		SDL_OpenURL(html_url.c_str());
+					// 	}},
+					// 	{"Ignore Version", [this, latestVersion]() {
+					// 		kvStore->set<KVType::STRING>("ignored_version", latestVersion.toString());
+					// 	}}
+					// }, true);
 				} catch (const nlohmann::json::parse_error& e) {
 					logError("Failed to parse update check response JSON: {}", "Network", e.what());
 					return;

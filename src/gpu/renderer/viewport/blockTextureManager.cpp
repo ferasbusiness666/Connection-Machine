@@ -1,12 +1,12 @@
 #include "blockTextureManager.h"
 
+#include "gpu/abstractions/vulkanBuffer.h"
 #include "gpu/vulkanDevice.h"
 #include "util/algorithm.h"
 
 #include <stb_image.h>
 
 BlockTextureArray::~BlockTextureArray() {
-	destroyImage(image);
 	vkDestroySampler(device->getDevice(), sampler, nullptr);
 	descriptorAllocator.cleanup();
 }
@@ -82,7 +82,7 @@ void BlockTextureManager::refreshBlockTexture(const std::string& path) {
 	int textureWidth, texHeight, texChannels;
 	stbi_uc* pixels = stbi_load(path.c_str(), &textureWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 	if (!pixels) {
-		logError("Failed to load texture: {}", "", path);
+		logError("Failed to load texture: {}", "BlockTextureManager", path);
 		return;
 	}
 
@@ -230,15 +230,14 @@ BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId block
 	}
 }
 
-BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId blockTextureId, Vec2Int tileSize, Vec2Int smallestCordTile, Vec2Int blockSize) const {
-	return getBlockTextureCords(blockTextureId, tileSize, smallestCordTile, blockSize, Vec2Int(0, tileSize.y * blockSize.y));
+BlockTextureCords BlockTextureManager::getBlockTextureCords(BlockTextureId blockTextureId, Vec2Int smallestTextureCord, Vec2Int textureSize) const {
+	return getBlockTextureCords(blockTextureId, smallestTextureCord, textureSize, Vec2Int(0, 0));
 }
 
 BlockTextureCords BlockTextureManager::getBlockTextureCords(
 	BlockTextureId blockTextureId,
-	Vec2Int tileSize,
-	Vec2Int smallestCordTile,
-	Vec2Int blockSize,
+	Vec2Int smallestTextureCord,
+	Vec2Int textureSize,
 	Vec2Int textureStepSize
 ) const {
 	auto blockTextureIter = blockTextures.find(blockTextureId);
@@ -246,13 +245,13 @@ BlockTextureCords BlockTextureManager::getBlockTextureCords(
 		logError("Could not find block texture with id {}", "BlockTextureManager", blockTextureId);
 		return { glm::vec2(0, 0), glm::vec2(0, 0), 0, glm::vec2(0, 0) };
 	}
-	unsigned int pixelsWidth = blockSize.x * tileSize.x;
-	unsigned int pixelsHeight = blockSize.y * tileSize.y;
+	unsigned int pixelsWidth = textureSize.x;
+	unsigned int pixelsHeight = textureSize.y;
 	if (pixelsWidth == pixelsHeight) {
 		return BlockTextureCords(
 			glm::vec2(
-				(double)(blockTextureIter->second.textureOrigin.x + smallestCordTile.x * tileSize.x + pixelInset) / (double)textureArray->textureSize.width,
-				(double)(blockTextureIter->second.textureOrigin.y + smallestCordTile.y * tileSize.y + pixelInset) / (double)textureArray->textureSize.height
+				(double)(blockTextureIter->second.textureOrigin.x + smallestTextureCord.x + pixelInset) / (double)textureArray->textureSize.width,
+				(double)(blockTextureIter->second.textureOrigin.y + smallestTextureCord.y + pixelInset) / (double)textureArray->textureSize.height
 			),
 			glm::vec2(
 				(double)(pixelsWidth - pixelInset * 2) / (double)textureArray->textureSize.width,
@@ -265,8 +264,8 @@ BlockTextureCords BlockTextureManager::getBlockTextureCords(
 		double otherPixelInset = (double)pixelInset * ((double)pixelsWidth / (double)pixelsHeight);
 		return BlockTextureCords(
 			glm::vec2(
-				((double)(blockTextureIter->second.textureOrigin.x + smallestCordTile.x * tileSize.x) + otherPixelInset) / (double)textureArray->textureSize.width,
-				(double)(blockTextureIter->second.textureOrigin.y + smallestCordTile.y * tileSize.y + pixelInset) / (double)textureArray->textureSize.height
+				((double)(blockTextureIter->second.textureOrigin.x + smallestTextureCord.x) + otherPixelInset) / (double)textureArray->textureSize.width,
+				(double)(blockTextureIter->second.textureOrigin.y + smallestTextureCord.y + pixelInset) / (double)textureArray->textureSize.height
 			),
 			glm::vec2(
 				((double)pixelsWidth - otherPixelInset * 2.) / (double)textureArray->textureSize.width,
@@ -279,8 +278,8 @@ BlockTextureCords BlockTextureManager::getBlockTextureCords(
 		double otherPixelInset = (double)pixelInset * ((double)pixelsHeight / (double)pixelsWidth);
 		return BlockTextureCords(
 			glm::vec2(
-				(double)(blockTextureIter->second.textureOrigin.x + smallestCordTile.x * tileSize.x + pixelInset) / (double)textureArray->textureSize.width,
-				((double)(blockTextureIter->second.textureOrigin.y + smallestCordTile.y * tileSize.y) + otherPixelInset) / (double)textureArray->textureSize.height
+				(double)(blockTextureIter->second.textureOrigin.x + smallestTextureCord.x + pixelInset) / (double)textureArray->textureSize.width,
+				((double)(blockTextureIter->second.textureOrigin.y + smallestTextureCord.y) + otherPixelInset) / (double)textureArray->textureSize.height
 			),
 			glm::vec2(
 				(double)(pixelsWidth - pixelInset * 2) / (double)textureArray->textureSize.width,
@@ -308,7 +307,7 @@ void BlockTextureManager::makeTextureArray(uint32_t layerCount, VkExtent3D textu
 	textureArray->textureSize = textureSize;
 	textureArray->device = device;
 	textureArray->layerCount = layerCount;
-	textureArray->image = createImageArray(
+	textureArray->image.emplace(
 		device,
 		textureSize,
 		VK_FORMAT_R8G8B8A8_UNORM,
@@ -324,7 +323,7 @@ void BlockTextureManager::makeTextureArray(uint32_t layerCount, VkExtent3D textu
 		barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrier.image = textureArray->image.image;
+		barrier.image = textureArray->image->image;
 		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		barrier.subresourceRange.baseMipLevel = 0;
 		barrier.subresourceRange.levelCount = 1;
@@ -355,7 +354,7 @@ void BlockTextureManager::makeTextureArray(uint32_t layerCount, VkExtent3D textu
 
 	// write descriptor
 	DescriptorWriter textureWriter;
-	textureWriter.writeImage(0, textureArray->image.imageView, textureArray->sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+	textureWriter.writeImage(0, textureArray->image->imageView, textureArray->sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 	textureWriter.updateSet(device->getDevice(), textureArray->descriptor);
 }
 
@@ -389,7 +388,7 @@ void BlockTextureManager::addTextureToArray(const stbi_uc* pixels, Vec2Int textu
 		barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrier.image = textureArray->image.image;
+		barrier.image = textureArray->image->image;
 		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		barrier.subresourceRange.baseMipLevel = 0;
 		barrier.subresourceRange.levelCount = 1;
@@ -414,7 +413,7 @@ void BlockTextureManager::addTextureToArray(const stbi_uc* pixels, Vec2Int textu
 		region.imageOffset = { static_cast<int32_t>(texPos.x), static_cast<int32_t>(texPos.y), 0 };
 		region.imageExtent = { static_cast<uint32_t>(textureSize.x), static_cast<uint32_t>(textureSize.y), 1 };
 
-		vkCmdCopyBufferToImage(cmd, stagingBuffer.buffer, textureArray->image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+		vkCmdCopyBufferToImage(cmd, stagingBuffer.buffer, textureArray->image->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
 		// Transition layer to SHADER_READ_ONLY_OPTIMAL
 		VkImageMemoryBarrier shaderBarrier = barrier;
@@ -449,7 +448,7 @@ void BlockTextureManager::resizeTextureArray(uint32_t newLayerCount) {
 		barrierOld.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 		barrierOld.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		barrierOld.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrierOld.image = oldTextureArray->image.image;
+		barrierOld.image = oldTextureArray->image->image;
 		barrierOld.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, oldTextureArray->layerCount };
 
 		// --- 2. Transition new image: UNDEFINED -> TRANSFER_DST_OPTIMAL
@@ -461,7 +460,7 @@ void BlockTextureManager::resizeTextureArray(uint32_t newLayerCount) {
 		barrierNew.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 		barrierNew.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		barrierNew.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrierNew.image = textureArray->image.image;
+		barrierNew.image = textureArray->image->image;
 		barrierNew.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, textureArray->layerCount };
 
 		VkImageMemoryBarrier barriers[] = { barrierOld, barrierNew };
@@ -473,7 +472,7 @@ void BlockTextureManager::resizeTextureArray(uint32_t newLayerCount) {
 			region.srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, layer, 1 };
 			region.dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, layer, 1 };
 			region.extent = { oldTextureArray->textureSize.width, oldTextureArray->textureSize.height, 1 };
-			vkCmdCopyImage(cmd, oldTextureArray->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, textureArray->image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+			vkCmdCopyImage(cmd, oldTextureArray->image->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, textureArray->image->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 		}
 
 		// --- 4. Transition new image: TRANSFER_DST_OPTIMAL -> SHADER_READ_ONLY_OPTIMAL
@@ -485,7 +484,7 @@ void BlockTextureManager::resizeTextureArray(uint32_t newLayerCount) {
 		finalBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		finalBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		finalBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		finalBarrier.image = textureArray->image.image;
+		finalBarrier.image = textureArray->image->image;
 		finalBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, newLayerCount };
 
 		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &finalBarrier);
@@ -498,6 +497,6 @@ void BlockTextureManager::resizeTextureArray(uint32_t newLayerCount) {
 
 	// --- 6. Update descriptor
 	DescriptorWriter writer;
-	writer.writeImage(0, textureArray->image.imageView, textureArray->sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+	writer.writeImage(0, textureArray->image->imageView, textureArray->sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 	writer.updateSet(device->getDevice(), textureArray->descriptor);
 }

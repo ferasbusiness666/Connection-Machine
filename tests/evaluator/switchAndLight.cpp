@@ -3,7 +3,7 @@
 #include "backend/evaluator/simulator/evalLogicSimulator.h"
 #include "loggingTestSetup.h"
 
-class SwitchAndLightSimulatoruatorTest : public ::testing::Test {
+class SwitchAndLightSimulatorTest : public ::testing::Test {
 protected:
 	void SetUp() override;
 	void TearDown() override;
@@ -16,7 +16,7 @@ protected:
 	logic_state_t X = logic_state_t::UNDEFINED;
 };
 
-void SwitchAndLightSimulatoruatorTest::SetUp() {
+void SwitchAndLightSimulatorTest::SetUp() {
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
 	circuit = environment.getBackend().getCircuit(circuitId);
 	simulator_id_t simulatorId = environment.getBackend().createSimulator(circuitId).value();
@@ -24,12 +24,12 @@ void SwitchAndLightSimulatoruatorTest::SetUp() {
 	ASSERT_TRUE(simulator->isPause());
 }
 
-void SwitchAndLightSimulatoruatorTest::TearDown() {
+void SwitchAndLightSimulatorTest::TearDown() {
 	circuit.reset();
 	simulator = nullptr;
 }
 
-TEST_F(SwitchAndLightSimulatoruatorTest, SingleSwitch) {
+TEST_F(SwitchAndLightSimulatorTest, SingleSwitch) {
 	Position switchPos(0, 0);
 	ASSERT_TRUE(circuit->tryInsertBlock(switchPos, 0, BlockType::SWITCH));
 	EXPECT_EQ(simulator->getState(switchPos), L);
@@ -39,7 +39,7 @@ TEST_F(SwitchAndLightSimulatoruatorTest, SingleSwitch) {
 	EXPECT_EQ(simulator->getState(switchPos), L);
 }
 
-TEST_F(SwitchAndLightSimulatoruatorTest, InteractFail) {
+TEST_F(SwitchAndLightSimulatorTest, InteractFail) {
 	Position nothingPos(10, 10);
 	EXPECT_EQ(simulator->getState(nothingPos), X);
 	logging_test::setExpectedLogCounts(1, 0);
@@ -47,7 +47,7 @@ TEST_F(SwitchAndLightSimulatoruatorTest, InteractFail) {
 	EXPECT_EQ(simulator->getState(nothingPos), X);
 }
 
-TEST_F(SwitchAndLightSimulatoruatorTest, SwitchAndLight) {
+TEST_F(SwitchAndLightSimulatorTest, SwitchAndLight) {
 	Position switchPos(0, 0);
 	Position lightPos(1, 0);
 	ASSERT_TRUE(circuit->tryInsertBlock(switchPos, 0, BlockType::SWITCH));
@@ -87,7 +87,7 @@ TEST_F(SwitchAndLightSimulatoruatorTest, SwitchAndLight) {
 	EXPECT_EQ(simulator->getState(lightPos), Z);
 }
 
-TEST_F(SwitchAndLightSimulatoruatorTest, TwoSwitchesAndLight) {
+TEST_F(SwitchAndLightSimulatorTest, TwoSwitchesAndLight) {
 	Position switch1Pos(0, 0);
 	Position switch2Pos(1, 0);
 	Position lightPos(2, 0);

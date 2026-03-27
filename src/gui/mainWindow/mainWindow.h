@@ -1,28 +1,18 @@
 #ifndef window_h
 #define window_h
 
-#include <RmlUi/Core.h>
 #include <SDL3/SDL_events.h>
 
+#include "environment/environment.h"
 #include "gui/sdl/sdlWindow.h"
 
-#include "circuitView/simControlsManager.h"
-#include "cornerLog.h"
-#include "gui/helper/keybindHandler.h"
-#include "gui/mainWindow/menuBar/menuBar.h"
-#include "popUps/popUpManager.h"
-#include "settingsWindow/settingsWindow.h"
-#include "sideBar/icEditor/blockCreationWindow.h"
-#include "sideBar/selector/selectorWindow.h"
-#include "sideBar/simulation/evalWindow.h"
 #include "tools/toolManagerManager.h"
+#include "widget.h"
+// #include "widgets/cornerLogWidget.h"
 
-class CircuitViewWidget;
-class Environment;
-
-class MainWindow {
+class MainWindow : public SdlWindow {
 public:
-	MainWindow(Environment& environment);
+	MainWindow();
 	~MainWindow();
 
 	// no copy
@@ -32,84 +22,99 @@ public:
 	Environment& getEnvironment() { return environment; }
 	const Environment& getEnvironment() const { return environment; }
 
-	SimControlsManager* getSimControlsManager() { return simControlsManager.has_value() ? &simControlsManager.value() : nullptr; }
-
 	ToolManagerManager& getToolManagerManager() { return toolManagerManager; }
 	const ToolManagerManager& getToolManagerManager() const { return toolManagerManager; }
 
-	Rml::ElementDocument* getRmlDocument() { return rmlDocument; }
-	const Rml::ElementDocument* getRmlDocument() const { return rmlDocument; }
-
-	PopUpManager& getPopUpManager() { return popUpManager; }
+	template<class WidgetType, typename... Args>
+	WidgetType& createWidget(Args&&... args) {
+		WidgetId widgetId = widgetIdProvider.getNewId();
+		std::unique_ptr<WidgetType> widget = std::make_unique<WidgetType>(widgetId, *this, std::forward<Args>(args)...);
+		WidgetType& widgetRef = *widget;
+		std::lock_guard lock(widgetsMux);
+		auto pair = widgets.emplace(widgetId, std::move(widget));
+		return widgetRef;
+	}
+	void destroyWidget(WidgetId widgetId);
 
 	// logging
-	// CornerLog& getCornerLog() { return cornerLog.value(); } // dont need this with the other functions here
-	void log(const std::string& message) { cornerLog->log(message); }
+	void log(const std::string& message);
 	template <typename... Args>
 	void log(const fmt::format_string<Args...>& formatString, Args&&... args) {
 		std::ostringstream message;
 		message << fmt::format(formatString, std::forward<Args>(args)...);
-		cornerLog->log(message.str());
+		log(message.str());
 	}
-	void logError(const std::string& message) { cornerLog->logError(message); }
+	void logError(const std::string& message);
 	template <typename... Args>
 	void logError(const fmt::format_string<Args...>& formatString, Args&&... args) {
 		std::ostringstream message;
 		message << fmt::format(formatString, std::forward<Args>(args)...);
-		cornerLog->logError(message.str());
+		logError(message.str());
 	}
 
-	bool recieveEvent(SDL_Event& event);
-	void updateRml();
+	bool isPressingKeybind(const Keybind& keybind, bool repeat = false) const;
+	bool isPressingKeybind(const std::string& settingKey, bool repeat = false) const;
+	const std::set<ImGuiKey>& getPressedKeys() const { return pressedKeys; }
 
-	inline SDL_Window* getSdlWindoHandle() { return sdlWindow->getHandle(); };
-	inline SdlWindow* getSdlWindo() { return sdlWindow.get(); };
-	inline float getSdlWindowScalingSize() const { return sdlWindow->getWindowScalingSize(); }
-	inline std::vector<std::shared_ptr<CircuitViewWidget>> getCircuitViewWidgets() { return circuitViewWidgets; };
-	inline std::shared_ptr<CircuitViewWidget> getCircuitViewWidget(unsigned int i) { return circuitViewWidgets[i]; };
-	inline std::shared_ptr<CircuitViewWidget> getActiveCircuitViewWidget() { return activeCircuitViewWidget; };
+	ImGuiID getDockMainId() const { return dockMainId; }
+	ImGuiID getDockLeftId() const { return dockLeftId; }
+	// ImGuiID getDockRightId() const { return dockRightId; }
+	// ImGuiID getDockBottomId() const { return dockBottomId; }
 
-	// void addCircuitViewWidget() // once we can change element that it is attached to
-	void createCircuitViewWidget(Rml::Element* element);
+	void setNextWindowMainDockable() const;
+	void setNextWindowSideBarDockable() const;
 
-	void setGlobalCssProperty(const std::string& property, const std::string& value);
+	void loadDialog();
+	void pushWindowStyling() const;
+	void popWindowStyling() const;
+
+private:
+	void doUpdate() override final;
+	bool killWindow(bool forced) override final { widgets.clear(); return true; }
+	void render() override final;
+	void processEvent(SDL_Event& event) override final;
+	nlohmann::json dumpState() const override final { return "Main Window"; }
 
 private:
 	void offsetUiScale(double delta);
 	void applyUiScale(float scale);
 
-	WindowId windowId;
-	Environment& environment;
+	Environment environment;
+
+	std::set<ImGuiKey> pressedKeys;
+	std::atomic<unsigned long long> frameIndex;
+	unsigned long long lastUpdatedFrame;
 
 	// inputs and tools
-	KeybindHandler keybindHandler;
+	// KeybindHandler keybindHandler;
 	ToolManagerManager toolManagerManager;
+	std::mutex uiScaleMux;
 	float uiScale = 1.0f;
-	bool uiScaleSettingUpdateInProgress = false;
 	static constexpr double kUiScaleStep = 0.1;
 	static constexpr double kUiScaleMin = 0.5;
 	static constexpr double kUiScaleMax = 3.0;
 
+
+	std::mutex widgetsMux;
+	std::unordered_map<WidgetId, std::unique_ptr<Widget>> widgets;
+	IdProvider<WidgetId> widgetIdProvider;
+	std::mutex widgetsToDestroyMux;
+	std::unordered_set<WidgetId> widgetsToDestroy;
+
+	ImGuiID docRootId;
+	ImGuiID dockMainId;
+	ImGuiID dockLeftId;
+	// ImGuiID dockRightId;
+	// ImGuiID dockBottomId;
+
+	float leftWidth = 150;
+
+	// CornerLogWidget& cornerLog;
+
 	// widgets
-	std::optional<SelectorWindow> selectorWindow;
-	std::optional<EvalWindow> evalWindow;
-	std::optional<BlockCreationWindow> blockCreationWindow;
-	std::optional<SimControlsManager> simControlsManager;
-	std::optional<SettingsWindow> settingsWindow;
-	std::optional<MenuBar> menuBar;
-	std::optional<CornerLog> cornerLog;
-
-	std::vector<std::pair<std::string, const std::vector<std::pair<std::string, std::function<void()>>>>> popUpsToAdd;
-
-	// circuit view widget
-	std::shared_ptr<CircuitViewWidget> activeCircuitViewWidget;
-	std::vector<std::shared_ptr<CircuitViewWidget>> circuitViewWidgets;
-
-	// rmlui and sdl
-	PopUpManager popUpManager;
-	Rml::Context* rmlContext;
-	Rml::ElementDocument* rmlDocument;
-	std::shared_ptr<SdlWindow> sdlWindow;
+	// std::optional<EvalWindow> evalWindow;
+	// std::optional<BlockCreationWindow> blockCreationWindow;
+	// std::optional<SettingsWindow> settingsWindow;
 };
 
 #endif /* window_h */

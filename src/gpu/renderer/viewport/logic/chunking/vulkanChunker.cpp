@@ -309,6 +309,9 @@ VulkanChunker::~VulkanChunker() { std::lock_guard<std::mutex> lock(mux); }
 void VulkanChunker::startMakingEdits() { mux.lock(); }
 
 void VulkanChunker::stopMakingEdits() {
+	#ifdef TRACY_PROFILER
+	ZoneScoped;
+	#endif
 	for (LogicGroup* logicGroup : logicGroupsToUpdate) logicGroup->rebuildAllocation(device, simulator, address);
 	logicGroupsToUpdate.clear();
 	mux.unlock();
@@ -529,7 +532,7 @@ void VulkanChunker::updateSimulatorIds(const std::vector<SimulatorMappingUpdate>
 	}
 }
 
-void VulkanChunker::setSimulatoruator(const EvalLogicSimulator* simulator, const Address& address) {
+void VulkanChunker::setSimulator(const EvalLogicSimulator* simulator, const Address& address) {
 	if (this->simulator) {
 		this->simulator->disconnectListener(this);
 	}

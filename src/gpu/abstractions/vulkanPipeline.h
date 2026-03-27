@@ -43,4 +43,4 @@ private:
 	VulkanDevice* device;
 };
 
-#endif
+#endif /* vulkanPipeline_h */
