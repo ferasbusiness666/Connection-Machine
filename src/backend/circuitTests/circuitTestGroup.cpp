@@ -10,8 +10,6 @@
 #include "backend/position/position.h"
 #include "logging/logging.h"
 #include "environment/environment.h"
-#include <optional>
-#include <utility>
 
 bool CircuitTestGroup::addTestCase(std::string name, int id) {
     if (testCaseNameToID.contains(name)) {
