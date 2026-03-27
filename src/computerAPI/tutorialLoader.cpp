@@ -73,6 +73,14 @@ void parsePreSteps(std::vector<std::string>& info, std::unordered_map<std::strin
 				logError("Invalid name on line {}, name should exist.", "TutorialLoader", i + 1);
 				continue;
 			}
+			info[0] = ss.str().substr(ss.str().find(info[0]));
+			if (info[0].starts_with("\"")) {
+				info[0] = info[0].substr(1);
+			}
+			if (info[info[0].size() - 1] == "\"") {
+				info[0] = info[0].substr(0, info[0].size() - 3);
+			}
+			logInfo(info[0]);
 		} else if (tok.starts_with("$")) {
 			// Macro (i.e. '$p1 (2, 5)')
 			if (tok.size() == 1) {
@@ -119,7 +127,7 @@ void parseConnection(std::stringstream& ss, int line, Position& p1out, Position&
 }
 
 void parseTruthTable(const std::vector<std::string>& lines, int& line) {
-	for (; line < lines.size(); line++) { }
+	for (; line < lines.size(); line++) { } // imagine this worked
 }
 
 void parseCondition(TutorialCondition& condition, const std::vector<std::string>& lines, int& line) {
@@ -128,21 +136,21 @@ void parseCondition(TutorialCondition& condition, const std::vector<std::string>
 		std::string tok;
 		std::string tmp;
 		ss >> tok;
-		if (tok == "Step:" || tok == "Action:") {
+		if (tok == STEP_TOKEN || tok == ACTION_TOKEN) {
 			line = i - 1;
 			return;
-		} else if (tok == "Block:") {
+		} else if (tok == BLOCK_CONDITION_TOKEN) {
 			BlockType blockName;
 			Position p;
 			Orientation orientation;
 			parseBlock(ss, i, blockName, p, orientation);
 			condition.blocks.emplace_back(p, blockName, orientation);
-		} else if (tok == "Connection:") {
+		} else if (tok == CONNECTION_CONDITION_TOKEN) {
 			Position connectionOutput;
 			Position connectionInput;
 			parseConnection(ss, i, connectionOutput, connectionInput);
 			condition.connections.emplace_back(connectionOutput, connectionInput);
-		} else if (tok == "State:") {
+		} else if (tok == LOGIC_STATE_CONDITION_TOKEN) {
 			// (logic_state: l,h,z,x) (x,y) (numsteps)
 			ss >> tok;
 			std::optional<logic_state_t> state = stringToLogicState(tok);
@@ -154,7 +162,7 @@ void parseCondition(TutorialCondition& condition, const std::vector<std::string>
 			int numSteps;
 			ss >> numSteps;
 			condition.logicStates.emplace_back(pos, state.value(), numSteps);
-		} else if (tok == "Truth") {
+		} else if (tok == TRUTH_TABLE_TOKEN) {
 			// force positions \ expect \ num steps \ table xxx -> xx
 			while (!ss.eof()) {
 				Position pos;
@@ -183,10 +191,10 @@ void parseAction(TutorialAction& action, const std::vector<std::string>& lines, 
 		std::string tok;
 		std::string tmp;
 		ss >> tok;
-		if (tok == "Step:" || tok == "Condition:") {
+		if (tok == STEP_TOKEN || tok == CONDITION_TOKEN) {
 			line = i - 1;
 			return;
-		} else if (tok == "Message:") {
+		} else if (tok == MESSAGE_TOKEN) {
 			// name (x,y) orientation (optional)
 			std::string message;
 			message = ss.str().substr(ss.str().find(tok) + tok.length() + 1);
@@ -194,7 +202,7 @@ void parseAction(TutorialAction& action, const std::vector<std::string>& lines, 
 				message = message.substr(1, message.length() - 2);
 			}
 			action.messages.emplace_back(message);
-		} else if (tok == "Block") {
+		} else if (tok == BLOCK_PREVIEW_TOKEN) {
 			// (name) (x,y) (orientation-optional)
 			ss >> tok; // throw out 'Preview:'
 			BlockType blockName;
@@ -202,14 +210,14 @@ void parseAction(TutorialAction& action, const std::vector<std::string>& lines, 
 			Orientation orientation;
 			parseBlock(ss, i, blockName, p, orientation);
 			action.blockPreviews.emplace_back(p, blockName, orientation);
-		} else if (tok == "Connection") {
+		} else if (tok == CONNECTION_PREVIEW_TOKEN) {
 			// (x,y) (x,y)
 			ss >> tok; // throw out 'Preview:'
 			Position connectionOutput;
 			Position connectionInput;
 			parseConnection(ss, i, connectionOutput, connectionInput);
 			action.connectionPreviews.emplace_back(connectionOutput, connectionInput);
-		} else if (tok == "View") {
+		} else if (tok == VIEW_CENTER_TOKEN) {
 			// Center:
 			ss >> tok;
 			FPosition viewCenter;
@@ -226,13 +234,13 @@ void parseStep(std::vector<TutorialStep>& steps, const std::vector<std::string>&
 		std::stringstream ss(lines[i]);
 		std::string tok;
 		ss >> tok;
-		if (tok == "Step:" || i + 1 == lines.size()) {
+		if (tok == STEP_TOKEN || i + 1 == lines.size()) {
 			line = i - 1;
 			steps.emplace_back(condition, action);
 			return;
-		} else if (tok == "Action:") {
+		} else if (tok == ACTION_TOKEN) {
 			parseAction(action, lines, i);
-		} else if (tok == "Condition:") {
+		} else if (tok == CONDITION_TOKEN) {
 			parseCondition(condition, lines, i);
 		}
 	}
@@ -249,7 +257,7 @@ void parseSteps(std::vector<TutorialStep>& steps, const std::vector<std::string>
 	}
 }
 
-std::vector<TutorialStep> parseTutorialFile(std::string fileName) {
+std::pair<std::string, std::vector<TutorialStep>> parseTutorialFile(std::string fileName) {
 	logInfo("Loading tutorial '" + fileName + "'", "TutorialLoader");
 	std::ifstream istream("TutorialLib/" + fileName);
 	if (!istream.is_open()) {
@@ -267,5 +275,5 @@ std::vector<TutorialStep> parseTutorialFile(std::string fileName) {
 	macroReplace(lines, macros);
 	std::vector<TutorialStep> steps;
 	parseSteps(steps, lines);
-	return steps;
+	return std::make_pair(info[0], steps);
 }

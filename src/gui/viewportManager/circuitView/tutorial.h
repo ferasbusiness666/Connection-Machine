@@ -64,8 +64,6 @@ public:
 	void setTutorial(const std::vector<TutorialStep>& steps);
 	void forceCompleteStep();
 
-	std::string selectTutorial();
-
 private:
 	void checkTutorial(DifferenceSharedPtr diff, circuit_id_t circuitId);
 	void checkTutorialState(Position pos, logic_state_t state);

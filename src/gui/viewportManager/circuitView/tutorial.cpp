@@ -42,27 +42,6 @@ void Tutorial::StartTutorial() {
 	runCurrentStep();
 }
 
-std::string Tutorial::selectTutorial() {
-	// change to text and buttons on screen later
-	std::vector<std::string> filenames;
-	logInfo("Select a tutorial");
-	for (const auto& file : std::filesystem::directory_iterator("TutorialLib/")) {
-		filenames.push_back(file.path().filename().string());
-		logInfo("  [" + std::to_string(filenames.size()) + "] " + file.path().filename().string());
-	}
-	const char* in;
-	char* p;
-	long converted;
-	do {
-		logInfo("Enter number 1-" + std::to_string(filenames.size()) + ": ");
-		std::string num;
-		std::cin >> num;
-		in = num.c_str();
-		converted = strtol(in, &p, 10);
-	} while (*p || converted < 1 || converted > filenames.size());
-	return filenames[converted - 1];
-}
-
 void Tutorial::stop() {
 	if (!tutorialRunning) return;
 	if (currentCircuit) {
