@@ -1,5 +1,6 @@
 #include "tutorialLoader.h"
 #include "computerAPI/circuits/textParser.h"
+#include "logging/logging.h"
 
 bool parsePosition(std::stringstream& ss, int line, Position& out) {
 	char ch;
@@ -77,10 +78,9 @@ void parsePreSteps(std::vector<std::string>& info, std::unordered_map<std::strin
 			if (info[0].starts_with("\"")) {
 				info[0] = info[0].substr(1);
 			}
-			if (info[info[0].size() - 1] == "\"") {
-				info[0] = info[0].substr(0, info[0].size() - 3);
+			if (info[0].ends_with("\"")) {
+				info[0] = info[0].substr(0, info[0].size() - 1);
 			}
-			logInfo(info[0]);
 		} else if (tok.starts_with("$")) {
 			// Macro (i.e. '$p1 (2, 5)')
 			if (tok.size() == 1) {
