@@ -29,6 +29,7 @@ bool CircuitTestGroup::addTestCase(std::string name, int id) {
     if (id <= -1) {
         testCases.emplace_back(name);
         testCaseNameToID.emplace(std::make_pair(name, testCases.size()-1));
+        sendTestGroupUpdate();
         return true;
     }
     if (id >= testCases.size()) {
@@ -42,6 +43,7 @@ bool CircuitTestGroup::addTestCase(std::string name, int id) {
             testCaseNameToID.emplace(std::make_pair(name, i));
         }
     }
+    sendTestGroupUpdate();
     return true;
 }
 
@@ -65,6 +67,7 @@ bool CircuitTestGroup::removeTestCase(int id) {
         std::string name = testCases[i].name;
         testCaseNameToID.emplace(std::make_pair(name, i));
     }
+    sendTestGroupUpdate();
     return true;
 }
 
@@ -78,6 +81,7 @@ bool CircuitTestGroup::swapTestCases(std::string testCase1, std::string testCase
         return false;
     }
     if (testCase1 == testCase2) return false;
+    sendTestGroupUpdate();
     return swapTestCases(testCaseNameToID[testCase1], testCaseNameToID[testCase2]);
 }
 
@@ -94,6 +98,7 @@ bool CircuitTestGroup::swapTestCases(int id1, int id2) {
     std::swap(testCases[id1], testCases[id2]);
     testCaseNameToID[testCases[id1].name] = id1;
     testCaseNameToID[testCases[id2].name] = id2;
+    sendTestGroupUpdate();
     return true;
 }
 
@@ -103,6 +108,7 @@ bool CircuitTestGroup::renameTestCase(std::string oldName, std::string newName) 
         logError("Unable to find test case with name '{}'", "CircuitTestGroup", oldName);
         return false;
     }
+    sendTestGroupUpdate();
     return renameTestCase(testCaseNameToID[oldName], newName);
 }
 
@@ -119,6 +125,7 @@ bool CircuitTestGroup::renameTestCase(int id, std::string newName) {
     testCases[id].name = newName;
     testCaseNameToID.erase(testCaseNameToID.find(oldName));
     testCaseNameToID.emplace(std::make_pair(newName, id));
+    sendTestGroupUpdate();
     return true;
 }
 
@@ -136,6 +143,7 @@ bool CircuitTestGroup::addSimpleTestCase(std::string name, std::vector<std::pair
     testCommands.emplace_back(TICK_STEP, truthTableTicks);
     testCommands.emplace_back(CHECK_STATES, 0, outputStates);
     testCases.emplace_back(name, testCommands);
+    sendTestGroupUpdate();
     return true;
 }
 
@@ -165,6 +173,7 @@ bool CircuitTestGroup::addSetStatesCommand(std::string testCaseName, std::vector
     TestCase* testCase = &testCases[idIter->second];
     if (id <= -1) {
         testCase->testCommands.emplace_back(SET_STATES, 0, states);
+        sendTestGroupUpdate();
         return true;
     }
     if (id >= testCase->testCommands.size()) {
@@ -174,6 +183,7 @@ bool CircuitTestGroup::addSetStatesCommand(std::string testCaseName, std::vector
     else {
         testCase->testCommands.insert(testCase->testCommands.begin() + id, TestCommand(SET_STATES, 0, states));
     }
+    sendTestGroupUpdate();
     return true;
 }
 
@@ -190,6 +200,7 @@ bool CircuitTestGroup::addCheckStatesCommand(std::string testCaseName, std::vect
     TestCase* testCase = &testCases[idIter->second];
     if (id <= -1) {
         testCase->testCommands.emplace_back(CHECK_STATES, 0, states);
+        sendTestGroupUpdate();
         return true;
     }
     if (id >= testCase->testCommands.size()) {
@@ -199,6 +210,7 @@ bool CircuitTestGroup::addCheckStatesCommand(std::string testCaseName, std::vect
     else {
         testCase->testCommands.insert(testCase->testCommands.begin() + id, TestCommand(CHECK_STATES, 0, states));
     }
+    sendTestGroupUpdate();
     return true;
 }
 
@@ -222,6 +234,7 @@ bool CircuitTestGroup::modifyStatesCommand(std::string testCaseName, std::vector
         return false;
     }
     testCase->testCommands[id].states = states;
+    sendTestGroupUpdate();
     return true;
 }
 
@@ -238,6 +251,7 @@ bool CircuitTestGroup::addTickStepCommand(std::string testCaseName, int ticks, i
     TestCase* testCase = &testCases[idIter->second];
     if (id <= -1) {
         testCase->testCommands.emplace_back(TICK_STEP, ticks);
+        sendTestGroupUpdate();
         return true;
     }
     if (id >= testCase->testCommands.size()) {
@@ -247,6 +261,7 @@ bool CircuitTestGroup::addTickStepCommand(std::string testCaseName, int ticks, i
     else {
         testCase->testCommands.insert(testCase->testCommands.begin() + id, TestCommand(TICK_STEP, 0, {}));
     }
+    sendTestGroupUpdate();
     return true;
 }
 
@@ -270,6 +285,7 @@ bool CircuitTestGroup::modifyTickStepCommand(std::string testCaseName, int ticks
         return false;
     }
     testCase->testCommands[id].ticks = ticks;
+    sendTestGroupUpdate();
     return true;
 }
 
@@ -285,6 +301,7 @@ bool CircuitTestGroup::removeTestCommand(std::string testCaseName, int id) {
     TestCase* testCase = &testCases[testCaseNameToID[testCaseName]];
     if (id >= testCase->testCommands.size()) return false;
     testCase->testCommands.erase(testCase->testCommands.begin() + id);
+    sendTestGroupUpdate();
     return true;
 }
 
@@ -307,6 +324,7 @@ bool CircuitTestGroup::swapTestCommands(std::string testCaseName, int id1, int i
         return false;
     }
     std::swap(testCase->testCommands[id1], testCase->testCommands[id2]);
+    sendTestGroupUpdate();
     return true;
 }
 
@@ -318,6 +336,7 @@ bool CircuitTestGroup::addInput(std::string input) {
         }
     }
     inputs.push_back(input);
+    sendTestGroupUpdate();
     return true;
 }
 
@@ -329,6 +348,7 @@ bool CircuitTestGroup::addOutput(std::string output) {
         }
     }
     outputs.push_back(output);
+    sendTestGroupUpdate();
     return true;
 }
 
