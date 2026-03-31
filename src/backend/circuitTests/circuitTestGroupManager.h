@@ -2,10 +2,11 @@
 #define circuitTestGroupManager_h
 
 #include "backend/circuitTests/circuitTestGroup.h"
+#include "backend/dataUpdateEventManager.h"
 
 class CircuitTestGroupManager {
 public:
-    CircuitTestGroupManager() = default;
+    CircuitTestGroupManager(DataUpdateEventManager& dataUpdateEventManager) : dataUpdateEventManager(dataUpdateEventManager) {};
 	CircuitTestGroupManager(const CircuitTestGroupManager&) = delete;
     CircuitTestGroupManager& operator=(const CircuitTestGroupManager&) = delete;
 
@@ -33,6 +34,7 @@ public:
 
 private:
     std::unordered_map<std::string, CircuitTestGroup> testGroups;
+    DataUpdateEventManager& dataUpdateEventManager;
 };
 
 #endif /* circuitTestGroupManager_h */
