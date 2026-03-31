@@ -11,6 +11,10 @@
 #include "logging/logging.h"
 #include "environment/environment.h"
 
+CircuitTestGroup::CircuitTestGroupCopy CircuitTestGroup::getMinimalCopy() {
+    return CircuitTestGroupCopy(name, isTruthTable, truthTableTicks, testCases, inputs, outputs);
+}
+
 bool CircuitTestGroup::addTestCase(std::string name, int id) {
     if (testCaseNameToID.contains(name)) {
         logError("Cannot add test case '{}' due to one with the same name already existing", "CircuitTestGroup", name);

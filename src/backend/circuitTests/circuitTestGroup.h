@@ -47,8 +47,18 @@ public:
         std::vector<TestCommand> testCommands;
     };
 
+    struct CircuitTestGroupCopy {
+        std::string name;
+        bool isTruthTable;
+        int truthTableTicks;
+        std::vector<TestCase> testCases;
+        std::vector<std::string> inputs;
+        std::vector<std::string> outputs;
+    };
+
     CircuitTestGroup(std::string name, bool isTruthTable, int truthTableTicks) : name(name), isTruthTable(isTruthTable), truthTableTicks(truthTableTicks) {}
     std::string getName() {return name;}
+    CircuitTestGroupCopy getMinimalCopy();
     int getTruthTableTicks() {return truthTableTicks;}
     bool truthTable() {return isTruthTable;}
 

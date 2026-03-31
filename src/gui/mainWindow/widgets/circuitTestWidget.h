@@ -5,6 +5,7 @@
 #include "gui/mainWindow/widget.h"
 #include "backend/circuit/circuitDefs.h"
 #include "backend/dataUpdateEventManager.h"
+#include "backend/circuitTests/circuitTestGroupManager.h"
 
 class CircuitView;
 
@@ -29,6 +30,8 @@ private:
 	std::unique_ptr<CircuitView> circuitView;
 	std::mutex circuitsMux;
 	std::map<circuit_id_t, std::string> circuits;
+	std::string testGroupName;
+	CircuitTestGroup::CircuitTestGroupCopy testGroupCopy;
 };
 
 #endif /* circuitTestWidget_h */
