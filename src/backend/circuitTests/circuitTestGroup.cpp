@@ -3,7 +3,9 @@
 #include "backend/address.h"
 #include "backend/blockData/blockData.h"
 #include "backend/circuit/circuit.h"
+#include "backend/circuit/circuitDefs.h"
 #include "backend/container/block/blockDefs.h"
+#include "backend/dataUpdateEventManager.h"
 #include "backend/evaluator/evaluator.h"
 #include "backend/evaluator/simulator/evalLogicSimulator.h"
 #include "backend/evaluator/simulator/logicState.h"
@@ -15,18 +17,23 @@ CircuitTestGroup::CircuitTestGroupCopy CircuitTestGroup::getMinimalCopy() {
     return CircuitTestGroupCopy(name, isTruthTable, truthTableTicks, testCases, inputs, outputs);
 }
 
+void CircuitTestGroup::sendTestGroupUpdate() {
+    environment.getBackend().getDataUpdateEventManager().sendEvent("testGroupUpdate", name);
+}
+
 bool CircuitTestGroup::addTestCase(std::string name, int id) {
     if (testCaseNameToID.contains(name)) {
         logError("Cannot add test case '{}' due to one with the same name already existing", "CircuitTestGroup", name);
         return false;
     }
-    if (id >= testCases.size()) {
-        logError("Attempted insertion at position {} in test case vector exceeds its bounds ({})", "CircuitTestGroup", id, testCases.size());
-        return false;
-    }
     if (id <= -1) {
         testCases.emplace_back(name);
         testCaseNameToID.emplace(std::make_pair(name, testCases.size()-1));
+        return true;
+    }
+    if (id >= testCases.size()) {
+        logError("Attempted insertion at position {} in test case vector exceeds its bounds ({})", "CircuitTestGroup", id, testCases.size());
+        return false;
     }
     else {
         testCases.insert(testCases.begin() + id, TestCase(name));
@@ -133,10 +140,7 @@ bool CircuitTestGroup::addSimpleTestCase(std::string name, std::vector<std::pair
 }
 
 const CircuitTestGroup::TestCase* CircuitTestGroup::getTestCase(int id) {
-    if (id >= testCases.size() || id < 0) {
-        logError("ID {} is out of the bounds of the test cases vector ({})", "CircuitTestGroup", id, testCases.size());
-        return nullptr;
-    }
+    if (id >= testCases.size() || id < 0) return nullptr;
     return &testCases[id];
 }
 
@@ -159,11 +163,14 @@ bool CircuitTestGroup::addSetStatesCommand(std::string testCaseName, std::vector
         return false;
     }
     TestCase* testCase = &testCases[idIter->second];
+    if (id <= -1) {
+        testCase->testCommands.emplace_back(SET_STATES, 0, states);
+        return true;
+    }
     if (id >= testCase->testCommands.size()) {
         logError("Attempted insertion at position {} in test command vector of test case '{}' exceeds its bounds ({})", "CircuitTestGroup", id, testCaseName, testCase->testCommands.size());
         return false;
     }
-    if (id <= -1) testCase->testCommands.emplace_back(SET_STATES, 0, states);
     else {
         testCase->testCommands.insert(testCase->testCommands.begin() + id, TestCommand(SET_STATES, 0, states));
     }
@@ -181,11 +188,14 @@ bool CircuitTestGroup::addCheckStatesCommand(std::string testCaseName, std::vect
         return false;
     }
     TestCase* testCase = &testCases[idIter->second];
-    if (id >= testCase->testCommands.size() || id < 0) {
+    if (id <= -1) {
+        testCase->testCommands.emplace_back(CHECK_STATES, 0, states);
+        return true;
+    }
+    if (id >= testCase->testCommands.size()) {
         logError("Attempted insertion at position {} in test command vector of test case '{}' exceeds its bounds ({})", "CircuitTestGroup", id, testCaseName, testCase->testCommands.size());
         return false;
     }
-    if (id <= -1) testCase->testCommands.emplace_back(CHECK_STATES, 0, states);
     else {
         testCase->testCommands.insert(testCase->testCommands.begin() + id, TestCommand(CHECK_STATES, 0, states));
     }
@@ -215,6 +225,31 @@ bool CircuitTestGroup::modifyStatesCommand(std::string testCaseName, std::vector
     return true;
 }
 
+bool CircuitTestGroup::addTickStepCommand(std::string testCaseName, int ticks, int id) {
+    if (isTruthTable) {
+        logError("Method addTickStepCommand disallowed on truth table, use addSimpleTestCase", "CircuitTestGroup");
+        return false;
+    }
+    auto idIter = testCaseNameToID.find(testCaseName);
+    if (idIter == testCaseNameToID.end()) {
+        logError("Unable to find test case with name '{}'", "CircuitTestGroup", testCaseName);
+        return false;
+    }
+    TestCase* testCase = &testCases[idIter->second];
+    if (id <= -1) {
+        testCase->testCommands.emplace_back(TICK_STEP, ticks);
+        return true;
+    }
+    if (id >= testCase->testCommands.size()) {
+        logError("Attempted insertion at position {} in test command vector of test case '{}' exceeds its bounds ({})", "CircuitTestGroup", id, testCaseName, testCase->testCommands.size());
+        return false;
+    }
+    else {
+        testCase->testCommands.insert(testCase->testCommands.begin() + id, TestCommand(TICK_STEP, 0, {}));
+    }
+    return true;
+}
+
 bool CircuitTestGroup::modifyTickStepCommand(std::string testCaseName, int ticks, int id) {
     if (isTruthTable) {
         logError("Method modifyStatesCommand disallowed on truth table, use addSimpleTestCase", "CircuitTestGroup");
@@ -235,28 +270,6 @@ bool CircuitTestGroup::modifyTickStepCommand(std::string testCaseName, int ticks
         return false;
     }
     testCase->testCommands[id].ticks = ticks;
-    return true;
-}
-
-bool CircuitTestGroup::addTickStepCommand(std::string testCaseName, int ticks, int id) {
-    if (isTruthTable) {
-        logError("Method addTickStepCommand disallowed on truth table, use addSimpleTestCase", "CircuitTestGroup");
-        return false;
-    }
-    auto idIter = testCaseNameToID.find(testCaseName);
-    if (idIter == testCaseNameToID.end()) {
-        logError("Unable to find test case with name '{}'", "CircuitTestGroup", testCaseName);
-        return false;
-    }
-    TestCase* testCase = &testCases[idIter->second];
-    if (id >= testCase->testCommands.size() || id < 0) {
-        logError("Attempted insertion at position {} in test command vector of test case '{}' exceeds its bounds ({})", "CircuitTestGroup", id, testCaseName, testCase->testCommands.size());
-        return false;
-    }
-    if (id <= -1) testCase->testCommands.emplace_back(TICK_STEP, ticks);
-    else {
-        testCase->testCommands.insert(testCase->testCommands.begin() + id, TestCommand(TICK_STEP, 0, {}));
-    }
     return true;
 }
 
@@ -319,15 +332,18 @@ bool CircuitTestGroup::addOutput(std::string output) {
     return true;
 }
 
-bool CircuitTestGroup::generateTestCircuit(BlockType blockType, Environment& environment) {
+bool CircuitTestGroup::generateTestCircuit(BlockType blockType, circuit_id_t circuitToUse) {
     Backend& backend = environment.getBackend();
     CircuitManager& cirManager = backend.getCircuitManager();
     SimulatorManager& evalManager = backend.getSimulatorManager();
     BlockDataManager& blockDataManager = backend.getBlockDataManager();
 
-    circuit_id_t cirId = cirManager.createNewCircuit(false);
-    SharedCircuit cir = cirManager.getCircuit(cirId);
-    simulator_id_t simID = backend.createSimulator(cirId).value();
+    if (circuitToUse == 0) {
+        circuitToUse = cirManager.createNewCircuit(false);
+    }
+    SharedCircuit cir = cirManager.getCircuit(circuitToUse);
+    cir->clear();
+    simulator_id_t simID = backend.createSimulator(circuitToUse).value();
     simulator = evalManager.getSimulator(simID);
     simulator->setPause(true);
     const BlockContainer& blockContainer = cir->getBlockContainer();
@@ -408,13 +424,13 @@ bool CircuitTestGroup::generateTestCircuit(BlockType blockType, Environment& env
     return true;
 }
 
-bool CircuitTestGroup::runAllTests(BlockType blockType, bool haltOnFailure, Environment& environment) {
+bool CircuitTestGroup::runAllTests(BlockType blockType, bool haltOnFailure, circuit_id_t circuitToUse) {
     std::vector<int> testIDs;
     for (int i =0; i < testCases.size(); i++) testIDs.push_back(i);
-    return runTests(testIDs, blockType, haltOnFailure, environment);
+    return runTests(testIDs, blockType, haltOnFailure, circuitToUse);
 }
 
-bool CircuitTestGroup::runTests(std::vector<std::string>& testsToRun, BlockType blockType, bool haltOnFailure, Environment& environment) {
+bool CircuitTestGroup::runTests(std::vector<std::string>& testsToRun, BlockType blockType, bool haltOnFailure, circuit_id_t circuitToUse) {
     // converts strings to their IDs and runs them by ID
     std::vector<int> testIDs;
     for (auto stringIter = testsToRun.begin(); stringIter != testsToRun.end(); stringIter++) {
@@ -425,11 +441,11 @@ bool CircuitTestGroup::runTests(std::vector<std::string>& testsToRun, BlockType 
         }
         testIDs.push_back(idIter->second);
     }
-    return runTests(testIDs, blockType, haltOnFailure, environment);
+    return runTests(testIDs, blockType, haltOnFailure, circuitToUse);
 }
 
-bool CircuitTestGroup::runTests(std::vector<int>& testsToRun, BlockType blockType, bool haltOnFailure, Environment& environment) {
-    generateTestCircuit(blockType, environment);
+bool CircuitTestGroup::runTests(std::vector<int>& testsToRun, BlockType blockType, bool haltOnFailure, circuit_id_t circuitToUse) {
+    generateTestCircuit(blockType, circuitToUse);
     bool fullTestSucceedStatus = true;
 
     for (auto testCaseIndexIter = testsToRun.begin(); testCaseIndexIter != testsToRun.end(); testCaseIndexIter++) {

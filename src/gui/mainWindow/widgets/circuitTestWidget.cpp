@@ -10,7 +10,7 @@
 #include "gui/mainWindow/guiColors.h"
 #include "app.h"
 
-CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow, circuit_id_t circuitId) :
+CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) :
 	Widget(widgetId, mainWindow), dataUpdateEventReceiver(getBackend().getDataUpdateEventManager()) {
 	{
 		ViewportId viewportId = MainRenderer::get().registerViewport(getMainWindow().getWindowId(), { 100, 100 });
@@ -122,7 +122,7 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow, 
 			circuitView->getSimulator()->setPause(isPaused);
 		}
 	});
-	setupGUIValue<circuit_id_t>("circuitId", circuitId, [this](const circuit_id_t& circuitId) {
+	setupGUIValue<circuit_id_t>("circuitId", 0, [this](const circuit_id_t& circuitId) {
 		const CircuitBlockData* circuitBlockData = getBackend().getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
 		if (circuitBlockData == nullptr) {
 			// std::lock_guard mux(blockDataCopyMux);

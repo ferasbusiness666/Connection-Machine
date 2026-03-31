@@ -4,7 +4,7 @@
 #include "logging/logging.h"
 #include "computerAPI/circuits/textParser.h"
 
-std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestGroupFromTruthTableFilePath(const std::string &path) {
+std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestGroupFromTruthTableFilePath(const std::string &path, Environment& environment) {
     logInfo("Parsing truth table (.tt)");
 	std::ifstream inputFile(path, std::ios::in | std::ios::binary);
 	if (!inputFile.is_open()) {
@@ -48,7 +48,7 @@ std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestGroupFromT
         inputFile >> token;
     }
 
-    CircuitTestGroup testGroup(testName, true, ticks);
+    CircuitTestGroup testGroup(testName, true, ticks, environment);
 
     std::string line;
     std::getline(inputFile, line);
@@ -138,9 +138,9 @@ std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestGroupFromT
     return testGroup;
 }
 
-std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestGroupFromFilePath(const std::string &path) {
+std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestGroupFromFilePath(const std::string &path, Environment& environment) {
     if (path.substr(path.size()-3) == ".tt"){
-        return getCircuitTestGroupFromTruthTableFilePath(path);
+        return getCircuitTestGroupFromTruthTableFilePath(path, environment);
     }
     else if (path.substr(path.size()-4) != ".tst") {
         logError("Unrecognized file extension, valid options are '.tst' for full test or '.tt' for a truth table");
@@ -174,7 +174,7 @@ std::optional<CircuitTestGroup> CircuitTestFileManager::getCircuitTestGroupFromF
         return std::nullopt;
     }
 
-    CircuitTestGroup testGroup(testName, false, 0);
+    CircuitTestGroup testGroup(testName, false, 0, environment);
 
     std::set<std::string> inputs;
     inputFile >> token;

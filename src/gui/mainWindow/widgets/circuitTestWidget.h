@@ -11,7 +11,7 @@ class CircuitView;
 
 class CircuitTestWidget : public Widget {
 public:
-	CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow, circuit_id_t circuitId = 0);
+	CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow);
 	~CircuitTestWidget();
 
 	void processEvent(SDL_Event& event) override final;

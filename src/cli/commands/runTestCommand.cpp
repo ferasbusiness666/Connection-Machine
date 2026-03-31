@@ -37,7 +37,7 @@ void RunTestCommand::run(const std::vector<std::string>& args, Environment& envi
         return;
     }
 
-    if (!testGroup->runAllTests(circuitBlock, false, environment)) {
+    if (!testGroup->runAllTests(circuitBlock, false)) {
         logInfo("Test failed.", "RunTestCommand");
     }
     else {
