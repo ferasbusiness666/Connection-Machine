@@ -8,7 +8,6 @@
 #include "util/preprocessors.h"
 #include "gui/mainWindow/mainWindow.h"
 #include "gui/mainWindow/guiColors.h"
-#include "app.h"
 
 CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) :
 	Widget(widgetId, mainWindow), dataUpdateEventReceiver(getBackend().getDataUpdateEventManager()) {
@@ -91,19 +90,29 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 		}
 	}
     {
-        std::lock_guard mux(circuitsMux);
-        for (const auto& circuit : getBackend().getCircuitManager().getCircuits()) {
-            if (circuit.second->isEditable()) circuits.emplace(circuit.first, circuit.second->getCircuitName());
-        }
+        std::lock_guard mux(blockTypesMux);
+		for (unsigned int type = 0; type < getBackend().getBlockDataManager().maxBlockId(); type++) {
+			const BlockData* blockData = getBackend().getBlockDataManager().getBlockData((BlockType)(type + 1));
+			if (blockData) {
+				if (blockData->isBus() || !blockData->isPlaceable()) continue;
+				blockTypes.emplace(blockData->getBlockType(), blockData->getName());
+			}
+		}
+	}
+	{
+		std::lock_guard mux(testGroupsMux);
+		for (const auto& circuitTestGroup : getBackend().getCircuitTestGroupManager()) {
+			testGroups.push_back(circuitTestGroup.first);
+		}
     }
 	dataUpdateEventReceiver.linkFunction("blockDataUpdate", [this](const DataUpdateEventManager::EventData* event) {
 		// update circuit list
 		{
-			std::lock_guard mux(circuitsMux);
-			circuits.clear();
-			for (const auto& circuit : getBackend().getCircuitManager().getCircuits()) {
-				if (circuit.second->isEditable()) circuits.emplace(circuit.first, circuit.second->getCircuitName());
-			}
+			// std::lock_guard mux(blockTypesMux);
+			// blockTypes.clear();
+			// for (const auto& circuit : getBackend().getCircuitManager().getCircuits()) {
+			// 	if (circuit.second->isEditable()) circuits.emplace(circuit.first, circuit.second->getCircuitName());
+			// }
 		}
 	});
     setupGUIValue<double>("SimulatorRealTPS", 0, nullptr);
@@ -122,18 +131,27 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 			circuitView->getSimulator()->setPause(isPaused);
 		}
 	});
-	setupGUIValue<circuit_id_t>("circuitId", 0, [this](const circuit_id_t& circuitId) {
-		const CircuitBlockData* circuitBlockData = getBackend().getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
-		if (circuitBlockData == nullptr) {
-			// std::lock_guard mux(blockDataCopyMux);
-			// blockDataCopy = std::nullopt;
-			circuitView->setCircuit(0);
-            blockType = NONE;
+	setupGUIValue<std::string>("testGroupName", "NONE", [this](const std::string& testGroupName) {
+		const CircuitTestGroup* circuitTestGroup = getBackend().getCircuitTestGroupManager().getCircuitTestGroup(testGroupName);
+		if (!circuitTestGroup) {
+			setGUIValue<std::string>("testGroupName", "NONE");
 			return;
 		}
-		const BlockData* blockData = getBackend().getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
-		assert(blockData);
-		blockType = blockData->getBlockType();
+		std::lock_guard mux(testGroupCopyMux);
+		testGroupCopy = circuitTestGroup->getMinimalCopy();
+	});
+	setupGUIValue<BlockType>("blockType", BlockType::NONE, [this](const BlockType& blockType) {
+		// const CircuitBlockData* circuitBlockData = getBackend().getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
+		// if (circuitBlockData == nullptr) {
+		// 	// std::lock_guard mux(blockDataCopyMux);
+		// 	// blockDataCopy = std::nullopt;
+		// 	circuitView->setCircuit(0);
+        //     blockType = NONE;
+		// 	return;
+		// }
+		// const BlockData* blockData = getBackend().getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
+		// assert(blockData);
+		// blockType = blockData->getBlockType();
 		// std::lock_guard mux(blockDataCopyMux);
 		// blockDataCopy = blockData->getBlockDataCopy();
 		// Circuit* circuit = getBackend().getCircuit(renderingCircuitId).get();
@@ -187,40 +205,67 @@ void CircuitTestWidget::render() {
 		ImGui::PopStyleVar();
 		getMainWindow().popWindowStyling();
 	) {
-		circuit_id_t circuitId = getGUIValue_rendering<circuit_id_t>("circuitId");
-		auto iter = circuits.find(circuitId);
-		std::string circuitName = "NONE";
-		if (iter != circuits.end()) circuitName = iter->second;
-		{ // circuit selector
-			if (ImGui::BeginCombo("##circuitSelector", circuitName.c_str())) {
-				static ImGuiTextFilter filter;
-				if (ImGui::IsWindowAppearing()) {
-					ImGui::SetKeyboardFocusHere();
-					filter.Clear();
-				}
-				ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F);
-				filter.Draw("##Filter", -FLT_MIN);
+		std::string testGroupName = getGUIValue_rendering<std::string>("testGroupName");
+		{
+			std::lock_guard mux(testGroupsMux);
+			{
+				if (ImGui::BeginCombo("##testGroupSelector", testGroupName.c_str())) {
+					static ImGuiTextFilter filter;
+					if (ImGui::IsWindowAppearing()) {
+						ImGui::SetKeyboardFocusHere();
+						filter.Clear();
+					}
+					ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F);
+					filter.Draw("##Filter", -FLT_MIN);
 
-				for (const std::pair<circuit_id_t, std::string>& circuit : circuits)  {
-					if (filter.PassFilter(circuit.second.c_str())) {
-						if (ImGui::Selectable(circuit.second.c_str(), circuit.first == circuitId)) {
-							setGUIValue_rendering("circuitId", circuit.first);
+					for (const std::string& testGroup : testGroups)  {
+						if (filter.PassFilter(testGroup.c_str())) {
+							if (ImGui::Selectable(testGroup.c_str(), testGroup == testGroupName)) {
+								setGUIValue_rendering<std::string>("testGroupName", testGroup);
+							}
 						}
 					}
+					ImGui::EndCombo();
 				}
-				ImGui::EndCombo();
 			}
 		}
-		// std::lock_guard mux(blockDataCopyMux);
+		BlockType blockType = getGUIValue_rendering<BlockType>("blockType");
+		{
+			std::lock_guard mux(blockTypesMux);
+			auto iter = blockTypes.find(blockType);
+			std::string blockTypeName = "NONE";
+			if (iter != blockTypes.end()) blockTypeName = iter->second;
+			{
+				if (ImGui::BeginCombo("##blockTypeSelector", blockTypeName.c_str())) {
+					static ImGuiTextFilter filter;
+					if (ImGui::IsWindowAppearing()) {
+						ImGui::SetKeyboardFocusHere();
+						filter.Clear();
+					}
+					ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F);
+					filter.Draw("##Filter", -FLT_MIN);
+
+					for (const std::pair<circuit_id_t, std::string>& blockTypeIter : blockTypes)  {
+						if (filter.PassFilter(blockTypeIter.second.c_str())) {
+							if (ImGui::Selectable(blockTypeIter.second.c_str(), blockTypeIter.first == blockType)) {
+								setGUIValue_rendering<BlockType>("blockType", (BlockType)blockTypeIter.first);
+							}
+						}
+					}
+					ImGui::EndCombo();
+				}
+			}
+		}
+		std::lock_guard mux(testGroupCopyMux);
 		ImGui::PushStyleColor(ImGuiCol_ChildBg, GUIColors::BACKGROUND);
 		ifGui (ImGui::BeginChild("##mainView", ImVec2(ImGui::GetContentRegionAvail().x - 200, ImGui::GetContentRegionAvail().y), ImGuiChildFlags_ResizeX, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse), ImGui::PopStyleColor()) {
-			renderViewport(circuitId);
+			renderViewport(blockType, testGroupName);
 		}
 		ImGui::EndChild();
 		ImGui::SameLine();
 		ImGui::PushStyleColor(ImGuiCol_ChildBg, GUIColors::BACKGROUND);
 		ifGui (ImGui::BeginChild("##SideBar"), ImGui::PopStyleColor()) {
-			renderSideBar(circuitId);
+			renderSideBar(blockType, testGroupName);
 		}
 		ImGui::EndChild();
 	}
@@ -230,7 +275,7 @@ void CircuitTestWidget::render() {
 	ImGui::End();
 }
 
-void CircuitTestWidget::renderViewport(circuit_id_t circuitId) {
+void CircuitTestWidget::renderViewport(BlockType blockType, const std::string& testGroupName) {
 	ImGui::SetScrollX(0);
 	ImGui::SetScrollY(0);
 	ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
@@ -340,7 +385,7 @@ void CircuitTestWidget::renderViewport(circuit_id_t circuitId) {
 	}
 }
 
-void CircuitTestWidget::renderSideBar(circuit_id_t circuitId) {
+void CircuitTestWidget::renderSideBar(BlockType blockType, const std::string& testGroupName) {
 	// renderDataList
 	ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 4);
 	ImGui::PushStyleColor(ImGuiCol_ChildBg, GUIColors::WIDGET_BACKGROUND);
@@ -351,14 +396,7 @@ void CircuitTestWidget::renderSideBar(circuit_id_t circuitId) {
 		if (ImGui::BeginMenuBar()) {
 			if (ImGui::BeginMenu("New")) {
 				if (ImGui::MenuItem("Texture")) {
-					App::runOnMain([this, circuitId](){
-						Backend& backend = getMainWindow().getEnvironment().getBackend();
-						const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
-						if (!circuitBlockData) return;
-						BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
-						assert(blockData);
-						blockData->newRenderData<BlockData::BlockTextureData>();
-					});
+
 				}
 				if (ImGui::MenuItem("Shape")) {
 					getMainWindow().logError("Shape render data not real yet!");

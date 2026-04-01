@@ -19,8 +19,8 @@ public:
 private:
 	void render() override final;
 	void update() override final;
-	void renderViewport(circuit_id_t circuitId);
-	void renderSideBar(circuit_id_t circuitId);
+	void renderViewport(BlockType blockType, const std::string& testGroupName);
+	void renderSideBar(BlockType blockType, const std::string& testGroupName);
 
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 
@@ -28,8 +28,10 @@ private:
 
 	circuit_id_t renderingCircuitId = 0;
 	std::unique_ptr<CircuitView> circuitView;
-	std::mutex circuitsMux;
-	std::map<circuit_id_t, std::string> circuits;
+	std::mutex blockTypesMux;
+	std::map<BlockType, std::string> blockTypes;
+	std::mutex testGroupsMux;
+	std::vector<std::string> testGroups;
 	std::string testGroupName;
 	std::mutex testGroupCopyMux;
 	CircuitTestGroup::CircuitTestGroupCopy testGroupCopy;

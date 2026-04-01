@@ -4,7 +4,7 @@
 #include "backend/evaluator/simulatorManager.h"
 #include "backend/backend.h"
 
-CircuitTestGroup::CircuitTestGroupCopy CircuitTestGroup::getMinimalCopy() {
+CircuitTestGroup::CircuitTestGroupCopy CircuitTestGroup::getMinimalCopy() const {
     return CircuitTestGroupCopy(name, isTruthTable, truthTableTicks, testCases, inputs, outputs);
 }
 
@@ -138,17 +138,18 @@ bool CircuitTestGroup::addSimpleTestCase(std::string name, std::vector<std::pair
     return true;
 }
 
-const CircuitTestGroup::TestCase* CircuitTestGroup::getTestCase(int id) {
+const CircuitTestGroup::TestCase* CircuitTestGroup::getTestCase(int id) const {
     if (id >= testCases.size() || id < 0) return nullptr;
     return &testCases[id];
 }
 
-const CircuitTestGroup::TestCase* CircuitTestGroup::getTestCase(std::string name) {
-    if (!testCaseNameToID.contains(name)) {
-        logError("Unable to find test case with name '{}'", "CircuitTestGroup", name);
-        return nullptr;
-    }
-    return &testCases[testCaseNameToID[name]];
+const CircuitTestGroup::TestCase* CircuitTestGroup::getTestCase(std::string name) const {
+	auto iter = testCaseNameToID.find(name);
+	if (iter == testCaseNameToID.end()) {
+		logError("Unable to find test case with name '{}'", "CircuitTestGroup", name);
+		return nullptr;
+	}
+    return &testCases[iter->second];
 }
 
 bool CircuitTestGroup::addSetStatesCommand(std::string testCaseName, std::vector<std::pair<std::string, logic_state_t>> states, int id) {

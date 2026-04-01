@@ -56,10 +56,10 @@ public:
 
     CircuitTestGroup(Backend& backend, std::string name, bool isTruthTable, int truthTableTicks) :
 		name(name), isTruthTable(isTruthTable), truthTableTicks(truthTableTicks), backend(backend) {}
-    std::string getName() {return name;}
-    CircuitTestGroupCopy getMinimalCopy();
-    int getTruthTableTicks() {return truthTableTicks;}
-    bool truthTable() {return isTruthTable;}
+    std::string getName() const {return name;}
+    CircuitTestGroupCopy getMinimalCopy() const;
+    int getTruthTableTicks() const {return truthTableTicks;}
+    bool truthTable() const {return isTruthTable;}
     void sendTestGroupUpdate();
 
     bool addTestCase(std::string name, int id=-1);
@@ -70,8 +70,8 @@ public:
     bool renameTestCase(std::string oldName, std::string newName);
     bool renameTestCase(int id, std::string newName);
     bool addSimpleTestCase(std::string name, std::vector<std::pair<std::string, logic_state_t>> inputStates, std::vector<std::pair<std::string, logic_state_t>> outputStates);
-    const TestCase* getTestCase(int id);
-    const TestCase* getTestCase(std::string name);
+    const TestCase* getTestCase(int id) const;
+    const TestCase* getTestCase(std::string name) const;
 
     bool addSetStatesCommand(std::string testCaseName, std::vector<std::pair<std::string, logic_state_t>> states, int id=-1);
     bool addCheckStatesCommand(std::string testCaseName, std::vector<std::pair<std::string, logic_state_t>> states, int id=-1);
@@ -83,10 +83,10 @@ public:
 
     bool addInput(std::string input);
     bool addOutput(std::string output);
-    std::vector<std::string>::const_iterator getInputIterator() {return inputs.cbegin();}
-    std::vector<std::string>::const_iterator getOutputIterator() {return outputs.cbegin();}
-    std::vector<std::string>::const_iterator getInputIteratorEnd() {return inputs.cend();}
-    std::vector<std::string>::const_iterator getOutputIteratorEnd() {return outputs.cend();}
+    std::vector<std::string>::const_iterator getInputIterator() const {return inputs.cbegin();}
+    std::vector<std::string>::const_iterator getOutputIterator() const {return outputs.cbegin();}
+    std::vector<std::string>::const_iterator getInputIteratorEnd() const {return inputs.cend();}
+    std::vector<std::string>::const_iterator getOutputIteratorEnd() const {return outputs.cend();}
 
     bool runAllTests(BlockType blockType, bool haltOnFailure, simulator_id_t simulatorToUse = 0);
     bool runTests(std::vector<std::string>& testsToRun, BlockType blockType, bool haltOnFailure, simulator_id_t simulatorToUse = 0);
