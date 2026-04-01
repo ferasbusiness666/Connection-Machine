@@ -52,7 +52,6 @@ public:
 	// void setBackend(Backend* backend);
 	void setSimulator(simulator_id_t simulatorId, const Address& address = Address());
 	void setSimulator(const EvalLogicSimulator* simulator, const Address& address = Address());
-	void setCircuit(std::shared_ptr<Circuit> circuit);
 	void setCircuit(circuit_id_t circuitId);
 
 	void viewChanged();

@@ -8,7 +8,7 @@ void PortSelector::activate() {
 }
 
 bool PortSelector::press(const Event* event) {
-	if (type == BlockType::NONE || !circuit || circuit->getBlockType() != type || !circuitView) return false;
+	if (type == BlockType::NONE || !getCircuit() || getCircuit()->getBlockType() != type || !circuitView) return false;
 	const PositionEvent* positionEvent = event->cast<PositionEvent>();
 	if (!positionEvent) return false;
 	onSelectFunction(positionEvent->getPosition());

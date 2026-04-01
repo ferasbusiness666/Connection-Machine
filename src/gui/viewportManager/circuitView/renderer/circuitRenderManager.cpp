@@ -9,7 +9,7 @@
 #include "environment/environment.h"
 
 CircuitRenderManager::CircuitRenderManager(Environment& environment, circuit_id_t circuitId, ViewportId viewportId) : environment(environment), backend(environment.getBackend()), circuitId(circuitId), viewportId(viewportId) {
-	SharedCircuit circuit = backend.getCircuit(circuitId);
+	Circuit* circuit = backend.getCircuitManager().getSharedCircuit(circuitId).get();
 	if (!circuit) {
 		logError("Failed to find circuit with Id {}", "CircuitRenderManager", circuitId);
 		return;
@@ -19,7 +19,7 @@ CircuitRenderManager::CircuitRenderManager(Environment& environment, circuit_id_
 }
 
 CircuitRenderManager::~CircuitRenderManager() {
-	SharedCircuit circuit = backend.getCircuit(circuitId);
+	Circuit* circuit = backend.getCircuitManager().getSharedCircuit(circuitId).get();
 	if (!circuit) return; // not an error because the circuit may have already been destroyed
 	MainRenderer::get().resetCircuit(viewportId);
 	MainRenderer::get().setViewportSimulator(viewportId, nullptr, Address());
@@ -38,7 +38,7 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 
 	MainRenderer::get().startMakingEdits(viewportId);
 
-	SharedCircuit circuit = backend.getCircuit(circuitId);
+	Circuit* circuit = backend.getCircuitManager().getSharedCircuit(circuitId).get();
 	if (!circuit) { // not an error because the circuit may have already been destroyed
 		MainRenderer::get().resetViewport(viewportId);
 		circuitId = 0; // dont let this attach to something else

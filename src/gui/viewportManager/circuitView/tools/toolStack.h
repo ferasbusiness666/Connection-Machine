@@ -12,11 +12,11 @@ class ToolManager;
 
 class ToolStack {
 public:
-	inline ToolStack(Environment& environment, EventRegister* eventRegister, ViewportId viewportId, CircuitView* circuitView, ToolManager& toolManager) :
+	inline ToolStack(Environment& environment, EventRegister& eventRegister, ViewportId viewportId, CircuitView& circuitView, ToolManager& toolManager) :
 		environment(environment), eventRegister(eventRegister), viewportId(viewportId), circuitView(circuitView), toolManager(toolManager), toolStackInterface(this) {
-		eventRegister->registerFunction("pointer enter view", std::bind(&ToolStack::enterBlockView, this, std::placeholders::_1));
-		eventRegister->registerFunction("pointer exit view", std::bind(&ToolStack::exitBlockView, this, std::placeholders::_1));
-		eventRegister->registerFunction("Pointer Move", std::bind(&ToolStack::pointerMove, this, std::placeholders::_1));
+		eventRegister.registerFunction("pointer enter view", std::bind(&ToolStack::enterBlockView, this, std::placeholders::_1));
+		eventRegister.registerFunction("pointer exit view", std::bind(&ToolStack::exitBlockView, this, std::placeholders::_1));
+		eventRegister.registerFunction("Pointer Move", std::bind(&ToolStack::pointerMove, this, std::placeholders::_1));
 	}
 	inline ToolStack(const ToolStack& other) = delete;
 	inline ToolStack& operator=(const ToolStack& other) = delete;
@@ -37,7 +37,7 @@ public:
 
 	void setMode(const std::string& mode);
 
-	void setCircuit(Circuit* circuit);
+	void setCircuit(circuit_id_t circuitId);
 
 private:
 	SharedCircuitTool getCurrentNonHelperTool_();
@@ -55,12 +55,12 @@ private:
 	Position lastPointerPosition;
 
 	// current block container
-	Circuit* circuit = nullptr;
-	CircuitView* circuitView;
+	circuit_id_t circuitId = 0;
+	CircuitView& circuitView;
 
 	// tool function event linking
 	ToolStackInterface toolStackInterface;
-	EventRegister* eventRegister;
+	EventRegister& eventRegister;
 
 	ViewportId viewportId;
 

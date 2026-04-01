@@ -8,14 +8,14 @@
 
 CircuitView::CircuitView(Environment& environment, ViewportId viewportId) :
 	environment(environment), backend(environment.getBackend()), dataUpdateEventManager(environment.getBackend().getDataUpdateEventManager()), viewportId(viewportId),
-	toolManager(environment, &eventRegister, viewportId, this), tutorialManager(environment, *this) {
+	toolManager(environment, eventRegister, viewportId, *this), tutorialManager(environment, *this), viewManager(environment.getBackend()) {
 	MainRenderer::get().moveViewportView(viewportId, viewManager.getTopLeft(), viewManager.getBottomRight());
 	viewManager.setUpEvents(eventRegister);
 	viewManager.connectViewChanged(std::bind(&CircuitView::viewChanged, this));
 }
 
-Circuit* CircuitView::getCircuit() { return backend.getCircuit(circuitId).get(); }
-const Circuit* CircuitView::getCircuit() const { return backend.getCircuit(circuitId).get(); }
+Circuit* CircuitView::getCircuit() { return backend.getCircuitManager().getSharedCircuit(circuitId).get(); }
+const Circuit* CircuitView::getCircuit() const { return backend.getCircuitManager().getSharedCircuit(circuitId).get(); }
 
 EvalLogicSimulator* CircuitView::getSimulator() { return backend.getSimulator(simulatorId); }
 const EvalLogicSimulator* CircuitView::getSimulator() const { return backend.getSimulator(simulatorId); }
@@ -26,8 +26,8 @@ void CircuitView::setSimulator(simulator_id_t simulatorId, const Address& addres
 		this->circuitId = 0;
 		circuitRenderManager.reset();
 		MainRenderer::get().setViewportSimulator(viewportId, nullptr, Address());
-		toolManager.setCircuit(nullptr);
-		viewManager.setCircuit(nullptr);
+		toolManager.setCircuit(0);
+		viewManager.setCircuit(0);
 		dataUpdateEventManager.sendEvent("circuitViewChangeSimulator", this);
 		dataUpdateEventManager.sendEvent("circuitViewChangeCircuit", this);
 	} else {
@@ -36,7 +36,7 @@ void CircuitView::setSimulator(simulator_id_t simulatorId, const Address& addres
 			logError("When setting CircuitView's simulator, a simulator with a different backend. Failed to connect! Doing nothing!", "CircuitView");
 		} else {
 			circuit_id_t circuitId = simulator->getCircuitId(address);
-			SharedCircuit circuit = backend.getCircuit(circuitId); // ok if null
+			Circuit* circuit = backend.getCircuitManager().getSharedCircuit(circuitId).get(); // ok if null
 			if (circuit == nullptr){
 				logError("When setting CircuitView's simulator, failed to find circuit for simulator with circuit id {}", "CircuitView", circuitId);
 				return;
@@ -47,8 +47,8 @@ void CircuitView::setSimulator(simulator_id_t simulatorId, const Address& addres
 			circuitRenderManager.reset();
 			MainRenderer::get().setViewportSimulator(viewportId, simulator, address);
 			circuitRenderManager.emplace(environment, this->circuitId, viewportId);
-			toolManager.setCircuit(circuit.get());
-			viewManager.setCircuit(circuit.get());
+			toolManager.setCircuit(circuitId);
+			viewManager.setCircuit(circuitId);
 			dataUpdateEventManager.sendEvent("circuitViewChangeSimulator", this);
 			dataUpdateEventManager.sendEvent("circuitViewChangeCircuit", this);
 		}
@@ -61,77 +61,48 @@ void CircuitView::setSimulator(const EvalLogicSimulator* simulator, const Addres
 		this->circuitId = 0;
 		circuitRenderManager.reset();
 		MainRenderer::get().setViewportSimulator(viewportId, nullptr, Address());
-		toolManager.setCircuit(nullptr);
-		viewManager.setCircuit(nullptr);
+		toolManager.setCircuit(0);
+		viewManager.setCircuit(0);
 		dataUpdateEventManager.sendEvent("circuitViewChangeSimulator", this);
 		dataUpdateEventManager.sendEvent("circuitViewChangeCircuit", this);
 	} else if (backend.getSimulatorManager().getSimulator(simulator->getSimulatorId()) != simulator) {
 		logError("When setting CircuitView's simulator, a simulator with a different backend. Failed to connect! Doing nothing!", "CircuitView");
 	} else {
 		circuit_id_t circuitId = simulator->getCircuitId(address);
-		SharedCircuit circuit = backend.getCircuit(circuitId); // ok if null
+		Circuit* circuit = backend.getCircuitManager().getSharedCircuit(circuitId).get(); // ok if null
 		if (circuit == nullptr){
 			logError("When setting CircuitView's simulator, failed to find circuit for simulator with circuit id {}", "CircuitView", circuitId);
 			return;
 		}
 		this->simulatorId = simulator->getSimulatorId();
 		this->address = address;
-		this->circuitId = circuit->getCircuitId();
-		circuitRenderManager.emplace(environment, circuit->getCircuitId(), viewportId);
+		this->circuitId = circuitId;
+		circuitRenderManager.emplace(environment, circuitId, viewportId);
 		MainRenderer::get().setViewportSimulator(viewportId, simulator, address);
-		toolManager.setCircuit(circuit.get());
-		viewManager.setCircuit(circuit.get());
+		toolManager.setCircuit(circuitId);
+		viewManager.setCircuit(circuitId);
 		dataUpdateEventManager.sendEvent("circuitViewChangeSimulator", this);
 		dataUpdateEventManager.sendEvent("circuitViewChangeCircuit", this);
 	}
 }
 
 void CircuitView::setCircuit(circuit_id_t circuitId) {
-	if (circuitId == 0) {
+	if (backend.getCircuitManager().getCircuit(circuitId) == nullptr) {
 		this->simulatorId = 0;
 		this->circuitId = 0;
 		circuitRenderManager.reset();
 		MainRenderer::get().setViewportSimulator(viewportId, nullptr, Address());
-		toolManager.setCircuit(nullptr);
-		viewManager.setCircuit(nullptr);
+		toolManager.setCircuit(0);
+		viewManager.setCircuit(0);
 		dataUpdateEventManager.sendEvent("circuitViewChangeSimulator", this);
 		dataUpdateEventManager.sendEvent("circuitViewChangeCircuit", this);
 	} else {
-		SharedCircuit circuit = backend.getCircuit(circuitId);
-		if (circuit == nullptr) {
-			logError("When setting CircuitView's circuit, a circuit with a different backend. Failed to connect! Doing nothing!", "CircuitView");
-		} else {
-			this->simulatorId = 0;
-			this->circuitId = circuit->getCircuitId();
-			circuitRenderManager.emplace(environment, circuit->getCircuitId(), viewportId);
-			MainRenderer::get().setViewportSimulator(viewportId, nullptr, Address());
-			toolManager.setCircuit(circuit.get());
-			viewManager.setCircuit(circuit.get());
-			dataUpdateEventManager.sendEvent("circuitViewChangeSimulator", this);
-			dataUpdateEventManager.sendEvent("circuitViewChangeCircuit", this);
-		}
-	}
-}
-
-void CircuitView::setCircuit(SharedCircuit circuit) {
-	if (circuit == nullptr) {
 		this->simulatorId = 0;
-		this->circuitId = 0;
-		circuitRenderManager.reset();
+		this->circuitId = circuitId;
+		circuitRenderManager.emplace(environment, circuitId, viewportId);
 		MainRenderer::get().setViewportSimulator(viewportId, nullptr, Address());
-		toolManager.setCircuit(nullptr);
-		viewManager.setCircuit(nullptr);
-		dataUpdateEventManager.sendEvent("circuitViewChangeSimulator", this);
-		dataUpdateEventManager.sendEvent("circuitViewChangeCircuit", this);
-	} else if (backend.getCircuit(circuit->getCircuitId()) != circuit) {
-		logError("When setting CircuitView's circuit, a circuit with a different backend. Failed to connect! Doing nothing!", "CircuitView");
-	} else {
-		this->simulatorId = 0;
-		this->circuitId = circuit->getCircuitId();
-		circuitRenderManager.emplace(environment, circuit->getCircuitId(), viewportId);
-		MainRenderer::get().setViewportSimulator(viewportId, nullptr, Address());
-		toolManager.setCircuit(circuit.get());
-		viewManager.setCircuit(circuit.get());
+		toolManager.setCircuit(circuitId);
+		viewManager.setCircuit(circuitId);
 		dataUpdateEventManager.sendEvent("circuitViewChangeSimulator", this);
 		dataUpdateEventManager.sendEvent("circuitViewChangeCircuit", this);
 	}

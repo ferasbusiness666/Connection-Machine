@@ -367,7 +367,7 @@ bool CircuitTestGroup::generateTestCircuit(BlockType blockType, simulator_id_t s
 	}
     simulator = evalManager.getSimulator(simulatorId);
     simulator->setPause(true);
-    SharedCircuit circuit = cirManager.getCircuit(circuitId);
+    Circuit* circuit = cirManager.getSharedCircuit(circuitId).get();
     circuit->clear();
     const BlockContainer& blockContainer = circuit->getBlockContainer();
 

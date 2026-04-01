@@ -92,7 +92,7 @@ WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, Circu
 	tryLinkWasmFunc("getNonPrimitiveType",
 		[thisPtrPtr](int32_t UUIDStrOffset) -> int32_t {
 			std::string UUID = (*thisPtrPtr)->wasmToString(UUIDStrOffset);
-			SharedCircuit circuit = (*thisPtrPtr)->circuitManager->getCircuit(UUID);
+			Circuit* circuit = (*thisPtrPtr)->circuitManager->getSharedCircuit(UUID).get();
 			if (circuit) {
 				return circuit->getBlockType();
 			}
@@ -113,7 +113,7 @@ WasmProceduralCircuit::WasmInstance::WasmInstance(wasmtime::Module module, Circu
 				std::stringstream ss((*thisPtrPtr)->wasmToString(parametersStrOffset));
 				return proceduralCircuit->getBlockType(ProceduralCircuitParameters(ss));
 			}
-			SharedCircuit circuit = (*thisPtrPtr)->circuitManager->getCircuit(UUID);
+			Circuit* circuit = (*thisPtrPtr)->circuitManager->getSharedCircuit(UUID).get();
 			if (circuit) {
 				logError("To get the BlockType of a Circuit you need to use \"getNonPrimitiveType\" not \"getProceduralCircuitType\".", "WasmProceduralCircuit::WasmInstance");
 			}

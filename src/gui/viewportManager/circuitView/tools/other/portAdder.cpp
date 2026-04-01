@@ -8,18 +8,18 @@ void PortAdder::activate() {
 }
 
 bool PortAdder::press(const Event* event) {
-	if (type == BlockType::NONE || !circuit || circuit->getBlockType() != type || !circuitView) return false;
+	if (type == BlockType::NONE || !getCircuit() || getCircuit()->getBlockType() != type || !circuitView) return false;
 	const PositionEvent* positionEvent = event->cast<PositionEvent>();
 	if (!positionEvent) return false;
 	bool can = true;
-	if (!circuit->getBlockContainer().checkCollision(lastPointerPosition)) {
+	if (!getCircuit()->getBlockContainer().checkCollision(lastPointerPosition)) {
 		can = false;
 	} else if (isInput) {
-		if (circuit->getBlockContainer().getInputOrBidirectionalConnectionEnd(lastPointerPosition).has_value()) {
+		if (getCircuit()->getBlockContainer().getInputOrBidirectionalConnectionEnd(lastPointerPosition).has_value()) {
 			can = false;
 		}
 	} else {
-		if (circuit->getBlockContainer().getOutputOrBidirectionalConnectionEnd(lastPointerPosition).has_value()) {
+		if (getCircuit()->getBlockContainer().getOutputOrBidirectionalConnectionEnd(lastPointerPosition).has_value()) {
 			can = false;
 		}
 	}
@@ -32,14 +32,14 @@ bool PortAdder::press(const Event* event) {
 void PortAdder::updateElements() {
 	elementCreator.clear();
 	bool can = true;
-	if (!circuit->getBlockContainer().checkCollision(lastPointerPosition)) {
+	if (!getCircuit()->getBlockContainer().checkCollision(lastPointerPosition)) {
 		can = false;
 	} else if (isInput) {
-		if (circuit->getBlockContainer().getInputOrBidirectionalConnectionEnd(lastPointerPosition).has_value()) {
+		if (getCircuit()->getBlockContainer().getInputOrBidirectionalConnectionEnd(lastPointerPosition).has_value()) {
 			can = false;
 		}
 	} else {
-		if (circuit->getBlockContainer().getOutputOrBidirectionalConnectionEnd(lastPointerPosition).has_value()) {
+		if (getCircuit()->getBlockContainer().getOutputOrBidirectionalConnectionEnd(lastPointerPosition).has_value()) {
 			can = false;
 		}
 	}

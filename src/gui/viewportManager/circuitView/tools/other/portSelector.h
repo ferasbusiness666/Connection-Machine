@@ -14,7 +14,12 @@ public:
 	inline bool showInMenu() const override final { return false; }
 
 	typedef std::function<void(Position)> OnSelectFunction;
-	inline void setPort(connection_end_id_t endId, OnSelectFunction function) { if (!circuit) return; type = circuit->getBlockType(); this->endId = endId; onSelectFunction = function; }
+	inline void setPort(connection_end_id_t endId, OnSelectFunction function) {
+		if (!getCircuit()) return;
+		type = getCircuit()->getBlockType();
+		this->endId = endId;
+		onSelectFunction = function;
+	}
 
 	inline void reset() override final { type = BlockType::NONE; elementCreator.clear(); setStatusBar(""); }
 	bool press(const Event* event);

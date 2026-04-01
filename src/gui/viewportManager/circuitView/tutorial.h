@@ -1,11 +1,12 @@
 #ifndef tutorialManager_h
 #define tutorialManager_h
 
-class CircuitView;
-class Environment;
-
+#include "backend/container/difference.h"
 #include "./viewManager/viewManager.h"
 #include "renderer/elementCreator.h"
+
+class CircuitView;
+class Environment;
 
 struct TutorialCondition {
 	struct BlockRequirement {

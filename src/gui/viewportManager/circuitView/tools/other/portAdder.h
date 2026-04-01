@@ -15,7 +15,12 @@ public:
 	inline bool canMakeEdits() const override final { return false; }
 
 	typedef std::function<void(Position)> OnSelectFunction;
-	inline void setup(bool isInput, OnSelectFunction function) { if (!circuit) return; type = circuit->getBlockType(); this->isInput = isInput; onSelectFunction = function; }
+	inline void setup(bool isInput, OnSelectFunction function) {
+		if (!getCircuit()) return;
+		type = getCircuit()->getBlockType();
+		this->isInput = isInput;
+		onSelectFunction = function;
+	}
 	void updateElements() override final;
 
 	inline void reset() override final { type = BlockType::NONE; elementCreator.clear(); setStatusBar(""); }

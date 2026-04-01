@@ -25,10 +25,6 @@ std::optional<simulator_id_t> Backend::createSimulator(circuit_id_t circuitId) {
 	return std::nullopt;
 }
 
-SharedCircuit Backend::getCircuit(circuit_id_t circuitId) {
-	return circuitManager.getSharedCircuit(circuitId);
-}
-
 EvalLogicSimulator* Backend::getSimulator(simulator_id_t simulator_id) {
 	return simulatorManager.getSimulator(simulator_id);
 }

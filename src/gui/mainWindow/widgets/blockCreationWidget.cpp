@@ -142,7 +142,7 @@ BlockCreationWidget::BlockCreationWidget(WidgetId widgetId, MainWindow& mainWind
 		blockType = blockData->getBlockType();
 		std::lock_guard mux(blockDataCopyMux);
 		blockDataCopy = blockData->getBlockDataCopy();
-		Circuit* circuit = getBackend().getCircuit(renderingCircuitId).get();
+		Circuit* circuit = getBackend().getCircuitManager().getSharedCircuit(renderingCircuitId).get();
 		circuit->clear();
 		circuit->tryInsertBlock(Position(), Orientation(), blockData->getBlockType());
 		circuitView->getViewManager().focus();
@@ -582,7 +582,7 @@ void BlockCreationWidget::renderSideBar(circuit_id_t circuitId) {
 			if (ImGui::InputText("##Name", &blockDataCopy->name)) {
 				App::runOnMain([this, circuitId, name = blockDataCopy->name](){
 					Backend& backend = getEnvironment().getBackend();
-					Circuit* circuit = backend.getCircuit(circuitId).get();
+					Circuit* circuit = backend.getCircuitManager().getSharedCircuit(circuitId).get();
 					if (!circuit) return;
 					circuit->setCircuitName(name);
 				});

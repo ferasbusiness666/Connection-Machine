@@ -1,6 +1,7 @@
 #include "toolManager.h"
 
 // tools
+#include "environment/environment.h"
 #include "placement/blockPlacementTool.h"
 
 void ToolManager::selectBlock(BlockType blockType) {
@@ -32,8 +33,9 @@ SharedCircuitTool ToolManager::selectTool(SharedCircuitTool tool) {
 		activeToolStack = tool->getStackId();
 		toolStacks[activeToolStack].activate();
 	}
+	Circuit* circuit = environment.getBackend().getCircuitManager().getSharedCircuit(circuitId).get();
 	if (circuit) {
-		if (!(circuit->isEditable())) {
+		if (!circuit->isEditable()) {
 			if (tool->canMakeEdits()) {
 				toolStacks[activeToolStack].clearTools();
 				return nullptr; // Can't select tool that can make edits

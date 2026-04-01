@@ -35,7 +35,6 @@ public:
 
 	inline DataUpdateEventManager& getDataUpdateEventManager() { return dataUpdateEventManager; }
 
-	SharedCircuit getCircuit(circuit_id_t circuitId);
 	EvalLogicSimulator* getSimulator(simulator_id_t simulatorId);
 
 	const SharedCopiedBlocks getClipboard() const { return clipboard; }

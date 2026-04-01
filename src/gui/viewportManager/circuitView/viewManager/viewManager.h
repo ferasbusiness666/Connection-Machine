@@ -1,12 +1,13 @@
 #ifndef viewManager_h
 #define viewManager_h
 
-#include "backend/circuit/circuit.h"
+#include "backend/circuit/circuitDefs.h"
 #include "backend/position/position.h"
 #include "util/vec2.h"
 
 class EventRegister;
 class Event;
+class Backend;
 
 class ViewManager {
 private:
@@ -17,7 +18,7 @@ private:
 	};
 public:
 	// initialization
-	ViewManager() : viewCenter(), viewScale(8.0f), aspectRatio(16.0f / 9.0f), pointerViewPosition(0.5f, 0.5f) { }
+	ViewManager(Backend& backend) : backend(backend), viewCenter(), viewScale(8.0f), aspectRatio(16.0f / 9.0f), pointerViewPosition(0.5f, 0.5f) { }
 	ViewManager(const ViewManager&) = delete;
 	void operator=(const ViewManager&) = delete;
 	void setUpEvents(EventRegister& eventRegister);
@@ -26,7 +27,7 @@ public:
 	inline void connectViewChanged(const std::function<void()>& func) { viewChangedListener = func; }
 
 	// setters
-	void setCircuit(Circuit* circuit);
+	void setCircuit(circuit_id_t circuitId);
 	inline void setAspectRatio(float value) {
 		if (value > 10000.f || value < 0.0001f) return;
 		aspectRatio = value;
@@ -75,7 +76,6 @@ private:
 	bool pointerEnterView(const Event* event);
 	bool pointerExitView(const Event* event);
 private:
-
 	// pointer
 	bool anchored = false;
 	bool pointerActive = false;
@@ -84,7 +84,8 @@ private:
 
 	// view data per circuit
 	std::map<circuit_id_t, ViewPositioningData> perCircuitViewData;
-	Circuit* currentCircuit = nullptr;
+	circuit_id_t currentCircuitId = 0;
+	Backend& backend;
 
 	// view
 	FPosition viewCenter;
