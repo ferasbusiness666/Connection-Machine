@@ -2,11 +2,12 @@
 #define circuitTestFileManager_h
 
 #include "backend/circuitTests/circuitTestGroup.h"
-#include "environment/environment.h"
+
+class Backend;
 
 namespace CircuitTestFileManager {
-    std::optional<CircuitTestGroup> getCircuitTestGroupFromFilePath(const std::string& path, Environment& environment);
-    std::optional<CircuitTestGroup> getCircuitTestGroupFromTruthTableFilePath(const std::string& path, Environment& environment);
+    std::optional<CircuitTestGroup> getCircuitTestGroupFromFilePath(const std::string& path, Backend& backend);
+    std::optional<CircuitTestGroup> getCircuitTestGroupFromTruthTableFilePath(const std::string& path, Backend& backend);
 
     bool saveToTruthTableFile(const std::string& path, CircuitTestGroup& testGroup);
     bool saveToFile(const std::string& path, CircuitTestGroup& testGroup);

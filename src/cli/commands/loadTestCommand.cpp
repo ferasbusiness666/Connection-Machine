@@ -15,7 +15,7 @@ void LoadTestCommand::run(const std::vector<std::string>& args, Environment& env
 	}
 
     CircuitTestGroupManager& testGroupManager = environment.getBackend().getCircuitTestGroupManager();
-    std::optional<CircuitTestGroup> testGroup = CircuitTestFileManager::getCircuitTestGroupFromFilePath(args[1], environment);
+    std::optional<CircuitTestGroup> testGroup = CircuitTestFileManager::getCircuitTestGroupFromFilePath(args[1], environment.getBackend());
     if (testGroup == std::nullopt) {
         logInfo("No tests loaded", "LoadTestCommand");
         return;

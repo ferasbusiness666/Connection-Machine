@@ -1,24 +1,15 @@
 #include "circuitTestGroup.h"
 
-#include "backend/address.h"
-#include "backend/blockData/blockData.h"
-#include "backend/circuit/circuit.h"
-#include "backend/circuit/circuitDefs.h"
-#include "backend/container/block/blockDefs.h"
-#include "backend/dataUpdateEventManager.h"
-#include "backend/evaluator/evaluator.h"
 #include "backend/evaluator/simulator/evalLogicSimulator.h"
-#include "backend/evaluator/simulator/logicState.h"
-#include "backend/position/position.h"
-#include "logging/logging.h"
-#include "environment/environment.h"
+#include "backend/evaluator/simulatorManager.h"
+#include "backend/backend.h"
 
 CircuitTestGroup::CircuitTestGroupCopy CircuitTestGroup::getMinimalCopy() {
     return CircuitTestGroupCopy(name, isTruthTable, truthTableTicks, testCases, inputs, outputs);
 }
 
 void CircuitTestGroup::sendTestGroupUpdate() {
-    environment.getBackend().getDataUpdateEventManager().sendEvent("testGroupUpdate", name);
+    backend.getDataUpdateEventManager().sendEvent("testGroupUpdate", name);
 }
 
 bool CircuitTestGroup::addTestCase(std::string name, int id) {
@@ -352,33 +343,44 @@ bool CircuitTestGroup::addOutput(std::string output) {
     return true;
 }
 
-bool CircuitTestGroup::generateTestCircuit(BlockType blockType, circuit_id_t circuitToUse) {
-    Backend& backend = environment.getBackend();
+bool CircuitTestGroup::generateTestCircuit(BlockType blockType, simulator_id_t simulatorToUse) {
     CircuitManager& cirManager = backend.getCircuitManager();
     SimulatorManager& evalManager = backend.getSimulatorManager();
     BlockDataManager& blockDataManager = backend.getBlockDataManager();
 
-    if (circuitToUse == 0) {
-        circuitToUse = cirManager.createNewCircuit(false);
-    }
-    SharedCircuit cir = cirManager.getCircuit(circuitToUse);
-    cir->clear();
-    simulator_id_t simID = backend.createSimulator(circuitToUse).value();
-    simulator = evalManager.getSimulator(simID);
+	circuit_id_t circuitId;
+	simulator_id_t simulatorId;
+    if (simulatorToUse == 0) {
+        circuitId = cirManager.createNewCircuit(false);
+		simulatorId = backend.createSimulator(circuitId).value();
+    } else {
+		simulator = backend.getSimulator(simulatorToUse);
+		if (simulator) {
+			circuitId = simulator->getCircuitId();
+
+		} else {
+			logWarning("simulatorToUse was {}. But a simulator with that Id could not be found.", "CircuitTestGroup::generateTestCircuit", simulatorToUse);
+			circuitId = cirManager.createNewCircuit(false);
+			simulatorId = backend.createSimulator(circuitId).value();
+		}
+	}
+    simulator = evalManager.getSimulator(simulatorId);
     simulator->setPause(true);
-    const BlockContainer& blockContainer = cir->getBlockContainer();
+    SharedCircuit circuit = cirManager.getCircuit(circuitId);
+    circuit->clear();
+    const BlockContainer& blockContainer = circuit->getBlockContainer();
 
     const BlockData* blockData = blockDataManager.getBlockData(blockType);
     std::unordered_map<connection_end_id_t, BlockData::ConnectionData> connections = blockData->getConnections();
     // change implementation of this when BlockData::getConnectionNameToId is implemented
     namePositionMap.clear();
 
-    if (!cir->tryInsertBlock(Position(0,0), Orientation(), blockType)) {
+    if (!circuit->tryInsertBlock(Position(0,0), Orientation(), blockType)) {
         logError("Couldn't insert test circuit block '{}'", "circuitTestCase", blockType);
         return false;
     }
 
-	const Block* testedBlock = cir->getBlockContainer().getBlock(Position(0, 0));
+	const Block* testedBlock = circuit->getBlockContainer().getBlock(Position(0, 0));
 
     // iterate through the connections on the block type and create a switch/light to represent each input/output on a test circuit
     for (auto iter = connections.begin(); iter != connections.end(); iter++) {
@@ -394,13 +396,13 @@ bool CircuitTestGroup::generateTestCircuit(BlockType blockType, circuit_id_t cir
             if (std::find(inputs.begin(), inputs.end(), blockName) == inputs.end()) {
                 logWarning("Tested circuit's port '{}' does not match any inputs expected by test, this may cause errors", "CircuitTestGroup", blockName);
             }
-            if (!cir->tryInsertBlock(externalConnPos, Orientation(), SWITCH)) {
+            if (!circuit->tryInsertBlock(externalConnPos, Orientation(), SWITCH)) {
                 logError("Couldn't insert switch test circuit block", "CircuitTestGroup");
                 return false;
             }
 
             const Block* block = blockContainer.getBlock(externalConnPos);
-            if (!cir->tryCreateConnection(ConnectionEnd(testedBlock->id(), iter->first), ConnectionEnd(block->id(), 0))) {
+            if (!circuit->tryCreateConnection(ConnectionEnd(testedBlock->id(), iter->first), ConnectionEnd(block->id(), 0))) {
                 logError("Couldn't create switch test circuit connection, ext: {}", "CircuitTestGroup", externalConnPos);
                 return false;
             }
@@ -418,13 +420,13 @@ bool CircuitTestGroup::generateTestCircuit(BlockType blockType, circuit_id_t cir
             if (std::find(outputs.begin(), outputs.end(), blockName) == outputs.end()) {
                 logWarning("Tested circuit's port '{}' does not match any outputs expected by test, this may cause errors", "CircuitTestGroup", blockName);
             }
-            if (!cir->tryInsertBlock(externalConnPos, Orientation(), LIGHT)) {
+            if (!circuit->tryInsertBlock(externalConnPos, Orientation(), LIGHT)) {
                 logError("Couldn't insert light test circuit block", "CircuitTestGroup");
                 return false;
             }
 
             const Block* block = blockContainer.getBlock(externalConnPos);
-            if (!cir->tryCreateConnection(ConnectionEnd(testedBlock->id(), iter->first), ConnectionEnd(block->id(), 0))) {
+            if (!circuit->tryCreateConnection(ConnectionEnd(testedBlock->id(), iter->first), ConnectionEnd(block->id(), 0))) {
                 logError("Couldn't create light test circuit connection, ext: {}", "CircuitTestGroup", externalConnPos);
                 return false;
             }
@@ -444,13 +446,13 @@ bool CircuitTestGroup::generateTestCircuit(BlockType blockType, circuit_id_t cir
     return true;
 }
 
-bool CircuitTestGroup::runAllTests(BlockType blockType, bool haltOnFailure, circuit_id_t circuitToUse) {
+bool CircuitTestGroup::runAllTests(BlockType blockType, bool haltOnFailure, simulator_id_t simulatorToUse) {
     std::vector<int> testIDs;
     for (int i =0; i < testCases.size(); i++) testIDs.push_back(i);
-    return runTests(testIDs, blockType, haltOnFailure, circuitToUse);
+    return runTests(testIDs, blockType, haltOnFailure, simulatorToUse);
 }
 
-bool CircuitTestGroup::runTests(std::vector<std::string>& testsToRun, BlockType blockType, bool haltOnFailure, circuit_id_t circuitToUse) {
+bool CircuitTestGroup::runTests(std::vector<std::string>& testsToRun, BlockType blockType, bool haltOnFailure, simulator_id_t simulatorToUse) {
     // converts strings to their IDs and runs them by ID
     std::vector<int> testIDs;
     for (auto stringIter = testsToRun.begin(); stringIter != testsToRun.end(); stringIter++) {
@@ -461,11 +463,11 @@ bool CircuitTestGroup::runTests(std::vector<std::string>& testsToRun, BlockType 
         }
         testIDs.push_back(idIter->second);
     }
-    return runTests(testIDs, blockType, haltOnFailure, circuitToUse);
+    return runTests(testIDs, blockType, haltOnFailure, simulatorToUse);
 }
 
-bool CircuitTestGroup::runTests(std::vector<int>& testsToRun, BlockType blockType, bool haltOnFailure, circuit_id_t circuitToUse) {
-    generateTestCircuit(blockType, circuitToUse);
+bool CircuitTestGroup::runTests(std::vector<int>& testsToRun, BlockType blockType, bool haltOnFailure, simulator_id_t simulatorToUse) {
+    generateTestCircuit(blockType, simulatorToUse);
     bool fullTestSucceedStatus = true;
 
     for (auto testCaseIndexIter = testsToRun.begin(); testCaseIndexIter != testsToRun.end(); testCaseIndexIter++) {

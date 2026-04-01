@@ -1,14 +1,10 @@
 #ifndef circuitTestGroup_h
 #define circuitTestGroup_h
 
-#include "backend/circuit/circuitDefs.h"
-#include "backend/container/block/block.h"
-#include "backend/container/block/blockDefs.h"
-#include "backend/dataUpdateEventManager.h"
 #include "backend/evaluator/evalDefs.h"
 #include "backend/evaluator/simulator/logicState.h"
 
-class Environment;
+class Backend;
 class EvalLogicSimulator;
 
 class CircuitTestGroup {
@@ -58,7 +54,8 @@ public:
         std::vector<std::string> outputs;
     };
 
-    CircuitTestGroup(std::string name, bool isTruthTable, int truthTableTicks, Environment& environment) : name(name), isTruthTable(isTruthTable), truthTableTicks(truthTableTicks), environment(environment) {}
+    CircuitTestGroup(Backend& backend, std::string name, bool isTruthTable, int truthTableTicks) :
+		name(name), isTruthTable(isTruthTable), truthTableTicks(truthTableTicks), backend(backend) {}
     std::string getName() {return name;}
     CircuitTestGroupCopy getMinimalCopy();
     int getTruthTableTicks() {return truthTableTicks;}
@@ -91,12 +88,12 @@ public:
     std::vector<std::string>::const_iterator getInputIteratorEnd() {return inputs.cend();}
     std::vector<std::string>::const_iterator getOutputIteratorEnd() {return outputs.cend();}
 
-    bool runAllTests(BlockType blockType, bool haltOnFailure, circuit_id_t circuitToUse = 0);
-    bool runTests(std::vector<std::string>& testsToRun, BlockType blockType, bool haltOnFailure, circuit_id_t circuitToUse = 0);
-    bool runTests(std::vector<int>& testsToRun, BlockType blockType, bool haltOnFailure, circuit_id_t circuitToUse = 0);
+    bool runAllTests(BlockType blockType, bool haltOnFailure, simulator_id_t simulatorToUse = 0);
+    bool runTests(std::vector<std::string>& testsToRun, BlockType blockType, bool haltOnFailure, simulator_id_t simulatorToUse = 0);
+    bool runTests(std::vector<int>& testsToRun, BlockType blockType, bool haltOnFailure, simulator_id_t simulatorToUse = 0);
 
 private:
-    bool generateTestCircuit(BlockType blockType, circuit_id_t circuitToUse = 0);
+    bool generateTestCircuit(BlockType blockType, simulator_id_t simulatorToUse = 0);
     bool runSetStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition);
     bool runCheckStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition);
 
@@ -111,7 +108,7 @@ private:
     EvalLogicSimulator* simulator;
     std::vector<std::string> inputs;
     std::vector<std::string> outputs;
-	Environment& environment;
+	Backend& backend;
 };
 
-#endif
+#endif /* circuitTestGroup_h */

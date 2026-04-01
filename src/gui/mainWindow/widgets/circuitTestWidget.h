@@ -1,11 +1,11 @@
 #ifndef circuitTestWidget_h
-#define citcuitTestWidget_h
+#define circuitTestWidget_h
 
 #include "backend/container/block/blockDefs.h"
 #include "gui/mainWindow/widget.h"
 #include "backend/circuit/circuitDefs.h"
 #include "backend/dataUpdateEventManager.h"
-#include "backend/circuitTests/circuitTestGroupManager.h"
+#include "backend/circuitTests/circuitTestGroup.h"
 
 class CircuitView;
 
@@ -31,6 +31,7 @@ private:
 	std::mutex circuitsMux;
 	std::map<circuit_id_t, std::string> circuits;
 	std::string testGroupName;
+	std::mutex testGroupCopyMux;
 	CircuitTestGroup::CircuitTestGroupCopy testGroupCopy;
 };
 
