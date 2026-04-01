@@ -78,7 +78,7 @@ BlockCreationWidget::BlockCreationWidget(WidgetId widgetId, MainWindow& mainWind
 		// =================================== Init rendering circuit ===================================
 		renderingCircuitId = getBackend().getCircuitManager().createNewCircuit(true);
 		assert(renderingCircuitId);
-		Circuit* circuit = getBackend().getCircuitManager().getCircuit(renderingCircuitId).get();
+		Circuit* circuit = getBackend().getCircuitManager().getSharedCircuit(renderingCircuitId).get();
 		assert(circuit);
 		circuit->setEditable(false);
 		BlockData* blockData = getBackend().getBlockDataManager().getBlockData(circuit->getBlockType());

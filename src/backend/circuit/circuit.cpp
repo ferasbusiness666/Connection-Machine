@@ -45,7 +45,7 @@ circuit_id_t Circuit::getCircuitId(const Address& address) const {
 	circuit_id_t id = circuitManager.getCircuitBlockDataManager().getCircuitId(block->type());
 	for (unsigned int i = 1; i < address.size(); i++) {
 		if (id == 0) return 0;
-		const Circuit* circuit = circuitManager.getCircuit(id).get();
+		const Circuit* circuit = circuitManager.getSharedCircuit(id).get();
 		block = circuit->getBlockContainer().getBlock(address.getPosition(i));
 		if (!block) return 0;
 		id = circuitManager.getCircuitBlockDataManager().getCircuitId(block->type());

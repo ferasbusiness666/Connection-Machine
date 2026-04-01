@@ -225,6 +225,7 @@ function(add_main_dependencies)
 				"FT_DISABLE_HARFBUZZ ON"
 				"FT_WITH_HARFBUZZ OFF"
 				"FT_DISABLE_BROTLI ON"
+				"FT_ENABLE_ERROR_STRINGS ON"
 			EXCLUDE_FROM_ALL YES
 			SOURCE_DIR "${EXTERNAL_DIR}/freetype"
 		)

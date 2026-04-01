@@ -421,7 +421,7 @@ bool MainWindow::tryClose() {
 		std::string message = "Do you want to save:\n";
 		std::vector<const std::string*> toSave;
 		for (auto lastSavedEdit : fileData.second.lastSavedEdit) {
-			const SharedCircuit& circuit = environment.getBackend().getCircuitManager().getCircuit(lastSavedEdit.first);
+			const SharedCircuit& circuit = environment.getBackend().getCircuitManager().getSharedCircuit(lastSavedEdit.first);
 			if (!circuit->isEditable()) continue;
 			if (lastSavedEdit.second == circuit->getEditCount()) continue;
 			message += circuit->getCircuitName() + "\n";
@@ -432,15 +432,16 @@ bool MainWindow::tryClose() {
 		createPopup(
 			message,
 			{
-				std::make_pair("Save",[filePath = fileData.second.fileLocation, this]() {
+				std::make_pair("Save",[this, filePath = fileData.second.fileLocation]() {
 					logInfo("Saving {}", "", filePath);
 					environment.getCircuitFileManager().saveFile(filePath);
 					kill(false);
 				}),
-				// std::make_pair("Dont Save",[this]() {
-				// 	logInfo("\"Dont Save\" option picked.");
-				// 	kill(false);
-				// }),
+				std::make_pair("Dont Save",[this, filePath = fileData.second.fileLocation]() {
+					logInfo("\"Dont Save\" option picked.");
+					environment.getCircuitFileManager().closeFile(filePath);
+					kill(false);
+				}),
 				std::make_pair("Cancel", [this]() {
 					logInfo("Canceling close.");
 					App::stopTryingToQuit();
@@ -451,7 +452,7 @@ bool MainWindow::tryClose() {
 	}
 	for (auto& circuit : environment.getBackend().getCircuitManager().getCircuits()) {
 		if (environment.getCircuitFileManager().getSavePath(circuit.second->getUUID())) continue;
-		if (circuit.second->isEmpty() || circuit.second->getEditCount() == 0 || !circuit.second->isEditable()) continue;
+		if (circuit.second->isEmpty() || circuit.second->getEditCount() == 0 || !circuit.second->isEditable() || circuit.second->closed()) continue;
 		createPopup(
 			"Do you want to save: " + circuit.second->getCircuitName(),
 			{
@@ -471,10 +472,12 @@ bool MainWindow::tryClose() {
 						delete data;
 					}, data, nullptr, filters, 1, nullptr);
 				}),
-				// std::make_pair("Dont Save", [this]() {
-				// 	logInfo("\"Dont Save\" option picked.");
-				// 	kill(false);
-				// }),
+				std::make_pair("Dont Save", [this, uuid = circuit.second->getUUID()]() {
+					logInfo("\"Dont Save\" option picked.");
+					const Circuit* circuit = this->getEnvironment().getBackend().getCircuitManager().getSharedCircuit(uuid).get();
+					if (circuit) this->getEnvironment().getBackend().getCircuitManager().closeCircuit(circuit->getCircuitId());
+					kill(false);
+				}),
 				std::make_pair("Cancel", [this]() {
 					logInfo("Canceling close.");
 					App::stopTryingToQuit();

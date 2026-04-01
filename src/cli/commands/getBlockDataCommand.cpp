@@ -25,7 +25,7 @@ void GetBlockDataCommand::run(const std::vector<std::string>& args, Environment&
         return;
     }
 
-    SharedCircuit cir = environment.getBackend().getCircuitManager().getCircuit(cirID);
+    SharedCircuit cir = environment.getBackend().getCircuitManager().getSharedCircuit(cirID);
     if (cir == nullptr) {
         logError("Unrecognized circuit ID. Available circuits can be found with the 'list_circuits' command.", "GetBlockDataCommand");
         return;

@@ -12,6 +12,7 @@ private:
 
 	std::string message;
 	std::vector<std::pair<std::string, std::function<void()>>> buttons;
+	bool open = false;
 };
 
 #endif /* popupWidget_h */

@@ -38,6 +38,26 @@ public:
 		if (iter == UUIDToCircuits.end()) return nullptr;
 		return iter->second;
 	}
+	inline SharedCircuit getSharedCircuit(circuit_id_t id) {
+		auto iter = circuits.find(id);
+		if (iter == circuits.end()) return nullptr;
+		return iter->second;
+	}
+	inline const SharedCircuit getSharedCircuit(circuit_id_t id) const {
+		auto iter = circuits.find(id);
+		if (iter == circuits.end()) return nullptr;
+		return iter->second;
+	}
+	inline SharedCircuit getSharedCircuit(const std::string& uuid) {
+		auto iter = UUIDToCircuits.find(uuid);
+		if (iter == UUIDToCircuits.end()) return nullptr;
+		return iter->second;
+	}
+	inline const SharedCircuit getSharedCircuit(const std::string& uuid) const {
+		auto iter = UUIDToCircuits.find(uuid);
+		if (iter == UUIDToCircuits.end()) return nullptr;
+		return iter->second;
+	}
 	inline const std::map<circuit_id_t, SharedCircuit>& getCircuits() const { return circuits; }
 
 	inline circuit_id_t createNewCircuit(bool createSim = true) {
@@ -119,6 +139,7 @@ public:
 	circuit_id_t createNewCircuit(const ParsedCircuit& parsedCircuit, bool createEval = true);
 	circuit_id_t createNewCircuit(const GeneratedCircuit& generatedCircuit, bool createEval = true);
 	void updateExistingCircuit(circuit_id_t circuitId, const GeneratedCircuit* generatedCircuit);
+	void closeCircuit(circuit_id_t circuitId);
 
 	// Iterator
 	typedef std::map<circuit_id_t, SharedCircuit>::iterator iterator;

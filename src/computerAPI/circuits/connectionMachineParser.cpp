@@ -166,7 +166,7 @@ std::vector<circuit_id_t> ConnectionMachineParser::load(const std::string& path)
 			BlockType blockType = stringToBlockType(blockTypeStr);
 
 			if (blockType == BlockType::CUSTOM) {
-				SharedCircuit circuit = circuitManager.getCircuit(blockTypeStr);
+				SharedCircuit circuit = circuitManager.getSharedCircuit(blockTypeStr);
 				if (circuit) {
 					blockType = circuitManager.getCircuitBlockDataManager().getCircuitBlockData(circuit->getCircuitId())->getBlockType();
 				} else {
@@ -281,7 +281,7 @@ bool ConnectionMachineParser::save(const CircuitFileManager::FileData& fileData,
 	std::set<std::string> pathImports;
 	std::map<std::string, std::set<std::string>> inFileDependencies;
 	for (const std::string& UUID : fileData.UUIDs) {
-		SharedCircuit circuit = circuitManager.getCircuit(UUID);
+		SharedCircuit circuit = circuitManager.getSharedCircuit(UUID);
 		if (!circuit) continue;
 		const BlockContainer& blockContainer = circuit->getBlockContainer();
 		for (auto itr = blockContainer.begin(); itr != blockContainer.end(); ++itr) {
@@ -303,7 +303,7 @@ bool ConnectionMachineParser::save(const CircuitFileManager::FileData& fileData,
 			if (subProceduralCircuitUUID) {
 				subUUID = &(subProceduralCircuitUUID.value());
 			} else {
-				SharedCircuit circuit = circuitManager.getCircuit(subCircuitId);
+				SharedCircuit circuit = circuitManager.getSharedCircuit(subCircuitId);
 				subUUID = &(circuit->getUUID());
 			}
 			subSavePath = circuitFileManager.getSavePath(*subUUID);
@@ -340,7 +340,7 @@ bool ConnectionMachineParser::save(const CircuitFileManager::FileData& fileData,
 			continue;
 		}
 		UUIDsAlreadyInFile.emplace(UUID);
-		SharedCircuit circuit = circuitManager.getCircuit(UUID);
+		SharedCircuit circuit = circuitManager.getSharedCircuit(UUID);
 		if (!circuit) continue;
 		;
 		const BlockContainer& blockContainer = circuit->getBlockContainer();
@@ -417,7 +417,7 @@ bool ConnectionMachineParser::save(const CircuitFileManager::FileData& fileData,
 
 					blockTypeStr = '"' + proceduralCircuitUUID.value() + "\" " + (proceduralCircuitParameters->toString());
 				} else {
-					const SharedCircuit circuit = circuitManager.getCircuit(subCircuitId);
+					const SharedCircuit circuit = circuitManager.getSharedCircuit(subCircuitId);
 					blockTypeStr = '"' + circuit->getUUID() + '"';
 				}
 			} else {

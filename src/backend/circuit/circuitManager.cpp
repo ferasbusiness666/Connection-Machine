@@ -61,7 +61,7 @@ circuit_id_t CircuitManager::createNewCircuit(const ParsedCircuit& parsedCircuit
 		logInfo("Setting a uuid for parsed circuit", "CircuitManager");
 		uuid = generate_uuid_v4();
 	} else {
-		SharedCircuit possibleExistingCircuit = getCircuit(uuid);
+		Circuit* possibleExistingCircuit = getSharedCircuit(uuid).get();
 		if (possibleExistingCircuit) {
 			// this duplicates check won't really work with open circuits ics because we have no way of knowing
 			// unless we save which paths we have loaded. Though this would require then linking the IC blocktype to
@@ -77,7 +77,7 @@ circuit_id_t CircuitManager::createNewCircuit(const ParsedCircuit& parsedCircuit
 	}
 
 	circuit_id_t id = createNewCircuit(parsedCircuit.getName(), uuid, createEval);
-	SharedCircuit circuit = getCircuit(id);
+	Circuit* circuit = getSharedCircuit(id).get();
 	circuit->tryInsertParsedCircuit(parsedCircuit, Position());
 
 	// if is custom
@@ -160,7 +160,7 @@ circuit_id_t CircuitManager::createNewCircuit(const GeneratedCircuit& generatedC
 
 	std::string uuid = generate_uuid_v4();
 	circuit_id_t id = createNewCircuit(generatedCircuit.getName(), uuid, createEval);
-	SharedCircuit circuit = getCircuit(id);
+	Circuit* circuit = getSharedCircuit(id).get();
 	circuit->tryInsertGeneratedCircuit(generatedCircuit, Position());
 
 	if (!generatedCircuit.isCustom()) {
@@ -224,7 +224,11 @@ void CircuitManager::updateExistingCircuit(circuit_id_t id, const GeneratedCircu
 		return;
 	}
 
-	SharedCircuit circuit = getCircuit(id);
+	Circuit* circuit = getSharedCircuit(id).get();
+	if (!circuit) {
+		logError("Could not find circuit with id {}.", "CircuitManager::updateExistingCircuit", id);
+		return;
+	}
 	std::string uuid = circuit->getUUID();
 
 	circuit->clear(true);
@@ -327,6 +331,15 @@ void CircuitManager::updateExistingCircuit(circuit_id_t id, const GeneratedCircu
 	}
 
 	dataUpdateEventManager.sendEvent<BlockType>("blockDataUpdate", blockType);
+}
+
+void CircuitManager::closeCircuit(circuit_id_t circuitId) {
+	Circuit* circuit = getSharedCircuit(circuitId).get();
+	if (!circuit) {
+		logError("Could not find circuit with id {}.", "CircuitManager::updateExistingCircuit", circuitId);
+		return;
+	}
+	circuit->close();
 }
 
 nlohmann::json CircuitManager::dumpState() const /* GCOVR_EXCL_FUNCTION */ {

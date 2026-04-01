@@ -9,7 +9,7 @@
 		{
 			"name": "debug",
 			"displayName": "Debug",
-			"binaryDir": "build/build",
+			"binaryDir": "build/build-debug",
 			"cacheVariables": {
 				"CMAKE_BUILD_TYPE": "Debug",
 				"CONNECTION_MACHINE_BUILD_APP": "ON",
@@ -35,7 +35,7 @@
 		{
 			"name": "debug&profiler",
 			"displayName": "Debug & Profiler",
-			"binaryDir": "build/build",
+			"binaryDir": "build/build-debug",
 			"cacheVariables": {
 				"CMAKE_BUILD_TYPE": "Debug",
 				"CONNECTION_MACHINE_BUILD_APP": "ON",

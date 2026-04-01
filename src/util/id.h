@@ -955,6 +955,7 @@ public:
 		page.destroy(index % PageSize, pos.vecIndex);
 	}
 	void erase(iterator start, iterator end) {
+		if (start == end) return;
 		PageData& firstPage = storage[start.index / PageSize];
 		if (start.index == end.index) { // if only sub block
 			cur_size -= firstPage.destroyRange(start.index, start.vecIndex, end.vecIndex);

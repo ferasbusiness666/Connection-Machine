@@ -75,7 +75,7 @@ void ProceduralCircuit::setProceduralCircuitName(const std::string& name) {
 	if (this->proceduralCircuitName == name) return;
 	this->proceduralCircuitName = name;
 	for (const auto& iter : generatedCircuits) {
-		SharedCircuit circuit = circuitManager.getCircuit(iter.second);
+		SharedCircuit circuit = circuitManager.getSharedCircuit(iter.second);
 		if (circuit) circuit->setCircuitName(name + iter.first.toString());
 	}
 	dataUpdateEventManager.sendEvent<std::string>("proceduralCircuitPathUpdate", getUUID());
@@ -125,7 +125,7 @@ circuit_id_t ProceduralCircuit::getCircuitId(const ProceduralCircuitParameters& 
 	if (type == BlockType::NONE) return 0;
 
 	// Get useful objects
-	SharedCircuit circuit = circuitManager.getCircuit(id);
+	Circuit* circuit = circuitManager.getSharedCircuit(id).get();
 	BlockData* blockData = circuitManager.getBlockDataManager().getBlockData(type);
 
 	// Settings
@@ -139,7 +139,7 @@ circuit_id_t ProceduralCircuit::getCircuitId(const ProceduralCircuitParameters& 
 
 BlockType ProceduralCircuit::getBlockType(const ProceduralCircuitParameters& parameters) {
 	circuit_id_t circuitId = getCircuitId(parameters);
-	SharedCircuit circuit = circuitManager.getCircuit(circuitId);
+	Circuit* circuit = circuitManager.getSharedCircuit(circuitId).get();
 	return circuit ? circuit->getBlockType() : BlockType::NONE;
 }
 
@@ -158,7 +158,7 @@ void ProceduralCircuit::regenerateAll() {
 		GeneratedCircuitValidator validator(generatedCircuit, circuitManager.getBlockDataManager());
 		circuitManager.updateExistingCircuit(pair.second, &generatedCircuit);
 		circuitIdToProceduralCircuitParameters[pair.second] = realParameters;
-		SharedCircuit circuit = circuitManager.getCircuit(pair.second);
+		Circuit* circuit = circuitManager.getSharedCircuit(pair.second).get();
 		circuit->setCircuitName(getProceduralCircuitName() + " (" + realParameters.toString() + ")");
 	}
 }

@@ -22,7 +22,7 @@ void CreateSimulatorCommand::run(const std::vector<std::string>& args, Environme
     }
 
     Backend& backend = environment.getBackend();
-    if (backend.getCircuitManager().getCircuit(cirID) == nullptr) {
+    if (backend.getCircuitManager().getSharedCircuit(cirID) == nullptr) {
         logError("Unrecognized circuit ID. Available circuits can be found with the 'list_circuits' command.", "CreateSimulatorCommand");
         return;
     }
