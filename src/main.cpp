@@ -56,8 +56,9 @@ void registerSettings() {
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Increase UI Scale", Keybind(ImGuiKey::ImGuiKey_Equal | ImGuiKey::ImGuiMod_Ctrl));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Decrease UI Scale", Keybind(ImGuiKey::ImGuiKey_Minus | ImGuiKey::ImGuiMod_Ctrl));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Window/Reset UI Scale", Keybind(ImGuiKey::ImGuiKey_0 | ImGuiKey::ImGuiMod_Ctrl));
-	// Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Tutorial/Start", Keybind(ImGuiKey::ImGuiKey_J));
-	// Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Tutorial/Stop", Keybind(ImGuiKey::ImGuiKey_K));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Tutorial/Start", Keybind(ImGuiKey::ImGuiKey_1 | ImGuiKey::ImGuiMod_Alt));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Tutorial/Stop", Keybind(ImGuiKey::ImGuiKey_2 | ImGuiKey::ImGuiMod_Alt));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Tutorial/DebugForceCompleteStep", Keybind(ImGuiKey::ImGuiKey_3 | ImGuiKey::ImGuiMod_Alt));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Zoom", Keybind(ImGuiKey::ImGuiKey_None | ImGuiKey::ImGuiMod_Shift));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Home", Keybind(ImGuiKey::ImGuiKey_F));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Camera/Pan", Keybind(ImGuiKey::ImGuiKey_None | ImGuiKey::ImGuiMod_Alt));

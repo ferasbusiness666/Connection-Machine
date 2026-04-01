@@ -1,12 +1,13 @@
 #include "backend.h"
 
+#include "backend/circuitTests/circuitTestGroupManager.h"
 #include "backend/wasm/wasm.h"
 #include "backend/proceduralCircuits/wasmProceduralCircuit.h"
 
 class CircuitFileManager;
 
 Backend::Backend(CircuitFileManager& fileManager) :
-	circuitManager(dataUpdateEventManager, simulatorManager, fileManager), simulatorManager(circuitManager, dataUpdateEventManager)
+	circuitManager(dataUpdateEventManager, simulatorManager, fileManager), simulatorManager(circuitManager, dataUpdateEventManager), circuitTestGroupManager(dataUpdateEventManager)
 {
 	logInfo("Initializing Backend", "Backend");
 	Wasm::initialize();

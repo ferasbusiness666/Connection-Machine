@@ -5,6 +5,7 @@
 #include "renderer/circuitRenderManager.h"
 #include "tools/toolManager.h"
 #include "tutorial.h"
+#include "tutorialDataManager.h"
 #include "viewManager/viewManager.h"
 #include "backend/address.h"
 
@@ -35,6 +36,8 @@ public:
 
 	Tutorial& getTutorialManager() { return tutorialManager; }
 	const Tutorial& getTutorialManager() const { return tutorialManager; }
+
+	void initializeTutorial() { tutorialManager.setTutorial(std::move(loadTutorialFromFile(tutorialManager.selectTutorial()))); }
 
 	ViewManager& getViewManager() { return viewManager; }
 	const ViewManager& getViewManager() const { return viewManager; }
