@@ -12,8 +12,8 @@ EvalLogicSimulator::EvalLogicSimulator(
 	circuit_id_t circuitId,
 	DataUpdateEventManager& dataUpdateEventManager
 ) : logicSimulator(simulatorId, dirtySimulatorIds, dataUpdateEventManager), circuitManager(circuitManager), circuitId(circuitId),
-	evaluatorInternal(circuitManager.getSharedCircuit(circuitId)->getEvaluator().getEvaluatorInternal()), simulatorId(simulatorId) {
-	const Circuit* circuit = circuitManager.getSharedCircuit(circuitId).get();
+	evaluatorInternal(circuitManager.getCircuit(circuitId)->getEvaluator().getEvaluatorInternal()), simulatorId(simulatorId) {
+	const Circuit* circuit = circuitManager.getCircuit(circuitId);
 	assert(circuit);
 	circuit->getEvaluator().addSimulator(*this);
 	const EvalLayerState& evalLayerState = circuit->getEvaluator().getEvaluatorInternal().getLayerRunner().getOutputLayer();
@@ -63,10 +63,10 @@ EvalLogicSimulator::EvalLogicSimulator(
 	logicSimulator.resetStates();
 }
 
-EvalLogicSimulator::~EvalLogicSimulator() { circuitManager.getSharedCircuit(circuitId)->getEvaluator().removeSimulator(*this); }
+EvalLogicSimulator::~EvalLogicSimulator() { circuitManager.getCircuit(circuitId)->getEvaluator().removeSimulator(*this); }
 
 std::string EvalLogicSimulator::getSimulatorName() const {
-	return "Sim " + std::to_string(getSimulatorId()) + " (" + circuitManager.getSharedCircuit(circuitId)->getCircuitNameNumber() + ")";
+	return "Sim " + std::to_string(getSimulatorId()) + " (" + circuitManager.getCircuit(circuitId)->getCircuitNameNumber() + ")";
 }
 
 circuit_id_t EvalLogicSimulator::getCircuitId(const Address& address) const {
@@ -533,10 +533,10 @@ void EvalLogicSimulator::processEdits() {
 	assert(aboveBusLayerConnectionPointsToUpdateMappedDown.size() == aboveBusLayerConnectionPointsToUpdate.size());
 
 
-	const Circuit* circuit = circuitManager.getSharedCircuit(circuitId).get();
+	const Circuit* circuit = circuitManager.getCircuit(circuitId);
 	for (auto iter : simulatorMappingUpdateListeners) {
 		circuit_id_t otherCircuitId = circuit->getCircuitId(iter.second.address);
-		const Circuit* otherCircuit = circuitManager.getSharedCircuit(otherCircuitId).get();
+		const Circuit* otherCircuit = circuitManager.getCircuit(otherCircuitId);
 		if (!otherCircuit) {
 			logError("Could not find circuit with id {}.", "EvalLogicSimulator::processEdits", otherCircuitId);
 			continue;

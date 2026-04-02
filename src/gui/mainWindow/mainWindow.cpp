@@ -440,7 +440,7 @@ bool MainWindow::tryClose() {
 		std::string message = "Do you want to save:\n";
 		std::vector<const std::string*> toSave;
 		for (auto lastSavedEdit : fileData.second.lastSavedEdit) {
-			const SharedCircuit& circuit = environment.getBackend().getCircuitManager().getSharedCircuit(lastSavedEdit.first);
+			const Circuit* circuit = environment.getBackend().getCircuitManager().getCircuit(lastSavedEdit.first);
 			if (!circuit->isEditable()) continue;
 			if (lastSavedEdit.second == circuit->getEditCount()) continue;
 			message += circuit->getCircuitName() + "\n";
@@ -470,12 +470,12 @@ bool MainWindow::tryClose() {
 		return false;
 	}
 	for (auto& circuit : environment.getBackend().getCircuitManager().getCircuits()) {
-		if (environment.getCircuitFileManager().getSavePath(circuit.second->getUUID())) continue;
-		if (circuit.second->isEmpty() || circuit.second->getEditCount() == 0 || !circuit.second->isEditable() || circuit.second->closed()) continue;
+		if (environment.getCircuitFileManager().getSavePath(circuit.second.getUUID())) continue;
+		if (circuit.second.isEmpty() || circuit.second.getEditCount() == 0 || !circuit.second.isEditable() || circuit.second.closed()) continue;
 		createPopup(
-			"Do you want to save: " + circuit.second->getCircuitName(),
+			"Do you want to save: " + circuit.second.getCircuitName(),
 			{
-				std::make_pair( "Save", [uuid = circuit.second->getUUID(), this]() {
+				std::make_pair( "Save", [uuid = circuit.second.getUUID(), this]() {
 					logInfo("Saving circuit {}", "", uuid);
 					static const SDL_DialogFileFilter filters[] = { { "Circuit Files", "cir" } };
 					typedef std::pair<std::pair<CircuitFileManager&, std::string>, MainWindow&> DataType;
@@ -491,9 +491,9 @@ bool MainWindow::tryClose() {
 						delete data;
 					}, data, nullptr, filters, 1, nullptr);
 				}),
-				std::make_pair("Dont Save", [this, uuid = circuit.second->getUUID()]() {
+				std::make_pair("Dont Save", [this, uuid = circuit.second.getUUID()]() {
 					logInfo("\"Dont Save\" option picked.");
-					const Circuit* circuit = this->getEnvironment().getBackend().getCircuitManager().getSharedCircuit(uuid).get();
+					const Circuit* circuit = this->getEnvironment().getBackend().getCircuitManager().getCircuit(uuid);
 					if (circuit) this->getEnvironment().getBackend().getCircuitManager().closeCircuit(circuit->getCircuitId());
 					kill(false);
 				}),

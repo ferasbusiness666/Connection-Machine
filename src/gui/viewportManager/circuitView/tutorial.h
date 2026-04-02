@@ -79,7 +79,7 @@ private:
 	ElementCreator elementCreator;
 	Environment& environment;
 	EvalLogicSimulator* simulator;
-	SharedCircuit currentCircuit = nullptr;
+	Circuit* currentCircuit = nullptr;
 	ViewManager& viewManager;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReciever;
 

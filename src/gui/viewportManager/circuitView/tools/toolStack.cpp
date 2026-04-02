@@ -65,7 +65,7 @@ void ToolStack::reset() {
 }
 
 void ToolStack::pushTool(SharedCircuitTool newTool, bool resetTool) {
-	Circuit* circuit = environment.getBackend().getCircuitManager().getSharedCircuit(circuitId).get();
+	Circuit* circuit = environment.getBackend().getCircuitManager().getCircuit(circuitId);
 	if (circuit) {
 		if (!circuit->isEditable()) {
 			if (newTool->canMakeEdits()) {
@@ -168,7 +168,7 @@ bool ToolStack::pointerMove(const Event* event) {
 }
 
 void ToolStack::verifyNoEdits() {
-	Circuit* circuit = environment.getBackend().getCircuitManager().getSharedCircuit(circuitId).get();
+	Circuit* circuit = environment.getBackend().getCircuitManager().getCircuit(circuitId);
 	if (circuit && !(circuit->isEditable())) {
 		for (SharedCircuitTool tool : toolStack) {
 			if (tool->canMakeEdits()) {

@@ -7,15 +7,18 @@
 
 circuit_id_t CircuitManager::createNewCircuit(const std::string& name, const std::string& uuid, bool createSim) {
 	circuit_id_t circuitId = getNewCircuitId();
-	const SharedCircuit circuit = std::make_shared<Circuit>(circuitId, *this, dataUpdateEventManager, name, uuid);
-	circuits.emplace(circuitId, circuit);
-	UUIDToCircuits.emplace(uuid, circuit);
+	auto pair = circuits.emplace(std::piecewise_construct,
+		std::forward_as_tuple(circuitId),
+		std::forward_as_tuple(circuitId, *this, dataUpdateEventManager, name, uuid)
+	);
+	assert(pair.second);
+	UUIDToCircuits.emplace(uuid, circuitId);
 	for (auto& [object, funcData] : listenerFunctions) {
-		circuit->connectListener(object, funcData.second, funcData.first);
+		pair.first->second.connectListener(object, funcData.second, funcData.first);
 	}
 
 	setupBlockData(circuitId);
-	circuit->editCount = 0;
+	pair.first->second.editCount = 0;
 
 	if (createSim) {
 		simulator_id_t simulatorId = simulatorManager.createNewSimulator(circuitId);
@@ -61,7 +64,7 @@ circuit_id_t CircuitManager::createNewCircuit(const ParsedCircuit& parsedCircuit
 		logInfo("Setting a uuid for parsed circuit", "CircuitManager");
 		uuid = generate_uuid_v4();
 	} else {
-		Circuit* possibleExistingCircuit = getSharedCircuit(uuid).get();
+		Circuit* possibleExistingCircuit = getCircuit(uuid);
 		if (possibleExistingCircuit) {
 			// this duplicates check won't really work with open circuits ics because we have no way of knowing
 			// unless we save which paths we have loaded. Though this would require then linking the IC blocktype to
@@ -77,7 +80,7 @@ circuit_id_t CircuitManager::createNewCircuit(const ParsedCircuit& parsedCircuit
 	}
 
 	circuit_id_t id = createNewCircuit(parsedCircuit.getName(), uuid, createEval);
-	Circuit* circuit = getSharedCircuit(id).get();
+	Circuit* circuit = getCircuit(id);
 	circuit->tryInsertParsedCircuit(parsedCircuit, Position());
 
 	// if is custom
@@ -160,7 +163,7 @@ circuit_id_t CircuitManager::createNewCircuit(const GeneratedCircuit& generatedC
 
 	std::string uuid = generate_uuid_v4();
 	circuit_id_t id = createNewCircuit(generatedCircuit.getName(), uuid, createEval);
-	Circuit* circuit = getSharedCircuit(id).get();
+	Circuit* circuit = getCircuit(id);
 	circuit->tryInsertGeneratedCircuit(generatedCircuit, Position());
 
 	if (!generatedCircuit.isCustom()) {
@@ -224,7 +227,7 @@ void CircuitManager::updateExistingCircuit(circuit_id_t id, const GeneratedCircu
 		return;
 	}
 
-	Circuit* circuit = getSharedCircuit(id).get();
+	Circuit* circuit = getCircuit(id);
 	if (!circuit) {
 		logError("Could not find circuit with id {}.", "CircuitManager::updateExistingCircuit", id);
 		return;
@@ -334,7 +337,7 @@ void CircuitManager::updateExistingCircuit(circuit_id_t id, const GeneratedCircu
 }
 
 void CircuitManager::closeCircuit(circuit_id_t circuitId) {
-	Circuit* circuit = getSharedCircuit(circuitId).get();
+	Circuit* circuit = getCircuit(circuitId);
 	if (!circuit) {
 		logError("Could not find circuit with id {}.", "CircuitManager::updateExistingCircuit", circuitId);
 		return;
@@ -347,11 +350,11 @@ nlohmann::json CircuitManager::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	stateJson["lastId"] = lastId;
 	stateJson["circuits"] = nlohmann::json::object();
 	for (const auto& [circuitId, circuit] : circuits) {
-		stateJson["circuits"][std::to_string(circuitId)] = circuit->dumpState();
+		stateJson["circuits"][std::to_string(circuitId)] = circuit.dumpState();
 	}
 	stateJson["UUIDToCircuits"] = nlohmann::json::object();
-	for (const auto& [uuid, circuit] : UUIDToCircuits) {
-		stateJson["UUIDToCircuits"][uuid] = circuit->getCircuitId();
+	for (const auto& [uuid, circuitId] : UUIDToCircuits) {
+		stateJson["UUIDToCircuits"][uuid] = circuitId;
 	}
 	stateJson["blockDataManager"] = blockDataManager.dumpState();
 	stateJson["circuitBlockDataManager"] = circuitBlockDataManager.dumpState();

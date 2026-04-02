@@ -19,7 +19,7 @@ const EvalLogicSimulator* SimulatorManager::getSimulator(simulator_id_t id) cons
 }
 
 simulator_id_t SimulatorManager::createNewSimulator(circuit_id_t circuitId) {
-	if (!circuitManager.getSharedCircuit(circuitId)) {
+	if (!circuitManager.getCircuit(circuitId)) {
 		logError("Could not make simulator because circuit {} was not found", "SimulatorManager::createNewSimulator", circuitId);
 		return 0;
 	}

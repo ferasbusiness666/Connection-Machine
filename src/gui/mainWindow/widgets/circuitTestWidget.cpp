@@ -76,7 +76,7 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 		// =================================== Init rendering circuit ===================================
 		renderingCircuitId = getBackend().getCircuitManager().createNewCircuit(true);
 		assert(renderingCircuitId);
-		Circuit* circuit = getBackend().getCircuitManager().getCircuit(renderingCircuitId).get();
+		Circuit* circuit = getBackend().getCircuitManager().getCircuit(renderingCircuitId);
 		assert(circuit);
 		circuit->setEditable(false);
 		BlockData* blockData = getBackend().getBlockDataManager().getBlockData(circuit->getBlockType());

@@ -33,7 +33,7 @@ SharedCircuitTool ToolManager::selectTool(SharedCircuitTool tool) {
 		activeToolStack = tool->getStackId();
 		toolStacks[activeToolStack].activate();
 	}
-	Circuit* circuit = environment.getBackend().getCircuitManager().getSharedCircuit(circuitId).get();
+	Circuit* circuit = environment.getBackend().getCircuitManager().getCircuit(circuitId);
 	if (circuit) {
 		if (!circuit->isEditable()) {
 			if (tool->canMakeEdits()) {

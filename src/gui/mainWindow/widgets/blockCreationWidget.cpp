@@ -78,7 +78,7 @@ BlockCreationWidget::BlockCreationWidget(WidgetId widgetId, MainWindow& mainWind
 		// =================================== Init rendering circuit ===================================
 		renderingCircuitId = getBackend().getCircuitManager().createNewCircuit(true);
 		assert(renderingCircuitId);
-		Circuit* circuit = getBackend().getCircuitManager().getSharedCircuit(renderingCircuitId).get();
+		Circuit* circuit = getBackend().getCircuitManager().getCircuit(renderingCircuitId);
 		assert(circuit);
 		circuit->setEditable(false);
 		BlockData* blockData = getBackend().getBlockDataManager().getBlockData(circuit->getBlockType());
@@ -104,7 +104,7 @@ BlockCreationWidget::BlockCreationWidget(WidgetId widgetId, MainWindow& mainWind
 		{
 			std::lock_guard mux(circuitsMux);
 			for (const auto& circuit : getBackend().getCircuitManager().getCircuits()) {
-				if (circuit.second->isEditable()) circuits.emplace(circuit.first, circuit.second->getCircuitName());
+				if (circuit.second.isEditable()) circuits.emplace(circuit.first, circuit.second.getCircuitName());
 			}
 		}
 	}
@@ -114,7 +114,7 @@ BlockCreationWidget::BlockCreationWidget(WidgetId widgetId, MainWindow& mainWind
 			std::lock_guard mux(circuitsMux);
 			circuits.clear();
 			for (const auto& circuit : getBackend().getCircuitManager().getCircuits()) {
-				if (circuit.second->isEditable()) circuits.emplace(circuit.first, circuit.second->getCircuitName());
+				if (circuit.second.isEditable()) circuits.emplace(circuit.first, circuit.second.getCircuitName());
 			}
 		}
 		// update renderData
@@ -142,7 +142,7 @@ BlockCreationWidget::BlockCreationWidget(WidgetId widgetId, MainWindow& mainWind
 		blockType = blockData->getBlockType();
 		std::lock_guard mux(blockDataCopyMux);
 		blockDataCopy = blockData->getBlockDataCopy();
-		Circuit* circuit = getBackend().getCircuitManager().getSharedCircuit(renderingCircuitId).get();
+		Circuit* circuit = getBackend().getCircuitManager().getCircuit(renderingCircuitId);
 		circuit->clear();
 		circuit->tryInsertBlock(Position(), Orientation(), blockData->getBlockType());
 		circuitView->getViewManager().focus();
@@ -582,7 +582,7 @@ void BlockCreationWidget::renderSideBar(circuit_id_t circuitId) {
 			if (ImGui::InputText("##Name", &blockDataCopy->name)) {
 				App::runOnMain([this, circuitId, name = blockDataCopy->name](){
 					Backend& backend = getEnvironment().getBackend();
-					Circuit* circuit = backend.getCircuitManager().getSharedCircuit(circuitId).get();
+					Circuit* circuit = backend.getCircuitManager().getCircuit(circuitId);
 					if (!circuit) return;
 					circuit->setCircuitName(name);
 				});

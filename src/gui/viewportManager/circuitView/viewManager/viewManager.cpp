@@ -16,7 +16,7 @@ void ViewManager::setUpEvents(EventRegister& eventRegister) {
 }
 
 void ViewManager::setCircuit(circuit_id_t circuitId) {
-	const Circuit* circuit = backend.getCircuitManager().getSharedCircuit(circuitId).get();
+	const Circuit* circuit = backend.getCircuitManager().getCircuit(circuitId);
 	if (!circuit) circuitId = 0;
 	if (circuitId == currentCircuitId) return;
 
@@ -124,7 +124,7 @@ bool ViewManager::pointerExitView(const Event* event) {
 }
 
 void ViewManager::focus() {
-	const Circuit* circuit = backend.getCircuitManager().getSharedCircuit(currentCircuitId).get();
+	const Circuit* circuit = backend.getCircuitManager().getCircuit(currentCircuitId);
 	if (circuit == nullptr) {
 		viewCenter = FPosition();
 		viewScale = 8.0f;

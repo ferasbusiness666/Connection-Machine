@@ -14,8 +14,8 @@ CircuitView::CircuitView(Environment& environment, ViewportId viewportId) :
 	viewManager.connectViewChanged(std::bind(&CircuitView::viewChanged, this));
 }
 
-Circuit* CircuitView::getCircuit() { return backend.getCircuitManager().getSharedCircuit(circuitId).get(); }
-const Circuit* CircuitView::getCircuit() const { return backend.getCircuitManager().getSharedCircuit(circuitId).get(); }
+Circuit* CircuitView::getCircuit() { return backend.getCircuitManager().getCircuit(circuitId); }
+const Circuit* CircuitView::getCircuit() const { return backend.getCircuitManager().getCircuit(circuitId); }
 
 EvalLogicSimulator* CircuitView::getSimulator() { return backend.getSimulator(simulatorId); }
 const EvalLogicSimulator* CircuitView::getSimulator() const { return backend.getSimulator(simulatorId); }
@@ -36,7 +36,7 @@ void CircuitView::setSimulator(simulator_id_t simulatorId, const Address& addres
 			logError("When setting CircuitView's simulator, a simulator with a different backend. Failed to connect! Doing nothing!", "CircuitView");
 		} else {
 			circuit_id_t circuitId = simulator->getCircuitId(address);
-			Circuit* circuit = backend.getCircuitManager().getSharedCircuit(circuitId).get(); // ok if null
+			Circuit* circuit = backend.getCircuitManager().getCircuit(circuitId); // ok if null
 			if (circuit == nullptr){
 				logError("When setting CircuitView's simulator, failed to find circuit for simulator with circuit id {}", "CircuitView", circuitId);
 				return;
@@ -69,7 +69,7 @@ void CircuitView::setSimulator(const EvalLogicSimulator* simulator, const Addres
 		logError("When setting CircuitView's simulator, a simulator with a different backend. Failed to connect! Doing nothing!", "CircuitView");
 	} else {
 		circuit_id_t circuitId = simulator->getCircuitId(address);
-		Circuit* circuit = backend.getCircuitManager().getSharedCircuit(circuitId).get(); // ok if null
+		Circuit* circuit = backend.getCircuitManager().getCircuit(circuitId); // ok if null
 		if (circuit == nullptr){
 			logError("When setting CircuitView's simulator, failed to find circuit for simulator with circuit id {}", "CircuitView", circuitId);
 			return;

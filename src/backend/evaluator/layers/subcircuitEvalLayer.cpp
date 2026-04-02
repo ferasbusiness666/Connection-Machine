@@ -36,7 +36,7 @@ void SubcircuitEvalLayer::run() {
 			nextState.removeGate(iter.first);
 			continue;
 		}
-		const Circuit* circuit = circuitManager.getSharedCircuit(subcircuitDataIter->second.circuitId).get();
+		const Circuit* circuit = circuitManager.getCircuit(subcircuitDataIter->second.circuitId);
 		assert(circuit);
 		circuit->getEvaluator().getEvaluatorInternal().removeEvaluator(*this);
 		const EvalLayerState& evalLayerState = subcircuitDataIter->second.outputEvalLayer;
@@ -95,7 +95,7 @@ void SubcircuitEvalLayer::run() {
 			nextState.addGate(iter.first, iter.second);
 			continue;
 		}
-		const Circuit* circuit = circuitManager.getSharedCircuit(circuitId).get();
+		const Circuit* circuit = circuitManager.getCircuit(circuitId);
 		assert(circuit);
 		circuit->getEvaluator().getEvaluatorInternal().addEvaluator(*this);
 		const EvaluatorInternal& evaluatorInternal = circuit->getEvaluator().getEvaluatorInternal();
@@ -189,7 +189,7 @@ std::vector<std::pair<eval_gate_id, circuit_id_t>> SubcircuitEvalLayer::getSubci
 EvalConnectionPoint SubcircuitEvalLayer::getMappedAddress(eval_gate_id gateId, const Address& address) const {
 	auto subcircuitIter = subcircuits.find(gateId);
 	if (subcircuitIter == subcircuits.end()) return EvalConnectionPoint::null();
-	const Circuit* circuit = circuitManager.getSharedCircuit(subcircuitIter->second.circuitId).get();
+	const Circuit* circuit = circuitManager.getCircuit(subcircuitIter->second.circuitId);
 	assert(circuit);
 	EvalConnectionPoint internalBottomPoint = circuit->getEvaluator().getEvaluatorInternal().mapFromAddressToBottomConnectionPointForOtherEvals(address);
 	if (internalBottomPoint.isNull()) return EvalConnectionPoint::null();
@@ -219,7 +219,7 @@ VecVecEvalConnectionPoint SubcircuitEvalLayer::getReversedMappedConnectionPointG
 			subcircuitConnectionPoints.back().push_back(EvalConnectionPoint(iter->second, connectionPoint.connectionEndId));
 		}
 	}
-	const Circuit* circuit = circuitManager.getSharedCircuit(subcircuitIter->second.circuitId).get();
+	const Circuit* circuit = circuitManager.getCircuit(subcircuitIter->second.circuitId);
 	assert(circuit);
 	return circuit->getEvaluator().getEvaluatorInternal().mapFromBottomConnectionPointGroupsToTopConnectionPointsForOtherEvals(subcircuitConnectionPoints, address);
 }
@@ -229,7 +229,7 @@ void SubcircuitEvalLayer::getReversedMappedEvalConnectionPoint(EvalConnectionPoi
 	for (auto iter = connectionPointIterPair.first; iter != connectionPointIterPair.second; iter++) {
 		auto subcircuitsIter = subcircuits.find(iter->second.gateId);
 		assert(subcircuitsIter != subcircuits.end());
-		const Circuit* circuit = circuitManager.getSharedCircuit(subcircuitsIter->second.circuitId).get();
+		const Circuit* circuit = circuitManager.getCircuit(subcircuitsIter->second.circuitId);
 		assert(circuit);
 		auto portDataIter = circuit->getEvaluator().getEvaluatorInternal().getPortToInternalPointMapping().find(iter->second.connectionEndId);
 		if (portDataIter->second.portType == BlockData::ConnectionData::PortType::OUTPUT) {
@@ -253,7 +253,7 @@ void SubcircuitEvalLayer::getReversedMappedEvalConnectionPoint(EvalConnectionPoi
 
 void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vector<std::tuple<connection_end_id_t, EvalConnectionPoint, EvalConnectionPoint>>& updatedPortIds) {
 	evaluator.startEdit();
-	const Circuit* circuit = circuitManager.getSharedCircuit(circuitId).get();
+	const Circuit* circuit = circuitManager.getCircuit(circuitId);
 	assert(circuit);
 	const EvaluatorInternal& evaluatorInternal = circuit->getEvaluator().getEvaluatorInternal();
 	for (auto subcircuitsPair : subcircuits) {
@@ -361,7 +361,7 @@ void SubcircuitEvalLayer::processICEdits(circuit_id_t circuitId, const std::vect
 					for (EvalConnectionPoint otherConnectionPoint : connectionsIter->second) {
 						// auto subcircuitDataAIter = subcircuits.find(otherConnectionPoint.gateId);
 						// if (subcircuitDataAIter != subcircuits.end()) {
-						// 	const Circuit* circuit = circuitManager.getSharedCircuit(subcircuitDataAIter->second.circuitId).get();
+						// 	const Circuit* circuit = circuitManager.getCircuit(subcircuitDataAIter->second.circuitId);
 						// 	assert(circuit);
 						// 	const EvaluatorInternal& evaluatorInternalval = circuit->getEvaluator().getEvaluatorInternal();
 						// 	auto internalPointMappingIter = evaluatorInternalval.getPortToInternalPointMapping().find(otherConnectionPoint.connectionEndId);
