@@ -66,7 +66,7 @@ void parsePreSteps(std::vector<std::string>& info, std::unordered_map<std::strin
 		std::stringstream ss(lines[i]);
 		std::string tok;
 		ss >> tok;
-		if (tok == "version_0" || tok == "version_1") {
+		if (tok == "version_0" || tok == "version_1" || tok == "version_2") {
 			// do something with versions once there is not backwards compatibility
 		} else if ((tok == "Tutorial:")) {
 			// Tutorial:

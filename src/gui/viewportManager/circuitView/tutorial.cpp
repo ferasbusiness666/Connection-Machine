@@ -1,9 +1,12 @@
 #include "tutorial.h"
-
+#include "app.h"
+#include "backend/position/position.h"
 #include "circuitView.h"
 
 #include "environment/environment.h"
 #include "events/customEvents.h"
+#include "gui/mainWindow/widgets/circuitViewWidget.h"
+#include "imgui/imgui.h"
 
 Tutorial::Tutorial(Environment& environment, CircuitView& circuitView) :
 	circuitView(circuitView), elementCreator(circuitView.getViewportId()), viewManager(circuitView.getViewManager()), environment(environment),
@@ -107,8 +110,8 @@ void Tutorial::runCurrentStep() {
 	const TutorialStep& currentStep = tutorialSteps[tutorialState];
 	const BlockContainer& blockContainer = currentCircuit->getBlockContainer();
 	// change this later to real popups or something
-	for (const std::string& message : currentStep.action.messages) {
-		logInfo(message);
+	for (const TutorialAction::Message& message : currentStep.action.messages) {
+		elementCreator.addText(message.message, message.pos, message.scale);
 	}
 	for (const TutorialAction::BlockPreviewInfo& blockPreview : currentStep.action.blockPreviews) {
 		elementCreator.addBlockPreview(

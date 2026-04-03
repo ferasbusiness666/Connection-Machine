@@ -45,7 +45,12 @@ struct TutorialAction {
 		Position pos1;
 		Position pos2;
 	};
-	std::vector<std::string> messages;
+    struct Message {
+        std::string message;
+        FPosition pos;
+        float scale;
+    };
+	std::vector<Message> messages;
 	std::vector<BlockPreviewInfo> blockPreviews;
 	std::vector<ConnectionPreviewInfo> connectionPreviews;
 	std::optional<FPosition> viewCenter;

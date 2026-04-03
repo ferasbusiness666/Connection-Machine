@@ -42,9 +42,9 @@ $view View Center: (2, 1)
 # steps
 Step:
 	Action:
-		Message: "Welcome to Connection Machine!"
-		Message: "In this tutorial we will learn about the 'OR' block!"
-		Message: "Place down the highlighted blocks to get started."
+		Message: (0, -3) -2 "Welcome to Connection Machine!"
+		Message: (0, -2) -2 "In this tutorial we will learn about the 'OR' block!"
+		Message: (0, -1) -2 "Place down the highlighted blocks to get started."
 		Block Preview: SWITCH ($p1)
 		Block Preview: SWITCH ($p2)
 		Block Preview: OR ($p3)
@@ -57,7 +57,7 @@ Step:
 		Block: LIGHT ($p4)
 Step:
 	Action:
-		Message: "Now, connect the blocks."
+		Message: (0, -3) -2 "Now, connect the blocks."
 		Connection Preview: ($p1) ($p3)
 		Connection Preview: ($p2) ($p3)
 		Connection Preview: ($p3) ($p4)
@@ -68,7 +68,7 @@ Step:
 		Connection: ($p3) ($p4)
 Step:
 	Action:
-		Message: "Now, flick the switches to test how the 'OR' block reacts."
+		Message: (0, -3) -2 "Now, flick the switches to test how the 'OR' block reacts."
 	Condition:
 		State: h ($p1) 3
 Step:
@@ -76,11 +76,11 @@ Step:
 		State: l ($p1) 3
 Step:
 	Action:
-		Message: "Congrats, you completed this tutorial."
-		Message: "The OR block has the following truth table for 2 inputs:"
-		Message: "A | B | OR"
-		Message: "--+---+---"
-		Message: "0 | 0 |  0"
-		Message: "0 | 1 |  1"
-		Message: "1 | 0 |  1"
-		Message: "1 | 1 |  1"
+		Message: (0, -8) -2 "Congrats, you completed this tutorial."
+		Message: (0, -7) -2 "The OR block has the following truth table for 2 inputs:"
+		Message: (0, -6) -2 "A | B | OR"
+		Message: (0, -5) -2 "--+---+---"
+		Message: (0, -4) -2 "0 | 0 |  0"
+		Message: (0, -3) -2 "0 | 1 |  1"
+		Message: (0, -2) -2 "1 | 0 |  1"
+		Message: (0, -1) -2 "1 | 1 |  1"
