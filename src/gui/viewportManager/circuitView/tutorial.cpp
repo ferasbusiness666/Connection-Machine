@@ -1,12 +1,10 @@
 #include "tutorial.h"
-#include "app.h"
 #include "backend/position/position.h"
 #include "circuitView.h"
 
 #include "environment/environment.h"
 #include "events/customEvents.h"
 #include "gui/mainWindow/widgets/circuitViewWidget.h"
-#include "imgui/imgui.h"
 
 Tutorial::Tutorial(Environment& environment, CircuitView& circuitView) :
 	circuitView(circuitView), elementCreator(circuitView.getViewportId()), viewManager(circuitView.getViewManager()), environment(environment),
@@ -20,7 +18,7 @@ Tutorial::Tutorial(Environment& environment, CircuitView& circuitView) :
 	});
 	dataUpdateEventReciever.linkFunction("circuitViewChangeCircuit", [this](const DataUpdateEventManager::EventData* event) -> bool {
 		elementCreator.clear();
-		if (currentCircuit && this->circuitView.getCircuit()->getCircuitId() == currentCircuit->getCircuitId()) {
+		if (circuitId == this->circuitView.getCircuit()->getCircuitId()) {
 			runCurrentStep();
 		}
 		return false;
@@ -40,13 +38,14 @@ void Tutorial::StartTutorial() {
 	}
 	circuitView.setSimulator(simulatorId.value());
 	simulator = circuitView.getBackend().getSimulator(simulatorId.value());
-	currentCircuit = circuitView.getBackend().getCircuitManager().getCircuit(circuitId);
+	Circuit* currentCircuit = circuitView.getBackend().getCircuitManager().getCircuit(circuitId);
 	currentCircuit->connectListener(this, std::bind(&Tutorial::checkTutorial, this, std::placeholders::_1, std::placeholders::_2));
 	runCurrentStep();
 }
 
 void Tutorial::stop() {
 	if (!tutorialRunning) return;
+	Circuit* currentCircuit = circuitView.getBackend().getCircuitManager().getCircuit(circuitId);
 	if (currentCircuit) {
 		currentCircuit->disconnectListener(this);
 	}
@@ -75,6 +74,8 @@ void Tutorial::advanceTutorial() {
 bool Tutorial::isCurrentStepComplete() const {
 	if (tutorialState >= tutorialSteps.size()) return false;
 	const TutorialStep& currentStep = tutorialSteps[tutorialState];
+	Circuit* currentCircuit = circuitView.getBackend().getCircuitManager().getCircuit(circuitId);
+	if (!currentCircuit) return false;
 	const BlockContainer& blockContainer = currentCircuit->getBlockContainer();
 
 	for (const TutorialCondition::BlockRequirement& blockCondition : currentStep.condition.blocks) {
@@ -108,6 +109,8 @@ bool Tutorial::isCurrentStepComplete() const {
 void Tutorial::runCurrentStep() {
 	if (tutorialState >= tutorialSteps.size()) return;
 	const TutorialStep& currentStep = tutorialSteps[tutorialState];
+	Circuit* currentCircuit = circuitView.getBackend().getCircuitManager().getCircuit(circuitId);
+	if (!currentCircuit) return;
 	const BlockContainer& blockContainer = currentCircuit->getBlockContainer();
 	// change this later to real popups or something
 	for (const TutorialAction::Message& message : currentStep.action.messages) {
@@ -174,6 +177,8 @@ void Tutorial::forceCompleteStep() {
 	if (tutorialState >= tutorialSteps.size()) return;
 
 	const TutorialStep& currentStep = tutorialSteps[tutorialState];
+	Circuit* currentCircuit = circuitView.getBackend().getCircuitManager().getCircuit(circuitId);
+	if (!currentCircuit) return;
 	const BlockContainer& blockContainer = currentCircuit->getBlockContainer();
 
 	for (const TutorialCondition::BlockRequirement& block : currentStep.condition.blocks) {

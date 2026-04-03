@@ -63,7 +63,6 @@ struct TutorialStep {
 
 class Tutorial {
 public:
-
 	Tutorial(Environment& environment, CircuitView& circuitView);
 	void StartTutorial();
 	void stop();
@@ -82,7 +81,7 @@ private:
 	ElementCreator elementCreator;
 	Environment& environment;
 	EvalLogicSimulator* simulator;
-	Circuit* currentCircuit = nullptr;
+	circuit_id_t circuitId;
 	ViewManager& viewManager;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReciever;
 
