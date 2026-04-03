@@ -358,10 +358,11 @@ void MainWindow::render() {
 					App::runOnMain([this]() { App::makeWindow<MainWindow>(); });
 				}
 				ImGui::Separator();
-				if (ImGui::MenuItem("Open...", "Ctrl+O")) { }
-				if (ImGui::MenuItem("Save", "Ctrl+S")) { }
-				if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S")) { }
-				if (ImGui::MenuItem("Exit")) { }
+				if (ImGui::MenuItem("Open...", "Ctrl+O")) {
+					App::runOnMain([this]() { loadDialog(); });
+				}
+				// if (ImGui::MenuItem("Save", "Ctrl+S")) { }
+				// if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S")) { }
 				ImGui::EndMenu();
 			}
 			if (ImGui::BeginMenu("Edit")) {
