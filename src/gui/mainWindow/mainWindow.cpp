@@ -5,6 +5,8 @@
 
 #include "computerAPI/circuitTestFileLoader.h"
 #include "gui/mainWindow/widgets/circuitTestWidget.h"
+#include "gui/viewportManager/circuitView/tutorialDataManager.h"
+#include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
 #include "imgui/imgui_notify.h"
 #include "logging/logging.h"
@@ -16,8 +18,6 @@
 #include "gui/helper/keybindHelpers.h"
 #include "gui/helper/saveCallback.h"
 
-#include "computerAPI/directoryManager.h"
-
 // widgets
 #include "widgets/blockCreationWidget.h"
 #include "widgets/blockSelectorWidget.h"
@@ -25,7 +25,7 @@
 #include "widgets/toolSelectorWidget.h"
 #include "widgets/popupWidget.h"
 
-MainWindow::MainWindow() : SdlWindow("Connection Machine"), environment(true), toolManagerManager(environment), widgetIdProvider(1) {
+MainWindow::MainWindow() : SdlWindow("Connection Machine"), environment(true), toolManagerManager(environment), widgetIdProvider(1), tutorialDataManager() {
 	const double* initialUiScale = Settings::get<SettingType::DECIMAL>("Appearance/UI Scale");
 	applyUiScale(initialUiScale ? static_cast<float>(*initialUiScale) : 1.0f);
 	Settings::registerListener<SettingType::DECIMAL>("Appearance/UI Scale", [this](const double& value) { applyUiScale(static_cast<float>(value)); });
@@ -195,13 +195,7 @@ void MainWindow::doUpdate() {
 	if (isPressingKeybind("Keybinds/Window/Reset UI Scale")) {
 		applyUiScale(1.0f);
 	}
-	if (isPressingKeybind("Keybinds/Tutorial/Start")) {
-		CircuitViewWidget& circuitViewWidget = createWidget<CircuitViewWidget>();
-		circuitViewWidget.getCircuitView().getTutorialManager().setTutorial(
-			loadTutorialFromFile(circuitViewWidget.getCircuitView().getTutorialManager().selectTutorial())
-		);
-		circuitViewWidget.getCircuitView().getTutorialManager().StartTutorial();
-	}
+	if (isPressingKeybind("Keybinds/Tutorial/Start")) { }
 	for (std::pair<const WidgetId, std::unique_ptr<Widget>>& widget : widgets) {
 		widget.second->doUpdate();
 	}
@@ -364,10 +358,11 @@ void MainWindow::render() {
 					App::runOnMain([this]() { App::makeWindow<MainWindow>(); });
 				}
 				ImGui::Separator();
-				if (ImGui::MenuItem("Open...", "Ctrl+O")) { }
-				if (ImGui::MenuItem("Save", "Ctrl+S")) { }
-				if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S")) { }
-				if (ImGui::MenuItem("Exit")) { }
+				if (ImGui::MenuItem("Open...", "Ctrl+O")) {
+					App::runOnMain([this]() { loadDialog(); });
+				}
+				// if (ImGui::MenuItem("Save", "Ctrl+S")) { }
+				// if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S")) { }
 				ImGui::EndMenu();
 			}
 			if (ImGui::BeginMenu("Edit")) {
@@ -390,21 +385,14 @@ void MainWindow::render() {
 			}
 			if (ImGui::BeginMenu("Help")) {
 				if (ImGui::BeginMenu("Tutorial")) {
-					// ; // gather
-					std::vector<std::string> filenames;
-					logInfo("Tutorials Loaded:", "MainWindow");
-					logInfo((DirectoryManager::getResourceDirectory() / "tutorials" / "").string());
-					for (const auto& file : std::filesystem::directory_iterator((DirectoryManager::getResourceDirectory() / "tutorials" / "").string())) {
-						filenames.push_back(file.path().filename().string());
-						logInfo("  [" + std::to_string(filenames.size()) + "] " + file.path().filename().string());
-					}
-					for (const std::string& tutorial : filenames) {
-						if (ImGui::MenuItem(tutorial.c_str())) {
-							App::runOnMain([this, tutorial]() {
+					std::vector<std::string> names = tutorialDataManager.getNames();
+					for (const std::string& name : names) {
+						if (ImGui::MenuItem(name.c_str())) {
+							App::runOnMain([this, name]() {
 								CircuitViewWidget& circuitViewWidget = createWidget<CircuitViewWidget>();
-								circuitViewWidget.getCircuitView().getTutorialManager().setTutorial(loadTutorialFromFile(tutorial));
+								circuitViewWidget.getCircuitView().getTutorialManager().setTutorial(tutorialDataManager.getTutorial(name));
 								circuitViewWidget.getCircuitView().getTutorialManager().StartTutorial();
-								circuitViewWidget.getCircuitView().getCircuit()->setCircuitName(tutorial);
+								circuitViewWidget.getCircuitView().getCircuit()->setCircuitName(name);
 							});
 						}
 					}

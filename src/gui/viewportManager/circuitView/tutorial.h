@@ -45,7 +45,12 @@ struct TutorialAction {
 		Position pos1;
 		Position pos2;
 	};
-	std::vector<std::string> messages;
+    struct Message {
+        std::string message;
+        FPosition pos;
+        float scale;
+    };
+	std::vector<Message> messages;
 	std::vector<BlockPreviewInfo> blockPreviews;
 	std::vector<ConnectionPreviewInfo> connectionPreviews;
 	std::optional<FPosition> viewCenter;
@@ -58,14 +63,11 @@ struct TutorialStep {
 
 class Tutorial {
 public:
-
 	Tutorial(Environment& environment, CircuitView& circuitView);
 	void StartTutorial();
 	void stop();
 	void setTutorial(const std::vector<TutorialStep>& steps);
 	void forceCompleteStep();
-
-	std::string selectTutorial();
 
 private:
 	void checkTutorial(DifferenceSharedPtr diff, circuit_id_t circuitId);
@@ -79,7 +81,7 @@ private:
 	ElementCreator elementCreator;
 	Environment& environment;
 	EvalLogicSimulator* simulator;
-	Circuit* currentCircuit = nullptr;
+	circuit_id_t circuitId;
 	ViewManager& viewManager;
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReciever;
 

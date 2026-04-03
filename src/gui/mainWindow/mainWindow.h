@@ -6,6 +6,7 @@
 #include "environment/environment.h"
 #include "gui/sdl/sdlWindow.h"
 
+#include "gui/viewportManager/circuitView/tutorialDataManager.h"
 #include "tools/toolManagerManager.h"
 #include "widget.h"
 // #include "widgets/cornerLogWidget.h"
@@ -87,6 +88,8 @@ private:
 	std::set<ImGuiKey> pressedKeys;
 	std::atomic<unsigned long long> frameIndex;
 	unsigned long long lastUpdatedFrame;
+
+	TutorialDataManager tutorialDataManager;
 
 	// inputs and tools
 	// KeybindHandler keybindHandler;

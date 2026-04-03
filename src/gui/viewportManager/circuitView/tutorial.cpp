@@ -1,9 +1,10 @@
 #include "tutorial.h"
-
+#include "backend/position/position.h"
 #include "circuitView.h"
 
 #include "environment/environment.h"
 #include "events/customEvents.h"
+#include "gui/mainWindow/widgets/circuitViewWidget.h"
 
 Tutorial::Tutorial(Environment& environment, CircuitView& circuitView) :
 	circuitView(circuitView), elementCreator(circuitView.getViewportId()), viewManager(circuitView.getViewManager()), environment(environment),
@@ -17,7 +18,7 @@ Tutorial::Tutorial(Environment& environment, CircuitView& circuitView) :
 	});
 	dataUpdateEventReciever.linkFunction("circuitViewChangeCircuit", [this](const DataUpdateEventManager::EventData* event) -> bool {
 		elementCreator.clear();
-		if (currentCircuit && this->circuitView.getCircuit()->getCircuitId() == currentCircuit->getCircuitId()) {
+		if (circuitId == this->circuitView.getCircuit()->getCircuitId()) {
 			runCurrentStep();
 		}
 		return false;
@@ -37,34 +38,14 @@ void Tutorial::StartTutorial() {
 	}
 	circuitView.setSimulator(simulatorId.value());
 	simulator = circuitView.getBackend().getSimulator(simulatorId.value());
-	currentCircuit = circuitView.getBackend().getCircuitManager().getCircuit(circuitId);
+	Circuit* currentCircuit = circuitView.getBackend().getCircuitManager().getCircuit(circuitId);
 	currentCircuit->connectListener(this, std::bind(&Tutorial::checkTutorial, this, std::placeholders::_1, std::placeholders::_2));
 	runCurrentStep();
 }
 
-std::string Tutorial::selectTutorial() {
-	// change to text and buttons on screen later
-	std::vector<std::string> filenames;
-	logInfo("Select a tutorial");
-	for (const auto& file : std::filesystem::directory_iterator("TutorialLib/")) {
-		filenames.push_back(file.path().filename().string());
-		logInfo("  [" + std::to_string(filenames.size()) + "] " + file.path().filename().string());
-	}
-	const char* in;
-	char* p;
-	long converted;
-	do {
-		logInfo("Enter number 1-" + std::to_string(filenames.size()) + ": ");
-		std::string num;
-		std::cin >> num;
-		in = num.c_str();
-		converted = strtol(in, &p, 10);
-	} while (*p || converted < 1 || converted > filenames.size());
-	return filenames[converted - 1];
-}
-
 void Tutorial::stop() {
 	if (!tutorialRunning) return;
+	Circuit* currentCircuit = circuitView.getBackend().getCircuitManager().getCircuit(circuitId);
 	if (currentCircuit) {
 		currentCircuit->disconnectListener(this);
 	}
@@ -93,6 +74,8 @@ void Tutorial::advanceTutorial() {
 bool Tutorial::isCurrentStepComplete() const {
 	if (tutorialState >= tutorialSteps.size()) return false;
 	const TutorialStep& currentStep = tutorialSteps[tutorialState];
+	Circuit* currentCircuit = circuitView.getBackend().getCircuitManager().getCircuit(circuitId);
+	if (!currentCircuit) return false;
 	const BlockContainer& blockContainer = currentCircuit->getBlockContainer();
 
 	for (const TutorialCondition::BlockRequirement& blockCondition : currentStep.condition.blocks) {
@@ -126,10 +109,12 @@ bool Tutorial::isCurrentStepComplete() const {
 void Tutorial::runCurrentStep() {
 	if (tutorialState >= tutorialSteps.size()) return;
 	const TutorialStep& currentStep = tutorialSteps[tutorialState];
+	Circuit* currentCircuit = circuitView.getBackend().getCircuitManager().getCircuit(circuitId);
+	if (!currentCircuit) return;
 	const BlockContainer& blockContainer = currentCircuit->getBlockContainer();
 	// change this later to real popups or something
-	for (const std::string& message : currentStep.action.messages) {
-		logInfo(message);
+	for (const TutorialAction::Message& message : currentStep.action.messages) {
+		elementCreator.addText(message.message, message.pos, message.scale);
 	}
 	for (const TutorialAction::BlockPreviewInfo& blockPreview : currentStep.action.blockPreviews) {
 		elementCreator.addBlockPreview(
@@ -192,6 +177,8 @@ void Tutorial::forceCompleteStep() {
 	if (tutorialState >= tutorialSteps.size()) return;
 
 	const TutorialStep& currentStep = tutorialSteps[tutorialState];
+	Circuit* currentCircuit = circuitView.getBackend().getCircuitManager().getCircuit(circuitId);
+	if (!currentCircuit) return;
 	const BlockContainer& blockContainer = currentCircuit->getBlockContainer();
 
 	for (const TutorialCondition::BlockRequirement& block : currentStep.condition.blocks) {
