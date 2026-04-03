@@ -8,8 +8,8 @@ $carry (5, 3)
 $b Block:
 Step:
 	Action:
-		Message: "Create a 3 bit adder. Each switches value is 1 bit."
-		Message: "The top bit is the result, the bottom bit is the carry."
+		Message: (0, 0) -2 "Create a 3 bit adder. Each switches value is 1 bit."
+		Message: (0, 1) -2 "The top bit is the result, the bottom bit is the carry."
 		Block Preview: SWITCH ($switch_1)
 		Block Preview: SWITCH ($switch_2)
 		Block Preview: SWITCH ($switch_3)
