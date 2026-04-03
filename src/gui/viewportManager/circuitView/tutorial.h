@@ -23,20 +23,13 @@ struct TutorialCondition {
 		logic_state_t state;
 		int numSteps;
 	};
-	struct TruthTable {
-		std::vector<Position> force;
-		std::vector<Position> expect;
-		std::vector<logic_state_t> states;
-		int numSteps;
-	};
 	std::vector<BlockRequirement> blocks;
 	std::vector<ConnectionRequirement> connections;
 	std::vector<LogicStateRequirement> logicStates;
-	TruthTable truthTable;
 };
 
 struct TutorialAction {
-	struct BlockPreviewInfo {
+	struct BlockInfo {
 		Position pos;
 		BlockType type;
 		Orientation orientation;
@@ -46,12 +39,13 @@ struct TutorialAction {
 		Position pos2;
 	};
     struct Message {
-        std::string message;
         FPosition pos;
         float scale;
+        std::string message;
     };
 	std::vector<Message> messages;
-	std::vector<BlockPreviewInfo> blockPreviews;
+	std::vector<BlockInfo> blockPreviews;
+    std::vector<BlockInfo> blocks;
 	std::vector<ConnectionPreviewInfo> connectionPreviews;
 	std::optional<FPosition> viewCenter;
 };
