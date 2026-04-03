@@ -105,16 +105,6 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 			testGroups.push_back(circuitTestGroup.first);
 		}
     }
-	dataUpdateEventReceiver.linkFunction("blockDataUpdate", [this](const DataUpdateEventManager::EventData* event) {
-		// update circuit list
-		{
-			// std::lock_guard mux(blockTypesMux);
-			// blockTypes.clear();
-			// for (const auto& circuit : getBackend().getCircuitManager().getCircuits()) {
-			// 	if (circuit.second->isEditable()) circuits.emplace(circuit.first, circuit.second->getCircuitName());
-			// }
-		}
-	});
 	dataUpdateEventReceiver.linkFunction("testGroupUpdate", [this](const DataUpdateEventManager::EventData* event) {
 		const DataUpdateEventManager::EventDataWithValue<std::string>* passedName = event->cast<std::string>();
 		assert(passedName);
@@ -126,6 +116,13 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 		}
 		std::lock_guard mux(testGroupCopyMux);
 		testGroupCopy = circuitTestGroup->getMinimalCopy();
+	});
+	dataUpdateEventReceiver.linkFunction("newTestGroup", [this](const DataUpdateEventManager::EventData* event) {
+		std::lock_guard mux(testGroupsMux);
+		testGroups.clear();
+		for (const auto& circuitTestGroup : getBackend().getCircuitTestGroupManager()) {
+			testGroups.push_back(circuitTestGroup.first);
+		}
 	});
     setupGUIValue<double>("SimulatorRealTPS", 0, nullptr);
 	setupGUIValue<double>("SimulatorTargetTPS", 40, [this](const double& tps) {
