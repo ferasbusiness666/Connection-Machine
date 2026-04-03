@@ -1,11 +1,11 @@
-#ifndef circuitTestFileManager_h
-#define circuitTestFileManager_h
+#ifndef circuitTestFileLoader_h
+#define circuitTestFileLoader_h
 
 #include "backend/circuitTests/circuitTestGroup.h"
 
 class Backend;
 
-namespace CircuitTestFileManager {
+namespace CircuitTestFileLoader {
     std::optional<CircuitTestGroup> getCircuitTestGroupFromFilePath(const std::string& path, Backend& backend);
     std::optional<CircuitTestGroup> getCircuitTestGroupFromTruthTableFilePath(const std::string& path, Backend& backend);
 
@@ -13,4 +13,4 @@ namespace CircuitTestFileManager {
     bool saveToFile(const std::string& path, CircuitTestGroup& testGroup);
 }
 
-#endif /* circuitTestFileManager_h */
+#endif /* circuitTestFileLoader_h */

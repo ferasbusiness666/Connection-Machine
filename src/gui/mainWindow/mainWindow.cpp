@@ -3,6 +3,7 @@
 #include <SDL3/SDL_video.h>
 #include "SDL3/SDL_dialog.h"
 
+#include "computerAPI/circuitTestFileLoader.h"
 #include "gui/mainWindow/widgets/circuitTestWidget.h"
 #include "imgui/imgui_internal.h"
 #include "imgui/imgui_notify.h"
@@ -81,8 +82,18 @@ std::chrono::time_point<std::chrono::high_resolution_clock> lastOpenCommand = st
 
 void LoadCallback(void* userData, const char* const* filePaths, int filter) {
 	MainWindow* mainWindow = (MainWindow*)userData;
+	assert(mainWindow);
 	if (filePaths && filePaths[0]) {
 		std::string filePath = filePaths[0];
+		if (filePath.ends_with(".tst")) {
+			std::optional<CircuitTestGroup> testGroup = CircuitTestFileLoader::getCircuitTestGroupFromFilePath(filePath, mainWindow->getEnvironment().getBackend());
+			if (testGroup.has_value()) {
+				mainWindow->getEnvironment().getBackend().getCircuitTestGroupManager().addCircuitTestGroup(std::move(testGroup.value()));
+			} else {
+				logInfo("Failed to load test from '{}'", "MainWindow::LoadCallback", filePath);
+			}
+			return;
+		}
 		std::vector<circuit_id_t> ids = mainWindow->getEnvironment().getCircuitFileManager().loadFromFile(filePath);
 		logInfo("Requested load from '{}' produced {} circuit(s)", "MainWindow::LoadCallback", filePath, ids.size());
 		if (ids.empty()) {
@@ -113,10 +124,11 @@ void MainWindow::loadDialog() {
 		{ "Circuit Files", "cir" },
 		{ "BLIF Files", "blif" },
 		{ "WASM Files", "wasm" },
+		{ "Test Case Files", "tst" },
 	};
 
 	logInfo("Opening load dialog for circuit import", "CircuitViewWidget::load");
-	SDL_ShowOpenFileDialog(LoadCallback, this, nullptr, filters, 3, nullptr, true);
+	SDL_ShowOpenFileDialog(LoadCallback, this, nullptr, filters, 4, nullptr, true);
 	lastOpenCommand = std::chrono::high_resolution_clock::now();
 	focus();
 }

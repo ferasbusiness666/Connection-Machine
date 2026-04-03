@@ -4,7 +4,7 @@
 #include "util/runAtStartup.h"
 #include "../commandManager.h"
 #include "backend/circuitTests/circuitTestGroup.h"
-#include "computerAPI/circuitTestFileManager.h"
+#include "computerAPI/circuitTestFileLoader.h"
 
 runAtStartup(CommandManager::get().registerCommand(std::make_unique<LoadTestCommand>());)
 
@@ -15,7 +15,7 @@ void LoadTestCommand::run(const std::vector<std::string>& args, Environment& env
 	}
 
     CircuitTestGroupManager& testGroupManager = environment.getBackend().getCircuitTestGroupManager();
-    std::optional<CircuitTestGroup> testGroup = CircuitTestFileManager::getCircuitTestGroupFromFilePath(args[1], environment.getBackend());
+    std::optional<CircuitTestGroup> testGroup = CircuitTestFileLoader::getCircuitTestGroupFromFilePath(args[1], environment.getBackend());
     if (testGroup == std::nullopt) {
         logInfo("No tests loaded", "LoadTestCommand");
         return;

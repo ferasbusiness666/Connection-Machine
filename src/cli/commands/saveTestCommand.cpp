@@ -4,7 +4,7 @@
 #include "util/runAtStartup.h"
 #include "../commandManager.h"
 #include "backend/circuitTests/circuitTestGroup.h"
-#include "computerAPI/circuitTestFileManager.h"
+#include "computerAPI/circuitTestFileLoader.h"
 
 runAtStartup(CommandManager::get().registerCommand(std::make_unique<SaveTestCommand>());)
 
@@ -21,7 +21,7 @@ void SaveTestCommand::run(const std::vector<std::string>& args, Environment& env
         return;
     }
 
-    if (!CircuitTestFileManager::saveToFile(args[2], *testGroup)) {
+    if (!CircuitTestFileLoader::saveToFile(args[2], *testGroup)) {
         logInfo("Not saved", "SaveTestCommand");
     } else {
         logInfo("Test Saved", "SaveTestCommand");
