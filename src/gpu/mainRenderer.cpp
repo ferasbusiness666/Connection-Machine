@@ -1,5 +1,5 @@
 #include "mainRenderer.h"
-#include "gpu/renderer/imgui/imGuiRenderer.h
+#include "renderer/imgui/imGuiRenderer.h"
 
 std::optional<MainRenderer> mainRendererSingleton;
 
@@ -47,6 +47,7 @@ void MainRenderer::deregisterWindow(WindowId windowId) {
 		logError("Failed to call deregisterWindow on non existent window {}.", "MainRenderer", windowId);
 		return;
 	}
+	imageManager.clearWindow(iter->first);
 	windowRenderers.erase(iter);
 }
 
@@ -427,4 +428,17 @@ const std::unordered_map<ElementId, TextRenderData>* MainRenderer::getTextOnView
 		return nullptr;
 	}
 	return &iter->second.getTextOnViewport();
+}
+
+VkDescriptorSet MainRenderer::getImage(const std::string& path) {
+	if (currentlyRenderedWindow == 0) {
+		logError("Can't start viewport rendering when no window is rendering.");
+		return VK_NULL_HANDLE;
+	}
+	auto windowsIter = windowRenderers.find(currentlyRenderedWindow);
+	assert(windowsIter != windowRenderers.end());
+	auto [descriptorSet, lifetimeObjects] = imageManager.getImage(path, currentlyRenderedWindow);
+	if (descriptorSet == nullptr) return VK_NULL_HANDLE;
+	windowsIter->second.addLifetimeObjects(lifetimeObjects);
+	return descriptorSet;
 }

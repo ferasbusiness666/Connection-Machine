@@ -22,12 +22,12 @@ struct ViewportViewData {
 };
 
 class ViewportRenderer {
+public:
 	struct Sampler {
 		Sampler(VkSampler sampler);
 		~Sampler();
 		VkSampler sampler;
 	};
-public:
 	ViewportRenderer(VulkanDevice& device, ImGuiRenderer& imGuiRenderer);
 	~ViewportRenderer();
 

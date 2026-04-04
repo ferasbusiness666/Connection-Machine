@@ -1,26 +1,19 @@
 #ifndef imageManager_h
 #define imageManager_h
 
-#include "gpu/abstractions/vulkanImage.h"
+#include "renderer/imgui/imGuiRenderer.h"
+#include "renderer/viewport/viewportRenderer.h"
 #include "stb_image.h"
 
 class ImageManager {
+	typedef std::unordered_map<std::string, std::map<WindowId, std::shared_ptr<ImGuiRenderer::ImGuiDescriptorSet>>> ImagesMap;
 public:
-	ImageManager(VulkanDevice& device) : device(device) {}
-
-	const AllocatedImage* getImage(std::string path) {
-		int width, height, channels;
-		stbi_uc* pixels = stbi_load("my_image.png", &width, &height, &channels, STBI_rgb_alpha);
-		if (!pixels) return nullptr;
-		// VulkanDevice& device, void* data, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped = false, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT
-		auto pair = loadedImages.emplace(path, pixels, device, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-		return pair.first.second;
-	}
-
+	std::pair<VkDescriptorSet, std::vector<std::shared_ptr<void>>> getImage(const std::string& path, WindowId windowId);
+	void clearWindow(WindowId windowId);
 private:
-	VulkanDevice& device;
+	std::shared_ptr<ViewportRenderer::Sampler> sampler;
 	std::mutex loadedImagesMux;
-	std::unordered_map<std::string, AllocatedImage> loadedImages
-}
+	ImagesMap loadedImages;
+};
 
 #endif /* imageManager_h */

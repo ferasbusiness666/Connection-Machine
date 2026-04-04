@@ -1,5 +1,6 @@
 #include "aboutWidget.h"
 
+#include "computerAPI/directoryManager.h"
 #include "imgui/imgui_internal.h"
 #include "util/preprocessors.h"
 #include "../mainWindow.h"
@@ -23,7 +24,12 @@ void AboutWidget::render() {
 			ImGui::Text("Connection Machine");
 			ImGui::SetWindowFontScale(curScale);
 			ImGui::SameLine();
-			// ImGui::Image()
+			VkDescriptorSet descriptorSet = MainRenderer::get().getImage((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
+			if (descriptorSet != VK_NULL_HANDLE) {
+				ImGui::Image(descriptorSet, ImVec2(50, 50));
+			} else {
+				ImGui::Text("RENDERING BROKEN!! :(");
+			}
 			ImGui::Text("%s", PROJECT_VERSION);
 		}
 		ImGui::EndChild();
