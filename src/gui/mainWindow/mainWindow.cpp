@@ -6,6 +6,7 @@
 #include "computerAPI/circuitTestFileLoader.h"
 #include "gui/mainWindow/widgets/aboutWidget.h"
 #include "gui/mainWindow/widgets/circuitTestWidget.h"
+#include "gui/mainWindow/widgets/settingWidget.h"
 #include "gui/viewportManager/circuitView/tutorialDataManager.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
@@ -342,6 +343,10 @@ void MainWindow::render() {
 			if (ImGui::BeginMenu("Connnection Machine")) {
 				if (ImGui::MenuItem("About")) {
 					App::runOnMain([this]() { createWidget<AboutWidget>(); });
+				}
+				ImGui::Separator();
+				if (ImGui::MenuItem("Settings")) {
+					App::runOnMain([this]() { createWidget<SettingWidget>(); });
 				}
 				ImGui::Separator();
 				if (ImGui::MenuItem("Quit Connnection Machine")) {

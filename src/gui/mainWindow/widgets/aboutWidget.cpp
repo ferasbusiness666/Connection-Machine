@@ -1,5 +1,6 @@
 #include "aboutWidget.h"
 
+#include "app.h"
 #include "computerAPI/directoryManager.h"
 #include "gui/mainWindow/guiColors.h"
 #include "imgui/imgui_internal.h"
@@ -13,9 +14,11 @@ void AboutWidget::render() {
 	getMainWindow().pushWindowStyling();
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
-	ImGui::SetNextWindowPos((viewport->Size - ImVec2(400, 350)) / 2);
-	ImGui::SetNextWindowSize(ImVec2(400, 350));
-	ifGui (ImGui::Begin(("About###" + getWidgetIdStr()).c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar),
+	ImGui::SetNextWindowPos((viewport->Size - ImVec2(400, 370)) / 2, ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(400, 370));
+	ifGui (ImGui::Begin(("About###" + getWidgetIdStr()).c_str(), NULL,
+		ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDocking |
+		ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse),
 		getMainWindow().popWindowStyling();
 		ImGui::PopStyleVar();
 	) {
@@ -38,7 +41,7 @@ void AboutWidget::render() {
 		}
 		ImGui::EndChild();
 		ImGui::PushStyleColor(ImGuiCol_ChildBg, GUIColors::WIDGET_BACKGROUND_DARK);
-		if (ImGui::BeginChild("Description", ImVec2(250, 0), ImGuiChildFlags_AlwaysUseWindowPadding)) {
+		if (ImGui::BeginChild("Description", ImVec2(250, -20), ImGuiChildFlags_AlwaysUseWindowPadding)) {
 			float curScale = ImGui::GetCurrentWindow()->FontWindowScale;
 			ImGui::SetWindowFontScale(curScale * 1.2);
 			ImGui::TextWrapped("Connection Machine is an open source project for designing and simulating logic systems.");
@@ -47,7 +50,7 @@ void AboutWidget::render() {
 		ImGui::PopStyleColor();
 		ImGui::EndChild();
 		ImGui::SameLine();
-		if (ImGui::BeginChild("Contributors", ImVec2(0, 0)), ImGuiChildFlags_Borders) {
+		if (ImGui::BeginChild("Contributors", ImVec2(0, -20)), ImGuiChildFlags_Borders) {
 			std::vector<std::string> contributors = {
 				"Ben Herman",
 				"Nikita Lurye",
@@ -70,6 +73,12 @@ void AboutWidget::render() {
 			}
 		}
 		ImGui::EndChild();
+		ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2((400 - 50) / 2, 0));
+		if (ImGui::Button("Close", ImVec2(50, 0))) {
+			App::runOnMain([this]() {
+				getMainWindow().destroyWidget(this->getWidgetId());
+			});
+		}
 		ImGui::End();
 	}
 }
