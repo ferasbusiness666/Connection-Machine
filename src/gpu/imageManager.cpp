@@ -27,7 +27,7 @@ std::pair<VkDescriptorSet, std::vector<std::shared_ptr<void>>> ImageManager::get
 	size.depth = 1;
 
 	std::shared_ptr<AllocatedImage> image = std::make_shared<AllocatedImage>(
-		MainRenderer::get().getVulkanInstance().getDevice(), pixels, size, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_SAMPLED_BIT
+		MainRenderer::get().getVulkanInstance().getDevice(), pixels, size, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT
 	);
 
 	if (sampler == nullptr) {

@@ -1,6 +1,7 @@
 #include "aboutWidget.h"
 
 #include "computerAPI/directoryManager.h"
+#include "gui/mainWindow/guiColors.h"
 #include "imgui/imgui_internal.h"
 #include "util/preprocessors.h"
 #include "../mainWindow.h"
@@ -18,24 +19,32 @@ void AboutWidget::render() {
 		getMainWindow().popWindowStyling();
 		ImGui::PopStyleVar();
 	) {
-		if (ImGui::BeginChild("Title", ImVec2(0, 45))) {
-			float curScale = ImGui::GetCurrentWindow()->FontWindowScale;
-			ImGui::SetWindowFontScale(curScale * 2);
-			ImGui::Text("Connection Machine");
-			ImGui::SetWindowFontScale(curScale);
+		if (ImGui::BeginChild("Title", ImVec2(0, 60))) {
+			if (ImGui::BeginChild("Title", ImVec2(-70, 50))) {
+				float curScale = ImGui::GetCurrentWindow()->FontWindowScale;
+				ImGui::SetWindowFontScale(curScale * 2.2);
+				ImGui::Text("Connection Machine");
+				ImGui::SetWindowFontScale(curScale);
+				ImGui::Text("%s", PROJECT_VERSION);
+			}
+			ImGui::EndChild();
 			ImGui::SameLine();
 			VkDescriptorSet descriptorSet = MainRenderer::get().getImage((DirectoryManager::getResourceDirectory() / "gateIcon.png").string());
 			if (descriptorSet != VK_NULL_HANDLE) {
-				ImGui::Image(descriptorSet, ImVec2(50, 50));
+				ImGui::Image(descriptorSet, ImVec2(60, 60));
 			} else {
 				ImGui::Text("RENDERING BROKEN!! :(");
 			}
-			ImGui::Text("%s", PROJECT_VERSION);
 		}
 		ImGui::EndChild();
-		if (ImGui::BeginChild("Description", ImVec2(250, 0))) {
-			ImGui::TextWrapped("Connection Machine is an open source project aiming to create an application for designing and simulating logic graph systems.");
+		ImGui::PushStyleColor(ImGuiCol_ChildBg, GUIColors::WIDGET_BACKGROUND_DARK);
+		if (ImGui::BeginChild("Description", ImVec2(250, 0), ImGuiChildFlags_AlwaysUseWindowPadding)) {
+			float curScale = ImGui::GetCurrentWindow()->FontWindowScale;
+			ImGui::SetWindowFontScale(curScale * 1.2);
+			ImGui::TextWrapped("Connection Machine is an open source project for designing and simulating logic systems.");
+			ImGui::SetWindowFontScale(curScale);
 		}
+		ImGui::PopStyleColor();
 		ImGui::EndChild();
 		ImGui::SameLine();
 		if (ImGui::BeginChild("Contributors", ImVec2(0, 0)), ImGuiChildFlags_Borders) {
