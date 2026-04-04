@@ -5,8 +5,8 @@
 
 #include <iostream>
 
-AllocatedImage::AllocatedImage(VulkanDevice* device, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped, uint32_t arrayLayers, VkSampleCountFlagBits samples) {
-    this->device = device;
+AllocatedImage::AllocatedImage(VulkanDevice& device, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped, uint32_t arrayLayers, VkSampleCountFlagBits samples)
+	: device(device) {
     this->imageFormat = format;
     this->imageExtent = size;
     this->arrayLayers = arrayLayers;
@@ -38,7 +38,7 @@ AllocatedImage::AllocatedImage(VulkanDevice* device, VkExtent3D size, VkFormat f
     vmaAllocInfo.usage = VMA_MEMORY_USAGE_AUTO;
     vmaAllocInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    VmaAllocator allocator = device->getAllocator();
+    VmaAllocator allocator = device.getAllocator();
     if (allocator == VK_NULL_HANDLE) {
         throwFatalError("VmaAllocator is null in createImage");
     }
@@ -74,7 +74,7 @@ AllocatedImage::AllocatedImage(VulkanDevice* device, VkExtent3D size, VkFormat f
     imageViewInfo.subresourceRange.layerCount = arrayLayers;
     imageViewInfo.subresourceRange.aspectMask = this->aspect;
 
-    result = vkCreateImageView(device->getDevice(), &imageViewInfo, nullptr, &this->imageView);
+    result = vkCreateImageView(device.getDevice(), &imageViewInfo, nullptr, &this->imageView);
     if (result != VK_SUCCESS) {
         std::stringstream ss;
         ss << "vkCreateImageView failed, VkResult = " << result;
@@ -96,23 +96,23 @@ AllocatedImage::AllocatedImage(VulkanDevice* device, VkExtent3D size, VkFormat f
 		imageViewInfo.subresourceRange.layerCount = 1;
 		imageViewInfo.subresourceRange.aspectMask = this->aspect;
 		layerViews.emplace_back();
-		result = vkCreateImageView(device->getDevice(), &imageViewInfo, nullptr, &layerViews.back());
+		result = vkCreateImageView(device.getDevice(), &imageViewInfo, nullptr, &layerViews.back());
 		if (result != VK_SUCCESS) if (result != VK_SUCCESS) {
 			layerViews.pop_back();
 			std::stringstream ss;
 			ss << "vkCreateImageView failed, VkResult = " << result;
 			// cleanup image/allocation before throwing
-			vkDestroyImageView(device->getDevice(), imageView, nullptr);
+			vkDestroyImageView(device.getDevice(), imageView, nullptr);
 			for (VkImageView layerView : layerViews) {
-				vkDestroyImageView(device->getDevice(), layerView, nullptr);
+				vkDestroyImageView(device.getDevice(), layerView, nullptr);
 			}
 			vmaDestroyImage(allocator, this->image, this->allocation);
 			throwFatalError(ss.str());
 		}
 	}
 }
-AllocatedImage::AllocatedImage(VulkanDevice* device, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped, VkSampleCountFlagBits samples) {
-    this->device = device;
+AllocatedImage::AllocatedImage(VulkanDevice& device, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped, VkSampleCountFlagBits samples)
+	: device(device) {
     this->imageFormat = format;
     this->imageExtent = size;
     this->arrayLayers = 1;
@@ -144,7 +144,7 @@ AllocatedImage::AllocatedImage(VulkanDevice* device, VkExtent3D size, VkFormat f
     vmaAllocInfo.usage = VMA_MEMORY_USAGE_AUTO;
     vmaAllocInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    VmaAllocator allocator = device->getAllocator();
+    VmaAllocator allocator = device.getAllocator();
     if (allocator == VK_NULL_HANDLE) {
         throwFatalError("VmaAllocator is null in createImage");
     }
@@ -180,7 +180,7 @@ AllocatedImage::AllocatedImage(VulkanDevice* device, VkExtent3D size, VkFormat f
     imageViewInfo.subresourceRange.layerCount = 1;
     imageViewInfo.subresourceRange.aspectMask = this->aspect;
 
-    VkResult r2 = vkCreateImageView(device->getDevice(), &imageViewInfo, nullptr, &this->imageView);
+    VkResult r2 = vkCreateImageView(device.getDevice(), &imageViewInfo, nullptr, &this->imageView);
     if (r2 != VK_SUCCESS) {
         std::stringstream ss;
         ss << "vkCreateImageView failed, VkResult = " << r2;
@@ -189,18 +189,16 @@ AllocatedImage::AllocatedImage(VulkanDevice* device, VkExtent3D size, VkFormat f
         throwFatalError(ss.str());
     }
 }
-AllocatedImage::AllocatedImage(VulkanDevice* device, void* data, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped, VkSampleCountFlagBits samples) {
+AllocatedImage::AllocatedImage(VulkanDevice& device, void* data, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped, VkSampleCountFlagBits samples):
+	AllocatedImage(device, size, format, usage | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, mipmapped, samples) {
 	// upload data to staging upload buffer
 	size_t dataSize = size.depth * size.height * size.width * 4; // each pixel is 4 bytes (8bit channels RGBA)
 	AllocatedBuffer uploadBuffer = createBuffer(device, dataSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-	vmaCopyMemoryToAllocation(device->getAllocator(), data, uploadBuffer.allocation, 0, dataSize);
-
-	// create image
-	AllocatedImage newImage(device, size, format, usage | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, mipmapped, samples); // not exactly sure why we need transfer src but tutorial says so
+	vmaCopyMemoryToAllocation(device.getAllocator(), data, uploadBuffer.allocation, 0, dataSize);
 
 	// submit copy from staging to real
-	device->immediateSubmit([&](VkCommandBuffer cmd) {
-		transitionImageLayout(cmd, newImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	device.immediateSubmit([&](VkCommandBuffer cmd) {
+		transitionImageLayout(cmd, *this, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
 		VkBufferImageCopy copyRegion = {};
 		copyRegion.bufferOffset = 0;
@@ -214,19 +212,19 @@ AllocatedImage::AllocatedImage(VulkanDevice* device, void* data, VkExtent3D size
 		copyRegion.imageExtent = size;
 
 		// copy the buffer into the image
-		vkCmdCopyBufferToImage(cmd, uploadBuffer.buffer, newImage.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+		vkCmdCopyBufferToImage(cmd, uploadBuffer.buffer, this->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
-		transitionImageLayout(cmd, newImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		transitionImageLayout(cmd, *this, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	});
 
 	destroyBuffer(uploadBuffer);
 }
 AllocatedImage::~AllocatedImage() {
-	vkDestroyImageView(device->getDevice(), imageView, nullptr);
+	vkDestroyImageView(device.getDevice(), imageView, nullptr);
 	for (VkImageView layerView : layerViews) {
-		vkDestroyImageView(device->getDevice(), layerView, nullptr);
+		vkDestroyImageView(device.getDevice(), layerView, nullptr);
 	}
-    vmaDestroyImage(device->getAllocator(), image, allocation);
+    vmaDestroyImage(device.getAllocator(), image, allocation);
 }
 
 bool transitionImageLayout(VkCommandBuffer cmd, AllocatedImage& image, VkImageLayout oldLayout, VkImageLayout newLayout) {

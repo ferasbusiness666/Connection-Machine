@@ -5,8 +5,8 @@ const std::vector<VkDynamicState> dynamicStates = {
 	VK_DYNAMIC_STATE_SCISSOR
 };
 
-void Pipeline::init(VulkanDevice* device, const PipelineInformation& info) {
-	this->device = device;
+void Pipeline::init(VulkanDevice& device, const PipelineInformation& info) {
+	this->device = &device;
 
 	// shader stages
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
@@ -125,7 +125,7 @@ void Pipeline::init(VulkanDevice* device, const PipelineInformation& info) {
 	pipelineLayoutInfo.pPushConstantRanges = pushConstants.data();
 
 	// create pipeline layout
-	if (vkCreatePipelineLayout(device->getDevice(), &pipelineLayoutInfo, nullptr, &layout) != VK_SUCCESS) {
+	if (vkCreatePipelineLayout(this->device->getDevice(), &pipelineLayoutInfo, nullptr, &layout) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create pipeline layout!");
 	}
 
@@ -148,7 +148,7 @@ void Pipeline::init(VulkanDevice* device, const PipelineInformation& info) {
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // unused
 	pipelineInfo.basePipelineIndex = -1; // unused
 
-	if (vkCreateGraphicsPipelines(device->getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &handle) != VK_SUCCESS) {
+	if (vkCreateGraphicsPipelines(this->device->getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &handle) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline!");
 	}
 };

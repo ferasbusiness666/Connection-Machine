@@ -81,8 +81,8 @@ void DescriptorWriter::updateSet(VkDevice device, VkDescriptorSet set) {
 }
 
 // ============================= DESCRIPTOR ALLOCATOR ===============================================
-void DescriptorAllocator::init(VulkanDevice* device, uint32_t maxSets, const std::vector<PoolSizeRatio>& poolRatios) {
-	this->device = device;
+void DescriptorAllocator::init(VulkanDevice& device, uint32_t maxSets, const std::vector<PoolSizeRatio>& poolRatios) {
+	this->device = &device;
 
 	// Get actual pool sizes
 	std::vector<VkDescriptorPoolSize> poolSizes;
@@ -98,7 +98,7 @@ void DescriptorAllocator::init(VulkanDevice* device, uint32_t maxSets, const std
 	poolInfo.poolSizeCount = (uint32_t)poolSizes.size();
 	poolInfo.pPoolSizes = poolSizes.data();
 
-	vkCreateDescriptorPool(device->getDevice(), &poolInfo, nullptr, &pool);
+	vkCreateDescriptorPool(this->device->getDevice(), &poolInfo, nullptr, &pool);
 }
 
 void DescriptorAllocator::cleanup() {
@@ -122,8 +122,8 @@ VkDescriptorSet DescriptorAllocator::allocate(VkDescriptorSetLayout layout) {
 	return set;
 }
 
-void GrowableDescriptorAllocator::init(VulkanDevice* device, uint32_t initialSets, const std::vector<PoolSizeRatio>& poolRatios) {
-	this->device = device;
+void GrowableDescriptorAllocator::init(VulkanDevice& device, uint32_t initialSets, const std::vector<PoolSizeRatio>& poolRatios) {
+	this->device = &device;
 
 	// add ratios
 	ratios.insert(ratios.begin(), poolRatios.begin(), poolRatios.end());
@@ -136,10 +136,10 @@ void GrowableDescriptorAllocator::init(VulkanDevice* device, uint32_t initialSet
 void GrowableDescriptorAllocator::cleanup() {
 	// destroy all pools
 	for (auto pool : readyPools) {
-		vkDestroyDescriptorPool(device->getDevice(), pool, nullptr);
+		vkDestroyDescriptorPool(this->device->getDevice(), pool, nullptr);
 	}
 	for (auto pool : fullPools) {
-		vkDestroyDescriptorPool(device->getDevice(), pool, nullptr);
+		vkDestroyDescriptorPool(this->device->getDevice(), pool, nullptr);
 	}
 }
 

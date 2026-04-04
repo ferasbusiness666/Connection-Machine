@@ -1,5 +1,5 @@
 #include "mainRenderer.h"
-#include "gpu/renderer/imgui/imGuiRenderer.h"
+#include "gpu/renderer/imgui/imGuiRenderer.h
 
 std::optional<MainRenderer> mainRendererSingleton;
 
@@ -67,31 +67,31 @@ void MainRenderer::setBlockSize(BlockRenderDataId blockRenderDataId, Size size) 
 }
 
 BlockTextureId MainRenderer::addBlockTexture(const std::string& path) {
-	return vulkanInstance.getDevice()->getBlockTextureManager().addTexture(path);
+	return vulkanInstance.getDevice().getBlockTextureManager().addTexture(path);
 }
 
 BlockTextureId MainRenderer::addBlockTexture(const std::filesystem::path& path) {
-	return vulkanInstance.getDevice()->getBlockTextureManager().addTexture(path.string());
+	return vulkanInstance.getDevice().getBlockTextureManager().addTexture(path.string());
 }
 
 void MainRenderer::refreshBlockTexture(const std::string& path) {
-	vulkanInstance.getDevice()->getBlockTextureManager().refreshBlockTexture(path);
+	vulkanInstance.getDevice().getBlockTextureManager().refreshBlockTexture(path);
 }
 
 BlockTextureId MainRenderer::addBlockTexture(const unsigned char* pixels, int textureWidth, int textureHeight) {
-	return vulkanInstance.getDevice()->getBlockTextureManager().addTexture(pixels, textureWidth, textureHeight);
+	return vulkanInstance.getDevice().getBlockTextureManager().addTexture(pixels, textureWidth, textureHeight);
 }
 
 void MainRenderer::updateBlockTexture(const unsigned char* pixels, BlockTextureId blockTextureId) {
-	vulkanInstance.getDevice()->getBlockTextureManager().updateBlockTexture(pixels, blockTextureId);
+	vulkanInstance.getDevice().getBlockTextureManager().updateBlockTexture(pixels, blockTextureId);
 }
 
 void MainRenderer::removeBlockTexture(const std::string& path) {
-	vulkanInstance.getDevice()->getBlockTextureManager().removeBlockTexture(path);
+	vulkanInstance.getDevice().getBlockTextureManager().removeBlockTexture(path);
 }
 
 void MainRenderer::removeBlockTexture(BlockTextureId blockTextureId) {
-	vulkanInstance.getDevice()->getBlockTextureManager().removeBlockTexture(blockTextureId);
+	vulkanInstance.getDevice().getBlockTextureManager().removeBlockTexture(blockTextureId);
 }
 
 void MainRenderer::setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId) {

@@ -5,7 +5,7 @@
 
 class Swapchain {
 public:
-	void init(VulkanDevice* device, VkSurfaceKHR surface, std::pair<uint32_t, uint32_t> size);
+	void init(VulkanDevice& device, VkSurfaceKHR surface, std::pair<uint32_t, uint32_t> size);
 	void cleanup();
 
 	void createFramebuffers(VkRenderPass renderPass, const AllocatedImage& colorImage);

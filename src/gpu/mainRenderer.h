@@ -12,7 +12,7 @@
 #include "mainRendererDefs.h"
 #include "blockRenderDataManager.h"
 #include "vulkanInstance.h"
-
+#include "imageManager.h"
 
 class MainRenderer {
 public:
@@ -107,6 +107,7 @@ private:
 	std::map<WindowId, WindowRenderer> windowRenderers;
 	std::map<ViewportId, ViewportRenderer> viewportRenderers;
 	BlockRenderDataManager blockRenderDataManager;
+	ImageManager imageManager;
 };
 
 

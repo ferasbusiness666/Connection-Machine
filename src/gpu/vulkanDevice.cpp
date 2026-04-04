@@ -50,7 +50,7 @@ VulkanDevice::VulkanDevice(VkSurfaceKHR surfaceForPresenting) {
 	initializeImmediateSubmission();
 
 	// Set up texture manager
-	blockTextureManager.init(this);
+	blockTextureManager.init(*this);
 }
 
 VulkanDevice::~VulkanDevice() {

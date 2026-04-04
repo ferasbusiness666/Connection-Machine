@@ -62,7 +62,7 @@ ImGuiRenderer::ImGuiRenderer(SDL_Window& window, VkRenderPass renderPass, uint32
 	poolInfo.poolSizeCount = std::size(poolSizes);
 	poolInfo.pPoolSizes = poolSizes;
 
-	if (vkCreateDescriptorPool(MainRenderer::get().getVulkanInstance().getDevice()->getDevice().device, &poolInfo, nullptr, &imguiDescriptorPool) != VK_SUCCESS) {
+	if (vkCreateDescriptorPool(MainRenderer::get().getVulkanInstance().getDevice().getDevice().device, &poolInfo, nullptr, &imguiDescriptorPool) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create ImGui descriptor pool");
 	}
 
@@ -94,17 +94,17 @@ ImGuiRenderer::ImGuiRenderer(SDL_Window& window, VkRenderPass renderPass, uint32
 	}
 
 	// initInfo.Instance = MainRenderer::get().getVulkanInstance().getVkbInstance().instance;
-	// initInfo.PhysicalDevice = MainRenderer::get().getVulkanInstance().getDevice()->getDevice().physical_device;
-	// initInfo.Device = MainRenderer::get().getVulkanInstance().getDevice()->getDevice().device;
-	// initInfo.QueueFamily = MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueIndex();
-	// initInfo.Queue = MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueue().queue;
+	// initInfo.PhysicalDevice = MainRenderer::get().getVulkanInstance().getDevice().getDevice().physical_device;
+	// initInfo.Device = MainRenderer::get().getVulkanInstance().getDevice().getDevice().device;
+	// initInfo.QueueFamily = MainRenderer::get().getVulkanInstance().getDevice().getGraphicsQueueIndex();
+	// initInfo.Queue = MainRenderer::get().getVulkanInstance().getDevice().getGraphicsQueue().queue;
 	// initInfo.DescriptorPool = ;
 	// initInfo.MinImageCount = ;
 	// initInfo.ImageCount = ;
 
 	// initInfo.PipelineInfoMain.RenderPass = m_renderPass;
 	// initInfo.PipelineInfoMain.Subpass = 0;
-	// initInfo.PipelineInfoMain.MSAASamples = MainRenderer::get().getVulkanInstance().getDevice()->getMaxUsableSampleCount();
+	// initInfo.PipelineInfoMain.MSAASamples = MainRenderer::get().getVulkanInstance().getDevice().getMaxUsableSampleCount();
 
 	// For platform windows (viewports), we need to specify UseDynamicRendering or provide a compatible render pass
 	// ImGui will create surfaces and swapchains for secondary viewports automatically
@@ -114,7 +114,7 @@ ImGuiRenderer::ImGuiRenderer(SDL_Window& window, VkRenderPass renderPass, uint32
 	// Set up info for platform windows (secondary viewports) - no MSAA
 	// initInfo.PipelineInfoForViewports.RenderPass = VK_NULL_HANDLE; // Will be created by ImGui
 	// initInfo.PipelineInfoForViewports.Subpass = 0;
-	// initInfo.PipelineInfoForViewports.MSAASamples = MainRenderer::get().getVulkanInstance().getDevice()->getMaxUsableSampleCount(); // Platform windows don't use MSAA
+	// initInfo.PipelineInfoForViewports.MSAASamples = MainRenderer::get().getVulkanInstance().getDevice().getMaxUsableSampleCount(); // Platform windows don't use MSAA
 
 	static bool vulkanFunctionsLoaded = false;
 	if (!vulkanFunctionsLoaded) {
@@ -126,16 +126,16 @@ ImGuiRenderer::ImGuiRenderer(SDL_Window& window, VkRenderPass renderPass, uint32
 
 	ImGui_ImplVulkan_InitInfo init_info = {};
 	init_info.Instance = MainRenderer::get().getVulkanInstance().getVkbInstance();
-    init_info.PhysicalDevice = MainRenderer::get().getVulkanInstance().getDevice()->getDevice().physical_device;
-    init_info.Device = MainRenderer::get().getVulkanInstance().getDevice()->getDevice().device;
-    init_info.QueueFamily = MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueIndex();
-    init_info.Queue = MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueue().queue;
+    init_info.PhysicalDevice = MainRenderer::get().getVulkanInstance().getDevice().getDevice().physical_device;
+    init_info.Device = MainRenderer::get().getVulkanInstance().getDevice().getDevice().device;
+    init_info.QueueFamily = MainRenderer::get().getVulkanInstance().getDevice().getGraphicsQueueIndex();
+    init_info.Queue = MainRenderer::get().getVulkanInstance().getDevice().getGraphicsQueue().queue;
     init_info.DescriptorPool = imguiDescriptorPool;
     init_info.MinImageCount = framesInFlight;
     init_info.ImageCount = framesInFlight;
     init_info.PipelineInfoMain.RenderPass = renderPass;
     init_info.PipelineInfoMain.Subpass = 0;
-    init_info.PipelineInfoMain.MSAASamples = MainRenderer::get().getVulkanInstance().getDevice()->getMaxUsableSampleCount();
+    init_info.PipelineInfoMain.MSAASamples = MainRenderer::get().getVulkanInstance().getDevice().getMaxUsableSampleCount();
 
 	// init_info.UseDynamicRendering = true;
 	// init_info.PipelineInfoForViewports.PipelineRenderingCreateInfo = {.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO};
@@ -183,7 +183,7 @@ ImGuiRenderer::~ImGuiRenderer() {
 
 	// Clean up Vulkan resources
 	if (imguiDescriptorPool != VK_NULL_HANDLE) {
-		vkDestroyDescriptorPool(MainRenderer::get().getVulkanInstance().getDevice()->getDevice().device, imguiDescriptorPool, nullptr);
+		vkDestroyDescriptorPool(MainRenderer::get().getVulkanInstance().getDevice().getDevice().device, imguiDescriptorPool, nullptr);
 		imguiDescriptorPool = VK_NULL_HANDLE;
 	}
 }
@@ -212,7 +212,7 @@ void ImGuiRenderer::endFrame(VkCommandBuffer cmd) {
 
 	// Render main window
 	{
-		std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
+		std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice().getGraphicsQueueLock());
 		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
 	}
 

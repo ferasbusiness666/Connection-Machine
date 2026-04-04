@@ -28,7 +28,7 @@ class ViewportRenderer {
 		VkSampler sampler;
 	};
 public:
-	ViewportRenderer(VulkanDevice* device, ImGuiRenderer& imGuiRenderer);
+	ViewportRenderer(VulkanDevice& device, ImGuiRenderer& imGuiRenderer);
 	~ViewportRenderer();
 
 	ViewportViewData getViewData();
@@ -95,7 +95,7 @@ private:
 
 	// Vulkan
 	VulkanChunker chunker;
-	VulkanDevice* device;
+	VulkanDevice& device;
 	ImGuiRenderer& imGuiRenderer;
 
 	// Elements

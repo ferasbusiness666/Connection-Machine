@@ -13,9 +13,9 @@
 #endif
 
 ViewportRenderer::Sampler::Sampler(VkSampler sampler) : sampler(sampler) { }
-ViewportRenderer::Sampler::~Sampler() { vkDestroySampler(MainRenderer::get().getVulkanInstance().getDevice()->getDevice(), sampler, nullptr); }
+ViewportRenderer::Sampler::~Sampler() { vkDestroySampler(MainRenderer::get().getVulkanInstance().getDevice().getDevice(), sampler, nullptr); }
 
-ViewportRenderer::ViewportRenderer(VulkanDevice* device, ImGuiRenderer& imGuiRenderer) : imGuiRenderer(imGuiRenderer), chunker(device), device(device) {
+ViewportRenderer::ViewportRenderer(VulkanDevice& device, ImGuiRenderer& imGuiRenderer) : imGuiRenderer(imGuiRenderer), chunker(device), device(device) {
 	createRenderPass();
 	gridRenderer.init(device, renderPass);
 	chunkRenderer.init(device, renderPass);
@@ -41,7 +41,7 @@ ViewportRenderer::ViewportRenderer(VulkanDevice* device, ImGuiRenderer& imGuiRen
 	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
 	samplerInfo.unnormalizedCoordinates = VK_FALSE;
 	VkSampler vkSampler;
-	vkCreateSampler(device->getDevice(), &samplerInfo, nullptr, &vkSampler);
+	vkCreateSampler(device.getDevice(), &samplerInfo, nullptr, &vkSampler);
 	sampler = std::make_shared<Sampler>(vkSampler);
 
 	frames.init(device);
@@ -52,13 +52,13 @@ ViewportRenderer::ViewportRenderer(VulkanDevice* device, ImGuiRenderer& imGuiRen
 
 ViewportRenderer::~ViewportRenderer() {
 	{
-		std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
+		std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice().getGraphicsQueueLock());
 		destroyImages();
 	}
 
 	imageSwapchain.cleanup();
 
-	vkDestroyRenderPass(device->getDevice(), renderPass, nullptr);
+	vkDestroyRenderPass(device.getDevice(), renderPass, nullptr);
 
 	elementRenderer.cleanup();
 	chunkRenderer.cleanup();
@@ -389,7 +389,7 @@ void ViewportRenderer::render(Frame& frame) {
 }
 
 void ViewportRenderer::createRenderPass() {
-	VkSampleCountFlagBits msaaSamples = device->getMaxUsableSampleCount();
+	VkSampleCountFlagBits msaaSamples = device.getMaxUsableSampleCount();
 
 	// MSAA color attachment (we render to this)
 	VkAttachmentDescription colorAttachment{};
@@ -457,7 +457,7 @@ void ViewportRenderer::createRenderPass() {
 	renderPassInfo.dependencyCount = dependencies.size();
 	renderPassInfo.pDependencies = dependencies.data();
 
-	if (vkCreateRenderPass(device->getDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+	if (vkCreateRenderPass(device.getDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create MSAA render pass!");
 	}
 }
@@ -509,7 +509,7 @@ std::tuple<VkDescriptorSet, VkSemaphore, std::vector<std::shared_ptr<void>>> Vie
 		}
 		if (recreateImages) {
 			imagesReady.store(0);
-			std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
+			std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice().getGraphicsQueueLock());
 			destroyImages();
 			createImages();
 		}
@@ -547,7 +547,7 @@ std::tuple<VkDescriptorSet, VkSemaphore, std::vector<std::shared_ptr<void>>> Vie
 
 	// Record command buffer
 	{
-		std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
+		std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice().getGraphicsQueueLock());
 		vkResetCommandBuffer(frame->mainCommandBuffer, 0);
 	}
 	renderToCommandBuffer(*frame, currentFrameIndex);
@@ -562,7 +562,7 @@ std::tuple<VkDescriptorSet, VkSemaphore, std::vector<std::shared_ptr<void>>> Vie
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &frame->mainCommandBuffer;
 
-	if (device->submitGraphicsQueue(&submitInfo, frame->renderFence) != VK_SUCCESS) {
+	if (device.submitGraphicsQueue(&submitInfo, frame->renderFence) != VK_SUCCESS) {
 		// Handle error - submission failed
 		return { VK_NULL_HANDLE, VK_NULL_HANDLE, {} };
 	}
@@ -577,7 +577,7 @@ std::tuple<VkDescriptorSet, VkSemaphore, std::vector<std::shared_ptr<void>>> Vie
 		imagesReady.fetch_add(1);
 	}
 	// }
-	// device->waitIdle();
+	// device.waitIdle();
 	return { imguiTextures[currentFrameIndex]->descriptorSet, semaphore->semaphore, { frame, imguiTextures[currentFrameIndex], semaphore } };
 }
 
@@ -639,7 +639,7 @@ void ViewportRenderer::renderToCommandBuffer(Frame& frame, uint32_t imageIndex) 
 
 void ViewportRenderer::destroyImages() {
 	if (imageReady.load()) {
-		device->waitIdleNoMux();
+		device.waitIdleNoMux();
 		imageReady.store(false);
 		imguiTextures.clear(); // will clear when done
 		msaaImage.reset();
@@ -648,7 +648,7 @@ void ViewportRenderer::destroyImages() {
 
 void ViewportRenderer::createImages() {
 	VkExtent3D imageSize = { viewData.viewportSize.width, viewData.viewportSize.height, 1 };
-	VkSampleCountFlagBits msaaSamples = device->getMaxUsableSampleCount();
+	VkSampleCountFlagBits msaaSamples = device.getMaxUsableSampleCount();
 
 	// Create MSAA image (transient - doesn't need to be stored)
 	msaaImage.emplace(device, imageSize, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, false, msaaSamples);

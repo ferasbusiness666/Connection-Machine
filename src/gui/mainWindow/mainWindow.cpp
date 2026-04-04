@@ -4,6 +4,7 @@
 #include "SDL3/SDL_dialog.h"
 
 #include "computerAPI/circuitTestFileLoader.h"
+#include "gui/mainWindow/widgets/aboutWidget.h"
 #include "gui/mainWindow/widgets/circuitTestWidget.h"
 #include "gui/viewportManager/circuitView/tutorialDataManager.h"
 #include "imgui/imgui.h"
@@ -339,7 +340,7 @@ void MainWindow::render() {
 		if (ImGui::BeginMainMenuBar()) {
 			if (ImGui::BeginMenu("Connnection Machine")) {
 				if (ImGui::MenuItem("About")) {
-					logInfo("ImGui branch!");
+					App::runOnMain([this]() { createWidget<AboutWidget>(); });
 				}
 				ImGui::Separator();
 				if (ImGui::MenuItem("Quit Connnection Machine")) {

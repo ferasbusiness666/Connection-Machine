@@ -13,15 +13,15 @@ WindowRenderer::WindowRenderer(WindowId windowId, SdlWindow* sdlWindow) : window
 
 	// create surface and use it to make sure a vulkan device has been created
 	surface = sdlWindow->createVkSurface(MainRenderer::get().getVulkanInstance().getVkbInstance());
-	device = MainRenderer::get().getVulkanInstance().createOrGetDevice(surface);
+	device = &MainRenderer::get().getVulkanInstance().createOrGetDevice(surface);
 
 	 // initialize frames
-	frames.init(device);
+	frames.init(*device);
 
 	// set up swapchain and subrenderer
 	std::pair<uint32_t, uint32_t> sdlWindowSize = sdlWindow->getSize();
 	windowSize ={max(sdlWindowSize.first, 1), max(sdlWindowSize.second, 1)}; // should stop vulkan validation error
-	swapchain.init(device, surface, windowSize);
+	swapchain.init(*device, surface, windowSize);
 	createRenderPass();
 	createColorResources();
 	swapchain.createFramebuffers(renderPass, *colorImage);
@@ -91,7 +91,7 @@ void WindowRenderer::renderLoop() {
 
 		// record command buffer
 		{
-			std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
+			std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice().getGraphicsQueueLock());
 			vkResetCommandBuffer(frame->mainCommandBuffer, 0);
 		}
 
@@ -270,7 +270,7 @@ void WindowRenderer::createColorResources() {
     VkSampleCountFlagBits msaaSamples = device->getMaxUsableSampleCount();
 
     colorImage.emplace(
-        device,
+        *device,
         size,
         colorFormat,
         VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -281,7 +281,7 @@ void WindowRenderer::createColorResources() {
 
 void WindowRenderer::recreateSwapchain() {
 
-	std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice()->getGraphicsQueueLock());
+	std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice().getGraphicsQueueLock());
 	device->waitIdleNoMux();
 
 	std::lock_guard<std::mutex> lock(windowSizeMux);
@@ -303,9 +303,9 @@ void WindowRenderer::updateImGuiBlockTextureArrayLayers() {
 	std::lock_guard lock(imGuiBlockTextureArrayLayersMux);
 	if (blockTextureArrayImage == nullptr) {
 		assert(imGuiBlockTextureArrayLayers.empty());
-		blockTextureArrayImage = MainRenderer::get().getVulkanInstance().getDevice()->getBlockTextureManager().getTextureArray();
+		blockTextureArrayImage = MainRenderer::get().getVulkanInstance().getDevice().getBlockTextureManager().getTextureArray();
 	} else {
-		std::shared_ptr<BlockTextureArray> image = MainRenderer::get().getVulkanInstance().getDevice()->getBlockTextureManager().getTextureArray();
+		std::shared_ptr<BlockTextureArray> image = MainRenderer::get().getVulkanInstance().getDevice().getBlockTextureManager().getTextureArray();
 		if (blockTextureArrayImage == image) return; // image has not changed
 		imGuiBlockTextureArrayLayers.clear();
 		blockTextureArrayImage = image;

@@ -35,7 +35,7 @@ struct PoolSizeRatio {
 
 class DescriptorAllocator {
 public:
-	void init(VulkanDevice* device, uint32_t maxSets, const std::vector<PoolSizeRatio>& poolRatios);
+	void init(VulkanDevice& device, uint32_t maxSets, const std::vector<PoolSizeRatio>& poolRatios);
 	void cleanup();
 
 	void clearDescriptors();
@@ -48,7 +48,7 @@ private:
 
 class GrowableDescriptorAllocator {
 public:
-	void init(VulkanDevice* device, uint32_t initialSets, const std::vector<PoolSizeRatio>& poolRatios);
+	void init(VulkanDevice& device, uint32_t initialSets, const std::vector<PoolSizeRatio>& poolRatios);
 	void cleanup();
 
 	VkDescriptorSet allocate(VkDescriptorSetLayout layout);

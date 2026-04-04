@@ -5,10 +5,10 @@
 #include "gpu/abstractions/vulkanShader.h"
 #include "backend/evaluator/simulator/evalLogicSimulator.h"
 
-void GridRenderer::init(VulkanDevice* device, VkRenderPass& renderPass) {
+void GridRenderer::init(VulkanDevice& device, VkRenderPass& renderPass) {
 	// create shaders
-	VkShaderModule gridVertShader = createShaderModule(device->getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/grid.vert.spv"));
-	VkShaderModule gridFragShader = createShaderModule(device->getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/grid.frag.spv"));
+	VkShaderModule gridVertShader = createShaderModule(device.getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/grid.vert.spv"));
+	VkShaderModule gridFragShader = createShaderModule(device.getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/grid.frag.spv"));
 
 	// create pipeline
 	PipelineInformation gridPipelineInfo{};
@@ -18,11 +18,11 @@ void GridRenderer::init(VulkanDevice* device, VkRenderPass& renderPass) {
 	gridPipelineInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
 	gridPipelineInfo.pushConstants.push_back({VK_SHADER_STAGE_VERTEX_BIT, fragmentPushOffset});
 	gridPipelineInfo.pushConstants.push_back({VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(GridPushConstants) - fragmentPushOffset});
-	gridPipelineInfo.sampleCount = device->getMaxUsableSampleCount();
+	gridPipelineInfo.sampleCount = device.getMaxUsableSampleCount();
 	pipeline.init(device, gridPipelineInfo);
 
-	destroyShaderModule(device->getDevice(), gridVertShader);
-	destroyShaderModule(device->getDevice(), gridFragShader);
+	destroyShaderModule(device.getDevice(), gridVertShader);
+	destroyShaderModule(device.getDevice(), gridFragShader);
 }
 
 void GridRenderer::cleanup() {

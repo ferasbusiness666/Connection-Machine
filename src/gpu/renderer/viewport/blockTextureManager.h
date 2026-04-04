@@ -13,7 +13,7 @@ class VulkanDevice;
 
 struct BlockTextureArray {
 	DescriptorAllocator descriptorAllocator;
-	VulkanDevice* device;
+	VulkanDevice* device = nullptr;
 	std::optional<AllocatedImage> image;
 	VkSampler sampler;
 	VkDescriptorSet descriptor;
@@ -21,7 +21,7 @@ struct BlockTextureArray {
 
 	uint32_t layerCount;
 
-	BlockTextureArray() : device(nullptr), sampler(VK_NULL_HANDLE), descriptor(VK_NULL_HANDLE), layerCount(0) { }
+	BlockTextureArray() : sampler(VK_NULL_HANDLE), descriptor(VK_NULL_HANDLE), layerCount(0) { }
 	~BlockTextureArray();
 };
 
@@ -53,7 +53,7 @@ public:
 
 class BlockTextureManager {
 public:
-	void init(VulkanDevice* device);
+	void init(VulkanDevice& device);
 	BlockTextureId addTexture(const std::string& path);
 	void refreshBlockTexture(const std::string& path);
 	BlockTextureId addTexture(const unsigned char* pixels, int textureWidth, int textureHeight);

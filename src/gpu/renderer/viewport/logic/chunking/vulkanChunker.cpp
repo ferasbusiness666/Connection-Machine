@@ -49,7 +49,7 @@ glm::vec2 computeBusOffset(const glm::vec2& pointA, const glm::vec2& pointB, uin
 // =========================================================================================================
 
 VulkanLogicAllocation::VulkanLogicAllocation(
-	VulkanDevice* device,
+	VulkanDevice& device,
 	const RenderedBlocks& blocks,
 	const RenderedWires& wires,
 	const EvalLogicSimulator* simulator,
@@ -115,7 +115,7 @@ VulkanLogicAllocation::VulkanLogicAllocation(
 		numBlockInstances = blockInstances.size();
 		size_t blockBufferSize = sizeof(BlockInstance) * numBlockInstances;
 		blockBuffer = createBuffer(device, blockBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-		vmaCopyMemoryToAllocation(device->getAllocator(), blockInstances.data(), blockBuffer->allocation, 0, blockBufferSize);
+		vmaCopyMemoryToAllocation(device.getAllocator(), blockInstances.data(), blockBuffer->allocation, 0, blockBufferSize);
 
 		indices.clear();
 	}
@@ -233,7 +233,7 @@ VulkanLogicAllocation::VulkanLogicAllocation(
 		numWireInstances = wireInstances.size();
 		size_t wireBufferSize = sizeof(WireInstance) * numWireInstances;
 		wireBuffer = createBuffer(device, wireBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-		vmaCopyMemoryToAllocation(device->getAllocator(), wireInstances.data(), wireBuffer->allocation, 0, wireBufferSize);
+		vmaCopyMemoryToAllocation(device.getAllocator(), wireInstances.data(), wireBuffer->allocation, 0, wireBufferSize);
 	}
 
 	if (!simulatorIds.empty()) {
@@ -254,7 +254,7 @@ VulkanLogicAllocation::~VulkanLogicAllocation() {
 // LogicGroup
 // =========================================================================================================
 
-void LogicGroup::rebuildAllocation(VulkanDevice* device, const EvalLogicSimulator* simulator, const Address& address) {
+void LogicGroup::rebuildAllocation(VulkanDevice& device, const EvalLogicSimulator* simulator, const Address& address) {
 	if (!blocks.empty() || !wires.empty()) { // if we have data to upload
 		// allocate new date
 		std::shared_ptr<VulkanLogicAllocation> newAllocation = std::make_unique<VulkanLogicAllocation>(device, blocks, wires, simulator, address);
@@ -302,7 +302,7 @@ void LogicGroup::annihilateOrphanGBs() {
 // VulkanChunker
 // =========================================================================================================
 
-VulkanChunker::VulkanChunker(VulkanDevice* device) : device(device) { }
+VulkanChunker::VulkanChunker(VulkanDevice& device) : device(device) { }
 
 VulkanChunker::~VulkanChunker() { std::lock_guard<std::mutex> lock(mux); }
 
