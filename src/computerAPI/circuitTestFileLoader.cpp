@@ -4,13 +4,8 @@
 #include "logging/logging.h"
 #include "computerAPI/circuits/textParser.h"
 
-std::optional<CircuitTestGroup> CircuitTestFileLoader::getCircuitTestGroupFromTruthTableFilePath(const std::string &path, Backend& backend) {
-    logInfo("Parsing truth table (.tt)");
-	std::ifstream inputFile(path, std::ios::in | std::ios::binary);
-	if (!inputFile.is_open()) {
-		logError("Couldn't open file at path: " + path, "CircuitTestFileLoader");
-		return std::nullopt;
-	}
+std::optional<CircuitTestGroup> CircuitTestFileLoader::getCircuitTestGroupFromTruthTableFilePath(std::ifstream &inputFile, Backend& backend) {
+    logInfo("Parsing truth table file (.tst)", "CircuitTestFileLoader");
 
     std::string token;
     inputFile >> token;
@@ -90,6 +85,7 @@ std::optional<CircuitTestGroup> CircuitTestFileLoader::getCircuitTestGroupFromTr
 
     while (!inputFile.eof()) {
         std::getline(inputFile, line);
+        if (line[0] != '|') break;
         std::stringstream lineStream;
         lineStream << line;
         std::string nameStr = "";
@@ -139,15 +135,11 @@ std::optional<CircuitTestGroup> CircuitTestFileLoader::getCircuitTestGroupFromTr
 }
 
 std::optional<CircuitTestGroup> CircuitTestFileLoader::getCircuitTestGroupFromFilePath(const std::string &path, Backend& backend) {
-    if (path.substr(path.size()-3) == ".tt"){
-        return getCircuitTestGroupFromTruthTableFilePath(path, backend);
-    }
-    else if (path.substr(path.size()-4) != ".tst") {
-        logError("Unrecognized file extension, valid options are '.tst' for full test or '.tt' for a truth table");
+    if (path.substr(path.size()-4) != ".tst") {
+        logError("Unrecognized file extension, expected .tst", "CircuitTestFileLoader");
         return std::nullopt;
     }
 
-    logInfo("Parsing test file (.tst)", "CircuitTestFileLoader");
 	std::ifstream inputFile(path, std::ios::in | std::ios::binary);
 	if (!inputFile.is_open()) {
 		logError("Couldn't open file at path: " + path, "CircuitTestFileLoader");
@@ -155,6 +147,18 @@ std::optional<CircuitTestGroup> CircuitTestFileLoader::getCircuitTestGroupFromFi
 	}
 
     std::string token;
+    inputFile >> token;
+    if (token == "tt") {
+        inputFile >> std::ws;
+        return getCircuitTestGroupFromTruthTableFilePath(inputFile, backend);
+    }
+    else if (token != "tst") {
+        logError("Invalid file format, expected 'tt' or 'tst' on line 1", "CircuitTestFileLoader");
+        return std::nullopt;
+    }
+    logInfo("Parsing test file (.tst)", "CircuitTestFileLoader");
+    inputFile >> std::ws;
+
     inputFile >> token;
     unsigned int version;
     const unsigned int latestVersion = 0;
@@ -170,7 +174,7 @@ std::optional<CircuitTestGroup> CircuitTestFileLoader::getCircuitTestGroupFromFi
     if (token == "Test:") {
         inputFile >> std::quoted(testName);
     } else {
-        logError("Invalid file format, expected 'Test:' on line 2", "CircuitTestFileLoader");
+        logError("Invalid file format, expected 'Test:' on line 3", "CircuitTestFileLoader");
         return std::nullopt;
     }
 
@@ -189,7 +193,7 @@ std::optional<CircuitTestGroup> CircuitTestFileLoader::getCircuitTestGroupFromFi
             inputFile >> std::ws;
         }
     } else {
-        logError("Invalid file format, expected 'Inputs:' on line 3", "CircuitTestFileLoader");
+        logError("Invalid file format, expected 'Inputs:' on line 4", "CircuitTestFileLoader");
         return std::nullopt;
     }
 
@@ -206,7 +210,7 @@ std::optional<CircuitTestGroup> CircuitTestFileLoader::getCircuitTestGroupFromFi
             inputFile >> std::ws;
         }
     } else {
-        logError("Invalid file format, expected 'Outputs:' on line 4", "CircuitTestFileLoader");
+        logError("Invalid file format, expected 'Outputs:' on line 5", "CircuitTestFileLoader");
         return std::nullopt;
     }
 
@@ -214,7 +218,7 @@ std::optional<CircuitTestGroup> CircuitTestFileLoader::getCircuitTestGroupFromFi
     if (token == "Cases:") {
         inputFile >> std::ws;
     } else {
-        logError("Invalid file format, expected 'Cases:' on line 5", "CircuitTestFileLoader");
+        logError("Invalid file format, expected 'Cases:' on line 6", "CircuitTestFileLoader");
         return std::nullopt;
     }
 
@@ -295,12 +299,17 @@ bool CircuitTestFileLoader::saveToTruthTableFile(const std::string& path, Circui
         logError("Can't save non-truth table test as a truth table", "CircuitTestFileLoader");
         return false;
     }
+    if (path.substr(path.size()-4) != ".tst") {
+        logError("Unrecognized file extension, expected .tst", "CircuitTestFileLoader");
+        return false;
+    }
 	std::ofstream outputFile(path);
 	if (!outputFile.is_open()) {
 		logError("Couldn't open file at path: {}", "CircuitTestFileLoader", path);
 		return false;
 	}
 
+    outputFile << "tt\n";
     outputFile << "version_0\n";
     outputFile << "Test: \"" << testGroup.getName() << "\"\n";
     if (testGroup.getTruthTableTicks() > -1) {
@@ -364,11 +373,8 @@ bool CircuitTestFileLoader::saveToTruthTableFile(const std::string& path, Circui
 }
 
 bool CircuitTestFileLoader::saveToFile(const std::string& path, CircuitTestGroup& testGroup){
-    if (path.substr(path.size()-3) == ".tt"){
-        return saveToTruthTableFile(path, testGroup);
-    }
-    else if (path.substr(path.size()-4) != ".tst") {
-        logError("Unrecognized file extension, valid options are '.tst' for full test or '.tt' for a truth table");
+    if (path.substr(path.size()-4) != ".tst") {
+        logError("Unrecognized file extension, expected .tst", "CircuitTestFileLoader");
         return false;
     }
 
@@ -378,6 +384,7 @@ bool CircuitTestFileLoader::saveToFile(const std::string& path, CircuitTestGroup
 		return false;
 	}
 
+    outputFile << "tst\n";
     outputFile << "version_0\n";
     outputFile << "Test: \"" << testGroup.getName() << "\"\n";
 

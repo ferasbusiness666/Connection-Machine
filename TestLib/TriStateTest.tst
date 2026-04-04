@@ -1,6 +1,7 @@
+tst
 version_0
 Test: "Tri State Buffer Test"
-Inputs: "Enable" "Input"
+Inputs: "Enable" "Input" 
 Outputs: "Output"
 Cases:
 "0 0 Z" {

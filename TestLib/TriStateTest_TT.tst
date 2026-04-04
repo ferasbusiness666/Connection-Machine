@@ -1,3 +1,4 @@
+tt
 version_0
 Test: "Tri State Buffer Test TT"
 Ticks: 10

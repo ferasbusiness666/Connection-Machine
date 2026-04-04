@@ -21,6 +21,15 @@ void SaveTestCommand::run(const std::vector<std::string>& args, Environment& env
         return;
     }
 
+    if (testGroup->truthTable()) {
+        if (!CircuitTestFileLoader::saveToTruthTableFile(args[2], *testGroup)) {
+            logInfo("Not saved", "SaveTestCommand");
+        } else {
+            logInfo("Test Saved", "SaveTestCommand");
+        }
+        return;
+    }
+
     if (!CircuitTestFileLoader::saveToFile(args[2], *testGroup)) {
         logInfo("Not saved", "SaveTestCommand");
     } else {

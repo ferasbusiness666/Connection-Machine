@@ -91,7 +91,8 @@ void LoadCallback(void* userData, const char* const* filePaths, int filter) {
 			if (testGroup.has_value()) {
 				mainWindow->getEnvironment().getBackend().getCircuitTestGroupManager().addCircuitTestGroup(std::move(testGroup.value()));
 			} else {
-				logInfo("Failed to load test from '{}'", "MainWindow::LoadCallback", filePath);
+				logError("Failed to load test from '{}'", "MainWindow::LoadCallback", filePath);
+				mainWindow->logError("Failed to load test from '{}'", filePath);
 			}
 			return;
 		}
