@@ -2,28 +2,53 @@
 #include "computerAPI/circuits/textParser.h"
 #include "logging/logging.h"
 
+constexpr std::string STEP_TOKEN = "Step:";
+
+constexpr std::string ACTION_TOKEN = "Action:";
+constexpr std::string MESSAGE_TOKEN = "Message:";
+constexpr std::string BLOCK_PREVIEW_TOKEN = "Block";
+constexpr std::string CONNECTION_PREVIEW_TOKEN = "Connection";
+constexpr std::string VIEW_CENTER_TOKEN = "View";
+constexpr std::string PLACE_BLOCK_TOKEN = "Block:";
+constexpr std::string PLACE_CONNECTION_TOKEN = "Connection:";
+constexpr std::string ACTIONS[] = {
+	MESSAGE_TOKEN, BLOCK_PREVIEW_TOKEN, CONNECTION_PREVIEW_TOKEN, VIEW_CENTER_TOKEN, PLACE_BLOCK_TOKEN, PLACE_CONNECTION_TOKEN,
+};
+
+constexpr std::string CONDITION_TOKEN = "Condition:";
+constexpr std::string BLOCK_CONDITION_TOKEN = "Block:";
+constexpr std::string CONNECTION_CONDITION_TOKEN = "Connection:";
+constexpr std::string LOGIC_STATE_CONDITION_TOKEN = "State:";
+constexpr std::string TRUTH_TABLE_TOKEN = "Truth";
+constexpr std::string CONDITIONS[] = {
+	BLOCK_CONDITION_TOKEN,
+	CONNECTION_CONDITION_TOKEN,
+	LOGIC_STATE_CONDITION_TOKEN,
+	TRUTH_TABLE_TOKEN,
+};
+
 bool parsePosition(std::stringstream& ss, int line, Position& out) {
 	char ch;
 	int x;
 	int y;
 	if (!(ss >> ch) || ch != '(') {
-		logError("Invalid position. Expected '(' on line {}.", "TutorialLoader", line);
+		logError("Invalid position. Expected '(' on line {}.", "TutorialLoader", line + 1);
 		return false;
 	}
 	if (!(ss >> x)) {
-		logError("Invalid position. Expected x coordinate on line {}.", "TutorialLoader", line);
+		logError("Invalid position. Expected x coordinate on line {}.", "TutorialLoader", line + 1);
 		return false;
 	}
 	if (!(ss >> ch) || ch != ',') {
-		logError("Invalid position. Expected ',' on line {}.", "TutorialLoader", line);
+		logError("Invalid position. Expected ',' on line {}.", "TutorialLoader", line + 1);
 		return false;
 	}
 	if (!(ss >> y)) {
-		logError("Invalid position. Expected y coordinate on line {}.", "TutorialLoader", line);
+		logError("Invalid position. Expected y coordinate on line {}.", "TutorialLoader", line + 1);
 		return false;
 	}
 	if (!(ss >> ch) || ch != ')') {
-		logError("Invalid position. Expected ')' on line {}.", "TutorialLoader", line);
+		logError("Invalid position. Expected ')' on line {}.", "TutorialLoader", line + 1);
 		return false;
 	}
 
@@ -36,23 +61,23 @@ bool parseFPosition(std::stringstream& ss, int line, FPosition& out) {
 	float x;
 	float y;
 	if (!(ss >> ch) || ch != '(') {
-		logError("Invalid position. Expected '(' on line {}.", "TutorialLoader", line);
+		logError("Invalid position. Expected '(' on line {}.", "TutorialLoader", line + 1);
 		return false;
 	}
 	if (!(ss >> x)) {
-		logError("Invalid position. Expected x coordinate on line {}.", "TutorialLoader", line);
+		logError("Invalid position. Expected x coordinate on line {}.", "TutorialLoader", line + 1);
 		return false;
 	}
 	if (!(ss >> ch) || ch != ',') {
-		logError("Invalid position. Expected ',' on line {}.", "TutorialLoader", line);
+		logError("Invalid position. Expected ',' on line {}.", "TutorialLoader", line + 1);
 		return false;
 	}
 	if (!(ss >> y)) {
-		logError("Invalid position. Expected y coordinate on line {}.", "TutorialLoader", line);
+		logError("Invalid position. Expected y coordinate on line {}.", "TutorialLoader", line + 1);
 		return false;
 	}
 	if (!(ss >> ch) || ch != ')') {
-		logError("Invalid position. Expected ')' on line {}.", "TutorialLoader", line);
+		logError("Invalid position. Expected ')' on line {}.", "TutorialLoader", line + 1);
 		return false;
 	}
 
@@ -163,24 +188,7 @@ void parseCondition(TutorialCondition& condition, const std::vector<std::string>
 			ss >> numSteps;
 			condition.logicStates.emplace_back(pos, state.value(), numSteps);
 		} else if (tok == TRUTH_TABLE_TOKEN) {
-			// force positions \ expect \ num steps \ table xxx -> xx
-			while (!ss.eof()) {
-				Position pos;
-				parsePosition(ss, i, pos);
-				condition.truthTable.force.emplace_back(pos);
-			}
-			i++;
-			std::stringstream line_2(lines[i]);
-			while (!ss.eof()) {
-				Position pos;
-				parsePosition(line_2, i, pos);
-				condition.truthTable.expect.emplace_back(pos);
-			}
-			i++;
-			std::stringstream line_3(lines[i]);
-			line_3 >> condition.truthTable.numSteps;
-			i++;
-			parseTruthTable(lines, i);
+			logError("Truth table not implemented (Line {})", "TutorialLoader", i + 1);
 		}
 	}
 }
@@ -195,13 +203,19 @@ void parseAction(TutorialAction& action, const std::vector<std::string>& lines, 
 			line = i - 1;
 			return;
 		} else if (tok == MESSAGE_TOKEN) {
-			// name (x,y) orientation (optional)
+			// message: (x,y) scale <message>
+			FPosition p;
+			parseFPosition(ss, i, p);
+			float scale;
+			if (!(ss >> scale)) {
+				logError("Invalid scale on line {}", "TutorialLoader", i + 1);
+			}
 			std::string message;
-			message = ss.str().substr(ss.str().find(tok) + tok.length() + 1);
+			message = ss.str().substr(ss.str().find("\""));
 			if (message.starts_with("\"") && message.ends_with("\"")) {
 				message = message.substr(1, message.length() - 2);
 			}
-			action.messages.emplace_back(message);
+			action.messages.emplace_back(p, scale, message);
 		} else if (tok == BLOCK_PREVIEW_TOKEN) {
 			// (name) (x,y) (orientation-optional)
 			ss >> tok; // throw out 'Preview:'
@@ -223,6 +237,14 @@ void parseAction(TutorialAction& action, const std::vector<std::string>& lines, 
 			FPosition viewCenter;
 			parseFPosition(ss, i, viewCenter);
 			action.viewCenter = viewCenter;
+		} else if (tok == PLACE_BLOCK_TOKEN) {
+			// (name) (x,y) (orientation-optional)
+			// ss >> tok; // throw out 'Preview:'
+			BlockType blockName;
+			Position p;
+			Orientation orientation;
+			parseBlock(ss, i, blockName, p, orientation);
+			action.blocks.emplace_back(p, blockName, orientation);
 		}
 	}
 }
@@ -257,11 +279,11 @@ void parseSteps(std::vector<TutorialStep>& steps, const std::vector<std::string>
 	}
 }
 
-std::pair<std::string, std::vector<TutorialStep>> parseTutorialFile(std::string fileName) {
-	logInfo("Loading tutorial '" + fileName + "'", "TutorialLoader");
-	std::ifstream istream("TutorialLib/" + fileName);
+std::pair<std::string, std::vector<TutorialStep>> parseTutorialFile(std::string filePath) {
+	logInfo("Loading tutorial '" + filePath + "'", "TutorialLoader");
+	std::ifstream istream(filePath);
 	if (!istream.is_open()) {
-		logError("Failed to open file '" + fileName + "'", "TutorialLoader");
+		logError("Failed to open file '" + filePath + "'", "TutorialLoader");
 		return {};
 	}
 	std::vector<std::string> lines;
