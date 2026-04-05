@@ -12,6 +12,7 @@
 #include "gpu/renderer/imgui/imGuiRenderer.h"
 #include "gui/sdl/sdlInstance.h"
 #include "gpu/mainRenderer.h"
+#include "gui/mainWindow/mainWindow.h"
 
 std::thread::id mainThreadId = std::this_thread::get_id();
 
@@ -29,7 +30,17 @@ std::atomic<bool> killingApp = false;
 void App::init() {
 	assert(mainThreadId == std::this_thread::get_id());
 	running = true;
-	// Network::get().checkForUpdates(windows[0]->getPopUpManager());
+	if (windows.empty()) {
+		logError("Cant send update popup when no windows exist!");
+	} else {
+		for (auto& window : windows) {
+			MainWindow* mainWindow = dynamic_cast<MainWindow*>(window.get());
+			if (mainWindow != nullptr) {
+				Network::get().checkForUpdates(*mainWindow);
+				break;
+			}
+		}
+	}
 	lastUpdateTime = std::chrono::high_resolution_clock::now();
 	SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "120");
 }

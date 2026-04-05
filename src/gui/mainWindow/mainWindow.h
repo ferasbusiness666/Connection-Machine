@@ -62,7 +62,7 @@ public:
 	// ImGuiID getDockRightId() const { return dockRightId; }
 	// ImGuiID getDockBottomId() const { return dockBottomId; }
 
-	void createPopup(std::string message, const std::vector<std::pair<std::string, std::function<void()>>>& buttons);
+	void createPopup(const std::string& message, const std::vector<std::pair<std::string, std::function<void()>>>& buttons);
 
 	void setNextWindowMainDockable() const;
 	void setNextWindowSideBarDockable() const;

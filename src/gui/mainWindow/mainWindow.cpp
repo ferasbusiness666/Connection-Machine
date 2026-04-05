@@ -64,7 +64,7 @@ bool MainWindow::isPressingKeybind(const std::string& settingKey, bool repeat) c
 	return isPressingKeybind(*keybind, repeat);
 }
 
-void MainWindow::createPopup(std::string message, const std::vector<std::pair<std::string, std::function<void()>>>& buttons) {
+void MainWindow::createPopup(const std::string& message, const std::vector<std::pair<std::string, std::function<void()>>>& buttons) {
 	createWidget<PopupWidget>(message, buttons);
 }
 
