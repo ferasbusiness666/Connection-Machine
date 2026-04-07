@@ -17,6 +17,13 @@ public:
         TICK_STEP
     };
 
+    enum TestCaseResult {
+        NOT_RUN,
+        SUCCEEDED,
+        FAILED,
+        ERROR
+    };
+
     static std::string getTestCommandTypeString(TestCommandType type) {
         switch (type) {
             case 0:
@@ -31,6 +38,13 @@ public:
                 return "UNKNOWN";
        }
     }
+
+    struct TestResult {
+        TestResult(const TestCaseResult& result = NOT_RUN, const std::string& message = "No message.", const bool& running = false) : result(result), message(message), running(running) {}
+        TestCaseResult result = NOT_RUN;
+        std::string message = "No message.";
+        bool running = false;
+    };
 
     struct TestCommand {
         TestCommand(const TestCommandType& type = NOP_COMMAND, const int& ticks = 0, const std::vector<std::pair<std::string, logic_state_t>>& states = {}) : type(type), ticks(ticks), states(states) {}
@@ -61,6 +75,7 @@ public:
     int getTruthTableTicks() const {return truthTableTicks;}
     bool truthTable() const {return isTruthTable;}
     void sendTestGroupUpdate();
+    void sendTestResultUpdate();
 
     bool addTestCase(std::string name, int id=-1);
     bool removeTestCase(std::string name);

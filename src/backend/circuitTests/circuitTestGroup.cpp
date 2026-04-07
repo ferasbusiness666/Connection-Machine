@@ -8,6 +8,10 @@ CircuitTestGroup::CircuitTestGroupCopy CircuitTestGroup::getMinimalCopy() const 
     return CircuitTestGroupCopy(name, isTruthTable, truthTableTicks, testCases, inputs, outputs);
 }
 
+void CircuitTestGroup::sendTestResultUpdate() {
+    backend.getDataUpdateEventManager().sendEvent("testGroupUpdate", name);
+}
+
 void CircuitTestGroup::sendTestGroupUpdate() {
     backend.getDataUpdateEventManager().sendEvent("testGroupUpdate", name);
 }

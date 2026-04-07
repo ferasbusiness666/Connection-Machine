@@ -10,6 +10,7 @@
 #include "util/preprocessors.h"
 #include "gui/mainWindow/mainWindow.h"
 #include "gui/mainWindow/guiColors.h"
+#include <mutex>
 #include <string>
 
 CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) :
@@ -126,6 +127,19 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 		for (const auto& circuitTestGroup : getBackend().getCircuitTestGroupManager()) {
 			testGroups.push_back(circuitTestGroup.first);
 		}
+	});
+	dataUpdateEventReceiver.linkFunction("newTestResult", [this](const DataUpdateEventManager::EventData* event) {
+		// make recieving test results a thing
+		const DataUpdateEventManager::EventDataWithValue<std::string>* passedName = event->cast<std::string>();
+		assert(passedName);
+		if (passedName->get() != testGroupName) return;
+		const CircuitTestGroup* circuitTestGroup = getBackend().getCircuitTestGroupManager().getCircuitTestGroup(testGroupName);
+		if (!circuitTestGroup) {
+			setGUIValue<std::string>("testGroupName", "NONE");
+			return;
+		}
+		std::lock_guard mux(testGroupCopyMux);
+		testGroupCopy = circuitTestGroup->getMinimalCopy();
 	});
     setupGUIValue<double>("SimulatorRealTPS", 0, nullptr);
 	setupGUIValue<double>("SimulatorTargetTPS", 40, [this](const double& tps) {
