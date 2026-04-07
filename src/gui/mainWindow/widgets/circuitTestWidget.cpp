@@ -2,6 +2,7 @@
 
 #include "backend/container/block/blockDefs.h"
 #include "gui/viewportManager/circuitView/events/customEvents.h"
+#include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
 
 #include "gui/viewportManager/circuitView/circuitView.h"
@@ -402,20 +403,27 @@ void CircuitTestWidget::renderSideBar(BlockType blockType, const std::string& te
 		ImGui::PopStyleColor();
 		ImGui::PopStyleVar();
 	) {
-		if (ImGui::BeginMenuBar()) {
-			if (ImGui::BeginMenu("New")) {
-				if (ImGui::MenuItem("Texture")) {
-
-				}
-				if (ImGui::MenuItem("Shape")) {
-					getMainWindow().logError("Shape render data not real yet!");
-				}
-				ImGui::EndMenu();
-			}
-			ImGui::EndMenuBar();
+		if (ImGui::Button("Run All")) {
+			getMainWindow().log("This should run all test cases.");
 		}
+		ImGui::SameLine();
+		if (ImGui::Button("Edit")) {
+			getMainWindow().log("This should edit the test.");
+		}
+		// if (ImGui::BeginMenuBar()) {
+		// 	if (ImGui::BeginMenu("New")) {
+		// 		if (ImGui::MenuItem("Texture")) {
 
-		for (unsigned int index = 0; index < 0; index++) {
+		// 		}
+		// 		if (ImGui::MenuItem("Shape")) { // if this is selected
+		// 			getMainWindow().logError("Shape render data not real yet!");
+		// 		}
+		// 		ImGui::EndMenu();
+		// 	}
+		// 	ImGui::EndMenuBar();
+		// }
+
+		for (unsigned int index = 0; index < testGroupCopy.testCases.size(); index++) {
 			ImGui::PushID(index);
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2, 2));
 			ImGui::PushStyleColor(ImGuiCol_ChildBg, (index % 2 ==0) ? GUIColors::WIDGET_ALTERNATING_BACKGROUND_1 : GUIColors::WIDGET_ALTERNATING_BACKGROUND_2);
@@ -423,7 +431,13 @@ void CircuitTestWidget::renderSideBar(BlockType blockType, const std::string& te
 				ImGui::PopStyleColor();
 				ImGui::PopStyleVar();
 			) {
-			
+				if(ImGui::Button("Run")) {
+					getMainWindow().log("This should run test case '{}'", testGroupCopy.testCases[index].name);
+				}
+				ImGui::SameLine();
+				if (ImGui::TreeNodeEx(testGroupCopy.testCases[index].name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+					ImGui::TreePop();
+				}
 			}
 			ImGui::EndChild();
 			ImGui::PopID();
