@@ -1,5 +1,6 @@
 #include "circuitTestWidget.h"
 
+#include "backend/circuitTests/circuitTestGroup.h"
 #include "backend/container/block/blockDefs.h"
 #include "gui/viewportManager/circuitView/events/customEvents.h"
 #include "imgui/imgui.h"
@@ -9,6 +10,7 @@
 #include "util/preprocessors.h"
 #include "gui/mainWindow/mainWindow.h"
 #include "gui/mainWindow/guiColors.h"
+#include <string>
 
 CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) :
 	Widget(widgetId, mainWindow), dataUpdateEventReceiver(getBackend().getDataUpdateEventManager()) {
@@ -424,6 +426,7 @@ void CircuitTestWidget::renderSideBar(BlockType blockType, const std::string& te
 		// }
 
 		for (unsigned int index = 0; index < testGroupCopy.testCases.size(); index++) {
+			CircuitTestGroup::TestCase* testCase = &testGroupCopy.testCases[index];
 			ImGui::PushID(index);
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2, 2));
 			ImGui::PushStyleColor(ImGuiCol_ChildBg, (index % 2 ==0) ? GUIColors::WIDGET_ALTERNATING_BACKGROUND_1 : GUIColors::WIDGET_ALTERNATING_BACKGROUND_2);
@@ -431,12 +434,39 @@ void CircuitTestWidget::renderSideBar(BlockType blockType, const std::string& te
 				ImGui::PopStyleColor();
 				ImGui::PopStyleVar();
 			) {
+				ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f);
 				if(ImGui::Button("Run")) {
-					getMainWindow().log("This should run test case '{}'", testGroupCopy.testCases[index].name);
+					getMainWindow().log("This should run test case '{}'", testCase->name);
 				}
 				ImGui::SameLine();
-				if (ImGui::TreeNodeEx(testGroupCopy.testCases[index].name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+				if (ImGui::TreeNodeEx(testCase->name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+					ImGui::PopStyleVar();
+
+					for (unsigned int commandIndex = 0; commandIndex < testCase->testCommands.size(); commandIndex++) {
+						CircuitTestGroup::TestCommand* testCommand = &testCase->testCommands[commandIndex];
+						if (testCommand->type != CircuitTestGroup::TICK_STEP) {
+							if (ImGui::TreeNodeEx(CircuitTestGroup::getTestCommandTypeString(testCommand->type).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+								for (unsigned int stateIndex = 0; stateIndex < testCommand->states.size(); stateIndex++) {
+									std::string stateStr = testCommand->states[stateIndex].first;
+									stateStr.append(": ");
+									stateStr.append(std::to_string((unsigned int)testCommand->states[stateIndex].second));
+									ImGui::TreeNodeEx(stateStr.c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+									ImGui::TableNextColumn();
+								}
+								ImGui::TreePop();
+							}
+
+						} else { // testCommand->type == CircuitTestGroup::TICK_STEP
+							std::string commandStr = CircuitTestGroup::getTestCommandTypeString(testCommand->type);
+							commandStr.append(": ");
+							commandStr.append(std::to_string(testCommand->ticks));
+							ImGui::TreeNodeEx(commandStr.c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+						}
+					}
 					ImGui::TreePop();
+
+				} else {
+					ImGui::PopStyleVar();
 				}
 			}
 			ImGui::EndChild();
