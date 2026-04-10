@@ -32,7 +32,6 @@ private:
 	std::map<BlockType, std::string> blockTypes;
 	std::mutex testGroupsMux;
 	std::vector<std::string> testGroups;
-	std::string testGroupName;
 	std::mutex testGroupCopyMux;
 	CircuitTestGroup::CircuitTestGroupCopy testGroupCopy;
 };

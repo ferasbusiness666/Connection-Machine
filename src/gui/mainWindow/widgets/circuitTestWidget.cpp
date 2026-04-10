@@ -112,8 +112,8 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 	dataUpdateEventReceiver.linkFunction("testGroupUpdate", [this](const DataUpdateEventManager::EventData* event) {
 		const DataUpdateEventManager::EventDataWithValue<std::string>* passedName = event->cast<std::string>();
 		assert(passedName);
-		if (passedName->get() != testGroupName) return;
-		const CircuitTestGroup* circuitTestGroup = getBackend().getCircuitTestGroupManager().getCircuitTestGroup(testGroupName);
+		if (passedName->get() != getGUIValue<std::string>("testGroupName")) return;
+		const CircuitTestGroup* circuitTestGroup = getBackend().getCircuitTestGroupManager().getCircuitTestGroup(getGUIValue<std::string>("testGroupName"));
 		if (!circuitTestGroup) {
 			setGUIValue<std::string>("testGroupName", "NONE");
 			return;
@@ -132,8 +132,8 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 		// make recieving test results a thing
 		const DataUpdateEventManager::EventDataWithValue<std::string>* passedName = event->cast<std::string>();
 		assert(passedName);
-		if (passedName->get() != testGroupName) return;
-		const CircuitTestGroup* circuitTestGroup = getBackend().getCircuitTestGroupManager().getCircuitTestGroup(testGroupName);
+		if (passedName->get() != getGUIValue<std::string>("testGroupName")) return;
+		const CircuitTestGroup* circuitTestGroup = getBackend().getCircuitTestGroupManager().getCircuitTestGroup(getGUIValue<std::string>("testGroupName"));
 		if (!circuitTestGroup) {
 			setGUIValue<std::string>("testGroupName", "NONE");
 			return;
