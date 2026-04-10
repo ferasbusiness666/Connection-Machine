@@ -102,21 +102,23 @@ circuit_id_t CircuitManager::createNewCircuit(const ParsedCircuit& parsedCircuit
 	blockData->setPath("Custom");
 	blockData->setSize(parsedCircuit.getSize());
 
-	blockData->newRenderData<BlockData::BlockTextureData>();
-	blockData->setBlockTexturePath(0, parsedCircuit.getTexturePath());
-	if (!parsedCircuit.getUseFullTexture()) {
-		blockData->setBlockTextureSize(0, {
-			parsedCircuit.getTextureSize().x,
-			parsedCircuit.getTextureSize().y
-		});
-		blockData->setBlockTextureTopLeft(0, {
-			parsedCircuit.getSmallestTextureCord().x,
-			parsedCircuit.getSmallestTextureCord().y
-		});
-	}
-	if (parsedCircuit.getRenderSate()) {
+	if (parsedCircuit.getTexturePath() != "") {
+		blockData->newRenderData<BlockData::BlockTextureData>();
+		blockData->setBlockTexturePath(0, parsedCircuit.getTexturePath());
+		if (!parsedCircuit.getUseFullTexture()) {
+			blockData->setBlockTextureSize(0, {
+				parsedCircuit.getTextureSize().x,
+				parsedCircuit.getTextureSize().y
+			});
+			blockData->setBlockTextureTopLeft(0, {
+				parsedCircuit.getSmallestTextureCord().x,
+				parsedCircuit.getSmallestTextureCord().y
+			});
+		}
+		if (parsedCircuit.getRenderSate()) {
 
-	}
+		}
+}
 
 	// Circuit Block Data
 	circuitBlockDataManager.newCircuitBlockData(id, blockType);

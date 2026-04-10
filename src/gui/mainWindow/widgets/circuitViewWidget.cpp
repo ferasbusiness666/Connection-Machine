@@ -5,6 +5,7 @@
 #include "gpu/mainRenderer.h"
 #include "gui/viewportManager/circuitView/circuitView.h"
 #include "gui/viewportManager/circuitView/events/customEvents.h"
+#include "gui/viewportManager/circuitView/tools/other/treeTraversal.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
 #include "util/preprocessors.h"
@@ -463,6 +464,11 @@ void CircuitViewWidget::update() {
 		}
 		if (getMainWindow().isPressingKeybind("Keybinds/Tutorial/DebugForceCompleteStep")) {
 			circuitView->getTutorialManager().forceCompleteStep();
+		}
+		if (getMainWindow().isPressingKeybind("Keybinds/Simulation/Transverse Simulation")) {
+			circuitView->getToolManager().selectTool(std::make_shared<TreeTraversal>(getEnvironment()));
+		} else if (dynamic_cast<const TreeTraversal*>(circuitView->getToolManager().getCircuitTool()) != nullptr) {
+			circuitView->getToolManager().selectStack(0);
 		}
 	}
 }

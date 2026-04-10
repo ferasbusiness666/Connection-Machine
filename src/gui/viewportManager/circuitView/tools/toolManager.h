@@ -29,6 +29,10 @@ public:
 		for (auto& toolStack : toolStacks) toolStack.setCircuit(circuitId);
 	}
 
+	const CircuitTool* getCircuitTool() const {
+		return toolStacks[activeToolStack].getCurrentTool().get();
+	}
+
 private:
 	int activeToolStack = 0;
 	circuit_id_t circuitId = 0;

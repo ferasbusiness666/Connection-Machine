@@ -16,7 +16,7 @@ typedef unsigned long long EventRegistrationSignature;
 class CircuitTool {
 	friend class ToolStack;
 public:
-	CircuitTool(const Environment& environment) : environment(environment) {}
+	CircuitTool(Environment& environment) : environment(environment) {}
 	virtual ~CircuitTool() { unregisterFunctions(); }
 	bool isHelper() const { return helper; }
 	inline virtual std::vector<std::string> getModes() const { return {}; }
@@ -39,7 +39,12 @@ protected:
 
 	virtual void reset() { elementCreator.clear(); }
 	virtual void activate();
-	virtual void deactivate() { isActivate = false; unregisterFunctions(); }
+	virtual void deactivate(bool clearRendering = false) {
+		isActivate = false;
+		unregisterFunctions();
+		setStatusBar("");
+		if (clearRendering) elementCreator.clear();
+	}
 
 	virtual void setMode(const std::string& toolMode) { }
 
@@ -55,7 +60,7 @@ protected:
 	CircuitView* circuitView;
 	ElementCreator elementCreator;
 	ToolStackInterface* toolStackInterface;
-	const Environment& environment;
+	Environment& environment;
 
 private:
 	// This will also tell the tool to reset.
