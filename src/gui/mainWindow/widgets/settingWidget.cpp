@@ -143,6 +143,6 @@ void SettingWidget::render() {
 			root.render("", "");
 		}
 		ImGui::EndChild();
-		ImGui::End();
 	}
+	ImGui::End();
 }

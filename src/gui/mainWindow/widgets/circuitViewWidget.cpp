@@ -1,12 +1,14 @@
 #include "circuitViewWidget.h"
 
 #include "../mainWindow.h"
+#include "SDL3/SDL_dialog.h"
 #include "gpu/mainRenderer.h"
 #include "gui/viewportManager/circuitView/circuitView.h"
 #include "gui/viewportManager/circuitView/events/customEvents.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
 #include "util/preprocessors.h"
+#include "gui/helper/saveCallback.h"
 
 CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) : Widget(widgetId, mainWindow) {
 	ViewportId viewportId = MainRenderer::get().registerViewport(getMainWindow().getWindowId(), { 100, 100 });
@@ -163,7 +165,8 @@ void CircuitViewWidget::save() {
 		if (getMainWindow().getEnvironment().getCircuitFileManager().save(circuitView->getCircuit()->getUUID())) {
 			getMainWindow().log("Saved circuit {}", circuitView->getCircuit()->getCircuitName());
 		} else {
-			getMainWindow().logError("Failed to save circuit {}.", circuitView->getCircuit()->getCircuitName());
+			asSave();
+			// getMainWindow().logError("Failed to save circuit {}.", circuitView->getCircuit()->getCircuitName());
 		}
 	} else {
 		logWarning("Could not save because non circuit was selected.", "CircuitViewWidget");
@@ -172,12 +175,17 @@ void CircuitViewWidget::save() {
 }
 
 void CircuitViewWidget::asSave() {
-	getMainWindow().log("Not implemented.");
-	// if (circuitView->getCircuit()) getMainWindow().getPopUpManager().saveAsPopUp(circuitView->getCircuit()->getUUID());
-	// else {
-	// 	logWarning("Could not save because non circuit was selected.", "CircuitViewWidget");
-	// 	getMainWindow().log("Could not save because non circuit was selected.");
-	// }
+	if (circuitView->getCircuit()) {
+		logInfo("Saving circuit {}", "", circuitView->getCircuit()->getUUID());
+		static const SDL_DialogFileFilter filters[] = { { "Circuit Files", "cir" } };
+		std::pair<MainWindow&, std::string>* data = new std::pair<MainWindow&, std::string>(
+			getMainWindow(), circuitView->getCircuit()->getUUID()
+		);
+		SDL_ShowSaveFileDialog(SaveCallback, data, nullptr, filters, 1, nullptr);
+	} else {
+		logWarning("Could not save because non circuit was selected.", "CircuitViewWidget");
+		getMainWindow().log("Could not save because non circuit was selected.");
+	}
 }
 
 void CircuitViewWidget::render() {

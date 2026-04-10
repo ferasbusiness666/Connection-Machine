@@ -485,16 +485,11 @@ bool MainWindow::tryClose() {
 				std::make_pair( "Save", [uuid = circuit.second.getUUID(), this]() {
 					logInfo("Saving circuit {}", "", uuid);
 					static const SDL_DialogFileFilter filters[] = { { "Circuit Files", "cir" } };
-					typedef std::pair<std::pair<CircuitFileManager&, std::string>, MainWindow&> DataType;
-					DataType* data = new DataType(
-						std::piecewise_construct,
-						std::forward_as_tuple(environment.getCircuitFileManager(), uuid),
-						std::forward_as_tuple(*this)
-					);
+					std::pair<MainWindow&, std::string>* data = new std::pair<MainWindow&, std::string>(*this, uuid);
 					SDL_ShowSaveFileDialog([](void* userData, const char* const* filePaths, int filter) {
-						DataType* data = (DataType*)userData;
-						SaveCallback_NoDelete(&data->first, filePaths, filter); // deletes data
-						data->second.kill(false);
+						std::pair<MainWindow&, std::string>* data = (std::pair<MainWindow&, std::string>*)userData;
+						SaveCallback_NoDelete(&data, filePaths, filter);
+						data->first.kill(false);
 						delete data;
 					}, data, nullptr, filters, 1, nullptr);
 				}),
