@@ -18,7 +18,7 @@ Tutorial::Tutorial(Environment& environment, CircuitView& circuitView) :
 	});
 	dataUpdateEventReciever.linkFunction("circuitViewChangeCircuit", [this](const DataUpdateEventManager::EventData* event) -> bool {
 		elementCreator.clear();
-		if (circuitId == this->circuitView.getCircuit()->getCircuitId()) {
+		if (this->circuitView.getCircuit() && circuitId == this->circuitView.getCircuit()->getCircuitId()) {
 			runCurrentStep();
 		}
 		return false;

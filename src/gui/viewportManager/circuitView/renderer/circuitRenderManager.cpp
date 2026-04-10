@@ -99,15 +99,21 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 				}
 				inputIter->second.connectionsToOtherBlock.emplace(newConnection, outputBlockPosition);
 				MainRenderer::get().addWire(viewportId, newConnection, {
-					blockDataManager.getBlockData(outputIter->second.type)->getConnectionPortOffset(outputConnectionEnd.value().getConnectionId(), outputIter->second.orientation).value_or(FVector(0.5)),
-					blockDataManager.getBlockData(inputIter->second.type)->getConnectionPortOffset(inputConnectionEnd.value().getConnectionId(), inputIter->second.orientation).value_or(FVector(0.5))
+					blockDataManager.getBlockData(outputIter->second.type)->getConnectionPortOffset(
+						outputConnectionEnd.value().getConnectionId(), outputIter->second.orientation
+					).value_or(FVector(0.5)) + outputIter->second.connectionsToOtherBlock.size() * 0.1,
+					blockDataManager.getBlockData(inputIter->second.type)->getConnectionPortOffset(
+						inputConnectionEnd.value().getConnectionId(), inputIter->second.orientation
+					).value_or(FVector(0.5)) + outputIter->second.connectionsToOtherBlock.size() * 0.1
 					// getOutputOffset(outputIter->second.type, outputConnectionEnd.value().getConnectionId(), outputIter->second.orientation),
 					// getInputOffset(inputIter->second.type, inputConnectionEnd.value().getConnectionId(), inputIter->second.orientation)
 				});
 			} else {
 				MainRenderer::get().addWire(viewportId, newConnection, {
-					blockDataManager.getBlockData(outputIter->second.type)->getConnectionPortOffset(outputConnectionEnd.value().getConnectionId(), outputIter->second.orientation).value_or(FVector(0.5)),
-					blockDataManager.getBlockData(outputIter->second.type)->getConnectionPortOffset(inputConnectionEnd.value().getConnectionId(), outputIter->second.orientation).value_or(FVector(0.5))
+					blockDataManager.getBlockData(outputIter->second.type)->getConnectionPortOffset(
+						outputConnectionEnd.value().getConnectionId(), outputIter->second.orientation).value_or(FVector(0.5)) + outputIter->second.connectionsToOtherBlock.size() * 0.1,
+					blockDataManager.getBlockData(outputIter->second.type)->getConnectionPortOffset(
+						inputConnectionEnd.value().getConnectionId(), outputIter->second.orientation).value_or(FVector(0.5)) + outputIter->second.connectionsToOtherBlock.size() * 0.1
 					// getOutputOffset(outputIter->second.type, outputConnectionEnd.value().getConnectionId(), outputIter->second.orientation),
 					// getInputOffset(outputIter->second.type, inputConnectionEnd.value().getConnectionId(), outputIter->second.orientation)
 				});
@@ -268,4 +274,8 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 	}
 
 	MainRenderer::get().stopMakingEdits(viewportId);
+}
+
+void CircuitRenderManager::createPortConnection(Position blockPosition, Position portPosition, const std::vector<std::pair<Position, Position>>& otherBlockPositions) {
+
 }
