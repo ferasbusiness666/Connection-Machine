@@ -44,6 +44,7 @@ void Tutorial::StartTutorial() {
 }
 
 void Tutorial::stop() {
+    
 	if (!tutorialRunning) return;
 	Circuit* currentCircuit = circuitView.getBackend().getCircuitManager().getCircuit(circuitId);
 	if (currentCircuit) {
@@ -115,7 +116,7 @@ void Tutorial::runCurrentStep() {
 	// change this later to real popups or something
 	// yippee i changed it later to real pop ups or something
 	for (const TutorialAction::Message& message : currentStep.action.messages) {
-		elementCreator.addText(message.message, message.pos, -message.scale);
+		elementCreator.addText(message.message, message.pos, message.scale);
 	}
 	for (const TutorialAction::BlockInfo& block : currentStep.action.blocks) {
 		currentCircuit->tryInsertBlock(block.pos, block.orientation, block.type);
@@ -171,8 +172,11 @@ void Tutorial::runCurrentStep() {
 			FPosition(connectionPreview.pos2.x, connectionPreview.pos2.y) + optionalPos2Offset.value()
 		));
 	}
-	if (currentStep.action.viewCenter.has_value()) {
-		viewManager.setViewCenter(currentStep.action.viewCenter.value());
+	if (currentStep.action.viewData.viewCenter.has_value()) {
+		viewManager.setViewCenter(currentStep.action.viewData.viewCenter.value());
+		if (currentStep.action.viewData.zoom.has_value()) {
+			viewManager.setViewScale(currentStep.action.viewData.zoom.value());
+		}
 	}
 }
 

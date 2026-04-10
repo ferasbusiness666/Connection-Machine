@@ -3,13 +3,13 @@
 #include "../mainWindow.h"
 #include "SDL3/SDL_dialog.h"
 #include "gpu/mainRenderer.h"
+#include "gui/helper/saveCallback.h"
 #include "gui/viewportManager/circuitView/circuitView.h"
 #include "gui/viewportManager/circuitView/events/customEvents.h"
 #include "gui/viewportManager/circuitView/tools/other/treeTraversal.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
 #include "util/preprocessors.h"
-#include "gui/helper/saveCallback.h"
 
 CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) : Widget(widgetId, mainWindow) {
 	ViewportId viewportId = MainRenderer::get().registerViewport(getMainWindow().getWindowId(), { 100, 100 });
@@ -179,9 +179,7 @@ void CircuitViewWidget::asSave() {
 	if (circuitView->getCircuit()) {
 		logInfo("Saving circuit {}", "", circuitView->getCircuit()->getUUID());
 		static const SDL_DialogFileFilter filters[] = { { "Circuit Files", "cir" } };
-		std::pair<MainWindow&, std::string>* data = new std::pair<MainWindow&, std::string>(
-			getMainWindow(), circuitView->getCircuit()->getUUID()
-		);
+		std::pair<MainWindow&, std::string>* data = new std::pair<MainWindow&, std::string>(getMainWindow(), circuitView->getCircuit()->getUUID());
 		SDL_ShowSaveFileDialog(SaveCallback, data, nullptr, filters, 1, nullptr);
 	} else {
 		logWarning("Could not save because non circuit was selected.", "CircuitViewWidget");
@@ -414,19 +412,12 @@ void CircuitViewWidget::update() {
 				simulator_id_t simulatorId = circuitView->getSimulator()->getSimulatorId();
 				getMainWindow().createPopup(
 					"Reset Simulation States?",
-					{
-						{
-							"Reset",
-							[this, simulatorId]() {
-								EvalLogicSimulator* simulator = circuitView->getBackend().getSimulator(simulatorId);
-								if (simulator) simulator->resetStates();
-							}
-						},
-						{
-							"Cancel",
-							[]() {}
-						}
-					}
+					{ { "Reset",
+						[this, simulatorId]() {
+					EvalLogicSimulator* simulator = circuitView->getBackend().getSimulator(simulatorId);
+					if (simulator) simulator->resetStates();
+				} },
+					  { "Cancel", []() {} } }
 				);
 			} else {
 				circuitView->getSimulator()->resetStates();
@@ -461,6 +452,8 @@ void CircuitViewWidget::update() {
 		}
 		if (getMainWindow().isPressingKeybind("Keybinds/Tutorial/Stop")) {
 			circuitView->getTutorialManager().stop();
+			// delete this
+			getMainWindow().getTutorialDataManager().initializeTutorials();
 		}
 		if (getMainWindow().isPressingKeybind("Keybinds/Tutorial/DebugForceCompleteStep")) {
 			circuitView->getTutorialManager().forceCompleteStep();

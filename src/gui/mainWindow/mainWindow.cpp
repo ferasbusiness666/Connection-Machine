@@ -1,7 +1,7 @@
 #include "mainWindow.h"
 
-#include <SDL3/SDL_video.h>
 #include "SDL3/SDL_dialog.h"
+#include <SDL3/SDL_video.h>
 
 #include "computerAPI/circuitTestFileLoader.h"
 #include "gui/mainWindow/widgets/aboutWidget.h"
@@ -15,8 +15,8 @@
 #include "widgets/blockCreationWidget.h"
 
 #include "app.h"
-#include "environment/environment.h"
 #include "backend/settings/settings.h"
+#include "environment/environment.h"
 #include "gui/helper/keybindHelpers.h"
 #include "gui/helper/saveCallback.h"
 
@@ -24,8 +24,8 @@
 #include "widgets/blockCreationWidget.h"
 #include "widgets/blockSelectorWidget.h"
 #include "widgets/circuitViewWidget.h"
-#include "widgets/toolSelectorWidget.h"
 #include "widgets/popupWidget.h"
+#include "widgets/toolSelectorWidget.h"
 
 MainWindow::MainWindow() : SdlWindow("Connection Machine"), environment(true), toolManagerManager(environment), widgetIdProvider(1), tutorialDataManager() {
 	const double* initialUiScale = Settings::get<SettingType::DECIMAL>("Appearance/UI Scale");
@@ -198,7 +198,6 @@ void MainWindow::doUpdate() {
 	if (isPressingKeybind("Keybinds/Window/Reset UI Scale")) {
 		applyUiScale(1.0f);
 	}
-	if (isPressingKeybind("Keybinds/Tutorial/Start")) { }
 	for (std::pair<const WidgetId, std::unique_ptr<Widget>>& widget : widgets) {
 		widget.second->doUpdate();
 	}
@@ -457,22 +456,26 @@ bool MainWindow::tryClose() {
 
 		createPopup(
 			message,
-			{
-				std::make_pair("Save",[this, filePath = fileData.second.fileLocation]() {
-					logInfo("Saving {}", "", filePath);
-					environment.getCircuitFileManager().saveFile(filePath);
-					kill(false);
-				}),
-				std::make_pair("Dont Save",[this, filePath = fileData.second.fileLocation]() {
-					logInfo("\"Dont Save\" option picked.");
-					environment.getCircuitFileManager().closeFile(filePath);
-					kill(false);
-				}),
-				std::make_pair("Cancel", [this]() {
-					logInfo("Canceling close.");
-					App::stopTryingToQuit();
-				})
-			}
+			{ std::make_pair(
+				  "Save",
+				  [this, filePath = fileData.second.fileLocation]() {
+			logInfo("Saving {}", "", filePath);
+			environment.getCircuitFileManager().saveFile(filePath);
+			kill(false);
+		}
+			  ),
+			  std::make_pair(
+				  "Dont Save",
+				  [this, filePath = fileData.second.fileLocation]() {
+			logInfo("\"Dont Save\" option picked.");
+			environment.getCircuitFileManager().closeFile(filePath);
+			kill(false);
+		}
+			  ),
+			  std::make_pair("Cancel", [this]() {
+			logInfo("Canceling close.");
+			App::stopTryingToQuit();
+		}) }
 		);
 		return false;
 	}
@@ -481,29 +484,33 @@ bool MainWindow::tryClose() {
 		if (circuit.second.isEmpty() || circuit.second.getEditCount() == 0 || !circuit.second.isEditable() || circuit.second.closed()) continue;
 		createPopup(
 			"Do you want to save: " + circuit.second.getCircuitName(),
-			{
-				std::make_pair( "Save", [uuid = circuit.second.getUUID(), this]() {
-					logInfo("Saving circuit {}", "", uuid);
-					static const SDL_DialogFileFilter filters[] = { { "Circuit Files", "cir" } };
-					std::pair<MainWindow&, std::string>* data = new std::pair<MainWindow&, std::string>(*this, uuid);
-					SDL_ShowSaveFileDialog([](void* userData, const char* const* filePaths, int filter) {
-						std::pair<MainWindow&, std::string>* data = (std::pair<MainWindow&, std::string>*)userData;
-						SaveCallback_NoDelete(&data, filePaths, filter);
-						data->first.kill(false);
-						delete data;
-					}, data, nullptr, filters, 1, nullptr);
-				}),
-				std::make_pair("Dont Save", [this, uuid = circuit.second.getUUID()]() {
-					logInfo("\"Dont Save\" option picked.");
-					const Circuit* circuit = this->getEnvironment().getBackend().getCircuitManager().getCircuit(uuid);
-					if (circuit) this->getEnvironment().getBackend().getCircuitManager().closeCircuit(circuit->getCircuitId());
-					kill(false);
-				}),
-				std::make_pair("Cancel", [this]() {
-					logInfo("Canceling close.");
-					App::stopTryingToQuit();
-				})
-			}
+			{ std::make_pair(
+				  "Save",
+				  [uuid = circuit.second.getUUID(), this]() {
+			logInfo("Saving circuit {}", "", uuid);
+			static const SDL_DialogFileFilter filters[] = { { "Circuit Files", "cir" } };
+			std::pair<MainWindow&, std::string>* data = new std::pair<MainWindow&, std::string>(*this, uuid);
+			SDL_ShowSaveFileDialog([](void* userData, const char* const* filePaths, int filter) {
+				std::pair<MainWindow&, std::string>* data = (std::pair<MainWindow&, std::string>*)userData;
+				SaveCallback_NoDelete(&data, filePaths, filter);
+				data->first.kill(false);
+				delete data;
+			}, data, nullptr, filters, 1, nullptr);
+		}
+			  ),
+			  std::make_pair(
+				  "Dont Save",
+				  [this, uuid = circuit.second.getUUID()]() {
+			logInfo("\"Dont Save\" option picked.");
+			const Circuit* circuit = this->getEnvironment().getBackend().getCircuitManager().getCircuit(uuid);
+			if (circuit) this->getEnvironment().getBackend().getCircuitManager().closeCircuit(circuit->getCircuitId());
+			kill(false);
+		}
+			  ),
+			  std::make_pair("Cancel", [this]() {
+			logInfo("Canceling close.");
+			App::stopTryingToQuit();
+		}) }
 		);
 		return false;
 	}

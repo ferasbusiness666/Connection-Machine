@@ -5,6 +5,8 @@
 void TutorialDataManager::initializeTutorials() {
 	tutorialsMutex.lock();
 	tutorialNamesMutex.lock();
+    tutorialNames.clear();
+    tutorials.clear();
 	logInfo("Tutorials Loaded:", "MainWindow");
 	logInfo((DirectoryManager::getResourceDirectory() / "tutorials" / "").string());
 	for (const auto& file : std::filesystem::directory_iterator((DirectoryManager::getResourceDirectory() / "tutorials" / "").string())) {
