@@ -411,23 +411,22 @@ void CircuitViewWidget::update() {
 			bool showConfirm = *Settings::get<SettingType::BOOL>("Preferences/Simulation/Show Confirmation for Reset Simulation");
 			if (showConfirm) {
 				simulator_id_t simulatorId = circuitView->getSimulator()->getSimulatorId();
-				EvalLogicSimulator* simulator = circuitView->getBackend().getSimulator(simulatorId);
-
-				// getMainWindow().getPopUpManager().addOptionsPopUp(
-				// 	"Reset Simulation States?",
-				// 	{
-				// 		{
-				// 			"Reset",
-				// 			[this, simulator]() {
-				// 				simulator->resetStates();
-				// 			}
-				// 		},
-				// 		{
-				// 			"Cancel",
-				// 			[]() {}
-				// 		}
-				// 	}
-				// );
+				getMainWindow().createPopup(
+					"Reset Simulation States?",
+					{
+						{
+							"Reset",
+							[this, simulatorId]() {
+								EvalLogicSimulator* simulator = circuitView->getBackend().getSimulator(simulatorId);
+								if (simulator) simulator->resetStates();
+							}
+						},
+						{
+							"Cancel",
+							[]() {}
+						}
+					}
+				);
 			} else {
 				circuitView->getSimulator()->resetStates();
 			}
