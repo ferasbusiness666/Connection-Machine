@@ -19,13 +19,6 @@ public:
         TICK_STEP
     };
 
-    enum TestCaseResult {
-        NOT_RUN,
-        SUCCEEDED,
-        FAILED,
-        ERROR
-    };
-
     static std::string getTestCommandTypeString(TestCommandType type) {
         switch (type) {
             case 0:
@@ -40,15 +33,6 @@ public:
                 return "UNKNOWN";
        }
     }
-
-    struct TestResult {
-        TestResult(const TestCaseResult& result = NOT_RUN, const std::string& message = "No message.", const bool& queued = false, const bool& running = false, const circuit_id_t circuitID = 0) : result(result), message(message), queued(queued), running(running), circuitID(circuitID) {}
-        TestCaseResult result = NOT_RUN;
-        std::string message = "No message.";
-        bool queued = false;
-        bool running = false;
-        circuit_id_t circuitID = 0;
-    };
 
     struct TestCommand {
         TestCommand(const TestCommandType& type = NOP_COMMAND, const int& ticks = 0, const std::vector<std::pair<std::string, logic_state_t>>& states = {}) : type(type), ticks(ticks), states(states) {}
@@ -78,8 +62,6 @@ public:
     CircuitTestGroupCopy getMinimalCopy() const;
     int getTruthTableTicks() const {return truthTableTicks;}
     bool truthTable() const {return isTruthTable;}
-    void sendTestGroupUpdate();
-    void sendTestResultUpdate();
 
     bool addTestCase(std::string name, int id=-1);
     bool removeTestCase(std::string name);
@@ -107,7 +89,7 @@ public:
     std::vector<std::string>::const_iterator getInputIteratorEnd() const {return inputs.cend();}
     std::vector<std::string>::const_iterator getOutputIteratorEnd() const {return outputs.cend();}
 private:
-
+    void sendTestGroupUpdate();
     std::string name;
     // truth tables follow a strict format of every test case having a set state, a tick step (universal across all test cases,
     // stored in the truthTableTicks value), and a get state. it only allows adding commands via the addSimpleTestCase method.

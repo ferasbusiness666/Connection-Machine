@@ -1,5 +1,7 @@
 #include "circuitTestWidget.h"
 
+#include "app.h"
+#include "backend/circuit/circuitDefs.h"
 #include "backend/circuitTests/circuitTestGroup.h"
 #include "backend/container/block/blockDefs.h"
 #include "gui/viewportManager/circuitView/events/customEvents.h"
@@ -78,6 +80,7 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 	}
 	{
 		// =================================== Init rendering circuit ===================================
+		std::lock_guard renderingCircuitMux(this->renderingCircuitMux);
 		renderingCircuitId = getBackend().getCircuitManager().createNewCircuit(true);
 		assert(renderingCircuitId);
 		Circuit* circuit = getBackend().getCircuitManager().getCircuit(renderingCircuitId);
@@ -128,9 +131,11 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 			testGroups.push_back(circuitTestGroup.first);
 		}
 	});
-	dataUpdateEventReceiver.linkFunction("newTestResult", [this](const DataUpdateEventManager::EventData* event) {
+	/*
+	dataUpdateEventReceiver.linkFunction("testRunDataUpdate", [this](const DataUpdateEventManager::EventData* event) {
 		// make recieving test results a thing
-		const DataUpdateEventManager::EventDataWithValue<std::string>* passedName = event->cast<std::string>();
+		const DataUpdateEventManager::EventDataWithValue<std::string>*  = event->cast<std::tuple<std::string, circuit_id_t, int>>();
+		const auto& [recievedName, recievedCircuitID, recievedIndex] = 
 		assert(passedName);
 		if (passedName->get() != getGUIValue<std::string>("testGroupName")) return;
 		const CircuitTestGroup* circuitTestGroup = getBackend().getCircuitTestGroupManager().getCircuitTestGroup(getGUIValue<std::string>("testGroupName"));
@@ -140,7 +145,7 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 		}
 		std::lock_guard mux(testGroupCopyMux);
 		testGroupCopy = circuitTestGroup->getMinimalCopy();
-	});
+	});*/
     setupGUIValue<double>("SimulatorRealTPS", 0, nullptr);
 	setupGUIValue<double>("SimulatorTargetTPS", 40, [this](const double& tps) {
 		if (circuitView->getSimulator()) {
@@ -157,16 +162,14 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 			circuitView->getSimulator()->setPause(isPaused);
 		}
 	});
-	setupGUIValue<std::string>("testGroupName", "NONE", [this](const std::string& testGroupName) {
-		const CircuitTestGroup* circuitTestGroup = getBackend().getCircuitTestGroupManager().getCircuitTestGroup(testGroupName);
-		if (!circuitTestGroup) {
-			setGUIValue<std::string>("testGroupName", "NONE");
+	setupGUIValue<BlockType>("blockType", BlockType::NONE, [this](const BlockType& blockType) {
+		if (blockType == BlockType::NONE) {
+			testGroupRunner.reset();
 			return;
 		}
-		std::lock_guard mux(testGroupCopyMux);
-		testGroupCopy = circuitTestGroup->getMinimalCopy();
-	});
-	setupGUIValue<BlockType>("blockType", BlockType::NONE, [this](const BlockType& blockType) {
+		testGroupRunner.emplace(getBackend(), getGUIValue<std::string>("testGroupName"), blockType);
+		std::lock_guard renderingCircuitMux(this->renderingCircuitMux);
+		renderingCircuitId = testGroupRunner.value().getCircuitId(); //segfault
 		// const CircuitBlockData* circuitBlockData = getBackend().getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
 		// if (circuitBlockData == nullptr) {
 		// 	// std::lock_guard mux(blockDataCopyMux);
@@ -185,6 +188,21 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 		// circuit->tryInsertBlock(Position(), Orientation(), blockData->getBlockType());
 		// circuitView->getViewManager().focus();
 		// setGUIValue<std::optional<connection_end_id_t>>("currentlyEditingPort", std::nullopt);
+	});
+	setupGUIValue<std::string>("testGroupName", "NONE", [this](const std::string& testGroupName) {
+		const CircuitTestGroup* circuitTestGroup = getBackend().getCircuitTestGroupManager().getCircuitTestGroup(testGroupName);
+		if (!circuitTestGroup) {
+			setGUIValue<std::string>("testGroupName", "NONE");
+			testGroupRunner.reset();
+			return;
+		}
+		std::lock_guard mux(testGroupCopyMux);
+		testGroupCopy = circuitTestGroup->getMinimalCopy();
+		if (getGUIValue<BlockType>("blockType") != BlockType::NONE) {
+			testGroupRunner.emplace(getBackend(), testGroupName, getGUIValue<BlockType>("blockType"));
+		}
+		std::lock_guard renderingCircuitMux(this->renderingCircuitMux);
+		renderingCircuitId = testGroupRunner.value().getCircuitId();
 	});
 }
 
@@ -420,7 +438,11 @@ void CircuitTestWidget::renderSideBar(BlockType blockType, const std::string& te
 		ImGui::PopStyleVar();
 	) {
 		if (ImGui::Button("Run All")) {
-			getMainWindow().log("This should run all test cases.");
+			if (testGroupRunner != std::nullopt && getGUIValue_rendering<BlockType>("blockType") != BlockType::NONE) {
+						App::runOnMain([this](){ testGroupRunner->runAllTests(false); });
+			} else {
+				getMainWindow().logError("Test group and circuit must be loaded before testing!");
+			}
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Edit")) {
@@ -450,7 +472,12 @@ void CircuitTestWidget::renderSideBar(BlockType blockType, const std::string& te
 			) {
 				ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f);
 				if(ImGui::Button("Run")) {
-					getMainWindow().log("This should run test case '{}'", testCase->name);
+					if (testGroupRunner != std::nullopt && getGUIValue_rendering<BlockType>("blockType") != BlockType::NONE) {
+						std::vector<std::string> runVec{testCase->name};
+						App::runOnMain([this, runVec](){ testGroupRunner->runTests(runVec, false); });
+					} else {
+						getMainWindow().logError("Test group and circuit must be loaded before testing!");
+					}
 				}
 				ImGui::SameLine();
 				if (ImGui::TreeNodeEx(testCase->name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {

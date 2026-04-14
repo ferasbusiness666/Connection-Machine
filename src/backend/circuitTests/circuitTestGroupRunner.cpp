@@ -1,12 +1,20 @@
 #include "circuitTestGroupRunner.h"
 
+#include "backend/circuit/circuitDefs.h"
 #include "backend/circuitTests/circuitTestGroup.h"
 #include "backend/evaluator/simulator/evalLogicSimulator.h"
 #include "backend/evaluator/simulatorManager.h"
 #include "backend/backend.h"
+#include <utility>
 
 const CircuitTestGroup* CircuitTestGroupRunner::getCircuitTestGroup() {
     return backend.getCircuitTestGroupManager().getCircuitTestGroup(name);
+}
+
+void CircuitTestGroupRunner::sendTestResultUpdate(int testCaseID) {
+    // std::get<n>(tuple)
+    std::tuple<std::string, circuit_id_t, int> values = std::make_tuple(name, circuitID, testCaseID);
+    backend.getDataUpdateEventManager().sendEvent("testRunDataUpdate", values);
 }
 
 bool CircuitTestGroupRunner::generateTestCircuit() {
@@ -23,15 +31,17 @@ bool CircuitTestGroupRunner::generateTestCircuit() {
     simulator->setPause(true);
     Circuit* circuit = cirManager.getCircuit(circuitId);
     circuit->clear();
+    circuit->setEditable(false);
     const BlockContainer& blockContainer = circuit->getBlockContainer();
 
-    const BlockData* blockData = blockDataManager.getBlockData(blockType);
+    BlockData* blockData = blockDataManager.getBlockData(blockType);
+    blockData->setIsPlaceable(false);
     std::unordered_map<connection_end_id_t, BlockData::ConnectionData> connections = blockData->getConnections();
     // change implementation of this when BlockData::getConnectionNameToId is implemented
     namePositionMap.clear();
 
     if (!circuit->tryInsertBlock(Position(0,0), Orientation(), blockType)) {
-        logError("Couldn't insert test circuit block '{}'", "circuitTestCase", blockType);
+        logError("Couldn't insert test circuit block '{}'", "circuitTestGroupRunner", blockType);
         return false;
     }
 
@@ -44,21 +54,21 @@ bool CircuitTestGroupRunner::generateTestCircuit() {
 
             std::optional<std::string> blockNameOpt = blockData->getConnectionIdToName(iter->first);
             if (blockNameOpt == std::nullopt) {
-                logError("Unable to resolve block name for id {}", "CircuitTestGroup", iter->first);
+                logError("Unable to resolve block name for id {}", "circuitTestGroupRunner", iter->first);
                 return false;
             }
             std::string blockName = blockNameOpt.value();
             if (std::find(testGroupData->inputs.begin(), testGroupData->inputs.end(), blockName) == testGroupData->inputs.end()) {
-                logWarning("Tested circuit's port '{}' does not match any inputs expected by test, this may cause errors", "CircuitTestGroup", blockName);
+                logWarning("Tested circuit's port '{}' does not match any inputs expected by test, this may cause errors", "circuitTestGroupRunner", blockName);
             }
             if (!circuit->tryInsertBlock(externalConnPos, Orientation(), SWITCH)) {
-                logError("Couldn't insert switch test circuit block", "CircuitTestGroup");
+                logError("Couldn't insert switch test circuit block", "circuitTestGroupRunner");
                 return false;
             }
 
             const Block* block = blockContainer.getBlock(externalConnPos);
             if (!circuit->tryCreateConnection(ConnectionEnd(testedBlock->id(), iter->first), ConnectionEnd(block->id(), 0))) {
-                logError("Couldn't create switch test circuit connection, ext: {}", "CircuitTestGroup", externalConnPos);
+                logError("Couldn't create switch test circuit connection, ext: {}", "circuitTestGroupRunner", externalConnPos);
                 return false;
             }
             namePositionMap.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
@@ -68,21 +78,21 @@ bool CircuitTestGroupRunner::generateTestCircuit() {
 
             std::optional<std::string> blockNameOpt = blockData->getConnectionIdToName(iter->first);
             if (blockNameOpt == std::nullopt) {
-                logError("Unable to resolve block name for id {}", "CircuitTestGroup", iter->first);
+                logError("Unable to resolve block name for id {}", "circuitTestGroupRunner", iter->first);
                 return false;
             }
             std::string blockName = blockNameOpt.value();
             if (std::find(testGroupData->outputs.begin(), testGroupData->outputs.end(), blockName) == testGroupData->outputs.end()) {
-                logWarning("Tested circuit's port '{}' does not match any outputs expected by test, this may cause errors", "CircuitTestGroup", blockName);
+                logWarning("Tested circuit's port '{}' does not match any outputs expected by test, this may cause errors", "circuitTestGroupRunner", blockName);
             }
             if (!circuit->tryInsertBlock(externalConnPos, Orientation(), LIGHT)) {
-                logError("Couldn't insert light test circuit block", "CircuitTestGroup");
+                logError("Couldn't insert light test circuit block", "circuitTestGroupRunner");
                 return false;
             }
 
             const Block* block = blockContainer.getBlock(externalConnPos);
             if (!circuit->tryCreateConnection(ConnectionEnd(testedBlock->id(), iter->first), ConnectionEnd(block->id(), 0))) {
-                logError("Couldn't create light test circuit connection, ext: {}", "CircuitTestGroup", externalConnPos);
+                logError("Couldn't create light test circuit connection, ext: {}", "circuitTestGroupRunner", externalConnPos);
                 return false;
             }
             namePositionMap.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
@@ -90,12 +100,12 @@ bool CircuitTestGroupRunner::generateTestCircuit() {
     }
     for (auto iter = testGroupData->inputs.begin(); iter != testGroupData->inputs.end(); iter++) {
         if (namePositionMap.find(*iter) == namePositionMap.end()) {
-            logWarning("Input '{}' expected by test not found on tested circuit, this may cause errors", "CircuitTestGroup", *iter);
+            logWarning("Input '{}' expected by test not found on tested circuit, this may cause errors", "circuitTestGroupRunner", *iter);
         }
     }
     for (auto iter = testGroupData->outputs.begin(); iter != testGroupData->outputs.end(); iter++) {
         if (namePositionMap.find(*iter) == namePositionMap.end()) {
-            logWarning("Output '{}' expected by test not found on tested circuit, this may cause errors", "CircuitTestGroup", *iter);
+            logWarning("Output '{}' expected by test not found on tested circuit, this may cause errors", "circuitTestGroupRunner", *iter);
         }
     }
     return true;
@@ -108,14 +118,14 @@ bool CircuitTestGroupRunner::runAllTests(bool haltOnFailure) {
     return runTests(testIDs, haltOnFailure);
 }
 
-bool CircuitTestGroupRunner::runTests(std::vector<std::string>& testsToRun, bool haltOnFailure) {
+bool CircuitTestGroupRunner::runTests(const std::vector<std::string>& testsToRun, bool haltOnFailure) {
     const CircuitTestGroup* testGroupData = getCircuitTestGroup();
     // converts strings to their IDs and runs them by ID
     std::vector<int> testIDs;
     for (auto stringIter = testsToRun.begin(); stringIter != testsToRun.end(); stringIter++) {
         auto idIter = testGroupData->testCaseNameToID.find(*stringIter);
         if (idIter == testGroupData->testCaseNameToID.end()) {
-            logError("Unable to find test case with name '{}'", "CircuitTestGroup", *stringIter);
+            logError("Unable to find test case with name '{}'", "circuitTestGroupRunner", *stringIter);
             return false;
         }
         testIDs.push_back(idIter->second);
@@ -123,17 +133,16 @@ bool CircuitTestGroupRunner::runTests(std::vector<std::string>& testsToRun, bool
     return runTests(testIDs, haltOnFailure);
 }
 
-bool CircuitTestGroupRunner::runTests(std::vector<int>& testsToRun, bool haltOnFailure) {
-    generateTestCircuit();
+bool CircuitTestGroupRunner::runTests(const std::vector<int>& testsToRun, bool haltOnFailure) {
     const CircuitTestGroup* testGroupData = getCircuitTestGroup();
     bool fullTestSucceedStatus = true;
 
     for (auto testCaseIndexIter = testsToRun.begin(); testCaseIndexIter != testsToRun.end(); testCaseIndexIter++) {
         simulator->resetStates();
         simulator->setPause(true); //don't know if this is necessary but playing it safe
-        logInfo("Running test case '{}'", "CircuitTestGroup", testGroupData->testCases[*testCaseIndexIter].name);
+        logInfo("Running test case '{}'", "circuitTestGroupRunner", testGroupData->testCases[*testCaseIndexIter].name);
         for (auto commandIter = testGroupData->testCases[*testCaseIndexIter].testCommands.begin(); commandIter != testGroupData->testCases[*testCaseIndexIter].testCommands.end(); commandIter++) {
-            logInfo("Performing a test command of type {}", "CircuitTestGroup", CircuitTestGroup::getTestCommandTypeString(commandIter->type));
+            logInfo("Performing a test command of type {}", "circuitTestGroupRunner", CircuitTestGroup::getTestCommandTypeString(commandIter->type));
             bool isTestGroupSuccessful = true;
             if (commandIter->type == CircuitTestGroup::NOP_COMMAND) {
                 continue;
@@ -142,15 +151,15 @@ bool CircuitTestGroupRunner::runTests(std::vector<int>& testsToRun, bool haltOnF
             } else if (commandIter->type == CircuitTestGroup::CHECK_STATES) {
                 isTestGroupSuccessful = runCheckStatesCommand(*commandIter, *simulator, namePositionMap);
             } else if (commandIter->type == CircuitTestGroup::TICK_STEP) {
-                logInfo("Stepping forward by {} ticks", "CircuitTestGroup - TICK_STEP", commandIter->ticks);
+                logInfo("Stepping forward by {} ticks", "circuitTestGroupRunner - TICK_STEP", commandIter->ticks);
                 simulator->tickStep(commandIter->ticks);
             } else {
-                logError("Unrecognized test command type", "CircuitTestGroup");
+                logError("Unrecognized test command type", "circuitTestGroupRunner");
                 isTestGroupSuccessful = false;
             }
 
             if (!isTestGroupSuccessful) {
-                logError("Test group failed.", "CircuitTestGroup");
+                logError("Test group failed.", "circuitTestGroupRunner");
                 fullTestSucceedStatus = false;
                 if (haltOnFailure) {
                     return false;
@@ -165,11 +174,11 @@ bool CircuitTestGroupRunner::runSetStatesCommand(CircuitTestGroup::TestCommand t
     for (auto statesIter = testCommand.states.begin(); statesIter != testCommand.states.end(); statesIter++) {
         auto blockPosIter = nameToConnectedBlockPosition.find(statesIter->first);
         if (blockPosIter == nameToConnectedBlockPosition.end()) {
-            logError("Port '{}' does not match any on circuit", "CircuitTestGroup", statesIter->first);
+            logError("Port '{}' does not match any on circuit", "circuitTestGroupRunner", statesIter->first);
             return false;
         }
         simulator.setState((Address(blockPosIter->second)), statesIter->second);
-        logInfo("Set port '{}' to state '{}'", "CircuitTestGroup - SET_STATES", statesIter->first, statesIter->second);
+        logInfo("Set port '{}' to state '{}'", "circuitTestGroupRunner - SET_STATES", statesIter->first, statesIter->second);
     }
     return true;
 }
@@ -180,15 +189,15 @@ bool CircuitTestGroupRunner::runCheckStatesCommand(CircuitTestGroup::TestCommand
     for (auto statesIter = testCommand.states.begin(); statesIter != testCommand.states.end(); statesIter++) {
         auto blockPosIter = nameToConnectedBlockPosition.find(statesIter->first);
         if (blockPosIter == nameToConnectedBlockPosition.end()) {
-            logError("Port '{}' does not match any on circuit", "CircuitTestGroup", statesIter->first);
+            logError("Port '{}' does not match any on circuit", "circuitTestGroupRunner", statesIter->first);
             return false;
         }
         logic_state_t actualState = simulator.getState((Address(blockPosIter->second)));
         if (actualState != statesIter->second) {
             testSucceeded = false;
-            logError("Inner test case failed: Expected port '{}' to have output '{}', got '{}'", "CircuitTestGroup - CHECK_STATES", statesIter->first, statesIter->second, actualState);
+            logError("Inner test case failed: Expected port '{}' to have output '{}', got '{}'", "circuitTestGroupRunner - CHECK_STATES", statesIter->first, statesIter->second, actualState);
         } else {
-            logInfo("Inner test case succeeded: Expected port '{}' to have output '{}', got '{}'", "CircuitTestGroup - CHECK_STATES", statesIter->first, statesIter->second, actualState);
+            logInfo("Inner test case succeeded: Expected port '{}' to have output '{}', got '{}'", "circuitTestGroupRunner - CHECK_STATES", statesIter->first, statesIter->second, actualState);
         }
     }
     return testSucceeded;
