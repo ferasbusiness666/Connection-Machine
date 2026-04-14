@@ -1,6 +1,7 @@
 #ifndef circuitTestGroup_h
 #define circuitTestGroup_h
 
+#include "backend/circuit/circuitDefs.h"
 #include "backend/evaluator/evalDefs.h"
 #include "backend/evaluator/simulator/logicState.h"
 
@@ -9,6 +10,7 @@ class EvalLogicSimulator;
 
 class CircuitTestGroup {
     typedef std::unordered_multimap<std::string, Position> NamePositionMap;
+    friend class CircuitTestGroupRunner;
 public:
     enum TestCommandType {
         NOP_COMMAND,
@@ -40,10 +42,12 @@ public:
     }
 
     struct TestResult {
-        TestResult(const TestCaseResult& result = NOT_RUN, const std::string& message = "No message.", const bool& running = false) : result(result), message(message), running(running) {}
+        TestResult(const TestCaseResult& result = NOT_RUN, const std::string& message = "No message.", const bool& queued = false, const bool& running = false, const circuit_id_t circuitID = 0) : result(result), message(message), queued(queued), running(running), circuitID(circuitID) {}
         TestCaseResult result = NOT_RUN;
         std::string message = "No message.";
+        bool queued = false;
         bool running = false;
+        circuit_id_t circuitID = 0;
     };
 
     struct TestCommand {
@@ -102,15 +106,7 @@ public:
     std::vector<std::string>::const_iterator getOutputIterator() const {return outputs.cbegin();}
     std::vector<std::string>::const_iterator getInputIteratorEnd() const {return inputs.cend();}
     std::vector<std::string>::const_iterator getOutputIteratorEnd() const {return outputs.cend();}
-
-    bool runAllTests(BlockType blockType, bool haltOnFailure, simulator_id_t simulatorToUse = 0);
-    bool runTests(std::vector<std::string>& testsToRun, BlockType blockType, bool haltOnFailure, simulator_id_t simulatorToUse = 0);
-    bool runTests(std::vector<int>& testsToRun, BlockType blockType, bool haltOnFailure, simulator_id_t simulatorToUse = 0);
-
 private:
-    bool generateTestCircuit(BlockType blockType, simulator_id_t simulatorToUse = 0);
-    bool runSetStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition);
-    bool runCheckStatesCommand(TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition);
 
     std::string name;
     // truth tables follow a strict format of every test case having a set state, a tick step (universal across all test cases,
@@ -119,8 +115,6 @@ private:
     int truthTableTicks; // setting this to -1 should make the timing automatic
     std::unordered_map<std::string, int> testCaseNameToID;
     std::vector<TestCase> testCases;
-    NamePositionMap namePositionMap;
-    EvalLogicSimulator* simulator;
     std::vector<std::string> inputs;
     std::vector<std::string> outputs;
 	Backend& backend;
