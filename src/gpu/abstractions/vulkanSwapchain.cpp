@@ -1,7 +1,7 @@
 #include "vulkanSwapchain.h"
 
-void Swapchain::init(VulkanDevice* device, VkSurfaceKHR surface, std::pair<uint32_t, uint32_t> size) {
-	this->device = device;
+void Swapchain::init(VulkanDevice& device, VkSurfaceKHR surface, std::pair<uint32_t, uint32_t> size) {
+	this->device = &device;
 
 	createSwapchain(surface, size, false);
 
@@ -10,7 +10,7 @@ void Swapchain::init(VulkanDevice* device, VkSurfaceKHR surface, std::pair<uint3
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 	imageSemaphores.resize(swapchain.image_count);
 	for (uint32_t i = 0; i < swapchain.image_count; ++i) {
-		vkCreateSemaphore(device->getDevice(), &semaphoreInfo, nullptr, &imageSemaphores[i]);
+		vkCreateSemaphore(this->device->getDevice(), &semaphoreInfo, nullptr, &imageSemaphores[i]);
 	}
 }
 

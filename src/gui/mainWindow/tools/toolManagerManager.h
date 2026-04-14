@@ -108,11 +108,11 @@ public:
 private:
 	struct BaseToolTypeMaker {
 		virtual ~BaseToolTypeMaker() { }
-		virtual SharedCircuitTool getInstance(const Environment& environment) const = 0;
+		virtual SharedCircuitTool getInstance(Environment& environment) const = 0;
 		virtual std::vector<std::string> getModes() const = 0;
 	};
 	template <class T> struct ToolTypeMaker : public BaseToolTypeMaker {
-		SharedCircuitTool getInstance(const Environment& environment) const override final { return std::make_shared<T>(environment); }
+		SharedCircuitTool getInstance(Environment& environment) const override final { return std::make_shared<T>(environment); }
 		std::vector<std::string> getModes() const override final { return T::getModes_(); }
 	};
 
@@ -128,7 +128,7 @@ private:
 
 	std::map<std::string, std::string> lastToolModes;
 
-	const Environment& environment;
+	Environment& environment;
 	DataUpdateEventManager& dataUpdateEventManager;
 
 	static std::map<std::string, std::unique_ptr<BaseToolTypeMaker>> tools;

@@ -9,7 +9,7 @@ class VulkanDevice;
 constexpr unsigned int FRAMES_IN_FLIGHT = 2;
 
 struct Frame {
-	Frame(VulkanDevice* device);
+	Frame(VulkanDevice& device);
 	~Frame();
 
 	VkCommandPool commandPool;
@@ -20,12 +20,12 @@ struct Frame {
 
 	LifetimeExtender lifetime;
 
-	VulkanDevice* device;
+	VulkanDevice& device;
 };
 
 class FrameManager {
 public:
-	void init(VulkanDevice* device);
+	void init(VulkanDevice& device);
 	void cleanup();
 
 	void incrementFrame();

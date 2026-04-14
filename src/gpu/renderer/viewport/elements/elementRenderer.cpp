@@ -9,28 +9,27 @@
 #include "gpu/abstractions/vulkanShader.h"
 #include "gpu/renderer/viewport/blockTextureManager.h"
 
-void ElementRenderer::init(VulkanDevice* device, VkRenderPass& renderPass) {
-	this->device = device;
-
+void ElementRenderer::init(VulkanDevice& device, VkRenderPass& renderPass) {
+	this->device = &device;
 	// block preview
-	VkShaderModule blockPreviewVertShader = createShaderModule(device->getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/blockPreview.vert.spv"));
-	VkShaderModule blockPreviewFragShader = createShaderModule(device->getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/blockPreview.frag.spv"));
+	VkShaderModule blockPreviewVertShader = createShaderModule(device.getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/blockPreview.vert.spv"));
+	VkShaderModule blockPreviewFragShader = createShaderModule(device.getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/blockPreview.frag.spv"));
 
 	PipelineInformation blockPreviewPipelineInfo{};
 	blockPreviewPipelineInfo.vertShader = blockPreviewVertShader;
 	blockPreviewPipelineInfo.fragShader = blockPreviewFragShader;
 	blockPreviewPipelineInfo.renderPass = renderPass;
 	blockPreviewPipelineInfo.pushConstants.push_back({ VK_SHADER_STAGE_VERTEX_BIT, sizeof(BlockPreviewPushConstant) });
-	blockPreviewPipelineInfo.descriptorSets.push_back(device->getBlockTextureManager().getDescriptorLayout());
-	blockPreviewPipelineInfo.sampleCount = device->getMaxUsableSampleCount();
+	blockPreviewPipelineInfo.descriptorSets.push_back(device.getBlockTextureManager().getDescriptorLayout());
+	blockPreviewPipelineInfo.sampleCount = device.getMaxUsableSampleCount();
 	blockPreviewPipeline.init(device, blockPreviewPipelineInfo);
 
-	destroyShaderModule(device->getDevice(), blockPreviewVertShader);
-	destroyShaderModule(device->getDevice(), blockPreviewFragShader);
+	destroyShaderModule(device.getDevice(), blockPreviewVertShader);
+	destroyShaderModule(device.getDevice(), blockPreviewFragShader);
 
 	// box selection
-	VkShaderModule boxSelectionVertShader = createShaderModule(device->getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/boxSelection.vert.spv"));
-	VkShaderModule boxSelectionFragShader = createShaderModule(device->getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/boxSelection.frag.spv"));
+	VkShaderModule boxSelectionVertShader = createShaderModule(device.getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/boxSelection.vert.spv"));
+	VkShaderModule boxSelectionFragShader = createShaderModule(device.getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/boxSelection.frag.spv"));
 
 	PipelineInformation boxSelectionPipelineInfo{};
 	boxSelectionPipelineInfo.vertShader = boxSelectionVertShader;
@@ -38,30 +37,30 @@ void ElementRenderer::init(VulkanDevice* device, VkRenderPass& renderPass) {
 	boxSelectionPipelineInfo.renderPass = renderPass;
 	boxSelectionPipelineInfo.pushConstants.push_back({ VK_SHADER_STAGE_VERTEX_BIT, offsetof(BoxSelectionPushConstant, state) });
 	boxSelectionPipelineInfo.pushConstants.push_back({ VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(uint32_t) });
-	boxSelectionPipelineInfo.sampleCount = device->getMaxUsableSampleCount();
+	boxSelectionPipelineInfo.sampleCount = device.getMaxUsableSampleCount();
 	boxSelectionPipeline.init(device, boxSelectionPipelineInfo);
 
-	destroyShaderModule(device->getDevice(), boxSelectionVertShader);
-	destroyShaderModule(device->getDevice(), boxSelectionFragShader);
+	destroyShaderModule(device.getDevice(), boxSelectionVertShader);
+	destroyShaderModule(device.getDevice(), boxSelectionFragShader);
 
 	// connection preview
-	VkShaderModule connectionPreviewVertShader = createShaderModule(device->getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/connectionPreview.vert.spv"));
-	VkShaderModule connectionPreviewFragShader = createShaderModule(device->getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/connectionPreview.frag.spv"));
+	VkShaderModule connectionPreviewVertShader = createShaderModule(device.getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/connectionPreview.vert.spv"));
+	VkShaderModule connectionPreviewFragShader = createShaderModule(device.getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/connectionPreview.frag.spv"));
 
 	PipelineInformation connectionPreviewPipelineInfo{};
 	connectionPreviewPipelineInfo.vertShader = connectionPreviewVertShader;
 	connectionPreviewPipelineInfo.fragShader = connectionPreviewFragShader;
 	connectionPreviewPipelineInfo.renderPass = renderPass;
 	connectionPreviewPipelineInfo.pushConstants.push_back({ VK_SHADER_STAGE_VERTEX_BIT, sizeof(ConnectionPreviewPushConstant) });
-	connectionPreviewPipelineInfo.sampleCount = device->getMaxUsableSampleCount();
+	connectionPreviewPipelineInfo.sampleCount = device.getMaxUsableSampleCount();
 	connectionPreviewPipeline.init(device, connectionPreviewPipelineInfo);
 
-	destroyShaderModule(device->getDevice(), connectionPreviewVertShader);
-	destroyShaderModule(device->getDevice(), connectionPreviewFragShader);
+	destroyShaderModule(device.getDevice(), connectionPreviewVertShader);
+	destroyShaderModule(device.getDevice(), connectionPreviewFragShader);
 
 	// arrow circle
-	VkShaderModule arrowCircleVertShader = createShaderModule(device->getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/arrowCircle.vert.spv"));
-	VkShaderModule arrowCircleFragShader = createShaderModule(device->getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/arrowCircle.frag.spv"));
+	VkShaderModule arrowCircleVertShader = createShaderModule(device.getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/arrowCircle.vert.spv"));
+	VkShaderModule arrowCircleFragShader = createShaderModule(device.getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/arrowCircle.frag.spv"));
 
 	PipelineInformation arrowCirclePipelineInfo{};
 	arrowCirclePipelineInfo.vertShader = arrowCircleVertShader;
@@ -69,15 +68,15 @@ void ElementRenderer::init(VulkanDevice* device, VkRenderPass& renderPass) {
 	arrowCirclePipelineInfo.renderPass = renderPass;
 	arrowCirclePipelineInfo.pushConstants.push_back({ VK_SHADER_STAGE_VERTEX_BIT, offsetof(ArrowCirclePushConstant, depth) });
 	arrowCirclePipelineInfo.pushConstants.push_back({ VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(uint32_t) });
-	arrowCirclePipelineInfo.sampleCount = device->getMaxUsableSampleCount();
+	arrowCirclePipelineInfo.sampleCount = device.getMaxUsableSampleCount();
 	arrowCirclePipeline.init(device, arrowCirclePipelineInfo);
 
-	destroyShaderModule(device->getDevice(), arrowCircleVertShader);
-	destroyShaderModule(device->getDevice(), arrowCircleFragShader);
+	destroyShaderModule(device.getDevice(), arrowCircleVertShader);
+	destroyShaderModule(device.getDevice(), arrowCircleFragShader);
 
 	// arrow
-	VkShaderModule arrowVertShader = createShaderModule(device->getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/arrow.vert.spv"));
-	VkShaderModule arrowFragShader = createShaderModule(device->getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/arrow.frag.spv"));
+	VkShaderModule arrowVertShader = createShaderModule(device.getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/arrow.vert.spv"));
+	VkShaderModule arrowFragShader = createShaderModule(device.getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/arrow.frag.spv"));
 
 	PipelineInformation arrowPipelineInfo{};
 	arrowPipelineInfo.vertShader = arrowVertShader;
@@ -85,11 +84,11 @@ void ElementRenderer::init(VulkanDevice* device, VkRenderPass& renderPass) {
 	arrowPipelineInfo.renderPass = renderPass;
 	arrowPipelineInfo.pushConstants.push_back({ VK_SHADER_STAGE_VERTEX_BIT, offsetof(ArrowPushConstant, depth) });
 	arrowPipelineInfo.pushConstants.push_back({ VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(uint32_t) });
-	arrowPipelineInfo.sampleCount = device->getMaxUsableSampleCount();
+	arrowPipelineInfo.sampleCount = device.getMaxUsableSampleCount();
 	arrowPipeline.init(device, arrowPipelineInfo);
 
-	destroyShaderModule(device->getDevice(), arrowVertShader);
-	destroyShaderModule(device->getDevice(), arrowFragShader);
+	destroyShaderModule(device.getDevice(), arrowVertShader);
+	destroyShaderModule(device.getDevice(), arrowFragShader);
 }
 
 void ElementRenderer::cleanup() {

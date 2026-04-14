@@ -22,7 +22,12 @@ public:
 	inline ToolStack& operator=(const ToolStack& other) = delete;
 
 	void activate();
-	void deactivate() { isActive = false; if (!toolStack.empty()) { toolStack.back()->deactivate(); toolStack.back()->elementCreator.clear(); } }
+	void deactivate() {
+		isActive = false;
+		if (!toolStack.empty()) {
+			toolStack.back()->deactivate(true);
+		}
+	}
 
 	void reset();
 	void pushTool(SharedCircuitTool newTool, bool resetTool = true);

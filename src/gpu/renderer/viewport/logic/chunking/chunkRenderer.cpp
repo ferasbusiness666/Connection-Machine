@@ -11,22 +11,22 @@
 	#include <tracy/Tracy.hpp>
 #endif
 
-void ChunkRenderer::init(VulkanDevice* device, VkRenderPass& renderPass) {
-	this->device = device;
+void ChunkRenderer::init(VulkanDevice& device, VkRenderPass& renderPass) {
+	this->device = &device;
 
 	// ==================== STATE BUFFER setup =============================================
 	// create layout and descriptor set
 	DescriptorLayoutBuilder stateBufferBuilder;
 	stateBufferBuilder.addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-	stateBufferDescriptorSetLayout = stateBufferBuilder.build(device->getDevice(), VK_SHADER_STAGE_VERTEX_BIT, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+	stateBufferDescriptorSetLayout = stateBufferBuilder.build(this->device->getDevice(), VK_SHADER_STAGE_VERTEX_BIT, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
 
 	// ==================== PIPELINE setup =================================================
 
 	// load shaders
-	VkShaderModule blockVertShader = createShaderModule(device->getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/block.vert.spv"));
-	VkShaderModule blockFragShader = createShaderModule(device->getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/block.frag.spv"));
-	VkShaderModule wireVertShader = createShaderModule(device->getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/wire.vert.spv"));
-	VkShaderModule wireFragShader = createShaderModule(device->getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/wire.frag.spv"));
+	VkShaderModule blockVertShader = createShaderModule(this->device->getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/block.vert.spv"));
+	VkShaderModule blockFragShader = createShaderModule(this->device->getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/block.frag.spv"));
+	VkShaderModule wireVertShader = createShaderModule(this->device->getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/wire.vert.spv"));
+	VkShaderModule wireFragShader = createShaderModule(this->device->getDevice(), readFileAsBytes(DirectoryManager::getResourceDirectory() / "shaders/wire.frag.spv"));
 
 	PipelineInformation blockPipelineInfo{};
 	blockPipelineInfo.vertShader = blockVertShader;
@@ -36,8 +36,8 @@ void ChunkRenderer::init(VulkanDevice* device, VkRenderPass& renderPass) {
 	blockPipelineInfo.vertexAttributeDescriptions = BlockInstance::getAttributeDescriptions();
 	blockPipelineInfo.pushConstants.push_back({VK_SHADER_STAGE_VERTEX_BIT, sizeof(ChunkPushConstants)});
 	blockPipelineInfo.descriptorSets.push_back(stateBufferDescriptorSetLayout);
-	blockPipelineInfo.descriptorSets.push_back(device->getBlockTextureManager().getDescriptorLayout());
-	blockPipelineInfo.sampleCount = device->getMaxUsableSampleCount();
+	blockPipelineInfo.descriptorSets.push_back(this->device->getBlockTextureManager().getDescriptorLayout());
+	blockPipelineInfo.sampleCount = this->device->getMaxUsableSampleCount();
 	blockPipeline.init(device, blockPipelineInfo);
 
 	PipelineInformation wirePipelineInfo{};
@@ -48,14 +48,14 @@ void ChunkRenderer::init(VulkanDevice* device, VkRenderPass& renderPass) {
 	wirePipelineInfo.vertexAttributeDescriptions = WireInstance::getAttributeDescriptions();
 	wirePipelineInfo.pushConstants.push_back({VK_SHADER_STAGE_VERTEX_BIT, sizeof(ChunkPushConstants)});
 	wirePipelineInfo.descriptorSets.push_back(stateBufferDescriptorSetLayout);
-	wirePipelineInfo.sampleCount = device->getMaxUsableSampleCount();
+	wirePipelineInfo.sampleCount = this->device->getMaxUsableSampleCount();
 	wirePipeline.init(device, wirePipelineInfo);
 
 	// destroy shader modules since we won't be recreating pipelines
-	destroyShaderModule(device->getDevice(), blockVertShader);
-	destroyShaderModule(device->getDevice(), blockFragShader);
-	destroyShaderModule(device->getDevice(), wireVertShader);
-	destroyShaderModule(device->getDevice(), wireFragShader);
+	destroyShaderModule(this->device->getDevice(), blockVertShader);
+	destroyShaderModule(this->device->getDevice(), blockFragShader);
+	destroyShaderModule(this->device->getDevice(), wireVertShader);
+	destroyShaderModule(this->device->getDevice(), wireFragShader);
 }
 
 void ChunkRenderer::cleanup() {

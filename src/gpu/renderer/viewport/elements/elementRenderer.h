@@ -78,7 +78,7 @@ struct TextRenderData {
 
 class ElementRenderer {
 public:
-	void init(VulkanDevice* device, VkRenderPass& renderPass);
+	void init(VulkanDevice& device, VkRenderPass& renderPass);
 	void cleanup();
 
 	void renderBlockPreviews(Frame& frame, const glm::mat4& viewMatrix, const std::vector<BlockPreviewRenderData>& blockPreviews);
@@ -96,7 +96,7 @@ private:
 	Pipeline arrowCirclePipeline;
 	Pipeline arrowPipeline;
 
-	VulkanDevice* device = nullptr;
+	VulkanDevice* device;
 };
 
 #endif

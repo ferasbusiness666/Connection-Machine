@@ -52,7 +52,7 @@ void BlockRenderDataManager::setBlockTexture(BlockRenderDataId blockRenderDataId
 		logError("Failed to call setBlockTextureIndex on non existent BlockRenderData {}.", "BlockRenderDataManager", blockRenderDataId);
 		return;
 	}
-	BlockTextureManager& blockTextureManager = MainRenderer::get().getVulkanInstance().getDevice()->getBlockTextureManager();
+	BlockTextureManager& blockTextureManager = MainRenderer::get().getVulkanInstance().getDevice().getBlockTextureManager();
 	BlockTextureCords newBlockTextureCords = blockTextureManager.getBlockTextureCords(blockTextureId);
 	if (newBlockTextureCords == iter->second.blockTextureCords) return;
 	iter->second.blockTextureCords = newBlockTextureCords;
@@ -65,7 +65,7 @@ void BlockRenderDataManager::setBlockTexture(BlockRenderDataId blockRenderDataId
 		logError("Failed to call setBlockTextureIndex on non existent BlockRenderData {}.", "BlockRenderDataManager", blockRenderDataId);
 		return;
 	}
-	BlockTextureManager& blockTextureManager = MainRenderer::get().getVulkanInstance().getDevice()->getBlockTextureManager();
+	BlockTextureManager& blockTextureManager = MainRenderer::get().getVulkanInstance().getDevice().getBlockTextureManager();
 	BlockTextureCords newBlockTextureCords = blockTextureManager.getBlockTextureCords(blockTextureId, smallestTextureCord, textureSize);
 	if (newBlockTextureCords == iter->second.blockTextureCords) return;
 	iter->second.blockTextureCords = newBlockTextureCords;
@@ -78,7 +78,7 @@ void BlockRenderDataManager::setBlockTexture(BlockRenderDataId blockRenderDataId
 		logError("Failed to call setBlockTextureIndex on non existent BlockRenderData {}.", "BlockRenderDataManager", blockRenderDataId);
 		return;
 	}
-	BlockTextureManager& blockTextureManager = MainRenderer::get().getVulkanInstance().getDevice()->getBlockTextureManager();
+	BlockTextureManager& blockTextureManager = MainRenderer::get().getVulkanInstance().getDevice().getBlockTextureManager();
 	BlockTextureCords newBlockTextureCords = blockTextureManager.getBlockTextureCords(blockTextureId, smallestTextureCord, textureSize, textureStepSize);
 	if (newBlockTextureCords != iter->second.blockTextureCords) {
 		iter->second.blockTextureCords = newBlockTextureCords;

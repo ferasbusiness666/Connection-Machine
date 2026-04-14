@@ -12,9 +12,10 @@
 #include "mainRendererDefs.h"
 #include "blockRenderDataManager.h"
 #include "vulkanInstance.h"
-
+#include "imageManager.h"
 
 class MainRenderer {
+	friend class ImageManager;
 public:
 	static MainRenderer& get();
 	static void kill();
@@ -95,6 +96,9 @@ public:
 	ElementId addTextOnViewport(ViewportId viewportId, const TextRenderData& textRenderData);
 	void removeTextOnViewport(ViewportId viewportId, ElementId id);
 	const std::unordered_map<ElementId, TextRenderData>* getTextOnViewport(ViewportId viewportId) const;
+
+	// images
+	VkDescriptorSet getImage(const std::string& path);
 private:
 	inline WindowId getNewWindowId() { return ++lastWindowId; }
 	inline ViewportId getNewViewportId() { return ++lastViewportId; }
@@ -107,6 +111,7 @@ private:
 	std::map<WindowId, WindowRenderer> windowRenderers;
 	std::map<ViewportId, ViewportRenderer> viewportRenderers;
 	BlockRenderDataManager blockRenderDataManager;
+	ImageManager imageManager;
 };
 
 

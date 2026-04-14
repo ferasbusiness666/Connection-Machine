@@ -151,7 +151,7 @@ struct PortStateRange {
 // TODO - maybe these should just be split into two different types
 class VulkanLogicAllocation {
 public:
-	VulkanLogicAllocation(VulkanDevice* device, const RenderedBlocks& blocks, const RenderedWires& wires, const EvalLogicSimulator* simulator, const Address& address);
+	VulkanLogicAllocation(VulkanDevice& device, const RenderedBlocks& blocks, const RenderedWires& wires, const EvalLogicSimulator* simulator, const Address& address);
 	~VulkanLogicAllocation();
 
 	inline const std::optional<AllocatedBuffer>& getBlockBuffer() const { return blockBuffer; }
@@ -189,7 +189,7 @@ class LogicGroup {
 public:
 	inline RenderedBlocks& getRenderedBlocks() { return blocks; }
 	inline RenderedWires& getRenderedWires() { return wires; }
-	void rebuildAllocation(VulkanDevice* device, const EvalLogicSimulator* simulator, const Address& address);
+	void rebuildAllocation(VulkanDevice& device, const EvalLogicSimulator* simulator, const Address& address);
 
 	std::optional<std::shared_ptr<VulkanLogicAllocation>> getAllocation();
 
@@ -215,7 +215,7 @@ struct ChunkIntersection {
 
 class VulkanChunker {
 public:
-	VulkanChunker(VulkanDevice* device);
+	VulkanChunker(VulkanDevice& device);
 	~VulkanChunker();
 
 	void startMakingEdits();
@@ -246,7 +246,7 @@ private:
 	// while edits are being made
 	std::unordered_set<LogicGroup*> logicGroupsToUpdate;
 
-	VulkanDevice* device = nullptr;
+	VulkanDevice& device;
 	const EvalLogicSimulator* simulator = nullptr;
 	Address address;
 };

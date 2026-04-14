@@ -26,7 +26,7 @@ struct PipelineInformation {
 
 class Pipeline {
 public:
-	void init(VulkanDevice* device, const PipelineInformation& info);
+	void init(VulkanDevice& device, const PipelineInformation& info);
 	void cleanup();
 
 	void cmdPushConstants(VkCommandBuffer commandBuffer, void* data);

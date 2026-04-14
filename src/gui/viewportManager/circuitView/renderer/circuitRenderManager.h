@@ -22,6 +22,8 @@ private:
 		Orientation orientation;
 	};
 
+	void createPortConnection(Position blockPosition, Position portPosition, const std::vector<std::pair<Position, Position>>& otherBlockPositions);
+
 	circuit_id_t circuitId;
 	ViewportId viewportId;
 	Environment& environment;

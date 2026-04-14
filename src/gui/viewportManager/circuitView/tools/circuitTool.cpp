@@ -74,8 +74,7 @@ void CircuitTool::setup(ViewportId viewportId, EventRegister& eventRegister, Too
 }
 
 void CircuitTool::unsetup() {
-	elementCreator.clear();
-	deactivate();
+	deactivate(true);
 }
 
 bool CircuitTool::enterBlockView(const Event* event) {

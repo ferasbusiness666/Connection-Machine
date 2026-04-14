@@ -146,17 +146,45 @@ std::vector<circuit_id_t> ConnectionMachineParser::load(const std::string& path)
 			std::string uuid;
 			inputFile >> uuid;
 			currentParsedCircuit->setUUID(uuid == "null" ? generate_uuid_v4() : uuid);
-		} else if (token == "texture:") {
-			std::string texturePath;
-			inputFile >> std::quoted(texturePath);
-			currentParsedCircuit->setTexturePath(texturePath);
-		} else if (token == "textureTileData:") {
-			int smallestTextureCordX, smallestTextureCordY, textureSizeX, textureSizeY;
-			inputFile >> cToken >> cToken >> cToken >> smallestTextureCordX >> cToken >> smallestTextureCordY >> cToken >>
-				cToken >> cToken >> textureSizeX >> cToken >> textureSizeY >> cToken;
-			currentParsedCircuit->setUseFullTexture(false);
-			currentParsedCircuit->setSmallestTextureCord({ smallestTextureCordX, smallestTextureCordY });
-			currentParsedCircuit->setTextureSize({ textureSizeX, textureSizeY });
+		} else if (token == "renderData:") {
+			while (true) {
+				inputFile >> std::ws;
+				if (inputFile.peek() != '(') break;
+				inputFile >> cToken;
+				inputFile >> token;
+				if (token == "texture:") {
+					std::string texturePath;
+					inputFile >> std::quoted(texturePath);
+					currentParsedCircuit->setTexturePath(texturePath);
+					inputFile >> std::ws;
+					if (inputFile.peek() != ')') {
+						inputFile >> token;
+						if (token == "textureTileData:") {
+							int smallestTextureCordX, smallestTextureCordY, textureSizeX, textureSizeY;
+							inputFile >> cToken >> smallestTextureCordX >> cToken >> smallestTextureCordY >> cToken >>
+								cToken >> cToken >> textureSizeX >> cToken >> textureSizeY >> cToken;
+							currentParsedCircuit->setUseFullTexture(false);
+							currentParsedCircuit->setSmallestTextureCord({ smallestTextureCordX, smallestTextureCordY });
+							currentParsedCircuit->setTextureSize({ textureSizeX, textureSizeY });
+							inputFile >> std::ws;
+							if (inputFile.peek() != ')') {
+								inputFile >> token;
+							}
+						}
+						if (token == "stateData:") {
+							int virtualConnectionId, stateOffsetX, stateOffsetY;
+							inputFile >> virtualConnectionId >> cToken >> cToken >> cToken >> stateOffsetX >> cToken >> stateOffsetY >> cToken;
+							currentParsedCircuit->setRenderState(true);
+							// currentParsedCircuit->({ smallestTextureCordX, smallestTextureCordY });
+							// currentParsedCircuit->setTextureSize({ textureSizeX, textureSizeY });
+							logError("StateData not implemented yet!", "ConnectionMachineParser");
+						}
+					}
+				} else {
+					logError("Invalid renderData type \"{}\"", "ConnectionMachineParser", token);
+				}
+				inputFile >> cToken;
+			}
 		} else if (token == "blockId") {
 			// block id
 			int blockId;

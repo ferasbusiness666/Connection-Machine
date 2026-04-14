@@ -29,7 +29,7 @@ public:
 	void addLifetimeObjects(const std::vector<std::shared_ptr<void>>& lifetimeObjects) {
 		for (const std::shared_ptr<void>& obj : lifetimeObjects) frames.getCurrentFrame()->lifetime.push(obj);
 	}
-	VulkanDevice* getDevice() { return device; }
+	VulkanDevice& getDevice() { return *device; }
 
 	std::pair<VkDescriptorSet, std::vector<std::shared_ptr<void>>> getBlockTextureArrayLayer_ImGui(unsigned int layer) {
 		updateImGuiBlockTextureArrayLayers(); // just make sure its up to date

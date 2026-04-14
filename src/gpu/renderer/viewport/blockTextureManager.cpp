@@ -11,13 +11,13 @@ BlockTextureArray::~BlockTextureArray() {
 	descriptorAllocator.cleanup();
 }
 
-void BlockTextureManager::init(VulkanDevice* device) {
-	this->device = device;
+void BlockTextureManager::init(VulkanDevice& device) {
+	this->device = &device;
 
 	// create layout and descriptor set
 	DescriptorLayoutBuilder textureLayoutBuilder;
 	textureLayoutBuilder.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-	descriptorLayout = textureLayoutBuilder.build(device->getDevice(), VK_SHADER_STAGE_FRAGMENT_BIT);
+	descriptorLayout = textureLayoutBuilder.build(this->device->getDevice(), VK_SHADER_STAGE_FRAGMENT_BIT);
 
 	makeTextureArray(1, { BLOCK_TEXTURE_SIZE, BLOCK_TEXTURE_SIZE, 1 });
 	while (layerRectPackers.size() < textureArray->layerCount) layerRectPackers.push_back(RectPacker(Vec2Int(textureArray->textureSize.width, textureArray->textureSize.height)));
@@ -303,12 +303,12 @@ void BlockTextureManager::makeTextureArray(uint32_t layerCount, VkExtent3D textu
 
 	// logInfo("Making texture array {}, {}, {}", "BlockTextureManager", textureSize.width, textureSize.height, layerCount);
 	textureArray = std::make_shared<BlockTextureArray>();
-	textureArray->descriptorAllocator.init(device, 1, { { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1.0f } });
+	textureArray->descriptorAllocator.init(*device, 1, { { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1.0f } });
 	textureArray->textureSize = textureSize;
 	textureArray->device = device;
 	textureArray->layerCount = layerCount;
 	textureArray->image.emplace(
-		device,
+		*device,
 		textureSize,
 		VK_FORMAT_R8G8B8A8_UNORM,
 		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
@@ -374,7 +374,7 @@ void BlockTextureManager::addTextureToArray(const stbi_uc* pixels, Vec2Int textu
 	VkDeviceSize imageSize = static_cast<VkDeviceSize>(textureSize.x) * textureSize.y * 4;
 
 	// --- Create staging buffer ---
-	AllocatedBuffer stagingBuffer = createBuffer(textureArray->device, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+	AllocatedBuffer stagingBuffer = createBuffer(*textureArray->device, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
 	// Copy pixels into the staging buffer
 	vmaCopyMemoryToAllocation(textureArray->device->getAllocator(), pixels, stagingBuffer.allocation, 0, imageSize);

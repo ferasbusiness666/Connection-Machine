@@ -7,7 +7,7 @@
 
 class NBuffer {
 public:
-	void init(VulkanDevice* device, size_t allocSize, VkBufferUsageFlags usage, VmaAllocationCreateFlags flags);
+	void init(VulkanDevice& device, size_t allocSize, VkBufferUsageFlags usage, VmaAllocationCreateFlags flags);
 	void cleanup();
 
 	inline void incrementBufferFrame() { index = (index + 1) % FRAMES_IN_FLIGHT; }
@@ -19,7 +19,7 @@ private:
 	std::array<VkDescriptorBufferInfo, FRAMES_IN_FLIGHT> bufferInfos;
 	uint32_t index = 0;
 
-	VulkanDevice* device = nullptr;
+	VulkanDevice* device;
 };
 
 #endif

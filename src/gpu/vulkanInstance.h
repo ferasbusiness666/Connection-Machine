@@ -11,8 +11,8 @@ public:
 	VulkanInstance();
 	~VulkanInstance();
 
-	VulkanDevice* getDevice();
-	VulkanDevice* createOrGetDevice(VkSurfaceKHR surfaceForPresenting);
+	VulkanDevice& getDevice();
+	VulkanDevice& createOrGetDevice(VkSurfaceKHR surfaceForPresenting);
 
 	inline vkb::Instance getVkbInstance() { return instance; };
 

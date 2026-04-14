@@ -27,6 +27,7 @@ void registerSettings() {
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Simulation/Increase Speed", Keybind(ImGuiKey::ImGuiKey_UpArrow));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Simulation/Decrease Speed", Keybind(ImGuiKey::ImGuiKey_DownArrow));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Simulation/Reset Simulation", Keybind(ImGuiKey::ImGuiKey_R | ImGuiKey::ImGuiMod_Ctrl));
+	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Simulation/Transverse Simulation", Keybind(ImGuiKey::ImGuiMod_Shift));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Undo", Keybind(ImGuiKey::ImGuiKey_Z | ImGuiKey::ImGuiMod_Ctrl));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Redo", Keybind(ImGuiKey::ImGuiKey_Z | ImGuiKey::ImGuiMod_Ctrl  | ImGuiKey::ImGuiMod_Shift));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/Editing/Copy", Keybind(ImGuiKey::ImGuiKey_C | ImGuiKey::ImGuiMod_Ctrl));

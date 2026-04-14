@@ -3,11 +3,11 @@
 #include "gpu/renderer/frameManager.h"
 
 ImageSwapchain::Semaphore::~Semaphore() {
-	vkDestroySemaphore(MainRenderer::get().getVulkanInstance().getDevice()->getDevice(), semaphore, nullptr);
+	vkDestroySemaphore(MainRenderer::get().getVulkanInstance().getDevice().getDevice(), semaphore, nullptr);
 }
 
-void ImageSwapchain::init(VulkanDevice* device) {
-	this->device = device;
+void ImageSwapchain::init(VulkanDevice& device) {
+	this->device = &device;
 
 	// create image semaphores
 	VkSemaphoreCreateInfo semaphoreInfo = {};
@@ -15,14 +15,14 @@ void ImageSwapchain::init(VulkanDevice* device) {
 	imageSemaphores.resize(FRAMES_IN_FLIGHT);
 	for (uint32_t i = 0; i < imageSemaphores.size(); ++i) {
 		VkSemaphore semaphore;
-		vkCreateSemaphore(device->getDevice(), &semaphoreInfo, nullptr, &semaphore);
+		vkCreateSemaphore(this->device->getDevice(), &semaphoreInfo, nullptr, &semaphore);
 		imageSemaphores[i] = std::make_shared<Semaphore>(semaphore);
 	}
 }
 
 void ImageSwapchain::cleanup() {
 	for (unsigned int i = 0; i < images.size(); i++) {
-		vkDestroyFramebuffer(device->getDevice(), framebuffers[i], nullptr);
+		vkDestroyFramebuffer(this->device->getDevice(), framebuffers[i], nullptr);
 	}
 	framebuffers.clear();
 	images.clear();
@@ -43,7 +43,7 @@ void ImageSwapchain::create(VkRenderPass renderPass, std::pair<uint32_t, uint32_
 
 		// Create resolve image (non-MSAA, for ImGui to sample)
 		images[i] = std::make_shared<AllocatedImage>(
-			device,
+			*device,
 			imageSize,
 			VK_FORMAT_R8G8B8A8_UNORM,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,

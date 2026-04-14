@@ -1,5 +1,5 @@
 #include "mainRenderer.h"
-#include "gpu/renderer/imgui/imGuiRenderer.h"
+#include "renderer/imgui/imGuiRenderer.h"
 
 std::optional<MainRenderer> mainRendererSingleton;
 
@@ -47,6 +47,7 @@ void MainRenderer::deregisterWindow(WindowId windowId) {
 		logError("Failed to call deregisterWindow on non existent window {}.", "MainRenderer", windowId);
 		return;
 	}
+	imageManager.clearWindow(iter->first);
 	windowRenderers.erase(iter);
 }
 
@@ -67,31 +68,31 @@ void MainRenderer::setBlockSize(BlockRenderDataId blockRenderDataId, Size size) 
 }
 
 BlockTextureId MainRenderer::addBlockTexture(const std::string& path) {
-	return vulkanInstance.getDevice()->getBlockTextureManager().addTexture(path);
+	return vulkanInstance.getDevice().getBlockTextureManager().addTexture(path);
 }
 
 BlockTextureId MainRenderer::addBlockTexture(const std::filesystem::path& path) {
-	return vulkanInstance.getDevice()->getBlockTextureManager().addTexture(path.string());
+	return vulkanInstance.getDevice().getBlockTextureManager().addTexture(path.string());
 }
 
 void MainRenderer::refreshBlockTexture(const std::string& path) {
-	vulkanInstance.getDevice()->getBlockTextureManager().refreshBlockTexture(path);
+	vulkanInstance.getDevice().getBlockTextureManager().refreshBlockTexture(path);
 }
 
 BlockTextureId MainRenderer::addBlockTexture(const unsigned char* pixels, int textureWidth, int textureHeight) {
-	return vulkanInstance.getDevice()->getBlockTextureManager().addTexture(pixels, textureWidth, textureHeight);
+	return vulkanInstance.getDevice().getBlockTextureManager().addTexture(pixels, textureWidth, textureHeight);
 }
 
 void MainRenderer::updateBlockTexture(const unsigned char* pixels, BlockTextureId blockTextureId) {
-	vulkanInstance.getDevice()->getBlockTextureManager().updateBlockTexture(pixels, blockTextureId);
+	vulkanInstance.getDevice().getBlockTextureManager().updateBlockTexture(pixels, blockTextureId);
 }
 
 void MainRenderer::removeBlockTexture(const std::string& path) {
-	vulkanInstance.getDevice()->getBlockTextureManager().removeBlockTexture(path);
+	vulkanInstance.getDevice().getBlockTextureManager().removeBlockTexture(path);
 }
 
 void MainRenderer::removeBlockTexture(BlockTextureId blockTextureId) {
-	vulkanInstance.getDevice()->getBlockTextureManager().removeBlockTexture(blockTextureId);
+	vulkanInstance.getDevice().getBlockTextureManager().removeBlockTexture(blockTextureId);
 }
 
 void MainRenderer::setBlockTexture(BlockRenderDataId blockRenderDataId, BlockTextureId blockTextureId) {
@@ -427,4 +428,17 @@ const std::unordered_map<ElementId, TextRenderData>* MainRenderer::getTextOnView
 		return nullptr;
 	}
 	return &iter->second.getTextOnViewport();
+}
+
+VkDescriptorSet MainRenderer::getImage(const std::string& path) {
+	if (currentlyRenderedWindow == 0) {
+		logError("Can't start viewport rendering when no window is rendering.");
+		return VK_NULL_HANDLE;
+	}
+	auto windowsIter = windowRenderers.find(currentlyRenderedWindow);
+	assert(windowsIter != windowRenderers.end());
+	auto [descriptorSet, lifetimeObjects] = imageManager.getImage(path, currentlyRenderedWindow);
+	if (descriptorSet == nullptr) return VK_NULL_HANDLE;
+	windowsIter->second.addLifetimeObjects(lifetimeObjects);
+	return descriptorSet;
 }

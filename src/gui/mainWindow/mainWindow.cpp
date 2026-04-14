@@ -4,7 +4,9 @@
 #include "SDL3/SDL_dialog.h"
 
 #include "computerAPI/circuitTestFileLoader.h"
+#include "gui/mainWindow/widgets/aboutWidget.h"
 #include "gui/mainWindow/widgets/circuitTestWidget.h"
+#include "gui/mainWindow/widgets/settingWidget.h"
 #include "gui/viewportManager/circuitView/tutorialDataManager.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
@@ -62,7 +64,7 @@ bool MainWindow::isPressingKeybind(const std::string& settingKey, bool repeat) c
 	return isPressingKeybind(*keybind, repeat);
 }
 
-void MainWindow::createPopup(std::string message, const std::vector<std::pair<std::string, std::function<void()>>>& buttons) {
+void MainWindow::createPopup(const std::string& message, const std::vector<std::pair<std::string, std::function<void()>>>& buttons) {
 	createWidget<PopupWidget>(message, buttons);
 }
 
@@ -340,7 +342,11 @@ void MainWindow::render() {
 		if (ImGui::BeginMainMenuBar()) {
 			if (ImGui::BeginMenu("Connnection Machine")) {
 				if (ImGui::MenuItem("About")) {
-					logInfo("ImGui branch!");
+					App::runOnMain([this]() { createWidget<AboutWidget>(); });
+				}
+				ImGui::Separator();
+				if (ImGui::MenuItem("Settings")) {
+					App::runOnMain([this]() { createWidget<SettingWidget>(); });
 				}
 				ImGui::Separator();
 				if (ImGui::MenuItem("Quit Connnection Machine")) {
@@ -479,16 +485,11 @@ bool MainWindow::tryClose() {
 				std::make_pair( "Save", [uuid = circuit.second.getUUID(), this]() {
 					logInfo("Saving circuit {}", "", uuid);
 					static const SDL_DialogFileFilter filters[] = { { "Circuit Files", "cir" } };
-					typedef std::pair<std::pair<CircuitFileManager&, std::string>, MainWindow&> DataType;
-					DataType* data = new DataType(
-						std::piecewise_construct,
-						std::forward_as_tuple(environment.getCircuitFileManager(), uuid),
-						std::forward_as_tuple(*this)
-					);
+					std::pair<MainWindow&, std::string>* data = new std::pair<MainWindow&, std::string>(*this, uuid);
 					SDL_ShowSaveFileDialog([](void* userData, const char* const* filePaths, int filter) {
-						DataType* data = (DataType*)userData;
-						SaveCallback_NoDelete(&data->first, filePaths, filter); // deletes data
-						data->second.kill(false);
+						std::pair<MainWindow&, std::string>* data = (std::pair<MainWindow&, std::string>*)userData;
+						SaveCallback_NoDelete(&data, filePaths, filter);
+						data->first.kill(false);
 						delete data;
 					}, data, nullptr, filters, 1, nullptr);
 				}),

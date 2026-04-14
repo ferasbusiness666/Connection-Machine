@@ -10,7 +10,7 @@ public:
 		~Semaphore();
 		VkSemaphore semaphore;
 	};
-	void init(VulkanDevice* device);
+	void init(VulkanDevice& device);
 	void cleanup();
 
 	void create(VkRenderPass renderPass, std::pair<uint32_t, uint32_t> size, const AllocatedImage& colorImage, bool useOld);

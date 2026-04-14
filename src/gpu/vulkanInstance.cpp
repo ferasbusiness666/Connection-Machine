@@ -77,7 +77,7 @@ VulkanInstance::~VulkanInstance() {
 	vkb::destroy_instance(instance);
 }
 
-VulkanDevice* VulkanInstance::getDevice() {
+VulkanDevice& VulkanInstance::getDevice() {
 	if (!device.has_value()) {
 		logInfo("Creating tmp SDL window to create devise");
 		SdlWindow sdlWindow("tmp", 1, 1);
@@ -87,15 +87,15 @@ VulkanDevice* VulkanInstance::getDevice() {
 		}
 		device.emplace(surface);
 	}
-	return &device.value();
+	return device.value();
 }
 
-VulkanDevice* VulkanInstance::createOrGetDevice(VkSurfaceKHR surfaceForPresenting) {
+VulkanDevice& VulkanInstance::createOrGetDevice(VkSurfaceKHR surfaceForPresenting) {
 	// create device if one doesn't exist
 	if (!device.has_value()) {
 		device.emplace(surfaceForPresenting);
 	}
-	return &device.value();
+	return device.value();
 }
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugCallback(

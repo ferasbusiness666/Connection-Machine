@@ -18,7 +18,7 @@ Tutorial::Tutorial(Environment& environment, CircuitView& circuitView) :
 	});
 	dataUpdateEventReciever.linkFunction("circuitViewChangeCircuit", [this](const DataUpdateEventManager::EventData* event) -> bool {
 		elementCreator.clear();
-		if (circuitId == this->circuitView.getCircuit()->getCircuitId()) {
+		if (this->circuitView.getCircuit() && circuitId == this->circuitView.getCircuit()->getCircuitId()) {
 			runCurrentStep();
 		}
 		return false;
@@ -30,7 +30,7 @@ void Tutorial::StartTutorial() {
 	if (tutorialSteps.empty()) return;
 	tutorialRunning = true;
 	tutorialState = 0;
-	circuit_id_t circuitId = circuitView.getBackend().getCircuitManager().createNewCircuit(false);
+	circuitId = circuitView.getBackend().getCircuitManager().createNewCircuit(false);
 	std::optional<simulator_id_t> simulatorId = circuitView.getBackend().createSimulator(circuitId);
 	if (!simulatorId) {
 		logError("Failed to create simulator.", "Tutorial::StartTutorial");
@@ -113,10 +113,14 @@ void Tutorial::runCurrentStep() {
 	if (!currentCircuit) return;
 	const BlockContainer& blockContainer = currentCircuit->getBlockContainer();
 	// change this later to real popups or something
+	// yippee i changed it later to real pop ups or something
 	for (const TutorialAction::Message& message : currentStep.action.messages) {
-		elementCreator.addText(message.message, message.pos, message.scale);
+		elementCreator.addText(message.message, message.pos, -message.scale);
 	}
-	for (const TutorialAction::BlockPreviewInfo& blockPreview : currentStep.action.blockPreviews) {
+	for (const TutorialAction::BlockInfo& block : currentStep.action.blocks) {
+		currentCircuit->tryInsertBlock(block.pos, block.orientation, block.type);
+	}
+	for (const TutorialAction::BlockInfo& blockPreview : currentStep.action.blockPreviews) {
 		elementCreator.addBlockPreview(
 			BlockPreview(environment.getBlockRenderDataFeeder().getBlockRenderDataId(blockPreview.type), blockPreview.pos, blockPreview.orientation)
 		);
@@ -129,7 +133,7 @@ void Tutorial::runCurrentStep() {
 									 .getBlockData(block1->type())
 									 ->getConnectionPortOffset(blockContainer.getOutputConnectionEnd(connectionPreview.pos1).value().getConnectionId());
 		} else {
-			for (const TutorialAction::BlockPreviewInfo& blockPreview : currentStep.action.blockPreviews) {
+			for (const TutorialAction::BlockInfo& blockPreview : currentStep.action.blockPreviews) {
 				if (connectionPreview.pos1.withinArea(
 						blockPreview.pos,
 						blockPreview.pos +
@@ -146,7 +150,7 @@ void Tutorial::runCurrentStep() {
 									 .getBlockData(block2->type())
 									 ->getConnectionPortOffset(blockContainer.getInputConnectionEnd(connectionPreview.pos2).value().getConnectionId());
 		} else {
-			for (const TutorialAction::BlockPreviewInfo& blockPreview : currentStep.action.blockPreviews) {
+			for (const TutorialAction::BlockInfo& blockPreview : currentStep.action.blockPreviews) {
 				if (connectionPreview.pos2.withinArea(
 						blockPreview.pos,
 						blockPreview.pos +
