@@ -2,6 +2,7 @@
 
 #include "backend/container/block/blockDefs.h"
 #include "gui/viewportManager/circuitView/events/customEvents.h"
+#include "gui/viewportManager/circuitView/tools/other/treeTraversal.h"
 #include "imgui/imgui_internal.h"
 
 #include "gui/viewportManager/circuitView/circuitView.h"
@@ -423,7 +424,7 @@ void CircuitTestWidget::renderSideBar(BlockType blockType, const std::string& te
 				ImGui::PopStyleColor();
 				ImGui::PopStyleVar();
 			) {
-			
+
 			}
 			ImGui::EndChild();
 			ImGui::PopID();
@@ -442,5 +443,13 @@ void CircuitTestWidget::update() {
 	if (getGUIValue<bool>("CircuitViewIsFocused")) {
 		if (getMainWindow().isPressingKeybind("Keybinds/Camera/Home")) {
 			 circuitView->getViewManager().focus(); }
+	}
+	if (getMainWindow().isPressingKeybind("Keybinds/Simulation/Transverse Simulation")) {
+		if (dynamic_cast<const TreeTraversal*>(circuitView->getToolManager().getCircuitTool()) == nullptr) {
+			lastToolStack = circuitView->getToolManager().getStack();
+			circuitView->getToolManager().selectTool(std::make_shared<TreeTraversal>(getEnvironment()));
+		}
+	} else if (dynamic_cast<const TreeTraversal*>(circuitView->getToolManager().getCircuitTool()) != nullptr) {
+		circuitView->getToolManager().selectStack(lastToolStack);
 	}
 }

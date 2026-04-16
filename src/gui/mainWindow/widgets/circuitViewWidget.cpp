@@ -466,9 +466,12 @@ void CircuitViewWidget::update() {
 			circuitView->getTutorialManager().forceCompleteStep();
 		}
 		if (getMainWindow().isPressingKeybind("Keybinds/Simulation/Transverse Simulation")) {
-			circuitView->getToolManager().selectTool(std::make_shared<TreeTraversal>(getEnvironment()));
+			if (dynamic_cast<const TreeTraversal*>(circuitView->getToolManager().getCircuitTool()) == nullptr) {
+				lastToolStack = circuitView->getToolManager().getStack();
+				circuitView->getToolManager().selectTool(std::make_shared<TreeTraversal>(getEnvironment()));
+			}
 		} else if (dynamic_cast<const TreeTraversal*>(circuitView->getToolManager().getCircuitTool()) != nullptr) {
-			circuitView->getToolManager().selectStack(0);
+			circuitView->getToolManager().selectStack(lastToolStack);
 		}
 	}
 }

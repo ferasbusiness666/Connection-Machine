@@ -22,6 +22,7 @@ private:
 	void renderViewport(BlockType blockType, const std::string& testGroupName);
 	void renderSideBar(BlockType blockType, const std::string& testGroupName);
 
+	int lastToolStack = 0; // used for going back from TreeTraversal
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 
 	BlockType blockType = BlockType::NONE;
