@@ -6,6 +6,9 @@
 #include "backend/circuit/circuitDefs.h"
 #include "backend/dataUpdateEventManager.h"
 #include "backend/circuitTests/circuitTestGroup.h"
+#include "backend/circuitTests/circuitTestGroupRunner.h"
+#include <optional>
+
 
 class CircuitView;
 
@@ -27,15 +30,16 @@ private:
 
 	BlockType blockType = BlockType::NONE;
 
+	std::mutex renderingCircuitMux;
 	circuit_id_t renderingCircuitId = 0;
 	std::unique_ptr<CircuitView> circuitView;
 	std::mutex blockTypesMux;
 	std::map<BlockType, std::string> blockTypes;
 	std::mutex testGroupsMux;
 	std::vector<std::string> testGroups;
-	std::string testGroupName;
 	std::mutex testGroupCopyMux;
 	CircuitTestGroup::CircuitTestGroupCopy testGroupCopy;
+	std::optional<CircuitTestGroupRunner> testGroupRunner;
 };
 
 #endif /* circuitTestWidget_h */

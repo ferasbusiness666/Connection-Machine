@@ -5,6 +5,7 @@
 #include "util/runAtStartup.h"
 #include "../commandManager.h"
 #include "backend/circuitTests/circuitTestGroup.h"
+#include "backend/circuitTests/circuitTestGroupRunner.h"
 #include "backend/container/block/blockDefs.h"
 
 runAtStartup(CommandManager::get().registerCommand(std::make_unique<RunTestCommand>());)
@@ -37,7 +38,9 @@ void RunTestCommand::run(const std::vector<std::string>& args, Environment& envi
         return;
     }
 
-    if (!testGroup->runAllTests(circuitBlock, false)) {
+    CircuitTestGroupRunner testGroupRunner = CircuitTestGroupRunner(environment.getBackend(), args[1], circuitBlock);
+
+    if (!testGroupRunner.runAllTests(false)) {
         logInfo("Test failed.", "RunTestCommand");
     }
     else {
