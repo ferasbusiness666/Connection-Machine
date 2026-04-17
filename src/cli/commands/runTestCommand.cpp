@@ -40,7 +40,12 @@ void RunTestCommand::run(const std::vector<std::string>& args, Environment& envi
 
     CircuitTestGroupRunner testGroupRunner = CircuitTestGroupRunner(environment.getBackend(), args[1], circuitBlock);
 
-    if (!testGroupRunner.runAllTests(false)) {
+    std::vector<CircuitTestGroupRunner::TestRunData> testResults = testGroupRunner.runAllTests();
+    bool failed = false;
+    for (auto i = testResults.begin(); i != testResults.end(); i++) {
+        if (i->result == CircuitTestGroupRunner::ERROR || i->result == CircuitTestGroupRunner::FAILED) failed = true;
+    }
+    if (!failed) {
         logInfo("Test failed.", "RunTestCommand");
     }
     else {

@@ -13,12 +13,6 @@ const CircuitTestGroup* CircuitTestGroupRunner::getCircuitTestGroup() {
     return backend.getCircuitTestGroupManager().getCircuitTestGroup(name);
 }
 
-void CircuitTestGroupRunner::sendTestResultUpdate(int testCaseID) {
-    // std::get<n>(tuple)
-    std::tuple<std::string, circuit_id_t, int> values = std::make_tuple(name, circuitID, testCaseID);
-    backend.getDataUpdateEventManager().sendEvent("testRunDataUpdate", values);
-}
-
 bool CircuitTestGroupRunner::generateTestCircuit() {
     if (blockType == BlockType::NONE) {
         circuitID = 0;
@@ -119,94 +113,93 @@ bool CircuitTestGroupRunner::generateTestCircuit() {
     return true;
 }
 
-bool CircuitTestGroupRunner::runAllTests(bool haltOnFailure) {
+std::vector<CircuitTestGroupRunner::TestRunData> CircuitTestGroupRunner::runAllTests() {
     const CircuitTestGroup* testGroupData = getCircuitTestGroup();
-    std::vector<int> testIDs;
-    for (int i =0; i < testGroupData->testCases.size(); i++) testIDs.push_back(i);
-    return runTests(testIDs, haltOnFailure);
-}
-
-bool CircuitTestGroupRunner::runTests(const std::vector<std::string>& testsToRun, bool haltOnFailure) {
-    const CircuitTestGroup* testGroupData = getCircuitTestGroup();
-    // converts strings to their IDs and runs them by ID
-    std::vector<int> testIDs;
-    for (auto stringIter = testsToRun.begin(); stringIter != testsToRun.end(); stringIter++) {
-        auto idIter = testGroupData->testCaseNameToID.find(*stringIter);
-        if (idIter == testGroupData->testCaseNameToID.end()) {
-            logError("Unable to find test case with name '{}'", "circuitTestGroupRunner", *stringIter);
-            return false;
-        }
-        testIDs.push_back(idIter->second);
+    std::vector<TestRunData> testResults;
+    for (int i =0; i < testGroupData->testCases.size(); i++) {
+        testResults.push_back(runTest(i));
     }
-    return runTests(testIDs, haltOnFailure);
+    return testResults;
 }
 
-bool CircuitTestGroupRunner::runTests(const std::vector<int>& testsToRun, bool haltOnFailure) {
+CircuitTestGroupRunner::TestRunData CircuitTestGroupRunner::runTest(const std::string testName) {
     const CircuitTestGroup* testGroupData = getCircuitTestGroup();
-    bool fullTestSucceedStatus = true;
+    const auto testIter = testGroupData->testCaseNameToID.find(testName);
+    if (testIter == testGroupData->testCaseNameToID.end()) {
+        logError("Unable to find test case with name '{}'", "circuitTestGroupRunner", testName);
+        return TestRunData(CircuitTestGroupRunner::ERROR, "Unable to find test case with name " + testName);
+    }
+    return runTest(testIter->second);
+}
 
-    for (auto testCaseIndexIter = testsToRun.begin(); testCaseIndexIter != testsToRun.end(); testCaseIndexIter++) {
-        simulator->resetStates();
-        simulator->setPause(true); //don't know if this is necessary but playing it safe
-        logInfo("Running test case '{}'", "circuitTestGroupRunner", testGroupData->testCases[*testCaseIndexIter].name);
-        for (auto commandIter = testGroupData->testCases[*testCaseIndexIter].testCommands.begin(); commandIter != testGroupData->testCases[*testCaseIndexIter].testCommands.end(); commandIter++) {
-            logInfo("Performing a test command of type {}", "circuitTestGroupRunner", CircuitTestGroup::getTestCommandTypeString(commandIter->type));
-            bool isTestGroupSuccessful = true;
-            if (commandIter->type == CircuitTestGroup::NOP_COMMAND) {
-                continue;
-            } else if (commandIter->type == CircuitTestGroup::SET_STATES) {
-                isTestGroupSuccessful = runSetStatesCommand(*commandIter, *simulator, namePositionMap);
-            } else if (commandIter->type == CircuitTestGroup::CHECK_STATES) {
-                isTestGroupSuccessful = runCheckStatesCommand(*commandIter, *simulator, namePositionMap);
-            } else if (commandIter->type == CircuitTestGroup::TICK_STEP) {
-                logInfo("Stepping forward by {} ticks", "circuitTestGroupRunner - TICK_STEP", commandIter->ticks);
-                simulator->tickStep(commandIter->ticks);
-            } else {
-                logError("Unrecognized test command type", "circuitTestGroupRunner");
-                isTestGroupSuccessful = false;
-            }
+CircuitTestGroupRunner::TestRunData CircuitTestGroupRunner::runTest(const int testIndex) {
+    const CircuitTestGroup* testGroupData = getCircuitTestGroup();
 
-            if (!isTestGroupSuccessful) {
-                logError("Test group failed.", "circuitTestGroupRunner");
-                fullTestSucceedStatus = false;
-                if (haltOnFailure) {
-                    return false;
-                }
-            }
+    simulator->resetStates();
+    simulator->setPause(true); //don't know if this is necessary but playing it safe
+    std::pair<CircuitTestGroupRunner::TestResult, std::string> testCommandResult;
+    CircuitTestGroupRunner::TestResult testGroupStatus;
+    std::string testGroupMessage = "";
+    logInfo("Running test case '{}'", "circuitTestGroupRunner", testGroupData->testCases[testIndex].name);
+    for (auto commandIter = testGroupData->testCases[testIndex].testCommands.begin(); commandIter != testGroupData->testCases[testIndex].testCommands.end(); commandIter++) {
+        logInfo("Performing a test command of type {}", "circuitTestGroupRunner", CircuitTestGroup::getTestCommandTypeString(commandIter->type));
+        if (commandIter->type == CircuitTestGroup::NOP_COMMAND) {
+            continue;
+        } else if (commandIter->type == CircuitTestGroup::SET_STATES) {
+            testCommandResult = runSetStatesCommand(*commandIter, *simulator, namePositionMap);
+        } else if (commandIter->type == CircuitTestGroup::CHECK_STATES) {
+            testCommandResult = runCheckStatesCommand(*commandIter, *simulator, namePositionMap);
+        } else if (commandIter->type == CircuitTestGroup::TICK_STEP) {
+            logInfo("Stepping forward by {} ticks", "circuitTestGroupRunner - TICK_STEP", commandIter->ticks);
+            simulator->tickStep(commandIter->ticks);
+        } else {
+            logError("Unrecognized test command type", "circuitTestGroupRunner");
+            return TestRunData(CircuitTestGroupRunner::TestResult::ERROR, "Unrecognized test command type");
+        }
+
+        if (testCommandResult.first == CircuitTestGroupRunner::ERROR) {
+            logError("Test command error detected.", "circuitTestGroupRunner");
+            return TestRunData(CircuitTestGroupRunner::TestResult::ERROR, testGroupMessage + testCommandResult.second);
+        }
+        if (testCommandResult.first == CircuitTestGroupRunner::FAILED) {
+            testGroupStatus = CircuitTestGroupRunner::FAILED;
+            testGroupMessage = testGroupMessage + testCommandResult.second + "\n";
         }
     }
-    return fullTestSucceedStatus;
+    return TestRunData(testGroupStatus, testGroupMessage);
 }
 
-bool CircuitTestGroupRunner::runSetStatesCommand(CircuitTestGroup::TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition) {
+std::pair<CircuitTestGroupRunner::TestResult, std::string> CircuitTestGroupRunner::runSetStatesCommand(CircuitTestGroup::TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition) {
     for (auto statesIter = testCommand.states.begin(); statesIter != testCommand.states.end(); statesIter++) {
         auto blockPosIter = nameToConnectedBlockPosition.find(statesIter->first);
         if (blockPosIter == nameToConnectedBlockPosition.end()) {
             logError("Port '{}' does not match any on circuit", "circuitTestGroupRunner", statesIter->first);
-            return false;
+            return std::make_pair(CircuitTestGroupRunner::ERROR, "Port " + statesIter->first + " does not match any on circuit");
         }
         simulator.setState((Address(blockPosIter->second)), statesIter->second);
         logInfo("Set port '{}' to state '{}'", "circuitTestGroupRunner - SET_STATES", statesIter->first, statesIter->second);
     }
-    return true;
+    return std::make_pair(CircuitTestGroupRunner::SUCCEEDED, "");
 }
 
-bool CircuitTestGroupRunner::runCheckStatesCommand(CircuitTestGroup::TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition) {
+std::pair<CircuitTestGroupRunner::TestResult, std::string> CircuitTestGroupRunner::runCheckStatesCommand(CircuitTestGroup::TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition) {
 // probably needs to return the state of every single block tested instead of whether just one of them fails
-    bool testSucceeded = true;
+    TestResult testCommandStatus = CircuitTestGroupRunner::SUCCEEDED;
+    std::string testCommandMessage = "";
     for (auto statesIter = testCommand.states.begin(); statesIter != testCommand.states.end(); statesIter++) {
         auto blockPosIter = nameToConnectedBlockPosition.find(statesIter->first);
         if (blockPosIter == nameToConnectedBlockPosition.end()) {
             logError("Port '{}' does not match any on circuit", "circuitTestGroupRunner", statesIter->first);
-            return false;
+            return std::make_pair(CircuitTestGroupRunner::ERROR, "Port " + statesIter->first + " does not match any on circuit");
         }
         logic_state_t actualState = simulator.getState((Address(blockPosIter->second)));
         if (actualState != statesIter->second) {
-            testSucceeded = false;
             logError("Inner test case failed: Expected port '{}' to have output '{}', got '{}'", "circuitTestGroupRunner - CHECK_STATES", statesIter->first, statesIter->second, actualState);
+            testCommandStatus = CircuitTestGroupRunner::FAILED;
+            testCommandMessage = testCommandMessage + "Expected port " + statesIter->first + " to have state " + std::to_string((unsigned int)statesIter->second) + ", got " + std::to_string((unsigned int)actualState) + "\n";
         } else {
             logInfo("Inner test case succeeded: Expected port '{}' to have output '{}', got '{}'", "circuitTestGroupRunner - CHECK_STATES", statesIter->first, statesIter->second, actualState);
         }
     }
-    return testSucceeded;
+    return std::make_pair(testCommandStatus, testCommandMessage);
 }

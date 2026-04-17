@@ -447,7 +447,7 @@ void CircuitTestWidget::renderSideBar(BlockType blockType, const std::string& te
 	) {
 		if (ImGui::Button("Run All")) {
 			if (testGroupRunner != std::nullopt && getGUIValue_rendering<BlockType>("blockType") != BlockType::NONE) {
-						App::runOnMain([this](){ testGroupRunner->runAllTests(false); });
+						App::runOnMain([this](){ testGroupRunner->runAllTests(); });
 			} else {
 				getMainWindow().logError("Test group and circuit must be loaded before testing!");
 			}
@@ -478,7 +478,45 @@ void CircuitTestWidget::renderSideBar(BlockType blockType, const std::string& te
 				ImGui::PopStyleColor();
 				ImGui::PopStyleVar();
 			) {
+				ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f);
+				if(ImGui::Button("Run")) {
+					if (testGroupRunner != std::nullopt && getGUIValue_rendering<BlockType>("blockType") != BlockType::NONE) {
+						std::string testCaseName = testCase->name;
+						App::runOnMain([this, testCaseName](){ testGroupRunner->runTest(testCaseName); });
+					} else {
+						getMainWindow().logError("Test group and circuit must be loaded before testing!");
+					}
+				}
+				ImGui::SameLine();
+				if (ImGui::TreeNodeEx(testCase->name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+					ImGui::PopStyleVar();
 
+					for (unsigned int commandIndex = 0; commandIndex < testCase->testCommands.size(); commandIndex++) {
+						CircuitTestGroup::TestCommand* testCommand = &testCase->testCommands[commandIndex];
+						if (testCommand->type != CircuitTestGroup::TICK_STEP) {
+							if (ImGui::TreeNodeEx(CircuitTestGroup::getTestCommandTypeString(testCommand->type).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+								for (unsigned int stateIndex = 0; stateIndex < testCommand->states.size(); stateIndex++) {
+									std::string stateStr = testCommand->states[stateIndex].first;
+									stateStr.append(": ");
+									stateStr.append(std::to_string((unsigned int)testCommand->states[stateIndex].second));
+									ImGui::TreeNodeEx(stateStr.c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+									ImGui::TableNextColumn();
+								}
+								ImGui::TreePop();
+							}
+
+						} else { // testCommand->type == CircuitTestGroup::TICK_STEP
+							std::string commandStr = CircuitTestGroup::getTestCommandTypeString(testCommand->type);
+							commandStr.append(": ");
+							commandStr.append(std::to_string(testCommand->ticks));
+							ImGui::TreeNodeEx(commandStr.c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+						}
+					}
+					ImGui::TreePop();
+
+				} else {
+					ImGui::PopStyleVar();
+				}
 			}
 			ImGui::EndChild();
 			ImGui::PopID();
