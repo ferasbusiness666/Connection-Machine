@@ -44,7 +44,6 @@ void Tutorial::StartTutorial() {
 }
 
 void Tutorial::stop() {
-    
 	if (!tutorialRunning) return;
 	Circuit* currentCircuit = circuitView.getBackend().getCircuitManager().getCircuit(circuitId);
 	if (currentCircuit) {

@@ -16,6 +16,6 @@ private:
 	std::unordered_map<std::string, std::vector<TutorialStep>> tutorials;
 };
 
-std::pair<std::string, std::vector<TutorialStep>> loadTutorialFromFile(std::string filename);
+void writeTutorial(const std::vector<TutorialStep>& steps, const std::string& tutorialName, const std::string& filepath);
 
 #endif /* tutorialDataManager_h */
