@@ -5,7 +5,7 @@
 #include <tracy/Tracy.hpp>
 #endif
 
-bool isConnectionEndIdSinglePin(EvalGateType gateType, connection_end_id_t connectionEndId) {
+bool EvalConnectionEndInfo::isConnectionEndIdSinglePin(EvalGateType gateType, connection_end_id_t connectionEndId) {
 	// ignore lights, junctions, busses, custom blocks
 	switch (getBlockType(gateType)) {
 	case BlockType::SWITCH:
@@ -31,7 +31,7 @@ bool isConnectionEndIdSinglePin(EvalGateType gateType, connection_end_id_t conne
 	}
 }
 
-bool isOutputConnectionPort(EvalGateType gateType, connection_end_id_t connectionEndId) {
+bool EvalConnectionEndInfo::isOutputConnectionPort(EvalGateType gateType, connection_end_id_t connectionEndId) {
 	// ignore lights, junctions, busses, custom blocks
 	switch (getBlockType(gateType)) {
 	case BlockType::SWITCH:
@@ -199,7 +199,7 @@ void JunctionMergeEvalLayer::run() {
 		if (connectionPointRemappingIterA != connectionPointRemapping.end()) {
 			const EvalGate* gate = nextState.getGate(connection.connectionPointA.gateId);
 			assert(gate);
-			assert(isConnectionEndIdSinglePin(gate->type, connection.connectionPointA.connectionEndId));
+			assert(EvalConnectionEndInfo::isConnectionEndIdSinglePin(gate->type, connection.connectionPointA.connectionEndId));
 			connection.connectionPointA = EvalConnectionPoint(connectionPointRemappingIterA->second, 0);
 			remappedTypeA = 1;
 		} else if (connection.connectionPointA.connectionEndId == 0) {
@@ -224,7 +224,7 @@ void JunctionMergeEvalLayer::run() {
 		if (connectionPointRemappingIterB != connectionPointRemapping.end()) {
 			const EvalGate* gate = nextState.getGate(connection.connectionPointB.gateId);
 			assert(gate);
-			assert(isConnectionEndIdSinglePin(gate->type, connection.connectionPointB.connectionEndId));
+			assert(EvalConnectionEndInfo::isConnectionEndIdSinglePin(gate->type, connection.connectionPointB.connectionEndId));
 			connection.connectionPointB = EvalConnectionPoint(connectionPointRemappingIterB->second, 0);
 			remappedTypeB = 1;
 		} else if (connection.connectionPointB.connectionEndId == 0) {
@@ -259,16 +259,16 @@ void JunctionMergeEvalLayer::run() {
 			if (remappedTypeA != 0) junctionGroupsToKill.insert(connection.connectionPointA.gateId);
 			if (remappedTypeB != 0) junctionGroupsToKill.insert(connection.connectionPointB.gateId);
 		} else if (
-			isConnectionEndIdSinglePin(gateA->type, connection.connectionPointA.connectionEndId) &&
-			isConnectionEndIdSinglePin(gateB->type, connection.connectionPointB.connectionEndId)
+			EvalConnectionEndInfo::isConnectionEndIdSinglePin(gateA->type, connection.connectionPointA.connectionEndId) &&
+			EvalConnectionEndInfo::isConnectionEndIdSinglePin(gateB->type, connection.connectionPointB.connectionEndId)
 		) {
 			connectionPointsToScan.insert(iter.first.connectionPointA);
 			assert(remappedTypeA == 0);
 			assert(remappedTypeB == 0);
-		} else if (isJunctionType(gateA->type) && isConnectionEndIdSinglePin(gateB->type, connection.connectionPointB.connectionEndId)) {
+		} else if (isJunctionType(gateA->type) && EvalConnectionEndInfo::isConnectionEndIdSinglePin(gateB->type, connection.connectionPointB.connectionEndId)) {
 			connectionPointsToScan.insert(iter.first.connectionPointA);
 			if (remappedTypeA != 0) junctionGroupsToKill.insert(connection.connectionPointA.gateId);
-		} else if (isJunctionType(gateB->type) && isConnectionEndIdSinglePin(gateA->type, connection.connectionPointA.connectionEndId)) {
+		} else if (isJunctionType(gateB->type) && EvalConnectionEndInfo::isConnectionEndIdSinglePin(gateA->type, connection.connectionPointA.connectionEndId)) {
 			connectionPointsToScan.insert(iter.first.connectionPointA);
 			if (remappedTypeB != 0) junctionGroupsToKill.insert(connection.connectionPointB.gateId);
 		} else {
@@ -298,7 +298,7 @@ void JunctionMergeEvalLayer::run() {
 		{
 			const EvalGate* curGate = currentState.getGate(connectionPointToScanFrom.gateId);
 			if (!curGate) continue;
-			if (!(isJunctionType(curGate->type) || isConnectionEndIdSinglePin(curGate->type, connectionPointToScanFrom.connectionEndId))) {
+			if (!(isJunctionType(curGate->type) || EvalConnectionEndInfo::isConnectionEndIdSinglePin(curGate->type, connectionPointToScanFrom.connectionEndId))) {
 				// logError("This is a bug and should not happen. Tho it should not break anything I dont want it to happen!"); // for now this will happen as I just throw alot at connectionPointsToScan
 				continue;
 			}
@@ -318,7 +318,7 @@ void JunctionMergeEvalLayer::run() {
 			const EvalGate* gate = nextState.getGate(connectionPoint.gateId);
 			assert(gate);
 			if (outputConnectionPoint.has_value()) {
-				if (isOutputConnectionPort(gate->type, connectionPoint.connectionEndId)) {
+				if (EvalConnectionEndInfo::isOutputConnectionPort(gate->type, connectionPoint.connectionEndId)) {
 					if (outputConnectionPoint->isNull()) outputConnectionPoint = connectionPoint;
 					else outputConnectionPoint = std::nullopt;
 				}
@@ -441,7 +441,7 @@ std::tuple<
 		if (startGate->type == getEvalGateType(BlockType::JUNCTION_L)) foundPullDown = true;
 		else if (startGate->type == getEvalGateType(BlockType::JUNCTION_H)) foundPullUp = true;
 		else if (startGate->type == getEvalGateType(BlockType::JUNCTION_X)) foundPullUp = foundPullDown = true;
-	} else if (isConnectionEndIdSinglePin(startGate->type, start.connectionEndId)) {
+	} else if (EvalConnectionEndInfo::isConnectionEndIdSinglePin(startGate->type, start.connectionEndId)) {
 		singlePinConnectionPoints.insert(start);
 	} else {
 		assert(false);
@@ -480,7 +480,7 @@ std::tuple<
 					else if (otherGate->type == getEvalGateType(BlockType::JUNCTION_H)) foundPullUp = true;
 					else if (otherGate->type == getEvalGateType(BlockType::JUNCTION_X)) foundPullUp = foundPullDown = true;
 				}
-			} else if (isConnectionEndIdSinglePin(otherGate->type, otherConnectionPoint.connectionEndId)) {
+			} else if (EvalConnectionEndInfo::isConnectionEndIdSinglePin(otherGate->type, otherConnectionPoint.connectionEndId)) {
 				if (visited.insert(otherConnectionPoint).second) {
 					queue.push_back(otherConnectionPoint);
 					singlePinConnectionPoints.insert(otherConnectionPoint);

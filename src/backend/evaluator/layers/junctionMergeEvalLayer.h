@@ -4,6 +4,11 @@
 #include "backend/evaluator/evalDefs.h"
 #include "baseEvalLayer.h"
 
+namespace EvalConnectionEndInfo {
+	bool isConnectionEndIdSinglePin(EvalGateType gateType, connection_end_id_t connectionEndId);
+	bool isOutputConnectionPort(EvalGateType gateType, connection_end_id_t connectionEndId);
+}
+
 class JunctionMergeEvalLayer : public BaseEvalLayer {
 public:
 	JunctionMergeEvalLayer(EvalLayerState& currentState, const CircuitManager& circuitManager) : BaseEvalLayer(currentState, circuitManager) {}
