@@ -459,7 +459,6 @@ void CircuitViewWidget::update() {
 			for (int i = 0; i < getMainWindow().getTutorialDataManager().getNames().size(); i++) {
 				writeTutorial(
 					getMainWindow().getTutorialDataManager().getTutorial(getMainWindow().getTutorialDataManager().getNames()[i]),
-					getMainWindow().getTutorialDataManager().getNames()[i],
 					DirectoryManager::getResourceDirectory() / "tutorials" / (to_string(i) + ".cmt")
 				);
 			}

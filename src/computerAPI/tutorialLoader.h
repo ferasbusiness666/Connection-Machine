@@ -29,6 +29,6 @@ constexpr std::string CONDITIONS[] = {
 	TRUTH_TABLE_TOKEN,
 };
 
-std::pair<std::string, std::vector<TutorialStep>> parseTutorialFile(std::string fileName);
+Tutorial parseTutorialFile(std::string fileName);
 
 #endif
