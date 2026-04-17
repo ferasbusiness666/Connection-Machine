@@ -151,10 +151,6 @@ void parseConnection(std::stringstream& ss, int line, Position& p1out, Position&
 	parsePosition(ss, line, p2out);
 }
 
-void parseTruthTable(const std::vector<std::string>& lines, int& line) {
-	for (; line < lines.size(); line++) { } // imagine this worked
-}
-
 void parseCondition(TutorialCondition& condition, const std::vector<std::string>& lines, int& line) {
 	for (int i = line; i < lines.size(); i++) {
 		std::stringstream ss(lines[i]);
@@ -232,11 +228,15 @@ void parseAction(TutorialAction& action, const std::vector<std::string>& lines, 
 			parseConnection(ss, i, connectionOutput, connectionInput);
 			action.connectionPreviews.emplace_back(connectionOutput, connectionInput);
 		} else if (tok == VIEW_CENTER_TOKEN) {
-			// Center:
+			// View Center: (x,y) <zoom>
 			ss >> tok;
 			FPosition viewCenter;
 			parseFPosition(ss, i, viewCenter);
-			action.viewCenter = viewCenter;
+			action.viewData.viewCenter = viewCenter;
+			float zoom;
+			if (ss >> zoom) {
+				action.viewData.zoom = zoom;
+			}
 		} else if (tok == PLACE_BLOCK_TOKEN) {
 			// (name) (x,y) (orientation-optional)
 			// ss >> tok; // throw out 'Preview:'
