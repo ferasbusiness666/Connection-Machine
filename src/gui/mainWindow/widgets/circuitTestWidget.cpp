@@ -7,6 +7,7 @@
 #include "backend/container/block/blockDefs.h"
 #include "gui/viewportManager/circuitView/events/customEvents.h"
 #include "imgui/imgui.h"
+#include "gui/viewportManager/circuitView/tools/other/treeTraversal.h"
 #include "imgui/imgui_internal.h"
 
 #include "gui/viewportManager/circuitView/circuitView.h"
@@ -136,7 +137,7 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 	dataUpdateEventReceiver.linkFunction("testRunDataUpdate", [this](const DataUpdateEventManager::EventData* event) {
 		// make recieving test results a thing
 		const DataUpdateEventManager::EventDataWithValue<std::string>*  = event->cast<std::tuple<std::string, circuit_id_t, int>>();
-		const auto& [recievedName, recievedCircuitID, recievedIndex] = 
+		const auto& [recievedName, recievedCircuitID, recievedIndex] =
 		assert(passedName);
 		if (passedName->get() != getGUIValue<std::string>("testGroupName")) return;
 		const CircuitTestGroup* circuitTestGroup = getBackend().getCircuitTestGroupManager().getCircuitTestGroup(getGUIValue<std::string>("testGroupName"));
@@ -477,45 +478,7 @@ void CircuitTestWidget::renderSideBar(BlockType blockType, const std::string& te
 				ImGui::PopStyleColor();
 				ImGui::PopStyleVar();
 			) {
-				ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f);
-				if(ImGui::Button("Run")) {
-					if (testGroupRunner != std::nullopt && getGUIValue_rendering<BlockType>("blockType") != BlockType::NONE) {
-						std::vector<std::string> runVec{testCase->name};
-						App::runOnMain([this, runVec](){ testGroupRunner->runTests(runVec, false); });
-					} else {
-						getMainWindow().logError("Test group and circuit must be loaded before testing!");
-					}
-				}
-				ImGui::SameLine();
-				if (ImGui::TreeNodeEx(testCase->name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-					ImGui::PopStyleVar();
 
-					for (unsigned int commandIndex = 0; commandIndex < testCase->testCommands.size(); commandIndex++) {
-						CircuitTestGroup::TestCommand* testCommand = &testCase->testCommands[commandIndex];
-						if (testCommand->type != CircuitTestGroup::TICK_STEP) {
-							if (ImGui::TreeNodeEx(CircuitTestGroup::getTestCommandTypeString(testCommand->type).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-								for (unsigned int stateIndex = 0; stateIndex < testCommand->states.size(); stateIndex++) {
-									std::string stateStr = testCommand->states[stateIndex].first;
-									stateStr.append(": ");
-									stateStr.append(std::to_string((unsigned int)testCommand->states[stateIndex].second));
-									ImGui::TreeNodeEx(stateStr.c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen);
-									ImGui::TableNextColumn();
-								}
-								ImGui::TreePop();
-							}
-
-						} else { // testCommand->type == CircuitTestGroup::TICK_STEP
-							std::string commandStr = CircuitTestGroup::getTestCommandTypeString(testCommand->type);
-							commandStr.append(": ");
-							commandStr.append(std::to_string(testCommand->ticks));
-							ImGui::TreeNodeEx(commandStr.c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen);
-						}
-					}
-					ImGui::TreePop();
-
-				} else {
-					ImGui::PopStyleVar();
-				}
 			}
 			ImGui::EndChild();
 			ImGui::PopID();
@@ -534,5 +497,13 @@ void CircuitTestWidget::update() {
 	if (getGUIValue<bool>("CircuitViewIsFocused")) {
 		if (getMainWindow().isPressingKeybind("Keybinds/Camera/Home")) {
 			 circuitView->getViewManager().focus(); }
+	}
+	if (getMainWindow().isPressingKeybind("Keybinds/Simulation/Transverse Simulation")) {
+		if (dynamic_cast<const TreeTraversal*>(circuitView->getToolManager().getCircuitTool()) == nullptr) {
+			lastToolStack = circuitView->getToolManager().getStack();
+			circuitView->getToolManager().selectTool(std::make_shared<TreeTraversal>(getEnvironment()));
+		}
+	} else if (dynamic_cast<const TreeTraversal*>(circuitView->getToolManager().getCircuitTool()) != nullptr) {
+		circuitView->getToolManager().selectStack(lastToolStack);
 	}
 }

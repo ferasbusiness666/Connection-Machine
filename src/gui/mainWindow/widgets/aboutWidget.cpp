@@ -16,7 +16,8 @@ void AboutWidget::render() {
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
 	ImGui::SetNextWindowPos((viewport->Size - ImVec2(400, 370)) / 2, ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(400, 370));
-	ifGui (ImGui::Begin(("About###" + getWidgetIdStr()).c_str(), NULL,
+	bool open = true;
+	ifGui (ImGui::Begin(("About###" + getWidgetIdStr()).c_str(), &open,
 		ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDocking |
 		ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse),
 		getMainWindow().popWindowStyling();
@@ -80,5 +81,8 @@ void AboutWidget::render() {
 			});
 		}
 		ImGui::End();
+	}
+	if (!open) {
+		getMainWindow().destroyWidget(this->getWidgetId());
 	}
 }

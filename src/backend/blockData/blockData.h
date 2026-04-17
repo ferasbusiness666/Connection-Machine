@@ -29,7 +29,7 @@ public:
 		std::variant<unsigned int, std::vector<unsigned int>> bitConfiguration;
 		inline unsigned int getBitWidth() const noexcept;
 		inline unsigned int getFirstLaneId() const noexcept;
-		// TODO: improve the performance of the below functions by improving the data structure used to store bitConfiguration
+		// TODO: improve the performance of the below functions by improving the data structure used to store bitConfiguration (its prob fine)
 		inline unsigned int getLaneId(unsigned int index) const noexcept;
 		inline unsigned int getMaxLaneId() const noexcept;
 		unsigned int getMaxLaneIndex() const noexcept { return getBitWidth() - 1; }
@@ -191,8 +191,8 @@ private:
 };
 
 // defaults for good connection pos
-constexpr float edgeDistance = 0.48f;
-constexpr float sideShift = 0.25f;
+constexpr float edgeDistance = 0.46f;
+constexpr float sideShift = 0.0f;
 
 /* --------- BlockData::ConnectionData --------- */
 
@@ -205,7 +205,6 @@ inline unsigned int BlockData::ConnectionData::getFirstLaneId() const noexcept {
 	if (std::holds_alternative<unsigned int>(bitConfiguration)) return 0;
 	else return std::get<std::vector<unsigned int>>(bitConfiguration).at(0);
 }
-// TODO: improve the performance of the below functions by improving the data structure used to store bitConfiguration
 inline unsigned int BlockData::ConnectionData::getLaneId(unsigned int index) const noexcept {
 	if (std::holds_alternative<unsigned int>(bitConfiguration)) {
 		assert(index < std::get<unsigned int>(bitConfiguration));

@@ -25,6 +25,7 @@ private:
 	void render() override final;
 	void update() override final;
 	std::unique_ptr<CircuitView> circuitView;
+	int lastToolStack = 0; // used for going back from TreeTraversal
 	bool mouseControls;
 };
 

@@ -28,13 +28,18 @@ public:
 
 	// setters
 	void setCircuit(circuit_id_t circuitId);
-	inline void setAspectRatio(float value) {
+	void setAspectRatio(float value) {
 		if (value > 10000.f || value < 0.0001f) return;
 		aspectRatio = value;
 		viewChanged();
 	}
-	inline void setViewCenter(FPosition value) {
+	void setViewCenter(FPosition value) {
 		viewCenter = value;
+		viewChanged();
+	}
+	void setViewScale(float value) {
+		viewScale = value;
+		applyLimits();
 		viewChanged();
 	}
 

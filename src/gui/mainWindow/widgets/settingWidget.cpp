@@ -117,7 +117,8 @@ void SettingWidget::render() {
 	getMainWindow().setNextWindowMainDockable();
 	getMainWindow().pushWindowStyling();
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
-	ifGui (ImGui::Begin(("Setting###" + getWidgetIdStr()).c_str(), NULL),
+	bool open = true;
+	ifGui (ImGui::Begin(("Setting###" + getWidgetIdStr()).c_str(), &open),
 		getMainWindow().popWindowStyling();
 	) {
 		static ImGuiTextFilter filter;
@@ -143,6 +144,9 @@ void SettingWidget::render() {
 			root.render("", "");
 		}
 		ImGui::EndChild();
+	}
+	if (!open) {
+		getMainWindow().destroyWidget(this->getWidgetId());
 	}
 	ImGui::End();
 }

@@ -26,7 +26,7 @@ public:
 	ToolManagerManager& getToolManagerManager() { return toolManagerManager; }
 	const ToolManagerManager& getToolManagerManager() const { return toolManagerManager; }
 
-	template<class WidgetType, typename... Args>
+	template <class WidgetType, typename... Args>
 	WidgetType& createWidget(Args&&... args) {
 		WidgetId widgetId = widgetIdProvider.getNewId();
 		std::unique_ptr<WidgetType> widget = std::make_unique<WidgetType>(widgetId, *this, std::forward<Args>(args)...);
@@ -71,6 +71,8 @@ public:
 	void pushWindowStyling() const;
 	void popWindowStyling() const;
 
+	TutorialDataManager& getTutorialDataManager() { return tutorialDataManager; }
+
 private:
 	void doUpdate() override final;
 	bool killWindow(bool forced) override final;
@@ -99,7 +101,6 @@ private:
 	static constexpr double kUiScaleStep = 0.1;
 	static constexpr double kUiScaleMin = 0.5;
 	static constexpr double kUiScaleMax = 3.0;
-
 
 	std::mutex widgetsMux;
 	std::unordered_map<WidgetId, std::unique_ptr<Widget>> widgets;

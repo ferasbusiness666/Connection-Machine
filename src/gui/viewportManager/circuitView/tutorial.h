@@ -1,8 +1,8 @@
 #ifndef tutorialManager_h
 #define tutorialManager_h
 
-#include "backend/container/difference.h"
 #include "./viewManager/viewManager.h"
+#include "backend/container/difference.h"
 #include "renderer/elementCreator.h"
 
 class CircuitView;
@@ -38,16 +38,20 @@ struct TutorialAction {
 		Position pos1;
 		Position pos2;
 	};
-    struct Message {
-        FPosition pos;
-        float scale;
-        std::string message;
-    };
+	struct Message {
+		FPosition pos;
+		float scale;
+		std::string message;
+	};
+	struct View {
+		std::optional<FPosition> viewCenter;
+		std::optional<float> zoom;
+	};
+	View viewData;
 	std::vector<Message> messages;
 	std::vector<BlockInfo> blockPreviews;
-    std::vector<BlockInfo> blocks;
+	std::vector<BlockInfo> blocks;
 	std::vector<ConnectionPreviewInfo> connectionPreviews;
-	std::optional<FPosition> viewCenter;
 };
 
 struct TutorialStep {
