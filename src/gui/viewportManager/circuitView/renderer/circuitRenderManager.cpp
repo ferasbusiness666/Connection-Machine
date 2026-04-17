@@ -264,7 +264,7 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 						continue;;
 					}
 					if (inputRenderedBlockPortIter->second.ordering.has_value()) {
-						auto iter = std::find(inputRenderedBlockPortIter->second.ordering->begin(), inputRenderedBlockPortIter->second.ordering->end(), outputBlockPosition);
+						auto iter = std::find(inputRenderedBlockPortIter->second.ordering->begin(), inputRenderedBlockPortIter->second.ordering->end(), outputPortPosition);
 						inputRenderedBlockPortIter->second.ordering->erase(iter);
 						for (Position otherOutputPortPosition : inputRenderedBlockPortIter->second.ordering.value()) {
 							MainRenderer::get().removeWire(viewportId, std::make_pair(otherOutputPortPosition, inputPortPosition));
@@ -407,7 +407,7 @@ void CircuitRenderManager::createConnectionsForInputPort(Position inputBlockPosi
 	const BlockData* inputBlockData = blockDataManager.getBlockData(inputBlockIter->second.type);
 	assert(inputBlockData);
 	std::optional<connection_end_id_t> inputEndId = inputBlockData->getInputOrBidirectionalConnectionId(
-	inputPortPosition - inputBlockPosition, inputBlockIter->second.type);
+		inputPortPosition - inputBlockPosition, inputBlockIter->second.orientation);
 	if (!inputEndId) return;
 	FVector inputOffset = inputBlockData->getConnectionPortOffset(inputEndId.value(), inputBlockIter->second.orientation).value_or(FVector(0.5));
 	if (inputPortIter->second.ordering.has_value()) {
@@ -421,7 +421,7 @@ void CircuitRenderManager::createConnectionsForInputPort(Position inputBlockPosi
 			if (outputBlockPosition.x == 10000000) continue;
 			if (inputBlockPosition == outputBlockPosition) {
 				std::optional<connection_end_id_t> outputEndId = inputBlockData->getOutputOrBidirectionalConnectionId(
-					outputPortPosition - inputBlockPosition, inputBlockIter->second.type);
+					outputPortPosition - inputBlockPosition, inputBlockIter->second.orientation);
 				if (!outputEndId) continue;
 				MainRenderer::get().addWire(viewportId, std::make_pair(outputPortPosition, inputPortPosition), std::make_pair(
 					inputBlockData->getConnectionPortOffset(outputEndId.value(), inputBlockIter->second.orientation).value_or(FVector(0.5)),
@@ -449,12 +449,12 @@ void CircuitRenderManager::createConnectionsForInputPort(Position inputBlockPosi
 		}
 	} else {
 		for (const auto& [outputPortPosition, outputBlockPosition] : inputPortIter->second.connections) {
-			if (inputBlockPosition == inputPortPosition) {
+			if (outputPortPosition == inputPortPosition) {
 				std::optional<connection_end_id_t> outputEndId = inputBlockData->getOutputOrBidirectionalConnectionId(
-					outputPortPosition - inputBlockPosition, inputBlockIter->second.type);
+					outputPortPosition - inputBlockPosition, inputBlockIter->second.orientation);
 				if (!outputEndId) continue;
 				std::optional<connection_end_id_t> inputEndId = inputBlockData->getInputOrBidirectionalConnectionId(
-					inputPortPosition - inputBlockPosition, inputBlockIter->second.type);
+					inputPortPosition - inputBlockPosition, inputBlockIter->second.orientation);
 				if (!inputEndId) continue;
 				MainRenderer::get().addWire(viewportId, std::make_pair(outputPortPosition, inputPortPosition), std::make_pair(
 					inputBlockData->getConnectionPortOffset(outputEndId.value(), inputBlockIter->second.orientation).value_or(FVector(0.5)),
