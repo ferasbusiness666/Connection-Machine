@@ -39,6 +39,8 @@ private:
 	std::mutex testGroupCopyMux;
 	CircuitTestGroup::CircuitTestGroupCopy testGroupCopy;
 	std::optional<CircuitTestGroupRunner> testGroupRunner;
+	std::mutex testResultsMutex;
+	std::vector<CircuitTestGroupRunner::TestRunData>
 };
 
 #endif /* circuitTestWidget_h */

@@ -2,9 +2,11 @@
 
 #include "backend/circuit/circuitDefs.h"
 #include "backend/circuitTests/circuitTestGroup.h"
+#include "backend/container/block/block.h"
 #include "backend/evaluator/simulator/evalLogicSimulator.h"
 #include "backend/evaluator/simulatorManager.h"
 #include "backend/backend.h"
+#include <cassert>
 #include <utility>
 
 const CircuitTestGroup* CircuitTestGroupRunner::getCircuitTestGroup() {
@@ -18,24 +20,30 @@ void CircuitTestGroupRunner::sendTestResultUpdate(int testCaseID) {
 }
 
 bool CircuitTestGroupRunner::generateTestCircuit() {
+    if (blockType == BlockType::NONE) {
+        circuitID = 0;
+        simID = 0;
+        return false;
+    }
     const CircuitTestGroup* testGroupData = getCircuitTestGroup();
     CircuitManager& cirManager = backend.getCircuitManager();
     SimulatorManager& evalManager = backend.getSimulatorManager();
     BlockDataManager& blockDataManager = backend.getBlockDataManager();
 
-	circuit_id_t circuitId;
-	simulator_id_t simulatorId;
-    circuitId = cirManager.createNewCircuit(false);
-	simulatorId = backend.createSimulator(circuitId).value();
-    simulator = evalManager.getSimulator(simulatorId);
+    circuitID = cirManager.createNewCircuit(false);
+	simID = backend.createSimulator(circuitID).value();
+    simulator = evalManager.getSimulator(simID);
     simulator->setPause(true);
-    Circuit* circuit = cirManager.getCircuit(circuitId);
+    Circuit* circuit = cirManager.getCircuit(circuitID);
     circuit->clear();
     circuit->setEditable(false);
+    BlockData* circuitBlockData = blockDataManager.getBlockData(circuit->getBlockType());
+    assert(circuitBlockData);
+    circuitBlockData->setIsPlaceable(false);
+
     const BlockContainer& blockContainer = circuit->getBlockContainer();
 
-    BlockData* blockData = blockDataManager.getBlockData(blockType);
-    blockData->setIsPlaceable(false);
+    const BlockData* blockData = blockDataManager.getBlockData(blockType);
     std::unordered_map<connection_end_id_t, BlockData::ConnectionData> connections = blockData->getConnections();
     // change implementation of this when BlockData::getConnectionNameToId is implemented
     namePositionMap.clear();

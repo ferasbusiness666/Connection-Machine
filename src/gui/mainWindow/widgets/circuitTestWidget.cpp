@@ -3,6 +3,7 @@
 #include "app.h"
 #include "backend/circuit/circuitDefs.h"
 #include "backend/circuitTests/circuitTestGroup.h"
+#include "backend/container/block/block.h"
 #include "backend/container/block/blockDefs.h"
 #include "gui/viewportManager/circuitView/events/customEvents.h"
 #include "imgui/imgui.h"
@@ -78,24 +79,24 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 			return false;
 		});
 	}
-	{
-		// =================================== Init rendering circuit ===================================
-		std::lock_guard renderingCircuitMux(this->renderingCircuitMux);
-		renderingCircuitId = getBackend().getCircuitManager().createNewCircuit(true);
-		assert(renderingCircuitId);
-		Circuit* circuit = getBackend().getCircuitManager().getCircuit(renderingCircuitId);
-		assert(circuit);
-		circuit->setEditable(false);
-		BlockData* blockData = getBackend().getBlockDataManager().getBlockData(circuit->getBlockType());
-		assert(blockData);
-		blockData->setIsPlaceable(false);
-		circuitView->setCircuit(renderingCircuitId);
-		for (auto& iter : circuitView->getBackend().getSimulatorManager().getSimulators()) {
-			if (iter.second->getCircuitId() == renderingCircuitId) {
-				circuitView->setSimulator(iter.second.get());
-			}
-		}
-	}
+	// {
+	// 	// =================================== Init rendering circuit ===================================
+	// 	std::lock_guard renderingCircuitMux(this->renderingCircuitMux);
+	// 	renderingCircuitId = getBackend().getCircuitManager().createNewCircuit(true);
+	// 	assert(renderingCircuitId);
+	// 	Circuit* circuit = getBackend().getCircuitManager().getCircuit(renderingCircuitId);
+	// 	assert(circuit);
+	// 	circuit->setEditable(false);
+	// 	BlockData* blockData = getBackend().getBlockDataManager().getBlockData(circuit->getBlockType());
+	// 	assert(blockData);
+	// 	blockData->setIsPlaceable(false);
+	// 	circuitView->setCircuit(renderingCircuitId);
+	// 	for (auto& iter : circuitView->getBackend().getSimulatorManager().getSimulators()) {
+	// 		if (iter.second->getCircuitId() == renderingCircuitId) {
+	// 			circuitView->setSimulator(iter.second.get());
+	// 		}
+	// 	}
+	// }
     {
         std::lock_guard mux(blockTypesMux);
 		for (unsigned int type = 0; type < getBackend().getBlockDataManager().maxBlockId(); type++) {
@@ -163,13 +164,13 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 		}
 	});
 	setupGUIValue<BlockType>("blockType", BlockType::NONE, [this](const BlockType& blockType) {
-		if (blockType == BlockType::NONE) {
-			testGroupRunner.reset();
-			return;
+		if (getGUIValue<std::string>("testGroupName") != "NONE") {
+			testGroupRunner.emplace(getBackend(), getGUIValue<std::string>("testGroupName"), blockType);
+			std::lock_guard renderingCircuitMux(this->renderingCircuitMux);
+			renderingCircuitId = testGroupRunner.value().getCircuitId();
+			circuitView->setSimulator(testGroupRunner->getSimulatorId());
 		}
-		testGroupRunner.emplace(getBackend(), getGUIValue<std::string>("testGroupName"), blockType);
-		std::lock_guard renderingCircuitMux(this->renderingCircuitMux);
-		renderingCircuitId = testGroupRunner.value().getCircuitId(); //segfault
+		setGUIValue("blockType", blockType);
 		// const CircuitBlockData* circuitBlockData = getBackend().getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
 		// if (circuitBlockData == nullptr) {
 		// 	// std::lock_guard mux(blockDataCopyMux);
@@ -194,15 +195,21 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 		if (!circuitTestGroup) {
 			setGUIValue<std::string>("testGroupName", "NONE");
 			testGroupRunner.reset();
+			std::lock_guard renderingCircuitMux(this->renderingCircuitMux);
+			renderingCircuitId = 0;
+			circuitView->setSimulator(0);
 			return;
 		}
-		std::lock_guard mux(testGroupCopyMux);
-		testGroupCopy = circuitTestGroup->getMinimalCopy();
-		if (getGUIValue<BlockType>("blockType") != BlockType::NONE) {
-			testGroupRunner.emplace(getBackend(), testGroupName, getGUIValue<BlockType>("blockType"));
+
+		{
+			std::lock_guard mux(testGroupCopyMux);
+			testGroupCopy = circuitTestGroup->getMinimalCopy();
 		}
+		setGUIValue<std::string>("testGroupName", testGroupName);
+		testGroupRunner.emplace(getBackend(), getGUIValue<std::string>("testGroupName"), getGUIValue<BlockType>("blockType"));
 		std::lock_guard renderingCircuitMux(this->renderingCircuitMux);
 		renderingCircuitId = testGroupRunner.value().getCircuitId();
+		circuitView->setSimulator(testGroupRunner->getSimulatorId());
 	});
 }
 
