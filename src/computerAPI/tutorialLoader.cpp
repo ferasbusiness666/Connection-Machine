@@ -1,31 +1,8 @@
 #include "tutorialLoader.h"
 #include "computerAPI/circuits/textParser.h"
 #include "logging/logging.h"
-
-constexpr std::string STEP_TOKEN = "Step:";
-
-constexpr std::string ACTION_TOKEN = "Action:";
-constexpr std::string MESSAGE_TOKEN = "Message:";
-constexpr std::string BLOCK_PREVIEW_TOKEN = "Block";
-constexpr std::string CONNECTION_PREVIEW_TOKEN = "Connection";
-constexpr std::string VIEW_CENTER_TOKEN = "View";
-constexpr std::string PLACE_BLOCK_TOKEN = "Block:";
-constexpr std::string PLACE_CONNECTION_TOKEN = "Connection:";
-constexpr std::string ACTIONS[] = {
-	MESSAGE_TOKEN, BLOCK_PREVIEW_TOKEN, CONNECTION_PREVIEW_TOKEN, VIEW_CENTER_TOKEN, PLACE_BLOCK_TOKEN, PLACE_CONNECTION_TOKEN,
-};
-
-constexpr std::string CONDITION_TOKEN = "Condition:";
-constexpr std::string BLOCK_CONDITION_TOKEN = "Block:";
-constexpr std::string CONNECTION_CONDITION_TOKEN = "Connection:";
-constexpr std::string LOGIC_STATE_CONDITION_TOKEN = "State:";
-constexpr std::string TRUTH_TABLE_TOKEN = "Truth";
-constexpr std::string CONDITIONS[] = {
-	BLOCK_CONDITION_TOKEN,
-	CONNECTION_CONDITION_TOKEN,
-	LOGIC_STATE_CONDITION_TOKEN,
-	TRUTH_TABLE_TOKEN,
-};
+#include <string>
+#include <unordered_map>
 
 bool parsePosition(std::stringstream& ss, int line, Position& out) {
 	char ch;
@@ -85,7 +62,7 @@ bool parseFPosition(std::stringstream& ss, int line, FPosition& out) {
 	return true;
 }
 
-void parsePreSteps(std::vector<std::string>& info, std::unordered_map<std::string, std::string>& macros, const std::vector<std::string>& lines) {
+void parsePreSteps(std::unordered_map<std::string, std::string>& info, std::unordered_map<std::string, std::string>& macros, const std::vector<std::string>& lines) {
 	macros.clear();
 	for (int i = 0; i < lines.size(); i++) {
 		std::stringstream ss(lines[i]);
@@ -93,19 +70,30 @@ void parsePreSteps(std::vector<std::string>& info, std::unordered_map<std::strin
 		ss >> tok;
 		if (tok == "version_0" || tok == "version_1" || tok == "version_2") {
 			// do something with versions once there is not backwards compatibility
+			if (info.find("version") != info.end()) {
+				logError("Duplicate version symbol on line {}.", "TutorialLoader", i + 1);
+				continue;
+			}
+			info.emplace("version", tok);
 		} else if ((tok == "Tutorial:")) {
 			// Tutorial:
-			if (!(ss >> info[0])) {
+			if (info.find("name") != info.end()) {
+				logError("Duplicate name symbol on line {}.", "TutorialLoader", i + 1);
+				continue;
+			}
+			std::string tutorialName;
+			if (!(ss >> tutorialName)) {
 				logError("Invalid name on line {}, name should exist.", "TutorialLoader", i + 1);
 				continue;
 			}
-			info[0] = ss.str().substr(ss.str().find(info[0]));
-			if (info[0].starts_with("\"")) {
-				info[0] = info[0].substr(1);
+			tutorialName = ss.str().substr(ss.str().find(tutorialName));
+			if (tutorialName.starts_with("\"")) {
+				tutorialName = tutorialName.substr(1);
 			}
-			if (info[0].ends_with("\"")) {
-				info[0] = info[0].substr(0, info[0].size() - 1);
+			if (tutorialName.ends_with("\"")) {
+				tutorialName = tutorialName.substr(0, tutorialName.size() - 1);
 			}
+			info.emplace("name", tutorialName);
 		} else if (tok.starts_with("$")) {
 			// Macro (i.e. '$p1 (2, 5)')
 			if (tok.size() == 1) {
@@ -279,7 +267,7 @@ void parseSteps(std::vector<TutorialStep>& steps, const std::vector<std::string>
 	}
 }
 
-std::pair<std::string, std::vector<TutorialStep>> parseTutorialFile(std::string filePath) {
+Tutorial parseTutorialFile(std::string filePath) {
 	logInfo("Loading tutorial '" + filePath + "'", "TutorialLoader");
 	std::ifstream istream(filePath);
 	if (!istream.is_open()) {
@@ -291,11 +279,11 @@ std::pair<std::string, std::vector<TutorialStep>> parseTutorialFile(std::string 
 	while (std::getline(istream, buffer)) {
 		lines.push_back(buffer);
 	}
-	std::vector<std::string> info(2, "");
+	std::unordered_map<std::string, std::string> info;
 	std::unordered_map<std::string, std::string> macros;
 	parsePreSteps(info, macros, lines);
 	macroReplace(lines, macros);
 	std::vector<TutorialStep> steps;
 	parseSteps(steps, lines);
-	return std::make_pair(info[0], steps);
+	return { steps, info };
 }

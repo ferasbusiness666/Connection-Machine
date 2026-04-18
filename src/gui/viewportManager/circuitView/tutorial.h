@@ -4,6 +4,8 @@
 #include "./viewManager/viewManager.h"
 #include "backend/container/difference.h"
 #include "renderer/elementCreator.h"
+#include <string>
+#include <unordered_map>
 
 class CircuitView;
 class Environment;
@@ -59,12 +61,17 @@ struct TutorialStep {
 	TutorialAction action;
 };
 
-class Tutorial {
+struct Tutorial {
+    std::vector<TutorialStep> tutorialSteps;
+    std::unordered_map<std::string, std::string> info;
+};
+
+class TutorialManager {
 public:
-	Tutorial(Environment& environment, CircuitView& circuitView);
+	TutorialManager(Environment& environment, CircuitView& circuitView);
 	void StartTutorial();
 	void stop();
-	void setTutorial(const std::vector<TutorialStep>& steps);
+	void setTutorial(const Tutorial& tutorial);
 	void forceCompleteStep();
 
 private:
@@ -85,7 +92,7 @@ private:
 
 	bool tutorialRunning;
 	int tutorialState;
-	std::vector<TutorialStep> tutorialSteps;
+    Tutorial tutorialSteps;
 };
 
 #endif /* tutorialManager_h */
