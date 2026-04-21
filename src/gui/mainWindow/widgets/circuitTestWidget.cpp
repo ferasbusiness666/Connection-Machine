@@ -483,6 +483,15 @@ void CircuitTestWidget::renderSideBar(BlockType blockType, const std::string& te
 		if (ImGui::Button("Edit")) {
 			getMainWindow().log("This should edit the test.");
 		}
+		int failed = 0;
+		int errors = 0;
+		int succeeded = 0;
+		for (unsigned int index = 0; index < testRunData.size(); index++) {
+			if (testRunData[index].result == CircuitTestGroupRunner::TestResult::FAILED) failed++;
+			else if (testRunData[index].result == CircuitTestGroupRunner::TestResult::SUCCEEDED) succeeded++;
+			else if (testRunData[index].result == CircuitTestGroupRunner::TestResult::ERROR) errors++;
+		}
+		ImGui::Text("%d succeded\n%d failed\n%d errors", succeeded, failed, errors);
 		// if (ImGui::BeginMenuBar()) {
 		// 	if (ImGui::BeginMenu("New")) {
 		// 		if (ImGui::MenuItem("Texture")) {
