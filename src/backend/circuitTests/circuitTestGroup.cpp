@@ -1,7 +1,5 @@
 #include "circuitTestGroup.h"
 
-#include "backend/evaluator/simulator/evalLogicSimulator.h"
-#include "backend/evaluator/simulatorManager.h"
 #include "backend/backend.h"
 
 CircuitTestGroup::CircuitTestGroupCopy CircuitTestGroup::getMinimalCopy() const {

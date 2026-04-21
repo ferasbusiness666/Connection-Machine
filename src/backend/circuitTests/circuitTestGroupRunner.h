@@ -4,7 +4,6 @@
 #include "backend/circuit/circuitDefs.h"
 #include "backend/container/block/blockDefs.h"
 #include "backend/evaluator/evalDefs.h"
-#include "backend/evaluator/simulator/logicState.h"
 #include "backend/circuitTests/circuitTestGroup.h"
 
 class Backend;

@@ -1,13 +1,8 @@
 #include "circuitTestGroupRunner.h"
 
-#include "backend/circuit/circuitDefs.h"
 #include "backend/circuitTests/circuitTestGroup.h"
-#include "backend/container/block/block.h"
 #include "backend/evaluator/simulator/evalLogicSimulator.h"
-#include "backend/evaluator/simulatorManager.h"
 #include "backend/backend.h"
-#include <cassert>
-#include <utility>
 
 const CircuitTestGroup* CircuitTestGroupRunner::getCircuitTestGroup() {
     return backend.getCircuitTestGroupManager().getCircuitTestGroup(name);
