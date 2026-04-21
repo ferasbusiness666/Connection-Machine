@@ -21,9 +21,9 @@ public:
     };
 
     struct TestRunData {
-        TestRunData(const TestResult& result = NOT_RUN, const std::string& message = "No message.") : result(result), message(message){}
+        TestRunData(const TestResult& result = NOT_RUN, const std::string& message = "Not run") : result(result), message(message){}
         TestResult result = NOT_RUN;
-        std::string message = "No message.";
+        std::string message = "Not run";
     };
 
     CircuitTestGroupRunner(Backend& backend, std::string name, BlockType blockType) :

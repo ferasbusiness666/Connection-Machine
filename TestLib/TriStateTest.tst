@@ -1,13 +1,13 @@
 tst
 version_0
 Test: "Tri State Buffer Test"
-Inputs: "Enable" "Input" 
+Inputs: "Enable" "Data"
 Outputs: "Output"
 Cases:
 "0 0 Z" {
 	>Set:
 		"Enable":0
-		"Input":0
+		"Data":0
 	>Step 10
 	>Check:
 		"Output":2
@@ -15,7 +15,7 @@ Cases:
 "0 1 0" {
 	>Set:
 		"Enable":1
-		"Input":0
+		"Data":0
 	>Step 10
 	>Check:
 		"Output":0
@@ -23,7 +23,7 @@ Cases:
 "0 Z X" {
 	>Set:
 		"Enable":2
-		"Input":0
+		"Data":0
 	>Step 10
 	>Check:
 		"Output":3
@@ -31,7 +31,7 @@ Cases:
 "0 X X" {
 	>Set:
 		"Enable":3
-		"Input":0
+		"Data":0
 	>Step 10
 	>Check:
 		"Output":3
@@ -39,7 +39,7 @@ Cases:
 "1 0 Z" {
 	>Set:
 		"Enable":0
-		"Input":1
+		"Data":1
 	>Step 10
 	>Check:
 		"Output":2
@@ -47,7 +47,7 @@ Cases:
 "1 1 1" {
 	>Set:
 		"Enable":1
-		"Input":1
+		"Data":1
 	>Step 10
 	>Check:
 		"Output":1
@@ -55,7 +55,7 @@ Cases:
 "1 Z X" {
 	>Set:
 		"Enable":2
-		"Input":1
+		"Data":1
 	>Step 10
 	>Check:
 		"Output":3
@@ -63,7 +63,7 @@ Cases:
 "1 X X" {
 	>Set:
 		"Enable":3
-		"Input":1
+		"Data":1
 	>Step 10
 	>Check:
 		"Output":3
@@ -71,7 +71,7 @@ Cases:
 "Z 0 Z" {
 	>Set:
 		"Enable":0
-		"Input":2
+		"Data":2
 	>Step 10
 	>Check:
 		"Output":2
@@ -79,7 +79,7 @@ Cases:
 "Z 1 X" {
 	>Set:
 		"Enable":1
-		"Input":2
+		"Data":2
 	>Step 10
 	>Check:
 		"Output":3
@@ -87,7 +87,7 @@ Cases:
 "Z Z X" {
 	>Set:
 		"Enable":2
-		"Input":2
+		"Data":2
 	>Step 10
 	>Check:
 		"Output":3
@@ -95,7 +95,7 @@ Cases:
 "Z X X" {
 	>Set:
 		"Enable":3
-		"Input":2
+		"Data":2
 	>Step 10
 	>Check:
 		"Output":3
@@ -103,7 +103,7 @@ Cases:
 "X 0 Z" {
 	>Set:
 		"Enable":0
-		"Input":3
+		"Data":3
 	>Step 10
 	>Check:
 		"Output":2
@@ -111,7 +111,7 @@ Cases:
 "X 1 X" {
 	>Set:
 		"Enable":1
-		"Input":3
+		"Data":3
 	>Step 10
 	>Check:
 		"Output":3
@@ -119,7 +119,7 @@ Cases:
 "X Z X" {
 	>Set:
 		"Enable":2
-		"Input":3
+		"Data":3
 	>Step 10
 	>Check:
 		"Output":3
@@ -127,7 +127,7 @@ Cases:
 "X X X" {
 	>Set:
 		"Enable":3
-		"Input":3
+		"Data":3
 	>Step 10
 	>Check:
 		"Output":3

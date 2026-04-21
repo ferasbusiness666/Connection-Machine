@@ -138,7 +138,7 @@ CircuitTestGroupRunner::TestRunData CircuitTestGroupRunner::runTest(const int te
     simulator->resetStates();
     simulator->setPause(true); //don't know if this is necessary but playing it safe
     std::pair<CircuitTestGroupRunner::TestResult, std::string> testCommandResult;
-    CircuitTestGroupRunner::TestResult testGroupStatus;
+    CircuitTestGroupRunner::TestResult testGroupStatus = CircuitTestGroupRunner::SUCCEEDED;
     std::string testGroupMessage = "";
     logInfo("Running test case '{}'", "circuitTestGroupRunner", testGroupData->testCases[testIndex].name);
     for (auto commandIter = testGroupData->testCases[testIndex].testCommands.begin(); commandIter != testGroupData->testCases[testIndex].testCommands.end(); commandIter++) {
@@ -159,13 +159,15 @@ CircuitTestGroupRunner::TestRunData CircuitTestGroupRunner::runTest(const int te
 
         if (testCommandResult.first == CircuitTestGroupRunner::ERROR) {
             logError("Test command error detected.", "circuitTestGroupRunner");
-            return TestRunData(CircuitTestGroupRunner::TestResult::ERROR, testGroupMessage + testCommandResult.second);
+            return TestRunData(CircuitTestGroupRunner::TestResult::ERROR, testCommandResult.second);
         }
         if (testCommandResult.first == CircuitTestGroupRunner::FAILED) {
             testGroupStatus = CircuitTestGroupRunner::FAILED;
-            testGroupMessage = testGroupMessage + testCommandResult.second + "\n";
+            if (testGroupMessage == "") testGroupMessage = testGroupMessage + testCommandResult.second;
+            else testGroupMessage = testGroupMessage + "\n" + testCommandResult.second;
         }
     }
+    if (testGroupStatus == TestResult::SUCCEEDED) testGroupMessage = "Test passed";
     return TestRunData(testGroupStatus, testGroupMessage);
 }
 
