@@ -3,6 +3,7 @@
 #include "app.h"
 #include "backend/circuit/circuitDefs.h"
 #include "backend/circuitTests/circuitTestGroup.h"
+#include "backend/circuitTests/circuitTestGroupRunner.h"
 #include "backend/container/block/block.h"
 #include "backend/container/block/blockDefs.h"
 #include "gui/viewportManager/circuitView/events/customEvents.h"
@@ -124,6 +125,11 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 			return;
 		}
 		std::lock_guard mux(testGroupCopyMux);
+		std::lock_guard testResultsMutex(this->testResultsMutex);
+		testRunData.clear();
+		for (int index = 0; index < testGroupCopy.testCases.size(); index++) {
+			testRunData.emplace_back(CircuitTestGroupRunner::TestRunData());
+		}
 		testGroupCopy = circuitTestGroup->getMinimalCopy();
 	});
 	dataUpdateEventReceiver.linkFunction("newTestGroup", [this](const DataUpdateEventManager::EventData* event) {
@@ -167,8 +173,18 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 	setupGUIValue<BlockType>("blockType", BlockType::NONE, [this](const BlockType& blockType) {
 		if (getGUIValue<std::string>("testGroupName") != "NONE") {
 			testGroupRunner.emplace(getBackend(), getGUIValue<std::string>("testGroupName"), blockType);
-			std::lock_guard renderingCircuitMux(this->renderingCircuitMux);
-			renderingCircuitId = testGroupRunner.value().getCircuitId();
+			{
+				std::lock_guard testResultsMutex(this->testResultsMutex);
+				std::lock_guard mux(testGroupCopyMux);
+				testRunData.clear();
+				for (int index = 0; index < testGroupCopy.testCases.size(); index++) {
+					testRunData.emplace_back(CircuitTestGroupRunner::TestRunData());
+				}
+			}
+			{
+				std::lock_guard renderingCircuitMux(this->renderingCircuitMux);
+				renderingCircuitId = testGroupRunner.value().getCircuitId();
+			}
 			circuitView->setSimulator(testGroupRunner->getSimulatorId());
 		}
 		setGUIValue("blockType", blockType);
@@ -204,7 +220,12 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 
 		{
 			std::lock_guard mux(testGroupCopyMux);
+			std::lock_guard testResultsMutex(this->testResultsMutex);
 			testGroupCopy = circuitTestGroup->getMinimalCopy();
+			testRunData.clear();
+			for (int index = 0; index < testGroupCopy.testCases.size(); index++) {
+				testRunData.emplace_back(CircuitTestGroupRunner::TestRunData());
+			}
 		}
 		setGUIValue<std::string>("testGroupName", testGroupName);
 		testGroupRunner.emplace(getBackend(), getGUIValue<std::string>("testGroupName"), getGUIValue<BlockType>("blockType"));
@@ -447,7 +468,11 @@ void CircuitTestWidget::renderSideBar(BlockType blockType, const std::string& te
 	) {
 		if (ImGui::Button("Run All")) {
 			if (testGroupRunner != std::nullopt && getGUIValue_rendering<BlockType>("blockType") != BlockType::NONE) {
-						App::runOnMain([this](){ testGroupRunner->runAllTests(); });
+				App::runOnMain([this](){
+					std::vector<CircuitTestGroupRunner::TestRunData> results = testGroupRunner->runAllTests();
+					std::lock_guard mux(testResultsMutex);
+					testRunData = results;
+				});
 			} else {
 				getMainWindow().logError("Test group and circuit must be loaded before testing!");
 			}
@@ -482,11 +507,16 @@ void CircuitTestWidget::renderSideBar(BlockType blockType, const std::string& te
 				if(ImGui::Button("Run")) {
 					if (testGroupRunner != std::nullopt && getGUIValue_rendering<BlockType>("blockType") != BlockType::NONE) {
 						std::string testCaseName = testCase->name;
-						App::runOnMain([this, testCaseName](){ testGroupRunner->runTest(testCaseName); });
+						App::runOnMain([this, testCaseName, index](){
+							CircuitTestGroupRunner::TestRunData result = testGroupRunner->runTest(testCaseName);
+							std::lock_guard mux(testResultsMutex);
+							testRunData[index] = result;
+						});
 					} else {
 						getMainWindow().logError("Test group and circuit must be loaded before testing!");
 					}
 				}
+				ImGui::SetItemTooltip("%s", testRunData[index].message.c_str());
 				ImGui::SameLine();
 				if (ImGui::TreeNodeEx(testCase->name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
 					ImGui::PopStyleVar();
