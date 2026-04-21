@@ -184,7 +184,7 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 		// blockType = blockData->getBlockType();
 		// std::lock_guard mux(blockDataCopyMux);
 		// blockDataCopy = blockData->getBlockDataCopy();
-		// Circuit* circuit = getBackend().getCircuit(renderingCircuitId).get();
+		// Circuit* circuit = getbackend().getCircuitManager().getCircuit(renderingCircuitId).get();
 		// circuit->clear();
 		// circuit->tryInsertBlock(Position(), Orientation(), blockData->getBlockType());
 		// circuitView->getViewManager().focus();

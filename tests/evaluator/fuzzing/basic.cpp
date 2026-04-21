@@ -147,7 +147,7 @@ protected:
 	void TearDown() override;
 	std::mt19937_64 gen;
 	Environment environment {false};
-	SharedCircuit circuit = nullptr;
+	Circuit* circuit = nullptr;
 	EvalLogicSimulator* tSimulator = nullptr; // testing simulator
 	EvalLogicSimulator* rSimulator = nullptr; // reference simulator
 	BlockType loadCircuit(const std::filesystem::path& path);
@@ -156,20 +156,20 @@ protected:
 BlockType BasicFuzzingEvaluatorTest::loadCircuit(const std::filesystem::path& path) {
 	CircuitFileManager& circuitFileManager = environment.getCircuitFileManager();
 	circuit_id_t circuitId = circuitFileManager.loadFromFile(path.string()).at(0);
-	SharedCircuit circuit = environment.getBackend().getCircuitManager().getCircuit(circuitId);
+	Circuit* circuit = environment.getBackend().getCircuitManager().getCircuit(circuitId);
 	return circuit->getBlockType();
 }
 
 void BasicFuzzingEvaluatorTest::SetUp() {
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
-	circuit = environment.getBackend().getCircuit(circuitId);
+	circuit = environment.getBackend().getCircuitManager().getCircuit(circuitId);
 	simulator_id_t simulatorId = environment.getBackend().createSimulator(circuitId).value();
 	tSimulator = environment.getBackend().getSimulator(simulatorId);
 	ASSERT_TRUE(tSimulator->isPause());
 }
 
 void BasicFuzzingEvaluatorTest::TearDown() {
-	circuit.reset();
+	circuit = nullptr;
 	tSimulator = nullptr;
 	rSimulator = nullptr;
 }
