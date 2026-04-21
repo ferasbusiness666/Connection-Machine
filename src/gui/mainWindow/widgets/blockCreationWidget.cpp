@@ -300,179 +300,181 @@ void BlockCreationWidget::renderViewport(circuit_id_t circuitId) {
 		}
 	}
 	std::optional<connection_end_id_t> currentlyEditingPort = getGUIValue<std::optional<connection_end_id_t>>("currentlyEditingPort");
-	if (currentlyEditingPort.has_value()) {
-		auto connectionIter = blockDataCopy->connections.find(currentlyEditingPort.value());
-		if (connectionIter == blockDataCopy->connections.end()) {
-			setGUIValue_rendering<std::optional<connection_end_id_t>>("currentlyEditingPort", std::nullopt);
-		} else {
-			BlockData::ConnectionData& connectionData = connectionIter->second;
-			ImVec2 portSettingsSize;
-			ImVec2 portSettingPos = viewportWindowPos + viewportPanelSize / 2 - ImVec2(
-				pixPerCell.x * (viewportCenter.x - connectionData.positionOnBlock.dx),
-				pixPerCell.y * (viewportCenter.y - connectionData.positionOnBlock.dy)
-			) + ImVec2(5, 5) + ImVec2(pixPerCell.x * 0, pixPerCell.y);
-			drawList->ChannelsSplit(2);
-			{
-				drawList->ChannelsSetCurrent(1);
-				ImGui::SetCursorPos(portSettingPos);
-				ImGui::BeginGroup();
-					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-					float xPos = ImGui::GetCursorPos().x;
-					ImGui::Text("Name");
-					ImGui::SetCursorPos(ImVec2(xPos, ImGui::GetCursorPos().y));
-					ImGui::SetNextItemWidth(160);
-					const std::string* portName = blockDataCopy->connectionIdNames.get(currentlyEditingPort.value());
-					std::string portNameStr = "";
-					if (portName != nullptr) portNameStr = *portName;
-					if (ImGui::InputText("##PortName", &portNameStr)) {
-						blockDataCopy->connectionIdNames.set(currentlyEditingPort.value(), portNameStr);
-						App::runOnMain([this, blockType = blockDataCopy->blockType, port = currentlyEditingPort.value(), name = portNameStr](){
-							Backend& backend = getEnvironment().getBackend();
-							BlockData* blockData = backend.getBlockDataManager().getBlockData(blockType);
-							if (!blockData) return;
-							blockData->setConnectionIdName(port, name);
-						});
-					}
-					ImGui::SetCursorPos(ImVec2(xPos, ImGui::GetCursorPos().y));
-					{
-						ImGui::Text("Pos");
-						ImGui::SameLine();
-						ImGui::SetNextItemWidth(50);
-						bool portPosUpdated = ImGui::InputScalar("##xPortPos", ImGuiDataType_U32, &connectionData.positionOnBlock.dx);
-						ImGui::SameLine();
-						ImGui::SetNextItemWidth(50);
-						portPosUpdated |= ImGui::InputScalar("##yPortPos", ImGuiDataType_U32, &connectionData.positionOnBlock.dy);
-						if (portPosUpdated) {
-							if (connectionData.positionOnBlock.dx >= blockDataCopy->blockSize.w) {
-								connectionData.positionOnBlock.dx = blockDataCopy->blockSize.w - 1;
-							}
-							if (connectionData.positionOnBlock.dy >= blockDataCopy->blockSize.h) {
-								connectionData.positionOnBlock.dy = blockDataCopy->blockSize.h - 1;
-							}
-							bool cant = false;
-							for (const auto& connection : blockDataCopy->connections) {
-								if (connection.second.portType == connectionData.portType) {
-									if (connection.first != currentlyEditingPort.value() && connection.second.positionOnBlock == connectionData.positionOnBlock) {
-										cant = true;
-										break;
+	if (blockDataCopy.has_value()) {
+		if (currentlyEditingPort.has_value()) {
+			auto connectionIter = blockDataCopy->connections.find(currentlyEditingPort.value());
+			if (connectionIter == blockDataCopy->connections.end()) {
+				setGUIValue_rendering<std::optional<connection_end_id_t>>("currentlyEditingPort", std::nullopt);
+			} else {
+				BlockData::ConnectionData& connectionData = connectionIter->second;
+				ImVec2 portSettingsSize;
+				ImVec2 portSettingPos = viewportWindowPos + viewportPanelSize / 2 - ImVec2(
+					pixPerCell.x * (viewportCenter.x - connectionData.positionOnBlock.dx),
+					pixPerCell.y * (viewportCenter.y - connectionData.positionOnBlock.dy)
+				) + ImVec2(5, 5) + ImVec2(pixPerCell.x * 0, pixPerCell.y);
+				drawList->ChannelsSplit(2);
+				{
+					drawList->ChannelsSetCurrent(1);
+					ImGui::SetCursorPos(portSettingPos);
+					ImGui::BeginGroup();
+						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+						float xPos = ImGui::GetCursorPos().x;
+						ImGui::Text("Name");
+						ImGui::SetCursorPos(ImVec2(xPos, ImGui::GetCursorPos().y));
+						ImGui::SetNextItemWidth(160);
+						const std::string* portName = blockDataCopy->connectionIdNames.get(currentlyEditingPort.value());
+						std::string portNameStr = "";
+						if (portName != nullptr) portNameStr = *portName;
+						if (ImGui::InputText("##PortName", &portNameStr)) {
+							blockDataCopy->connectionIdNames.set(currentlyEditingPort.value(), portNameStr);
+							App::runOnMain([this, blockType = blockDataCopy->blockType, port = currentlyEditingPort.value(), name = portNameStr](){
+								Backend& backend = getEnvironment().getBackend();
+								BlockData* blockData = backend.getBlockDataManager().getBlockData(blockType);
+								if (!blockData) return;
+								blockData->setConnectionIdName(port, name);
+							});
+						}
+						ImGui::SetCursorPos(ImVec2(xPos, ImGui::GetCursorPos().y));
+						{
+							ImGui::Text("Pos");
+							ImGui::SameLine();
+							ImGui::SetNextItemWidth(50);
+							bool portPosUpdated = ImGui::InputScalar("##xPortPos", ImGuiDataType_U32, &connectionData.positionOnBlock.dx);
+							ImGui::SameLine();
+							ImGui::SetNextItemWidth(50);
+							portPosUpdated |= ImGui::InputScalar("##yPortPos", ImGuiDataType_U32, &connectionData.positionOnBlock.dy);
+							if (portPosUpdated) {
+								if (connectionData.positionOnBlock.dx >= blockDataCopy->blockSize.w) {
+									connectionData.positionOnBlock.dx = blockDataCopy->blockSize.w - 1;
+								}
+								if (connectionData.positionOnBlock.dy >= blockDataCopy->blockSize.h) {
+									connectionData.positionOnBlock.dy = blockDataCopy->blockSize.h - 1;
+								}
+								bool cant = false;
+								for (const auto& connection : blockDataCopy->connections) {
+									if (connection.second.portType == connectionData.portType) {
+										if (connection.first != currentlyEditingPort.value() && connection.second.positionOnBlock == connectionData.positionOnBlock) {
+											cant = true;
+											break;
+										}
 									}
 								}
+								if (!cant) {
+									App::runOnMain([this, blockType = blockDataCopy->blockType, port = currentlyEditingPort.value(), portType = connectionData.portType, pos = connectionData.positionOnBlock](){
+										Backend& backend = getEnvironment().getBackend();
+										BlockData* blockData = backend.getBlockDataManager().getBlockData(blockType);
+										if (!blockData) return;
+										if (portType == BlockData::ConnectionData::PortType::INPUT) {
+											blockData->setConnectionInput(pos, port);
+										} else {
+											blockData->setConnectionOutput(pos, port);
+										}
+									});
+								}
 							}
-							if (!cant) {
-								App::runOnMain([this, blockType = blockDataCopy->blockType, port = currentlyEditingPort.value(), portType = connectionData.portType, pos = connectionData.positionOnBlock](){
+						}
+						{
+							ImGui::Text("Offset");
+							ImGui::SameLine();
+							ImGui::SetNextItemWidth(50);
+							bool portOffsetPosUpdated = ImGui::InputScalar("##xPortOffsetPos", ImGuiDataType_Float, &connectionData.portOffset.dx);
+							ImGui::SameLine();
+							ImGui::SetNextItemWidth(50);
+							portOffsetPosUpdated |= ImGui::InputScalar("##yPortOffsetPos", ImGuiDataType_Float, &connectionData.portOffset.dy);
+							if (portOffsetPosUpdated) {
+								connectionData.portOffset.dx = std::clamp(connectionData.portOffset.dx, 0.0f, 1.0f);
+								connectionData.portOffset.dy = std::clamp(connectionData.portOffset.dy, 0.0f, 1.0f);
+								App::runOnMain([this, blockType = blockDataCopy->blockType, port = currentlyEditingPort.value(), portType = connectionData.portType, pos = connectionData.portOffset](){
 									Backend& backend = getEnvironment().getBackend();
 									BlockData* blockData = backend.getBlockDataManager().getBlockData(blockType);
-									if (!blockData) return;
 									if (portType == BlockData::ConnectionData::PortType::INPUT) {
-										blockData->setConnectionInput(pos, port);
+										if (!blockData) return;
+										blockData->setConnectionPortOffset(port, pos);
 									} else {
-										blockData->setConnectionOutput(pos, port);
+										blockData->setConnectionPortOffset(port, pos);
 									}
 								});
 							}
 						}
-					}
-					{
-						ImGui::Text("Offset");
-						ImGui::SameLine();
-						ImGui::SetNextItemWidth(50);
-						bool portOffsetPosUpdated = ImGui::InputScalar("##xPortOffsetPos", ImGuiDataType_Float, &connectionData.portOffset.dx);
-						ImGui::SameLine();
-						ImGui::SetNextItemWidth(50);
-						portOffsetPosUpdated |= ImGui::InputScalar("##yPortOffsetPos", ImGuiDataType_Float, &connectionData.portOffset.dy);
-						if (portOffsetPosUpdated) {
-							connectionData.portOffset.dx = std::clamp(connectionData.portOffset.dx, 0.0f, 1.0f);
-							connectionData.portOffset.dy = std::clamp(connectionData.portOffset.dy, 0.0f, 1.0f);
-							App::runOnMain([this, blockType = blockDataCopy->blockType, port = currentlyEditingPort.value(), portType = connectionData.portType, pos = connectionData.portOffset](){
-								Backend& backend = getEnvironment().getBackend();
-								BlockData* blockData = backend.getBlockDataManager().getBlockData(blockType);
-								if (portType == BlockData::ConnectionData::PortType::INPUT) {
-									if (!blockData) return;
-									blockData->setConnectionPortOffset(port, pos);
-								} else {
-									blockData->setConnectionPortOffset(port, pos);
+						{
+							ImGui::Text("Bit Width");
+							ImGui::SameLine();
+							ImGui::SetNextItemWidth(50);
+							unsigned int bitWidth = connectionData.getBitWidth();
+							if (ImGui::InputScalar("##BitWidth", ImGuiDataType_U32, &bitWidth)) {
+								if (bitWidth == 0) {
+									bitWidth = 1;
+								} else if (bitWidth > 65535) {
+									bitWidth = 65535; // it should never be this big!
 								}
-							});
-						}
-					}
-					{
-						ImGui::Text("Bit Width");
-						ImGui::SameLine();
-						ImGui::SetNextItemWidth(50);
-						unsigned int bitWidth = connectionData.getBitWidth();
-						if (ImGui::InputScalar("##BitWidth", ImGuiDataType_U32, &bitWidth)) {
-							if (bitWidth == 0) {
-								bitWidth = 1;
-							} else if (bitWidth > 65535) {
-								bitWidth = 65535; // it should never be this big!
+								connectionData.bitConfiguration = bitWidth;
+								App::runOnMain([this, blockType = blockDataCopy->blockType, port = currentlyEditingPort.value(), bitWidth](){
+									Backend& backend = getEnvironment().getBackend();
+									BlockData* blockData = backend.getBlockDataManager().getBlockData(blockType);
+									if (!blockData) return;
+									blockData->setConnectionBitConfiguration(port, bitWidth);
+								});
 							}
-							connectionData.bitConfiguration = bitWidth;
-							App::runOnMain([this, blockType = blockDataCopy->blockType, port = currentlyEditingPort.value(), bitWidth](){
-								Backend& backend = getEnvironment().getBackend();
-								BlockData* blockData = backend.getBlockDataManager().getBlockData(blockType);
-								if (!blockData) return;
-								blockData->setConnectionBitConfiguration(port, bitWidth);
-							});
 						}
-					}
-					ImGui::SetCursorPos(ImVec2(xPos, ImGui::GetCursorPos().y));
-					if (ImGui::SmallButton("Remove")) {
-						ImGui::OpenPopup("Are you sure you want to remove this port");
-					}
-					if (ImGui::BeginPopup("Are you sure you want to remove this port")) {
-						if (ImGui::Button("cancel")) {
-							ImGui::CloseCurrentPopup();
+						ImGui::SetCursorPos(ImVec2(xPos, ImGui::GetCursorPos().y));
+						if (ImGui::SmallButton("Remove")) {
+							ImGui::OpenPopup("Are you sure you want to remove this port");
 						}
-						if (ImGui::Button("Remove")) {
-							App::runOnMain([this, blockType = blockDataCopy->blockType, port = currentlyEditingPort.value()](){
-								Backend& backend = getEnvironment().getBackend();
-								BlockData* blockData = backend.getBlockDataManager().getBlockData(blockType);
-								if (!blockData) return;
-								blockData->removeConnection(port);
-							});
+						if (ImGui::BeginPopup("Are you sure you want to remove this port")) {
+							if (ImGui::Button("cancel")) {
+								ImGui::CloseCurrentPopup();
+							}
+							if (ImGui::Button("Remove")) {
+								App::runOnMain([this, blockType = blockDataCopy->blockType, port = currentlyEditingPort.value()](){
+									Backend& backend = getEnvironment().getBackend();
+									BlockData* blockData = backend.getBlockDataManager().getBlockData(blockType);
+									if (!blockData) return;
+									blockData->removeConnection(port);
+								});
+							}
+							ImGui::EndPopup();
 						}
-						ImGui::EndPopup();
-					}
-					ImGui::SameLine();
-					if (ImGui::SmallButton("Done")) {
-						setGUIValue_rendering<std::optional<connection_end_id_t>>("currentlyEditingPort", std::nullopt);
-					}
-					ImGui::PopStyleColor();
-				ImGui::EndGroup();
-				portSettingsSize = ImGui::GetItemRectSize();
+						ImGui::SameLine();
+						if (ImGui::SmallButton("Done")) {
+							setGUIValue_rendering<std::optional<connection_end_id_t>>("currentlyEditingPort", std::nullopt);
+						}
+						ImGui::PopStyleColor();
+					ImGui::EndGroup();
+					portSettingsSize = ImGui::GetItemRectSize();
+				}
+				{
+					drawList->ChannelsSetCurrent(0);
+					drawList->AddRectFilled(
+						{ viewportWindowScreenPos.x + portSettingPos.x - padding, viewportWindowScreenPos.y + portSettingPos.y - padding },
+						{ viewportWindowScreenPos.x + portSettingPos.x + portSettingsSize.x + padding,
+							viewportWindowScreenPos.y + portSettingPos.y + portSettingsSize.y + padding },
+						ImColor(0.8f, 0.8f, 0.8f, 0.75f),
+						5.f
+					);
+				}
+				drawList->ChannelsMerge();
 			}
-			{
-				drawList->ChannelsSetCurrent(0);
-				drawList->AddRectFilled(
-					{ viewportWindowScreenPos.x + portSettingPos.x - padding, viewportWindowScreenPos.y + portSettingPos.y - padding },
-					{ viewportWindowScreenPos.x + portSettingPos.x + portSettingsSize.x + padding,
-						viewportWindowScreenPos.y + portSettingPos.y + portSettingsSize.y + padding },
-					ImColor(0.8f, 0.8f, 0.8f, 0.75f),
-					5.f
-				);
+		} else {
+			for (const auto& connection : blockDataCopy->connections) {
+				ImGui::SetCursorPos(viewportWindowPos + viewportPanelSize / 2 - ImVec2(
+					pixPerCell.x * (viewportCenter.x - connection.second.positionOnBlock.dx),
+					pixPerCell.y * (viewportCenter.y - connection.second.positionOnBlock.dy) + (
+						(connection.second.portType == BlockData::ConnectionData::OUTPUT) ? -(ImGui::CalcTextSize("Edit Input").y + 5) : 0
+					)
+				) + ImVec2(5, 5));
+				ImGui::PushID(connection.first.get());
+				bool pressed = false;
+				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.77f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.1f, 0.2f, 0.79f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.3f, 0.4f, 0.90f));
+				if (connection.second.portType == BlockData::ConnectionData::OUTPUT) pressed = ImGui::SmallButton("Edit Out");
+				else pressed = ImGui::SmallButton("Edit In");
+				ImGui::PopStyleColor(3);
+				if (pressed) {
+					setGUIValue_rendering<std::optional<connection_end_id_t>>("currentlyEditingPort", connection.first);
+				}
+				ImGui::PopID();
 			}
-			drawList->ChannelsMerge();
-		}
-	} else {
-		for (const auto& connection : blockDataCopy->connections) {
-			ImGui::SetCursorPos(viewportWindowPos + viewportPanelSize / 2 - ImVec2(
-				pixPerCell.x * (viewportCenter.x - connection.second.positionOnBlock.dx),
-				pixPerCell.y * (viewportCenter.y - connection.second.positionOnBlock.dy) + (
-					(connection.second.portType == BlockData::ConnectionData::OUTPUT) ? -(ImGui::CalcTextSize("Edit Input").y + 5) : 0
-				)
-			) + ImVec2(5, 5));
-			ImGui::PushID(connection.first.get());
-			bool pressed = false;
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.77f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.1f, 0.2f, 0.79f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.3f, 0.4f, 0.90f));
-			if (connection.second.portType == BlockData::ConnectionData::OUTPUT) pressed = ImGui::SmallButton("Edit Out");
-			else pressed = ImGui::SmallButton("Edit In");
-			ImGui::PopStyleColor(3);
-			if (pressed) {
-				setGUIValue_rendering<std::optional<connection_end_id_t>>("currentlyEditingPort", connection.first);
-			}
-			ImGui::PopID();
 		}
 	}
 	drawList->ChannelsSplit(2);
@@ -575,38 +577,40 @@ void BlockCreationWidget::renderSideBar(circuit_id_t circuitId) {
 		ImGui::PopStyleColor();
 		ImGui::PopStyleVar();
 	) {
-		{
-			ImGui::Text("Name");
-			ImGui::SameLine();
-			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-			if (ImGui::InputText("##Name", &blockDataCopy->name)) {
-				App::runOnMain([this, circuitId, name = blockDataCopy->name](){
-					Backend& backend = getEnvironment().getBackend();
-					Circuit* circuit = backend.getCircuitManager().getCircuit(circuitId);
-					if (!circuit) return;
-					circuit->setCircuitName(name);
-				});
+		if (blockDataCopy.has_value()) {
+			{
+				ImGui::Text("Name");
+				ImGui::SameLine();
+				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+				if (ImGui::InputText("##Name", &blockDataCopy->name)) {
+					App::runOnMain([this, circuitId, name = blockDataCopy->name](){
+						Backend& backend = getEnvironment().getBackend();
+						Circuit* circuit = backend.getCircuitManager().getCircuit(circuitId);
+						if (!circuit) return;
+						circuit->setCircuitName(name);
+					});
+				}
 			}
-		}
-		{
-			ImGui::Text("Size");
-			ImGui::SameLine();
-			ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x/2, 100));
-			bool sizeChange = ImGui::InputScalar("##xSize", ImGuiDataType_S32, &blockDataCopy->blockSize.w);
-			ImGui::SameLine();
-			ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x, 100));
-			sizeChange |= ImGui::InputScalar("##ySize", ImGuiDataType_S32, &blockDataCopy->blockSize.h);
-			if (sizeChange) {
-				if (blockDataCopy->blockSize.w <= 0) blockDataCopy->blockSize.w = 1;
-				if (blockDataCopy->blockSize.h <= 0) blockDataCopy->blockSize.h = 1;
-				App::runOnMain([this, circuitId, size = blockDataCopy->blockSize](){
-					Backend& backend = getMainWindow().getEnvironment().getBackend();
-					const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
-					if (!circuitBlockData) return;
-					BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
-					assert(blockData);
-					blockData->setSize(size);
-				});
+			{
+				ImGui::Text("Size");
+				ImGui::SameLine();
+				ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x/2, 100));
+				bool sizeChange = ImGui::InputScalar("##xSize", ImGuiDataType_S32, &blockDataCopy->blockSize.w);
+				ImGui::SameLine();
+				ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x, 100));
+				sizeChange |= ImGui::InputScalar("##ySize", ImGuiDataType_S32, &blockDataCopy->blockSize.h);
+				if (sizeChange) {
+					if (blockDataCopy->blockSize.w <= 0) blockDataCopy->blockSize.w = 1;
+					if (blockDataCopy->blockSize.h <= 0) blockDataCopy->blockSize.h = 1;
+					App::runOnMain([this, circuitId, size = blockDataCopy->blockSize](){
+						Backend& backend = getMainWindow().getEnvironment().getBackend();
+						const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
+						if (!circuitBlockData) return;
+						BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
+						assert(blockData);
+						blockData->setSize(size);
+					});
+				}
 			}
 		}
 	}
@@ -637,138 +641,139 @@ void BlockCreationWidget::renderSideBar(circuit_id_t circuitId) {
 			}
 			ImGui::EndMenuBar();
 		}
-
-		for (unsigned int index = 0; index < blockDataCopy->renderData.size(); index++) {
-			BlockData::RenderDataType& renderData = blockDataCopy->renderData[index];
-			ImGui::PushID(index);
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2, 2));
-			ImGui::PushStyleColor(ImGuiCol_ChildBg, (index % 2 ==0) ? GUIColors::WIDGET_ALTERNATING_BACKGROUND_1 : GUIColors::WIDGET_ALTERNATING_BACKGROUND_2);
-			ifGui (ImGui::BeginChild("Render Data Row", ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysUseWindowPadding),
-				ImGui::PopStyleColor();
-				ImGui::PopStyleVar();
-			) {
-				if (std::holds_alternative<BlockData::BlockTextureData>(renderData)) {
-					BlockData::BlockTextureData& blockTextureData = std::get<BlockData::BlockTextureData>(renderData);
-					if (ImGui::TreeNodeEx("BlockTexture", ImGuiTreeNodeFlags_DefaultOpen)) {
-						ImGui::TreePop();
-						ImGui::Indent();
-						if (ImGui::InputText("Path", &blockTextureData.path)) {
-							App::runOnMain([this, circuitId, index, path = blockTextureData.path](){
-								Backend& backend = getMainWindow().getEnvironment().getBackend();
-								const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
-								if (!circuitBlockData) return;
-								BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
-								assert(blockData);
-								if (!blockData->isRenderDataOfType<BlockData::BlockTextureData>(index)) return;
-								blockData->setBlockTexturePath(index, path);
-							});
-						}
-						if (ImGui::Checkbox("Use full texture", &blockTextureData.useFullTexture)) {
-							App::runOnMain([this, circuitId, index, useFullTexture = blockTextureData.useFullTexture](){
-								Backend& backend = getMainWindow().getEnvironment().getBackend();
-								const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
-								if (!circuitBlockData) return;
-								BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
-								assert(blockData);
-								if (!blockData->isRenderDataOfType<BlockData::BlockTextureData>(index)) return;
-								blockData->setBlockUseFullTexture(index, useFullTexture);
-							});
-						}
-						if (!blockTextureData.useFullTexture) {
-							{
-								ImGui::Text("Size");
-								ImGui::SameLine();
-								ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x/2, 100));
-								bool sizeUpdated = ImGui::InputScalar("##xSize", ImGuiDataType_U32, &blockTextureData.size.x);
-								ImGui::SameLine();
-								ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x, 100));
-								sizeUpdated |= ImGui::InputScalar("##ySize", ImGuiDataType_U32, &blockTextureData.size.y);
-								if (sizeUpdated) {
-									App::runOnMain([this, circuitId, index, size = blockTextureData.size](){
-										Backend& backend = getMainWindow().getEnvironment().getBackend();
-										const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
-										if (!circuitBlockData) return;
-										BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
-										assert(blockData);
-										if (!blockData->isRenderDataOfType<BlockData::BlockTextureData>(index)) return;
-										blockData->setBlockTextureSize(index, size);
-									});
-								}
-							}
-							{
-								ImGui::Text("Top Left");
-								ImGui::SameLine();
-								ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x/2, 100));
-								bool topLeftUpdated = ImGui::InputScalar("##xTopLeft", ImGuiDataType_U32, &blockTextureData.topLeft.x);
-								ImGui::SameLine();
-								ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x, 100));
-								topLeftUpdated |= ImGui::InputScalar("##yTopLeft", ImGuiDataType_U32, &blockTextureData.topLeft.y);
-								if (topLeftUpdated) {
-									App::runOnMain([this, circuitId, index, topLeft = blockTextureData.topLeft](){
-										Backend& backend = getMainWindow().getEnvironment().getBackend();
-										const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
-										if (!circuitBlockData) return;
-										BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
-										assert(blockData);
-										if (!blockData->isRenderDataOfType<BlockData::BlockTextureData>(index)) return;
-										blockData->setBlockTextureTopLeft(index, topLeft);
-									});
-								}
-							}
-							if (ImGui::Checkbox("Display state", &blockTextureData.renderState)) {
-								App::runOnMain([this, circuitId, index, renderState = blockTextureData.renderState](){
+		if (blockDataCopy.has_value()) {
+			for (unsigned int index = 0; index < blockDataCopy->renderData.size(); index++) {
+				BlockData::RenderDataType& renderData = blockDataCopy->renderData[index];
+				ImGui::PushID(index);
+				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2, 2));
+				ImGui::PushStyleColor(ImGuiCol_ChildBg, (index % 2 ==0) ? GUIColors::WIDGET_ALTERNATING_BACKGROUND_1 : GUIColors::WIDGET_ALTERNATING_BACKGROUND_2);
+				ifGui (ImGui::BeginChild("Render Data Row", ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysUseWindowPadding),
+					ImGui::PopStyleColor();
+					ImGui::PopStyleVar();
+				) {
+					if (std::holds_alternative<BlockData::BlockTextureData>(renderData)) {
+						BlockData::BlockTextureData& blockTextureData = std::get<BlockData::BlockTextureData>(renderData);
+						if (ImGui::TreeNodeEx("BlockTexture", ImGuiTreeNodeFlags_DefaultOpen)) {
+							ImGui::TreePop();
+							ImGui::Indent();
+							if (ImGui::InputText("Path", &blockTextureData.path)) {
+								App::runOnMain([this, circuitId, index, path = blockTextureData.path](){
 									Backend& backend = getMainWindow().getEnvironment().getBackend();
 									const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
 									if (!circuitBlockData) return;
 									BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
 									assert(blockData);
 									if (!blockData->isRenderDataOfType<BlockData::BlockTextureData>(index)) return;
-									blockData->setBlockRenderState(index, renderState);
+									blockData->setBlockTexturePath(index, path);
 								});
 							}
-							if (blockTextureData.renderState) {
+							if (ImGui::Checkbox("Use full texture", &blockTextureData.useFullTexture)) {
+								App::runOnMain([this, circuitId, index, useFullTexture = blockTextureData.useFullTexture](){
+									Backend& backend = getMainWindow().getEnvironment().getBackend();
+									const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
+									if (!circuitBlockData) return;
+									BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
+									assert(blockData);
+									if (!blockData->isRenderDataOfType<BlockData::BlockTextureData>(index)) return;
+									blockData->setBlockUseFullTexture(index, useFullTexture);
+								});
+							}
+							if (!blockTextureData.useFullTexture) {
 								{
+									ImGui::Text("Size");
+									ImGui::SameLine();
+									ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x/2, 100));
+									bool sizeUpdated = ImGui::InputScalar("##xSize", ImGuiDataType_U32, &blockTextureData.size.x);
+									ImGui::SameLine();
 									ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x, 100));
-									if (ImGui::InputScalar("Virtual connection id##virtutal", ImGuiDataType_U32, &blockTextureData.virtualConnectionId)) {
-										App::runOnMain([this, circuitId, index, virtualConnectionId = blockTextureData.virtualConnectionId](){
+									sizeUpdated |= ImGui::InputScalar("##ySize", ImGuiDataType_U32, &blockTextureData.size.y);
+									if (sizeUpdated) {
+										App::runOnMain([this, circuitId, index, size = blockTextureData.size](){
 											Backend& backend = getMainWindow().getEnvironment().getBackend();
 											const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
 											if (!circuitBlockData) return;
 											BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
 											assert(blockData);
 											if (!blockData->isRenderDataOfType<BlockData::BlockTextureData>(index)) return;
-											blockData->setBlockTextureVirtualConnection(index, virtualConnectionId);
+											blockData->setBlockTextureSize(index, size);
 										});
 									}
 								}
 								{
-									ImGui::Text("State Offset");
+									ImGui::Text("Top Left");
 									ImGui::SameLine();
 									ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x/2, 100));
-									bool stateOffsetUpdated = ImGui::InputScalar("##xStateOffset", ImGuiDataType_S32, &blockTextureData.stateOffset.x);
+									bool topLeftUpdated = ImGui::InputScalar("##xTopLeft", ImGuiDataType_U32, &blockTextureData.topLeft.x);
 									ImGui::SameLine();
 									ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x, 100));
-									stateOffsetUpdated |= ImGui::InputScalar("##yStateOffset", ImGuiDataType_S32, &blockTextureData.stateOffset.y);
-									if (stateOffsetUpdated) {
-										App::runOnMain([this, circuitId, index, stateOffset = blockTextureData.stateOffset](){
+									topLeftUpdated |= ImGui::InputScalar("##yTopLeft", ImGuiDataType_U32, &blockTextureData.topLeft.y);
+									if (topLeftUpdated) {
+										App::runOnMain([this, circuitId, index, topLeft = blockTextureData.topLeft](){
 											Backend& backend = getMainWindow().getEnvironment().getBackend();
 											const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
 											if (!circuitBlockData) return;
 											BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
 											assert(blockData);
 											if (!blockData->isRenderDataOfType<BlockData::BlockTextureData>(index)) return;
-											blockData->setBlockTextureStateOffset(index, stateOffset);
+											blockData->setBlockTextureTopLeft(index, topLeft);
 										});
+									}
+								}
+								if (ImGui::Checkbox("Display state", &blockTextureData.renderState)) {
+									App::runOnMain([this, circuitId, index, renderState = blockTextureData.renderState](){
+										Backend& backend = getMainWindow().getEnvironment().getBackend();
+										const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
+										if (!circuitBlockData) return;
+										BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
+										assert(blockData);
+										if (!blockData->isRenderDataOfType<BlockData::BlockTextureData>(index)) return;
+										blockData->setBlockRenderState(index, renderState);
+									});
+								}
+								if (blockTextureData.renderState) {
+									{
+										ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x, 100));
+										if (ImGui::InputScalar("Virtual connection id##virtutal", ImGuiDataType_U32, &blockTextureData.virtualConnectionId)) {
+											App::runOnMain([this, circuitId, index, virtualConnectionId = blockTextureData.virtualConnectionId](){
+												Backend& backend = getMainWindow().getEnvironment().getBackend();
+												const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
+												if (!circuitBlockData) return;
+												BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
+												assert(blockData);
+												if (!blockData->isRenderDataOfType<BlockData::BlockTextureData>(index)) return;
+												blockData->setBlockTextureVirtualConnection(index, virtualConnectionId);
+											});
+										}
+									}
+									{
+										ImGui::Text("State Offset");
+										ImGui::SameLine();
+										ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x/2, 100));
+										bool stateOffsetUpdated = ImGui::InputScalar("##xStateOffset", ImGuiDataType_S32, &blockTextureData.stateOffset.x);
+										ImGui::SameLine();
+										ImGui::SetNextItemWidth(min(ImGui::GetContentRegionAvail().x, 100));
+										stateOffsetUpdated |= ImGui::InputScalar("##yStateOffset", ImGuiDataType_S32, &blockTextureData.stateOffset.y);
+										if (stateOffsetUpdated) {
+											App::runOnMain([this, circuitId, index, stateOffset = blockTextureData.stateOffset](){
+												Backend& backend = getMainWindow().getEnvironment().getBackend();
+												const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
+												if (!circuitBlockData) return;
+												BlockData* blockData = backend.getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
+												assert(blockData);
+												if (!blockData->isRenderDataOfType<BlockData::BlockTextureData>(index)) return;
+												blockData->setBlockTextureStateOffset(index, stateOffset);
+											});
+										}
 									}
 								}
 							}
+							ImGui::Unindent();
 						}
-						ImGui::Unindent();
 					}
 				}
+				ImGui::EndChild();
+				ImGui::PopID();
 			}
-			ImGui::EndChild();
-			ImGui::PopID();
 		}
 	}
 	ImGui::EndChild();
