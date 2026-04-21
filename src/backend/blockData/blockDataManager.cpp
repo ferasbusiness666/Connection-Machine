@@ -6,7 +6,7 @@ void BlockDataManager::initializeDefaults() {
 	assert(blockData.size() == 0); // should call this before doing anything
 	logInfo("Initializing default BlockData", "BlockDataManager");
 	// load default data
-	for (unsigned int i = 0; i < 22; i++) addBlock();
+	for (unsigned int i = 0; i < 21; i++) addBlock();
 
 	std::string mainTexturePath = (DirectoryManager::getResourceDirectory() / "logicTiles.png").string();
 

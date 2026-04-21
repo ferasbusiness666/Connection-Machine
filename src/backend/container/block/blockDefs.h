@@ -29,7 +29,6 @@ enum BlockType : std::uint16_t {
 	CONSTANT_Z,
 	CONSTANT_X,
 	LIGHT,
-	COLOR_LIGHT,
 	CUSTOM, // placeholder for custom blocks in parsed circuit
 };
 
@@ -57,7 +56,6 @@ inline std::string blocktype_to_string(const BlockType blockType) /* GCOVR_EXCL_
 	case BlockType::CONSTANT_Z: return "CONSTANT_Z";
 	case BlockType::CONSTANT_X: return "CONSTANT_X";
 	case BlockType::LIGHT: return "LIGHT";
-	case BlockType::COLOR_LIGHT: return "COLOR_LIGHT";
 	default: return std::to_string(blockType);
 	}
 }
