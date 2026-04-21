@@ -452,14 +452,6 @@ simulator_gate_id_t LogicSimulator::addGate(const BlockType blockType) {
 		constantResetGates.back().resetState(simulatorConfig.isRealistic(), statesA);
 		constantResetGates.back().resetState(simulatorConfig.isRealistic(), statesB);
 		break;
-	case BlockType::COLOR_LIGHT:
-		simulatorId = portsToIntGates.size() == 0 ? simulatorIdProvider.getNewId() : simulatorIdProvider.getNewId(portsToIntGates.back().getId());
-		extendDataVectors(simulatorId);
-		portsToIntGates.push_back({ simulatorId, 6 });
-		updateGateLocation(simulatorId, SimGateType::PORTS_TO_INT, portsToIntGates.size() - 1);
-		portsToIntGates.back().resetState(simulatorConfig.isRealistic(), statesA);
-		portsToIntGates.back().resetState(simulatorConfig.isRealistic(), statesB);
-		break;
 
 	// case BlockType::NONE:
 	// 	logError("Cannot add gate of type NONE", "LogicSimulator::addGate");

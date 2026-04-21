@@ -1,9 +1,8 @@
 #ifndef circuitTestGroup_h
 #define circuitTestGroup_h
 
-#include "backend/circuit/circuitDefs.h"
-#include "backend/evaluator/evalDefs.h"
 #include "backend/evaluator/simulator/logicState.h"
+#include "backend/position/position.h"
 
 class Backend;
 class EvalLogicSimulator;

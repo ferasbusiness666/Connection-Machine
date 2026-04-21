@@ -15,3 +15,21 @@ Step:
         Block Preview: SWITCH ($p0)
     Condition:
         Block: SWITCH ($p0) ZERO
+Step:
+    Action:
+        View Center: (0, 0) 5
+        Block Preview: SWITCH (10, 10)
+    Condition:
+        Block: SWITCH (10, 10) ZERO
+Step:
+    Action:
+        View Center: (0, 0) 10
+        Block Preview: SWITCH (11, 10)
+    Condition:
+        Block: SWITCH (11, 10) ZERO
+Step:
+    Action:
+        View Center: (0, 0) 15
+        Block Preview: SWITCH (12, 10)
+    Condition:
+        Block: SWITCH (12, 10) ZERO

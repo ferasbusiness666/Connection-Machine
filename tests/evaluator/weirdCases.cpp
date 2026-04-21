@@ -9,7 +9,7 @@ protected:
 	void TearDown() override;
 	Environment environment { false };
 	EvalLogicSimulator* simulator = nullptr;
-	SharedCircuit circuit = nullptr;
+	Circuit* circuit = nullptr;
 	BlockType loadCircuit(const std::filesystem::path& path);
 	const BlockData* getBlockData(BlockType type);
 };
@@ -17,7 +17,7 @@ protected:
 BlockType WeirdCasesEvaluatorTest::loadCircuit(const std::filesystem::path& path) {
 	CircuitFileManager& circuitFileManager = environment.getCircuitFileManager();
 	circuit_id_t circuitId = circuitFileManager.loadFromFile(path.string()).at(0);
-	SharedCircuit circuit = environment.getBackend().getCircuitManager().getCircuit(circuitId);
+	Circuit* circuit = environment.getBackend().getCircuitManager().getCircuit(circuitId);
 	return circuit->getBlockType();
 }
 
@@ -28,13 +28,13 @@ const BlockData* WeirdCasesEvaluatorTest::getBlockData(BlockType type) {
 
 void WeirdCasesEvaluatorTest::SetUp() {
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
-	circuit = environment.getBackend().getCircuit(circuitId);
+	circuit = environment.getBackend().getCircuitManager().getCircuit(circuitId);
 	simulator_id_t simulatorId = environment.getBackend().createSimulator(circuitId).value();
 	simulator = environment.getBackend().getSimulator(simulatorId);
 }
 
 void WeirdCasesEvaluatorTest::TearDown() {
-	circuit.reset();
+	circuit = nullptr;
 	simulator = nullptr;
 }
 

@@ -5,6 +5,9 @@
 #endif
 
 #include "backend/circuit/circuit.h"
+#include "backend/evaluator/layers/junctionMergeEvalLayer.h"
+#include "backend/evaluator/evaluator.h"
+#include "backend/evaluator/evaluatorInternal.h"
 #include "gpu/mainRenderer.h"
 #include "environment/environment.h"
 
@@ -105,9 +108,23 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 			if (outputBlockPosition == inputBlockPosition) {
 				InputRenderedBlockPort& inputRenderedBlockPort = outputBlockIter->second.inputConnections[inputPortPosition];
 				inputRenderedBlockPort.connections.emplace(outputPortPosition, outputBlockPosition);
-				// TODO: need to get data for if this port is multi pin
-				if (!inputRenderedBlockPort.ordering.has_value()) {
-					inputRenderedBlockPort.ordering.emplace();
+				if ((!inputRenderedBlockPort.ordering.has_value()) &&
+					inputBlockIter->second.type != BlockType::JUNCTION && inputBlockIter->second.type != BlockType::JUNCTION_L &&
+					inputBlockIter->second.type != BlockType::JUNCTION_H && inputBlockIter->second.type != BlockType::JUNCTION_X &&
+					inputBlockIter->second.type != BlockType::LIGHT && !inputBlockData->isBus()
+				) {
+					circuit_id_t inputBlockCircuitId = environment.getBackend().getCircuitManager().getCircuitBlockDataManager().getCircuitId(inputBlockIter->second.type);
+					if (inputBlockCircuitId == 0) {
+						if (!EvalConnectionEndInfo::isConnectionEndIdSinglePin(getEvalGateType(inputBlockIter->second.type), inputConnectionEndId.value())) {
+							inputRenderedBlockPort.ordering.emplace();
+						}
+					} else {
+						const Circuit* circuit = environment.getBackend().getCircuitManager().getCircuit(inputBlockCircuitId);
+						assert(circuit);
+						if (!circuit->getEvaluator().getEvaluatorInternal().isConnectionIdSinglePin(inputConnectionEndId.value())) {
+							inputRenderedBlockPort.ordering.emplace();
+						}
+					}
 				}
 				if (inputRenderedBlockPort.ordering.has_value()) {
 					for (Position otherOutputPortPosition : inputRenderedBlockPort.ordering.value()) {
@@ -128,9 +145,23 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 			} else {
 				InputRenderedBlockPort& inputRenderedBlockPort = inputBlockIter->second.inputConnections[inputPortPosition];
 				inputRenderedBlockPort.connections.emplace(outputPortPosition, outputBlockPosition);
-				// if (blockData->getConnectionData(inputConnectionEndId.value()). // TODO: need to get data for if this port is multi pin
-				if (!inputRenderedBlockPort.ordering.has_value()) {
-					inputRenderedBlockPort.ordering.emplace();
+				if (!inputRenderedBlockPort.ordering.has_value() &&
+					inputBlockIter->second.type != BlockType::JUNCTION && inputBlockIter->second.type != BlockType::JUNCTION_L &&
+					inputBlockIter->second.type != BlockType::JUNCTION_H && inputBlockIter->second.type != BlockType::JUNCTION_X &&
+					inputBlockIter->second.type != BlockType::LIGHT && !inputBlockData->isBus()
+				) {
+					circuit_id_t inputBlockCircuitId = environment.getBackend().getCircuitManager().getCircuitBlockDataManager().getCircuitId(inputBlockIter->second.type);
+					if (inputBlockCircuitId == 0) {
+						if (!EvalConnectionEndInfo::isConnectionEndIdSinglePin(getEvalGateType(inputBlockIter->second.type), inputConnectionEndId.value())) {
+							inputRenderedBlockPort.ordering.emplace();
+						}
+					} else {
+						const Circuit* circuit = environment.getBackend().getCircuitManager().getCircuit(inputBlockCircuitId);
+						assert(circuit);
+						if (!circuit->getEvaluator().getEvaluatorInternal().isConnectionIdSinglePin(inputConnectionEndId.value())) {
+							inputRenderedBlockPort.ordering.emplace();
+						}
+					}
 				}
 				if (inputRenderedBlockPort.ordering.has_value()) {
 					for (Position otherOutputPortPosition : inputRenderedBlockPort.ordering.value()) {
@@ -169,16 +200,16 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 				continue;;
 			}
 			if (outputRenderedBlockPortIter->second.connections.size() == 1) {
-				if (outputRenderedBlockPortIter->second.connections.begin()->second != inputPortPosition) {
+				if (outputRenderedBlockPortIter->second.connections.begin()->first != inputPortPosition) {
 					logError("Failed to erase output connection {} from port {}.", "CircuitRenderManager", inputPortPosition, outputPortPosition);
-					continue;;
+					continue;
 				}
 				outputBlockIter->second.outputConnections.erase(outputRenderedBlockPortIter);
 			} else {
 				auto returnVal = outputRenderedBlockPortIter->second.connections.erase(inputPortPosition);
 				if (!returnVal) {
 					logError("Failed to erase output connection {} from port {}.", "CircuitRenderManager", inputPortPosition, outputPortPosition);
-					continue;;
+					continue;
 				}
 			}
 
@@ -233,7 +264,7 @@ void CircuitRenderManager::addDifference(DifferenceSharedPtr diff) {
 						continue;;
 					}
 					if (inputRenderedBlockPortIter->second.ordering.has_value()) {
-						auto iter = std::find(inputRenderedBlockPortIter->second.ordering->begin(), inputRenderedBlockPortIter->second.ordering->end(), outputBlockPosition);
+						auto iter = std::find(inputRenderedBlockPortIter->second.ordering->begin(), inputRenderedBlockPortIter->second.ordering->end(), outputPortPosition);
 						inputRenderedBlockPortIter->second.ordering->erase(iter);
 						for (Position otherOutputPortPosition : inputRenderedBlockPortIter->second.ordering.value()) {
 							MainRenderer::get().removeWire(viewportId, std::make_pair(otherOutputPortPosition, inputPortPosition));
@@ -376,7 +407,7 @@ void CircuitRenderManager::createConnectionsForInputPort(Position inputBlockPosi
 	const BlockData* inputBlockData = blockDataManager.getBlockData(inputBlockIter->second.type);
 	assert(inputBlockData);
 	std::optional<connection_end_id_t> inputEndId = inputBlockData->getInputOrBidirectionalConnectionId(
-	inputPortPosition - inputBlockPosition, inputBlockIter->second.type);
+		inputPortPosition - inputBlockPosition, inputBlockIter->second.orientation);
 	if (!inputEndId) return;
 	FVector inputOffset = inputBlockData->getConnectionPortOffset(inputEndId.value(), inputBlockIter->second.orientation).value_or(FVector(0.5));
 	if (inputPortIter->second.ordering.has_value()) {
@@ -390,7 +421,7 @@ void CircuitRenderManager::createConnectionsForInputPort(Position inputBlockPosi
 			if (outputBlockPosition.x == 10000000) continue;
 			if (inputBlockPosition == outputBlockPosition) {
 				std::optional<connection_end_id_t> outputEndId = inputBlockData->getOutputOrBidirectionalConnectionId(
-					outputPortPosition - inputBlockPosition, inputBlockIter->second.type);
+					outputPortPosition - inputBlockPosition, inputBlockIter->second.orientation);
 				if (!outputEndId) continue;
 				MainRenderer::get().addWire(viewportId, std::make_pair(outputPortPosition, inputPortPosition), std::make_pair(
 					inputBlockData->getConnectionPortOffset(outputEndId.value(), inputBlockIter->second.orientation).value_or(FVector(0.5)),
@@ -418,12 +449,12 @@ void CircuitRenderManager::createConnectionsForInputPort(Position inputBlockPosi
 		}
 	} else {
 		for (const auto& [outputPortPosition, outputBlockPosition] : inputPortIter->second.connections) {
-			if (inputBlockPosition == inputPortPosition) {
+			if (outputPortPosition == inputPortPosition) {
 				std::optional<connection_end_id_t> outputEndId = inputBlockData->getOutputOrBidirectionalConnectionId(
-					outputPortPosition - inputBlockPosition, inputBlockIter->second.type);
+					outputPortPosition - inputBlockPosition, inputBlockIter->second.orientation);
 				if (!outputEndId) continue;
 				std::optional<connection_end_id_t> inputEndId = inputBlockData->getInputOrBidirectionalConnectionId(
-					inputPortPosition - inputBlockPosition, inputBlockIter->second.type);
+					inputPortPosition - inputBlockPosition, inputBlockIter->second.orientation);
 				if (!inputEndId) continue;
 				MainRenderer::get().addWire(viewportId, std::make_pair(outputPortPosition, inputPortPosition), std::make_pair(
 					inputBlockData->getConnectionPortOffset(outputEndId.value(), inputBlockIter->second.orientation).value_or(FVector(0.5)),

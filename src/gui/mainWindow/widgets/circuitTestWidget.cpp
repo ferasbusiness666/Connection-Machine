@@ -202,7 +202,7 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 		// blockType = blockData->getBlockType();
 		// std::lock_guard mux(blockDataCopyMux);
 		// blockDataCopy = blockData->getBlockDataCopy();
-		// Circuit* circuit = getBackend().getCircuit(renderingCircuitId).get();
+		// Circuit* circuit = getbackend().getCircuitManager().getCircuit(renderingCircuitId).get();
 		// circuit->clear();
 		// circuit->tryInsertBlock(Position(), Orientation(), blockData->getBlockType());
 		// circuitView->getViewManager().focus();
@@ -369,6 +369,7 @@ void CircuitTestWidget::renderViewport(BlockType blockType, const std::string& t
 	ImGui::SetNextItemAllowOverlap();
 	ImGui::InvisibleButton("circuitViewInvisibleButton", viewportPanelSize, ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight);
 	bool isHovered = ImGui::IsItemHovered();
+	if (isHovered) ImGui::FocusItem();
 	ImVec2 mousePos = ImGui::GetMousePos();
 	mousePos = ImVec2(mousePos.x - viewportWindowScreenPos.x, mousePos.y - viewportWindowScreenPos.y);
 

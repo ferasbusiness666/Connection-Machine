@@ -2,11 +2,13 @@
 
 #include "../mainWindow.h"
 #include "SDL3/SDL_dialog.h"
+#include "computerAPI/directoryManager.h"
 #include "gpu/mainRenderer.h"
 #include "gui/helper/saveCallback.h"
 #include "gui/viewportManager/circuitView/circuitView.h"
 #include "gui/viewportManager/circuitView/events/customEvents.h"
 #include "gui/viewportManager/circuitView/tools/other/treeTraversal.h"
+#include "gui/viewportManager/circuitView/tutorialDataManager.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
 #include "util/preprocessors.h"
@@ -454,6 +456,12 @@ void CircuitViewWidget::update() {
 			circuitView->getTutorialManager().stop();
 			// delete this
 			getMainWindow().getTutorialDataManager().initializeTutorials();
+			for (int i = 0; i < getMainWindow().getTutorialDataManager().getNames().size(); i++) {
+				writeTutorial(
+					getMainWindow().getTutorialDataManager().getTutorial(getMainWindow().getTutorialDataManager().getNames()[i]),
+					DirectoryManager::getResourceDirectory() / "tutorials" / (to_string(i) + ".cmt")
+				);
+			}
 		}
 		if (getMainWindow().isPressingKeybind("Keybinds/Tutorial/DebugForceCompleteStep")) {
 			circuitView->getTutorialManager().forceCompleteStep();

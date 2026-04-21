@@ -3,6 +3,7 @@
 #include "backend/circuit/circuitManager.h"
 #include "backend/evaluator/layers/evalLayerState.h"
 #include "backend/evaluator/layers/subcircuitEvalLayer.h"
+#include "backend/evaluator/layers/junctionMergeEvalLayer.h"
 
 #ifdef TRACY_PROFILER
 #include <tracy/Tracy.hpp>
@@ -569,6 +570,43 @@ VecVecEvalConnectionPoint EvaluatorInternal::mapFromBottomConnectionPointGroupsT
 	auto iter = positionRemapping.find(address.getPosition(0));
 	if (iter == positionRemapping.end()) return { };
 	return layerRunner.getReversedMappedConnectionPointGroupsWithAddressForOtherEvals(bottomConnectionPoints, iter->second.first, address.popTopPosition());
+}
+
+EvalConnectionPoint EvaluatorInternal::getConnectionPointFromConnectionEndId(connection_end_id_t connectionEndId) const {
+	auto iter = portToInternalPointMapping.find(connectionEndId);
+	if (iter == portToInternalPointMapping.end()) return EvalConnectionPoint::null();
+	return iter->second.connectionPoint.value_or(EvalConnectionPoint::null());
+}
+
+bool EvaluatorInternal::isConnectionIdSinglePin(connection_end_id_t connectionEndId) const {
+	EvalConnectionPoint topConnectionPoint = getConnectionPointFromConnectionEndId(connectionEndId);
+	if (topConnectionPoint.isNull()) return false; // no point means that they are not connection
+	std::variant<EvalConnectionPoint, std::vector<EvalConnectionPoint>> connectionPointsVariant = layerRunner.getMappedEvalConnectionPoint(topConnectionPoint);
+	if (std::holds_alternative<EvalConnectionPoint>(connectionPointsVariant)) {
+		EvalConnectionPoint connectionPoint = std::get<EvalConnectionPoint>(connectionPointsVariant);
+		const EvalGate* gate = layerRunner.getOutputLayer().getGate(connectionPoint.gateId);
+		if (gate == nullptr) {
+			logError("No gate {} found when checking output layer", "EvalConnectionPoint::isConnectionIdSinglePin", connectionPoint.gateId);
+			return false;
+		}
+		return (gate->type != BlockType::JUNCTION && gate->type != BlockType::JUNCTION_L &&
+			gate->type != BlockType::JUNCTION_H && gate->type != BlockType::JUNCTION_X &&
+			EvalConnectionEndInfo::isConnectionEndIdSinglePin(gate->type, connectionPoint.connectionEndId)
+		);
+	}
+	const std::vector<EvalConnectionPoint>& connectionPoints = std::get<std::vector<EvalConnectionPoint>>(connectionPointsVariant);
+	for (EvalConnectionPoint connectionPoint : connectionPoints) {
+		const EvalGate* gate = layerRunner.getOutputLayer().getGate(connectionPoint.gateId);
+		if (gate == nullptr) {
+			logError("No gate {} found when checking output layer", "EvalConnectionPoint::isConnectionIdSinglePin", connectionPoint.gateId);
+			continue;
+		}
+		if (gate->type != BlockType::JUNCTION && gate->type != BlockType::JUNCTION_L &&
+			gate->type != BlockType::JUNCTION_H && gate->type != BlockType::JUNCTION_X &&
+			EvalConnectionEndInfo::isConnectionEndIdSinglePin(gate->type, connectionPoint.connectionEndId)
+		) return true;
+	}
+	return false;
 }
 
 std::vector<std::pair<Position, circuit_id_t>> EvaluatorInternal::getSubcircuits() const {

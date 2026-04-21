@@ -42,7 +42,9 @@ public:
 	VecVecEvalConnectionPoint mapFromBottomConnectionPointsToTopConnectionPointsForOtherEvals(VecEvalConnectionPoint bottomConnectionPoint, Address address) const;
 	// get all the top connection points from bottom connections points for a certain eval at address with the output containing the mappings
 	VecVecEvalConnectionPoint mapFromBottomConnectionPointGroupsToTopConnectionPointsForOtherEvals(VecVecEvalConnectionPoint bottomConnectionPoint, Address address) const;
-	// get all the top connection points from bottom connections points for a certain eval at address with the outputs all mixed together
+
+	EvalConnectionPoint getConnectionPointFromConnectionEndId(connection_end_id_t connectionEndId) const;
+	bool isConnectionIdSinglePin(connection_end_id_t connectionEndId) const;
 
 	const std::unordered_map<Position, std::pair<eval_gate_id, Orientation>>& getPositionRemapping() const { return positionRemapping; }
 	const IdMap<eval_gate_id, std::pair<Position, Orientation>>& getPositionReverseRemapping() const { return positionReverseRemapping; }

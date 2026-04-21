@@ -6,7 +6,7 @@
 #include "events/customEvents.h"
 #include "gui/mainWindow/widgets/circuitViewWidget.h"
 
-Tutorial::Tutorial(Environment& environment, CircuitView& circuitView) :
+TutorialManager::TutorialManager(Environment& environment, CircuitView& circuitView) :
 	circuitView(circuitView), elementCreator(circuitView.getViewportId()), viewManager(circuitView.getViewManager()), environment(environment),
 	dataUpdateEventReciever(environment.getBackend().getDataUpdateEventManager()), tutorialRunning(false), tutorialState(0) {
 	this->circuitView.getEventRegister().registerFunction("CircuitStateSet", [this](const Event* event) -> bool {
@@ -25,9 +25,9 @@ Tutorial::Tutorial(Environment& environment, CircuitView& circuitView) :
 	});
 }
 
-void Tutorial::StartTutorial() {
+void TutorialManager::StartTutorial() {
 	if (tutorialRunning) return;
-	if (tutorialSteps.empty()) return;
+	if (tutorialSteps.tutorialSteps.empty()) return;
 	tutorialRunning = true;
 	tutorialState = 0;
 	circuitId = circuitView.getBackend().getCircuitManager().createNewCircuit(false);
@@ -39,12 +39,11 @@ void Tutorial::StartTutorial() {
 	circuitView.setSimulator(simulatorId.value());
 	simulator = circuitView.getBackend().getSimulator(simulatorId.value());
 	Circuit* currentCircuit = circuitView.getBackend().getCircuitManager().getCircuit(circuitId);
-	currentCircuit->connectListener(this, std::bind(&Tutorial::checkTutorial, this, std::placeholders::_1, std::placeholders::_2));
+	currentCircuit->connectListener(this, std::bind(&TutorialManager::checkTutorial, this, std::placeholders::_1, std::placeholders::_2));
 	runCurrentStep();
 }
 
-void Tutorial::stop() {
-    
+void TutorialManager::stop() {
 	if (!tutorialRunning) return;
 	Circuit* currentCircuit = circuitView.getBackend().getCircuitManager().getCircuit(circuitId);
 	if (currentCircuit) {
@@ -53,18 +52,18 @@ void Tutorial::stop() {
 	elementCreator.clear();
 	tutorialRunning = false;
 }
-void Tutorial::checkTutorial(DifferenceSharedPtr, circuit_id_t) { advanceTutorial(); }
-void Tutorial::checkTutorialState(Position pos, logic_state_t state) { advanceTutorial(); }
+void TutorialManager::checkTutorial(DifferenceSharedPtr, circuit_id_t) { advanceTutorial(); }
+void TutorialManager::checkTutorialState(Position pos, logic_state_t state) { advanceTutorial(); }
 
-void Tutorial::setTutorial(const std::vector<TutorialStep>& steps) { tutorialSteps = steps; }
+void TutorialManager::setTutorial(const Tutorial& tutorial) { tutorialSteps = tutorial; }
 
-void Tutorial::advanceTutorial() {
+void TutorialManager::advanceTutorial() {
 	if (!tutorialRunning) return;
-	if (tutorialState >= tutorialSteps.size()) return;
+	if (tutorialState >= tutorialSteps.tutorialSteps.size()) return;
 	if (isCurrentStepComplete()) {
 		tutorialState++;
 		elementCreator.clear();
-		if (tutorialState == tutorialSteps.size()) {
+		if (tutorialState == tutorialSteps.tutorialSteps.size()) {
 			stop();
 			return;
 		}
@@ -72,9 +71,9 @@ void Tutorial::advanceTutorial() {
 	}
 }
 
-bool Tutorial::isCurrentStepComplete() const {
-	if (tutorialState >= tutorialSteps.size()) return false;
-	const TutorialStep& currentStep = tutorialSteps[tutorialState];
+bool TutorialManager::isCurrentStepComplete() const {
+	if (tutorialState >= tutorialSteps.tutorialSteps.size()) return false;
+	const TutorialStep& currentStep = tutorialSteps.tutorialSteps[tutorialState];
 	Circuit* currentCircuit = circuitView.getBackend().getCircuitManager().getCircuit(circuitId);
 	if (!currentCircuit) return false;
 	const BlockContainer& blockContainer = currentCircuit->getBlockContainer();
@@ -107,9 +106,9 @@ bool Tutorial::isCurrentStepComplete() const {
 	return true;
 }
 
-void Tutorial::runCurrentStep() {
-	if (tutorialState >= tutorialSteps.size()) return;
-	const TutorialStep& currentStep = tutorialSteps[tutorialState];
+void TutorialManager::runCurrentStep() {
+	if (tutorialState >= tutorialSteps.tutorialSteps.size()) return;
+	const TutorialStep& currentStep = tutorialSteps.tutorialSteps[tutorialState];
 	Circuit* currentCircuit = circuitView.getBackend().getCircuitManager().getCircuit(circuitId);
 	if (!currentCircuit) return;
 	const BlockContainer& blockContainer = currentCircuit->getBlockContainer();
@@ -180,11 +179,11 @@ void Tutorial::runCurrentStep() {
 	}
 }
 
-void Tutorial::forceCompleteStep() {
+void TutorialManager::forceCompleteStep() {
 	if (!tutorialRunning) return;
-	if (tutorialState >= tutorialSteps.size()) return;
+	if (tutorialState >= tutorialSteps.tutorialSteps.size()) return;
 
-	const TutorialStep& currentStep = tutorialSteps[tutorialState];
+	const TutorialStep& currentStep = tutorialSteps.tutorialSteps[tutorialState];
 	Circuit* currentCircuit = circuitView.getBackend().getCircuitManager().getCircuit(circuitId);
 	if (!currentCircuit) return;
 	const BlockContainer& blockContainer = currentCircuit->getBlockContainer();

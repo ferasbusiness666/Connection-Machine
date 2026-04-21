@@ -24,7 +24,7 @@ void RunTestCommand::run(const std::vector<std::string>& args, Environment& envi
         logError("Exception occured. Check the circuit_id parameter, it should be a reasonably-sized integer.", "RunTestCommand");
         return;
     }
-    
+
     BlockType circuitBlock = environment.getBackend().getCircuitManager().setupBlockData(cirID);
     if (circuitBlock == 0) {
         logError("Invalid circuit ID. Run list_circuits to get a list of circuit IDs.", "RunTestCommand");
