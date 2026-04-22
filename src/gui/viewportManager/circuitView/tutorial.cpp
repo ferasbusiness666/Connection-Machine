@@ -57,6 +57,14 @@ void TutorialManager::checkTutorialState(Position pos, logic_state_t state) { ad
 
 void TutorialManager::setTutorial(const Tutorial& tutorial) { tutorialSteps = tutorial; }
 
+void TutorialManager::midStepChecks() {
+	if (!tutorialRunning) return;
+	if (tutorialState >= tutorialSteps.tutorialSteps.size()) return;
+	const TutorialStep& currentStep = tutorialSteps.tutorialSteps[tutorialState];
+	Circuit* currentCircuit = circuitView.getBackend().getCircuitManager().getCircuit(circuitId);
+	if (!currentCircuit) return;
+}
+
 void TutorialManager::advanceTutorial() {
 	if (!tutorialRunning) return;
 	if (tutorialState >= tutorialSteps.tutorialSteps.size()) return;

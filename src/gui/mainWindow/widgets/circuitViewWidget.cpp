@@ -455,13 +455,13 @@ void CircuitViewWidget::update() {
 		if (getMainWindow().isPressingKeybind("Keybinds/Tutorial/Stop")) {
 			circuitView->getTutorialManager().stop();
 			// delete this
-			getMainWindow().getTutorialDataManager().initializeTutorials();
-			for (int i = 0; i < getMainWindow().getTutorialDataManager().getNames().size(); i++) {
-				writeTutorial(
-					getMainWindow().getTutorialDataManager().getTutorial(getMainWindow().getTutorialDataManager().getNames()[i]),
-					DirectoryManager::getResourceDirectory() / "tutorials" / (to_string(i) + ".cmt")
-				);
-			}
+			// getMainWindow().getTutorialDataManager().initializeTutorials();
+			// for (int i = 0; i < getMainWindow().getTutorialDataManager().getNames().size(); i++) {
+			// 	writeTutorial(
+			// 		getMainWindow().getTutorialDataManager().getTutorial(getMainWindow().getTutorialDataManager().getNames()[i]),
+			// 		DirectoryManager::getResourceDirectory() / "tutorials" / (to_string(i) + ".cmt")
+			// 	);
+			// }
 		}
 		if (getMainWindow().isPressingKeybind("Keybinds/Tutorial/DebugForceCompleteStep")) {
 			circuitView->getTutorialManager().forceCompleteStep();
