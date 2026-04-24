@@ -117,6 +117,7 @@ void BlockData::setConnectionIdName(connection_end_id_t connectionId, const std:
 		"blockDataConnectionNameSet",
 		std::pair<BlockType, connection_end_id_t>({ blockType, connectionId })
 	);
+	sendBlockDataUpdate();
 }
 
 std::optional<std::string> BlockData::getConnectionIdToName(connection_end_id_t connectionId) const {
@@ -134,6 +135,7 @@ void BlockData::setConnectionPortOffset(connection_end_id_t connectionId, FVecto
 	if (iter == connections.end()) return;
 	iter->second.portOffset = offset;
 	dataUpdateEventManager.sendEvent<std::pair<BlockType, connection_end_id_t>>("blockDataSetConnection", { blockType, connectionId });
+	sendBlockDataUpdate();
 }
 
 void BlockData::setConnectionBitConfiguration(connection_end_id_t connectionId, std::variant<unsigned int, std::vector<unsigned int>> bitConfiguration) {
@@ -156,6 +158,7 @@ void BlockData::setConnectionBitConfiguration(connection_end_id_t connectionId, 
 	);
 	iter->second.bitConfiguration = bitConfiguration;
 	dataUpdateEventManager.sendEvent<std::tuple<BlockType, connection_end_id_t, unsigned int>>("blockDataPortBitConfigurationSet", { blockType, connectionId, bitWidth });
+	sendBlockDataUpdate();
 }
 
 nlohmann::json BlockData::dumpState() const /* GCOVR_EXCL_FUNCTION */ {

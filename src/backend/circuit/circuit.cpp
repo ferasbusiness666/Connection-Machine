@@ -648,7 +648,7 @@ void Circuit::popOffStack(Position position, Orientation transformAmount, bool r
 
 void Circuit::setBlockType(BlockType blockType) {
 	blockContainer.setBlockType(blockType);
-	blockContainer.getBlockDataManager().getBlockData(blockType)->setName(getCircuitNameNumber());
+	blockContainer.getBlockDataManager().getBlockData(blockType)->setName(getCircuitName());
 }
 
 void Circuit::addConnectionPort(const DataUpdateEventManager::EventData* event) {
@@ -688,7 +688,7 @@ void Circuit::setCircuitName(const std::string& name) {
 	circuitName = name;
 	if (blockContainer.getBlockType() == BlockType::NONE) return;
 	BlockData* blockData = blockContainer.getBlockDataManager().getBlockData(blockContainer.getBlockType());
-	if (blockData) blockData->setName(getCircuitNameNumber());
+	if (blockData) blockData->setName(getCircuitName());
 }
 
 nlohmann::json Circuit::dumpState() const /* GCOVR_EXCL_FUNCTION */ {

@@ -157,6 +157,9 @@ void MainWindow::doUpdate() {
 	if (isPressingKeybind("Keybinds/File/Open")) {
 		loadDialog();
 	}
+	if (isPressingKeybind("Keybinds/File/New")) {
+		createWidget<CircuitViewWidget>().newCircuit();
+	}
 	if (isPressingKeybind("Keybinds/Editing/Paste")) {
 		toolManagerManager.setTool("paste tool");
 	}
@@ -253,6 +256,14 @@ void MainWindow::processEvent(SDL_Event& event) {
 }
 
 void MainWindow::render() {
+	{
+		std::lock_guard lock(windowToFocusMux);
+		if (windowToFocus.has_value()) {
+			ImGui::SetWindowFocus(windowToFocus.value().c_str());
+			windowToFocus.reset();
+		}
+	}
+
 	// global styling
 	ImGuiStyle& style = ImGui::GetStyle();
 	{

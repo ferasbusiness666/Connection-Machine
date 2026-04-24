@@ -25,8 +25,7 @@ public:
         std::string message = "Not run";
     };
 
-    CircuitTestGroupRunner(Backend& backend, std::string name, BlockType blockType) :
-		name(name), backend(backend), blockType(blockType) {generateTestCircuit();}
+    CircuitTestGroupRunner(Backend& backend, std::string name, BlockType blockType);
     std::string getName() const {return name;}
 
     const CircuitTestGroup* getCircuitTestGroup();
@@ -42,12 +41,13 @@ private:
     std::pair<TestResult, std::string> runCheckStatesCommand(CircuitTestGroup::TestCommand testCommand, EvalLogicSimulator& simulator, NamePositionMap& nameToConnectedBlockPosition);
 
     std::string name;
-    circuit_id_t circuitID;
-    simulator_id_t simID;
+    circuit_id_t circuitID = 0;
+    simulator_id_t simID = 0;
     NamePositionMap namePositionMap;
-    EvalLogicSimulator* simulator;
+    EvalLogicSimulator* simulator = nullptr;
 	Backend& backend;
     BlockType blockType;
+	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 };
 
 #endif /* circuitTestGroupRunner_h */

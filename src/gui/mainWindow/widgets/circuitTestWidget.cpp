@@ -121,6 +121,17 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 			testGroups.push_back(circuitTestGroup.first);
 		}
 	});
+	dataUpdateEventReceiver.linkFunction("blockDataUpdate", [this](const DataUpdateEventManager::EventData* event) {
+		std::lock_guard mux(blockTypesMux);
+		blockTypes.clear();
+		for (unsigned int type = 0; type < getBackend().getBlockDataManager().maxBlockId(); type++) {
+			const BlockData* blockData = getBackend().getBlockDataManager().getBlockData((BlockType)(type + 1));
+			if (blockData) {
+				if (blockData->isBus() || !blockData->isPlaceable()) continue;
+				blockTypes.emplace(blockData->getBlockType(), blockData->getName());
+			}
+		}
+	});
     setupGUIValue<double>("SimulatorRealTPS", 0, nullptr);
 	setupGUIValue<double>("SimulatorTargetTPS", 40, [this](const double& tps) {
 		if (circuitView->getSimulator()) {

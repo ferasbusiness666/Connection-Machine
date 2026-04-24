@@ -4,6 +4,17 @@
 #include "backend/evaluator/simulator/evalLogicSimulator.h"
 #include "backend/backend.h"
 
+CircuitTestGroupRunner::CircuitTestGroupRunner(Backend& backend, std::string name, BlockType blockType) :
+	name(name), backend(backend), blockType(blockType), dataUpdateEventReceiver(backend.getDataUpdateEventManager()) {
+	generateTestCircuit();
+	dataUpdateEventReceiver.linkFunction("blockDataUpdate", [this](const DataUpdateEventManager::EventData* event) {
+		const DataUpdateEventManager::EventDataWithValue<BlockType>* data = event->cast<BlockType>();
+		assert(data);
+		if (this->blockType != data->get()) return;
+		generateTestCircuit();
+	});
+}
+
 const CircuitTestGroup* CircuitTestGroupRunner::getCircuitTestGroup() {
     return backend.getCircuitTestGroupManager().getCircuitTestGroup(name);
 }
@@ -15,25 +26,25 @@ bool CircuitTestGroupRunner::generateTestCircuit() {
         return false;
     }
     const CircuitTestGroup* testGroupData = getCircuitTestGroup();
-    CircuitManager& cirManager = backend.getCircuitManager();
-    SimulatorManager& evalManager = backend.getSimulatorManager();
-    BlockDataManager& blockDataManager = backend.getBlockDataManager();
+	if (testGroupData == nullptr) {
+		circuitID = 0;
+        simID = 0;
+		return false;
+	}
 
-    circuitID = cirManager.createNewCircuit(false);
-	simID = backend.createSimulator(circuitID).value();
-    simulator = evalManager.getSimulator(simID);
+	if (circuitID == 0) circuitID = backend.getCircuitManager().createNewCircuit(false);
+	if (simID == 0) simID = backend.createSimulator(circuitID).value();
+	simulator = backend.getSimulatorManager().getSimulator(simID);
     simulator->setPause(true);
-    Circuit* circuit = cirManager.getCircuit(circuitID);
+    Circuit* circuit = backend.getCircuitManager().getCircuit(circuitID);
     circuit->clear();
     circuit->setEditable(false);
-    BlockData* circuitBlockData = blockDataManager.getBlockData(circuit->getBlockType());
+    BlockData* circuitBlockData = backend.getBlockDataManager().getBlockData(circuit->getBlockType());
     assert(circuitBlockData);
     circuitBlockData->setIsPlaceable(false);
 
-    const BlockContainer& blockContainer = circuit->getBlockContainer();
+    const BlockData* blockData = backend.getBlockDataManager().getBlockData(blockType);
 
-    const BlockData* blockData = blockDataManager.getBlockData(blockType);
-    std::unordered_map<connection_end_id_t, BlockData::ConnectionData> connections = blockData->getConnections();
     // change implementation of this when BlockData::getConnectionNameToId is implemented
     namePositionMap.clear();
 
@@ -45,13 +56,13 @@ bool CircuitTestGroupRunner::generateTestCircuit() {
 	const Block* testedBlock = circuit->getBlockContainer().getBlock(Position(0, 0));
 
     // iterate through the connections on the block type and create a switch/light to represent each input/output on a test circuit
-    for (auto iter = connections.begin(); iter != connections.end(); iter++) {
-        if (iter->second.portType == BlockData::ConnectionData::PortType::INPUT || iter->second.portType == BlockData::ConnectionData::PortType::BIDIRECTIONAL) {
+    for (const auto& [connectionEndId, connectionData] : blockData->getConnections()) {
+        if (connectionData.portType == BlockData::ConnectionData::PortType::INPUT || connectionData.portType == BlockData::ConnectionData::PortType::BIDIRECTIONAL) {
             Position externalConnPos = Position(-1-namePositionMap.size(), 0);
 
-            std::optional<std::string> blockNameOpt = blockData->getConnectionIdToName(iter->first);
+            std::optional<std::string> blockNameOpt = blockData->getConnectionIdToName(connectionEndId);
             if (blockNameOpt == std::nullopt) {
-                logError("Unable to resolve block name for id {}", "circuitTestGroupRunner", iter->first);
+                logError("Unable to resolve block name for id {}", "circuitTestGroupRunner", connectionEndId);
                 return false;
             }
             std::string blockName = blockNameOpt.value();
@@ -63,19 +74,19 @@ bool CircuitTestGroupRunner::generateTestCircuit() {
                 return false;
             }
 
-            const Block* block = blockContainer.getBlock(externalConnPos);
-            if (!circuit->tryCreateConnection(ConnectionEnd(testedBlock->id(), iter->first), ConnectionEnd(block->id(), 0))) {
+            const Block* block = circuit->getBlockContainer().getBlock(externalConnPos);
+            if (!circuit->tryCreateConnection(ConnectionEnd(testedBlock->id(), connectionEndId), ConnectionEnd(block->id(), 0))) {
                 logError("Couldn't create switch test circuit connection, ext: {}", "circuitTestGroupRunner", externalConnPos);
                 return false;
             }
-            namePositionMap.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
+            namePositionMap.insert({blockData->getConnectionIdToName(connectionEndId).value(), externalConnPos});
         }
-        if (iter->second.portType == BlockData::ConnectionData::PortType::OUTPUT || iter->second.portType == BlockData::ConnectionData::PortType::BIDIRECTIONAL) {
+        if (connectionData.portType == BlockData::ConnectionData::PortType::OUTPUT || connectionData.portType == BlockData::ConnectionData::PortType::BIDIRECTIONAL) {
             Position externalConnPos = Position(-1-namePositionMap.size(), 0);
 
-            std::optional<std::string> blockNameOpt = blockData->getConnectionIdToName(iter->first);
+            std::optional<std::string> blockNameOpt = blockData->getConnectionIdToName(connectionEndId);
             if (blockNameOpt == std::nullopt) {
-                logError("Unable to resolve block name for id {}", "circuitTestGroupRunner", iter->first);
+                logError("Unable to resolve block name for id {}", "circuitTestGroupRunner", connectionEndId);
                 return false;
             }
             std::string blockName = blockNameOpt.value();
@@ -87,22 +98,22 @@ bool CircuitTestGroupRunner::generateTestCircuit() {
                 return false;
             }
 
-            const Block* block = blockContainer.getBlock(externalConnPos);
-            if (!circuit->tryCreateConnection(ConnectionEnd(testedBlock->id(), iter->first), ConnectionEnd(block->id(), 0))) {
+            const Block* block = circuit->getBlockContainer().getBlock(externalConnPos);
+            if (!circuit->tryCreateConnection(ConnectionEnd(testedBlock->id(), connectionEndId), ConnectionEnd(block->id(), 0))) {
                 logError("Couldn't create light test circuit connection, ext: {}", "circuitTestGroupRunner", externalConnPos);
                 return false;
             }
-            namePositionMap.insert({blockData->getConnectionIdToName(iter->first).value(), externalConnPos});
+            namePositionMap.insert({blockData->getConnectionIdToName(connectionEndId).value(), externalConnPos});
         }
     }
-    for (auto iter = testGroupData->inputs.begin(); iter != testGroupData->inputs.end(); iter++) {
-        if (namePositionMap.find(*iter) == namePositionMap.end()) {
-            logWarning("Input '{}' expected by test not found on tested circuit, this may cause errors", "circuitTestGroupRunner", *iter);
+    for (const auto& input : testGroupData->inputs) {
+        if (namePositionMap.find(input) == namePositionMap.end()) {
+            logWarning("Input '{}' expected by test not found on tested circuit, this may cause errors", "circuitTestGroupRunner", input);
         }
     }
-    for (auto iter = testGroupData->outputs.begin(); iter != testGroupData->outputs.end(); iter++) {
-        if (namePositionMap.find(*iter) == namePositionMap.end()) {
-            logWarning("Output '{}' expected by test not found on tested circuit, this may cause errors", "circuitTestGroupRunner", *iter);
+    for (const auto& output : testGroupData->outputs) {
+        if (namePositionMap.find(output) == namePositionMap.end()) {
+            logWarning("Output '{}' expected by test not found on tested circuit, this may cause errors", "circuitTestGroupRunner", output);
         }
     }
     return true;

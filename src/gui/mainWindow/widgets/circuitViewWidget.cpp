@@ -447,9 +447,6 @@ void CircuitViewWidget::update() {
 		if (getMainWindow().isPressingKeybind("Keybinds/Editing/Tools/Cycle Mode Back")) {
 			getMainWindow().getToolManagerManager().cycleActiveToolMode(-1);
 		}
-		if (getMainWindow().isPressingKeybind("Keybinds/File/New")) {
-			newCircuit();
-		}
 		if (getMainWindow().isPressingKeybind("Keybinds/Tutorial/Stop")) {
 			circuitView->getTutorialManager().stop();
 			// delete this

@@ -31,8 +31,25 @@ public:
 		WidgetId widgetId = widgetIdProvider.getNewId();
 		std::unique_ptr<WidgetType> widget = std::make_unique<WidgetType>(widgetId, *this, std::forward<Args>(args)...);
 		WidgetType& widgetRef = *widget;
-		std::lock_guard lock(widgetsMux);
-		auto pair = widgets.emplace(widgetId, std::move(widget));
+		{
+			std::lock_guard lock(widgetsMux);
+			auto pair = widgets.emplace(widgetId, std::move(widget));
+		}
+		{
+			std::lock_guard lock(windowToFocusMux);
+			windowToFocus = widgetRef.getWidgetIdStr().c_str();
+		}
+		return widgetRef;
+	}
+	template <class WidgetType, typename... Args>
+	WidgetType& createWidgetNoFocus(Args&&... args) {
+		WidgetId widgetId = widgetIdProvider.getNewId();
+		std::unique_ptr<WidgetType> widget = std::make_unique<WidgetType>(widgetId, *this, std::forward<Args>(args)...);
+		WidgetType& widgetRef = *widget;
+		{
+			std::lock_guard lock(widgetsMux);
+			auto pair = widgets.emplace(widgetId, std::move(widget));
+		}
 		return widgetRef;
 	}
 	void destroyWidget(WidgetId widgetId);
@@ -107,6 +124,8 @@ private:
 	IdProvider<WidgetId> widgetIdProvider;
 	std::mutex widgetsToDestroyMux;
 	std::unordered_set<WidgetId> widgetsToDestroy;
+	std::mutex windowToFocusMux;
+	std::optional<std::string> windowToFocus = std::nullopt;
 
 	ImGuiID docRootId;
 	ImGuiID dockMainId;
