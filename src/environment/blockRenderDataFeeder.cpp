@@ -234,8 +234,11 @@ BlockTextureId BlockRenderDataFeeder::getBlockTextureId(const BlockData& blockDa
 		}
 		CpuImage paddedImg = padTexture(img);
 		blockTextureId = MainRenderer::get().addBlockTexture(paddedImg.getData(), paddedImg.getSize().x, paddedImg.getSize().y);
-	} else if (!std::get<BlockData::BlockTextureData>(blockData.getRenderData(0)).path.empty()) {
-		blockTextureId = MainRenderer::get().addBlockTexture(std::get<BlockData::BlockTextureData>(blockData.getRenderData(0)).path);
+	} else {
+		const BlockData::RenderDataType* renderData = blockData.getRenderData(0);
+		if (renderData != nullptr && !std::get<BlockData::BlockTextureData>(*renderData).path.empty()) {
+			blockTextureId = MainRenderer::get().addBlockTexture(std::get<BlockData::BlockTextureData>(*renderData).path);
+		}
 	}
 	if (renderData.blockTextureId == blockTextureId) return blockTextureId;
 	if (renderData.blockTextureId != 0) {
@@ -305,8 +308,9 @@ void BlockRenderDataFeeder::doBlockTextureUpdates() {
 		} else {
 			BlockTextureId blockTextureId = getBlockTextureId(*blockData, iter->second);
 			if (blockTextureId == 0) continue;
-			assert(blockData->isRenderDataOfType<BlockData::BlockTextureData>(0));
-			const auto& textureData = std::get<BlockData::BlockTextureData>(blockData->getRenderData(0));
+			const BlockData::RenderDataType* renderData = blockData->getRenderData(0);
+			assert(renderData != nullptr && std::holds_alternative<BlockData::BlockTextureData>(*renderData));
+			const BlockData::BlockTextureData& textureData = std::get<BlockData::BlockTextureData>(*renderData);
 			if (textureData.useFullTexture) {
 				MainRenderer::get().setBlockTexture(
 					iter->second.blockRenderDataId,

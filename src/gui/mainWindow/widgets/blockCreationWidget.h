@@ -6,6 +6,7 @@
 #include "backend/circuit/circuitDefs.h"
 #include "backend/circuit/circuitBlockData.h"
 #include "backend/dataUpdateEventManager.h"
+#include "gui/viewportManager/circuitView/renderer/elementCreator.h"
 
 class CircuitView;
 
@@ -25,6 +26,7 @@ private:
 	DataUpdateEventManager::DataUpdateEventReceiver dataUpdateEventReceiver;
 
 	BlockType blockType = BlockType::NONE;
+	ElementCreator elementCreator;
 
 	circuit_id_t renderingCircuitId = 0;
 	std::unique_ptr<CircuitView> circuitView;

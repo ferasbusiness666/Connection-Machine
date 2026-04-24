@@ -9,7 +9,7 @@ public:
 	void activate() override final;
 
 	static inline std::vector<std::string> getModes_() { return {}; }
-	static inline std::string getPath_() { return "NONE"; }
+	static inline std::string getPath_() { return "NONE/TreeTraversal"; }
 	inline std::string getPath() const override final { return getPath_(); }
 	inline unsigned int getStackId() const override final { return 2; }
 	inline bool showInMenu() const override final { return false; }

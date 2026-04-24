@@ -28,11 +28,6 @@ void ToolManager::selectStack(int stack) {
 SharedCircuitTool ToolManager::selectTool(SharedCircuitTool tool) {
 	if (!tool) return nullptr;
 
-	if (activeToolStack != tool->getStackId()) {
-		toolStacks[activeToolStack].deactivate();
-		activeToolStack = tool->getStackId();
-		toolStacks[activeToolStack].activate();
-	}
 	Circuit* circuit = environment.getBackend().getCircuitManager().getCircuit(circuitId);
 	if (circuit) {
 		if (!circuit->isEditable()) {
@@ -41,6 +36,11 @@ SharedCircuitTool ToolManager::selectTool(SharedCircuitTool tool) {
 				return nullptr; // Can't select tool that can make edits
 			}
 		}
+	}
+	if (activeToolStack != tool->getStackId()) {
+		toolStacks[activeToolStack].deactivate();
+		activeToolStack = tool->getStackId();
+		toolStacks[activeToolStack].activate();
 	}
 	if (!toolStacks[activeToolStack].empty() && toolStacks[activeToolStack].getCurrentNonHelperTool()->getPath() == tool->getPath()) {
 		return toolStacks[activeToolStack].getCurrentNonHelperTool();

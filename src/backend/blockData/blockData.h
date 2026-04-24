@@ -159,7 +159,7 @@ public:
 	void removeRenderData(unsigned int index);
 	unsigned int getRenderDataSize() const noexcept { return renderData.size(); }
 	const std::vector<RenderDataType>& getRenderData() const noexcept { return renderData; }
-	const RenderDataType& getRenderData(unsigned int index) const noexcept;
+	const RenderDataType* getRenderData(unsigned int index) const noexcept;
 	template<class T>
 	const bool isRenderDataOfType(unsigned int index) const noexcept;
 
@@ -435,9 +435,9 @@ void BlockData::newRenderData(unsigned int index) {
 	sendBlockDataUpdate();
 }
 
-inline const BlockData::RenderDataType& BlockData::getRenderData(unsigned int index) const noexcept {
-	assert(index < renderData.size());
-	return renderData[index];
+inline const BlockData::RenderDataType* BlockData::getRenderData(unsigned int index) const noexcept {
+	if (index >= renderData.size()) return nullptr;
+	return &renderData[index];
 }
 
 template<class T>

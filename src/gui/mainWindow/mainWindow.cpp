@@ -83,42 +83,44 @@ void MainWindow::setNextWindowSideBarDockable() const {
 std::chrono::time_point<std::chrono::high_resolution_clock> lastOpenCommand = std::chrono::high_resolution_clock::now();
 
 void LoadCallback(void* userData, const char* const* filePaths, int filter) {
-	MainWindow* mainWindow = (MainWindow*)userData;
-	assert(mainWindow);
-	if (filePaths && filePaths[0]) {
-		std::string filePath = filePaths[0];
-		if (filePath.ends_with(".tst")) {
-			std::optional<CircuitTestGroup> testGroup = CircuitTestFileLoader::getCircuitTestGroupFromFilePath(filePath, mainWindow->getEnvironment().getBackend());
-			if (testGroup.has_value()) {
-				mainWindow->getEnvironment().getBackend().getCircuitTestGroupManager().addCircuitTestGroup(std::move(testGroup.value()));
-			} else {
-				logError("Failed to load test from '{}'", "MainWindow::LoadCallback", filePath);
-				mainWindow->logError("Failed to load test from '{}'", filePath);
-			}
-			return;
-		}
-		std::vector<circuit_id_t> ids = mainWindow->getEnvironment().getCircuitFileManager().loadFromFile(filePath);
-		logInfo("Requested load from '{}' produced {} circuit(s)", "MainWindow::LoadCallback", filePath, ids.size());
-		if (ids.empty()) {
-			logInfo("No circuits found in '{}'", "MainWindow::LoadCallback", filePath);
-			return;
-		}
-		circuit_id_t id = ids.back();
-		bool doSetCir = true;
-		CircuitViewWidget& circuitViewWidget = mainWindow->createWidget<CircuitViewWidget>();
-		for (auto& iter : mainWindow->getEnvironment().getBackend().getSimulatorManager().getSimulators()) {
-			if (iter.second->getCircuitId() == id) {
-				doSetCir = false;
-				logInfo("Loaded circuit {}", "MainWindow::LoadCallback", id);
-				circuitViewWidget.getCircuitView().setSimulator(iter.first);
+	App::runOnMain([&](){
+		MainWindow* mainWindow = (MainWindow*)userData;
+		assert(mainWindow);
+		if (filePaths && filePaths[0]) {
+			std::string filePath = filePaths[0];
+			if (filePath.ends_with(".tst")) {
+				std::optional<CircuitTestGroup> testGroup = CircuitTestFileLoader::getCircuitTestGroupFromFilePath(filePath, mainWindow->getEnvironment().getBackend());
+				if (testGroup.has_value()) {
+					mainWindow->getEnvironment().getBackend().getCircuitTestGroupManager().addCircuitTestGroup(std::move(testGroup.value()));
+				} else {
+					logError("Failed to load test from '{}'", "MainWindow::LoadCallback", filePath);
+					mainWindow->logError("Failed to load test from '{}'", filePath);
+				}
 				return;
 			}
+			std::vector<circuit_id_t> ids = mainWindow->getEnvironment().getCircuitFileManager().loadFromFile(filePath);
+			logInfo("Requested load from '{}' produced {} circuit(s)", "MainWindow::LoadCallback", filePath, ids.size());
+			if (ids.empty()) {
+				logInfo("No circuits found in '{}'", "MainWindow::LoadCallback", filePath);
+				return;
+			}
+			circuit_id_t id = ids.back();
+			bool doSetCir = true;
+			CircuitViewWidget& circuitViewWidget = mainWindow->createWidget<CircuitViewWidget>();
+			for (auto& iter : mainWindow->getEnvironment().getBackend().getSimulatorManager().getSimulators()) {
+				if (iter.second->getCircuitId() == id) {
+					doSetCir = false;
+					logInfo("Loaded circuit {}", "MainWindow::LoadCallback", id);
+					circuitViewWidget.getCircuitView().setSimulator(iter.first);
+					return;
+				}
+			}
+			logInfo("Loaded circuit {}", "MainWindow::LoadCallback", id);
+			circuitViewWidget.getCircuitView().setCircuit(id);
+		} else {
+			logInfo("File dialog canceled.", "MainWindow::LoadCallback");
 		}
-		logInfo("Loaded circuit {}", "MainWindow::LoadCallback", id);
-		circuitViewWidget.getCircuitView().setCircuit(id);
-	} else {
-		logInfo("File dialog canceled.", "MainWindow::LoadCallback");
-	}
+	});
 }
 
 void MainWindow::loadDialog() {

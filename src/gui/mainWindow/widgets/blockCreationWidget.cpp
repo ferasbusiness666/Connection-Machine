@@ -1,5 +1,6 @@
 #include "blockCreationWidget.h"
 
+#include "SDL3/SDL_dialog.h"
 #include "gui/viewportManager/circuitView/tools/other/portAdder.h"
 #include "gui/viewportManager/circuitView/events/customEvents.h"
 #include "gui/viewportManager/circuitView/tools/other/portSelector.h"
@@ -17,6 +18,7 @@ BlockCreationWidget::BlockCreationWidget(WidgetId widgetId, MainWindow& mainWind
 	Widget(widgetId, mainWindow), dataUpdateEventReceiver(getBackend().getDataUpdateEventManager()) {
 	{
 		ViewportId viewportId = MainRenderer::get().registerViewport(getMainWindow().getWindowId(), { 100, 100 });
+		elementCreator.setup(viewportId);
 		circuitView = std::make_unique<CircuitView>(mainWindow.getEnvironment(), viewportId);
 		setupGUIValue<float>("AspectRatio", 1, [&](const float& aspectRatio) { circuitView->getViewManager().setAspectRatio(aspectRatio); });
 		setupGUIValue<bool>("MouseLeftDown", false, [&](const bool& state) {
@@ -89,7 +91,9 @@ BlockCreationWidget::BlockCreationWidget(WidgetId widgetId, MainWindow& mainWind
 		circuitView->setCircuit(renderingCircuitId);
 		for (auto& iter : circuitView->getBackend().getSimulatorManager().getSimulators()) {
 			if (iter.second->getCircuitId() == renderingCircuitId) {
+				iter.second->setPause(true);
 				circuitView->setSimulator(iter.second.get());
+				break;
 			}
 		}
 	}
@@ -177,13 +181,21 @@ BlockCreationWidget::BlockCreationWidget(WidgetId widgetId, MainWindow& mainWind
 		setGUIValue<std::optional<connection_end_id_t>>("currentlyEditingPort", std::nullopt);
 	});
 	setupGUIValue<bool>("doingPortMapping", false, [this](const bool& doingPortMapping) {
-		if (circuitView->getSimulator() != 0) {
+	});
+	setupGUIValue<bool>("showingCircuitInternals", false, [this](const bool& showingCircuitInternals) {
+		if (circuitView->getSimulator() != 0 && blockType != BlockType::NONE) {
 			circuitView->getToolManager().clearStacks();
-			if (doingPortMapping) {
+			if (showingCircuitInternals) {
 				circuitView->setSimulator(circuitView->getSimulator(), Address(Position()));
 			} else {
 				circuitView->setSimulator(circuitView->getSimulator());
 			}
+		}
+	});
+	setupGUIValue<std::optional<Position>>("selectedCell", std::nullopt, [this](const std::optional<Position>& doingPortMapping) {
+		elementCreator.clear();
+		if (doingPortMapping) {
+			elementCreator.addSelectionElement(SelectionElement(doingPortMapping.value()));
 		}
 	});
 }
@@ -220,6 +232,7 @@ void BlockCreationWidget::processEvent(SDL_Event& event) {
 }
 
 void BlockCreationWidget::render() {
+	setGUIValue_rendering<std::optional<Position>>("selectedCell", std::nullopt);
 	ImGui::SetNextWindowDockID(getMainWindow().getDockMainId(), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(100, 300), ImGuiCond_FirstUseEver);
 	getMainWindow().setNextWindowMainDockable();
@@ -698,6 +711,7 @@ void BlockCreationWidget::renderSideBar(circuit_id_t circuitId) {
 	if (ImGui::BeginTabBar("Creation Tabs")) {
 		if (ImGui::BeginTabItem("Textures")) {
 			setGUIValue_rendering<bool>("doingPortMapping", false);
+			setGUIValue_rendering<bool>("showingCircuitInternals", false);
 			ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 4);
 			ImGui::PushStyleColor(ImGuiCol_ChildBg, GUIColors::WIDGET_BACKGROUND);
 			ifGui (ImGui::BeginChild("Render Data", ImGui::GetContentRegionAvail(), ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_MenuBar),
@@ -738,7 +752,33 @@ void BlockCreationWidget::renderSideBar(circuit_id_t circuitId) {
 								if (ImGui::TreeNodeEx("BlockTexture", ImGuiTreeNodeFlags_DefaultOpen)) {
 									ImGui::TreePop();
 									ImGui::Indent();
-									if (ImGui::InputText("Path", &blockTextureData.path)) {
+									if (ImGui::Button("Path")) {
+										App::runOnMain([this, index]() {
+											SDL_ShowOpenFileDialog([](void* userData, const char* const* filePaths, int filter) {
+												App::runOnMain([&]() {
+													if (!filePaths || !filePaths[0]) return;
+
+													std::pair<BlockCreationWidget*, unsigned int>* data = (std::pair<BlockCreationWidget*, unsigned int>*)userData;
+
+													circuit_id_t circuitId = data->first->getGUIValue<circuit_id_t>("circuitId");
+													Circuit* circuit = data->first->getBackend().getCircuitManager().getCircuit(circuitId);
+													if (!circuit) return;
+													BlockData* blockData = data->first->getBackend().getBlockDataManager().getBlockData(circuit->getBlockType());
+
+													std::string filePath = filePaths[0];
+													if (filePath.empty()) return;
+													const BlockData::RenderDataType* renderData = blockData->getRenderData(data->second);
+													if (renderData == nullptr) return;
+													if (std::holds_alternative<BlockData::BlockTextureData>(*renderData)) {
+														blockData->setBlockTexturePath(data->second, filePath);
+													}
+												});
+											}, new std::pair(this, index), nullptr, nullptr, 0, nullptr, true);
+										});
+									}
+									ImGui::SameLine();
+									ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+									if (ImGui::InputText("##Path", &blockTextureData.path)) {
 										App::runOnMain([this, circuitId, index, path = blockTextureData.path](){
 											Backend& backend = getMainWindow().getEnvironment().getBackend();
 											const CircuitBlockData* circuitBlockData = backend.getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
@@ -864,43 +904,81 @@ void BlockCreationWidget::renderSideBar(circuit_id_t circuitId) {
 		if (ImGui::BeginTabItem("Port Mappings")) {
 			ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 4);
 			ImGui::PushStyleColor(ImGuiCol_ChildBg, GUIColors::WIDGET_BACKGROUND);
-			ifGui (ImGui::BeginChild("Render Data", ImGui::GetContentRegionAvail(), ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_MenuBar),
+			ifGui (ImGui::BeginChild("PortMappings", ImGui::GetContentRegionAvail(), ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_MenuBar),
 				ImGui::PopStyleColor();
 				ImGui::PopStyleVar();
 			) {
 				setGUIValue_rendering<bool>("doingPortMapping", true);
 				if (blockDataCopy.has_value()) {
+					unsigned int index = 0;
+					bool showInternal = true;
 					for (const auto& [endId, connectionData] : blockDataCopy->connections) {
 						const Position* portPos = circuitBlockDataCopy->connectionIdPosition.get(endId);
-						if (ImGui::TreeNodeEx("BlockTexture", ImGuiTreeNodeFlags_DefaultOpen)) {
-							ImGui::TreePop();
-							ImGui::Indent();
-							ImGui::Text("Port on block at %s.", connectionData.positionOnBlock.toString().c_str());
-							ImGui::SameLine();
-							if (portPos == nullptr) {
-								if (ImGui::Button("Add mapping")) {
-									App::runOnMain([this, circuitId, endId]() {
-										auto tool = std::dynamic_pointer_cast<PortSelector>(
-											circuitView->getToolManager().selectTool(std::make_shared<PortSelector>(getEnvironment()))
-										);
-										if (tool) {
-											tool->setPort(endId, [this, endId, circuitId](Position position) {
-												getBackend().getCircuitManager().getCircuitBlockDataManager()
-													.getCircuitBlockData(circuitId)->setConnectionIdPosition(endId, position);
-											});
-										}
+						ImGui::PushID(index);
+						ImGui::PushStyleVarY(ImGuiStyleVar_ItemSpacing, 0);
+						ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2, 2));
+						ImGui::PushStyleColor(ImGuiCol_ChildBg, (index % 2 ==0) ? GUIColors::WIDGET_ALTERNATING_BACKGROUND_1 : GUIColors::WIDGET_ALTERNATING_BACKGROUND_2);
+						ifGui (ImGui::BeginChild("Port Mapping Data Row", ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysUseWindowPadding),
+							ImGui::PopStyleColor();
+							ImGui::PopStyleVar();
+						) {
+							if (ImGui::TreeNodeEx(fmt::format(
+									"Port \"{}\" at {}          ",
+									valueOr(blockDataCopy->connectionIdNames.get(endId), std::string("Unnamed")),
+									connectionData.positionOnBlock.toString()
+								).c_str())) {
+								ImGui::TreePop();
+								ImGui::Indent();
+								if (portPos == nullptr) {
+									if (ImGui::Button("Add Mapping")) {
+										App::runOnMain([this, circuitId, endId]() {
+											auto tool = std::dynamic_pointer_cast<PortSelector>(
+												circuitView->getToolManager().selectTool(std::make_shared<PortSelector>(getEnvironment()))
+											);
+											if (tool) {
+												tool->setPort(endId, [this, endId, circuitId](Position position) {
+													getBackend().getCircuitManager().getCircuitBlockDataManager()
+														.getCircuitBlockData(circuitId)->setConnectionIdPosition(endId, position);
+												});
+											}
 
-									});
+										});
+									}
+								} else {
+									if (ImGui::Button("Remove Mapping")) {
+										App::runOnMain([this, circuitId, endId]() {
+											getBackend().getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId)->removeConnectionIdPosition(endId);
+										});
+									}
 								}
-							} else {
-								ImGui::Button("Remove mapping");
-								App::runOnMain([this, circuitId, endId]() {
-									getBackend().getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId)->removeConnectionIdPosition(endId);
-								});
+								ImGui::SameLine();
+								ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2, 2));
+								ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetColorU32(ImGuiCol_Button));
+								ifGui (ImGui::BeginChild("ViewOnBlock", ImVec2(ImGui::CalcTextSize("View").x + 4, 0), ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysUseWindowPadding),
+									ImGui::PopStyleColor();
+									ImGui::PopStyleVar();
+								) {
+									ImGui::Text("View");
+									if (ImGui::IsWindowHovered()) {
+										showInternal = false;
+										setGUIValue_rendering<std::optional<Position>>("selectedCell", Position() + connectionData.positionOnBlock);
+									}
+								}
+								ImGui::EndChild();
+								ImGui::Unindent();
 							}
-							ImGui::Unindent();
+							if (showInternal && portPos) {
+								if (ImGui::IsWindowHovered()) {
+									setGUIValue_rendering<std::optional<Position>>("selectedCell", *portPos);
+								}
+							}
 						}
+						ImGui::EndChild();
+						ImGui::PopStyleVar();
+						ImGui::PopID();
+						index++;
 					}
+					setGUIValue_rendering<bool>("showingCircuitInternals", showInternal);
 				}
 			}
 			ImGui::EndChild();
