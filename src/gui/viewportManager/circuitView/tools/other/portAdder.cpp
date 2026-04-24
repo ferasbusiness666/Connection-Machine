@@ -25,6 +25,7 @@ bool PortAdder::press(const Event* event) {
 	}
 	if (can) onSelectFunction(positionEvent->getPosition());
 	reset();
+	toolStackInterface->popTool();
 	toolStackInterface->switchToStack(0);
 	return true;
 }

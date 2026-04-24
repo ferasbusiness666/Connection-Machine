@@ -57,7 +57,20 @@ SharedCircuitTool ToolManager::selectTool(SharedCircuitTool tool) {
 	}
 }
 
+void ToolManager::clearStacks() {
+	for (auto& toolStack : toolStacks) toolStack.clearTools();
+}
+
 void ToolManager::setMode(const std::string& mode) {
 	if (activeToolStack == -1) return;
 	toolStacks[activeToolStack].setMode(mode);
+}
+
+void ToolManager::setCircuit(circuit_id_t circuitId) {
+	this->circuitId = circuitId;
+	for (auto& toolStack : toolStacks) toolStack.setCircuit(circuitId);
+}
+
+const CircuitTool* ToolManager::getCircuitTool() const {
+	return toolStacks[activeToolStack].getCurrentTool().get();
 }

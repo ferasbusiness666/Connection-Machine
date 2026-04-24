@@ -5,6 +5,7 @@
 #include "imgui/imgui_internal.h"
 #include "imgui/imgui_stdlib.h"
 
+#include "gui/viewportManager/circuitView/tools/toolStack.h"
 #include "gui/viewportManager/circuitView/circuitView.h"
 #include "util/preprocessors.h"
 #include "gui/mainWindow/mainWindow.h"
@@ -150,6 +151,7 @@ BlockCreationWidget::BlockCreationWidget(WidgetId widgetId, MainWindow& mainWind
 	});
 	setupGUIValue<bool>("doingPortMapping", false, [this](const bool& doingPortMapping) {
 		if (circuitView->getSimulator() != 0) {
+			circuitView->getToolManager().clearStacks();
 			if (doingPortMapping) {
 				circuitView->setSimulator(circuitView->getSimulator(), Address(Position()));
 			} else {
@@ -309,260 +311,296 @@ void BlockCreationWidget::renderViewport(circuit_id_t circuitId) {
 			}
 		}
 	}
-	std::optional<connection_end_id_t> currentlyEditingPort = getGUIValue<std::optional<connection_end_id_t>>("currentlyEditingPort");
-	if (blockDataCopy.has_value()) {
-		if (currentlyEditingPort.has_value()) {
-			auto connectionIter = blockDataCopy->connections.find(currentlyEditingPort.value());
-			if (connectionIter == blockDataCopy->connections.end()) {
-				setGUIValue_rendering<std::optional<connection_end_id_t>>("currentlyEditingPort", std::nullopt);
-			} else {
-				BlockData::ConnectionData& connectionData = connectionIter->second;
-				ImVec2 portSettingsSize;
-				ImVec2 portSettingPos = viewportWindowPos + viewportPanelSize / 2 - ImVec2(
-					pixPerCell.x * (viewportCenter.x - connectionData.positionOnBlock.dx),
-					pixPerCell.y * (viewportCenter.y - connectionData.positionOnBlock.dy)
-				) + ImVec2(5, 5) + ImVec2(pixPerCell.x * 0, pixPerCell.y);
-				drawList->ChannelsSplit(2);
-				{
-					drawList->ChannelsSetCurrent(1);
-					ImGui::SetCursorPos(portSettingPos);
-					ImGui::BeginGroup();
-						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-						float xPos = ImGui::GetCursorPos().x;
-						ImGui::Text("Name");
-						ImGui::SetCursorPos(ImVec2(xPos, ImGui::GetCursorPos().y));
-						ImGui::SetNextItemWidth(160);
-						const std::string* portName = blockDataCopy->connectionIdNames.get(currentlyEditingPort.value());
-						std::string portNameStr = "";
-						if (portName != nullptr) portNameStr = *portName;
-						if (ImGui::InputText("##PortName", &portNameStr)) {
-							blockDataCopy->connectionIdNames.set(currentlyEditingPort.value(), portNameStr);
-							App::runOnMain([this, blockType = blockDataCopy->blockType, port = currentlyEditingPort.value(), name = portNameStr](){
-								Backend& backend = getEnvironment().getBackend();
-								BlockData* blockData = backend.getBlockDataManager().getBlockData(blockType);
-								if (!blockData) return;
-								blockData->setConnectionIdName(port, name);
-							});
-						}
-						ImGui::SetCursorPos(ImVec2(xPos, ImGui::GetCursorPos().y));
-						{
-							ImGui::Text("Pos");
-							ImGui::SameLine();
-							ImGui::SetNextItemWidth(50);
-							bool portPosUpdated = ImGui::InputScalar("##xPortPos", ImGuiDataType_U32, &connectionData.positionOnBlock.dx);
-							ImGui::SameLine();
-							ImGui::SetNextItemWidth(50);
-							portPosUpdated |= ImGui::InputScalar("##yPortPos", ImGuiDataType_U32, &connectionData.positionOnBlock.dy);
-							if (portPosUpdated) {
-								if (connectionData.positionOnBlock.dx >= blockDataCopy->blockSize.w) {
-									connectionData.positionOnBlock.dx = blockDataCopy->blockSize.w - 1;
-								}
-								if (connectionData.positionOnBlock.dy >= blockDataCopy->blockSize.h) {
-									connectionData.positionOnBlock.dy = blockDataCopy->blockSize.h - 1;
-								}
-								bool cant = false;
-								for (const auto& connection : blockDataCopy->connections) {
-									if (connection.second.portType == connectionData.portType) {
-										if (connection.first != currentlyEditingPort.value() && connection.second.positionOnBlock == connectionData.positionOnBlock) {
-											cant = true;
-											break;
+	if (!getGUIValue_rendering<bool>("doingPortMapping")) {
+		std::optional<connection_end_id_t> currentlyEditingPort = getGUIValue<std::optional<connection_end_id_t>>("currentlyEditingPort");
+		if (blockDataCopy.has_value()) {
+			if (currentlyEditingPort.has_value()) {
+				auto connectionIter = blockDataCopy->connections.find(currentlyEditingPort.value());
+				if (connectionIter == blockDataCopy->connections.end()) {
+					setGUIValue_rendering<std::optional<connection_end_id_t>>("currentlyEditingPort", std::nullopt);
+				} else {
+					BlockData::ConnectionData& connectionData = connectionIter->second;
+					ImVec2 portSettingsSize;
+					ImVec2 portSettingPos = viewportWindowPos + viewportPanelSize / 2 - ImVec2(
+						pixPerCell.x * (viewportCenter.x - connectionData.positionOnBlock.dx),
+						pixPerCell.y * (viewportCenter.y - connectionData.positionOnBlock.dy)
+					) + ImVec2(5, 5) + ImVec2(pixPerCell.x * 0, pixPerCell.y);
+					drawList->ChannelsSplit(2);
+					{
+						drawList->ChannelsSetCurrent(1);
+						ImGui::SetCursorPos(portSettingPos);
+						ImGui::BeginGroup();
+							ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+							float xPos = ImGui::GetCursorPos().x;
+							ImGui::Text("Name");
+							ImGui::SetCursorPos(ImVec2(xPos, ImGui::GetCursorPos().y));
+							ImGui::SetNextItemWidth(160);
+							const std::string* portName = blockDataCopy->connectionIdNames.get(currentlyEditingPort.value());
+							std::string portNameStr = "";
+							if (portName != nullptr) portNameStr = *portName;
+							if (ImGui::InputText("##PortName", &portNameStr)) {
+								blockDataCopy->connectionIdNames.set(currentlyEditingPort.value(), portNameStr);
+								App::runOnMain([this, blockType = blockDataCopy->blockType, port = currentlyEditingPort.value(), name = portNameStr](){
+									Backend& backend = getEnvironment().getBackend();
+									BlockData* blockData = backend.getBlockDataManager().getBlockData(blockType);
+									if (!blockData) return;
+									blockData->setConnectionIdName(port, name);
+								});
+							}
+							ImGui::SetCursorPos(ImVec2(xPos, ImGui::GetCursorPos().y));
+							{
+								ImGui::Text("Pos");
+								ImGui::SameLine();
+								ImGui::SetNextItemWidth(50);
+								bool portPosUpdated = ImGui::InputScalar("##xPortPos", ImGuiDataType_U32, &connectionData.positionOnBlock.dx);
+								ImGui::SameLine();
+								ImGui::SetNextItemWidth(50);
+								portPosUpdated |= ImGui::InputScalar("##yPortPos", ImGuiDataType_U32, &connectionData.positionOnBlock.dy);
+								if (portPosUpdated) {
+									if (connectionData.positionOnBlock.dx >= blockDataCopy->blockSize.w) {
+										connectionData.positionOnBlock.dx = blockDataCopy->blockSize.w - 1;
+									}
+									if (connectionData.positionOnBlock.dy >= blockDataCopy->blockSize.h) {
+										connectionData.positionOnBlock.dy = blockDataCopy->blockSize.h - 1;
+									}
+									bool cant = false;
+									for (const auto& connection : blockDataCopy->connections) {
+										if (connection.second.portType == connectionData.portType) {
+											if (connection.first != currentlyEditingPort.value() && connection.second.positionOnBlock == connectionData.positionOnBlock) {
+												cant = true;
+												break;
+											}
 										}
 									}
+									if (!cant) {
+										App::runOnMain([this, blockType = blockDataCopy->blockType, port = currentlyEditingPort.value(), portType = connectionData.portType, pos = connectionData.positionOnBlock](){
+											Backend& backend = getEnvironment().getBackend();
+											BlockData* blockData = backend.getBlockDataManager().getBlockData(blockType);
+											if (!blockData) return;
+											if (portType == BlockData::ConnectionData::PortType::INPUT) {
+												blockData->setConnectionInput(pos, port);
+											} else {
+												blockData->setConnectionOutput(pos, port);
+											}
+										});
+									}
 								}
-								if (!cant) {
-									App::runOnMain([this, blockType = blockDataCopy->blockType, port = currentlyEditingPort.value(), portType = connectionData.portType, pos = connectionData.positionOnBlock](){
+							}
+							{
+								ImGui::Text("Offset");
+								ImGui::SameLine();
+								ImGui::SetNextItemWidth(50);
+								bool portOffsetPosUpdated = ImGui::InputScalar("##xPortOffsetPos", ImGuiDataType_Float, &connectionData.portOffset.dx);
+								ImGui::SameLine();
+								ImGui::SetNextItemWidth(50);
+								portOffsetPosUpdated |= ImGui::InputScalar("##yPortOffsetPos", ImGuiDataType_Float, &connectionData.portOffset.dy);
+								if (portOffsetPosUpdated) {
+									connectionData.portOffset.dx = std::clamp(connectionData.portOffset.dx, 0.0f, 1.0f);
+									connectionData.portOffset.dy = std::clamp(connectionData.portOffset.dy, 0.0f, 1.0f);
+									App::runOnMain([this, blockType = blockDataCopy->blockType, port = currentlyEditingPort.value(), portType = connectionData.portType, pos = connectionData.portOffset](){
 										Backend& backend = getEnvironment().getBackend();
 										BlockData* blockData = backend.getBlockDataManager().getBlockData(blockType);
-										if (!blockData) return;
 										if (portType == BlockData::ConnectionData::PortType::INPUT) {
-											blockData->setConnectionInput(pos, port);
+											if (!blockData) return;
+											blockData->setConnectionPortOffset(port, pos);
 										} else {
-											blockData->setConnectionOutput(pos, port);
+											blockData->setConnectionPortOffset(port, pos);
 										}
 									});
 								}
 							}
-						}
-						{
-							ImGui::Text("Offset");
-							ImGui::SameLine();
-							ImGui::SetNextItemWidth(50);
-							bool portOffsetPosUpdated = ImGui::InputScalar("##xPortOffsetPos", ImGuiDataType_Float, &connectionData.portOffset.dx);
-							ImGui::SameLine();
-							ImGui::SetNextItemWidth(50);
-							portOffsetPosUpdated |= ImGui::InputScalar("##yPortOffsetPos", ImGuiDataType_Float, &connectionData.portOffset.dy);
-							if (portOffsetPosUpdated) {
-								connectionData.portOffset.dx = std::clamp(connectionData.portOffset.dx, 0.0f, 1.0f);
-								connectionData.portOffset.dy = std::clamp(connectionData.portOffset.dy, 0.0f, 1.0f);
-								App::runOnMain([this, blockType = blockDataCopy->blockType, port = currentlyEditingPort.value(), portType = connectionData.portType, pos = connectionData.portOffset](){
-									Backend& backend = getEnvironment().getBackend();
-									BlockData* blockData = backend.getBlockDataManager().getBlockData(blockType);
-									if (portType == BlockData::ConnectionData::PortType::INPUT) {
+							{
+								ImGui::Text("Bit Width");
+								ImGui::SameLine();
+								ImGui::SetNextItemWidth(50);
+								unsigned int bitWidth = connectionData.getBitWidth();
+								if (ImGui::InputScalar("##BitWidth", ImGuiDataType_U32, &bitWidth)) {
+									if (bitWidth == 0) {
+										bitWidth = 1;
+									} else if (bitWidth > 65535) {
+										bitWidth = 65535; // it should never be this big!
+									}
+									connectionData.bitConfiguration = bitWidth;
+									App::runOnMain([this, blockType = blockDataCopy->blockType, port = currentlyEditingPort.value(), bitWidth](){
+										Backend& backend = getEnvironment().getBackend();
+										BlockData* blockData = backend.getBlockDataManager().getBlockData(blockType);
 										if (!blockData) return;
-										blockData->setConnectionPortOffset(port, pos);
+										blockData->setConnectionBitConfiguration(port, bitWidth);
+									});
+								}
+							}
+							ImGui::SetCursorPos(ImVec2(xPos, ImGui::GetCursorPos().y));
+							if (ImGui::SmallButton("Remove")) {
+								ImGui::OpenPopup("Are you sure you want to remove this port");
+							}
+							if (ImGui::BeginPopup("Are you sure you want to remove this port")) {
+								if (ImGui::Button("cancel")) {
+									ImGui::CloseCurrentPopup();
+								}
+								if (ImGui::Button("Remove")) {
+									App::runOnMain([this, blockType = blockDataCopy->blockType, port = currentlyEditingPort.value()](){
+										Backend& backend = getEnvironment().getBackend();
+										BlockData* blockData = backend.getBlockDataManager().getBlockData(blockType);
+										if (!blockData) return;
+										blockData->removeConnection(port);
+									});
+								}
+								ImGui::EndPopup();
+							}
+							ImGui::SameLine();
+							if (ImGui::SmallButton("Done")) {
+								setGUIValue_rendering<std::optional<connection_end_id_t>>("currentlyEditingPort", std::nullopt);
+							}
+							ImGui::PopStyleColor();
+						ImGui::EndGroup();
+						portSettingsSize = ImGui::GetItemRectSize();
+					}
+					{
+						drawList->ChannelsSetCurrent(0);
+						drawList->AddRectFilled(
+							{ viewportWindowScreenPos.x + portSettingPos.x - padding, viewportWindowScreenPos.y + portSettingPos.y - padding },
+							{ viewportWindowScreenPos.x + portSettingPos.x + portSettingsSize.x + padding,
+								viewportWindowScreenPos.y + portSettingPos.y + portSettingsSize.y + padding },
+							ImColor(0.8f, 0.8f, 0.8f, 0.75f),
+							5.f
+						);
+					}
+					drawList->ChannelsMerge();
+				}
+			} else {
+				for (const auto& connection : blockDataCopy->connections) {
+					ImGui::SetCursorPos(viewportWindowPos + viewportPanelSize / 2 - ImVec2(
+						pixPerCell.x * (viewportCenter.x - connection.second.positionOnBlock.dx),
+						pixPerCell.y * (viewportCenter.y - connection.second.positionOnBlock.dy) + (
+							(connection.second.portType == BlockData::ConnectionData::OUTPUT) ? -(ImGui::CalcTextSize("Edit Input").y + 5) : 0
+						)
+					) + ImVec2(5, 5));
+					ImGui::PushID(connection.first.get());
+					bool pressed = false;
+					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.77f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.1f, 0.2f, 0.79f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.3f, 0.4f, 0.90f));
+					if (connection.second.portType == BlockData::ConnectionData::OUTPUT) pressed = ImGui::SmallButton("Edit Out");
+					else pressed = ImGui::SmallButton("Edit In");
+					ImGui::PopStyleColor(3);
+					if (pressed) {
+						setGUIValue_rendering<std::optional<connection_end_id_t>>("currentlyEditingPort", connection.first);
+					}
+					ImGui::PopID();
+				}
+			}
+		}
+		drawList->ChannelsSplit(2);
+		ImVec2 simControlsSize;
+		{
+			drawList->ChannelsSetCurrent(1);
+			ImGui::SetCursorPos({ viewportWindowPos.x + padding + offset, viewportWindowPos.y + padding + offset });
+			ImGui::BeginGroup();
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+				FPosition mouseGridPos = getGUIValue_rendering<FPosition>("MouseGridPos");
+				ImGui::Text("Mouse: (%.2f, %.2f)", mouseGridPos.x, mouseGridPos.y);
+				if (!currentlyEditingPort.has_value()) {
+					if (ImGui::Button("Add Port"))
+						ImGui::OpenPopup("port_popup");
+
+					if (blockDataCopy.has_value()) {
+						ImGui::SameLine();
+						ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.6f, 0.6f, 0.6f, 0.8f));
+						ifGui (ImGui::BeginPopup("port_popup"), ImGui::PopStyleColor();) {
+							if (ImGui::Selectable("Input")) {
+								App::runOnMain([this, circuitId, name = blockDataCopy->name](){
+									auto tool = std::dynamic_pointer_cast<PortAdder>(
+										circuitView->getToolManager().selectTool(std::make_shared<PortAdder>(getEnvironment()))
+									);
+									if (tool) {
+										tool->setup(true, [this](Position position){
+											BlockData* blockData = getBackend().getBlockDataManager().getBlockData(blockType);
+											if (blockData == nullptr) return;
+											blockData->setConnectionInput(position - Position(), blockData->getNewConnectionId());
+										});
 									} else {
-										blockData->setConnectionPortOffset(port, pos);
+										logError("Failed to set tool to PortAdder", "BlockCreationWidget");
 									}
 								});
 							}
-						}
-						{
-							ImGui::Text("Bit Width");
-							ImGui::SameLine();
-							ImGui::SetNextItemWidth(50);
-							unsigned int bitWidth = connectionData.getBitWidth();
-							if (ImGui::InputScalar("##BitWidth", ImGuiDataType_U32, &bitWidth)) {
-								if (bitWidth == 0) {
-									bitWidth = 1;
-								} else if (bitWidth > 65535) {
-									bitWidth = 65535; // it should never be this big!
-								}
-								connectionData.bitConfiguration = bitWidth;
-								App::runOnMain([this, blockType = blockDataCopy->blockType, port = currentlyEditingPort.value(), bitWidth](){
-									Backend& backend = getEnvironment().getBackend();
-									BlockData* blockData = backend.getBlockDataManager().getBlockData(blockType);
-									if (!blockData) return;
-									blockData->setConnectionBitConfiguration(port, bitWidth);
-								});
-							}
-						}
-						ImGui::SetCursorPos(ImVec2(xPos, ImGui::GetCursorPos().y));
-						if (ImGui::SmallButton("Remove")) {
-							ImGui::OpenPopup("Are you sure you want to remove this port");
-						}
-						if (ImGui::BeginPopup("Are you sure you want to remove this port")) {
-							if (ImGui::Button("cancel")) {
-								ImGui::CloseCurrentPopup();
-							}
-							if (ImGui::Button("Remove")) {
-								App::runOnMain([this, blockType = blockDataCopy->blockType, port = currentlyEditingPort.value()](){
-									Backend& backend = getEnvironment().getBackend();
-									BlockData* blockData = backend.getBlockDataManager().getBlockData(blockType);
-									if (!blockData) return;
-									blockData->removeConnection(port);
+							if (ImGui::Selectable("Output")) {
+								App::runOnMain([this, circuitId, name = blockDataCopy->name](){
+									auto tool = std::dynamic_pointer_cast<PortAdder>(
+										circuitView->getToolManager().selectTool(std::make_shared<PortAdder>(getEnvironment()))
+									);
+									if (tool) {
+										tool->setup(false, [this](Position position){
+											BlockData* blockData = getBackend().getBlockDataManager().getBlockData(blockType);
+											if (blockData == nullptr) return;
+											blockData->setConnectionOutput(position - Position(), blockData->getNewConnectionId());
+										});
+									} else {
+										logError("Failed to set tool to PortAdder", "BlockCreationWidget");
+									}
 								});
 							}
 							ImGui::EndPopup();
 						}
-						ImGui::SameLine();
-						if (ImGui::SmallButton("Done")) {
-							setGUIValue_rendering<std::optional<connection_end_id_t>>("currentlyEditingPort", std::nullopt);
-						}
-						ImGui::PopStyleColor();
-					ImGui::EndGroup();
-					portSettingsSize = ImGui::GetItemRectSize();
-				}
-				{
-					drawList->ChannelsSetCurrent(0);
-					drawList->AddRectFilled(
-						{ viewportWindowScreenPos.x + portSettingPos.x - padding, viewportWindowScreenPos.y + portSettingPos.y - padding },
-						{ viewportWindowScreenPos.x + portSettingPos.x + portSettingsSize.x + padding,
-							viewportWindowScreenPos.y + portSettingPos.y + portSettingsSize.y + padding },
-						ImColor(0.8f, 0.8f, 0.8f, 0.75f),
-						5.f
-					);
-				}
-				drawList->ChannelsMerge();
-			}
-		} else {
-			for (const auto& connection : blockDataCopy->connections) {
-				ImGui::SetCursorPos(viewportWindowPos + viewportPanelSize / 2 - ImVec2(
-					pixPerCell.x * (viewportCenter.x - connection.second.positionOnBlock.dx),
-					pixPerCell.y * (viewportCenter.y - connection.second.positionOnBlock.dy) + (
-						(connection.second.portType == BlockData::ConnectionData::OUTPUT) ? -(ImGui::CalcTextSize("Edit Input").y + 5) : 0
-					)
-				) + ImVec2(5, 5));
-				ImGui::PushID(connection.first.get());
-				bool pressed = false;
-				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.77f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.1f, 0.2f, 0.79f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.3f, 0.4f, 0.90f));
-				if (connection.second.portType == BlockData::ConnectionData::OUTPUT) pressed = ImGui::SmallButton("Edit Out");
-				else pressed = ImGui::SmallButton("Edit In");
-				ImGui::PopStyleColor(3);
-				if (pressed) {
-					setGUIValue_rendering<std::optional<connection_end_id_t>>("currentlyEditingPort", connection.first);
-				}
-				ImGui::PopID();
-			}
-		}
-	}
-	drawList->ChannelsSplit(2);
-	ImVec2 simControlsSize;
-	{
-		drawList->ChannelsSetCurrent(1);
-		ImGui::SetCursorPos({ viewportWindowPos.x + padding + offset, viewportWindowPos.y + padding + offset });
-		ImGui::BeginGroup();
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-			FPosition mouseGridPos = getGUIValue_rendering<FPosition>("MouseGridPos");
-			ImGui::Text("Mouse: (%.2f, %.2f)", mouseGridPos.x, mouseGridPos.y);
-			if (!currentlyEditingPort.has_value()) {
-				if (ImGui::Button("Add Port"))
-					ImGui::OpenPopup("port_popup");
-
-				if (blockDataCopy.has_value()) {
-					ImGui::SameLine();
-					ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.6f, 0.6f, 0.6f, 0.8f));
-					ifGui (ImGui::BeginPopup("port_popup"), ImGui::PopStyleColor();) {
-						if (ImGui::Selectable("Input")) {
-							App::runOnMain([this, circuitId, name = blockDataCopy->name](){
-								auto tool = std::dynamic_pointer_cast<PortAdder>(
-									circuitView->getToolManager().selectTool(std::make_shared<PortAdder>(getEnvironment()))
-								);
-								if (tool) {
-									tool->setup(true, [this](Position position){
-										BlockData* blockData = getBackend().getBlockDataManager().getBlockData(blockType);
-										if (blockData == nullptr) return;
-										blockData->setConnectionInput(position - Position(), blockData->getNewConnectionId());
-									});
-								} else {
-									logError("Failed to set tool to PortAdder", "BlockCreationWidget");
-								}
-							});
-						}
-						if (ImGui::Selectable("Output")) {
-							App::runOnMain([this, circuitId, name = blockDataCopy->name](){
-								auto tool = std::dynamic_pointer_cast<PortAdder>(
-									circuitView->getToolManager().selectTool(std::make_shared<PortAdder>(getEnvironment()))
-								);
-								if (tool) {
-									tool->setup(false, [this](Position position){
-										BlockData* blockData = getBackend().getBlockDataManager().getBlockData(blockType);
-										if (blockData == nullptr) return;
-										blockData->setConnectionOutput(position - Position(), blockData->getNewConnectionId());
-									});
-								} else {
-									logError("Failed to set tool to PortAdder", "BlockCreationWidget");
-								}
-							});
-						}
-						ImGui::EndPopup();
 					}
 				}
-			}
-			ImGui::PopStyleColor();
-		ImGui::EndGroup();
-		simControlsSize = ImGui::GetItemRectSize();
-	}
-	{
-		drawList->ChannelsSetCurrent(0);
-		if (blockDataCopy.has_value()) {
-			drawList->AddRectFilled(
-				{ viewportWindowScreenPos.x + offset, viewportWindowScreenPos.y + offset },
-				{ viewportWindowScreenPos.x + simControlsSize.x + padding * 2 + offset, viewportWindowScreenPos.y + simControlsSize.y + padding * 2 + offset },
-				ImColor(0.f, 0.f, 0.f, 0.1f),
-				5.f
-			);
-		} else {
-			drawList->AddRectFilled(
-				{ viewportWindowScreenPos.x + offset, viewportWindowScreenPos.y + offset },
-				{ viewportWindowScreenPos.x + simControlsSize.x + padding * 2 + offset, viewportWindowScreenPos.y + simControlsSize.y + padding * 2 + offset },
-				ImColor(0.f, 0.f, 0.f, 0.2f),
-				5.f
-			);
+				ImGui::PopStyleColor();
+			ImGui::EndGroup();
+			simControlsSize = ImGui::GetItemRectSize();
 		}
+		{
+			drawList->ChannelsSetCurrent(0);
+			if (blockDataCopy.has_value()) {
+				drawList->AddRectFilled(
+					{ viewportWindowScreenPos.x + offset, viewportWindowScreenPos.y + offset },
+					{ viewportWindowScreenPos.x + simControlsSize.x + padding * 2 + offset, viewportWindowScreenPos.y + simControlsSize.y + padding * 2 + offset },
+					ImColor(0.f, 0.f, 0.f, 0.1f),
+					5.f
+				);
+			} else {
+				drawList->AddRectFilled(
+					{ viewportWindowScreenPos.x + offset, viewportWindowScreenPos.y + offset },
+					{ viewportWindowScreenPos.x + simControlsSize.x + padding * 2 + offset, viewportWindowScreenPos.y + simControlsSize.y + padding * 2 + offset },
+					ImColor(0.f, 0.f, 0.f, 0.2f),
+					5.f
+				);
+			}
+		}
+		drawList->ChannelsMerge();
+	} else {
+		drawList->ChannelsSplit(2);
+		ImVec2 simControlsSize;
+		{
+			drawList->ChannelsSetCurrent(1);
+			ImGui::SetCursorPos({ viewportWindowPos.x + padding + offset, viewportWindowPos.y + padding + offset });
+			ImGui::BeginGroup();
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+				FPosition mouseGridPos = getGUIValue_rendering<FPosition>("MouseGridPos");
+				ImGui::Text("Mouse: (%.2f, %.2f)", mouseGridPos.x, mouseGridPos.y);
+				ImGui::PopStyleColor();
+			ImGui::EndGroup();
+			simControlsSize = ImGui::GetItemRectSize();
+		}
+		{
+			drawList->ChannelsSetCurrent(0);
+			if (blockDataCopy.has_value()) {
+				drawList->AddRectFilled(
+					{ viewportWindowScreenPos.x + offset, viewportWindowScreenPos.y + offset },
+					{ viewportWindowScreenPos.x + simControlsSize.x + padding * 2 + offset, viewportWindowScreenPos.y + simControlsSize.y + padding * 2 + offset },
+					ImColor(0.f, 0.f, 0.f, 0.1f),
+					5.f
+				);
+			} else {
+				drawList->AddRectFilled(
+					{ viewportWindowScreenPos.x + offset, viewportWindowScreenPos.y + offset },
+					{ viewportWindowScreenPos.x + simControlsSize.x + padding * 2 + offset, viewportWindowScreenPos.y + simControlsSize.y + padding * 2 + offset },
+					ImColor(0.f, 0.f, 0.f, 0.2f),
+					5.f
+				);
+			}
+		}
+		drawList->ChannelsMerge();
 	}
-	drawList->ChannelsMerge();
+
 	std::string statusBarText = getGUIValue_rendering<std::string>("StatusBar");
 	if (!statusBarText.empty()) {
 		ImVec2 textSize = ImGui::CalcTextSize(statusBarText.data());

@@ -21,17 +21,13 @@ public:
 	int getStack() const { return activeToolStack; }
 	void selectBlock(BlockType blockType);
 	SharedCircuitTool selectTool(SharedCircuitTool tool);
+	void clearStacks();
 
 	void setMode(const std::string& mode);
 
-	inline void setCircuit(circuit_id_t circuitId) {
-		this->circuitId = circuitId;
-		for (auto& toolStack : toolStacks) toolStack.setCircuit(circuitId);
-	}
+	void setCircuit(circuit_id_t circuitId);
 
-	const CircuitTool* getCircuitTool() const {
-		return toolStacks[activeToolStack].getCurrentTool().get();
-	}
+	const CircuitTool* getCircuitTool() const;
 
 private:
 	int activeToolStack = 0;
