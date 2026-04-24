@@ -80,6 +80,7 @@ private:
 
 	void runCurrentStep();
 	bool isCurrentStepComplete() const;
+    void midStepChecks();
 	void advanceTutorial();
 
 	CircuitView& circuitView;
