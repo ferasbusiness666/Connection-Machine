@@ -256,14 +256,6 @@ void MainWindow::processEvent(SDL_Event& event) {
 }
 
 void MainWindow::render() {
-	{
-		std::lock_guard lock(windowToFocusMux);
-		if (windowToFocus.has_value()) {
-			ImGui::SetWindowFocus(windowToFocus.value().c_str());
-			windowToFocus.reset();
-		}
-	}
-
 	// global styling
 	ImGuiStyle& style = ImGui::GetStyle();
 	{
@@ -437,6 +429,13 @@ void MainWindow::render() {
 		ImGui::PopStyleVar();
 	}
 	ImGui::PopStyleVar();
+	{
+		std::lock_guard lock(windowToFocusMux);
+		if (windowToFocus.has_value()) {
+			ImGui::SetWindowFocus(windowToFocus.value().c_str());
+			windowToFocus.reset();
+		}
+	}
 }
 
 bool MainWindow::tryClose() {
