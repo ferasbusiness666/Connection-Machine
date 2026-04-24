@@ -88,14 +88,6 @@ BlockCreationWidget::BlockCreationWidget(WidgetId widgetId, MainWindow& mainWind
 		BlockData* blockData = getBackend().getBlockDataManager().getBlockData(circuit->getBlockType());
 		assert(blockData);
 		blockData->setIsPlaceable(false);
-		circuitView->setCircuit(renderingCircuitId);
-		for (auto& iter : circuitView->getBackend().getSimulatorManager().getSimulators()) {
-			if (iter.second->getCircuitId() == renderingCircuitId) {
-				iter.second->setPause(true);
-				circuitView->setSimulator(iter.second.get());
-				break;
-			}
-		}
 	}
 	{
 		// =================================== Init all data ===================================
@@ -177,6 +169,14 @@ BlockCreationWidget::BlockCreationWidget(WidgetId widgetId, MainWindow& mainWind
 		Circuit* circuit = getBackend().getCircuitManager().getCircuit(renderingCircuitId);
 		circuit->clear();
 		circuit->tryInsertBlock(Position(), Orientation(), blockData->getBlockType());
+		circuitView->setCircuit(renderingCircuitId);
+		for (auto& iter : circuitView->getBackend().getSimulatorManager().getSimulators()) {
+			if (iter.second->getCircuitId() == renderingCircuitId) {
+				iter.second->setPause(true);
+				circuitView->setSimulator(iter.second.get());
+				break;
+			}
+		}
 		circuitView->getViewManager().focus();
 		setGUIValue<std::optional<connection_end_id_t>>("currentlyEditingPort", std::nullopt);
 	});
@@ -923,9 +923,11 @@ void BlockCreationWidget::renderSideBar(circuit_id_t circuitId) {
 							ImGui::PopStyleVar();
 						) {
 							if (ImGui::TreeNodeEx(fmt::format(
-									"Port \"{}\" at {}          ",
-									valueOr(blockDataCopy->connectionIdNames.get(endId), std::string("Unnamed")),
-									connectionData.positionOnBlock.toString()
+									"Port \"{}\"                              ",
+									valueOr(blockDataCopy->connectionIdNames.get(endId), std::string(
+										(connectionData.portType == BlockData::ConnectionData::INPUT) ? "IN" : "OUT"
+									))//,
+									// connectionData.positionOnBlock.toString()
 								).c_str())) {
 								ImGui::TreePop();
 								ImGui::Indent();

@@ -4,7 +4,6 @@
 #include "backend/circuit/circuitDefs.h"
 #include "backend/circuitTests/circuitTestGroup.h"
 #include "backend/circuitTests/circuitTestGroupRunner.h"
-#include "backend/container/block/block.h"
 #include "backend/container/block/blockDefs.h"
 #include "gui/viewportManager/circuitView/events/customEvents.h"
 #include "imgui/imgui.h"
@@ -82,24 +81,6 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 			return false;
 		});
 	}
-	// {
-	// 	// =================================== Init rendering circuit ===================================
-	// 	std::lock_guard renderingCircuitMux(this->renderingCircuitMux);
-	// 	renderingCircuitId = getBackend().getCircuitManager().createNewCircuit(true);
-	// 	assert(renderingCircuitId);
-	// 	Circuit* circuit = getBackend().getCircuitManager().getCircuit(renderingCircuitId);
-	// 	assert(circuit);
-	// 	circuit->setEditable(false);
-	// 	BlockData* blockData = getBackend().getBlockDataManager().getBlockData(circuit->getBlockType());
-	// 	assert(blockData);
-	// 	blockData->setIsPlaceable(false);
-	// 	circuitView->setCircuit(renderingCircuitId);
-	// 	for (auto& iter : circuitView->getBackend().getSimulatorManager().getSimulators()) {
-	// 		if (iter.second->getCircuitId() == renderingCircuitId) {
-	// 			circuitView->setSimulator(iter.second.get());
-	// 		}
-	// 	}
-	// }
     {
         std::lock_guard mux(blockTypesMux);
 		for (unsigned int type = 0; type < getBackend().getBlockDataManager().maxBlockId(); type++) {
@@ -140,21 +121,6 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 			testGroups.push_back(circuitTestGroup.first);
 		}
 	});
-	/*
-	dataUpdateEventReceiver.linkFunction("testRunDataUpdate", [this](const DataUpdateEventManager::EventData* event) {
-		// make recieving test results a thing
-		const DataUpdateEventManager::EventDataWithValue<std::string>*  = event->cast<std::tuple<std::string, circuit_id_t, int>>();
-		const auto& [recievedName, recievedCircuitID, recievedIndex] =
-		assert(passedName);
-		if (passedName->get() != getGUIValue<std::string>("testGroupName")) return;
-		const CircuitTestGroup* circuitTestGroup = getBackend().getCircuitTestGroupManager().getCircuitTestGroup(getGUIValue<std::string>("testGroupName"));
-		if (!circuitTestGroup) {
-			setGUIValue<std::string>("testGroupName", "NONE");
-			return;
-		}
-		std::lock_guard mux(testGroupCopyMux);
-		testGroupCopy = circuitTestGroup->getMinimalCopy();
-	});*/
     setupGUIValue<double>("SimulatorRealTPS", 0, nullptr);
 	setupGUIValue<double>("SimulatorTargetTPS", 40, [this](const double& tps) {
 		if (circuitView->getSimulator()) {
@@ -187,26 +153,9 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 				renderingCircuitId = testGroupRunner.value().getCircuitId();
 			}
 			circuitView->setSimulator(testGroupRunner->getSimulatorId());
+			if (circuitView->getSimulator()) circuitView->getSimulator()->setTickrate(40);
 		}
 		setGUIValue("blockType", blockType);
-		// const CircuitBlockData* circuitBlockData = getBackend().getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
-		// if (circuitBlockData == nullptr) {
-		// 	// std::lock_guard mux(blockDataCopyMux);
-		// 	// blockDataCopy = std::nullopt;
-		// 	circuitView->setCircuit(0);
-        //     blockType = NONE;
-		// 	return;
-		// }
-		// const BlockData* blockData = getBackend().getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
-		// assert(blockData);
-		// blockType = blockData->getBlockType();
-		// std::lock_guard mux(blockDataCopyMux);
-		// blockDataCopy = blockData->getBlockDataCopy();
-		// Circuit* circuit = getbackend().getCircuitManager().getCircuit(renderingCircuitId).get();
-		// circuit->clear();
-		// circuit->tryInsertBlock(Position(), Orientation(), blockData->getBlockType());
-		// circuitView->getViewManager().focus();
-		// setGUIValue<std::optional<connection_end_id_t>>("currentlyEditingPort", std::nullopt);
 	});
 	setupGUIValue<std::string>("testGroupName", "NONE", [this](const std::string& testGroupName) {
 		const CircuitTestGroup* circuitTestGroup = getBackend().getCircuitTestGroupManager().getCircuitTestGroup(testGroupName);
@@ -233,6 +182,7 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 		std::lock_guard renderingCircuitMux(this->renderingCircuitMux);
 		renderingCircuitId = testGroupRunner.value().getCircuitId();
 		circuitView->setSimulator(testGroupRunner->getSimulatorId());
+		if (circuitView->getSimulator()) circuitView->getSimulator()->setTickrate(40);
 	});
 }
 
@@ -492,18 +442,6 @@ void CircuitTestWidget::renderSideBar(BlockType blockType, const std::string& te
 			else if (testRunData[index].result == CircuitTestGroupRunner::TestResult::ERROR) errors++;
 		}
 		ImGui::Text("%d succeded\n%d failed\n%d errors", succeeded, failed, errors);
-		// if (ImGui::BeginMenuBar()) {
-		// 	if (ImGui::BeginMenu("New")) {
-		// 		if (ImGui::MenuItem("Texture")) {
-
-		// 		}
-		// 		if (ImGui::MenuItem("Shape")) { // if this is selected
-		// 			getMainWindow().logError("Shape render data not real yet!");
-		// 		}
-		// 		ImGui::EndMenu();
-		// 	}
-		// 	ImGui::EndMenuBar();
-		// }
 
 		for (unsigned int index = 0; index < testGroupCopy.testCases.size(); index++) {
 			CircuitTestGroup::TestCase* testCase = &testGroupCopy.testCases[index];
@@ -590,16 +528,100 @@ void CircuitTestWidget::update() {
 		setGUIValue<std::string>("CircuitName", "NULL");
 	}
 	setGUIValue<FPosition>("MouseGridPos", circuitView->getViewManager().getPointerPosition());
+	setGUIValue<double>("SimulatorRealTPS", circuitView->getSimulator() ? circuitView->getSimulator()->getRealTickrate() : 0);
+	setGUIValue<double>("SimulatorTargetTPS", circuitView->getSimulator() ? circuitView->getSimulator()->getTickrate() : 0);
+	setGUIValue<bool>("SimulatorLimitSpeed", circuitView->getSimulator() ? circuitView->getSimulator()->getUseTickrate() : true);
+	setGUIValue<bool>("SimulatorPaused", circuitView->getSimulator() ? circuitView->getSimulator()->isPause() : true);
 	if (getGUIValue<bool>("CircuitViewIsFocused")) {
 		if (getMainWindow().isPressingKeybind("Keybinds/Camera/Home")) {
-			 circuitView->getViewManager().focus(); }
-	}
-	if (getMainWindow().isPressingKeybind("Keybinds/Simulation/Transverse Simulation")) {
-		if (dynamic_cast<const TreeTraversal*>(circuitView->getToolManager().getCircuitTool()) == nullptr) {
-			lastToolStack = circuitView->getToolManager().getStack();
-			circuitView->getToolManager().selectTool(std::make_shared<TreeTraversal>(getEnvironment()));
+			 circuitView->getViewManager().focus();
 		}
-	} else if (dynamic_cast<const TreeTraversal*>(circuitView->getToolManager().getCircuitTool()) != nullptr) {
-		circuitView->getToolManager().selectStack(lastToolStack);
+		if (getMainWindow().isPressingKeybind("Keybinds/Simulation/Start Stop")) {
+			if (!circuitView->getSimulator()) {
+				getMainWindow().logError("Cant start simulation when there is none");
+				return;
+			}
+			circuitView->getSimulator()->setPause(!circuitView->getSimulator()->isPause());
+		}
+		if (getMainWindow().isPressingKeybind("Keybinds/Simulation/Step Forward")) {
+			if (!circuitView->getSimulator()) {
+				getMainWindow().logError("Cant step simulation when there is none");
+				return;
+			}
+			circuitView->getSimulator()->stepForward();
+		}
+		if (getMainWindow().isPressingKeybind("Keybinds/Simulation/Step Back")) {
+			if (!circuitView->getSimulator()) {
+				getMainWindow().logError("Cant back step simulation when there is none");
+				return;
+			}
+			if (circuitView->getSimulator()->stepBack()) {
+			} else {
+				getMainWindow().logError("Cant back step simulation with no simulation data");
+			}
+		}
+		if (getMainWindow().isPressingKeybind("Keybinds/Simulation/Increase Speed")) {
+			if (!circuitView->getSimulator()) {
+				getMainWindow().logError("Cant change simulation speed when there is none");
+				return;
+			}
+			circuitView->getSimulator()->increaseTickrateSeq();
+		}
+		if (getMainWindow().isPressingKeybind("Keybinds/Simulation/Decrease Speed")) {
+			if (!circuitView->getSimulator()) {
+				getMainWindow().logError("Cant change simulation speed when there is none");
+				return;
+			}
+			circuitView->getSimulator()->decreaseTickrateSeq();
+		}
+		if (getMainWindow().isPressingKeybind("Keybinds/Simulation/Skip Forward")) {
+			if (circuitView->getSimulator()) {
+				if (circuitView->getSimulator()->skipForward()) {
+				} else {
+					getMainWindow().logError("Cant skip forward simulation with no simulation data");
+				}
+			} else {
+				getMainWindow().logError("Cant skip forward simulation when there is none");
+			}
+		}
+		if (getMainWindow().isPressingKeybind("Keybinds/Simulation/Skip Back")) {
+			if (circuitView->getSimulator()) {
+				if (circuitView->getSimulator()->skipBack()) {
+				} else {
+					getMainWindow().logError("Cant skip back simulation with no simulation data");
+				}
+			} else {
+				getMainWindow().logError("Cant skip back simulation when there is none");
+			}
+		}
+		if (getMainWindow().isPressingKeybind("Keybinds/Simulation/Reset Simulation")) {
+			if (!circuitView->getSimulator()) {
+				getMainWindow().logError("Cant reset simulation when there is none");
+				return;
+			}
+			bool showConfirm = *Settings::get<SettingType::BOOL>("Preferences/Simulation/Show Confirmation for Reset Simulation");
+			if (showConfirm) {
+				simulator_id_t simulatorId = circuitView->getSimulator()->getSimulatorId();
+				getMainWindow().createPopup(
+					"Reset Simulation States?",
+					{ { "Reset",
+						[this, simulatorId]() {
+					EvalLogicSimulator* simulator = circuitView->getBackend().getSimulator(simulatorId);
+					if (simulator) simulator->resetStates();
+				} },
+					  { "Cancel", []() {} } }
+				);
+			} else {
+				circuitView->getSimulator()->resetStates();
+			}
+		}
+		if (getMainWindow().isPressingKeybind("Keybinds/Simulation/Transverse Simulation")) {
+			if (dynamic_cast<const TreeTraversal*>(circuitView->getToolManager().getCircuitTool()) == nullptr) {
+				lastToolStack = circuitView->getToolManager().getStack();
+				circuitView->getToolManager().selectTool(std::make_shared<TreeTraversal>(getEnvironment()));
+			}
+		} else if (dynamic_cast<const TreeTraversal*>(circuitView->getToolManager().getCircuitTool()) != nullptr) {
+			circuitView->getToolManager().selectStack(lastToolStack);
+		}
 	}
 }
