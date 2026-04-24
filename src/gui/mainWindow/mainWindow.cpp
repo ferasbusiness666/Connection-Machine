@@ -359,9 +359,9 @@ void MainWindow::render() {
 				if (ImGui::MenuItem("New Circuit", "Ctrl+N")) {
 					App::runOnMain([this]() { environment.getBackend().createCircuit(); });
 				}
-				if (ImGui::MenuItem("New Viewport")) {
-					App::runOnMain([this]() { createWidget<CircuitViewWidget>(); });
-				}
+				// if (ImGui::MenuItem("New Viewport")) {
+				// 	App::runOnMain([this]() { createWidget<CircuitViewWidget>(); });
+				// }
 				if (ImGui::MenuItem("New Window")) {
 					App::runOnMain([this]() { App::makeWindow<MainWindow>(); });
 				}
