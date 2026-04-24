@@ -3,6 +3,8 @@
 #include "app.h"
 #include "backend/circuit/circuitDefs.h"
 #include "backend/circuitTests/circuitTestGroup.h"
+#include "backend/circuitTests/circuitTestGroupRunner.h"
+#include "backend/container/block/block.h"
 #include "backend/container/block/blockDefs.h"
 #include "gui/viewportManager/circuitView/events/customEvents.h"
 #include "imgui/imgui.h"
@@ -10,6 +12,7 @@
 #include "imgui/imgui_internal.h"
 
 #include "gui/viewportManager/circuitView/circuitView.h"
+#include "logging/logging.h"
 #include "util/preprocessors.h"
 #include "gui/mainWindow/mainWindow.h"
 #include "gui/mainWindow/guiColors.h"
@@ -123,6 +126,11 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 			return;
 		}
 		std::lock_guard mux(testGroupCopyMux);
+		std::lock_guard testResultsMutex(this->testResultsMutex);
+		testRunData.clear();
+		for (int index = 0; index < testGroupCopy.testCases.size(); index++) {
+			testRunData.emplace_back(CircuitTestGroupRunner::TestRunData());
+		}
 		testGroupCopy = circuitTestGroup->getMinimalCopy();
 	});
 	dataUpdateEventReceiver.linkFunction("newTestGroup", [this](const DataUpdateEventManager::EventData* event) {
@@ -166,8 +174,18 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 	setupGUIValue<BlockType>("blockType", BlockType::NONE, [this](const BlockType& blockType) {
 		if (getGUIValue<std::string>("testGroupName") != "NONE") {
 			testGroupRunner.emplace(getBackend(), getGUIValue<std::string>("testGroupName"), blockType);
-			std::lock_guard renderingCircuitMux(this->renderingCircuitMux);
-			renderingCircuitId = testGroupRunner.value().getCircuitId();
+			{
+				std::lock_guard testResultsMutex(this->testResultsMutex);
+				std::lock_guard mux(testGroupCopyMux);
+				testRunData.clear();
+				for (int index = 0; index < testGroupCopy.testCases.size(); index++) {
+					testRunData.emplace_back(CircuitTestGroupRunner::TestRunData());
+				}
+			}
+			{
+				std::lock_guard renderingCircuitMux(this->renderingCircuitMux);
+				renderingCircuitId = testGroupRunner.value().getCircuitId();
+			}
 			circuitView->setSimulator(testGroupRunner->getSimulatorId());
 		}
 		setGUIValue("blockType", blockType);
@@ -203,7 +221,12 @@ CircuitTestWidget::CircuitTestWidget(WidgetId widgetId, MainWindow& mainWindow) 
 
 		{
 			std::lock_guard mux(testGroupCopyMux);
+			std::lock_guard testResultsMutex(this->testResultsMutex);
 			testGroupCopy = circuitTestGroup->getMinimalCopy();
+			testRunData.clear();
+			for (int index = 0; index < testGroupCopy.testCases.size(); index++) {
+				testRunData.emplace_back(CircuitTestGroupRunner::TestRunData());
+			}
 		}
 		setGUIValue<std::string>("testGroupName", testGroupName);
 		testGroupRunner.emplace(getBackend(), getGUIValue<std::string>("testGroupName"), getGUIValue<BlockType>("blockType"));
@@ -447,7 +470,11 @@ void CircuitTestWidget::renderSideBar(BlockType blockType, const std::string& te
 	) {
 		if (ImGui::Button("Run All")) {
 			if (testGroupRunner != std::nullopt && getGUIValue_rendering<BlockType>("blockType") != BlockType::NONE) {
-						App::runOnMain([this](){ testGroupRunner->runAllTests(); });
+				App::runOnMain([this](){
+					std::vector<CircuitTestGroupRunner::TestRunData> results = testGroupRunner->runAllTests();
+					std::lock_guard mux(testResultsMutex);
+					testRunData = results;
+				});
 			} else {
 				getMainWindow().logError("Test group and circuit must be loaded before testing!");
 			}
@@ -456,6 +483,15 @@ void CircuitTestWidget::renderSideBar(BlockType blockType, const std::string& te
 		if (ImGui::Button("Edit")) {
 			getMainWindow().log("This should edit the test.");
 		}
+		int failed = 0;
+		int errors = 0;
+		int succeeded = 0;
+		for (unsigned int index = 0; index < testRunData.size(); index++) {
+			if (testRunData[index].result == CircuitTestGroupRunner::TestResult::FAILED) failed++;
+			else if (testRunData[index].result == CircuitTestGroupRunner::TestResult::SUCCEEDED) succeeded++;
+			else if (testRunData[index].result == CircuitTestGroupRunner::TestResult::ERROR) errors++;
+		}
+		ImGui::Text("%d succeded\n%d failed\n%d errors", succeeded, failed, errors);
 		// if (ImGui::BeginMenuBar()) {
 		// 	if (ImGui::BeginMenu("New")) {
 		// 		if (ImGui::MenuItem("Texture")) {
@@ -479,27 +515,49 @@ void CircuitTestWidget::renderSideBar(BlockType blockType, const std::string& te
 				ImGui::PopStyleVar();
 			) {
 				ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f);
+				CircuitTestGroupRunner::TestResult indexTestResult = testRunData[index].result;
+				float hue;
+				if (indexTestResult == CircuitTestGroupRunner::TestResult::FAILED) hue = 0.14f;
+				else if (indexTestResult == CircuitTestGroupRunner::TestResult::SUCCEEDED) hue = 0.28f;
+				else if (indexTestResult == CircuitTestGroupRunner::TestResult::ERROR) hue = 1.0f;
+				if (indexTestResult != CircuitTestGroupRunner::TestResult::NOT_RUN) {
+					ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(hue, 0.6f, 0.6f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(hue, 0.7f, 0.7f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(hue, 0.8f, 0.8f));
+				}
 				if(ImGui::Button("Run")) {
 					if (testGroupRunner != std::nullopt && getGUIValue_rendering<BlockType>("blockType") != BlockType::NONE) {
 						std::string testCaseName = testCase->name;
-						App::runOnMain([this, testCaseName](){ testGroupRunner->runTest(testCaseName); });
+						App::runOnMain([this, testCaseName, index](){
+							CircuitTestGroupRunner::TestRunData result = testGroupRunner->runTest(testCaseName);
+							std::lock_guard mux(testResultsMutex);
+							testRunData[index] = result;
+							logInfo("Test got message {}", "CircuitTestWidget", result.message);
+							if (result.result == CircuitTestGroupRunner::TestResult::SUCCEEDED) {
+								logInfo("The test was allegedly a success", "CircuitTestWidget");
+							}
+						});
 					} else {
 						getMainWindow().logError("Test group and circuit must be loaded before testing!");
 					}
 				}
+				ImGui::SetItemTooltip("%s", testRunData[index].message.c_str());
+				if (indexTestResult != CircuitTestGroupRunner::TestResult::NOT_RUN) {
+					ImGui::PopStyleColor(3);
+				}
 				ImGui::SameLine();
-				if (ImGui::TreeNodeEx(testCase->name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+				if (ImGui::TreeNodeEx(testCase->name.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_DrawLinesNone)) {
 					ImGui::PopStyleVar();
 
 					for (unsigned int commandIndex = 0; commandIndex < testCase->testCommands.size(); commandIndex++) {
 						CircuitTestGroup::TestCommand* testCommand = &testCase->testCommands[commandIndex];
 						if (testCommand->type != CircuitTestGroup::TICK_STEP) {
-							if (ImGui::TreeNodeEx(CircuitTestGroup::getTestCommandTypeString(testCommand->type).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+							if (ImGui::TreeNodeEx(CircuitTestGroup::getTestCommandTypeString(testCommand->type).c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_DrawLinesNone)) {
 								for (unsigned int stateIndex = 0; stateIndex < testCommand->states.size(); stateIndex++) {
 									std::string stateStr = testCommand->states[stateIndex].first;
 									stateStr.append(": ");
 									stateStr.append(std::to_string((unsigned int)testCommand->states[stateIndex].second));
-									ImGui::TreeNodeEx(stateStr.c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+									ImGui::TreeNodeEx(stateStr.c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_DrawLinesNone);
 									ImGui::TableNextColumn();
 								}
 								ImGui::TreePop();
@@ -509,7 +567,7 @@ void CircuitTestWidget::renderSideBar(BlockType blockType, const std::string& te
 							std::string commandStr = CircuitTestGroup::getTestCommandTypeString(testCommand->type);
 							commandStr.append(": ");
 							commandStr.append(std::to_string(testCommand->ticks));
-							ImGui::TreeNodeEx(commandStr.c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+							ImGui::TreeNodeEx(commandStr.c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_DrawLinesNone);
 						}
 					}
 					ImGui::TreePop();
