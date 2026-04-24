@@ -2,6 +2,7 @@
 
 #include "gui/viewportManager/circuitView/tools/other/portAdder.h"
 #include "gui/viewportManager/circuitView/events/customEvents.h"
+#include "gui/viewportManager/circuitView/tools/other/portSelector.h"
 #include "imgui/imgui_internal.h"
 #include "imgui/imgui_stdlib.h"
 
@@ -99,8 +100,14 @@ BlockCreationWidget::BlockCreationWidget(WidgetId widgetId, MainWindow& mainWind
 			const BlockData* blockData = getBackend().getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
 			assert(blockData);
 			blockType = blockData->getBlockType();
-			std::lock_guard mux(blockDataCopyMux);
-			blockDataCopy = blockData->getBlockDataCopy();
+			{
+				std::lock_guard mux(blockDataCopyMux);
+				blockDataCopy = blockData->getBlockDataCopy();
+			}
+			{
+				std::lock_guard mux(circuitBlockDataCopyMux);
+				circuitBlockDataCopy = circuitBlockData->getCircuitBlockDataCopy();
+			}
 		}
 		{
 			std::lock_guard mux(circuitsMux);
@@ -129,20 +136,40 @@ BlockCreationWidget::BlockCreationWidget(WidgetId widgetId, MainWindow& mainWind
 			blockDataCopy = blockData->getBlockDataCopy();
 		}
 	});
+	dataUpdateEventReceiver.linkFunction("circuitBlockDataUpdate", [this](const DataUpdateEventManager::EventData* event) {
+		const DataUpdateEventManager::EventDataWithValue<std::pair<BlockType, circuit_id_t>>* data = event->cast<std::pair<BlockType, circuit_id_t>>();
+		assert(data);
+		if (blockType != data->get().first) return;
+		const CircuitBlockData* circuitBlockData = getBackend().getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(data->get().second);
+		std::lock_guard mux(circuitBlockDataCopyMux);
+		circuitBlockDataCopy = circuitBlockData->getCircuitBlockDataCopy();
+	});
 	setupGUIValue<std::optional<connection_end_id_t>>("currentlyEditingPort", std::nullopt, nullptr);
 	setupGUIValue<circuit_id_t>("circuitId", circuitId, [this](const circuit_id_t& circuitId) {
 		const CircuitBlockData* circuitBlockData = getBackend().getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId);
 		if (circuitBlockData == nullptr) {
-			std::lock_guard mux(blockDataCopyMux);
-			blockDataCopy = std::nullopt;
+			{
+				std::lock_guard mux(blockDataCopyMux);
+				blockDataCopy = std::nullopt;
+			}
+			{
+				std::lock_guard mux(circuitBlockDataCopyMux);
+				circuitBlockDataCopy = std::nullopt;
+			}
 			circuitView->setCircuit(0);
 			return;
 		}
 		const BlockData* blockData = getBackend().getBlockDataManager().getBlockData(circuitBlockData->getBlockType());
 		assert(blockData);
 		blockType = blockData->getBlockType();
-		std::lock_guard mux(blockDataCopyMux);
-		blockDataCopy = blockData->getBlockDataCopy();
+		{
+			std::lock_guard mux(blockDataCopyMux);
+			blockDataCopy = blockData->getBlockDataCopy();
+		}
+		{
+			std::lock_guard mux(circuitBlockDataCopyMux);
+			circuitBlockDataCopy = circuitBlockData->getCircuitBlockDataCopy();
+		}
 		Circuit* circuit = getBackend().getCircuitManager().getCircuit(renderingCircuitId);
 		circuit->clear();
 		circuit->tryInsertBlock(Position(), Orientation(), blockData->getBlockType());
@@ -228,7 +255,8 @@ void BlockCreationWidget::render() {
 				ImGui::EndCombo();
 			}
 		}
-		std::lock_guard mux(blockDataCopyMux);
+		std::lock_guard mux1(blockDataCopyMux);
+		std::lock_guard mux2(circuitBlockDataCopyMux);
 		ImGui::PushStyleColor(ImGuiCol_ChildBg, GUIColors::BACKGROUND);
 		ifGui (ImGui::BeginChild("##mainView", ImVec2(ImGui::GetContentRegionAvail().x - 200, ImGui::GetContentRegionAvail().y), ImGuiChildFlags_ResizeX, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse), ImGui::PopStyleColor()) {
 			renderViewport(circuitId);
@@ -660,6 +688,9 @@ void BlockCreationWidget::renderSideBar(circuit_id_t circuitId) {
 					});
 				}
 			}
+			{
+
+			}
 		}
 	}
 	ImGui::EndChild();
@@ -838,6 +869,39 @@ void BlockCreationWidget::renderSideBar(circuit_id_t circuitId) {
 				ImGui::PopStyleVar();
 			) {
 				setGUIValue_rendering<bool>("doingPortMapping", true);
+				if (blockDataCopy.has_value()) {
+					for (const auto& [endId, connectionData] : blockDataCopy->connections) {
+						const Position* portPos = circuitBlockDataCopy->connectionIdPosition.get(endId);
+						if (ImGui::TreeNodeEx("BlockTexture", ImGuiTreeNodeFlags_DefaultOpen)) {
+							ImGui::TreePop();
+							ImGui::Indent();
+							ImGui::Text("Port on block at %s.", connectionData.positionOnBlock.toString().c_str());
+							ImGui::SameLine();
+							if (portPos == nullptr) {
+								if (ImGui::Button("Add mapping")) {
+									App::runOnMain([this, circuitId, endId]() {
+										auto tool = std::dynamic_pointer_cast<PortSelector>(
+											circuitView->getToolManager().selectTool(std::make_shared<PortSelector>(getEnvironment()))
+										);
+										if (tool) {
+											tool->setPort(endId, [this, endId, circuitId](Position position) {
+												getBackend().getCircuitManager().getCircuitBlockDataManager()
+													.getCircuitBlockData(circuitId)->setConnectionIdPosition(endId, position);
+											});
+										}
+
+									});
+								}
+							} else {
+								ImGui::Button("Remove mapping");
+								App::runOnMain([this, circuitId, endId]() {
+									getBackend().getCircuitManager().getCircuitBlockDataManager().getCircuitBlockData(circuitId)->removeConnectionIdPosition(endId);
+								});
+							}
+							ImGui::Unindent();
+						}
+					}
+				}
 			}
 			ImGui::EndChild();
 			ImGui::EndTabItem();

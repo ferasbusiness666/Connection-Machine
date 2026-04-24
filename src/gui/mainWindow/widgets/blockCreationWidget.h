@@ -4,6 +4,7 @@
 #include "gui/mainWindow/widget.h"
 #include "backend/blockData/blockData.h"
 #include "backend/circuit/circuitDefs.h"
+#include "backend/circuit/circuitBlockData.h"
 #include "backend/dataUpdateEventManager.h"
 
 class CircuitView;
@@ -31,6 +32,8 @@ private:
 	std::map<circuit_id_t, std::string> circuits;
 	std::mutex blockDataCopyMux;
 	std::optional<BlockData::BlockDataCopy> blockDataCopy;
+	std::mutex circuitBlockDataCopyMux;
+	std::optional<CircuitBlockData::CircuitBlockDataCopy> circuitBlockDataCopy;
 };
 
 #endif /* blockCreationWidget_h */
