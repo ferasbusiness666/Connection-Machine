@@ -32,11 +32,6 @@ MainWindow::MainWindow() : SdlWindow("Connection Machine"), environment(true), t
 	applyUiScale(initialUiScale ? static_cast<float>(*initialUiScale) : 1.0f);
 	Settings::registerListener<SettingType::DECIMAL>("Appearance/UI Scale", [this](const double& value) { applyUiScale(static_cast<float>(value)); });
 
-	Settings::registerListener<SettingType::FILE_PATH>("Appearance/Font", [this](const std::string& fontFilePath) {
-		// Rml::LoadFontFace(fontFilePath);
-		logInfo("loaded, {}", "", fontFilePath);
-	});
-
 	createWidget<CircuitViewWidget>().newCircuit();
 	createWidget<ToolSelectorWidget>();
 	createWidget<BlockSelectorWidget>();

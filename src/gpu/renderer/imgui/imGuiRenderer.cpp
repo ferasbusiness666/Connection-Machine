@@ -148,14 +148,19 @@ ImGuiRenderer::ImGuiRenderer(SDL_Window& window, VkRenderPass renderPass, uint32
 	const std::string* fontPath = Settings::get<SettingType::FILE_PATH>("Appearance/Font");
 	std::pair<char*, unsigned long long> fontData;
 	if (fontPath) {
-		fontData = readFileAsBytes_noVec(DirectoryManager::getResourceDirectory() / *fontPath);
+		std::string realFontPath = DirectoryManager::extendPath(*fontPath).generic_string();
+		fontData = readFileAsBytes_noVec(realFontPath);
 		if (fontData.second == 0) {
-			logError("Failed to read font from \"{}\". Falling back to \"{}\"", "ImGuiRenderer::ImGuiRenderer", *fontPath, (DirectoryManager::getResourceDirectory() / "gui/fonts/Consolas.ttf").string());
-			fontData = readFileAsBytes_noVec(DirectoryManager::getResourceDirectory() / "gui/fonts/Consolas.ttf");
+			std::filesystem::path fallBackPath = (DirectoryManager::getResourceDirectory() / "gui/fonts/Consolas.ttf");
+			logError("Failed to read font from \"{}\". Falling back to \"{}\"", "ImGuiRenderer::ImGuiRenderer", realFontPath, fallBackPath.generic_string());
+			fontData = readFileAsBytes_noVec(fallBackPath);
+		} else {
+			logInfo("Loaded, {}", "ImGuiRenderer::ImGuiRenderer", realFontPath);
 		}
 	} else {
-		logError("Failed to load file path from setting.", "ImGuiRenderer::ImGuiRenderer");
-		fontData = readFileAsBytes_noVec(DirectoryManager::getResourceDirectory() / "gui/fonts/Consolas.ttf");
+		std::filesystem::path fallBackPath = (DirectoryManager::getResourceDirectory() / "gui/fonts/Consolas.ttf");
+		logError("Failed to load file path from setting. Falling back to \"{}\"", "ImGuiRenderer::ImGuiRenderer", fallBackPath.generic_string());
+		fontData = readFileAsBytes_noVec(fallBackPath);
 	}
 
 	if (fontData.second == 0) {
@@ -165,6 +170,28 @@ ImGuiRenderer::ImGuiRenderer(SDL_Window& window, VkRenderPass renderPass, uint32
 		io.Fonts->AddFontFromMemoryTTF(fontData.first, fontData.second, 17.f, &font_cfg);
 		ImGui::MergeIconsWithLatestFont(16.f, false);
 	}
+
+	Settings::registerListener<SettingType::FILE_PATH>("Appearance/Font", [this](const std::string& fontFilePath) {
+		std::pair<char*, unsigned long long> fontData;
+		std::string realFontPath = DirectoryManager::extendPath(fontFilePath).generic_string();
+		fontData = readFileAsBytes_noVec(realFontPath);
+		if (fontData.second == 0) {
+			std::filesystem::path fallBackPath = (DirectoryManager::getResourceDirectory() / "gui/fonts/Consolas.ttf");
+			logError("Failed to read font from \"{}\". Falling back to \"{}\"", "ImGuiRenderer::ImGuiRenderer", realFontPath, fallBackPath.generic_string());
+			fontData = readFileAsBytes_noVec(fallBackPath);
+		} else {
+			logInfo("Loaded, {}", "ImGuiRenderer::ImGuiRenderer", realFontPath);
+		}
+
+		if (fontData.second == 0) {
+			logError("No font could be loaded!", "ImGuiRenderer::ImGuiRenderer");
+		} else {
+			ImFontConfig font_cfg;
+			ImGuiIO& io = ImGui::GetIO();
+			io.Fonts->AddFontFromMemoryTTF(fontData.first, fontData.second, 17.f, &font_cfg);
+			ImGui::MergeIconsWithLatestFont(16.f, false);
+		}
+	});
 }
 
 ImGuiRenderer::~ImGuiRenderer() {

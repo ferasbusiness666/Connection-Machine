@@ -1,12 +1,16 @@
 #include "settingWidget.h"
 
-#include "app.h"
-#include "imgui/imgui.h"
-#include "imgui/imgui_stdlib.h"
+#include "SDL3/SDL_dialog.h"
+
+#include "computerAPI/directoryManager.h"
 #include "util/preprocessors.h"
+#include "util/algorithm.h"
 #include "../mainWindow.h"
 #include "util/version.h"
-#include "util/algorithm.h"
+#include "app.h"
+
+#include "imgui/imgui_stdlib.h"
+#include "imgui/imgui.h"
 
 SettingWidget::SettingWidget(WidgetId widgetId, MainWindow& mainWindow) : Widget(widgetId, mainWindow) { }
 
@@ -24,8 +28,59 @@ struct SettingTreeNode {
 		if (leaf) {
 			ImGui::Indent(10);
 			ImGui::SameLine();
+			SettingType settingType = Settings::getType(path);
+			if (!Settings::isDefalut(path)) {
+				if (ImGui::Button("Reset")) {
+					switch (settingType) {
+					case SettingType::VOID: break;
+					case SettingType::STRING: {
+						App::runOnMain([this, path]() {
+							const SettingTypeToType<SettingType::STRING>::type* defaultValue = Settings::getDefault<SettingType::STRING>(path);
+							if (defaultValue) Settings::set<SettingType::STRING>(path, *defaultValue);
+						});
+					} break;
+					case SettingType::INT: {
+						App::runOnMain([this, path]() {
+							const SettingTypeToType<SettingType::INT>::type* defaultValue = Settings::getDefault<SettingType::INT>(path);
+							if (defaultValue) Settings::set<SettingType::INT>(path, *defaultValue);
+						});
+					} break;
+					case SettingType::UINT: {
+						App::runOnMain([this, path]() {
+							const SettingTypeToType<SettingType::UINT>::type* defaultValue = Settings::getDefault<SettingType::UINT>(path);
+							if (defaultValue) Settings::set<SettingType::UINT>(path, *defaultValue);
+						});
+					} break;
+					case SettingType::DECIMAL: {
+						App::runOnMain([this, path]() {
+							const SettingTypeToType<SettingType::DECIMAL>::type* defaultValue = Settings::getDefault<SettingType::DECIMAL>(path);
+							if (defaultValue) Settings::set<SettingType::DECIMAL>(path, *defaultValue);
+						});
+					} break;
+					case SettingType::BOOL: {
+						App::runOnMain([this, path]() {
+							const SettingTypeToType<SettingType::BOOL>::type* defaultValue = Settings::getDefault<SettingType::BOOL>(path);
+							if (defaultValue) Settings::set<SettingType::BOOL>(path, *defaultValue);
+						});
+					} break;
+					case SettingType::KEYBIND: {
+						App::runOnMain([this, path]() {
+							const SettingTypeToType<SettingType::KEYBIND>::type* defaultValue = Settings::getDefault<SettingType::KEYBIND>(path);
+							if (defaultValue) Settings::set<SettingType::KEYBIND>(path, *defaultValue);
+						});
+					} break;
+					case SettingType::FILE_PATH: {
+						App::runOnMain([this, path]() {
+							const SettingTypeToType<SettingType::FILE_PATH>::type* defaultValue = Settings::getDefault<SettingType::FILE_PATH>(path);
+							if (defaultValue) Settings::set<SettingType::FILE_PATH>(path, *defaultValue);
+						});
+					} break;
+					}
+				}
+				ImGui::SameLine();
+			}
 			ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2(0, -2.5));
-			switch (Settings::getType(path)) {
+			switch (settingType) {
 				case SettingType::VOID: {
 					ImGui::Text("VOID SETTING TYPE");
 				} break;
@@ -82,12 +137,27 @@ struct SettingTreeNode {
 				} break;
 				case SettingType::FILE_PATH: {
 					std::string filePath = valueOr(Settings::get<SettingType::FILE_PATH>(path), std::string(""));
+					if (ImGui::Button("Select File")) {
+						App::runOnMain([this, path, filePath]() {
+							SDL_ShowOpenFileDialog([](void* userData, const char* const* filePaths, int filter) {
+								App::runOnMain([&]() {
+									if (!filePaths || !filePaths[0]) return;
+									std::pair<SettingWidget*, std::string>* data = (std::pair<SettingWidget*, std::string>*)userData;
+									std::string filePath = filePaths[0];
+									if (filePath.empty()) return;
+									Settings::set<SettingType::FILE_PATH>(data->second, DirectoryManager::shortenPath(filePath));
+									delete data;
+								});
+							}, new std::pair(this, path), nullptr, nullptr, 0, filePath.c_str(), true);
+						});
+					}
+					ImGui::SameLine();
 					if (ImGui::InputText("##ID", &filePath)) {
 						App::runOnMain([this, filePath, path]() {
 							Settings::set<SettingType::FILE_PATH>(path, filePath);
 						});
 					}
-				}break;
+				} break;
 			}
 			ImGui::Unindent(10);
 		} else {

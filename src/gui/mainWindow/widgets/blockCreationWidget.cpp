@@ -772,6 +772,7 @@ void BlockCreationWidget::renderSideBar(circuit_id_t circuitId) {
 													if (std::holds_alternative<BlockData::BlockTextureData>(*renderData)) {
 														blockData->setBlockTexturePath(data->second, filePath);
 													}
+													delete data;
 												});
 											}, new std::pair(this, index), nullptr, nullptr, 0, nullptr, true);
 										});

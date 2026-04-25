@@ -14,7 +14,9 @@
 
 void registerSettings() {
 	logInfo("Registering settings", "Main");
-	Settings::registerSetting<SettingType::FILE_PATH>("Appearance/Font", (DirectoryManager::getResourceDirectory() / "gui/fonts/Consolas.ttf").generic_string());
+	Settings::registerSetting<SettingType::FILE_PATH>("Appearance/Font",
+		DirectoryManager::shortenPath(DirectoryManager::getResourceDirectory() / "gui/fonts/Consolas.ttf")
+	);
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/Save", Keybind(ImGuiKey::ImGuiKey_S | ImGuiKey::ImGuiMod_Ctrl));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/Save As", Keybind(ImGuiKey::ImGuiKey_S | ImGuiKey::ImGuiMod_Ctrl | ImGuiKey::ImGuiMod_Shift));
 	Settings::registerSetting<SettingType::KEYBIND>("Keybinds/File/Open", Keybind(ImGuiKey::ImGuiKey_O | ImGuiKey::ImGuiMod_Ctrl));

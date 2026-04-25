@@ -32,6 +32,10 @@ namespace Settings {
 		return getSettingsMap().get<settingType>(key);
 	}
 	template<SettingType settingType>
+	inline const SettingTypeToType<settingType>::type* getDefault(const std::string& key) {
+		return getSettingsMap().getDefault<settingType>(key);
+	}
+	template<SettingType settingType>
 	inline const SettingTypeToType<settingType>::type& get(const std::string& key, const typename SettingTypeToType<settingType>::type& fallbackValue) {
 		return valueOr(getSettingsMap().get<settingType>(key), fallbackValue);
 	}
@@ -45,6 +49,9 @@ namespace Settings {
 	}
 	inline SettingType getType(const std::string& key) {
 		return getSettingsMap().getType(key);
+	}
+	inline bool isDefalut(const std::string& key) {
+		return getSettingsMap().isDefault(key);
 	}
 	inline bool hasKey(const std::string& key) {
 		return getSettingsMap().hasKey(key);
