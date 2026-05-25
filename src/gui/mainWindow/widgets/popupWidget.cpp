@@ -9,9 +9,13 @@ PopupWidget::PopupWidget(WidgetId widgetId, MainWindow& mainWindow, std::string 
 	Widget(widgetId, mainWindow), message(message), buttons(buttons) { }
 
 void PopupWidget::render() {
-	if (!open) {
+	if (open > 1) {
+		open--;
+		return;
+	}
+	if (open == 1) {
 		ImGui::OpenPopup(("###" + getWidgetIdStr()).c_str());
-		open = true;
+		open = 0;
 	}
 	getMainWindow().pushWindowStyling();
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
