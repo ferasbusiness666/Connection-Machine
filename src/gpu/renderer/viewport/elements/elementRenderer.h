@@ -72,13 +72,12 @@ struct ArrowRenderData {
 struct TextRenderData {
 	std::string text;
 	FPosition pos;
-	// scale > 0 scales with the view. scale < 0 is fixed size. scale = 0 is nothing.
 	float scale;
 };
 
 class ElementRenderer {
 public:
-	void init(VulkanDevice& device, VkRenderPass& renderPass);
+	void init(VulkanDevice& device, vk::RenderPass renderPass);
 	void cleanup();
 
 	void renderBlockPreviews(Frame& frame, const glm::mat4& viewMatrix, const std::vector<BlockPreviewRenderData>& blockPreviews);
@@ -96,7 +95,7 @@ private:
 	Pipeline arrowCirclePipeline;
 	Pipeline arrowPipeline;
 
-	VulkanDevice* device;
+	VulkanDevice* device = nullptr;
 };
 
 #endif

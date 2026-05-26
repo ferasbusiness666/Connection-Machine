@@ -18,15 +18,14 @@ struct ViewportViewData {
 	glm::mat4 viewportViewMat;
 	std::pair<FPosition, FPosition> viewBounds;
 	float viewScale;
-	VkExtent2D viewportSize;
+	vk::Extent2D viewportSize;
 };
 
 class ViewportRenderer {
 public:
 	struct Sampler {
-		Sampler(VkSampler sampler);
-		~Sampler();
-		VkSampler sampler;
+		Sampler(vk::UniqueSampler s) : sampler(std::move(s)) { }
+		vk::UniqueSampler sampler;
 	};
 	ViewportRenderer(VulkanDevice& device, ImGuiRenderer& imGuiRenderer);
 	~ViewportRenderer();
@@ -47,19 +46,13 @@ public:
 	std::vector<ConnectionPreviewRenderData> getConnectionPreviews();
 	std::vector<ArrowRenderData> getArrows();
 
-	// main flow
 	void setSimulator(const EvalLogicSimulator* simulator, const Address& address);
 
 	void updateViewFrame(glm::vec2 size);
 	void updateView(FPosition topLeft, FPosition bottomRight);
 
-	// std::pair<VkDescriptorSet, std::shared_ptr<void>> getLatestImage();
+	std::tuple<vk::DescriptorSet, vk::Semaphore, std::vector<std::shared_ptr<void>>> startImageRender();
 
-	// float getFps() const { return fps.load(); }
-
-	std::tuple<VkDescriptorSet, VkSemaphore, std::vector<std::shared_ptr<void>>> startImageRender();
-
-	// elements
 	ElementId addSelectionObjectElement(const SelectionObjectElement& selection);
 	ElementId addSelectionElement(const SelectionElement& selection);
 	void removeSelectionElement(ElementId selection);
@@ -86,19 +79,16 @@ private:
 	void createRenderPass();
 	void render(Frame& frame);
 	void renderToCommandBuffer(Frame& frame, uint32_t imageIndex);
-	// void renderLoop();
 
 	const EvalLogicSimulator* simulator = nullptr;
 	std::mutex simulatorMux;
 	Address address;
 	std::mutex addressMux;
 
-	// Vulkan
 	VulkanChunker chunker;
 	VulkanDevice& device;
 	ImGuiRenderer& imGuiRenderer;
 
-	// Elements
 	ElementId currentElementId = 0;
 	std::unordered_multimap<ElementId, BlockPreviewRenderData> blockPreviews;
 	std::unordered_map<ElementId, std::vector<BoxSelectionRenderData>> boxSelections;
@@ -107,13 +97,11 @@ private:
 	std::unordered_map<ElementId, TextRenderData> renderText;
 	std::mutex elementsMux;
 
-	// View data
 	ViewportViewData newViewData{};
 	ViewportViewData viewData{};
 	std::mutex viewMux;
 
-	// renderers
-	VkRenderPass renderPass;
+	vk::UniqueRenderPass renderPass;
 	GridRenderer gridRenderer;
 	ChunkRenderer chunkRenderer;
 	ElementRenderer elementRenderer;
@@ -126,7 +114,7 @@ private:
 	std::atomic<int> currentBorrowedImage = -1;
 	std::optional<AllocatedImage> msaaImage;
 	ImageSwapchain imageSwapchain;
-	std::vector<std::shared_ptr<ImGuiRenderer::ImGuiDescriptorSet>> imguiTextures;  // ImGui descriptor sets
+	std::vector<std::shared_ptr<ImGuiRenderer::ImGuiDescriptorSet>> imguiTextures;
 	std::atomic<bool> imageReady = false;
 	std::atomic<unsigned int> imagesReady = 0;
 	std::atomic<bool> updateViewData = true;

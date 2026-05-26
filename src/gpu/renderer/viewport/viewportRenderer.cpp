@@ -12,37 +12,29 @@
 #include <tracy/Tracy.hpp>
 #endif
 
-ViewportRenderer::Sampler::Sampler(VkSampler sampler) : sampler(sampler) { }
-ViewportRenderer::Sampler::~Sampler() { vkDestroySampler(MainRenderer::get().getVulkanInstance().getDevice().getDevice(), sampler, nullptr); }
-
 ViewportRenderer::ViewportRenderer(VulkanDevice& device, ImGuiRenderer& imGuiRenderer) : imGuiRenderer(imGuiRenderer), chunker(device), device(device) {
 	createRenderPass();
-	gridRenderer.init(device, renderPass);
-	chunkRenderer.init(device, renderPass);
-	elementRenderer.init(device, renderPass);
+	gridRenderer.init(device, renderPass.get());
+	chunkRenderer.init(device, renderPass.get());
+	elementRenderer.init(device, renderPass.get());
 
-	VkSamplerCreateInfo samplerInfo{};
-	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-
-	samplerInfo.magFilter = VK_FILTER_LINEAR;
-	samplerInfo.minFilter = VK_FILTER_LINEAR;
-
-	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-
-	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	vk::SamplerCreateInfo samplerInfo{};
+	samplerInfo.magFilter = vk::Filter::eLinear;
+	samplerInfo.minFilter = vk::Filter::eLinear;
+	samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
+	samplerInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
+	samplerInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
+	samplerInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
 	samplerInfo.mipLodBias = 0.0f;
 	samplerInfo.minLod = 0.0f;
 	samplerInfo.maxLod = 0.0f;
-
 	samplerInfo.anisotropyEnable = VK_FALSE;
 	samplerInfo.compareEnable = VK_FALSE;
-	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	samplerInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
 	samplerInfo.unnormalizedCoordinates = VK_FALSE;
-	VkSampler vkSampler;
-	vkCreateSampler(device.getDevice(), &samplerInfo, nullptr, &vkSampler);
-	sampler = std::make_shared<Sampler>(vkSampler);
+	auto samplerResult = device.getDevice().createSamplerUnique(samplerInfo);
+	if (samplerResult.result != vk::Result::eSuccess) throwFatalError("failed to create sampler");
+	sampler = std::make_shared<Sampler>(std::move(samplerResult.value));
 
 	frames.init(device);
 
@@ -58,7 +50,7 @@ ViewportRenderer::~ViewportRenderer() {
 
 	imageSwapchain.cleanup();
 
-	vkDestroyRenderPass(device.getDevice(), renderPass, nullptr);
+	renderPass.reset();
 
 	elementRenderer.cleanup();
 	chunkRenderer.cleanup();
@@ -70,8 +62,6 @@ ViewportViewData ViewportRenderer::getViewData() {
 	std::lock_guard<std::mutex> lock(viewMux);
 	return viewData;
 }
-
-// ====================================== INTERFACE ==========================================
 
 void ViewportRenderer::setSimulator(const EvalLogicSimulator* simulator, const Address& address) {
 	std::lock_guard<std::mutex> lock1(simulatorMux);
@@ -362,14 +352,11 @@ void ViewportRenderer::render(Frame& frame) {
 	ZoneScoped;
 #endif
 
-	// Get simulator and address with proper locking
 	const EvalLogicSimulator* sim = getSimulator();
 	Address addr = getAddress();
 
-	// Get view data with proper locking
 	ViewportViewData localViewData = getViewData();
 
-	// Only render if we have valid data
 	gridRenderer.render(frame, localViewData.viewportViewMat, localViewData.viewScale, sim);
 
 	if (sim != nullptr) {
@@ -389,67 +376,60 @@ void ViewportRenderer::render(Frame& frame) {
 }
 
 void ViewportRenderer::createRenderPass() {
-	VkSampleCountFlagBits msaaSamples = device.getMaxUsableSampleCount();
+	vk::SampleCountFlagBits msaaSamples = device.getMaxUsableSampleCount();
 
-	// MSAA color attachment (we render to this)
-	VkAttachmentDescription colorAttachment{};
-	colorAttachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+	vk::AttachmentDescription colorAttachment{};
+	colorAttachment.format = vk::Format::eR8G8B8A8Unorm;
 	colorAttachment.samples = msaaSamples;
-	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; // Don't need to store MSAA
-	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
+	colorAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
+	colorAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+	colorAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+	colorAttachment.initialLayout = vk::ImageLayout::eUndefined;
+	colorAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
 
-	// Resolve attachment (non-MSAA, for ImGui to read)
-	VkAttachmentDescription resolveAttachment{};
-	resolveAttachment.format = VK_FORMAT_R8G8B8A8_UNORM;
-	resolveAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	resolveAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;	  // Clear on each frame
-	resolveAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // We need this for ImGui
-	resolveAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	resolveAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	resolveAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;			  // Don't care about previous contents
-	resolveAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; // Ready for ImGui sampling
+	vk::AttachmentDescription resolveAttachment{};
+	resolveAttachment.format = vk::Format::eR8G8B8A8Unorm;
+	resolveAttachment.samples = vk::SampleCountFlagBits::e1;
+	resolveAttachment.loadOp = vk::AttachmentLoadOp::eClear;
+	resolveAttachment.storeOp = vk::AttachmentStoreOp::eStore;
+	resolveAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+	resolveAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+	resolveAttachment.initialLayout = vk::ImageLayout::eUndefined;
+	resolveAttachment.finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
-	// Attachment references
-	VkAttachmentReference colorAttachmentRef{};
+	vk::AttachmentReference colorAttachmentRef{};
 	colorAttachmentRef.attachment = 0;
-	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
 
-	VkAttachmentReference resolveAttachmentRef{};
+	vk::AttachmentReference resolveAttachmentRef{};
 	resolveAttachmentRef.attachment = 1;
-	resolveAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	resolveAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
 
-	// Subpass
-	VkSubpassDescription subpass{};
-	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	vk::SubpassDescription subpass{};
+	subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
 	subpass.colorAttachmentCount = 1;
 	subpass.pColorAttachments = &colorAttachmentRef;
 	subpass.pResolveAttachments = &resolveAttachmentRef;
 
-	// Subpass dependency for layout transitions
-	std::array<VkSubpassDependency, 2> dependencies{};
+	std::array<vk::SubpassDependency, 2> dependencies{};
 
 	dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
 	dependencies[0].dstSubpass = 0;
-	dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependencies[0].srcAccessMask = 0;
-	dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	dependencies[0].srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	dependencies[0].srcAccessMask = {};
+	dependencies[0].dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	dependencies[0].dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
 
 	dependencies[1].srcSubpass = 0;
 	dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
-	dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	dependencies[1].srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	dependencies[1].dstStageMask = vk::PipelineStageFlagBits::eFragmentShader;
+	dependencies[1].srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+	dependencies[1].dstAccessMask = vk::AccessFlagBits::eShaderRead;
 
-	// Create render pass with both attachments
-	std::array<VkAttachmentDescription, 2> attachments = { colorAttachment, resolveAttachment };
-	VkRenderPassCreateInfo renderPassInfo{};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	std::array<vk::AttachmentDescription, 2> attachments = { colorAttachment, resolveAttachment };
+	vk::RenderPassCreateInfo renderPassInfo{};
 	renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
 	renderPassInfo.pAttachments = attachments.data();
 	renderPassInfo.subpassCount = 1;
@@ -457,35 +437,18 @@ void ViewportRenderer::createRenderPass() {
 	renderPassInfo.dependencyCount = dependencies.size();
 	renderPassInfo.pDependencies = dependencies.data();
 
-	if (vkCreateRenderPass(device.getDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create MSAA render pass!");
+	auto rpResult = device.getDevice().createRenderPassUnique(renderPassInfo);
+	if (rpResult.result != vk::Result::eSuccess) {
+		throwFatalError("failed to create MSAA render pass!");
 	}
+	renderPass = std::move(rpResult.value);
 }
 
 #ifdef TRACY_PROFILER
 const char* const viewportLoop_Tracy = "ViewportLoop";
 #endif
 
-// std::pair<VkDescriptorSet, std::shared_ptr<void>> ViewportRenderer::getLatestImage() {
-// 	std::lock_guard<std::mutex> lock(imageMux);
-// 	if (!imageReady || imguiTextures.size() < FRAMES_IN_FLIGHT || imagesReady.load() < FRAMES_IN_FLIGHT) {
-// 		return { VK_NULL_HANDLE, nullptr };
-// 	}
-// 	{
-// 		unsigned int lastFrameIndex = (frames.getCurrentFrameIndex() - 1) % FRAMES_IN_FLIGHT;
-// 		VkDescriptorSet descriptorSet = imguiTextures[lastFrameIndex];
-// 		if (descriptorSet == VK_NULL_HANDLE) return { VK_NULL_HANDLE, nullptr };
-// 		currentBorrowedImage.store(lastFrameIndex);
-// 		return { descriptorSet, std::make_shared<BorrowedImageDetector>(currentBorrowedImage) } ;
-// 	}
-// }
-
-std::tuple<VkDescriptorSet, VkSemaphore, std::vector<std::shared_ptr<void>>> ViewportRenderer::startImageRender() {
-	// while(running.load()) {
-	// 	if (currentBorrowedImage.load() != -1) {
-	// 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	// 		continue;
-	// 	}
+std::tuple<vk::DescriptorSet, vk::Semaphore, std::vector<std::shared_ptr<void>>> ViewportRenderer::startImageRender() {
 	uint32_t currentFrameIndex = frames.getCurrentFrameIndex();
 
 	if (updateViewData.load()) {
@@ -518,53 +481,29 @@ std::tuple<VkDescriptorSet, VkSemaphore, std::vector<std::shared_ptr<void>>> Vie
 		createImages();
 	}
 
-	// Wait for this frame to complete
 	frames.waitForCurrentFrameCompletion();
-	// #ifdef TRACY_PROFILER
-	// FrameMarkEnd(viewportLoop_Tracy);
-	// #endif
-
-	// std::chrono::time_point<std::chrono::high_resolution_clock> now = std::chrono::high_resolution_clock::now();
-	// std::chrono::nanoseconds deltaTime = now - lastUpdateRender;
-	// // force 60 fps
-	// if (deltaTime.count() < 16 * 1000000) {
-	// 	std::this_thread::sleep_for(std::chrono::nanoseconds(16 * 1000000 - deltaTime.count()));
-	// }
-	// // get real time between frames
-	// now = std::chrono::high_resolution_clock::now();
-	// deltaTime = now - lastUpdateRender;
-	// lastUpdateRender = now;
-	// float alpha = 0.2f;
-	// fps.store((alpha * 1000000000. / (float)deltaTime.count()) + (1.0 - alpha) * fps);
 
 	std::shared_ptr<Frame> frame = frames.getCurrentFrame();
 
-	// Mark frame as started
-	// #ifdef TRACY_PROFILER
-	// FrameMarkStart(viewportLoop_Tracy);
-	// #endif
 	frames.startCurrentFrame();
 
-	// Record command buffer
 	{
 		std::lock_guard guard(MainRenderer::get().getVulkanInstance().getDevice().getGraphicsQueueLock());
-		vkResetCommandBuffer(frame->mainCommandBuffer, 0);
+		frame->mainCommandBuffer.reset({});
 	}
 	renderToCommandBuffer(*frame, currentFrameIndex);
 
 	std::shared_ptr<ImageSwapchain::Semaphore> semaphore = imageSwapchain.getImageSemaphores()[currentFrameIndex];
 
-	// Submit to graphics queue
-	VkSubmitInfo submitInfo{};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	vk::SubmitInfo submitInfo{};
+	vk::Semaphore signalSem = semaphore->semaphore.get();
 	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = &semaphore->semaphore;
+	submitInfo.pSignalSemaphores = &signalSem;
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &frame->mainCommandBuffer;
 
-	if (device.submitGraphicsQueue(&submitInfo, frame->renderFence) != VK_SUCCESS) {
-		// Handle error - submission failed
-		return { VK_NULL_HANDLE, VK_NULL_HANDLE, {} };
+	if (device.submitGraphicsQueue(submitInfo, frame->renderFence.get()) != vk::Result::eSuccess) {
+		return { vk::DescriptorSet{}, vk::Semaphore{}, {} };
 	}
 
 	{
@@ -576,64 +515,52 @@ std::tuple<VkDescriptorSet, VkSemaphore, std::vector<std::shared_ptr<void>>> Vie
 		frames.incrementFrame();
 		imagesReady.fetch_add(1);
 	}
-	// }
-	// device.waitIdle();
-	return { imguiTextures[currentFrameIndex]->descriptorSet, semaphore->semaphore, { frame, imguiTextures[currentFrameIndex], semaphore } };
+	return { imguiTextures[currentFrameIndex]->descriptorSet, signalSem, { frame, imguiTextures[currentFrameIndex], semaphore } };
 }
 
 void ViewportRenderer::renderToCommandBuffer(Frame& frame, uint32_t imageIndex) {
-	// Start recording
-	VkCommandBufferBeginInfo beginInfo{};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags = 0;
-	beginInfo.pInheritanceInfo = nullptr;
+	vk::CommandBufferBeginInfo beginInfo{};
 
-	if (vkBeginCommandBuffer(frame.mainCommandBuffer, &beginInfo) != VK_SUCCESS) {
-		throw std::runtime_error("failed to begin recording command buffer!");
+	if (frame.mainCommandBuffer.begin(beginInfo) != vk::Result::eSuccess) {
+		throwFatalError("failed to begin recording command buffer!");
 	}
 
-	// Clear color
-	VkClearValue clearValues[2];
-	clearValues[0].color = { { 0.0f, 0.0f, 0.0f, 1.0f } }; // MSAA attachment
-	clearValues[1].color = { { 0.0f, 0.0f, 0.0f, 1.0f } }; // Resolve attachment
+	vk::ClearValue clearValues[2];
+	clearValues[0].color = vk::ClearColorValue(std::array<float,4>{ 0.0f, 0.0f, 0.0f, 1.0f });
+	clearValues[1].color = vk::ClearColorValue(std::array<float,4>{ 0.0f, 0.0f, 0.0f, 1.0f });
 
-	// Begin render pass
-	VkRenderPassBeginInfo renderPassInfo{};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = renderPass;
-	renderPassInfo.framebuffer = imageSwapchain.getFramebuffers()[imageIndex];
-	renderPassInfo.renderArea.offset = { 0, 0 };
+	vk::RenderPassBeginInfo renderPassInfo{};
+	renderPassInfo.renderPass = renderPass.get();
+	renderPassInfo.framebuffer = imageSwapchain.getFramebuffers()[imageIndex].get();
+	renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
 	renderPassInfo.renderArea.extent = viewData.viewportSize;
 	renderPassInfo.clearValueCount = 2;
 	renderPassInfo.pClearValues = clearValues;
 
-	vkCmdBeginRenderPass(frame.mainCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	frame.mainCommandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 
-	// Set dynamic viewport and scissor
-	VkViewport viewport{};
+	vk::Viewport viewport{};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
 	viewport.width = static_cast<float>(viewData.viewportSize.width);
 	viewport.height = static_cast<float>(viewData.viewportSize.height);
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
-	vkCmdSetViewport(frame.mainCommandBuffer, 0, 1, &viewport);
+	frame.mainCommandBuffer.setViewport(0, viewport);
 
-	VkRect2D scissor{};
-	scissor.offset = { 0, 0 };
+	vk::Rect2D scissor{};
+	scissor.offset = vk::Offset2D{ 0, 0 };
 	scissor.extent = viewData.viewportSize;
-	vkCmdSetScissor(frame.mainCommandBuffer, 0, 1, &scissor);
+	frame.mainCommandBuffer.setScissor(0, scissor);
 
-	// Render viewport content - only if viewport has valid dimensions
 	if (viewData.viewportSize.width > 0 && viewData.viewportSize.height > 0) {
 		render(frame);
 	}
 
-	// End render pass (automatically resolves MSAA to resolve image)
-	vkCmdEndRenderPass(frame.mainCommandBuffer);
+	frame.mainCommandBuffer.endRenderPass();
 
-	if (vkEndCommandBuffer(frame.mainCommandBuffer) != VK_SUCCESS) {
-		throw std::runtime_error("failed to record command buffer!");
+	if (frame.mainCommandBuffer.end() != vk::Result::eSuccess) {
+		throwFatalError("failed to record command buffer!");
 	}
 }
 
@@ -641,24 +568,22 @@ void ViewportRenderer::destroyImages() {
 	if (imageReady.load()) {
 		device.waitIdleNoMux();
 		imageReady.store(false);
-		imguiTextures.clear(); // will clear when done
+		imguiTextures.clear();
 		msaaImage.reset();
 	}
 }
 
 void ViewportRenderer::createImages() {
-	VkExtent3D imageSize = { viewData.viewportSize.width, viewData.viewportSize.height, 1 };
-	VkSampleCountFlagBits msaaSamples = device.getMaxUsableSampleCount();
+	vk::Extent3D imageSize = { viewData.viewportSize.width, viewData.viewportSize.height, 1 };
+	vk::SampleCountFlagBits msaaSamples = device.getMaxUsableSampleCount();
 
-	// Create MSAA image (transient - doesn't need to be stored)
-	msaaImage.emplace(device, imageSize, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, false, msaaSamples);
+	msaaImage.emplace(device, imageSize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment, false, msaaSamples);
 
-	imageSwapchain.recreate(renderPass, { viewData.viewportSize.width, viewData.viewportSize.height }, *msaaImage);
+	imageSwapchain.recreate(renderPass.get(), { viewData.viewportSize.width, viewData.viewportSize.height }, *msaaImage);
 	imguiTextures.resize(FRAMES_IN_FLIGHT);
 	for (unsigned int i = 0; i < imguiTextures.size(); i++) {
-		// std::lock_guard lock(imGuiRenderer.setActiveContext()); // not needed this is only called from the render func of a widget
 		imguiTextures[i] = std::make_shared<ImGuiRenderer::ImGuiDescriptorSet>(
-			ImGui_ImplVulkan_AddTexture(sampler->sampler, imageSwapchain.getImages()[i]->imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
+			ImGui_ImplVulkan_AddTexture(static_cast<VkSampler>(sampler->sampler.get()), static_cast<VkImageView>(imageSwapchain.getImages()[i]->imageView.get()), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
 			imGuiRenderer,
 			std::vector<std::shared_ptr<void>>{ imageSwapchain.getImages()[i], sampler }
 		);

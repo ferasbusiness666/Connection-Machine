@@ -2,7 +2,7 @@
 #define frameManager_h
 
 #include "util/lifetimeExtender.h"
-#include <vk_mem_alloc.h>
+#include "gpu/vulkanCommon.h"
 
 class VulkanDevice;
 
@@ -12,10 +12,10 @@ struct Frame {
 	Frame(VulkanDevice& device);
 	~Frame();
 
-	VkCommandPool commandPool;
-	VkCommandBuffer mainCommandBuffer;
-	VkSemaphore acquireSemaphore;
-	VkFence renderFence;
+	vk::UniqueCommandPool commandPool;
+	vk::CommandBuffer mainCommandBuffer;
+	vk::UniqueSemaphore acquireSemaphore;
+	vk::UniqueFence renderFence;
 	std::chrono::time_point<std::chrono::system_clock> lastStartTime;
 
 	LifetimeExtender lifetime;

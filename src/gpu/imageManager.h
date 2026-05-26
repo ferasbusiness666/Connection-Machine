@@ -8,7 +8,7 @@
 class ImageManager {
 	typedef std::unordered_map<std::string, std::map<WindowId, std::shared_ptr<ImGuiRenderer::ImGuiDescriptorSet>>> ImagesMap;
 public:
-	std::pair<VkDescriptorSet, std::vector<std::shared_ptr<void>>> getImage(const std::string& path, WindowId windowId);
+	std::pair<vk::DescriptorSet, std::vector<std::shared_ptr<void>>> getImage(const std::string& path, WindowId windowId);
 	void clearWindow(WindowId windowId);
 private:
 	std::shared_ptr<ViewportRenderer::Sampler> sampler;

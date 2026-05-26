@@ -1,15 +1,14 @@
 #include "nBuffer.h"
 
-void NBuffer::init(VulkanDevice& device, size_t allocSize, VkBufferUsageFlags usage, VmaAllocationCreateFlags flags) {
+void NBuffer::init(VulkanDevice& device, size_t allocSize, vk::BufferUsageFlags usage, vma::AllocationCreateFlags flags) {
 	this->device = &device;
 
-	// create buffers and infos
 	for (uint32_t i = 0; i < buffers.size(); ++i){
 		buffers[i] = createBuffer(*this->device, allocSize, usage, flags);
-		bufferInfos[i] = {
-			.buffer = buffers[i].buffer,
-			.offset = 0,
-			.range = allocSize
+		bufferInfos[i] = vk::DescriptorBufferInfo{
+			buffers[i].buffer.get(),
+			0,
+			allocSize
 		};
 	}
 }

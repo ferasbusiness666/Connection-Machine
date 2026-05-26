@@ -15,13 +15,13 @@ struct BlockTextureArray {
 	DescriptorAllocator descriptorAllocator;
 	VulkanDevice* device = nullptr;
 	std::optional<AllocatedImage> image;
-	VkSampler sampler;
-	VkDescriptorSet descriptor;
-	VkExtent3D textureSize;
+	vk::UniqueSampler sampler;
+	vk::DescriptorSet descriptor;
+	vk::Extent3D textureSize;
 
 	uint32_t layerCount;
 
-	BlockTextureArray() : sampler(VK_NULL_HANDLE), descriptor(VK_NULL_HANDLE), layerCount(0) { }
+	BlockTextureArray() : layerCount(0) { }
 	~BlockTextureArray();
 };
 
@@ -66,20 +66,20 @@ public:
 	void update();
 	void cleanup();
 
-	inline VkDescriptorSetLayout getDescriptorLayout() { return descriptorLayout; }
+	inline vk::DescriptorSetLayout getDescriptorLayout() { return descriptorLayout.get(); }
 	inline std::shared_ptr<BlockTextureArray> getTextureArray() {
 		std::lock_guard<std::mutex> lock(descriptorMutex);
 		return textureArray;
 	}
 
 private:
-	void makeTextureArray(uint32_t newLayerCount, VkExtent3D textureSize);
+	void makeTextureArray(uint32_t newLayerCount, vk::Extent3D textureSize);
 	void addTextureToArray(const unsigned char* pixels, Vec2Int textureSize, Vec2Int texturePos, unsigned int textureLayer);
 	void resizeTextureArray(uint32_t newLayerCount);
 
-	VulkanDevice* device;
+	VulkanDevice* device = nullptr;
 
-	VkDescriptorSetLayout descriptorLayout;
+	vk::UniqueDescriptorSetLayout descriptorLayout;
 
 	std::vector<bool> writtenLayers;
 	std::vector<RectPacker> layerRectPackers;

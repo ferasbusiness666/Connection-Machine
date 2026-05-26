@@ -180,17 +180,17 @@ void MainRenderer::setViewportSimulator(ViewportId viewportId, const EvalLogicSi
 	iter->second.setSimulator(simulator, address);
 }
 
-VkDescriptorSet MainRenderer::startViewportRendering(ViewportId viewportId) {
+vk::DescriptorSet MainRenderer::startViewportRendering(ViewportId viewportId) {
 	if (currentlyRenderedWindow == 0) {
 		logError("Can't start viewport rendering when no window is rendering.");
-		return VK_NULL_HANDLE;
+		return {};
 	}
 	auto windowsIter = windowRenderers.find(currentlyRenderedWindow);
 	assert(windowsIter != windowRenderers.end());
 	auto iter = viewportRenderers.find(viewportId);
 	if (iter == viewportRenderers.end()) {
 		logError("Failed to call get_viewport_latest_image on non existent viewport {}", "MainRenderer", viewportId);
-		return VK_NULL_HANDLE;
+		return {};
 	}
 	auto [vkDescriptorSet, vkSemaphore, lifetimeObjects] = iter->second.startImageRender();
 	windowsIter->second.addSemaphore(vkSemaphore, lifetimeObjects);
@@ -301,11 +301,11 @@ void MainRenderer::updateSimulatorIds(ViewportId viewportId, const std::vector<S
 	iter->second.getChunker().updateSimulatorIds(simulatorMappingUpdates);
 }
 
-VkDescriptorSet MainRenderer::getBlockTextureArrayLayer(WindowId windowId, unsigned int layerIndex) {
+vk::DescriptorSet MainRenderer::getBlockTextureArrayLayer(WindowId windowId, unsigned int layerIndex) {
 	auto iter = windowRenderers.find(windowId);
 	if (iter == windowRenderers.end()) {
 		logError("Failed to call getBlockTextureArrayLayer on non existent window {}.", "MainRenderer", windowId);
-		return VK_NULL_HANDLE;
+		return {};
 	}
 	auto [descriptorSet, lifetimeObjects] = iter->second.getBlockTextureArrayLayer_ImGui(layerIndex);
 	iter->second.addLifetimeObjects(lifetimeObjects);
@@ -430,15 +430,15 @@ const std::unordered_map<ElementId, TextRenderData>* MainRenderer::getTextOnView
 	return &iter->second.getTextOnViewport();
 }
 
-VkDescriptorSet MainRenderer::getImage(const std::string& path) {
+vk::DescriptorSet MainRenderer::getImage(const std::string& path) {
 	if (currentlyRenderedWindow == 0) {
 		logError("Can't start viewport rendering when no window is rendering.");
-		return VK_NULL_HANDLE;
+		return {};
 	}
 	auto windowsIter = windowRenderers.find(currentlyRenderedWindow);
 	assert(windowsIter != windowRenderers.end());
 	auto [descriptorSet, lifetimeObjects] = imageManager.getImage(path, currentlyRenderedWindow);
-	if (descriptorSet == nullptr) return VK_NULL_HANDLE;
+	if (!descriptorSet) return {};
 	windowsIter->second.addLifetimeObjects(lifetimeObjects);
 	return descriptorSet;
 }

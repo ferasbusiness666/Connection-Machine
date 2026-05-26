@@ -60,7 +60,7 @@ public:
 	void resizeViewport(ViewportId viewportId, glm::vec2 size);
 	void moveViewportView(ViewportId viewportId, FPosition topLeft, FPosition bottomRight);
 	void setViewportSimulator(ViewportId viewportId, const EvalLogicSimulator* simulator, Address address); // tmp circuit
-	VkDescriptorSet startViewportRendering(ViewportId viewportId);
+	vk::DescriptorSet startViewportRendering(ViewportId viewportId);
 	// float getFps(ViewportId viewportId) const;
 	void resetViewport(ViewportId viewportId);
 	void deregisterViewport(ViewportId viewportId);
@@ -76,7 +76,7 @@ public:
 	void resetCircuit(ViewportId viewportId);
 	void updateSimulatorIds(ViewportId viewportId, const std::vector<SimulatorMappingUpdate>& simulatorMappingUpdates);
 
-	VkDescriptorSet getBlockTextureArrayLayer(WindowId windowId, unsigned int layerIndex);
+	vk::DescriptorSet getBlockTextureArrayLayer(WindowId windowId, unsigned int layerIndex);
 
 	// elements
 	ElementId addSelectionObjectElement(ViewportId viewportId, const SelectionObjectElement& selection);
@@ -98,7 +98,7 @@ public:
 	const std::unordered_map<ElementId, TextRenderData>* getTextOnViewport(ViewportId viewportId) const;
 
 	// images
-	VkDescriptorSet getImage(const std::string& path);
+	vk::DescriptorSet getImage(const std::string& path);
 private:
 	inline WindowId getNewWindowId() { return ++lastWindowId; }
 	inline ViewportId getNewViewportId() { return ++lastViewportId; }

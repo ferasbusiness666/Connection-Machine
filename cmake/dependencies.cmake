@@ -154,6 +154,16 @@ function(add_main_dependencies)
 	# Find vulkan (we don't actually use the headers, we just want shaderc compiler (won't be needed when we switch to slang hopefully))
 	find_package(Vulkan REQUIRED COMPONENTS glslc)
 
+	# Vulkan-Headers (for vulkan.hpp)
+	CPMAddPackage(
+		NAME Vulkan-Headers
+		GITHUB_REPOSITORY KhronosGroup/Vulkan-Headers
+		GIT_TAG v1.4.323
+		EXCLUDE_FROM_ALL YES
+		SOURCE_DIR "${EXTERNAL_DIR}/Vulkan-Headers"
+	)
+	list(APPEND EXTERNAL_LINKS Vulkan-Headers::Vulkan-Headers)
+
 	# Volk vulkan meta loader
 	CPMAddPackage(
 		NAME volk
@@ -179,6 +189,7 @@ function(add_main_dependencies)
 		set(compile_opts "$<$<CXX_COMPILER_ID:AppleClang>:-Wno-nullability-completeness>")
 	endif()
 	set_target_properties(VulkanMemoryAllocator PROPERTIES INTERFACE_COMPILE_OPTIONS "${compile_opts}")
+	target_include_directories(VulkanMemoryAllocator INTERFACE "${EXTERNAL_DIR}/VulkanMemoryAllocator/include")
 	list(APPEND EXTERNAL_LINKS VulkanMemoryAllocator)
 
 	# Vk Bootstrap

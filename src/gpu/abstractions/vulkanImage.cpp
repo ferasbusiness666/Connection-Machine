@@ -5,238 +5,202 @@
 
 #include <iostream>
 
-AllocatedImage::AllocatedImage(VulkanDevice& device, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped, uint32_t arrayLayers, VkSampleCountFlagBits samples)
+AllocatedImage::AllocatedImage(VulkanDevice& device, vk::Extent3D size, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped, uint32_t arrayLayers, vk::SampleCountFlagBits samples)
 	: device(device) {
-    this->imageFormat = format;
-    this->imageExtent = size;
-    this->arrayLayers = arrayLayers;
+	this->imageFormat = format;
+	this->imageExtent = size;
+	this->arrayLayers = arrayLayers;
 
-    // calculate mipmapping levels
-    if (mipmapped) {
-        this->mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(size.width, size.height)))) + 1;
-    } else {
-        this->mipLevels = 1;
-    }
+	if (mipmapped) {
+		this->mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(size.width, size.height)))) + 1;
+	} else {
+		this->mipLevels = 1;
+	}
 
-    VkImageCreateInfo imageInfo{};
-    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    imageInfo.pNext = nullptr;
-    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.format = format;
-    imageInfo.extent = size;
-    imageInfo.mipLevels = this->mipLevels;
-    imageInfo.arrayLayers = arrayLayers;
-    imageInfo.samples = samples;
-    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-    imageInfo.usage = usage;
-    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    imageInfo.flags = 0;
+	vk::ImageCreateInfo imageInfo{};
+	imageInfo.imageType = vk::ImageType::e2D;
+	imageInfo.format = format;
+	imageInfo.extent = size;
+	imageInfo.mipLevels = this->mipLevels;
+	imageInfo.arrayLayers = arrayLayers;
+	imageInfo.samples = samples;
+	imageInfo.tiling = vk::ImageTiling::eOptimal;
+	imageInfo.usage = usage;
+	imageInfo.initialLayout = vk::ImageLayout::eUndefined;
+	imageInfo.sharingMode = vk::SharingMode::eExclusive;
 
-    // VMA allocation
-    VmaAllocationCreateInfo vmaAllocInfo = {};
-    vmaAllocInfo.usage = VMA_MEMORY_USAGE_AUTO;
-    vmaAllocInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	vma::AllocationCreateInfo vmaAllocInfo{};
+	vmaAllocInfo.usage = vma::MemoryUsage::eAuto;
+	vmaAllocInfo.requiredFlags = vk::MemoryPropertyFlagBits::eDeviceLocal;
 
-    VmaAllocator allocator = device.getAllocator();
-    if (allocator == VK_NULL_HANDLE) {
-        throwFatalError("VmaAllocator is null in createImage");
-    }
+	vma::Allocator allocator = device.getAllocator();
+	if (!allocator) {
+		throwFatalError("VmaAllocator is null in createImage");
+	}
 
-    VkResult result = vmaCreateImage(allocator, &imageInfo, &vmaAllocInfo, &this->image, &this->allocation, nullptr);
-    if (result != VK_SUCCESS) {
-        std::stringstream ss;
-        ss << "vmaCreateImage failed, VkResult = " << result;
-        throwFatalError(ss.str());
-    }
-    if (this->image == VK_NULL_HANDLE) {
-        throwFatalError("vmaCreateImage succeeded but returned null VkImage");
-    }
+	auto imageResult = allocator.createImageUnique(imageInfo, vmaAllocInfo);
+	if (imageResult.result != vk::Result::eSuccess) {
+		std::stringstream ss;
+		ss << "vmaCreateImage failed, VkResult = " << static_cast<int>(imageResult.result);
+		throwFatalError(ss.str());
+	}
+	this->image = std::move(imageResult.value.first);
+	this->allocation = std::move(imageResult.value.second);
 
-    // set the aspect flag to depth if image is using a depth format
-    if (format == VK_FORMAT_D32_SFLOAT) {
-        this->aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
-    } else {
-        this->aspect = VK_IMAGE_ASPECT_COLOR_BIT;
-    }
+	if (format == vk::Format::eD32Sfloat) {
+		this->aspect = vk::ImageAspectFlagBits::eDepth;
+	} else {
+		this->aspect = vk::ImageAspectFlagBits::eColor;
+	}
 
-    // create image view
-    VkImageViewCreateInfo imageViewInfo{};
-    imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    imageViewInfo.pNext = nullptr;
+	vk::ImageViewCreateInfo imageViewInfo{};
+	imageViewInfo.viewType = vk::ImageViewType::e2DArray;
+	imageViewInfo.image = this->image.get();
+	imageViewInfo.format = format;
+	imageViewInfo.subresourceRange.baseMipLevel = 0;
+	imageViewInfo.subresourceRange.levelCount = this->mipLevels;
+	imageViewInfo.subresourceRange.baseArrayLayer = 0;
+	imageViewInfo.subresourceRange.layerCount = arrayLayers;
+	imageViewInfo.subresourceRange.aspectMask = this->aspect;
 
-    imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-    imageViewInfo.image = this->image;
-    imageViewInfo.format = format;
-    imageViewInfo.subresourceRange.baseMipLevel = 0;
-    imageViewInfo.subresourceRange.levelCount = this->mipLevels;
-    imageViewInfo.subresourceRange.baseArrayLayer = 0;
-    imageViewInfo.subresourceRange.layerCount = arrayLayers;
-    imageViewInfo.subresourceRange.aspectMask = this->aspect;
-
-    result = vkCreateImageView(device.getDevice(), &imageViewInfo, nullptr, &this->imageView);
-    if (result != VK_SUCCESS) {
-        std::stringstream ss;
-        ss << "vkCreateImageView failed, VkResult = " << result;
-        // cleanup image/allocation before throwing
-        vmaDestroyImage(allocator, this->image, this->allocation);
-        throwFatalError(ss.str());
-    }
+	auto viewResult = device.getDevice().createImageViewUnique(imageViewInfo);
+	if (viewResult.result != vk::Result::eSuccess) {
+		std::stringstream ss;
+		ss << "vkCreateImageView failed, VkResult = " << static_cast<int>(viewResult.result);
+		throwFatalError(ss.str());
+	}
+	this->imageView = std::move(viewResult.value);
 
 	for (unsigned int i = 0; i < arrayLayers; i++) {
-		VkImageViewCreateInfo imageViewInfo{};
-		imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		imageViewInfo.pNext = nullptr;
-		imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		imageViewInfo.image = this->image;
-		imageViewInfo.format = format;
-		imageViewInfo.subresourceRange.baseMipLevel = 0;
-		imageViewInfo.subresourceRange.levelCount = this->mipLevels;
-		imageViewInfo.subresourceRange.baseArrayLayer = i;
-		imageViewInfo.subresourceRange.layerCount = 1;
-		imageViewInfo.subresourceRange.aspectMask = this->aspect;
-		layerViews.emplace_back();
-		result = vkCreateImageView(device.getDevice(), &imageViewInfo, nullptr, &layerViews.back());
-		if (result != VK_SUCCESS) if (result != VK_SUCCESS) {
-			layerViews.pop_back();
+		vk::ImageViewCreateInfo layerViewInfo{};
+		layerViewInfo.viewType = vk::ImageViewType::e2D;
+		layerViewInfo.image = this->image.get();
+		layerViewInfo.format = format;
+		layerViewInfo.subresourceRange.baseMipLevel = 0;
+		layerViewInfo.subresourceRange.levelCount = this->mipLevels;
+		layerViewInfo.subresourceRange.baseArrayLayer = i;
+		layerViewInfo.subresourceRange.layerCount = 1;
+		layerViewInfo.subresourceRange.aspectMask = this->aspect;
+		auto layerViewResult = device.getDevice().createImageViewUnique(layerViewInfo);
+		if (layerViewResult.result != vk::Result::eSuccess) {
 			std::stringstream ss;
-			ss << "vkCreateImageView failed, VkResult = " << result;
-			// cleanup image/allocation before throwing
-			vkDestroyImageView(device.getDevice(), imageView, nullptr);
-			for (VkImageView layerView : layerViews) {
-				vkDestroyImageView(device.getDevice(), layerView, nullptr);
-			}
-			vmaDestroyImage(allocator, this->image, this->allocation);
+			ss << "vkCreateImageView failed, VkResult = " << static_cast<int>(layerViewResult.result);
 			throwFatalError(ss.str());
 		}
+		layerViews.push_back(std::move(layerViewResult.value));
 	}
 }
-AllocatedImage::AllocatedImage(VulkanDevice& device, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped, VkSampleCountFlagBits samples)
+
+AllocatedImage::AllocatedImage(VulkanDevice& device, vk::Extent3D size, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped, vk::SampleCountFlagBits samples)
 	: device(device) {
-    this->imageFormat = format;
-    this->imageExtent = size;
-    this->arrayLayers = 1;
+	this->imageFormat = format;
+	this->imageExtent = size;
+	this->arrayLayers = 1;
 
-    // calculate mipmapping levels
-    if (mipmapped) {
-        this->mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(size.width, size.height)))) + 1;
-    } else {
-        this->mipLevels = 1;
-    }
+	if (mipmapped) {
+		this->mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(size.width, size.height)))) + 1;
+	} else {
+		this->mipLevels = 1;
+	}
 
-    VkImageCreateInfo imageInfo{};
-    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    imageInfo.pNext = nullptr;
-    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.format = format;
-    imageInfo.extent = size;
-    imageInfo.mipLevels = this->mipLevels;
-    imageInfo.arrayLayers = 1;
-    imageInfo.samples = samples;
-    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-    imageInfo.usage = usage;
-    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    imageInfo.flags = 0;
+	vk::ImageCreateInfo imageInfo{};
+	imageInfo.imageType = vk::ImageType::e2D;
+	imageInfo.format = format;
+	imageInfo.extent = size;
+	imageInfo.mipLevels = this->mipLevels;
+	imageInfo.arrayLayers = 1;
+	imageInfo.samples = samples;
+	imageInfo.tiling = vk::ImageTiling::eOptimal;
+	imageInfo.usage = usage;
+	imageInfo.initialLayout = vk::ImageLayout::eUndefined;
+	imageInfo.sharingMode = vk::SharingMode::eExclusive;
 
-    // VMA allocation
-    VmaAllocationCreateInfo vmaAllocInfo = {};
-    vmaAllocInfo.usage = VMA_MEMORY_USAGE_AUTO;
-    vmaAllocInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	vma::AllocationCreateInfo vmaAllocInfo{};
+	vmaAllocInfo.usage = vma::MemoryUsage::eAuto;
+	vmaAllocInfo.requiredFlags = vk::MemoryPropertyFlagBits::eDeviceLocal;
 
-    VmaAllocator allocator = device.getAllocator();
-    if (allocator == VK_NULL_HANDLE) {
-        throwFatalError("VmaAllocator is null in createImage");
-    }
+	vma::Allocator allocator = device.getAllocator();
+	if (!allocator) {
+		throwFatalError("VmaAllocator is null in createImage");
+	}
 
-    VkResult result = vmaCreateImage(allocator, &imageInfo, &vmaAllocInfo, &this->image, &this->allocation, nullptr);
-    if (result != VK_SUCCESS) {
-        std::stringstream ss;
-        ss << "vmaCreateImage failed, VkResult = " << result;
-        throwFatalError(ss.str());
-    }
-    if (this->image == VK_NULL_HANDLE) {
-        throwFatalError("vmaCreateImage succeeded but returned null VkImage");
-    }
+	auto imageResult = allocator.createImageUnique(imageInfo, vmaAllocInfo);
+	if (imageResult.result != vk::Result::eSuccess) {
+		std::stringstream ss;
+		ss << "vmaCreateImage failed, VkResult = " << static_cast<int>(imageResult.result);
+		throwFatalError(ss.str());
+	}
+	this->image = std::move(imageResult.value.first);
+	this->allocation = std::move(imageResult.value.second);
 
-    // set the aspect flag to depth if image is using a depth format
-    if (format == VK_FORMAT_D32_SFLOAT) {
-        this->aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
-    } else {
-        this->aspect = VK_IMAGE_ASPECT_COLOR_BIT;
-    }
+	if (format == vk::Format::eD32Sfloat) {
+		this->aspect = vk::ImageAspectFlagBits::eDepth;
+	} else {
+		this->aspect = vk::ImageAspectFlagBits::eColor;
+	}
 
-    // create image view
-    VkImageViewCreateInfo imageViewInfo{};
-    imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    imageViewInfo.pNext = nullptr;
+	vk::ImageViewCreateInfo imageViewInfo{};
+	imageViewInfo.viewType = vk::ImageViewType::e2D;
+	imageViewInfo.image = this->image.get();
+	imageViewInfo.format = format;
+	imageViewInfo.subresourceRange.baseMipLevel = 0;
+	imageViewInfo.subresourceRange.levelCount = this->mipLevels;
+	imageViewInfo.subresourceRange.baseArrayLayer = 0;
+	imageViewInfo.subresourceRange.layerCount = 1;
+	imageViewInfo.subresourceRange.aspectMask = this->aspect;
 
-    imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    imageViewInfo.image = this->image;
-    imageViewInfo.format = format;
-    imageViewInfo.subresourceRange.baseMipLevel = 0;
-    imageViewInfo.subresourceRange.levelCount = this->mipLevels;
-    imageViewInfo.subresourceRange.baseArrayLayer = 0;
-    imageViewInfo.subresourceRange.layerCount = 1;
-    imageViewInfo.subresourceRange.aspectMask = this->aspect;
-
-    VkResult r2 = vkCreateImageView(device.getDevice(), &imageViewInfo, nullptr, &this->imageView);
-    if (r2 != VK_SUCCESS) {
-        std::stringstream ss;
-        ss << "vkCreateImageView failed, VkResult = " << r2;
-        // cleanup image/allocation before throwing
-        vmaDestroyImage(allocator, this->image, this->allocation);
-        throwFatalError(ss.str());
-    }
+	auto viewResult = device.getDevice().createImageViewUnique(imageViewInfo);
+	if (viewResult.result != vk::Result::eSuccess) {
+		std::stringstream ss;
+		ss << "vkCreateImageView failed, VkResult = " << static_cast<int>(viewResult.result);
+		throwFatalError(ss.str());
+	}
+	this->imageView = std::move(viewResult.value);
 }
-AllocatedImage::AllocatedImage(VulkanDevice& device, void* data, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped, VkSampleCountFlagBits samples):
-	AllocatedImage(device, size, format, usage | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, mipmapped, samples) {
-	// upload data to staging upload buffer
-	size_t dataSize = size.depth * size.height * size.width * 4; // each pixel is 4 bytes (8bit channels RGBA)
-	AllocatedBuffer uploadBuffer = createBuffer(device, dataSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-	vmaCopyMemoryToAllocation(device.getAllocator(), data, uploadBuffer.allocation, 0, dataSize);
 
-	// submit copy from staging to real
-	device.immediateSubmit([&](VkCommandBuffer cmd) {
-		transitionImageLayout(cmd, *this, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+AllocatedImage::AllocatedImage(VulkanDevice& device, void* data, vk::Extent3D size, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped, vk::SampleCountFlagBits samples)
+	: AllocatedImage(device, size, format, usage | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc, mipmapped, samples) {
+	size_t dataSize = size.depth * size.height * size.width * 4;
+	AllocatedBuffer uploadBuffer = createBuffer(device, dataSize, vk::BufferUsageFlagBits::eTransferSrc, vma::AllocationCreateFlagBits::eHostAccessSequentialWrite);
+	device.getAllocator().copyMemoryToAllocation(data, uploadBuffer.allocation.get(), 0, dataSize);
 
-		VkBufferImageCopy copyRegion = {};
+	device.immediateSubmit([&](vk::CommandBuffer cmd) {
+		transitionImageLayout(cmd, *this, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+
+		vk::BufferImageCopy copyRegion{};
 		copyRegion.bufferOffset = 0;
 		copyRegion.bufferRowLength = 0;
 		copyRegion.bufferImageHeight = 0;
 
-		copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		copyRegion.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
 		copyRegion.imageSubresource.mipLevel = 0;
 		copyRegion.imageSubresource.baseArrayLayer = 0;
 		copyRegion.imageSubresource.layerCount = 1;
 		copyRegion.imageExtent = size;
 
-		// copy the buffer into the image
-		vkCmdCopyBufferToImage(cmd, uploadBuffer.buffer, this->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+		cmd.copyBufferToImage(uploadBuffer.buffer.get(), this->image.get(), vk::ImageLayout::eTransferDstOptimal, copyRegion);
 
-		transitionImageLayout(cmd, *this, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		transitionImageLayout(cmd, *this, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 	});
 
 	destroyBuffer(uploadBuffer);
 }
+
 AllocatedImage::~AllocatedImage() {
-	vkDestroyImageView(device.getDevice(), imageView, nullptr);
-	for (VkImageView layerView : layerViews) {
-		vkDestroyImageView(device.getDevice(), layerView, nullptr);
-	}
-    vmaDestroyImage(device.getAllocator(), image, allocation);
+	layerViews.clear();
+	imageView.reset();
+	image.reset();
+	allocation.reset();
 }
 
-bool transitionImageLayout(VkCommandBuffer cmd, AllocatedImage& image, VkImageLayout oldLayout, VkImageLayout newLayout) {
-	// set the aspect flag to depth if image is using a depth format
-	VkImageMemoryBarrier barrier{};
-	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+bool transitionImageLayout(vk::CommandBuffer cmd, AllocatedImage& image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout) {
+	vk::ImageMemoryBarrier barrier{};
 	barrier.oldLayout = oldLayout;
 	barrier.newLayout = newLayout;
 
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = image.image;
+	barrier.image = image.image.get();
 	barrier.subresourceRange.aspectMask = image.aspect;
 
 	barrier.subresourceRange.baseMipLevel = 0;
@@ -244,34 +208,26 @@ bool transitionImageLayout(VkCommandBuffer cmd, AllocatedImage& image, VkImageLa
 	barrier.subresourceRange.baseArrayLayer = 0;
 	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 
-	// determine access masks
-	VkPipelineStageFlags sourceStage;
-	VkPipelineStageFlags destinationStage;
-	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-		barrier.srcAccessMask = 0;
-		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	vk::PipelineStageFlags sourceStage;
+	vk::PipelineStageFlags destinationStage;
+	if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal) {
+		barrier.srcAccessMask = {};
+		barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
 
-		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-	} else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
+		destinationStage = vk::PipelineStageFlagBits::eTransfer;
+	} else if (oldLayout == vk::ImageLayout::eTransferDstOptimal && newLayout == vk::ImageLayout::eShaderReadOnlyOptimal) {
+		barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+		barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
 
-		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		sourceStage = vk::PipelineStageFlagBits::eTransfer;
+		destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
 	} else {
 		logError("unsupported image layout transition!", "Vulkan");
 		return false;
 	}
 
-	vkCmdPipelineBarrier(
-		cmd,
-		sourceStage, destinationStage,
-		0,
-		0, nullptr,
-		0, nullptr,
-		1, &barrier
-	);
+	cmd.pipelineBarrier(sourceStage, destinationStage, {}, nullptr, nullptr, barrier);
 
 	return true;
 }
