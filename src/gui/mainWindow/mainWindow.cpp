@@ -48,15 +48,25 @@ void MainWindow::log(const std::string& message) { ImGui::InsertNotification({ I
 
 void MainWindow::logError(const std::string& message) { ImGui::InsertNotification({ ImGuiToastType_Error, 3000, "%s", message.c_str() }); }
 
-bool MainWindow::isPressingKeybind(const Keybind& keybind, bool repeat) const {
+bool MainWindow::isPressingKeybind(const Keybind& keybind) const {
 	if (lastUpdatedFrame >= frameIndex.load() && (keybind.getKeybind() & (~ImGuiKey::ImGuiMod_Mask_)) != ImGuiKey::ImGuiKey_None) return false;
 	return ::isPressingKeybind(keybind, pressedKeys);
 }
 
-bool MainWindow::isPressingKeybind(const std::string& settingKey, bool repeat) const {
+bool MainWindow::isPressingKeybind(const std::string& settingKey) const {
 	const Keybind* keybind = Settings::get<SettingType::KEYBIND>(settingKey);
 	if (!keybind) return false;
-	return isPressingKeybind(*keybind, repeat);
+	return isPressingKeybind(*keybind);
+}
+
+bool MainWindow::isHoldingKeybind(const Keybind& keybind) const {
+	return ::isPressingKeybind(keybind, heldKeys);
+}
+
+bool MainWindow::isHoldingKeybind(const std::string& settingKey) const {
+	const Keybind* keybind = Settings::get<SettingType::KEYBIND>(settingKey);
+	if (!keybind) return false;
+	return isHoldingKeybind(*keybind);
 }
 
 void MainWindow::createPopup(const std::string& message, const std::vector<std::pair<std::string, std::function<void()>>>& buttons) {
@@ -149,6 +159,7 @@ void MainWindow::doUpdate() {
 		widgets.erase(widgetId);
 	}
 	pressedKeys = ::getPressedKeys(getHandle());
+	heldKeys = ::getHeldKeys(getHandle());
 	if (isPressingKeybind("Keybinds/File/Open")) {
 		loadDialog();
 	}

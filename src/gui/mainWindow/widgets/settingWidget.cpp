@@ -12,7 +12,10 @@
 #include "imgui/imgui_stdlib.h"
 #include "imgui/imgui.h"
 
-SettingWidget::SettingWidget(WidgetId widgetId, MainWindow& mainWindow) : Widget(widgetId, mainWindow) { }
+SettingWidget::SettingWidget(WidgetId widgetId, MainWindow& mainWindow) : Widget(widgetId, mainWindow) {
+	setupGUIValue<std::string>("settingKeybind", "", nullptr);
+	setupGUIValue<Keybind>("settingKeybindValue", Keybind(), nullptr);
+}
 
 struct SettingTreeNode {
 	std::map<std::string, SettingTreeNode> children;
@@ -24,8 +27,9 @@ struct SettingTreeNode {
 		}
 		children[path.front()].addPath(std::span(path.begin() + 1, path.end()));
 	}
-	void render(const std::string& path, const std::string& name) const {
+	void render(const std::string& path, const std::string& name, const std::string& settingKeybind, SettingWidget& settingWidget) const {
 		if (leaf) {
+			ImGui::PushID(path.c_str());
 			ImGui::Indent(10);
 			ImGui::SameLine();
 			SettingType settingType = Settings::getType(path);
@@ -125,9 +129,14 @@ struct SettingTreeNode {
 					}
 				} break;
 				case SettingType::KEYBIND: {
-					Keybind keybind = valueOr(Settings::get<SettingType::KEYBIND>(path), Keybind());
+					Keybind keybind = (settingKeybind == path) ? (
+						settingWidget.getGUIValue_rendering<Keybind>("settingKeybindValue")
+					) : (
+						valueOr(Settings::get<SettingType::KEYBIND>(path), Keybind())
+					);
 					if (ImGui::Button(keybind.toString().c_str())) {
-
+						settingWidget.setGUIValue_rendering<std::string>("settingKeybind", path);
+						settingWidget.setGUIValue_rendering<Keybind>("settingKeybindValue", Keybind());
 					}
 					// if (ImGui::InputText("##ID", k.c_str())) {
 					// 	App::runOnMain([this, keybind, path]() {
@@ -160,6 +169,7 @@ struct SettingTreeNode {
 				} break;
 			}
 			ImGui::Unindent(10);
+			ImGui::PopID();
 		} else {
 			for (const auto& child : children) {
 				if (child.second.leaf) {
@@ -168,12 +178,12 @@ struct SettingTreeNode {
 					ifGui (ImGui::TreeNodeEx((child.first + "##node").c_str(), ImGuiTreeNodeFlags_Leaf),
 						ImGui::PopStyleColor(2);
 					) {
-						child.second.render(path.empty() ? child.first : (path + "/" + child.first), child.first);
+						child.second.render(path.empty() ? child.first : (path + "/" + child.first), child.first, settingKeybind, settingWidget);
 						ImGui::TreePop();
 					}
 				} else {
 					if (ImGui::TreeNodeEx((child.first + "##node").c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-						child.second.render(path.empty() ? child.first : (path + "/" + child.first), child.first);
+						child.second.render(path.empty() ? child.first : (path + "/" + child.first), child.first, settingKeybind, settingWidget);
 						ImGui::TreePop();
 					}
 				}
@@ -183,6 +193,7 @@ struct SettingTreeNode {
 };
 
 void SettingWidget::render() {
+	ImGui::PushItemFlag(ImGuiItemFlags_NoTabStop, true);
 	ImGui::SetNextWindowDockID(getMainWindow().getDockMainId(), ImGuiCond_FirstUseEver);
 	getMainWindow().setNextWindowMainDockable();
 	getMainWindow().pushWindowStyling();
@@ -211,7 +222,8 @@ void SettingWidget::render() {
 			root.addPath(std::span(pathVec.begin(), pathVec.end()));
 		}
 		if (ImGui::BeginChild("tree")) {
-			root.render("", "");
+			std::string settingKeybind = getGUIValue<std::string>("settingKeybind");
+			root.render("", "", settingKeybind, *this);
 		}
 		ImGui::EndChild();
 	}
@@ -219,4 +231,33 @@ void SettingWidget::render() {
 		getMainWindow().destroyWidget(this->getWidgetId());
 	}
 	ImGui::End();
+	ImGui::PopItemFlag();
+}
+
+void SettingWidget::update() {
+	std::string settingKeybind = getGUIValue<std::string>("settingKeybind");
+	if (settingKeybind.empty()) return;
+	const std::set<ImGuiKey>& heldKeys = getMainWindow().getHeldKeys();
+	if (heldKeys.contains(ImGuiKey_Escape)) {
+		setGUIValue<std::string>("settingKeybind", "");
+		return;
+	}
+	ImGuiKey keybind = Keybind().getKeybind();
+	for (ImGuiKey key : heldKeys) {
+		Keybind realKey(key);
+		if (realKey.getKeybind() != ImGuiKey_Enter && !realKey.containsMods()) {
+			keybind = realKey.getKeybind();
+			break;
+		}
+	}
+	assert(keybind != ImGuiKey_ReservedForModShift);
+	if (heldKeys.contains(ImGuiKey::ImGuiMod_Ctrl)) keybind = (ImGuiKey)(keybind | ImGuiKey::ImGuiMod_Ctrl);
+	if (heldKeys.contains(ImGuiKey::ImGuiMod_Shift)) keybind = (ImGuiKey)(keybind | ImGuiKey::ImGuiMod_Shift);
+	if (heldKeys.contains(ImGuiKey::ImGuiMod_Alt)) keybind = (ImGuiKey)(keybind | ImGuiKey::ImGuiMod_Alt);
+	if (heldKeys.contains(ImGuiKey::ImGuiMod_Super)) keybind = (ImGuiKey)(keybind | ImGuiKey::ImGuiMod_Super);
+	setGUIValue<Keybind>("settingKeybindValue", Keybind(keybind));
+	if (heldKeys.contains(ImGuiKey_Enter)) {
+		Settings::set<SettingType::KEYBIND>(settingKeybind, keybind);
+		setGUIValue<std::string>("settingKeybind", "");
+	}
 }

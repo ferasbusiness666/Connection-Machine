@@ -19,7 +19,7 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 	setupGUIValue<bool>("MouseLeftDown", false, [&](const bool& state) {
 		if (state) {
 			if (!getGUIValue<bool>("MouseInView")) return;
-			if (getMainWindow().isPressingKeybind("Keybinds/Editing/Pick Block", true)) {
+			if (getMainWindow().isHoldingKeybind("Keybinds/Editing/Pick Block")) {
 				std::unique_ptr<CircuitView>& circuitView = this->circuitView;
 				Circuit* circuit = circuitView->getCircuit();
 				if (circuit) {
@@ -38,7 +38,7 @@ CircuitViewWidget::CircuitViewWidget(WidgetId widgetId, MainWindow& mainWindow) 
 					}
 				}
 			}
-			if (getMainWindow().isPressingKeybind("Keybinds/Camera/Pan", true)) {
+			if (getMainWindow().isHoldingKeybind("Keybinds/Camera/Pan")) {
 				if (circuitView->getEventRegister().doEvent(PositionEvent("View Attach Anchor", circuitView->getViewManager().getPointerPosition()))) {
 					return;
 				}
@@ -128,7 +128,7 @@ void CircuitViewWidget::processEvent(SDL_Event& event) {
 			Vec2 movement(-event.wheel.x * getMainWindow().getWindowScalingSize(), event.wheel.y * getMainWindow().getWindowScalingSize());
 			if (!Settings::get<SettingType::BOOL>("Keybinds/Camera/Scroll Panning", false)) {
 				circuitView->getEventRegister().doEvent(DeltaEvent("view zoom", (float)(movement.y) / 15.f));
-			} else if (getMainWindow().isPressingKeybind("Keybinds/Camera/Zoom", true)) {
+			} else if (getMainWindow().isHoldingKeybind("Keybinds/Camera/Zoom")) {
 				// do zoom
 				circuitView->getEventRegister().doEvent(DeltaEvent("view zoom", (float)(movement.y) / 15.f));
 			} else {
@@ -461,7 +461,7 @@ void CircuitViewWidget::update() {
 		if (getMainWindow().isPressingKeybind("Keybinds/Tutorial/DebugForceCompleteStep")) {
 			circuitView->getTutorialManager().forceCompleteStep();
 		}
-		if (getMainWindow().isPressingKeybind("Keybinds/Simulation/Transverse Simulation")) {
+		if (getMainWindow().isHoldingKeybind("Keybinds/Simulation/Transverse Simulation")) {
 			if (dynamic_cast<const TreeTraversal*>(circuitView->getToolManager().getCircuitTool()) == nullptr) {
 				lastToolStack = circuitView->getToolManager().getStack();
 				circuitView->getToolManager().selectTool(std::make_shared<TreeTraversal>(getEnvironment()));

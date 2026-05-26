@@ -24,7 +24,7 @@ BlockCreationWidget::BlockCreationWidget(WidgetId widgetId, MainWindow& mainWind
 		setupGUIValue<bool>("MouseLeftDown", false, [&](const bool& state) {
 			if (state) {
 				if (!getGUIValue<bool>("MouseInView")) return;
-				if (getMainWindow().isPressingKeybind("Keybinds/Camera/Pan", true)) {
+				if (getMainWindow().isHoldingKeybind("Keybinds/Camera/Pan")) {
 					if (circuitView->getEventRegister().doEvent(PositionEvent("View Attach Anchor", circuitView->getViewManager().getPointerPosition()))) {
 						return;
 					}
@@ -215,7 +215,7 @@ void BlockCreationWidget::processEvent(SDL_Event& event) {
 			Vec2 movement(-event.wheel.x * getMainWindow().getWindowScalingSize(), event.wheel.y * getMainWindow().getWindowScalingSize());
 			if (!Settings::get<SettingType::BOOL>("Keybinds/Camera/Scroll Panning", false)) {
 				circuitView->getEventRegister().doEvent(DeltaEvent("view zoom", (float)(movement.y) / 15.f));
-			} else if (getMainWindow().isPressingKeybind("Keybinds/Camera/Zoom", true)) {
+			} else if (getMainWindow().isHoldingKeybind("Keybinds/Camera/Zoom")) {
 				// do zoom
 				circuitView->getEventRegister().doEvent(DeltaEvent("view zoom", (float)(movement.y) / 15.f));
 			} else {

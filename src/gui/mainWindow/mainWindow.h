@@ -70,9 +70,12 @@ public:
 		logError(message.str());
 	}
 
-	bool isPressingKeybind(const Keybind& keybind, bool repeat = false) const;
-	bool isPressingKeybind(const std::string& settingKey, bool repeat = false) const;
+	bool isPressingKeybind(const Keybind& keybind) const;
+	bool isPressingKeybind(const std::string& settingKey) const;
+	bool isHoldingKeybind(const Keybind& keybind) const;
+	bool isHoldingKeybind(const std::string& settingKey) const;
 	const std::set<ImGuiKey>& getPressedKeys() const { return pressedKeys; }
+	const std::set<ImGuiKey>& getHeldKeys() const { return heldKeys; }
 
 	ImGuiID getDockMainId() const { return dockMainId; }
 	ImGuiID getDockLeftId() const { return dockLeftId; }
@@ -105,6 +108,7 @@ private:
 	Environment environment;
 
 	std::set<ImGuiKey> pressedKeys;
+	std::set<ImGuiKey> heldKeys;
 	std::atomic<unsigned long long> frameIndex;
 	unsigned long long lastUpdatedFrame;
 

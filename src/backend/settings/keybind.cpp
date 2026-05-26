@@ -25,22 +25,24 @@ ImGuiKey Keybind::transformKeyIdForLayout(ImGuiKey key) const {
 std::string Keybind::toString(bool convertForLayoutForceDisable) const {
 	ImGuiKey keyConvert = convertForLayoutForceDisable ? key : transformKeyIdForLayout(key);
 	std::string keyString;
-	keyString += ImGui::GetKeyName((ImGuiKey)(keyConvert & ~ImGuiKey::ImGuiMod_Mask_));
+	ImGuiKey keyNoMods = (ImGuiKey)(keyConvert & ~ImGuiKey::ImGuiMod_Mask_);
+	if (keyNoMods >= ImGuiKey_NamedKey_BEGIN && keyNoMods < ImGuiKey_NamedKey_END)
+		keyString += ImGui::GetKeyName(keyNoMods);
 	if (keyConvert & ImGuiKey::ImGuiMod_Ctrl) {
 		if (!keyString.empty()) keyString += " + ";
-		keyString += ImGui::GetKeyName(ImGuiKey::ImGuiMod_Ctrl);
+		keyString += "Ctrl";
 	}
 	if (keyConvert & ImGuiKey::ImGuiMod_Alt) {
 		if (!keyString.empty()) keyString += " + ";
-		keyString += ImGui::GetKeyName(ImGuiKey::ImGuiMod_Alt);
+		keyString += "Alt";
 	}
 	if (keyConvert & ImGuiKey::ImGuiMod_Shift) {
 		if (!keyString.empty()) keyString += " + ";
-		keyString += ImGui::GetKeyName(ImGuiKey::ImGuiMod_Shift);
+		keyString += "Shift";
 	}
 	if (keyConvert & ImGuiKey::ImGuiMod_Super) {
 		if (!keyString.empty()) keyString += " + ";
-		keyString += ImGui::GetKeyName(ImGuiKey::ImGuiMod_Super);
+		keyString += "Super";
 	}
 	return keyString;
 }
