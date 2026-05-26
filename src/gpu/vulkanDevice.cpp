@@ -105,6 +105,8 @@ void VulkanDevice::createAllocator() {
 	vma::VulkanFunctions vulkanFunctions{};
 	vulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
 	vulkanFunctions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
+	vulkanFunctions.vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties;
+    vulkanFunctions.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
 
 	vma::AllocatorCreateInfo allocatorInfo{};
 	allocatorInfo.physicalDevice = physicalDevice;
