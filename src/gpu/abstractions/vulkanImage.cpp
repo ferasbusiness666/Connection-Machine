@@ -44,8 +44,8 @@ AllocatedImage::AllocatedImage(VulkanDevice& device, vk::Extent3D size, vk::Form
 		ss << "vmaCreateImage failed, VkResult = " << static_cast<int>(imageResult.result);
 		throwFatalError(ss.str());
 	}
-	this->image = std::move(imageResult.value.first);
-	this->allocation = std::move(imageResult.value.second);
+	this->image = std::move(imageResult.value.second);
+	this->allocation = std::move(imageResult.value.first);
 
 	if (format == vk::Format::eD32Sfloat) {
 		this->aspect = vk::ImageAspectFlagBits::eDepth;
@@ -130,8 +130,8 @@ AllocatedImage::AllocatedImage(VulkanDevice& device, vk::Extent3D size, vk::Form
 		ss << "vmaCreateImage failed, VkResult = " << static_cast<int>(imageResult.result);
 		throwFatalError(ss.str());
 	}
-	this->image = std::move(imageResult.value.first);
-	this->allocation = std::move(imageResult.value.second);
+	this->image = std::move(imageResult.value.second);
+	this->allocation = std::move(imageResult.value.first);
 
 	if (format == vk::Format::eD32Sfloat) {
 		this->aspect = vk::ImageAspectFlagBits::eDepth;

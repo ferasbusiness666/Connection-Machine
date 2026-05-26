@@ -151,18 +151,9 @@ function(add_main_dependencies)
 
 	# adding all deps because code spltting became too complex
 
-	# Find vulkan (we don't actually use the headers, we just want shaderc compiler (won't be needed when we switch to slang hopefully))
+	# Find vulkan: provides glslc, the Vulkan::Headers target (with vulkan.hpp), and headers for vulkan.hpp/vma-hpp.
 	find_package(Vulkan REQUIRED COMPONENTS glslc)
-
-	# Vulkan-Headers (for vulkan.hpp)
-	CPMAddPackage(
-		NAME Vulkan-Headers
-		GITHUB_REPOSITORY KhronosGroup/Vulkan-Headers
-		GIT_TAG v1.4.323
-		EXCLUDE_FROM_ALL YES
-		SOURCE_DIR "${EXTERNAL_DIR}/Vulkan-Headers"
-	)
-	list(APPEND EXTERNAL_LINKS Vulkan-Headers::Vulkan-Headers)
+	list(APPEND EXTERNAL_LINKS Vulkan::Headers)
 
 	# Volk vulkan meta loader
 	CPMAddPackage(
@@ -189,8 +180,22 @@ function(add_main_dependencies)
 		set(compile_opts "$<$<CXX_COMPILER_ID:AppleClang>:-Wno-nullability-completeness>")
 	endif()
 	set_target_properties(VulkanMemoryAllocator PROPERTIES INTERFACE_COMPILE_OPTIONS "${compile_opts}")
-	target_include_directories(VulkanMemoryAllocator INTERFACE "${EXTERNAL_DIR}/VulkanMemoryAllocator/include")
 	list(APPEND EXTERNAL_LINKS VulkanMemoryAllocator)
+
+	# VMA-Hpp (C++ wrapper for VMA; separate repo from the C library)
+	CPMAddPackage(
+		NAME VulkanMemoryAllocator-Hpp
+		GITHUB_REPOSITORY YaaZ/VulkanMemoryAllocator-Hpp
+		GIT_TAG v3.3.0+3
+		EXCLUDE_FROM_ALL YES
+		DOWNLOAD_ONLY YES
+		SOURCE_DIR "${EXTERNAL_DIR}/VulkanMemoryAllocator-Hpp"
+	)
+	add_library(VulkanMemoryAllocator-Hpp INTERFACE)
+	target_include_directories(VulkanMemoryAllocator-Hpp INTERFACE "${EXTERNAL_DIR}/VulkanMemoryAllocator-Hpp/include")
+	target_link_libraries(VulkanMemoryAllocator-Hpp INTERFACE VulkanMemoryAllocator Vulkan::Headers)
+	target_compile_options(VulkanMemoryAllocator-Hpp INTERFACE "$<$<CXX_COMPILER_ID:AppleClang>:-Wno-nullability-completeness>")
+	list(APPEND EXTERNAL_LINKS VulkanMemoryAllocator-Hpp)
 
 	# Vk Bootstrap
 	CPMAddPackage(

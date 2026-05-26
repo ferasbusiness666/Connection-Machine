@@ -19,8 +19,8 @@ AllocatedBuffer createBuffer(VulkanDevice& device, size_t allocSize, vk::BufferU
 	if (result.result != vk::Result::eSuccess) {
 		throwFatalError("failed to create vulkan buffer");
 	}
-	newBuffer.buffer = std::move(result.value.first);
-	newBuffer.allocation = std::move(result.value.second);
+	newBuffer.buffer = std::move(result.value.second);
+	newBuffer.allocation = std::move(result.value.first);
 	return newBuffer;
 }
 
