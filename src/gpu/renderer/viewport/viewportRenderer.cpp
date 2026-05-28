@@ -351,12 +351,14 @@ void ViewportRenderer::render(Frame& frame) {
 #ifdef TRACY_PROFILER
 	ZoneScoped;
 #endif
-
+	// Get simulator and address with proper locking
 	const EvalLogicSimulator* sim = getSimulator();
 	Address addr = getAddress();
 
+	// Get view data with proper locking
 	ViewportViewData localViewData = getViewData();
 
+	// Only render if we have valid data
 	gridRenderer.render(frame, localViewData.viewportViewMat, localViewData.viewScale, sim);
 
 	if (sim != nullptr) {
@@ -378,26 +380,29 @@ void ViewportRenderer::render(Frame& frame) {
 void ViewportRenderer::createRenderPass() {
 	vk::SampleCountFlagBits msaaSamples = device.getMaxUsableSampleCount();
 
+	// MSAA color attachment (we render to this)
 	vk::AttachmentDescription colorAttachment{};
 	colorAttachment.format = vk::Format::eR8G8B8A8Unorm;
 	colorAttachment.samples = msaaSamples;
 	colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
 	colorAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
 	colorAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-	colorAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+	colorAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare; // Don't need to store MSAA
 	colorAttachment.initialLayout = vk::ImageLayout::eUndefined;
 	colorAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
 
+	// Resolve attachment (non-MSAA, for ImGui to read)
 	vk::AttachmentDescription resolveAttachment{};
 	resolveAttachment.format = vk::Format::eR8G8B8A8Unorm;
 	resolveAttachment.samples = vk::SampleCountFlagBits::e1;
-	resolveAttachment.loadOp = vk::AttachmentLoadOp::eClear;
-	resolveAttachment.storeOp = vk::AttachmentStoreOp::eStore;
+	resolveAttachment.loadOp = vk::AttachmentLoadOp::eClear; // Clear on each frame
+	resolveAttachment.storeOp = vk::AttachmentStoreOp::eStore; // We need this for ImGui
 	resolveAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
 	resolveAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-	resolveAttachment.initialLayout = vk::ImageLayout::eUndefined;
-	resolveAttachment.finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	resolveAttachment.initialLayout = vk::ImageLayout::eUndefined;// Don't care about previous contents
+	resolveAttachment.finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal; // Ready for ImGui sampling
 
+	// Attachment references
 	vk::AttachmentReference colorAttachmentRef{};
 	colorAttachmentRef.attachment = 0;
 	colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
@@ -412,6 +417,7 @@ void ViewportRenderer::createRenderPass() {
 	subpass.pColorAttachments = &colorAttachmentRef;
 	subpass.pResolveAttachments = &resolveAttachmentRef;
 
+	// Subpass dependency for layout transitions
 	std::array<vk::SubpassDependency, 2> dependencies{};
 
 	dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;

@@ -72,6 +72,7 @@ struct ArrowRenderData {
 struct TextRenderData {
 	std::string text;
 	FPosition pos;
+	// scale > 0 scales with the view. scale < 0 is fixed size. scale = 0 is nothing.
 	float scale;
 };
 

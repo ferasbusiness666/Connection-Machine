@@ -11,6 +11,7 @@ AllocatedImage::AllocatedImage(VulkanDevice& device, vk::Extent3D size, vk::Form
 	this->imageExtent = size;
 	this->arrayLayers = arrayLayers;
 
+	// calculate mipmapping levels
 	if (mipmapped) {
 		this->mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(size.width, size.height)))) + 1;
 	} else {
@@ -47,6 +48,7 @@ AllocatedImage::AllocatedImage(VulkanDevice& device, vk::Extent3D size, vk::Form
 	this->image = std::move(imageResult.value.second);
 	this->allocation = std::move(imageResult.value.first);
 
+	// set the aspect flag to depth if image is using a depth format
 	if (format == vk::Format::eD32Sfloat) {
 		this->aspect = vk::ImageAspectFlagBits::eDepth;
 	} else {
@@ -97,6 +99,7 @@ AllocatedImage::AllocatedImage(VulkanDevice& device, vk::Extent3D size, vk::Form
 	this->imageExtent = size;
 	this->arrayLayers = 1;
 
+	// calculate mipmapping levels
 	if (mipmapped) {
 		this->mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(size.width, size.height)))) + 1;
 	} else {
@@ -133,6 +136,7 @@ AllocatedImage::AllocatedImage(VulkanDevice& device, vk::Extent3D size, vk::Form
 	this->image = std::move(imageResult.value.second);
 	this->allocation = std::move(imageResult.value.first);
 
+	// set the aspect flag to depth if image is using a depth format
 	if (format == vk::Format::eD32Sfloat) {
 		this->aspect = vk::ImageAspectFlagBits::eDepth;
 	} else {
@@ -160,10 +164,12 @@ AllocatedImage::AllocatedImage(VulkanDevice& device, vk::Extent3D size, vk::Form
 
 AllocatedImage::AllocatedImage(VulkanDevice& device, void* data, vk::Extent3D size, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped, vk::SampleCountFlagBits samples)
 	: AllocatedImage(device, size, format, usage | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc, mipmapped, samples) {
-	size_t dataSize = size.depth * size.height * size.width * 4;
+	// upload data to staging upload buffer
+	size_t dataSize = size.depth * size.height * size.width * 4; // each pixel is 4 bytes (8bit channels RGBA)
 	AllocatedBuffer uploadBuffer = createBuffer(device, dataSize, vk::BufferUsageFlagBits::eTransferSrc, vma::AllocationCreateFlagBits::eHostAccessSequentialWrite);
 	device.getAllocator().copyMemoryToAllocation(data, uploadBuffer.allocation.get(), 0, dataSize);
 
+	// submit copy from staging to real
 	device.immediateSubmit([&](vk::CommandBuffer cmd) {
 		transitionImageLayout(cmd, *this, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 
@@ -178,6 +184,7 @@ AllocatedImage::AllocatedImage(VulkanDevice& device, void* data, vk::Extent3D si
 		copyRegion.imageSubresource.layerCount = 1;
 		copyRegion.imageExtent = size;
 
+		// copy the buffer into the image
 		cmd.copyBufferToImage(uploadBuffer.buffer.get(), this->image.get(), vk::ImageLayout::eTransferDstOptimal, copyRegion);
 
 		transitionImageLayout(cmd, *this, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
@@ -194,6 +201,7 @@ AllocatedImage::~AllocatedImage() {
 }
 
 bool transitionImageLayout(vk::CommandBuffer cmd, AllocatedImage& image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout) {
+	// set the aspect flag to depth if image is using a depth format
 	vk::ImageMemoryBarrier barrier{};
 	barrier.oldLayout = oldLayout;
 	barrier.newLayout = newLayout;
@@ -208,6 +216,7 @@ bool transitionImageLayout(vk::CommandBuffer cmd, AllocatedImage& image, vk::Ima
 	barrier.subresourceRange.baseArrayLayer = 0;
 	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 
+	// determine access masks
 	vk::PipelineStageFlags sourceStage;
 	vk::PipelineStageFlags destinationStage;
 	if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal) {

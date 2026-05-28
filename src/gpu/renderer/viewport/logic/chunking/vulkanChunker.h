@@ -148,6 +148,7 @@ struct PortStateRange {
 	inline bool isValid() const { return laneCount != 0; }
 };
 
+// TODO - maybe these should just be split into two different types
 class VulkanLogicAllocation {
 public:
 	VulkanLogicAllocation(VulkanDevice& device, const RenderedBlocks& blocks, const RenderedWires& wires, const EvalLogicSimulator* simulator, const Address& address);
@@ -203,7 +204,7 @@ private:
 
 	std::optional<std::shared_ptr<VulkanLogicAllocation>> newestAllocation;
 	std::optional<std::shared_ptr<VulkanLogicAllocation>> currentlyAllocating;
-	std::vector<std::shared_ptr<VulkanLogicAllocation>> gbJail;
+	std::vector<std::shared_ptr<VulkanLogicAllocation>> gbJail; // deleted chunks mid allocation go here
 };
 
 // ====================================================================================================================
@@ -238,11 +239,11 @@ private:
 	std::vector<ChunkIntersection> getChunkIntersections(FPosition start, FPosition end);
 
 private:
-	std::unordered_map<BlockRenderDataId, unsigned int> blockTypesCount;
+	std::unordered_map<BlockRenderDataId, unsigned int> blockTypesCount; // Used to regenerateAllChunksWithBlock
 
 	std::unordered_map<std::string, LogicGroup> logicGroups;
 	std::unordered_map<Position, std::set<LogicGroup*>> chunkToGroups;
-	std::mutex mux;
+	std::mutex mux; // sync can be relaxed in the future
 
 	std::unordered_set<LogicGroup*> logicGroupsToUpdate;
 

@@ -32,6 +32,7 @@ WindowRenderer::WindowRenderer(WindowId windowId, SdlWindow* sdlWindow) : window
 }
 
 WindowRenderer::~WindowRenderer() {
+	// stop render thread (not completely sure if this is right for the destructor yet)
 	running.store(false);
 	while (!renderLoopStopped.load()) App::doRunOnMainForThread(renderThread.get_id());
 	if (renderThread.joinable()) renderThread.join();
@@ -61,6 +62,8 @@ void WindowRenderer::renderLoop() {
 			continue;
 		}
 
+		// try to start rendering the frame
+		// get next swapchain image to render to (or fail and try again)
 		uint32_t imageIndex = 0;
 		vk::Result acquireResult = static_cast<vk::Result>(vkAcquireNextImageKHR(
 			static_cast<VkDevice>(device->getDevice()),
@@ -267,7 +270,7 @@ void WindowRenderer::updateImGuiBlockTextureArrayLayers() {
 		blockTextureArrayImage = MainRenderer::get().getVulkanInstance().getDevice().getBlockTextureManager().getTextureArray();
 	} else {
 		std::shared_ptr<BlockTextureArray> image = MainRenderer::get().getVulkanInstance().getDevice().getBlockTextureManager().getTextureArray();
-		if (blockTextureArrayImage == image) return;
+		if (blockTextureArrayImage == image) return; // image has not changed
 		imGuiBlockTextureArrayLayers.clear();
 		blockTextureArrayImage = image;
 	}

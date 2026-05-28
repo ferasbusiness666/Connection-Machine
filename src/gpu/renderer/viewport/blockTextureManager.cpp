@@ -23,11 +23,13 @@ void BlockTextureManager::init(VulkanDevice& device) {
 }
 
 BlockTextureId BlockTextureManager::addTexture(const std::string& path) {
+	// check if its already loaded
 	auto iter = loadedTextureFiles.find(path);
 	if (iter != loadedTextureFiles.end()) {
 		return iter->second;
 	}
 
+	// Load pixels from file
 	int textureWidth, textureHeight, texChannels;
 	stbi_uc* pixels = stbi_load(path.c_str(), &textureWidth, &textureHeight, &texChannels, STBI_rgb_alpha);
 	if (!pixels) {
@@ -67,6 +69,7 @@ BlockTextureId BlockTextureManager::addTexture(const std::string& path) {
 }
 
 void BlockTextureManager::refreshBlockTexture(const std::string& path) {
+	// check if its already loaded
 	auto iter = loadedTextureFiles.find(path);
 	if (iter == loadedTextureFiles.end()) {
 		logError("Can't refresh block texture \"{}\" that is not loaded.", "BlockTextureManager", path);
@@ -74,6 +77,7 @@ void BlockTextureManager::refreshBlockTexture(const std::string& path) {
 	}
 	BlockTexture& blockTexture = blockTextures.at(iter->second);
 
+	// Load pixels from file
 	int textureWidth, texHeight, texChannels;
 	stbi_uc* pixels = stbi_load(path.c_str(), &textureWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 	if (!pixels) {
@@ -360,10 +364,13 @@ void BlockTextureManager::addTextureToArray(const stbi_uc* pixels, Vec2Int textu
 
 	vk::DeviceSize imageSize = static_cast<vk::DeviceSize>(textureSize.x) * textureSize.y * 4;
 
+	// Create staging buffer
 	AllocatedBuffer stagingBuffer = createBuffer(*textureArray->device, imageSize, vk::BufferUsageFlagBits::eTransferSrc, vma::AllocationCreateFlagBits::eHostAccessSequentialWrite);
 
+	// Copy pixels into the staging buffer
 	textureArray->device->getAllocator().copyMemoryToAllocation(pixels, stagingBuffer.allocation.get(), 0, imageSize);
 
+	// Upload to the array image layer
 	textureArray->device->immediateSubmit([&](vk::CommandBuffer cmd) {
 		vk::ImageMemoryBarrier barrier{};
 		barrier.oldLayout = writtenLayers[textureLayer] ? vk::ImageLayout::eShaderReadOnlyOptimal : vk::ImageLayout::eUndefined;
@@ -381,6 +388,7 @@ void BlockTextureManager::addTextureToArray(const stbi_uc* pixels, Vec2Int textu
 
 		cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer, {}, nullptr, nullptr, barrier);
 
+		// Copy staging buffer -> texture layer
 		vk::BufferImageCopy region{};
 		region.bufferOffset = 0;
 		region.bufferRowLength = 0;
@@ -417,6 +425,7 @@ void BlockTextureManager::resizeTextureArray(uint32_t newLayerCount) {
 	while (layerRectPackers.size() < textureArray->layerCount) layerRectPackers.push_back(RectPacker(Vec2Int(textureArray->textureSize.width, textureArray->textureSize.height)));
 
 	device->immediateSubmit([&](vk::CommandBuffer cmd) {
+		// 1. Transition old image: SHADER_READ_ONLY_OPTIMAL -> TRANSFER_SRC_OPTIMAL
 		vk::ImageMemoryBarrier barrierOld{};
 		barrierOld.srcAccessMask = vk::AccessFlagBits::eShaderRead;
 		barrierOld.dstAccessMask = vk::AccessFlagBits::eTransferRead;
@@ -424,6 +433,8 @@ void BlockTextureManager::resizeTextureArray(uint32_t newLayerCount) {
 		barrierOld.newLayout = vk::ImageLayout::eTransferSrcOptimal;
 		barrierOld.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		barrierOld.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+		// 2. Transition new image: UNDEFINED -> TRANSFER_DST_OPTIMAL
 		barrierOld.image = oldTextureArray->image->image.get();
 		barrierOld.subresourceRange = vk::ImageSubresourceRange{ vk::ImageAspectFlagBits::eColor, 0, 1, 0, oldTextureArray->layerCount };
 
@@ -440,6 +451,7 @@ void BlockTextureManager::resizeTextureArray(uint32_t newLayerCount) {
 		vk::ImageMemoryBarrier barriers[] = { barrierOld, barrierNew };
 		cmd.pipelineBarrier(vk::PipelineStageFlagBits::eFragmentShader, vk::PipelineStageFlagBits::eTransfer, {}, 0, nullptr, 0, nullptr, 2, barriers);
 
+		// 3. Copy each layer from old to new
 		for (uint32_t layer = 0; layer < oldTextureArray->layerCount; layer++) {
 			vk::ImageCopy region{};
 			region.srcSubresource = vk::ImageSubresourceLayers{ vk::ImageAspectFlagBits::eColor, 0, layer, 1 };
@@ -448,6 +460,7 @@ void BlockTextureManager::resizeTextureArray(uint32_t newLayerCount) {
 			cmd.copyImage(oldTextureArray->image->image.get(), vk::ImageLayout::eTransferSrcOptimal, textureArray->image->image.get(), vk::ImageLayout::eTransferDstOptimal, region);
 		}
 
+		// 4. Transition new image: TRANSFER_DST_OPTIMAL -> SHADER_READ_ONLY_OPTIMAL
 		vk::ImageMemoryBarrier finalBarrier{};
 		finalBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
 		finalBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
@@ -466,6 +479,7 @@ void BlockTextureManager::resizeTextureArray(uint32_t newLayerCount) {
 		writtenLayers[i] = true;
 	}
 
+	// 6. Update descriptor
 	DescriptorWriter writer;
 	writer.writeImage(0, textureArray->image->imageView.get(), textureArray->sampler.get(), vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
 	writer.updateSet(device->getDevice(), textureArray->descriptor);

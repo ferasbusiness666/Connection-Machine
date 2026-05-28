@@ -30,10 +30,6 @@ Frame::Frame(VulkanDevice& device) : device(device) {
 	acquireSemaphore = std::move(semResult.value);
 }
 
-Frame::~Frame() {
-	// command buffer freed with pool; UniqueXxx handles handle the rest
-}
-
 void FrameManager::init(VulkanDevice& device) {
 	for (std::shared_ptr<Frame>& frame : frames) {
 		frame = std::make_shared<Frame>(device);

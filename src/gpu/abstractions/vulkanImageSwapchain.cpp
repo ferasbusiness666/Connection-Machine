@@ -31,6 +31,7 @@ void ImageSwapchain::create(vk::RenderPass renderPass, std::pair<uint32_t, uint3
 		vk::Extent3D imageSize = {size.first, size.second, 1};
 		(void)device->getMaxUsableSampleCount();
 
+		// Create resolve image (non-MSAA, for ImGui to sample)
 		images[i] = std::make_shared<AllocatedImage>(
 			*device,
 			imageSize,
@@ -40,9 +41,10 @@ void ImageSwapchain::create(vk::RenderPass renderPass, std::pair<uint32_t, uint3
 			vk::SampleCountFlagBits::e1
 		);
 
+		// Create framebuffer with both attachments
 		std::array<vk::ImageView, 2> attachments = {
-			msaaImage.imageView.get(),
-			images[i]->imageView.get()
+			msaaImage.imageView.get(), // Color attachment (MSAA)
+			images[i]->imageView.get() // Resolve attachment (non-MSAA)
 		};
 
 		vk::FramebufferCreateInfo framebufferInfo{};

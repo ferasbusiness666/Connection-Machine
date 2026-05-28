@@ -22,4 +22,32 @@ private:
 	std::optional<VulkanDevice> device;
 };
 
+// VULKAN TODO -
+// - [x] Vulkan chunker with wires - Chunk system should be abstracted somewaht (just also supports wires, move a few functions out)
+// - [x] Better naming convention for classes
+// - [x] Block textures
+// - [x] Wires
+// - [x] State
+// - [x] Effects (elements)
+
+// VULKAN IMPROVEMENTS -
+// - [x] VkBootstrap
+// - [x] Switch from singleton to top down design
+// - [x] Volk dynamic loader
+// - [x] Standardization of subrenderer params and input, better way for subrenderer to communicate and put data on the "frame", growable descriptor pool
+// - [x] Fix validation layers on mac, and weird resize messages on x11
+// - [x] Use dynamic rendering, push descriptors and other QOL extensions to simplify code
+// - [ ] Vertex pulling // idk
+// - [ ] Staging Buffers // maybe
+// - [ ] Pooled async resource uploading // maybe
+// - [ ] Check macro // what?
+// - [x] Don't draw directly to swapchain (well imgui does now...)
+
+// POSSIBLE SETTINGS -
+// Vsync // maybe...
+// Frame limit // yes
+// Mip mapping // always prob is best
+// Anti aliasing // yes
+// Chunk size? // nah
+
 #endif /* vulkanInstance_h */
