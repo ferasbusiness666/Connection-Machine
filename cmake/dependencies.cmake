@@ -289,19 +289,6 @@ function(add_main_dependencies)
 	add_library(SDL3::SDL3 ALIAS SDL3-static)
 	list(APPEND EXTERNAL_LINKS SDL3::SDL3)
 
-	# RmlUi
-	CPMAddPackage(
-        NAME RmlUi
-        GITHUB_REPOSITORY mikke89/RmlUi
-        GIT_TAG 6.1
-        OPTIONS
-			"RMLUI_BACKEND native"
-		EXCLUDE_FROM_ALL YES
-		SOURCE_DIR "${EXTERNAL_DIR}/RmlUi"
-    )
-	list(APPEND EXTERNAL_LINKS RmlUi::RmlUi)
-	list(APPEND EXTERNAL_LINKS RmlUi::Debugger)
-
 	# httplib
 	if (CONNECTION_MACHINE_DISTRIBUTE_APP)
 		CPMAddPackage(
