@@ -66,9 +66,9 @@ std::string DirectoryManager::shortenPath(std::filesystem::path path) {
 	auto baseIter = base.begin();
     auto pathIter = path.begin();
     for (; baseIter != base.end() && pathIter != path.end(); ++baseIter, ++pathIter) {
-        if (*baseIter != *pathIter) return path;
+        if (*baseIter != *pathIter) return path.generic_string();
     }
-	if (baseIter != base.end()) return path;
+	if (baseIter != base.end()) return path.generic_string();
 
 	std::string shortenedPath = "@ResourceDirectory";
 	for (; pathIter != path.end(); pathIter++) shortenedPath += "/" + (*pathIter).generic_string();
