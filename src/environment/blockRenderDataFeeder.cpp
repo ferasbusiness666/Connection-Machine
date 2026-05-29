@@ -32,14 +32,14 @@ BlockRenderDataFeeder::BlockRenderDataFeeder(Backend& backend) : backend(backend
 		if (font == nullptr) {
 			std::filesystem::path fallBackPath = (DirectoryManager::getResourceDirectory() / "gui/fonts/Consolas.ttf");
 			logError("Failed to read font from \"{}\". Falling back to \"{}\"", "BlockRenderDataFeeder::BlockRenderDataFeeder", realFontPath, fallBackPath.generic_string());
-			font = Freetype::get().loadFont(fallBackPath, 64);
+			font = Freetype::get().loadFont(fallBackPath.generic_string(), 64);
 		} else {
 			logInfo("Loaded, {}", "BlockRenderDataFeeder::BlockRenderDataFeeder", realFontPath);
 		}
 	} else {
 		std::filesystem::path fallBackPath = (DirectoryManager::getResourceDirectory() / "gui/fonts/Consolas.ttf");
 		logError("Failed to load file path from setting. Falling back to \"{}\"", "BlockRenderDataFeeder::BlockRenderDataFeeder", fallBackPath.generic_string());
-		font = Freetype::get().loadFont(fallBackPath, 64);
+		font = Freetype::get().loadFont(fallBackPath.generic_string(), 64);
 	}
 	blockTextureGenerator = std::make_unique<BlockTextureGenerator>(font);
 
@@ -50,7 +50,7 @@ BlockRenderDataFeeder::BlockRenderDataFeeder(Backend& backend) : backend(backend
 		if (font == nullptr) {
 			std::filesystem::path fallBackPath = (DirectoryManager::getResourceDirectory() / "gui/fonts/Consolas.ttf");
 			logError("Failed to read font from \"{}\". Falling back to \"{}\"", "BlockRenderDataFeeder::BlockRenderDataFeeder", realFontPath, fallBackPath.generic_string());
-			font = Freetype::get().loadFont(fallBackPath, 64);
+			font = Freetype::get().loadFont(fallBackPath.generic_string(), 64);
 		} else {
 			logInfo("Loaded, {}", "BlockRenderDataFeeder::BlockRenderDataFeeder", realFontPath);
 		}
