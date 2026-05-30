@@ -211,7 +211,6 @@ nlohmann::json BlockData::VirtualConnectionData::dumpState() const /* GCOVR_EXCL
 void BlockData::setVirtualConnection(virtual_connection_id_t virtualConnectionId, unsigned int bitWidth) {
 	dataUpdateEventManager.sendEvent<std::tuple<BlockType, virtual_connection_id_t, unsigned int>>("preBlockDataSetVirtualConnection", { blockType, virtualConnectionId, bitWidth });
 	virtualConnections.insert_or_assign(virtualConnectionId, VirtualConnectionData(bitWidth));
-	inputConnectionCount++;
 	dataUpdateEventManager.sendEvent<std::pair<BlockType, virtual_connection_id_t>>("blockDataSetVirtualConnection", { blockType, virtualConnectionId });
 	sendBlockDataUpdate();
 }
