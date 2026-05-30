@@ -6,6 +6,7 @@
 #include "computerAPI/circuitTestFileLoader.h"
 #include "gui/mainWindow/widgets/aboutWidget.h"
 #include "gui/mainWindow/widgets/circuitTestWidget.h"
+#include "gui/mainWindow/widgets/feedbackWidget.h"
 #include "gui/mainWindow/widgets/settingWidget.h"
 #include "gui/viewportManager/circuitView/tutorialDataManager.h"
 #include "imgui/imgui.h"
@@ -261,6 +262,17 @@ void MainWindow::processEvent(SDL_Event& event) {
 	}
 }
 
+nlohmann::json MainWindow::dumpState() const {
+	nlohmann::json json;
+	json["environment"] = environment.dumpState();
+	nlohmann::json widgets;
+	for (const auto& [widgetId, widget] : this->widgets) {
+		widgets[widgetId.get()] = widget->dumpWidgetState();
+	}
+	json["widgets"] = widgets;
+	return json;
+}
+
 void MainWindow::render() {
 	// global styling
 	ImGuiStyle& style = ImGui::GetStyle();
@@ -416,6 +428,13 @@ void MainWindow::render() {
 					ImGui::EndMenu();
 				}
 				ImGui::EndMenu();
+			}
+
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize("Feedback").x - 2.0);
+
+			if (ImGui::MenuItem("Feedback")) {
+				App::runOnMain([this]() { createWidget<FeedbackWidget>(); });
+				// ImGui::EndMenu();
 			}
 
 			ImGui::EndMainMenuBar();

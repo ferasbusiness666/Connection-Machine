@@ -98,7 +98,7 @@ private:
 	bool killWindow(bool forced) override final;
 	void render() override final;
 	void processEvent(SDL_Event& event) override final;
-	nlohmann::json dumpState() const override final { return "Main Window"; }
+	nlohmann::json dumpState() const override final;
 
 private:
 	bool tryClose();

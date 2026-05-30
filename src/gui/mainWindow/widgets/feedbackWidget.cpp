@@ -117,7 +117,7 @@ void FeedbackWidget::render() {
 					// App-state attachment
 					{
 						Network::Attachment att;
-						std::string appState = App::dumpState().dump(1, '\t');
+						std::string appState = App::dumpState().dump();
 						std::optional<std::string> compressed = compressString(appState);
 						if (compressed) {
 							att.data        = std::move(compressed.value());
