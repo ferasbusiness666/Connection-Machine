@@ -203,6 +203,38 @@ TEST_F(WeirdCasesEvaluatorTest, RemovingGateAdjacentToJunctionKeepsJunctionNet) 
 	}
 }
 
+TEST_F(WeirdCasesEvaluatorTest, RemovingSharedDriverWithBusKeepsConsistentRemapping) {
+	BlockType busType = environment.getBackend().getBlockDataManager().getBusBlock(4, 1, 1, 4);
+	ASSERT_NE(busType, BlockType::NONE);
+
+	Position notA(10, -3);
+	Position buffer(-6, -1);
+	Position constZ(2, -11);
+	Position bus(-16, -8);
+	Position notB(16, 16);
+
+	ASSERT_TRUE(circuit->tryInsertBlock(notA, Orientation(2 | 4), BlockType::NOT));
+	ASSERT_TRUE(circuit->tryInsertBlock(buffer, Orientation(2), BlockType::BUFFER));
+	ASSERT_TRUE(circuit->tryInsertBlock(constZ, Orientation(3 | 4), BlockType::CONSTANT_Z));
+	ASSERT_TRUE(circuit->tryCreateConnection(constZ, buffer));
+	ASSERT_TRUE(circuit->tryInsertBlock(bus, Orientation(2 | 4), busType));
+	circuit->tryCreateConnection(constZ, Position(-15, -7)); // CONSTANT_Z -> bus port
+	ASSERT_TRUE(circuit->tryCreateConnection(notA, buffer));
+	ASSERT_TRUE(circuit->tryInsertBlock(notB, Orientation(3), BlockType::NOT));
+	ASSERT_TRUE(circuit->tryCreateConnection(notB, buffer));
+	ASSERT_TRUE(circuit->tryRemoveBlock(notB));
+
+	simulator->tickStep(2);
+
+	simulator_id_t refId = environment.getBackend().createSimulator(circuit->getCircuitId()).value();
+	EvalLogicSimulator* ref = environment.getBackend().getSimulator(refId);
+	ref->tickStep(2);
+
+	for (Position p : { notA, buffer, constZ }) {
+		EXPECT_EQ(simulator->getState(p), ref->getState(p)) << "incremental vs fresh mismatch at " << p.toString();
+	}
+}
+
 TEST_F(WeirdCasesEvaluatorTest, PullUpPullDownButWithDifferentConnectionMethod) {
 	Position pullUpPos(0, 0);
 	Position pullDownPos(1, 0);

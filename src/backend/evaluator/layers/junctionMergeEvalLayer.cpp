@@ -302,6 +302,7 @@ void JunctionMergeEvalLayer::run() {
 				// logError("This is a bug and should not happen. Tho it should not break anything I dont want it to happen!"); // for now this will happen as I just throw alot at connectionPointsToScan
 				continue;
 			}
+			if (isJunctionType(curGate->type) && connectionPointToScanFrom.connectionEndId != connection_end_id_t(0)) continue;
 		}
 		auto [junctions, singlePinConnectionPoints, nonJunctionConnectionPoints, gateType] = gatherJunctionGroup(connectionPointToScanFrom, currentState);
 		assert(junctions.size() > 0 || singlePinConnectionPoints.size() > 0);
