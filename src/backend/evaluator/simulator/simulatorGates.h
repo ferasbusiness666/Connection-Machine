@@ -408,34 +408,47 @@ struct SingleBufferGate : public BufferGateBase {
 
 struct TristateBufferGate : public SimulatorGate {
 	bool enableInverted;
-	simulator_gate_id_t dataInput;
-	simulator_gate_id_t enableInput;
+	simulator_gate_id_t dataInput = simulator_gate_id_t(0);
+	simulator_gate_id_t enableInput = simulator_gate_id_t(0);
+	// Connections can arrive weighted (the same merged source connected multiple times),
+	// so track a per-port weight like SingleInputGate; the port stays connected until the
+	// weight drops to zero. Without this a single weighted removal clears the input early.
+	unsigned int dataWeight = 0;
+	unsigned int enableWeight = 0;
 
 	TristateBufferGate(simulator_gate_id_t id, bool enableInverted = false)
 		: SimulatorGate(id), enableInverted(enableInverted) {}
 
 	void addInput(simulator_gate_id_t inputId, connection_end_id_t portId) override {
-		if (portId == 0) {
-			dataInput = inputId;
-		} else {
-			enableInput = inputId;
+		simulator_gate_id_t& input = (portId == 0) ? dataInput : enableInput;
+		unsigned int& weight = (portId == 0) ? dataWeight : enableWeight;
+		if (weight > 0) {
+			if (input == inputId) weight++;
+			else logError("TristateBufferGate already has an input", "TristateBufferGate::addInput");
+			return;
 		}
+		input = inputId;
+		weight = 1;
 	}
 
 	void removeInput(simulator_gate_id_t inputId, connection_end_id_t portId) override {
-		if (portId == 0) {
-			dataInput = simulator_gate_id_t(0);
+		simulator_gate_id_t& input = (portId == 0) ? dataInput : enableInput;
+		unsigned int& weight = (portId == 0) ? dataWeight : enableWeight;
+		if (weight > 0 && input == inputId) {
+			if (--weight == 0) input = simulator_gate_id_t(0);
 		} else {
-			enableInput = simulator_gate_id_t(0);
+			logError("TristateBufferGate does not have the specified input", "TristateBufferGate::removeInput");
 		}
 	}
 
 	void removeIdRefs(simulator_gate_id_t otherId) override {
 		if (dataInput == otherId) {
 			dataInput = simulator_gate_id_t(0);
+			dataWeight = 0;
 		}
 		if (enableInput == otherId) {
 			enableInput = simulator_gate_id_t(0);
+			enableWeight = 0;
 		}
 	}
 

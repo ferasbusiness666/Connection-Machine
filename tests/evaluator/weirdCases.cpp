@@ -177,6 +177,32 @@ TEST_F(WeirdCasesEvaluatorTest, RemovingSharedDriverLeavesInputOnBusPort) {
 	EXPECT_EQ(simulator->getState(notAPos), logic_state_t::UNDEFINED);
 }
 
+TEST_F(WeirdCasesEvaluatorTest, RemovingGateAdjacentToJunctionKeepsJunctionNet) {
+	Position constZ(-14, -5);
+	Position tristate(-7, 1);
+	Position junctionX(20, 8);
+	Position nand(8, -5);
+
+	ASSERT_TRUE(circuit->tryInsertBlock(constZ, Orientation(3), BlockType::CONSTANT_Z));
+	ASSERT_TRUE(circuit->tryInsertBlock(tristate, Orientation(3 | 4), BlockType::TRISTATE_BUFFER));
+	ASSERT_TRUE(circuit->tryInsertBlock(junctionX, Orientation(2 | 4), BlockType::JUNCTION_X));
+	ASSERT_TRUE(circuit->tryCreateConnection(constZ, Position(20, 10)));
+	ASSERT_TRUE(circuit->tryInsertBlock(nand, Orientation(3), BlockType::NAND));
+	ASSERT_TRUE(circuit->tryCreateConnection(constZ, Position(-6, 1)));
+	ASSERT_TRUE(circuit->tryCreateConnection(nand, Position(-6, 1)));
+	ASSERT_TRUE(circuit->tryRemoveBlock(nand));
+
+	simulator->tickStep(1);
+
+	simulator_id_t refId = environment.getBackend().createSimulator(circuit->getCircuitId()).value();
+	EvalLogicSimulator* ref = environment.getBackend().getSimulator(refId);
+	ref->tickStep(1);
+
+	for (Position p : { constZ, tristate, junctionX, Position(-6, 1), Position(20, 10) }) {
+		EXPECT_EQ(simulator->getState(p), ref->getState(p)) << "incremental vs fresh mismatch at " << p.toString();
+	}
+}
+
 TEST_F(WeirdCasesEvaluatorTest, PullUpPullDownButWithDifferentConnectionMethod) {
 	Position pullUpPos(0, 0);
 	Position pullDownPos(1, 0);
