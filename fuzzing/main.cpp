@@ -4,9 +4,6 @@
 
 #include "computerAPI/directoryManager.h"
 
-// mainThreadId is defined in src/app.cpp (compiled into the fuzzer) and declared
-// extern in backend/settings/settings.h.
-
 int main(int argc, char** argv) {
 	DirectoryManager::findDirectories();
 	std::filesystem::create_directories(DirectoryManager::getConfigDirectory() / "fuzzing");
