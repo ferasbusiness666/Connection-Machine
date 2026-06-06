@@ -42,6 +42,7 @@ FuzzTestcase TestcaseMinifier::minifyTestcase(const FuzzTestcase& originalTestca
 }
 
 std::unique_ptr<FuzzTestcase> TestcaseMinifier::tryRemoveEditActions(const FuzzTestcase& testcase, std::set<size_t> editActions, std::set<size_t> testActions) {
+	resetFuzzSetStateFailCount();
 	std::unique_ptr<FuzzTestcase> outputTestcase = std::make_unique<FuzzTestcase>(testcase.getBlockTypesUsed());
 	Environment environment { false };
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
@@ -176,14 +177,20 @@ std::unique_ptr<FuzzTestcase> TestcaseMinifier::tryRemoveEditActions(const FuzzT
 		}
 	}
 
+	bool setStateFailDiverged = false;
 	for (int i = 0; i < testcase.getTestActions().size(); ++i) {
 		if (testActions.contains(i)) continue;
 		FuzzTestAction action = testcase.getTestActions()[i];
 		std::visit([&](auto&& arg) {
 			using T = std::decay_t<decltype(arg)>;
 			if constexpr (std::is_same_v<T, SetBlockStateAction>) {
+				unsigned long long failBefore = fuzzSetStateFailCount();
 				tSimulator->setState(arg.position, arg.state);
+				unsigned long long testFails = fuzzSetStateFailCount() - failBefore;
+				failBefore = fuzzSetStateFailCount();
 				rSimulator.setState(arg.position, arg.state);
+				unsigned long long refFails = fuzzSetStateFailCount() - failBefore;
+				if (testFails != refFails) setStateFailDiverged = true;
 				outputTestcase->addTestAction(arg);
 			} else if constexpr (std::is_same_v<T, TickEvalAction>) {
 				tSimulator->tickStep(arg.numTicks);
@@ -192,6 +199,7 @@ std::unique_ptr<FuzzTestcase> TestcaseMinifier::tryRemoveEditActions(const FuzzT
 			}
 		}, action);
 	}
+	if (setStateFailDiverged) return outputTestcase;
 
 	std::vector<logic_state_t> statesTest = tSimulator->getStates(simulatorIdsTest);
 	std::vector<logic_state_t> statesRef = rSimulator.getStates(simulatorIdsRef);

@@ -45,6 +45,7 @@ std::optional<connection_end_id_t> getRandomConnectionEnd(const BlockData* block
 } // namespace
 
 std::unique_ptr<FuzzTestcase> FailingCaseFinder::tryMakeFailingCase(const std::vector<FuzzBlockType>& blockTypesUsed) {
+	resetFuzzSetStateFailCount();
 	std::unique_ptr<FuzzTestcase> testcase = std::make_unique<FuzzTestcase>(blockTypesUsed);
 	Environment environment { false };
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
@@ -206,8 +207,13 @@ std::unique_ptr<FuzzTestcase> FailingCaseFinder::tryMakeFailingCase(const std::v
 			block_id_t blockId = blockIds[gen() % blockIds.size()];
 			Position pos = blockIdToPosition.at(blockId);
 			logic_state_t state = logic_state_t(gen() % 4);
+			unsigned long long failBefore = fuzzSetStateFailCount();
 			rSimulator.setState(pos, state);
+			unsigned long long refFails = fuzzSetStateFailCount() - failBefore;
+			failBefore = fuzzSetStateFailCount();
 			tSimulator->setState(pos, state);
+			unsigned long long testFails = fuzzSetStateFailCount() - failBefore;
+			if (refFails != testFails) return testcase;
 			testcase->addTestAction(SetBlockStateAction { pos, state });
 		}
 

@@ -1,6 +1,31 @@
 #include "fuzzTestcase.h"
 #include "computerAPI/directoryManager.h"
 
+namespace {
+	std::atomic<unsigned long long> g_setStateFailCount { 0 };
+}
+
+void setupFuzzLogCapture() {
+	setLogStdErrEnabled(false); // we re-emit below so we can drop one specific line
+	setLogOutputCallback([](const std::string& line) {
+		if (line.find("Failed to set sim id") != std::string::npos && line.find("EvalLogicSimulator::setState") != std::string::npos) return;
+		std::cerr << line << "\n";
+	});
+	setLogErrorCallback([](const std::string& message, const std::string& subcategory) {
+		if (message == "Failed to set sim id" && subcategory == "EvalLogicSimulator::setState") {
+			g_setStateFailCount.fetch_add(1, std::memory_order_relaxed);
+		}
+	});
+}
+
+unsigned long long fuzzSetStateFailCount() {
+	return g_setStateFailCount.load(std::memory_order_relaxed);
+}
+
+void resetFuzzSetStateFailCount() {
+	g_setStateFailCount.store(0, std::memory_order_relaxed);
+}
+
 std::string FuzzTestcase::serialize() const {
 	nlohmann::json j;
 	j["type"] = "FuzzTestcase Eval v1";
