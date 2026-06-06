@@ -1129,6 +1129,8 @@ nlohmann::json LogicSimulator::dumpState() const /* GCOVR_EXCL_FUNCTION */ {
 	for (const auto& gate : junctions) gatesJson["junctions"].push_back(gate.dumpState());
 	gatesJson["buffers"] = nlohmann::json::array();
 	for (const auto& gate : buffers) gatesJson["buffers"].push_back(gate.dumpState());
+	gatesJson["singleBuffers"] = nlohmann::json::array();
+	for (const auto& gate : singleBuffers) gatesJson["singleBuffers"].push_back(gate.dumpState());
 	gatesJson["tristateBuffers"] = nlohmann::json::array();
 	for (const auto& gate : tristateBuffers) gatesJson["tristateBuffers"].push_back(gate.dumpState());
 	gatesJson["constantGates"] = nlohmann::json::array();

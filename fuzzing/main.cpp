@@ -4,7 +4,8 @@
 
 #include "computerAPI/directoryManager.h"
 
-std::thread::id mainThreadId = std::this_thread::get_id();
+// mainThreadId is defined in src/app.cpp (compiled into the fuzzer) and declared
+// extern in backend/settings/settings.h.
 
 int main(int argc, char** argv) {
 	DirectoryManager::findDirectories();

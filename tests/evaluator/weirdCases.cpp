@@ -132,6 +132,51 @@ TEST_F(WeirdCasesEvaluatorTest, InitializationBehaviorWithICs) {
 	EXPECT_EQ(simulator2->getState(xnorPos), logic_state_t::LOW);
 }
 
+TEST_F(WeirdCasesEvaluatorTest, RemovingSharedDriverLeavesInputOnBusPort) {
+	// Regression for a crash in the (pre-bus-replacement) JunctionMergeEvalLayer,
+	// minimized from a fuzzer-found case. A NOT gate's input ("notA") is driven by
+	// two things: a bus port, and the output of a second NOT gate ("notB"). notB
+	// also drives a pull-down junction. Removing notB makes the merge layer rescan
+	// notA's input, which now forms a junction-free group whose only neighbour is
+	// the bus port. A bus port is not classified as a "single pin" output, so the
+	// layer found no driving output and tried to wire the group from a null
+	// connection point, tripping an assert in EvalLayerState::addConnection.
+	BlockType busType = environment.getBackend().getBlockDataManager().getBusBlock(4, 1, 1, 4);
+	ASSERT_NE(busType, BlockType::NONE);
+
+	Position busPos(0, 0);
+	Position notAPos(6, 0);
+	Position notBPos(6, 4);
+	Position pullDownPos(6, 8);
+
+	ASSERT_TRUE(circuit->tryInsertBlock(busPos, Rotation::ZERO, busType));
+	ASSERT_TRUE(circuit->tryInsertBlock(notAPos, Rotation::ZERO, BlockType::NOT));
+	ASSERT_TRUE(circuit->tryInsertBlock(notBPos, Rotation::ZERO, BlockType::NOT));
+	ASSERT_TRUE(circuit->tryInsertBlock(pullDownPos, Rotation::ZERO, BlockType::JUNCTION_L));
+
+	const Block* bus = circuit->getBlockContainer().getBlock(busPos);
+	const Block* notA = circuit->getBlockContainer().getBlock(notAPos);
+	const Block* notB = circuit->getBlockContainer().getBlock(notBPos);
+	const Block* pullDown = circuit->getBlockContainer().getBlock(pullDownPos);
+	ASSERT_NE(bus, nullptr);
+	ASSERT_NE(notA, nullptr);
+	ASSERT_NE(notB, nullptr);
+	ASSERT_NE(pullDown, nullptr);
+
+	// notA input (end 0) is driven by a bus port (end 2) and by notB's output (end 1)
+	ASSERT_TRUE(circuit->tryCreateConnection({ bus->id(), connection_end_id_t(2) }, { notA->id(), connection_end_id_t(0) }));
+	ASSERT_TRUE(circuit->tryCreateConnection({ notB->id(), connection_end_id_t(1) }, { notA->id(), connection_end_id_t(0) }));
+	// notB also drives a pull-down junction
+	ASSERT_TRUE(circuit->tryCreateConnection({ notB->id(), connection_end_id_t(1) }, { pullDown->id(), connection_end_id_t(0) }));
+
+	simulator->tickStep(2);
+
+	// removing notB leaves notA's input wired only to the (undriven) bus port
+	ASSERT_TRUE(circuit->tryRemoveBlock(notBPos));
+	simulator->tickStep(2);
+	EXPECT_EQ(simulator->getState(notAPos), logic_state_t::UNDEFINED);
+}
+
 TEST_F(WeirdCasesEvaluatorTest, PullUpPullDownButWithDifferentConnectionMethod) {
 	Position pullUpPos(0, 0);
 	Position pullDownPos(1, 0);

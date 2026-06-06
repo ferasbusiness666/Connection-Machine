@@ -107,7 +107,7 @@ BlockType getBlockTypeFromFuzzBlockType(const FuzzBlockType& fuzzBlockType, Envi
 	} else if (std::holds_alternative<FuzzCustomCircuitType>(fuzzBlockType)) {
 		CircuitFileManager& circuitFileManager = environment.getCircuitFileManager();
 		circuit_id_t circuitId = circuitFileManager.loadFromFile((DirectoryManager::getResourceDirectory() / std::get<FuzzCustomCircuitType>(fuzzBlockType).path).string()).at(0);
-		SharedCircuit circuit = environment.getBackend().getCircuitManager().getCircuit(circuitId);
+		Circuit* circuit = environment.getBackend().getCircuitManager().getCircuit(circuitId);
 		return circuit->getBlockType();
 	}
 	return BlockType::NONE;

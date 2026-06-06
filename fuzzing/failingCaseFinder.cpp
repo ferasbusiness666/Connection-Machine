@@ -48,7 +48,7 @@ std::unique_ptr<FuzzTestcase> FailingCaseFinder::tryMakeFailingCase(const std::v
 	std::unique_ptr<FuzzTestcase> testcase = std::make_unique<FuzzTestcase>(blockTypesUsed);
 	Environment environment { false };
 	circuit_id_t circuitId = environment.getBackend().getCircuitManager().createNewCircuit(false);
-	SharedCircuit circuit = environment.getBackend().getCircuit(circuitId);
+	Circuit* circuit = environment.getBackend().getCircuitManager().getCircuit(circuitId);
 	simulator_id_t simulatorId = environment.getBackend().createSimulator(circuitId).value();
 	EvalLogicSimulator* tSimulator = environment.getBackend().getSimulator(simulatorId); // test evaluator
 
@@ -163,8 +163,12 @@ std::unique_ptr<FuzzTestcase> FailingCaseFinder::tryMakeFailingCase(const std::v
 		if (block == nullptr) continue;
 		Position pos = block->getPosition();
 		blockIdToPosition[blockId] = pos;
+		if (std::holds_alternative<std::vector<simulator_gate_id_t>>(tSimulator->getVirtualConnectionSimulatorId(Address(pos), 0))) {
+			assert(std::holds_alternative<std::vector<simulator_gate_id_t>>(rSimulator.getVirtualConnectionSimulatorId(Address(pos), 0)));
+			continue;
+		}
 		simulatorIdsTest.push_back(std::get<simulator_gate_id_t>(tSimulator->getVirtualConnectionSimulatorId(Address(pos), 0)));
-		simulatorIdsRef.push_back(std::get<simulator_gate_id_t>(tSimulator->getVirtualConnectionSimulatorId(Address(pos), 0)));
+		simulatorIdsRef.push_back(std::get<simulator_gate_id_t>(rSimulator.getVirtualConnectionSimulatorId(Address(pos), 0)));
 		const BlockData* blockData = blockDataManager.getBlockData(block->type());
 		if (blockData == nullptr) continue;
 		const std::unordered_map<connection_end_id_t, BlockData::ConnectionData>& connections = blockData->getConnections();

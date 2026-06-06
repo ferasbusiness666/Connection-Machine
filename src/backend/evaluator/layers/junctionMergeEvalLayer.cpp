@@ -336,7 +336,10 @@ void JunctionMergeEvalLayer::run() {
 			EvalConnectionPoint connectionPoint = outputConnectionPoint.value();
 			for (std::pair<EvalConnectionPoint, unsigned int> pair : nonJunctionConnectionPoints) {
 				connectionPointsToScan.erase(pair.first);
-				if (pair.first == connectionPoint) continue;
+				// connectionPoint is null when the group has no driving output (e.g. an
+				// input sharing a bus port whose only driver was just removed); there is
+				// nothing to wire from, so leave the input unconnected.
+				if (connectionPoint.isNull() || pair.first == connectionPoint) continue;
 				nextState.addConnection(EvalConnection(connectionPoint, pair.first), pair.second);
 			}
 			continue;
