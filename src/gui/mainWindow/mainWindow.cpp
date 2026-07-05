@@ -22,6 +22,7 @@
 #include "gui/helper/saveCallback.h"
 
 // widgets
+#include "widgets/aiWidget.h"
 #include "widgets/blockCreationWidget.h"
 #include "widgets/blockSelectorWidget.h"
 #include "widgets/circuitViewWidget.h"
@@ -409,6 +410,10 @@ void MainWindow::render() {
 				}
 				if (ImGui::MenuItem("Block Tester")) {
 					App::runOnMain([this]() { createWidget<CircuitTestWidget>(); });
+				}
+				ImGui::Separator();
+				if (ImGui::MenuItem("AI Panel")) {
+					App::runOnMain([this]() { createWidget<AIWidget>(); });
 				}
 				ImGui::EndMenu();
 			}

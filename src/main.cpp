@@ -71,6 +71,21 @@ void registerSettings() {
 	Settings::registerSetting<SettingType::DECIMAL>("Appearance/UI Scale", 1.0);
 	Settings::registerSetting<SettingType::UINT>("Simulation/Max Thread Count", std::thread::hardware_concurrency() / 2);
 	Settings::registerSetting<SettingType::DECIMAL>("Appearance/Corner Log/Message Timeout", 3.f);
+
+	// AI Settings
+	Settings::registerSetting<SettingType::STRING>("ai/groq/apiKey", "");
+	Settings::registerSetting<SettingType::BOOL>("ai/groq/enabled", false);
+	Settings::registerSetting<SettingType::STRING>("ai/groq/defaultModel", "llama-3.3-70b-versatile");
+	Settings::registerSetting<SettingType::STRING>("ai/groq/baseUrl", "https://api.groq.com/openai/v1");
+	Settings::registerSetting<SettingType::STRING>("ai/openrouter/apiKey", "");
+	Settings::registerSetting<SettingType::BOOL>("ai/openrouter/enabled", false);
+	Settings::registerSetting<SettingType::STRING>("ai/openrouter/defaultModel", "google/gemini-2.0-flash-001");
+	Settings::registerSetting<SettingType::STRING>("ai/openrouter/baseUrl", "https://openrouter.ai/api/v1");
+	Settings::registerSetting<SettingType::STRING>("ai/googleAi/apiKey", "");
+	Settings::registerSetting<SettingType::BOOL>("ai/googleAi/enabled", false);
+	Settings::registerSetting<SettingType::STRING>("ai/googleAi/defaultModel", "gemini-2.0-flash");
+	Settings::registerSetting<SettingType::STRING>("ai/googleAi/baseUrl", "https://generativelanguage.googleapis.com/v1beta");
+
 	SaveSettings save;
 	save.load();
 
